@@ -1,1 +1,1 @@
-# neo4j-jdbc
+# Neo4j JDBC driver
