@@ -1,0 +1,7 @@
+= Neo4j JDBC Driver
+
+This project is made by the following modules:
+
+* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt]
+
+This directory also contains the common classes shared between modules.

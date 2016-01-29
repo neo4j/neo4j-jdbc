@@ -1,0 +1,3 @@
+= Neo4j JDBC Driver - Bolt
+
+This module implements the neo4j-jdbc driver with the bolt protocol.
