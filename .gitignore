@@ -5,6 +5,7 @@
 
 # Package Files #
 *.jar
+!neo4j-jdbc-idea-settings.jar
 *.war
 *.ear
 
