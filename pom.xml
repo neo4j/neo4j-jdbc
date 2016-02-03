@@ -12,6 +12,18 @@
     <name>Neo4j JDBC Driver</name>
     <description>Neo4j JDBC Driver</description>
 
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <comments>
+                Note that this license is for the project itself,
+                and not for its dependencies.
+            </comments>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <organization>
         <name>LARUS Business Automation Srl</name>
         <url>http://www.larus-ba.it</url>
@@ -20,5 +32,19 @@
     <modules>
         <module>neo4j-jdbc-bolt</module>
     </modules>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>(whatever version is current)</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 
 </project>
