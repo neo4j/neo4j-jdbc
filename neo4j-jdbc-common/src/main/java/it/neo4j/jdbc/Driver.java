@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class Driver implements java.sql.Driver {
+public abstract class Driver implements java.sql.Driver {
 	/**
 	 * Attempts to make a database connection to the given URL.
 	 * The driver should return "null" if it realizes it is the wrong kind

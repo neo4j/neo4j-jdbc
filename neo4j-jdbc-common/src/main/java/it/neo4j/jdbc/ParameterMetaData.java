@@ -23,7 +23,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class ParameterMetaData implements java.sql.ParameterMetaData {
+public abstract class ParameterMetaData implements java.sql.ParameterMetaData {
 	/**
 	 * Retrieves the number of parameters in the <code>PreparedStatement</code>
 	 * object for which this <code>ParameterMetaData</code> object contains

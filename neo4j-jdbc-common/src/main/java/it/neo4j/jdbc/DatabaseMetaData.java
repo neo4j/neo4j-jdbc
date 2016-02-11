@@ -18,13 +18,14 @@
 package it.neo4j.jdbc;
 
 import java.sql.*;
+import java.sql.Connection;
 import java.sql.ResultSet;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class DatabaseMetaData implements java.sql.DatabaseMetaData {
+public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/**
 	 * Retrieves whether the current user can call all the procedures
 	 * returned by the method <code>getProcedures</code>.
@@ -1300,7 +1301,7 @@ public class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 *
 	 * @return the default isolation level
 	 * @throws SQLException if a database access error occurs
-	 * @see Connection
+	 * @see java.sql.Connection
 	 */
 	@Override public int getDefaultTransactionIsolation() throws SQLException {
 		return 0;
@@ -1326,7 +1327,7 @@ public class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 *              <code>java.sql.Connection</code>
 	 * @return <code>true</code> if so; <code>false</code> otherwise
 	 * @throws SQLException if a database access error occurs
-	 * @see Connection
+	 * @see java.sql.Connection
 	 */
 	@Override public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
 		return false;
@@ -2327,7 +2328,7 @@ public class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 * @param type defined in <code>java.sql.ResultSet</code>
 	 * @return <code>true</code> if so; <code>false</code> otherwise
 	 * @throws SQLException if a database access error occurs
-	 * @see Connection
+	 * @see java.sql.Connection
 	 * @since 1.2
 	 */
 	@Override public boolean supportsResultSetType(int type) throws SQLException {
@@ -2342,7 +2343,7 @@ public class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 * @param concurrency type defined in <code>java.sql.ResultSet</code>
 	 * @return <code>true</code> if so; <code>false</code> otherwise
 	 * @throws SQLException if a database access error occurs
-	 * @see Connection
+	 * @see java.sql.Connection
 	 * @since 1.2
 	 */
 	@Override public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {

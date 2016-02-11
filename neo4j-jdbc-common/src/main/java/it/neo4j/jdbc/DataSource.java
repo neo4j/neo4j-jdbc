@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class DataSource implements javax.sql.DataSource {
+public abstract class DataSource implements javax.sql.DataSource {
 	/**
 	 * <p>Attempts to establish a connection with the data source that
 	 * this {@code DataSource} object represents.

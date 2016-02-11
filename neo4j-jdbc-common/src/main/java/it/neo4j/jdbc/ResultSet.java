@@ -22,6 +22,7 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
+import java.sql.DatabaseMetaData;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ import java.util.Map;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class ResultSet implements java.sql.ResultSet {
+public abstract class ResultSet implements java.sql.ResultSet {
 	/**
 	 * Moves the cursor forward one row from its current position.
 	 * A <code>ResultSet</code> cursor is initially positioned
@@ -1361,7 +1362,7 @@ public class ResultSet implements java.sql.ResultSet {
 	 *                                         or this method is called on a closed result set
 	 * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
 	 *                                         this method
-	 * @see DatabaseMetaData#updatesAreDetected
+	 * @see java.sql.DatabaseMetaData#updatesAreDetected
 	 * @since 1.2
 	 */
 	@Override public boolean rowUpdated() throws SQLException {
@@ -1382,7 +1383,7 @@ public class ResultSet implements java.sql.ResultSet {
 	 *                                         or this method is called on a closed result set
 	 * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
 	 *                                         this method
-	 * @see DatabaseMetaData#insertsAreDetected
+	 * @see java.sql.DatabaseMetaData#insertsAreDetected
 	 * @since 1.2
 	 */
 	@Override public boolean rowInserted() throws SQLException {

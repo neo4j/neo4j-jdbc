@@ -18,6 +18,7 @@
 package it.neo4j.jdbc;
 
 import java.sql.*;
+import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Map;
@@ -28,7 +29,7 @@ import java.util.concurrent.Executor;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class Connection implements java.sql.Connection {
+public abstract class Connection implements java.sql.Connection {
 	/**
 	 * Creates a <code>Statement</code> object for sending
 	 * SQL statements to the database.
@@ -117,7 +118,7 @@ public class Connection implements java.sql.Connection {
 	 * @throws SQLException if a database access error occurs
 	 *                      or this method is called on a closed connection
 	 */
-	@Override public CallableStatement prepareCall(String sql) throws SQLException {
+	@Override public java.sql.CallableStatement prepareCall(String sql) throws SQLException {
 		return null;
 	}
 
@@ -527,7 +528,7 @@ public class Connection implements java.sql.Connection {
 	 *                                         set type and result set concurrency.
 	 * @since 1.2
 	 */
-	@Override public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+	@Override public java.sql.CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
 		return null;
 	}
 

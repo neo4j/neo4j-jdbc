@@ -33,7 +33,7 @@ import java.util.Map;
  *
  * @since 3.0.0
  */
-public class CallableStatement implements java.sql.CallableStatement {
+public abstract class CallableStatement implements java.sql.CallableStatement {
 	/**
 	 * Registers the OUT parameter in ordinal position
 	 * <code>parameterIndex</code> to the JDBC type

@@ -23,7 +23,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class ResultSetMetaData implements java.sql.ResultSetMetaData {
+public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	/**
 	 * Returns the number of columns in this <code>ResultSet</code> object.
 	 *

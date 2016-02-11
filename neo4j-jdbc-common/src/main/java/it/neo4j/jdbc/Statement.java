@@ -19,13 +19,14 @@ package it.neo4j.jdbc;
 
 import java.sql.*;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class Statement implements java.sql.Statement {
+public abstract class Statement implements java.sql.Statement {
 	/**
 	 * Executes the given SQL statement, which returns a single
 	 * <code>ResultSet</code> object.
@@ -540,7 +541,7 @@ public class Statement implements java.sql.Statement {
 	 *                      driver does not support batch updates, the method is called on a
 	 *                      <code>PreparedStatement</code> or <code>CallableStatement</code>
 	 * @see #executeBatch
-	 * @see DatabaseMetaData#supportsBatchUpdates
+	 * @see java.sql.DatabaseMetaData#supportsBatchUpdates
 	 * @since 1.2
 	 */
 	@Override public void addBatch(String sql) throws SQLException {
@@ -556,7 +557,7 @@ public class Statement implements java.sql.Statement {
 	 *                      this method is called on a closed <code>Statement</code> or the
 	 *                      driver does not support batch updates
 	 * @see #addBatch
-	 * @see DatabaseMetaData#supportsBatchUpdates
+	 * @see java.sql.DatabaseMetaData#supportsBatchUpdates
 	 * @since 1.2
 	 */
 	@Override public void clearBatch() throws SQLException {

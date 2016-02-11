@@ -23,7 +23,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class Wrapper implements java.sql.Wrapper {
+public abstract class Wrapper implements java.sql.Wrapper {
 	/**
 	 * Returns an object that implements the given interface to allow access to
 	 * non-standard methods, or standard methods not exposed by the proxy.
