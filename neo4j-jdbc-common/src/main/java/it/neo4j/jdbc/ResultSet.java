@@ -57,9 +57,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 * @throws SQLException if a database access error occurs or this method is
 	 *                      called on a closed result set
 	 */
-	@Override public boolean next() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean next() throws SQLException;
 
 	/**
 	 * Releases this <code>ResultSet</code> object's database and
