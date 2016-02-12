@@ -1,3 +1,4 @@
-= Neo4j JDBC Driver - Bolt
+= Neo4j JDBC Driver
 
-This module implements the neo4j-jdbc driver with the bolt protocol.
+This is the common module of the neo4j-jdbc driver.
+It contains all the abstract classes and it's a dependency of all the other modules.

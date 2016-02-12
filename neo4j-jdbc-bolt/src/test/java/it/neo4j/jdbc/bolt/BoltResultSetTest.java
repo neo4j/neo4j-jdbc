@@ -1,17 +1,17 @@
 /**
- * Copyright (c) 2004-2015 LARUS Business Automation Srl
+ * Copyright (c) 2004-2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
- * All Rights Reserved.
+ * This file is part of the "LARUS Integration Framework for Neo4j".
  * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
+ * The "LARUS Integration Framework for Neo4j" is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions
- * and limitations under the License.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  * <p>
  * Created on 11/02/16
  */
@@ -25,7 +25,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.InternalRecord;
 import org.neo4j.driver.internal.InternalResultCursor;
-import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.Value;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -34,26 +36,20 @@ import java.util.List;
 
 /**
  * @author AgileLARUS
- *
  * @since 3.0.0
  */
 public class BoltResultSetTest {
 
-	@Rule
-	public ExpectedException expectedEx = ExpectedException.none();
+	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	@Ignore
-	@Test
-	public void nextShouldReturnFalseEmpty() throws SQLException {
+	@Ignore @Test public void nextShouldReturnFalseEmpty() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(null, new LinkedList<Record>(), null);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.next());
 	}
 
-	@Ignore
-	@Test
-	public void nextShouldReturnFalseAfterLast() throws SQLException {
+	@Ignore @Test public void nextShouldReturnFalseAfterLast() throws SQLException {
 		List<Record> records = new LinkedList<Record>();
 		records.add(new InternalRecord(new LinkedList<>(), new HashMap<>(), new Value[0]));
 		ResultCursor resultCursor = new InternalResultCursor(null, records, null);
@@ -64,9 +60,7 @@ public class BoltResultSetTest {
 		Assert.assertFalse(resultSet.next());
 	}
 
-	@Ignore
-	@Test
-	public void nextShouldReturnTrue() throws SQLException {
+	@Ignore @Test public void nextShouldReturnTrue() throws SQLException {
 		List<Record> records = new LinkedList<Record>();
 		records.add(new InternalRecord(new LinkedList<>(), new HashMap<>(), new Value[0]));
 		ResultCursor resultCursor = new InternalResultCursor(null, records, null);
@@ -75,9 +69,7 @@ public class BoltResultSetTest {
 		Assert.assertTrue(resultSet.next());
 	}
 
-	@Ignore
-	@Test
-	public void nextShouldThrowExceptionEmpty() throws SQLException {
+	@Ignore @Test public void nextShouldThrowExceptionEmpty() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultCursor not initialized");
 

@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>Neo4j JDBC Bolt</name>
-    <description>Neo4j JDBC Bolt</description>
+    <description>Bolt implementation for the Neo4j JDBC Driver</description>
 
     <parent>
         <groupId>it.neo4j.jdbc</groupId>
-        <artifactId>neo4j-jdbc</artifactId>
+        <artifactId>neo4j-jdbc-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
     </parent>
 

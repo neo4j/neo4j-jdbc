@@ -5,21 +5,22 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>it.neo4j.jdbc</groupId>
-    <artifactId>neo4j-jdbc</artifactId>
+    <artifactId>neo4j-jdbc-parent</artifactId>
     <version>3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Neo4j JDBC Driver</name>
-    <description>Neo4j JDBC Driver</description>
+    <name>Neo4j JDBC Driver Parent</name>
+    <description>Parent POM for Neo4j JDBC Driver and Modules</description>
+
+    <modules>
+        <module>neo4j-jdbc</module>
+        <module>neo4j-jdbc-bolt</module>
+    </modules>
 
     <licenses>
         <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <comments>
-                Note that this license is for the project itself,
-                and not for its dependencies.
-            </comments>
+            <name>GNU General Public License, version 3</name>
+            <url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -29,10 +30,18 @@
         <url>http://www.larus-ba.it</url>
     </organization>
 
-    <modules>
-        <module>neo4j-jdbc-bolt</module>
-        <module>neo4j-jdbc-common</module>
-    </modules>
+    <developers>
+        <developer>
+            <id>albertodeste</id>
+            <name>Alberto D'Este</name>
+            <email>alberto.deste@larus-ba.it</email>
+        </developer>
+        <developer>
+            <id>mfalcier-larus</id>
+            <name>Marco Falcier</name>
+            <email>marco.falcier@larus-ba.it</email>
+        </developer>
+    </developers>
 
     <dependencies>
         <dependency>
@@ -41,20 +50,5 @@
             <version>4.12</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>(whatever version is current)</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
 
 </project>
