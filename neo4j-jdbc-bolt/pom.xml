@@ -40,7 +40,7 @@
 
         <dependency>
             <groupId>it.neo4j.jdbc</groupId>
-            <artifactId>neo4j-jdbc-common</artifactId>
+            <artifactId>neo4j-jdbc</artifactId>
             <version>3.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

@@ -1100,9 +1100,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 *                                         this method
 	 * @since 1.2
 	 */
-	@Override public boolean first() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean first() throws SQLException;
 
 	/**
 	 * Moves the cursor to the last row in
@@ -1117,9 +1115,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 *                                         this method
 	 * @since 1.2
 	 */
-	@Override public boolean last() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean last() throws SQLException;
 
 	/**
 	 * Retrieves the current row number.  The first row is number 1, the
@@ -1238,9 +1234,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 *                                         this method
 	 * @since 1.2
 	 */
-	@Override public boolean previous() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean previous() throws SQLException;
 
 	/**
 	 * Gives a hint as to the direction in which the rows in this

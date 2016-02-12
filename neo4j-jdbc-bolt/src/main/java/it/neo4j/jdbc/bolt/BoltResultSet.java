@@ -37,5 +37,17 @@ public class BoltResultSet extends ResultSet {
 	@Override public boolean next() throws SQLException {
 		return false;
 	}
-}
 
+	@Override public boolean previous() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean first() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean last() throws SQLException {
+		return false;
+	}
+
+}
