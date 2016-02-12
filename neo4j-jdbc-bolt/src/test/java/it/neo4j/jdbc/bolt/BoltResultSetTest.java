@@ -30,6 +30,7 @@ import org.neo4j.driver.v1.ResultCursor;
 import org.neo4j.driver.v1.Value;
 
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +74,7 @@ public class BoltResultSetTest {
 	}
 
 	//TODO check Record initialization
-	public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
+	@Ignore @Test public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
 		List<Record> records = new LinkedList<Record>();
 		records.add(new InternalRecord(new LinkedList<>(), new HashMap<>(), new Value[0]));
 		ResultCursor resultCursor = new InternalResultCursor(null, records, null);
@@ -135,7 +136,7 @@ public class BoltResultSetTest {
 		resultSet.previous();
 	}
 
-	//TODO check second Record initialization
+	//TODO check first Record initialization
 	@Ignore @Test public void previousShouldReturnTrueAndPointPreviousNode() throws SQLException {
 		List<Record> records = new LinkedList<Record>();
 		records.add(new InternalRecord(new LinkedList<>(), new HashMap<>(), new Value[0]));
@@ -189,7 +190,7 @@ public class BoltResultSetTest {
 	}
 
 	@Ignore @Test public void firstShouldThrowExceptionForwardOnly() throws SQLException {
-		expectedEx.expect(SQLException.class);
+		expectedEx.expect(SQLFeatureNotSupportedException.class);
 		expectedEx.expectMessage("Called method first on forward-only ResultSet");
 
 		ResultSet resultSet = new BoltResultSet(null) {
@@ -242,8 +243,8 @@ public class BoltResultSetTest {
 	}
 
 	@Ignore @Test public void lastShouldThrowExceptionForwardOnly() throws SQLException {
-		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Called method first on forward-only ResultSet");
+		expectedEx.expect(SQLFeatureNotSupportedException.class);
+		expectedEx.expectMessage("Called method last on forward-only ResultSet");
 
 		ResultSet resultSet = new BoltResultSet(null) {
 			@Override public int getType() {
