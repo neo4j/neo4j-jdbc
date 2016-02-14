@@ -1068,7 +1068,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 * @since 1.2
 	 */
 	@Override public void beforeFirst() throws SQLException {
-
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	/**
@@ -1084,7 +1084,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 * @since 1.2
 	 */
 	@Override public void afterLast() throws SQLException {
-
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	/**
@@ -1180,7 +1180,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 * @since 1.2
 	 */
 	@Override public boolean absolute(int row) throws SQLException {
-		return false;
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	/**
@@ -1208,7 +1208,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 * @since 1.2
 	 */
 	@Override public boolean relative(int rows) throws SQLException {
-		return false;
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	/**
@@ -2382,7 +2382,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 * @since 1.2
 	 */
 	@Override public void moveToInsertRow() throws SQLException {
-
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	/**
