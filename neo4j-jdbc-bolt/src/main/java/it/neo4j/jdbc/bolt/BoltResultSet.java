@@ -35,7 +35,14 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public boolean next() throws SQLException {
-		return false;
+		if (this.cursor == null) {
+			throw new SQLException("ResultCursor not initialized");
+		}
+		if (this.cursor.position() == this.cursor.size() - 1) {
+			return false;
+		} else {
+			return this.cursor.next();
+		}
 	}
 
 	@Override public boolean previous() throws SQLException {

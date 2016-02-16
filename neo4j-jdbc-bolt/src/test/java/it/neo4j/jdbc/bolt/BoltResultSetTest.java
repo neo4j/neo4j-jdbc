@@ -29,11 +29,7 @@ import org.neo4j.driver.v1.*;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author AgileLARUS
@@ -185,21 +181,21 @@ public class BoltResultSetTest {
 	/*------------------------------*/
 	/*            next              */
 	/*------------------------------*/
-	@Ignore @Test public void nextShouldReturnFalseEmpty() throws SQLException {
+	@Test public void nextShouldReturnFalseEmpty() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_EMPTY, RECORD_LIST_EMPTY, RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.next());
 	}
 
-	@Ignore @Test public void nextShouldReturnTrue() throws SQLException {
+	@Test public void nextShouldReturnTrue() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
 	}
 
-	@Ignore @Test public void nextShouldReturnFalseAfterLast() throws SQLException {
+	@Test public void nextShouldReturnFalseAfterLast() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
@@ -208,6 +204,7 @@ public class BoltResultSetTest {
 		Assert.assertFalse(resultSet.next());
 	}
 
+	// Dependency with ResultSet.getString method
 	@Ignore @Test public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -221,7 +218,7 @@ public class BoltResultSetTest {
 		Assert.assertEquals("valueB2", resultSet.getString("columnB"));
 	}
 
-	@Ignore @Test public void nextShouldThrowExceptionEmpty() throws SQLException {
+	@Test public void nextShouldThrowExceptionEmpty() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultCursor not initialized");
 
