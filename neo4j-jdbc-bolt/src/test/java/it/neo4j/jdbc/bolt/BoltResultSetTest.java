@@ -18,18 +18,14 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSet;
+import it.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.internal.InternalRecord;
 import org.neo4j.driver.internal.InternalResultCursor;
-import org.neo4j.driver.internal.value.FloatValue;
-import org.neo4j.driver.internal.value.IntegerValue;
-import org.neo4j.driver.internal.value.StringValue;
 import org.neo4j.driver.v1.*;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.*;
 
 /**
  * @author AgileLARUS
@@ -39,164 +35,38 @@ public class BoltResultSetTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	static List<Record> RECORD_LIST_EMPTY;
-	static List<Record> RECORD_LIST_ONE_ELEMENT;
-	static List<Record> RECORD_LIST_MORE_ELEMENTS;
-	static List<Record> RECORD_LIST_MORE_ELEMENTS_MIXED;
-
-	static List<String> KEYS_RECORD_LIST_EMPTY;
-	static List<String> KEYS_RECORD_LIST_ONE_ELEMENT;
-	static List<String> KEYS_RECORD_LIST_MORE_ELEMENTS;
-	static List<String> KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED;
-
-	static ResultSummary RESULT_SUMMARY;
-
-	@BeforeClass public static void setupClass() {
-		RECORD_LIST_EMPTY = new LinkedList<>();
-		RECORD_LIST_ONE_ELEMENT = new LinkedList<>();
-		RECORD_LIST_MORE_ELEMENTS = new LinkedList<>();
-		RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
-
-		Record recordA = new InternalRecord(new LinkedList<String>() {{
-			add("columnA");
-			add("columnB");
-		}}, new HashMap<String, Integer>() {{
-			put("columnA", 0);
-			put("columnB", 1);
-		}}, new Value[] { new StringValue("valueA1"), new StringValue("valueB1") });
-
-		RECORD_LIST_ONE_ELEMENT.add(recordA);
-
-		Record recordB = new InternalRecord(new LinkedList<String>() {{
-			add("columnA");
-			add("columnB");
-		}}, new HashMap<String, Integer>() {{
-			put("columnA", 0);
-			put("columnB", 1);
-		}}, new Value[] { new StringValue("valueA2"), new StringValue("valueB2") });
-
-		Record recordC = new InternalRecord(new LinkedList<String>() {{
-			add("columnA");
-			add("columnB");
-		}}, new HashMap<String, Integer>() {{
-			put("columnA", 0);
-			put("columnB", 1);
-		}}, new Value[] { new StringValue("valueA3"), new StringValue("valueB3") });
-
-		RECORD_LIST_MORE_ELEMENTS.add(recordA);
-		RECORD_LIST_MORE_ELEMENTS.add(recordB);
-		RECORD_LIST_MORE_ELEMENTS.add(recordC);
-
-		KEYS_RECORD_LIST_EMPTY = getKeys(RECORD_LIST_EMPTY);
-		KEYS_RECORD_LIST_ONE_ELEMENT = getKeys(RECORD_LIST_ONE_ELEMENT);
-		KEYS_RECORD_LIST_MORE_ELEMENTS = getKeys(RECORD_LIST_MORE_ELEMENTS);
-
-		RESULT_SUMMARY = new ResultSummary() {
-
-			@Override public Statement statement() {
-				return null;
-			}
-
-			@Override public UpdateStatistics updateStatistics() {
-				return null;
-			}
-
-			@Override public StatementType statementType() {
-				return null;
-			}
-
-			@Override public boolean hasPlan() {
-				return false;
-			}
-
-			@Override public boolean hasProfile() {
-				return false;
-			}
-
-			@Override public Plan plan() {
-				return null;
-			}
-
-			@Override public ProfiledPlan profile() {
-				return null;
-			}
-
-			@Override public List<Notification> notifications() {
-				return null;
-			}
-		};
-
-		Record recordAMixed = new InternalRecord(new LinkedList<String>() {{
-			add("columnInt");
-			add("columnString");
-			add("columnFloat");
-		}}, new HashMap<String, Integer>() {{
-			put("columnInt", 0);
-			put("columnString", 1);
-			put("columnFloat", 2);
-		}}, new Value[] { new IntegerValue(1L), new StringValue("value1"), new FloatValue(0.1) });
-
-		Record recordBMixed = new InternalRecord(new LinkedList<String>() {{
-			add("columnString");
-			add("columnFloat");
-			add("columnInt");
-		}}, new HashMap<String, Integer>() {{
-			put("columnString", 0);
-			put("columnFloat", 1);
-			put("columnInt", 2);
-		}}, new Value[] { new StringValue("value2"), new FloatValue(0.2), new IntegerValue(2L) });
-
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(recordAMixed);
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(recordBMixed);
-
-		KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED = getKeys(RECORD_LIST_MORE_ELEMENTS_MIXED);
-	}
-
-	/**
-	 * Calculates the total keys from a list of record with potentially different keys
-	 *
-	 * @param records a list of records to retrieve keys from
-	 * @return a list of keys
-	 */
-	private static List<String> getKeys(List<Record> records) {
-		Set<String> keysSet = new HashSet<>();
-
-		for (Record record : records) {
-			keysSet.addAll(record.keys());
-		}
-
-		List<String> keys = new LinkedList<>();
-		keys.addAll(keysSet);
-
-		return keys;
-	}
-
-	@Test public void testGetKeys() {
-		Assert.assertEquals(2, getKeys(RECORD_LIST_MORE_ELEMENTS).size());
-		Assert.assertEquals(2, getKeys(RECORD_LIST_ONE_ELEMENT).size());
-		Assert.assertEquals(0, getKeys(RECORD_LIST_EMPTY).size());
-		Assert.assertEquals(3, getKeys(RECORD_LIST_MORE_ELEMENTS_MIXED).size());
+	@BeforeClass public static void initialize() {
+		ResultSetData.initialize();
 	}
 
 	/*------------------------------*/
 	/*            next              */
 	/*------------------------------*/
 	@Test public void nextShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_EMPTY, RECORD_LIST_EMPTY, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.next());
 	}
 
 	@Test public void nextShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
 	}
 
+	@Test public void nextShouldReturnTrueMoreElements() throws SQLException {
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultSet resultSet = new BoltResultSet(resultCursor);
+
+		Assert.assertTrue(resultSet.next());
+		Assert.assertTrue(resultSet.next());
+		Assert.assertTrue(resultSet.next());
+	}
+
 	@Test public void nextShouldReturnFalseAfterLast() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -204,9 +74,20 @@ public class BoltResultSetTest {
 		Assert.assertFalse(resultSet.next());
 	}
 
+	@Test public void nextShouldReturnFalseAfterLastMoreElements() throws SQLException {
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultSet resultSet = new BoltResultSet(resultCursor);
+
+		Assert.assertTrue(resultSet.next());
+		Assert.assertTrue(resultSet.next());
+		Assert.assertTrue(resultSet.next());
+
+		Assert.assertFalse(resultSet.next());
+	}
+
 	// Dependency with ResultSet.getString method
-	@Ignore @Test public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
+	@Test public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -231,25 +112,27 @@ public class BoltResultSetTest {
 	/*           previous           */
 	/*------------------------------*/
 	@Ignore @Test public void previousShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_EMPTY, RECORD_LIST_EMPTY, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.previous());
 	}
 
 	@Ignore @Test public void previousShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS,ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
-		Assert.assertTrue(resultSet.previous());
-
 		Assert.assertTrue(resultSet.next());
+		Assert.assertTrue(resultSet.next());
+
+		Assert.assertTrue(resultSet.previous());
 	}
 
 	@Ignore @Test public void previousShouldReturnFalseBeforeFirst() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
+		Assert.assertTrue(resultSet.next());
 		Assert.assertTrue(resultSet.next());
 
 		Assert.assertTrue(resultSet.previous());
@@ -258,7 +141,7 @@ public class BoltResultSetTest {
 	}
 
 	@Ignore @Test public void previousShouldReturnTrueAndPointPreviousNode() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.last());
@@ -285,21 +168,21 @@ public class BoltResultSetTest {
 	/*             first            */
 	/*------------------------------*/
 	@Ignore @Test public void firstShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_EMPTY, RECORD_LIST_EMPTY, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.first());
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueOnFirst() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.first());
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueNotOnFirst() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -308,7 +191,7 @@ public class BoltResultSetTest {
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueAndPointFirstElement() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.first());
@@ -343,21 +226,21 @@ public class BoltResultSetTest {
 	/*             last             */
 	/*------------------------------*/
 	@Ignore @Test public void lastShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_EMPTY, RECORD_LIST_EMPTY, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY,ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.last());
 	}
 
 	@Ignore @Test public void lastShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_ONE_ELEMENT, RECORD_LIST_ONE_ELEMENT, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.last());
 	}
 
 	@Ignore @Test public void lastShouldReturnTrueAndPointLastNode() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.last());
@@ -392,7 +275,7 @@ public class BoltResultSetTest {
 	/*          findColumn          */
 	/*------------------------------*/
 	@Ignore @Test public void findColumnShouldReturnCorrectIndex() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertEquals(0, resultSet.findColumn("columnA"));
@@ -403,7 +286,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.findColumn("columnZ");
@@ -413,7 +296,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS, RECORD_LIST_MORE_ELEMENTS, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
@@ -425,7 +308,7 @@ public class BoltResultSetTest {
 	/*------------------------------*/
 
 	@Test public void getStringByLabelShouldReturnString() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -439,7 +322,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -451,40 +334,41 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
 		resultSet.getString("columnString");
 	}
 
-	@Ignore @Test public void getStringByIndexShouldReturnString() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+	@Test public void getStringByIndexShouldReturnString() throws SQLException {
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
-		Assert.assertEquals("valueA1", resultSet.getString(2));
+		Assert.assertEquals("value1", resultSet.getString(2));
 
 		resultSet.next();
-		Assert.assertEquals("valueA2", resultSet.getString(1));
+		Assert.assertEquals("value2", resultSet.getString(1));
 	}
 
-	@Ignore @Test public void getStringByIndexShouldThrowExceptionNoIndex() throws SQLException {
+	@Test public void getStringByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
 		resultSet.getString(99);
 	}
 
+	//This test depends on the close method
 	@Ignore @Test public void getStringByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
@@ -496,7 +380,7 @@ public class BoltResultSetTest {
 	/*------------------------------*/
 
 	@Ignore @Test public void getIntByLabelShouldReturnInt() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -510,7 +394,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -521,7 +405,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
@@ -529,7 +413,7 @@ public class BoltResultSetTest {
 	}
 
 	@Ignore @Test public void getIntByIndexShouldReturnInt() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -543,7 +427,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -554,7 +438,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
@@ -566,7 +450,7 @@ public class BoltResultSetTest {
 	/*------------------------------*/
 
 	@Ignore @Test public void getFloatByLabelShouldReturnFloat() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -580,7 +464,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -591,7 +475,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
@@ -599,7 +483,7 @@ public class BoltResultSetTest {
 	}
 
 	@Ignore @Test public void getFloatByIndexShouldReturnFloat() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -613,7 +497,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
@@ -624,7 +508,7 @@ public class BoltResultSetTest {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
 
-		ResultCursor resultCursor = new InternalResultCursor(KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, RECORD_LIST_MORE_ELEMENTS_MIXED, RESULT_SUMMARY);
+		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
