@@ -118,9 +118,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 *                      if a database access error occurs or this method is
 	 *                      called on a closed result set
 	 */
-	@Override public String getString(int columnIndex) throws SQLException {
-		return null;
-	}
+	@Override public abstract String getString(int columnIndex) throws SQLException;
 
 	/**
 	 * Retrieves the value of the designated column in the current row
@@ -431,9 +429,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 *                      if a database access error occurs or this method is
 	 *                      called on a closed result set
 	 */
-	@Override public String getString(String columnLabel) throws SQLException {
-		return null;
-	}
+	@Override public abstract String getString(String columnLabel) throws SQLException;
 
 	/**
 	 * Retrieves the value of the designated column in the current row

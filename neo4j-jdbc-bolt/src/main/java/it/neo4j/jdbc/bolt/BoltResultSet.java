@@ -21,6 +21,7 @@ import it.neo4j.jdbc.ResultSet;
 import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;
+import java.util.Collections;
 
 /**
  * @author AgileLARUS
@@ -43,6 +44,17 @@ public class BoltResultSet extends ResultSet {
 		} else {
 			return this.cursor.next();
 		}
+	}
+
+	@Override public String getString(String columnLabel) throws SQLException {
+		if (!cursor.containsKey(columnLabel)) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return cursor.value(columnLabel).asString();
+	}
+
+	@Override public String getString(int columnIndex) throws SQLException {
+		return null;
 	}
 
 	@Override public boolean previous() throws SQLException {
