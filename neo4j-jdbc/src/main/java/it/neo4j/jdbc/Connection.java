@@ -239,9 +239,7 @@ public abstract class Connection implements java.sql.Connection {
 	 *
 	 * @throws SQLException SQLException if a database access error occurs
 	 */
-	@Override public void close() throws SQLException {
-
-	}
+	@Override public abstract void close() throws SQLException;
 
 	/**
 	 * Retrieves whether this <code>Connection</code> object has been
@@ -260,9 +258,7 @@ public abstract class Connection implements java.sql.Connection {
 	 * is closed; <code>false</code> if it is still open
 	 * @throws SQLException if a database access error occurs
 	 */
-	@Override public boolean isClosed() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean isClosed() throws SQLException;
 
 	/**
 	 * Retrieves a <code>DatabaseMetaData</code> object that contains
@@ -293,9 +289,7 @@ public abstract class Connection implements java.sql.Connection {
 	 *                      method is called on a closed connection or this
 	 *                      method is called during a transaction
 	 */
-	@Override public void setReadOnly(boolean readOnly) throws SQLException {
-
-	}
+	@Override public abstract void setReadOnly(boolean readOnly) throws SQLException;
 
 	/**
 	 * Retrieves whether this <code>Connection</code>
@@ -306,9 +300,7 @@ public abstract class Connection implements java.sql.Connection {
 	 * @throws SQLException SQLException if a database access error occurs
 	 *                      or this method is called on a closed connection
 	 */
-	@Override public boolean isReadOnly() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean isReadOnly() throws SQLException;
 
 	/**
 	 * Sets the given catalog name in order to select
