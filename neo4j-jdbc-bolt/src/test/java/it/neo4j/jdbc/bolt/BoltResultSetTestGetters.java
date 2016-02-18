@@ -44,7 +44,7 @@ public class BoltResultSetTestGetters {
 	/*------------------------------*/
 	/*          findColumn          */
 	/*------------------------------*/
-	@Ignore @Test public void findColumnShouldReturnCorrectIndex() throws SQLException {
+	@Test public void findColumnShouldReturnCorrectIndex() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -53,7 +53,7 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(1, resultSet.findColumn("columnB"));
 	}
 
-	@Ignore @Test public void findColumnShouldThrowExceptionOnWrongLabel() throws SQLException {
+	@Test public void findColumnShouldThrowExceptionOnWrongLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
@@ -64,6 +64,7 @@ public class BoltResultSetTestGetters {
 		resultSet.findColumn("columnZ");
 	}
 
+	// this test depends on the method close()
 	@Ignore @Test public void findColumnShouldThrowExceptionOnClosedResultSet() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");

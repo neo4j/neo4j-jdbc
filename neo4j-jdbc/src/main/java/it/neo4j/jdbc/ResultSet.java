@@ -233,9 +233,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	}
 
 
-	@Override public int findColumn(String columnLabel) throws SQLException {
-		return 0;
-	}
+	@Override public abstract int findColumn(String columnLabel) throws SQLException;
 
 
 	@Override public Reader getCharacterStream(int columnIndex) throws SQLException {
