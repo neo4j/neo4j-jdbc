@@ -27,9 +27,7 @@ import java.sql.SQLException;
  */
 public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 
-	@Override public int getColumnCount() throws SQLException {
-		return 0;
-	}
+	@Override public abstract int getColumnCount() throws SQLException;
 
 
 	@Override public boolean isAutoIncrement(int column) throws SQLException {
@@ -62,9 +60,9 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 
-	@Override public int getColumnDisplaySize(int column) throws SQLException {
+	@Override public  int getColumnDisplaySize(int column) throws SQLException {
 		return 0;
-	}
+	};
 
 
 	@Override public String getColumnLabel(int column) throws SQLException {

@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Connection;
+import it.neo4j.jdbc.Statement;
 
 import java.sql.SQLException;
 
@@ -45,6 +46,18 @@ public class BoltConnection extends Connection {
 	}
 
 	@Override public boolean isReadOnly() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public Statement createStatement() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 }

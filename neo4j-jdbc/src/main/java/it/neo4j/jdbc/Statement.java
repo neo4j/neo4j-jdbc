@@ -30,9 +30,7 @@ import java.sql.ResultSet;
  */
 public abstract class Statement implements java.sql.Statement {
 
-	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		return null;
-	}
+	@Override public abstract ResultSet executeQuery(String sql) throws SQLException;
 
 
 	@Override public int executeUpdate(String sql) throws SQLException {

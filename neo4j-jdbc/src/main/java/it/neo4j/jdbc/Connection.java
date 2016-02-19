@@ -33,9 +33,7 @@ import java.util.concurrent.Executor;
  */
 public abstract class Connection implements java.sql.Connection {
 
-	@Override public Statement createStatement() throws SQLException {
-		return null;
-	}
+	@Override public abstract Statement createStatement() throws SQLException;
 
 	@Override public PreparedStatement prepareStatement(String sql) throws SQLException {
 		return null;
@@ -101,9 +99,7 @@ public abstract class Connection implements java.sql.Connection {
 
 	}
 
-	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-		return null;
-	}
+	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException;
 
 	@Override public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
 		return null;
@@ -145,9 +141,7 @@ public abstract class Connection implements java.sql.Connection {
 
 	}
 
-	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-		return null;
-	}
+	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException;
 
 	@Override public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		return null;
