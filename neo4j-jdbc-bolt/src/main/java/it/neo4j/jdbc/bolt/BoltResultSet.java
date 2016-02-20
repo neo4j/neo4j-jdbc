@@ -54,8 +54,15 @@ public class BoltResultSet extends ResultSet {
 		return this.cursor.value(columnLabel).asString();
 	}
 
+	@Override public int getInt(String columnLabel) throws SQLException {
+		if (!this.cursor.containsKey(columnLabel)) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return this.cursor.value(columnLabel).asInt();
+	}
+
 	@Override public int findColumn(String columnLabel) throws SQLException {
-		if(!this.cursor.containsKey(columnLabel)) {
+		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
 		this.cursor.next();
@@ -63,10 +70,17 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public String getString(int columnIndex) throws SQLException {
-		if(columnIndex - 1 > this.cursor.record().size()){
+		if (columnIndex - 1 > this.cursor.record().size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
 		return this.cursor.value(columnIndex - 1).asString();
+	}
+
+	@Override public int getInt(int columnIndex) throws SQLException {
+		if (columnIndex - 1 > this.cursor.record().size()) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return this.cursor.record().value(columnIndex - 1).asInt();
 	}
 
 	@Override public boolean previous() throws SQLException {

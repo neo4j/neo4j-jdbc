@@ -159,7 +159,7 @@ public class BoltResultSetTestGetters {
 	/*            getInt            */
 	/*------------------------------*/
 
-	@Ignore @Test public void getIntByLabelShouldReturnInt() throws SQLException {
+	@Test public void getIntByLabelShouldReturnInt() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -171,7 +171,7 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(2, resultSet.getInt("columnInt"));
 	}
 
-	@Ignore @Test public void getIntByLabelShouldThrowExceptionNoLabel() throws SQLException {
+	@Test public void getIntByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
@@ -183,6 +183,7 @@ public class BoltResultSetTestGetters {
 		resultSet.getInt("columnZ");
 	}
 
+	//This test depends on the close method
 	@Ignore @Test public void getIntByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
@@ -195,7 +196,7 @@ public class BoltResultSetTestGetters {
 		resultSet.getInt("columnInt");
 	}
 
-	@Ignore @Test public void getIntByIndexShouldReturnInt() throws SQLException {
+	@Test public void getIntByIndexShouldReturnInt() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -207,7 +208,7 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(2, resultSet.getInt(3));
 	}
 
-	@Ignore @Test public void getIntByIndexShouldThrowExceptionNoIndex() throws SQLException {
+	@Test public void getIntByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
@@ -219,6 +220,7 @@ public class BoltResultSetTestGetters {
 		resultSet.getInt(99);
 	}
 
+	//This test depends on the close method
 	@Ignore @Test public void getIntByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
