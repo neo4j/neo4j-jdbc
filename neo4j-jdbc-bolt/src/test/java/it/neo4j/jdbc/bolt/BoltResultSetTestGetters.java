@@ -237,7 +237,7 @@ public class BoltResultSetTestGetters {
 	/*           getFloat           */
 	/*------------------------------*/
 
-	@Ignore @Test public void getFloatByLabelShouldReturnFloat() throws SQLException {
+	@Test public void getFloatByLabelShouldReturnFloat() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -246,10 +246,10 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(0.1F, resultSet.getFloat("columnFloat"), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2F, resultSet.getInt("columnFloat"), 0);
+		Assert.assertEquals(0.2F, resultSet.getFloat("columnFloat"), 0);
 	}
 
-	@Ignore @Test public void getFloatByLabelShouldThrowExceptionNoLabel() throws SQLException {
+	@Test public void getFloatByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
@@ -261,6 +261,7 @@ public class BoltResultSetTestGetters {
 		resultSet.getFloat("columnZ");
 	}
 
+	//This test depends on the close method.
 	@Ignore @Test public void getFloatByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");
@@ -273,7 +274,7 @@ public class BoltResultSetTestGetters {
 		resultSet.getFloat("columnFloat");
 	}
 
-	@Ignore @Test public void getFloatByIndexShouldReturnFloat() throws SQLException {
+	@Test public void getFloatByIndexShouldReturnFloat() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -282,10 +283,10 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(0.1F, resultSet.getFloat(3), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2F, resultSet.getInt(1), 0);
+		Assert.assertEquals(0.2F, resultSet.getFloat(2), 0);
 	}
 
-	@Ignore @Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {
+	@Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Column not present in ResultSet");
 
@@ -297,6 +298,7 @@ public class BoltResultSetTestGetters {
 		resultSet.getFloat(99);
 	}
 
+	//This test depends on the close method
 	@Ignore @Test public void getFloatByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ResultSet is closed");

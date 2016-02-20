@@ -84,11 +84,17 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public float getFloat(String columnLabel) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (!this.cursor.containsKey(columnLabel)) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return this.cursor.value(columnLabel).asFloat();
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (columnIndex - 1 > this.cursor.record().size()) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return this.cursor.record().value(columnIndex - 1).asFloat();
 	}
 
 	@Override public boolean previous() throws SQLException {
