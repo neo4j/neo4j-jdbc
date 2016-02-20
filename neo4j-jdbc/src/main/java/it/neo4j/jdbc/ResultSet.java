@@ -64,9 +64,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		return 0;
 	}
 
-	@Override public float getFloat(int columnIndex) throws SQLException {
-		return 0;
-	}
+	@Override public abstract float getFloat(int columnIndex) throws SQLException;
 
 	@Override public double getDouble(int columnIndex) throws SQLException {
 		return 0;
@@ -124,9 +122,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		return 0;
 	}
 
-	@Override public float getFloat(String columnLabel) throws SQLException {
-		return 0;
-	}
+	@Override public abstract float getFloat(String columnLabel) throws SQLException;
 
 	@Override public double getDouble(String columnLabel) throws SQLException {
 		return 0;

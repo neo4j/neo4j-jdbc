@@ -83,6 +83,14 @@ public class BoltResultSet extends ResultSet {
 		return this.cursor.record().value(columnIndex - 1).asInt();
 	}
 
+	@Override public float getFloat(String columnLabel) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public float getFloat(int columnIndex) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
 	@Override public boolean previous() throws SQLException {
 		throw new UnsupportedOperationException();
 	}

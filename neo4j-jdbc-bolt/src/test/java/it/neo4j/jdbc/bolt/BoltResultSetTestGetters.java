@@ -243,10 +243,10 @@ public class BoltResultSetTestGetters {
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
-		Assert.assertEquals(0.1, resultSet.getFloat("columnFloat"), 0);
+		Assert.assertEquals(0.1F, resultSet.getFloat("columnFloat"), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2, resultSet.getInt("columnFloat"), 0);
+		Assert.assertEquals(0.2F, resultSet.getInt("columnFloat"), 0);
 	}
 
 	@Ignore @Test public void getFloatByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -279,10 +279,10 @@ public class BoltResultSetTestGetters {
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
-		Assert.assertEquals(0.1, resultSet.getFloat(3), 0);
+		Assert.assertEquals(0.1F, resultSet.getFloat(3), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2, resultSet.getInt(1), 0);
+		Assert.assertEquals(0.2F, resultSet.getInt(1), 0);
 	}
 
 	@Ignore @Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {

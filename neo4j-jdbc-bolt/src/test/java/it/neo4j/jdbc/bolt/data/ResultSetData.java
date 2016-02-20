@@ -126,22 +126,22 @@ public class ResultSetData {
 		Record recordAMixed = new InternalRecord(new LinkedList<String>() {{
 			add("columnInt");
 			add("columnString");
-			add("columnDouble");
+			add("columnFloat");
 		}}, new HashMap<String, Integer>() {{
 			put("columnInt", 0);
 			put("columnString", 1);
-			put("columnDouble", 2);
-		}}, new Value[] { new IntegerValue(1L), new StringValue("value1"), new FloatValue(0.1) });
+			put("columnFloat", 2);
+		}}, new Value[] { new IntegerValue(1L), new StringValue("value1"), new FloatValue(0.1F) });
 
 		Record recordBMixed = new InternalRecord(new LinkedList<String>() {{
 			add("columnString");
-			add("columnDouble");
+			add("columnFloat");
 			add("columnInt");
 		}}, new HashMap<String, Integer>() {{
 			put("columnString", 0);
-			put("columnDouble", 1);
+			put("columnFloat", 1);
 			put("columnInt", 2);
-		}}, new Value[] { new StringValue("value2"), new FloatValue(0.2), new IntegerValue(2L) });
+		}}, new Value[] { new StringValue("value2"), new FloatValue(0.2F), new IntegerValue(2L) });
 
 		RECORD_LIST_MORE_ELEMENTS_MIXED.add(recordAMixed);
 		RECORD_LIST_MORE_ELEMENTS_MIXED.add(recordBMixed);
