@@ -20,9 +20,11 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Connection;
+import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.Statement;
 
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 
 /**
  * @author AgileLARUS
@@ -34,30 +36,78 @@ public class BoltConnection extends Connection {
 	private boolean readOnly = false;
 
 	@Override public void close() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (!this.closed) {
+			this.closed = true;
+		}
 	}
 
 	@Override public boolean isClosed() throws SQLException {
-		throw new UnsupportedOperationException();
+		return this.closed;
 	}
 
 	@Override public void setReadOnly(boolean readOnly) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.closed) {
+			throw new SQLException("Connection already closed");
+		}
+		this.readOnly = readOnly;
 	}
 
 	@Override public boolean isReadOnly() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.closed) {
+			throw new SQLException("Connection already closed");
+		}
+		return this.readOnly;
 	}
 
 	@Override public Statement createStatement() throws SQLException {
+		if (this.closed) {
+			throw new SQLException("Connection already closed");
+		}
 		throw new UnsupportedOperationException();
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("Connection already closed");
+		}
+		// @formatter:off
+		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
+			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
+			resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		if( resultSetConcurrency != ResultSet.CONCUR_UPDATABLE &&
+			resultSetConcurrency != ResultSet.CONCUR_READ_ONLY
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
 		throw new UnsupportedOperationException();
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("Connection already closed");
+		}
+		// @formatter:off
+		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
+			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
+			resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		if( resultSetConcurrency != ResultSet.CONCUR_UPDATABLE &&
+			resultSetConcurrency != ResultSet.CONCUR_READ_ONLY
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		if( resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT &&
+			resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
 		throw new UnsupportedOperationException();
 	}
 }

@@ -43,12 +43,12 @@ public class BoltConnectionTest {
 	/*------------------------------*/
 	/*           isClosed           */
 	/*------------------------------*/
-	@Ignore @Test public void isClosedShouldReturnFalse() throws SQLException {
+	@Test public void isClosedShouldReturnFalse() throws SQLException {
 		Connection connection = new BoltConnection();
 		assertFalse(connection.isClosed());
 	}
 
-	@Ignore @Test public void isClosedShouldReturnTrue() throws SQLException {
+	@Test public void isClosedShouldReturnTrue() throws SQLException {
 		Connection connection = new BoltConnection();
 		connection.close();
 		assertTrue(connection.isClosed());
@@ -57,7 +57,7 @@ public class BoltConnectionTest {
 	/*------------------------------*/
 	/*             close            */
 	/*------------------------------*/
-	@Ignore @Test public void closeShouldCloseConnection() throws SQLException {
+	@Test public void closeShouldCloseConnection() throws SQLException {
 		Connection connection = new BoltConnection();
 		assertFalse(connection.isClosed());
 		connection.close();
@@ -67,18 +67,18 @@ public class BoltConnectionTest {
 	/*------------------------------*/
 	/*          isReadOnly          */
 	/*------------------------------*/
-	@Ignore @Test public void isReadOnlyShouldReturnFalse() throws SQLException {
+	@Test public void isReadOnlyShouldReturnFalse() throws SQLException {
 		Connection connection = new BoltConnection();
 		assertFalse(connection.isReadOnly());
 	}
 
-	@Ignore @Test public void isReadOnlyShouldReturnTrue() throws SQLException {
+	@Test public void isReadOnlyShouldReturnTrue() throws SQLException {
 		Connection connection = new BoltConnection();
 		connection.setReadOnly(true);
 		assertTrue(connection.isReadOnly());
 	}
 
-	@Ignore @Test public void isReadOnlyShouldThrowExceptionWhenCalledOnAClosedConnection() throws SQLException {
+	@Test public void isReadOnlyShouldThrowExceptionWhenCalledOnAClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Connection already closed");
 
@@ -90,21 +90,21 @@ public class BoltConnectionTest {
 	/*------------------------------*/
 	/*         setReadOnly          */
 	/*------------------------------*/
-	@Ignore @Test public void setReadOnlyShouldSetReadOnlyTrue() throws SQLException {
+	@Test public void setReadOnlyShouldSetReadOnlyTrue() throws SQLException {
 		Connection connection = new BoltConnection();
 		assertFalse(connection.isReadOnly());
 		connection.setReadOnly(true);
 		assertTrue(connection.isReadOnly());
 	}
 
-	@Ignore @Test public void setReadOnlyShouldSetReadOnlyFalse() throws SQLException {
+	@Test public void setReadOnlyShouldSetReadOnlyFalse() throws SQLException {
 		Connection connection = new BoltConnection();
 		assertFalse(connection.isReadOnly());
 		connection.setReadOnly(false);
 		assertFalse(connection.isReadOnly());
 	}
 
-	@Ignore @Test public void setReadOnlyShouldSetReadOnlyFalseAfterSetItTrue() throws SQLException {
+	@Test public void setReadOnlyShouldSetReadOnlyFalseAfterSetItTrue() throws SQLException {
 		Connection connection = new BoltConnection();
 		assertFalse(connection.isReadOnly());
 		connection.setReadOnly(true);
@@ -113,7 +113,7 @@ public class BoltConnectionTest {
 		assertFalse(connection.isReadOnly());
 	}
 
-	@Ignore @Test public void setReadOnlyShouldThrowExceptionIfCalledOnAClosedConnection() throws SQLException {
+	@Test public void setReadOnlyShouldThrowExceptionIfCalledOnAClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Connection already closed");
 
@@ -126,6 +126,7 @@ public class BoltConnectionTest {
 	/*        createStatement       */
 	/*------------------------------*/
 
+	//this test depends on BoltStatement implementation
 	@Ignore @Test public void createStatementNoParamsShouldReturnNewStatement() throws SQLException {
 		Connection connection = new BoltConnection();
 		Statement statement = connection.createStatement();
@@ -136,7 +137,7 @@ public class BoltConnectionTest {
 		assertEquals(ResultSet.TYPE_FORWARD_ONLY, statement.getResultSetType());
 	}
 
-	@Ignore @Test public void createStatementNoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
+	@Test public void createStatementNoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Connection already closed");
 		Connection connection = new BoltConnection();
@@ -144,6 +145,7 @@ public class BoltConnectionTest {
 		connection.createStatement();
 	}
 
+	//this test depends on BoltStatement implementation
 	@Ignore @Test public void createStatementTwoParamsShouldReturnNewStatement() throws SQLException {
 		Connection connection = new BoltConnection();
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
@@ -160,7 +162,7 @@ public class BoltConnectionTest {
 		}
 	}
 
-	@Ignore @Test public void createStatementTwoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
+	@Test public void createStatementTwoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Connection already closed");
 		Connection connection = new BoltConnection();
@@ -170,7 +172,7 @@ public class BoltConnectionTest {
 
 	//Must be managed only the types specified in the createStatementTwoParamsShouldReturnNewStatement test
 	//This test doesn't cover all integers different from supported ones
-	@Ignore @Test public void createStatementTwoParamsShouldThrowExceptionOnWrongParams() throws SQLException {
+	@Test public void createStatementTwoParamsShouldThrowExceptionOnWrongParams() throws SQLException {
 		Connection connection = new BoltConnection();
 
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
@@ -199,6 +201,7 @@ public class BoltConnectionTest {
 		}
 	}
 
+	//this test depends on BoltStatement implementation
 	@Ignore @Test public void createStatementThreeParamsShouldReturnNewStatement() throws SQLException {
 		Connection connection = new BoltConnection();
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
@@ -221,7 +224,7 @@ public class BoltConnectionTest {
 		}
 	}
 
-	@Ignore @Test public void createStatementThreeParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
+	@Test public void createStatementThreeParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Connection already closed");
 		Connection connection = new BoltConnection();
@@ -231,7 +234,7 @@ public class BoltConnectionTest {
 
 	//Must be managed only the types specified in the createStatementThreeParamsShouldReturnNewStatement test
 	//This test doesn't cover all integers different from supported ones
-	@Ignore @Test public void createStatementThreeParamsShouldThrowExceptionOnWrongParams() throws SQLException {
+	@Test public void createStatementThreeParamsShouldThrowExceptionOnWrongParams() throws SQLException {
 		Connection connection = new BoltConnection();
 
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
@@ -263,7 +266,7 @@ public class BoltConnectionTest {
 		for (int holdability : holdabilities) {
 			try {
 				connection.createStatement(concurrencies[0], holdability, types[0]);
-			}catch (SQLFeatureNotSupportedException e) {
+			} catch (SQLFeatureNotSupportedException e) {
 
 			} catch (Exception e) {
 				fail();
