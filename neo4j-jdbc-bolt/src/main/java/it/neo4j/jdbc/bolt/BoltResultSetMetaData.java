@@ -37,6 +37,6 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 	}
 
 	@Override public int getColumnCount() throws SQLException {
-		throw new UnsupportedOperationException();
+		return cursor.size();
 	}
 }

@@ -44,7 +44,7 @@ public class BoltResultSetMetaDataTest {
 	/*        getColumnCount        */
 	/*------------------------------*/
 
-	@Ignore @Test public void getColumnsCountShouldReturnCorrectNumberEmpty() throws SQLException {
+	@Test public void getColumnsCountShouldReturnCorrectNumberEmpty() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
@@ -52,7 +52,7 @@ public class BoltResultSetMetaDataTest {
 		Assert.assertEquals(0, resultSet.getColumnCount());
 	}
 
-	@Ignore @Test public void getColumnsCountShouldReturnCorrectNumberMoreElements() throws SQLException {
+	@Test public void getColumnsCountShouldReturnCorrectNumberMoreElements() throws SQLException {
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS,
 				ResultSetData.RESULT_SUMMARY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
