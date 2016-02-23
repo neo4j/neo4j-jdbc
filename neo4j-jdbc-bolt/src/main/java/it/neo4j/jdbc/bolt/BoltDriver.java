@@ -15,42 +15,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 03/02/16
+ * Created on 23/02/16
  */
-package it.neo4j.jdbc;
+package it.neo4j.jdbc.bolt;
 
-import java.sql.*;
+import it.neo4j.jdbc.Driver;
+import org.neo4j.driver.v1.GraphDatabase;
+
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Driver implements java.sql.Driver {
+public class BoltDriver extends Driver {
 
-	@Override public abstract Connection connect(String url, Properties info) throws SQLException;
-
-	@Override public abstract boolean acceptsURL(String url) throws SQLException;
-
-	@Override public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		return new DriverPropertyInfo[0];
+	static {
+		try {
+			DriverManager.registerDriver(new BoltDriver());
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
-	@Override public int getMajorVersion() {
-		return 3;
+
+	public BoltDriver() {
 	}
 
-	@Override public int getMinorVersion() {
-		return 0;
+	@Override public Connection connect(String url, Properties info) throws SQLException {
+		throw new UnsupportedOperationException();
 	}
 
-	@Override public boolean jdbcCompliant() {
+	@Override public boolean acceptsURL(String url) throws SQLException {
 		return false;
-	}
-
-	@Override public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		return null;
 	}
 }
