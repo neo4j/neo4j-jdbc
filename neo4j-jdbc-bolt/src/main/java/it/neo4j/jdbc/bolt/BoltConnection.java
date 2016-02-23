@@ -73,7 +73,7 @@ public class BoltConnection extends Connection {
 		if (this.closed) {
 			throw new SQLException("Connection already closed");
 		}
-		throw new UnsupportedOperationException();
+		return new BoltStatement(this.session);
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
@@ -93,7 +93,7 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		throw new UnsupportedOperationException();
+		return new BoltStatement(this.session);
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -118,6 +118,6 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		throw new UnsupportedOperationException();
+		return new BoltStatement(this.session);
 	}
 }

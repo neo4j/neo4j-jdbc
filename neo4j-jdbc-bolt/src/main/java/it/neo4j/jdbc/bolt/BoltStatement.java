@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Statement;
+import org.neo4j.driver.v1.Session;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,12 +31,18 @@ import java.sql.SQLException;
  */
 public class BoltStatement extends Statement {
 
+	private Session session;
+
 	BoltStatement(Object statement) {
 
 	}
 
+	public BoltStatement(Session session) {
+		this.session = session;
+	}
+
 	//Mustn't return null
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		throw new UnsupportedOperationException();
+		return new BoltResultSet(this.session.run(sql));
 	}
 }
