@@ -41,6 +41,9 @@ public class BoltDriver extends Driver {
 		}
 	}
 
+	private static final String JDBC_PREFIX = "jdbc";
+	private static final String BOLT_PREFIX = "bolt";
+
 
 	public BoltDriver() {
 	}
@@ -50,6 +53,15 @@ public class BoltDriver extends Driver {
 	}
 
 	@Override public boolean acceptsURL(String url) throws SQLException {
+		if(url == null){
+			throw new SQLException("null is not a valid url");
+		}
+		String[] pieces = url.split(":");
+		if(pieces.length > 2){
+			if(JDBC_PREFIX.equals(pieces[0]) && BOLT_PREFIX.equals(pieces[1])){
+				return true;
+			}
+		}
 		return false;
 	}
 }

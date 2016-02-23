@@ -43,21 +43,21 @@ public class BoltDriverTest {
 	/*------------------------------*/
 	/*          acceptsURL          */
 	/*------------------------------*/
-	@Ignore @Test public void shouldAcceptURLOK() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
+	@Test public void shouldAcceptURLOK() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		Driver driver = new BoltDriver();
 		assertTrue(driver.acceptsURL("jdbc:bolt://localhost:7474"));
 		assertTrue(driver.acceptsURL("jdbc:bolt://192.168.0.1:7474"));
 		assertTrue(driver.acceptsURL("jdbc:bolt://localhost:8080"));
 	}
 
-	@Ignore @Test public void shouldAcceptURLKO() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
+	@Test public void shouldAcceptURLKO() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		Driver driver = new BoltDriver();
 		assertFalse(driver.acceptsURL("jdbc:http://localhost:7474"));
 		assertFalse(driver.acceptsURL("jdbc:file://192.168.0.1:7474"));
 		assertFalse(driver.acceptsURL("bolt://localhost:7474"));
 	}
 
-	@Ignore @Test public void shouldThrowException() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
+	@Test public void shouldThrowException() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("null is not a valid url");
 
