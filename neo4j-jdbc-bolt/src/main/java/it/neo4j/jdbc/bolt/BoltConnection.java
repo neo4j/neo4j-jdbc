@@ -22,6 +22,7 @@ package it.neo4j.jdbc.bolt;
 import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.Statement;
+import org.neo4j.driver.v1.Session;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -34,6 +35,15 @@ public class BoltConnection extends Connection {
 
 	private boolean closed   = false;
 	private boolean readOnly = false;
+	private Session session;
+
+	public BoltConnection() {
+
+	}
+
+	public BoltConnection(Session session) {
+		this.session = session;
+	}
 
 	@Override public void close() throws SQLException {
 		if (!this.closed) {
