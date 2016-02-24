@@ -24,6 +24,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.v1.Session;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -62,6 +64,14 @@ public class BoltConnectionTest {
 		assertFalse(connection.isClosed());
 		connection.close();
 		assertTrue(connection.isClosed());
+	}
+
+	@Ignore @Test public void closeShouldThrowExceptionWhenDatabaseAccessErrorOccurred() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("A database access error has occurred");
+
+		Connection connection  = new BoltConnection();
+		connection.close();
 	}
 
 	/*------------------------------*/
