@@ -25,12 +25,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.InternalSession;
-import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -42,6 +43,37 @@ public class BoltConnectionTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+	private class MockedSession implements Session {
+
+		@Override public boolean isOpen() {
+			return false;
+		}
+
+		@Override public void close() {
+
+		}
+
+		@Override public Transaction beginTransaction() {
+			return null;
+		}
+
+		@Override public ResultCursor run(String statementTemplate, Map<String, Value> statementParameters) {
+			return null;
+		}
+
+		@Override public ResultCursor run(String statementTemplate) {
+			return null;
+		}
+
+		@Override public ResultCursor run(org.neo4j.driver.v1.Statement statement) {
+			return null;
+		}
+
+		@Override public TypeSystem typeSystem() {
+			return null;
+		}
+	}
+
 	/*------------------------------*/
 	/*           isClosed           */
 	/*------------------------------*/
@@ -51,7 +83,8 @@ public class BoltConnectionTest {
 	}
 
 	@Test public void isClosedShouldReturnTrue() throws SQLException {
-		Connection connection = new BoltConnection();
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
 		connection.close();
 		assertTrue(connection.isClosed());
 	}
@@ -60,17 +93,18 @@ public class BoltConnectionTest {
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldCloseConnection() throws SQLException {
-		Connection connection = new BoltConnection();
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
 		assertFalse(connection.isClosed());
 		connection.close();
 		assertTrue(connection.isClosed());
 	}
 
-	@Ignore @Test public void closeShouldThrowExceptionWhenDatabaseAccessErrorOccurred() throws SQLException {
+	@Test public void closeShouldThrowExceptionWhenDatabaseAccessErrorOccurred() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("A database access error has occurred");
 
-		Connection connection  = new BoltConnection();
+		Session session = new InternalSession(null);
+		Connection connection = new BoltConnection(session);
 		connection.close();
 	}
 
