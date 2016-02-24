@@ -103,7 +103,6 @@ public class BoltResultSetTestIteration {
 
 	@Test public void nextShouldThrowExceptionEmpty() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultCursor not initialized");
 
 		ResultSet resultSet = new BoltResultSet(null);
 
@@ -159,7 +158,6 @@ public class BoltResultSetTestIteration {
 
 	@Ignore @Test public void previousShouldThrowExceptionEmpty() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultCursor not initialized");
 
 		ResultSet resultSet = new BoltResultSet(null);
 
@@ -203,7 +201,6 @@ public class BoltResultSetTestIteration {
 
 	@Ignore @Test public void firstShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet already closed");
 
 		ResultSet resultSet = new BoltResultSet(null);
 
@@ -213,7 +210,6 @@ public class BoltResultSetTestIteration {
 
 	@Ignore @Test public void firstShouldThrowExceptionForwardOnly() throws SQLException {
 		expectedEx.expect(SQLFeatureNotSupportedException.class);
-		expectedEx.expectMessage("Called method first on forward-only ResultSet");
 
 		ResultSet resultSet = new BoltResultSet(null) {
 			@Override public int getType() {
@@ -252,7 +248,6 @@ public class BoltResultSetTestIteration {
 
 	@Ignore @Test public void lastShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet already closed");
 
 		ResultSet resultSet = new BoltResultSet(null);
 
@@ -262,7 +257,6 @@ public class BoltResultSetTestIteration {
 
 	@Ignore @Test public void lastShouldThrowExceptionForwardOnly() throws SQLException {
 		expectedEx.expect(SQLFeatureNotSupportedException.class);
-		expectedEx.expectMessage("Called method last on forward-only ResultSet");
 
 		ResultSet resultSet = new BoltResultSet(null) {
 			@Override public int getType() {

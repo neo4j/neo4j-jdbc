@@ -80,7 +80,6 @@ public class BoltConnectionTest {
 
 	@Test public void isReadOnlyShouldThrowExceptionWhenCalledOnAClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Connection already closed");
 
 		Connection connection = new BoltConnection();
 		connection.close();
@@ -115,7 +114,6 @@ public class BoltConnectionTest {
 
 	@Test public void setReadOnlyShouldThrowExceptionIfCalledOnAClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Connection already closed");
 
 		Connection connection = new BoltConnection();
 		connection.close();
@@ -139,7 +137,6 @@ public class BoltConnectionTest {
 
 	@Test public void createStatementNoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Connection already closed");
 		Connection connection = new BoltConnection();
 		connection.close();
 		connection.createStatement();
@@ -164,7 +161,6 @@ public class BoltConnectionTest {
 
 	@Test public void createStatementTwoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Connection already closed");
 		Connection connection = new BoltConnection();
 		connection.close();
 		connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -226,7 +222,6 @@ public class BoltConnectionTest {
 
 	@Test public void createStatementThreeParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Connection already closed");
 		Connection connection = new BoltConnection();
 		connection.close();
 		connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);

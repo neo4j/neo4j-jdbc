@@ -21,6 +21,7 @@ package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.driver.v1.Session;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -44,21 +45,32 @@ public class BoltDriver extends Driver {
 	private static final String JDBC_PREFIX = "jdbc";
 	private static final String BOLT_PREFIX = "bolt";
 
-
 	public BoltDriver() {
 	}
 
 	@Override public Connection connect(String url, Properties info) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (url == null) {
+			throw new SQLException("null is not a valid url");
+		}
+		Connection connection = null;
+		if (acceptsURL(url)) {
+			url = url.replace("jdbc:", "");
+			try {
+				connection = new BoltConnection(GraphDatabase.driver(url).session());
+			} catch (Exception e) {
+				throw new SQLException(e);
+			}
+		}
+		return connection;
 	}
 
 	@Override public boolean acceptsURL(String url) throws SQLException {
-		if(url == null){
+		if (url == null) {
 			throw new SQLException("null is not a valid url");
 		}
 		String[] pieces = url.split(":");
-		if(pieces.length > 2){
-			if(JDBC_PREFIX.equals(pieces[0]) && BOLT_PREFIX.equals(pieces[1])){
+		if (pieces.length > 2) {
+			if (JDBC_PREFIX.equals(pieces[0]) && BOLT_PREFIX.equals(pieces[1])) {
 				return true;
 			}
 		}

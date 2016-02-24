@@ -55,7 +55,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void findColumnShouldThrowExceptionOnWrongLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS,
 				ResultSetData.RESULT_SUMMARY);
@@ -67,7 +66,6 @@ public class BoltResultSetTestGetters {
 	// this test depends on the method close()
 	@Ignore @Test public void findColumnShouldThrowExceptionOnClosedResultSet() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS,
 				ResultSetData.RESULT_SUMMARY);
@@ -95,7 +93,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void getStringByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -108,7 +105,6 @@ public class BoltResultSetTestGetters {
 	//This test depends on the close method
 	@Ignore @Test public void getStringByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -132,7 +128,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void getStringByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -145,7 +140,6 @@ public class BoltResultSetTestGetters {
 	//This test depends on the close method
 	@Ignore @Test public void getStringByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -173,7 +167,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void getIntByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -186,7 +179,6 @@ public class BoltResultSetTestGetters {
 	//This test depends on the close method
 	@Ignore @Test public void getIntByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -210,7 +202,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void getIntByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -223,7 +214,6 @@ public class BoltResultSetTestGetters {
 	//This test depends on the close method
 	@Ignore @Test public void getIntByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -251,7 +241,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void getFloatByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -264,7 +253,6 @@ public class BoltResultSetTestGetters {
 	//This test depends on the close method.
 	@Ignore @Test public void getFloatByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -288,7 +276,6 @@ public class BoltResultSetTestGetters {
 
 	@Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Column not present in ResultSet");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);
@@ -301,7 +288,6 @@ public class BoltResultSetTestGetters {
 	//This test depends on the close method
 	@Ignore @Test public void getFloatByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("ResultSet is closed");
 
 		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED,
 				ResultSetData.RESULT_SUMMARY);

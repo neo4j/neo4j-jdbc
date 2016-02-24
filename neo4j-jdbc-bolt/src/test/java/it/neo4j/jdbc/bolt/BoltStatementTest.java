@@ -56,7 +56,6 @@ public class BoltStatementTest {
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Statement already closed");
 
 		Connection connection = new BoltConnection();
 		Statement statement = connection.createStatement();
@@ -66,7 +65,6 @@ public class BoltStatementTest {
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("PreparedStatement does not support method executeQuery");
 
 		Connection connection = new BoltConnection();
 		connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL);
@@ -74,7 +72,6 @@ public class BoltStatementTest {
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("CallableStatement does not support method executeQuery");
 
 		Connection connection = new BoltConnection();
 		connection.prepareCall(StatementData.STATEMENT_MATCH_ALL);
@@ -82,7 +79,6 @@ public class BoltStatementTest {
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Timeout exceeded");
 
 		Statement statement = new BoltStatement(new Object() {
 			//TODO change with apropriate class and method

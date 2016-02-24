@@ -20,25 +20,77 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Driver;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.v1.GraphDatabase;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.lang.reflect.Field;
+import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
 import static junit.framework.TestCase.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest( GraphDatabase.class )
 public class BoltDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
+	private static org.neo4j.driver.v1.Driver mockedDriver;
+
+	@BeforeClass public static void initialize(){
+		mockedDriver = Mockito.mock(org.neo4j.driver.v1.Driver.class);
+		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(null));
+	}
+
+	/*------------------------------*/
+	/*           connect            */
+	/*------------------------------*/
+	//WARNING!! NOT COMPLETE TEST!! Needs tests for parameters
+
+	@Test public void shouldConnectCreateConnection() throws SQLException {
+		PowerMockito.mockStatic(GraphDatabase.class);
+		Mockito.when(GraphDatabase.driver("bolt://test")).thenReturn(mockedDriver);
+
+		Driver driver = new BoltDriver();
+		Connection connection = driver.connect("jdbc:bolt://test", null);
+		assertNotNull(connection);
+	}
+
+	@Test public void shouldConnectReturnNullIfUrlNotValid() throws SQLException {
+		Driver driver = new BoltDriver();
+		assertNull(driver.connect("jdbc:http://localhost:7474", null));
+		assertNull(driver.connect("bolt://localhost:7474", null));
+		assertNull(driver.connect("jdbcbolt://localhost:7474", null));
+	}
+
+	@Test public void shouldConnectThrowExceptionOnNullURL() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Driver driver = new BoltDriver();
+		driver.connect(null, null);
+	}
+
+	@Test public void shouldConnectThrowExceptionOnConnectionFailed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Driver driver = new BoltDriver();
+		driver.connect("jdbc:bolt://somehost:9999", null);
+	}
 
 	/*------------------------------*/
 	/*          acceptsURL          */
@@ -59,7 +111,6 @@ public class BoltDriverTest {
 
 	@Test public void shouldThrowException() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("null is not a valid url");
 
 		Driver driver = new BoltDriver();
 		assertFalse(driver.acceptsURL(null));
