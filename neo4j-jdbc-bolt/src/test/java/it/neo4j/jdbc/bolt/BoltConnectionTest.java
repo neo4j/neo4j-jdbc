@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.internal.logging.DevNullLogger;
 import org.neo4j.driver.v1.*;
 
 import java.sql.Connection;
@@ -103,7 +104,7 @@ public class BoltConnectionTest {
 	@Test public void closeShouldThrowExceptionWhenDatabaseAccessErrorOccurred() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Session session = new InternalSession(null);
+		Session session = new InternalSession(null, new DevNullLogger());
 		Connection connection = new BoltConnection(session);
 		connection.close();
 	}

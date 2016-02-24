@@ -23,7 +23,6 @@ import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.internal.InternalResultCursor;
 import org.neo4j.driver.v1.*;
 
 import java.sql.SQLException;
@@ -45,21 +44,21 @@ public class BoltResultSetTestIteration {
 	/*            next              */
 	/*------------------------------*/
 	@Test public void nextShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.next());
 	}
 
 	@Test public void nextShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
 	}
 
 	@Test public void nextShouldReturnTrueMoreElements() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -68,7 +67,7 @@ public class BoltResultSetTestIteration {
 	}
 
 	@Test public void nextShouldReturnFalseAfterLast() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -77,7 +76,7 @@ public class BoltResultSetTestIteration {
 	}
 
 	@Test public void nextShouldReturnFalseAfterLastMoreElements() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -89,7 +88,7 @@ public class BoltResultSetTestIteration {
 
 	// Dependency with ResultSet.getString method
 	@Test public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -113,14 +112,14 @@ public class BoltResultSetTestIteration {
 	/*           previous           */
 	/*------------------------------*/
 	@Ignore @Test public void previousShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.previous());
 	}
 
 	@Ignore @Test public void previousShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS,ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS,ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -130,7 +129,7 @@ public class BoltResultSetTestIteration {
 	}
 
 	@Ignore @Test public void previousShouldReturnFalseBeforeFirst() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -142,7 +141,7 @@ public class BoltResultSetTestIteration {
 	}
 
 	@Ignore @Test public void previousShouldReturnTrueAndPointPreviousNode() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.last());
@@ -168,21 +167,21 @@ public class BoltResultSetTestIteration {
 	/*             first            */
 	/*------------------------------*/
 	@Ignore @Test public void firstShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.first());
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueOnFirst() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.first());
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueNotOnFirst() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -191,7 +190,7 @@ public class BoltResultSetTestIteration {
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueAndPointFirstElement() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.first());
@@ -224,21 +223,21 @@ public class BoltResultSetTestIteration {
 	/*             last             */
 	/*------------------------------*/
 	@Ignore @Test public void lastShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY,ResultSetData.RECORD_LIST_EMPTY, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY,ResultSetData.RECORD_LIST_EMPTY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.last());
 	}
 
 	@Ignore @Test public void lastShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.last());
 	}
 
 	@Ignore @Test public void lastShouldReturnTrueAndPointLastNode() throws SQLException {
-		ResultCursor resultCursor = new InternalResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS, ResultSetData.RESULT_SUMMARY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.last());

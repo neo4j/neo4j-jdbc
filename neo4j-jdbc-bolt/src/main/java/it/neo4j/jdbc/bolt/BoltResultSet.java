@@ -51,14 +51,14 @@ public class BoltResultSet extends ResultSet {
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.value(columnLabel).asString();
+		return this.cursor.get(columnLabel).asString();
 	}
 
 	@Override public int getInt(String columnLabel) throws SQLException {
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.value(columnLabel).asInt();
+		return this.cursor.get(columnLabel).asInt();
 	}
 
 	@Override public int findColumn(String columnLabel) throws SQLException {
@@ -66,35 +66,35 @@ public class BoltResultSet extends ResultSet {
 			throw new SQLException("Column not present in ResultSet");
 		}
 		this.cursor.next();
-		return this.cursor.record().index(columnLabel);
+		return this.cursor.index(columnLabel);
 	}
 
 	@Override public String getString(int columnIndex) throws SQLException {
-		if (columnIndex - 1 > this.cursor.record().size()) {
+		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.value(columnIndex - 1).asString();
+		return this.cursor.get(columnIndex - 1).asString();
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
-		if (columnIndex - 1 > this.cursor.record().size()) {
+		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.record().value(columnIndex - 1).asInt();
+		return this.cursor.get(columnIndex - 1).asInt();
 	}
 
 	@Override public float getFloat(String columnLabel) throws SQLException {
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.value(columnLabel).asFloat();
+		return this.cursor.get(columnLabel).asFloat();
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
-		if (columnIndex - 1 > this.cursor.record().size()) {
+		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.record().value(columnIndex - 1).asFloat();
+		return this.cursor.get(columnIndex - 1).asFloat();
 	}
 
 	@Override public boolean previous() throws SQLException {

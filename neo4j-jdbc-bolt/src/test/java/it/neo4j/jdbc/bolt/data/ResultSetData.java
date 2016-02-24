@@ -19,16 +19,18 @@
  */
 package it.neo4j.jdbc.bolt.data;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Test;
-import org.neo4j.driver.internal.InternalRecord;
-import org.neo4j.driver.internal.value.FloatValue;
-import org.neo4j.driver.internal.value.IntegerValue;
-import org.neo4j.driver.internal.value.StringValue;
+import org.neo4j.driver.internal.InternalResultCursor;
+import org.neo4j.driver.internal.ParameterSupport;
+import org.neo4j.driver.internal.spi.Connection;
+import org.neo4j.driver.internal.spi.StreamCollector;
 import org.neo4j.driver.v1.*;
 
+import java.lang.reflect.Method;
 import java.util.*;
+
+import static org.mockito.Mockito.mock;
+import static org.neo4j.driver.v1.Values.values;
 
 /**
  * @author AgileLARUS
@@ -36,142 +38,78 @@ import java.util.*;
  * @since 3.0.0
  */
 public class ResultSetData {
-	public static List<Record> RECORD_LIST_EMPTY;
-	public static List<Record> RECORD_LIST_ONE_ELEMENT;
-	public static List<Record> RECORD_LIST_MORE_ELEMENTS;
-	public static List<Record> RECORD_LIST_MORE_ELEMENTS_MIXED;
+	public static List<Object[]> RECORD_LIST_EMPTY = Collections.emptyList();
+	public static List<Object[]> RECORD_LIST_ONE_ELEMENT;
+	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS;
+	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
 
-	public static List<String> KEYS_RECORD_LIST_EMPTY;
-	public static List<String> KEYS_RECORD_LIST_ONE_ELEMENT;
-	public static List<String> KEYS_RECORD_LIST_MORE_ELEMENTS;
-	public static List<String> KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED;
+	public static String[] KEYS_RECORD_LIST_EMPTY = new String[]{};
+	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT = new String[]{"columnA", "columnB"};
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS = KEYS_RECORD_LIST_ONE_ELEMENT;
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED = new String[]{"columnInt", "columnString", "columnFloat"};
 
-	public static ResultSummary RESULT_SUMMARY;
+	private static Method runResponseCollectorMethod;
+	private static Method pullAllResponseCollectorMethod;
 
 	@BeforeClass public static void initialize() {
-		RECORD_LIST_EMPTY = new LinkedList<>();
 		RECORD_LIST_ONE_ELEMENT = new LinkedList<>();
-		RECORD_LIST_MORE_ELEMENTS = new LinkedList<>();
-		RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
+        RECORD_LIST_ONE_ELEMENT.add(new Object[] {"valueA1", "valueB1"});
 
-		Record recordA = new InternalRecord(new LinkedList<String>() {{
-			add("columnA");
-			add("columnB");
-		}}, new HashMap<String, Integer>() {{
-			put("columnA", 0);
-			put("columnB", 1);
-		}}, new Value[] { new StringValue("valueA1"), new StringValue("valueB1") });
+        RECORD_LIST_MORE_ELEMENTS = new LinkedList<>();
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA1", "valueB1"});
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA2", "valueB3"});
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA3", "valueB3"});
 
-		RECORD_LIST_ONE_ELEMENT.add(recordA);
+        RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
+        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] {"valueA1", "valueB1"});
 
-		Record recordB = new InternalRecord(new LinkedList<String>() {{
-			add("columnA");
-			add("columnB");
-		}}, new HashMap<String, Integer>() {{
-			put("columnA", 0);
-			put("columnB", 1);
-		}}, new Value[] { new StringValue("valueA2"), new StringValue("valueB2") });
+        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{1, "value1", 0.1f});
+        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{2, "value2", 0.2f});
 
-		Record recordC = new InternalRecord(new LinkedList<String>() {{
-			add("columnA");
-			add("columnB");
-		}}, new HashMap<String, Integer>() {{
-			put("columnA", 0);
-			put("columnB", 1);
-		}}, new Value[] { new StringValue("valueA3"), new StringValue("valueB3") });
+		fixPublicForInternalResultCursor();
+	}
 
-		RECORD_LIST_MORE_ELEMENTS.add(recordA);
-		RECORD_LIST_MORE_ELEMENTS.add(recordB);
-		RECORD_LIST_MORE_ELEMENTS.add(recordC);
-
-		KEYS_RECORD_LIST_EMPTY = getKeys(RECORD_LIST_EMPTY);
-		KEYS_RECORD_LIST_ONE_ELEMENT = getKeys(RECORD_LIST_ONE_ELEMENT);
-		KEYS_RECORD_LIST_MORE_ELEMENTS = getKeys(RECORD_LIST_MORE_ELEMENTS);
-
-		RESULT_SUMMARY = new ResultSummary() {
-
-			@Override public Statement statement() {
-				return null;
-			}
-
-			@Override public UpdateStatistics updateStatistics() {
-				return null;
-			}
-
-			@Override public StatementType statementType() {
-				return null;
-			}
-
-			@Override public boolean hasPlan() {
-				return false;
-			}
-
-			@Override public boolean hasProfile() {
-				return false;
-			}
-
-			@Override public Plan plan() {
-				return null;
-			}
-
-			@Override public ProfiledPlan profile() {
-				return null;
-			}
-
-			@Override public List<Notification> notifications() {
-				return null;
-			}
-		};
-
-		Record recordAMixed = new InternalRecord(new LinkedList<String>() {{
-			add("columnInt");
-			add("columnString");
-			add("columnFloat");
-		}}, new HashMap<String, Integer>() {{
-			put("columnInt", 0);
-			put("columnString", 1);
-			put("columnFloat", 2);
-		}}, new Value[] { new IntegerValue(1L), new StringValue("value1"), new FloatValue(0.1F) });
-
-		Record recordBMixed = new InternalRecord(new LinkedList<String>() {{
-			add("columnString");
-			add("columnFloat");
-			add("columnInt");
-		}}, new HashMap<String, Integer>() {{
-			put("columnString", 0);
-			put("columnFloat", 1);
-			put("columnInt", 2);
-		}}, new Value[] { new StringValue("value2"), new FloatValue(0.2F), new IntegerValue(2L) });
-
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(recordAMixed);
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(recordBMixed);
-
-		KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED = getKeys(RECORD_LIST_MORE_ELEMENTS_MIXED);
+    /**
+     * open up some package scope method for public usage
+     */
+	private static void fixPublicForInternalResultCursor() {
+		try {
+			runResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("runResponseCollector");
+			runResponseCollectorMethod.setAccessible(true);
+			pullAllResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("pullAllResponseCollector");
+            pullAllResponseCollectorMethod.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
-	 * Calculates the total keys from a list of record with potentially different keys
-	 *
-	 * @param records a list of records to retrieve keys from
-	 * @return a list of keys
-	 */
-	private static List<String> getKeys(List<Record> records) {
-		Set<String> keysSet = new HashSet<>();
+     * hackish way to get a {@link InternalResultCursor}
+     * @param keys
+     * @param data
+     * @return
+     */
+	public static ResultCursor buildResultCursor(String[] keys, List<Object[]> data) {
 
-		for (Record record : records) {
-			keysSet.addAll(record.keys());
-		}
+        try {
+            Connection connection = mock(Connection.class);
 
-		List<String> keys = new LinkedList<>();
-		keys.addAll(keysSet);
+            InternalResultCursor cursor = new InternalResultCursor(connection, null, "<unknown>", ParameterSupport.NO_PARAMETERS);
+            StreamCollector responseCollector = (StreamCollector) runResponseCollectorMethod.invoke(cursor);
+            responseCollector.keys(keys);
+            responseCollector.done();
 
-		return keys;
-	}
+            StreamCollector pullAllResponseCollector = (StreamCollector) pullAllResponseCollectorMethod.invoke(cursor);
 
-	@Test public void testGetKeys() {
-		Assert.assertEquals(2, getKeys(RECORD_LIST_MORE_ELEMENTS).size());
-		Assert.assertEquals(2, getKeys(RECORD_LIST_ONE_ELEMENT).size());
-		Assert.assertEquals(0, getKeys(RECORD_LIST_EMPTY).size());
-		Assert.assertEquals(3, getKeys(RECORD_LIST_MORE_ELEMENTS_MIXED).size());
-	}
+            data.forEach(vals -> pullAllResponseCollector.record(values(vals)));
+            pullAllResponseCollector.done();
+            connection.run("<unknown>", ParameterSupport.NO_PARAMETERS, responseCollector);
+            connection.pullAll(pullAllResponseCollector);
+            connection.sendAll();
+
+            return cursor;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

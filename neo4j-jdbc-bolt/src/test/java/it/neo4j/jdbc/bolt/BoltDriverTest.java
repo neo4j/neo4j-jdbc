@@ -27,6 +27,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.internal.logging.DevNullLogger;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -54,7 +55,7 @@ public class BoltDriverTest {
 
 	@BeforeClass public static void initialize(){
 		mockedDriver = Mockito.mock(org.neo4j.driver.v1.Driver.class);
-		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(null));
+		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(null, new DevNullLogger()));
 	}
 
 	/*------------------------------*/
