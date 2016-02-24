@@ -42,7 +42,7 @@ public class SampleIT {
 
 
         // hitting the DB with a bolt request
-        Driver driver = GraphDatabase.driver( "bolt://localhost" );
+        Driver driver = GraphDatabase.driver( neo4j.getBoltUrl() );   // defaults to localhost:7687
         Session session = driver.session();
         ResultCursor rs = session.run("match (n) RETURN count(n)");
         session.close();
