@@ -55,6 +55,16 @@
             <artifactId>powermock-module-junit4</artifactId>
             <version>1.6.4</version>
         </dependency>
+
+        <!-- dependencies for integration tests to spin up a neo4j bolt server in process -->
+
+        <dependency>
+           <groupId>org.neo4j.test</groupId>
+           <artifactId>neo4j-harness</artifactId>
+           <version>3.0.0-M04</version>
+           <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
