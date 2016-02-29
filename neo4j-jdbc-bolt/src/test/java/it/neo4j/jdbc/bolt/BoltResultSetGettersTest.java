@@ -32,7 +32,7 @@ import java.sql.SQLFeatureNotSupportedException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltResultSetTestGetters {
+public class BoltResultSetGettersTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -115,7 +115,7 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals("value1", resultSet.getString(2));
 
 		resultSet.next();
-		Assert.assertEquals("value2", resultSet.getString(1));
+		Assert.assertEquals("value2", resultSet.getString(2));
 	}
 
 	@Test public void getStringByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -183,7 +183,7 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(1, resultSet.getInt(1));
 
 		resultSet.next();
-		Assert.assertEquals(2, resultSet.getInt(3));
+		Assert.assertEquals(2, resultSet.getInt(1));
 	}
 
 	@Test public void getIntByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -251,7 +251,7 @@ public class BoltResultSetTestGetters {
 		Assert.assertEquals(0.1F, resultSet.getFloat(3), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2F, resultSet.getFloat(2), 0);
+		Assert.assertEquals(0.2F, resultSet.getFloat(3), 0);
 	}
 
 	@Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {

@@ -28,3 +28,6 @@ target/
 .project
 .classpath
 
+#Neo4j
+**/neo4j-home/*
+

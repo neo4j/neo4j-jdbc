@@ -57,11 +57,11 @@ public class ResultSetData {
 
         RECORD_LIST_MORE_ELEMENTS = new LinkedList<>();
         RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA1", "valueB1"});
-        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA2", "valueB3"});
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA2", "valueB2"});
         RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA3", "valueB3"});
 
         RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
-        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] {"valueA1", "valueB1"});
+        //RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] {"valueA1", "valueB1"});
 
         RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{1, "value1", 0.1f});
         RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{2, "value2", 0.2f});

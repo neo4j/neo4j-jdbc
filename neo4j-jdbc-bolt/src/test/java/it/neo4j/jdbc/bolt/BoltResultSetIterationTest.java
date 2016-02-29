@@ -32,7 +32,7 @@ import java.sql.SQLFeatureNotSupportedException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltResultSetTestIteration {
+public class BoltResultSetIterationTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
