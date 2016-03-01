@@ -21,7 +21,6 @@ package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

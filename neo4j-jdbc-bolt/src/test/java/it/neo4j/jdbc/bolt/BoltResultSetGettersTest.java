@@ -439,5 +439,4 @@ public class BoltResultSetGettersTest {
 		resultSet.close();
 		resultSet.getDouble(5);
 	}
-
 }

@@ -51,8 +51,7 @@ public class BoltConnection extends Connection {
 				this.closed = true;
 				session.close();
 			}
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new SQLException("A database access error has occurred");
 		}
 	}

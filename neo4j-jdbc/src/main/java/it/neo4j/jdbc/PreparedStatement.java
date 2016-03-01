@@ -25,8 +25,6 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ParameterMetaData;
 import java.sql.ResultSet;
 import java.util.Calendar;
 

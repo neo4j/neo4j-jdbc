@@ -23,7 +23,7 @@ import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -119,7 +119,7 @@ public class BoltResultSetIterationTest {
 	}
 
 	@Ignore @Test public void previousShouldReturnTrue() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS,ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertTrue(resultSet.next());
@@ -223,7 +223,7 @@ public class BoltResultSetIterationTest {
 	/*             last             */
 	/*------------------------------*/
 	@Ignore @Test public void lastShouldReturnFalseEmpty() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY,ResultSetData.RECORD_LIST_EMPTY);
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		Assert.assertFalse(resultSet.last());

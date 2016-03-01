@@ -23,7 +23,6 @@ import it.neo4j.jdbc.ResultSetMetaData;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.driver.v1.ResultCursor;
 
@@ -44,7 +43,7 @@ public class BoltResultSetMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getColumnsCountShouldReturnCorrectNumberEmpty() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY );
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		Assert.assertEquals(0, resultSet.getColumnCount());

@@ -43,6 +43,7 @@ try (Statement stmt = con.createStatement()) {
 		System.out.println(rs.getString("n.name"));
 	}
 }
+con.close();
 ---------------------------------------------
 
 === Usage ===

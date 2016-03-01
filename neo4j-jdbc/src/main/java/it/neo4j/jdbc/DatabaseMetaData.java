@@ -19,9 +19,9 @@
  */
 package it.neo4j.jdbc;
 
-import java.sql.Connection;
-import java.sql.*;
 import java.sql.ResultSet;
+import java.sql.RowIdLifetime;
+import java.sql.SQLException;
 
 /**
  * @author AgileLARUS

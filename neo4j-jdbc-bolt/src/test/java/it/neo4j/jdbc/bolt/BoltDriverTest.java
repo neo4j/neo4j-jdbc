@@ -37,23 +37,19 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest( GraphDatabase.class )
-public class BoltDriverTest {
+@RunWith(PowerMockRunner.class) @PrepareForTest(GraphDatabase.class) public class BoltDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	private static org.neo4j.driver.v1.Driver mockedDriver;
 
-	@BeforeClass public static void initialize(){
+	@BeforeClass public static void initialize() {
 		mockedDriver = Mockito.mock(org.neo4j.driver.v1.Driver.class);
 		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(null, new DevNullLogger()));
 	}
