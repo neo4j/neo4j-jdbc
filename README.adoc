@@ -34,7 +34,7 @@ This project is made by the following modules:
 Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
 
 // Connect
-Connection con = DriverManager.getConnection("jdbc:bolt://localhost:7474");
+Connection con = DriverManager.getConnection("jdbc:bolt://localhost");
 
 // Querying
 try (Statement stmt = con.createStatement()) {
@@ -58,4 +58,4 @@ con.close();
 
 * Install a Neo4j 3.0 server and start it with the BOLT protocol enabled
 
-* Connect with URLs on the form jdbc:bolt://<host>:<port>/, e.g. jdbc:bolt://localhost:7474/
+* Connect with URLs on the form jdbc:bolt://<host>:<port>/, e.g. jdbc:bolt://localhost/
