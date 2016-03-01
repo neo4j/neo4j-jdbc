@@ -30,83 +30,110 @@ import java.sql.SQLException;
  */
 public class BoltResultSet extends ResultSet {
 
-	private ResultCursor cursor;
+    private ResultCursor cursor;
 
-	public BoltResultSet(ResultCursor cursor) {
-		this.cursor = cursor;
-	}
+    public BoltResultSet(ResultCursor cursor) {
+        this.cursor = cursor;
+    }
 
-	@Override public boolean next() throws SQLException {
-		if (this.cursor == null) {
-			throw new SQLException("ResultCursor not initialized");
-		}
-		if (this.cursor.position() == this.cursor.size()) {
-			return false;
-		} else {
-			return this.cursor.next();
-		}
-	}
+    @Override
+    public boolean next() throws SQLException {
+        if (this.cursor == null) {
+            throw new SQLException("ResultCursor not initialized");
+        }
+        if (this.cursor.position() == this.cursor.size()) {
+            return false;
+        } else {
+            return this.cursor.next();
+        }
+    }
 
-	@Override public String getString(String columnLabel) throws SQLException {
-		if (!this.cursor.containsKey(columnLabel)) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		return this.cursor.get(columnLabel).asString();
-	}
+    @Override
+    public String getString(String columnLabel) throws SQLException {
+        if (!this.cursor.containsKey(columnLabel)) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return this.cursor.get(columnLabel).asString();
+    }
 
-	@Override public int getInt(String columnLabel) throws SQLException {
-		if (!this.cursor.containsKey(columnLabel)) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		return this.cursor.get(columnLabel).asInt();
-	}
+    @Override
+    public int getInt(String columnLabel) throws SQLException {
+        if (!this.cursor.containsKey(columnLabel)) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return this.cursor.get(columnLabel).asInt();
+    }
 
-	@Override public int findColumn(String columnLabel) throws SQLException {
-		if (!this.cursor.containsKey(columnLabel)) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		this.cursor.next();
-		return this.cursor.index(columnLabel);
-	}
+    @Override
+    public int findColumn(String columnLabel) throws SQLException {
+        if (!this.cursor.containsKey(columnLabel)) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        this.cursor.next();
+        return this.cursor.index(columnLabel);
+    }
 
-	@Override public String getString(int columnIndex) throws SQLException {
-		if (columnIndex - 1 > this.cursor.size()) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		return this.cursor.get(columnIndex - 1).asString();
-	}
+    @Override
+    public String getString(int columnIndex) throws SQLException {
+        if (columnIndex - 1 > this.cursor.size()) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return this.cursor.get(columnIndex - 1).asString();
+    }
 
-	@Override public int getInt(int columnIndex) throws SQLException {
-		if (columnIndex - 1 > this.cursor.size()) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		return this.cursor.get(columnIndex - 1).asInt();
-	}
+    @Override
+    public int getInt(int columnIndex) throws SQLException {
+        if (columnIndex - 1 > this.cursor.size()) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return this.cursor.get(columnIndex - 1).asInt();
+    }
 
-	@Override public float getFloat(String columnLabel) throws SQLException {
-		if (!this.cursor.containsKey(columnLabel)) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		return this.cursor.get(columnLabel).asFloat();
-	}
+    @Override
+    public float getFloat(String columnLabel) throws SQLException {
+        if (!this.cursor.containsKey(columnLabel)) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return this.cursor.get(columnLabel).asFloat();
+    }
 
-	@Override public float getFloat(int columnIndex) throws SQLException {
-		if (columnIndex - 1 > this.cursor.size()) {
-			throw new SQLException("Column not present in ResultSet");
-		}
-		return this.cursor.get(columnIndex - 1).asFloat();
-	}
+    @Override
+    public float getFloat(int columnIndex) throws SQLException {
+        if (columnIndex - 1 > this.cursor.size()) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return this.cursor.get(columnIndex - 1).asFloat();
+    }
 
-	@Override public boolean previous() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public short getShort(String columnLabel) throws SQLException {
+        if (!this.cursor.containsKey(columnLabel)) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return (short) this.cursor.get(columnLabel).asInt();
+    }
 
-	@Override public boolean first() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public short getShort(int columnIndex) throws SQLException {
+        if (columnIndex - 1 > this.cursor.size()) {
+            throw new SQLException("Column not present in ResultSet");
+        }
+        return (short) this.cursor.get(columnIndex - 1).asInt();
+    }
 
-	@Override public boolean last() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public boolean previous() throws SQLException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean first() throws SQLException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean last() throws SQLException {
+        throw new UnsupportedOperationException();
+    }
 
 }

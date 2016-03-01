@@ -34,62 +34,63 @@ import static org.neo4j.driver.v1.Values.values;
 
 /**
  * @author AgileLARUS
- *
  * @since 3.0.0
  */
 public class ResultSetData {
-	public static List<Object[]> RECORD_LIST_EMPTY = Collections.emptyList();
-	public static List<Object[]> RECORD_LIST_ONE_ELEMENT;
-	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS;
-	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
+    public static List<Object[]> RECORD_LIST_EMPTY = Collections.emptyList();
+    public static List<Object[]> RECORD_LIST_ONE_ELEMENT;
+    public static List<Object[]> RECORD_LIST_MORE_ELEMENTS;
+    public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
 
-	public static String[] KEYS_RECORD_LIST_EMPTY = new String[]{};
-	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT = new String[]{"columnA", "columnB"};
-	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS = KEYS_RECORD_LIST_ONE_ELEMENT;
-	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED = new String[]{"columnInt", "columnString", "columnFloat"};
+    public static String[] KEYS_RECORD_LIST_EMPTY = new String[]{};
+    public static String[] KEYS_RECORD_LIST_ONE_ELEMENT = new String[]{"columnA", "columnB"};
+    public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS = KEYS_RECORD_LIST_ONE_ELEMENT;
+    public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED = new String[]{"columnInt", "columnString", "columnFloat", "columnShort"};
 
-	private static Method runResponseCollectorMethod;
-	private static Method pullAllResponseCollectorMethod;
+    private static Method runResponseCollectorMethod;
+    private static Method pullAllResponseCollectorMethod;
 
-	@BeforeClass public static void initialize() {
-		RECORD_LIST_ONE_ELEMENT = new LinkedList<>();
-        RECORD_LIST_ONE_ELEMENT.add(new Object[] {"valueA1", "valueB1"});
+    @BeforeClass
+    public static void initialize() {
+        RECORD_LIST_ONE_ELEMENT = new LinkedList<>();
+        RECORD_LIST_ONE_ELEMENT.add(new Object[]{"valueA1", "valueB1"});
 
         RECORD_LIST_MORE_ELEMENTS = new LinkedList<>();
-        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA1", "valueB1"});
-        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA2", "valueB2"});
-        RECORD_LIST_MORE_ELEMENTS.add(new Object[] {"valueA3", "valueB3"});
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[]{"valueA1", "valueB1"});
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[]{"valueA2", "valueB2"});
+        RECORD_LIST_MORE_ELEMENTS.add(new Object[]{"valueA3", "valueB3"});
 
         RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
         //RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] {"valueA1", "valueB1"});
 
-        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{1, "value1", 0.1f});
-        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{2, "value2", 0.2f});
+        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{1, "value1", 0.1f, (short) 1});
+        RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[]{2, "value2", 0.2f, (short) 2});
 
-		fixPublicForInternalResultCursor();
-	}
+        fixPublicForInternalResultCursor();
+    }
 
     /**
      * open up some package scope method for public usage
      */
-	private static void fixPublicForInternalResultCursor() {
-		try {
-			runResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("runResponseCollector");
-			runResponseCollectorMethod.setAccessible(true);
-			pullAllResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("pullAllResponseCollector");
+    private static void fixPublicForInternalResultCursor() {
+        try {
+            runResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("runResponseCollector");
+            runResponseCollectorMethod.setAccessible(true);
+            pullAllResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("pullAllResponseCollector");
             pullAllResponseCollectorMethod.setAccessible(true);
         } catch (NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		}
-	}
+            throw new RuntimeException(e);
+        }
+    }
 
-	/**
+    /**
      * hackish way to get a {@link InternalResultCursor}
+     *
      * @param keys
      * @param data
      * @return
      */
-	public static ResultCursor buildResultCursor(String[] keys, List<Object[]> data) {
+    public static ResultCursor buildResultCursor(String[] keys, List<Object[]> data) {
 
         try {
             Connection connection = mock(Connection.class);
