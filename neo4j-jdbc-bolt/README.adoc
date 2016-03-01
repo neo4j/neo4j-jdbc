@@ -1,3 +1,6 @@
 = Neo4j JDBC Driver - Bolt
 
-This module implements the neo4j-jdbc driver with the bolt protocol.
+This module implements the neo4j-jdbc driver with the BOLT protocol.
+
+This module is a JDBC-way wrapper of the https://github.com/neo4j/neo4j-java-driver[Neo4j-java] driver currently implementing an alpha
+version of the BOLT protocol for Java.

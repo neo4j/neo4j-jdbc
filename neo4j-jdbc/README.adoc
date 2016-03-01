@@ -1,4 +1,5 @@
 = Neo4j JDBC Driver
 
-This is the common module of the neo4j-jdbc driver.
-It contains all the abstract classes and it's a dependency of all the other modules.
+This is the core module of the neo4j-jdbc driver.
+
+It contains all the abstract classes implementing the java.sql interface and also the common pieces of code between the modules.
