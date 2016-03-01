@@ -75,9 +75,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
     public abstract float getFloat(int columnIndex) throws SQLException;
 
     @Override
-    public double getDouble(int columnIndex) throws SQLException {
-        return 0;
-    }
+    public abstract double getDouble(int columnIndex) throws SQLException;
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
@@ -147,9 +145,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
     public abstract float getFloat(String columnLabel) throws SQLException;
 
     @Override
-    public double getDouble(String columnLabel) throws SQLException {
-        return 0;
-    }
+    public abstract double getDouble(String columnLabel) throws SQLException;
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
