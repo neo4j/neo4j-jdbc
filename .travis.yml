@@ -1,0 +1,10 @@
+language: java
+
+jdk:
+  - openjdk8
+  - oraclejdk8
+
+script: 
+  - mvn clean test
+  - mvn -f neo4j-jdbc-bolt/pom.xml clean -Dtest=*IT test
+  - mvn -f neo4j-jdbc-bolt/pom.xml clean -Dtest=*PT test
