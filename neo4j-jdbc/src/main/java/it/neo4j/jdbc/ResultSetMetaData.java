@@ -57,15 +57,11 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return 0;
 	}
 
-	;
-
 	@Override public String getColumnLabel(int column) throws SQLException {
 		return null;
 	}
 
-	@Override public String getColumnName(int column) throws SQLException {
-		return null;
-	}
+	@Override public abstract String getColumnName(int column) throws SQLException;
 
 	@Override public String getSchemaName(int column) throws SQLException {
 		return null;
