@@ -1,4 +1,4 @@
-== Neo4j JDBC Driver ==
+== Neo4j JDBC Driver image:https://travis-ci.org/larusba/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/larusba/neo4j-jdbc"] ==
 
 This is the Neo4j JDBC driver supporting various types of database connections.
 By using this driver you will be able to interact with a Neo4J database also using the new BOLT protocol.
