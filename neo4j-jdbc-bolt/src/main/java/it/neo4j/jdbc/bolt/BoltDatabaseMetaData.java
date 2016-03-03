@@ -39,9 +39,6 @@ public class BoltDatabaseMetaData extends DatabaseMetaData {
 	}
 
 	@Override public Connection getConnection() throws SQLException {
-		if (this.connection == null) {
-			throw new SQLException();
-		}
 		return this.connection;
 	}
 }
