@@ -19,6 +19,16 @@
  */
 package it.neo4j.jdbc.bolt;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
+
+import java.lang.reflect.Field;
+import java.sql.SQLException;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * DatabaseMetaData Tests class
  *
@@ -26,4 +36,19 @@ package it.neo4j.jdbc.bolt;
  * @since 3.0.0
  */
 public class BoltDatabaseMetaDataTest {
+
+	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
+	/*------------------------------*/
+	/*        getConnection         */
+	/*------------------------------*/
+
+	@Test public void getConnectionShouldGetConnection() throws SQLException, NoSuchFieldException, IllegalAccessException {
+		BoltConnection connection = Mockito.mock(BoltConnection.class);
+		BoltDatabaseMetaData boltDatabaseMetaData = new BoltDatabaseMetaData(null);
+		Field field = BoltDatabaseMetaData.class.getDeclaredField("connection");
+		field.setAccessible(true);
+		field.set(boltDatabaseMetaData, connection);
+		assertEquals(connection, boltDatabaseMetaData.getConnection());
+	}
 }

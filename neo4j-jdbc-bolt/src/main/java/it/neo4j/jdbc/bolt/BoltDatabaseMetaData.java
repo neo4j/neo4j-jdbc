@@ -21,6 +21,9 @@ package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.DatabaseMetaData;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 /**
  * Provides metadata
  *
@@ -31,11 +34,14 @@ public class BoltDatabaseMetaData extends DatabaseMetaData {
 
 	private BoltConnection connection;
 
-	public BoltDatabaseMetaData() {
-
-	}
-
 	public BoltDatabaseMetaData(BoltConnection connection) {
 		this.connection = connection;
+	}
+
+	@Override public Connection getConnection() throws SQLException {
+		if (this.connection == null) {
+			throw new SQLException();
+		}
+		return this.connection;
 	}
 }

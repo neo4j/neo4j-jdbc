@@ -623,9 +623,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		return null;
 	}
 
-	@Override public java.sql.Connection getConnection() throws SQLException {
-		return null;
-	}
+	@Override public abstract java.sql.Connection getConnection() throws SQLException;
 
 	@Override public boolean supportsSavepoints() throws SQLException {
 		return false;
