@@ -74,11 +74,31 @@ public class BoltConnection extends Connection {
 		return this.readOnly;
 	}
 
+	@Override public int getTransactionIsolation() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
 	@Override public Statement createStatement() throws SQLException {
 		if (this.closed) {
 			throw new SQLException("Connection already closed");
 		}
 		return new BoltStatement(this.session);
+	}
+
+	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public boolean getAutoCommit() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public void commit() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public void rollback() throws SQLException {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {

@@ -315,4 +315,137 @@ public class BoltConnectionTest {
 	}
 
 	//TODO needs IT tests checking initialization succeeded
+
+	/*------------------------------*/
+	/*         setAutocommit        */
+	/*------------------------------*/
+
+	@Ignore @Test public void setAutoCommitShouldThrowExceptionOnDatabaseAccessErrorOccurred() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Session session = new InternalSession(null, new DevNullLogger());
+		Connection connection = new BoltConnection(session);
+		connection.setAutoCommit(true);
+	}
+
+	@Ignore @Test public void setAutoCommitShouldSetWhatIsPassed() throws SQLException {
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.setAutoCommit(false);
+		assertTrue(connection.getAutoCommit());
+	}
+
+	//TODO needs IT tests for committing what's in the transaction if AutoCommit is switched from false to true
+
+	/*------------------------------*/
+	/*         getAutoCommit        */
+	/*------------------------------*/
+
+	@Ignore @Test public void getAutoCommitShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.close();
+		connection.getAutoCommit();
+	}
+
+	@Ignore @Test public void getAutoCommitShouldReturnTrueByDefault() throws SQLException {
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		assertTrue(connection.getAutoCommit());
+	}
+
+	@Ignore @Test public void getAutoCommitShouldReturnFalse() throws SQLException {
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.setAutoCommit(false);
+		assertFalse(connection.getAutoCommit());
+	}
+
+	@Ignore @Test public void getAutoCommitShouldReturnTrue() throws SQLException {
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.setAutoCommit(false);
+		connection.setAutoCommit(true);
+		assertTrue(connection.getAutoCommit());
+	}
+
+	/*------------------------------*/
+	/*            commit            */
+	/*------------------------------*/
+
+	@Ignore @Test public void commitShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.close();
+		connection.commit();
+	}
+
+	@Ignore @Test public void commitShouldThrowExceptionIfInAutoCommitIsTrue() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.setAutoCommit(true);
+		connection.commit();
+	}
+
+	//TODO needs IT tests for see if the implementation is fully working
+
+	/*------------------------------*/
+	/*           rollback           */
+	/*------------------------------*/
+
+	@Ignore @Test public void rollbackShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.close();
+		connection.rollback();
+	}
+
+	@Ignore @Test public void rollbackShouldThrowExceptionIfInAutoCommitIsTrue() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.setAutoCommit(true);
+		connection.rollback();
+	}
+
+	//TODO needs IT tests for see if the implementation is fully working
+
+	/*------------------------------*/
+	/*   getTransactionIsolation    */
+	/*------------------------------*/
+
+	@Ignore @Test public void getTransactionIsolationShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		connection.close();
+		connection.getTransactionIsolation();
+	}
+
+	@Ignore @Test public void getTransactionIsolationShouldReturnTransactionReadCommitted() throws SQLException {
+		MockedSession session = new MockedSession();
+		Connection connection = new BoltConnection(session);
+
+		assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
+	}
 }

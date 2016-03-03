@@ -47,21 +47,13 @@ public abstract class Connection implements java.sql.Connection {
 		return null;
 	}
 
-	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
+	@Override public abstract void setAutoCommit(boolean autoCommit) throws SQLException;
 
-	}
+	@Override public abstract boolean getAutoCommit() throws SQLException;
 
-	@Override public boolean getAutoCommit() throws SQLException {
-		return false;
-	}
+	@Override abstract public void commit() throws SQLException;
 
-	@Override public void commit() throws SQLException {
-
-	}
-
-	@Override public void rollback() throws SQLException {
-
-	}
+	@Override abstract public void rollback() throws SQLException;
 
 	@Override public abstract void close() throws SQLException;
 
@@ -84,12 +76,10 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	@Override public void setTransactionIsolation(int level) throws SQLException {
-
+		throw new UnsupportedOperationException();
 	}
 
-	@Override public int getTransactionIsolation() throws SQLException {
-		return 0;
-	}
+	@Override abstract public int getTransactionIsolation() throws SQLException;
 
 	@Override public SQLWarning getWarnings() throws SQLException {
 		return null;
