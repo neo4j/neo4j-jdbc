@@ -54,6 +54,26 @@ con.close();
 
 * Execute queries using the Cyper graph query language
 
+=== Tests usage ===
+
+* Run all unitary tests:
+-------------------------------------------------
+mvn clean test
+-------------------------------------------------
+
+* Run integration tests:
+-------------------------------------------------
+mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*IT test
+-------------------------------------------------
+
+* Run performance tests:
+
+--------------------------------------------------
+mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*PT test
+--------------------------------------------------
+
+WARNING: Must have a neo4j (M04) stand alone with Bolt protocol on port 7687 (default)
+
 ===== Server =====
 
 * Install a Neo4j 3.0 server and start it with the BOLT protocol enabled

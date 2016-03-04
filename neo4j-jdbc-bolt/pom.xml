@@ -53,13 +53,30 @@
         <!-- dependencies for integration tests to spin up a neo4j bolt server in process -->
 
         <dependency>
-           <groupId>org.neo4j.test</groupId>
-           <artifactId>neo4j-harness</artifactId>
-           <version>3.0.0-M04</version>
-           <scope>test</scope>
+            <groupId>org.neo4j.test</groupId>
+            <artifactId>neo4j-harness</artifactId>
+            <version>3.0.0-M04</version>
+            <scope>test</scope>
         </dependency>
 
+        <!-- Performance tests dependencies -->
+
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
+
+    <properties>
+        <jmh.version>1.11.3</jmh.version>
+    </properties>
 
     <build>
         <plugins>

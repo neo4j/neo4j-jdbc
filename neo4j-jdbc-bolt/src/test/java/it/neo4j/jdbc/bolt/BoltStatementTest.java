@@ -25,6 +25,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
