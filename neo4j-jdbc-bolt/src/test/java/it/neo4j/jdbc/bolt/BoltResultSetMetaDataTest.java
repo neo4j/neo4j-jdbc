@@ -105,4 +105,16 @@ public class BoltResultSetMetaDataTest {
 
 		resultSet.getColumnName(1);
 	}
+
+	/*------------------------------*/
+	/*         getSchemaName        */
+	/*------------------------------*/
+
+	@Test public void getSchemanNameShouldThrowUnsupportedException() throws SQLException {
+		expectedEx.expect(UnsupportedOperationException.class);
+
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(null);
+
+		resultSet.getSchemaName(1);
+	}
 }
