@@ -125,6 +125,10 @@ public class BoltResultSet extends ResultSet {
 		return this.cursor.get(columnLabel).asDouble();
 	}
 
+	@Override public Object getObject(int columnIndex) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
 	@Override public boolean previous() throws SQLException {
 		throw new UnsupportedOperationException();
 	}

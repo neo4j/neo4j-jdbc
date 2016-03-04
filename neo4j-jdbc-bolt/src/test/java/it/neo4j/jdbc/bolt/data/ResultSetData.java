@@ -20,14 +20,21 @@
 package it.neo4j.jdbc.bolt.data;
 
 import org.junit.BeforeClass;
+import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalRelationship;
 import org.neo4j.driver.internal.InternalResultCursor;
 import org.neo4j.driver.internal.ParameterSupport;
 import org.neo4j.driver.internal.spi.Connection;
 import org.neo4j.driver.internal.spi.StreamCollector;
+import org.neo4j.driver.internal.value.FloatValue;
+import org.neo4j.driver.internal.value.IntegerValue;
+import org.neo4j.driver.internal.value.StringValue;
 import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.Value;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -43,11 +50,16 @@ public class ResultSetData {
 	public static List<Object[]> RECORD_LIST_ONE_ELEMENT;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
+	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_NODES;
+	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_RELATIONS;
 
-	public static String[] KEYS_RECORD_LIST_EMPTY               = new String[] {};
-	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT         = new String[] { "columnA", "columnB" };
-	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS       = KEYS_RECORD_LIST_ONE_ELEMENT;
-	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED = new String[] { "columnInt", "columnString", "columnFloat", "columnShort", "columnDouble" };
+	public static String[] KEYS_RECORD_LIST_EMPTY                   = new String[] {};
+	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT             = new String[] { "columnA", "columnB" };
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS           = KEYS_RECORD_LIST_ONE_ELEMENT;
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED     = new String[] { "columnInt", "columnString", "columnFloat", "columnShort",
+			"columnDouble" };
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
 
 	private static Method runResponseCollectorMethod;
 	private static Method pullAllResponseCollectorMethod;
@@ -62,10 +74,48 @@ public class ResultSetData {
 		RECORD_LIST_MORE_ELEMENTS.add(new Object[] { "valueA3", "valueB3" });
 
 		RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
-		//RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] {"valueA1", "valueB1"});
 
 		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D });
 		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D });
+
+		RECORD_LIST_MORE_ELEMENTS_NODES = new LinkedList<>();
+
+		RECORD_LIST_MORE_ELEMENTS_NODES.add(new Object[] { new InternalNode(1, new LinkedList<String>() {
+			{
+				this.add("label1");
+				this.add("label2");
+			}
+		}, new HashMap<String, Value>() {
+			{
+				this.put("property1", new StringValue("value1"));
+				this.put("property2", new IntegerValue(1));
+			}
+		}) });
+
+		RECORD_LIST_MORE_ELEMENTS_NODES.add(new Object[] { new InternalNode(2, new LinkedList<String>() {
+			{
+				this.add("label");
+			}
+		}, new HashMap<String, Value>() {
+			{
+				this.put("property", new FloatValue(1.6f));
+			}
+		}) });
+
+		RECORD_LIST_MORE_ELEMENTS_RELATIONS = new LinkedList<>();
+
+		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(1, 0, 0, "type1", new HashMap<String, Value>() {
+			{
+				this.put("property1", new StringValue("value"));
+				this.put("property2", new IntegerValue(100));
+			}
+		}) });
+
+		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(2, 0, 0, "type2", new HashMap<String, Value>() {
+			{
+				this.put("property", new FloatValue(2.6f));
+			}
+		}) });
 
 		fixPublicForInternalResultCursor();
 	}

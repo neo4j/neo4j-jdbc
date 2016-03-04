@@ -37,17 +37,17 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 	}
 
 	@Override public int getColumnCount() throws SQLException {
-		if(this.cursor == null){
+		if (this.cursor == null) {
 			throw new SQLException("The ResultCursor is null");
 		}
 		return this.cursor.size();
 	}
 
 	@Override public String getColumnName(int column) throws SQLException {
-		if(this.cursor == null){
+		if (this.cursor == null) {
 			throw new SQLException("The ResultCursor is null");
 		}
-		if(column > this.cursor.size() || column < 1){
+		if (column > this.cursor.size() || column < 1) {
 			throw new SQLException("Column out of range");
 		}
 		return this.cursor.keys().get(column - 1);
