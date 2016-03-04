@@ -60,6 +60,24 @@ con.close();
 
 * Connect with URLs on the form jdbc:bolt://<host>:<port>/, e.g. jdbc:bolt://localhost/
 
+=== Currently in development (Bolt module) ===
+
+* Connection [IN PROGRESS]
+
+* Statement [IN PROGRESS]
+
+* Driver [IN PROGRESS]
+
+* ResultSet [IN PROGRESS]
+
+* Transactions [TODO]
+
+* Metadata [TODO]
+
+* Prepared Statements [TODO]
+
+* Parameters [TODO]
+
 === Thank you ===
 
 We'd also like to thank for their precious support:
