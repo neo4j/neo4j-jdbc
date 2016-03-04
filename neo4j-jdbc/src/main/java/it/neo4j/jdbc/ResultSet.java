@@ -35,9 +35,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract boolean next() throws SQLException;
 
-	@Override public void close() throws SQLException {
-
-	}
+	@Override public abstract void close() throws SQLException;
 
 	@Override public boolean wasNull() throws SQLException {
 		return false;
@@ -215,9 +213,13 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new SQLFeatureNotSupportedException();
 	}
 
-	@Override public abstract boolean first() throws SQLException;
+	@Override public boolean first() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
 
-	@Override public abstract boolean last() throws SQLException;
+	@Override public boolean last() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
 
 	@Override public int getRow() throws SQLException {
 		return 0;
@@ -231,7 +233,9 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new SQLFeatureNotSupportedException();
 	}
 
-	@Override public abstract boolean previous() throws SQLException;
+	@Override public boolean previous() throws SQLException {
+		throw new UnsupportedOperationException();
+	}
 
 	@Override public void setFetchDirection(int direction) throws SQLException {
 
@@ -577,9 +581,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		return 0;
 	}
 
-	@Override public boolean isClosed() throws SQLException {
-		return false;
-	}
+	@Override public abstract boolean isClosed() throws SQLException;
 
 	@Override public void updateNString(int columnIndex, String nString) throws SQLException {
 

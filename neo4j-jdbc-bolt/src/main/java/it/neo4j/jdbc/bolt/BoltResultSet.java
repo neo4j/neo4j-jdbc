@@ -31,6 +31,7 @@ import java.sql.SQLException;
 public class BoltResultSet extends ResultSet {
 
 	private ResultCursor cursor;
+	private boolean closed = false;
 
 	public BoltResultSet(ResultCursor cursor) {
 		this.cursor = cursor;
@@ -47,7 +48,20 @@ public class BoltResultSet extends ResultSet {
 		}
 	}
 
+	@Override public void close() throws SQLException {
+		if (this.cursor == null) {
+			throw new SQLException("ResultCursor not initialized");
+		}
+		if (!this.closed) {
+			this.cursor.close();
+			this.closed = true;
+		}
+	}
+
 	@Override public String getString(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -55,6 +69,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public int getInt(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -62,6 +79,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public int findColumn(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -70,6 +90,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public String getString(int columnIndex) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -77,6 +100,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -84,6 +110,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public float getFloat(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -91,6 +120,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -98,6 +130,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public short getShort(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -105,6 +140,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public short getShort(int columnIndex) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -112,6 +150,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public double getDouble(int columnIndex) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (columnIndex - 1 > this.cursor.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -119,6 +160,9 @@ public class BoltResultSet extends ResultSet {
 	}
 
 	@Override public double getDouble(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
 		if (!this.cursor.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -129,15 +173,7 @@ public class BoltResultSet extends ResultSet {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override public boolean previous() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override public boolean first() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override public boolean last() throws SQLException {
-		throw new UnsupportedOperationException();
+	@Override public boolean isClosed() throws SQLException {
+		return this.closed;
 	}
 }
