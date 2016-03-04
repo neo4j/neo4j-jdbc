@@ -336,8 +336,6 @@ public class BoltConnectionTest {
 		assertTrue(connection.getAutoCommit());
 	}
 
-	//TODO needs IT tests for committing what's in the transaction if AutoCommit is switched from false to true
-
 	/*------------------------------*/
 	/*         getAutoCommit        */
 	/*------------------------------*/
@@ -400,8 +398,6 @@ public class BoltConnectionTest {
 		connection.commit();
 	}
 
-	//TODO needs IT tests for see if the implementation is fully working
-
 	/*------------------------------*/
 	/*           rollback           */
 	/*------------------------------*/
@@ -425,8 +421,6 @@ public class BoltConnectionTest {
 		connection.setAutoCommit(true);
 		connection.rollback();
 	}
-
-	//TODO needs IT tests for see if the implementation is fully working
 
 	/*------------------------------*/
 	/*   getTransactionIsolation    */
