@@ -167,9 +167,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract Object getObject(int columnIndex) throws SQLException;
 
-	@Override public Object getObject(String columnLabel) throws SQLException {
-		return null;
-	}
+	@Override public abstract Object getObject(String columnLabel) throws SQLException;
 
 	@Override public abstract int findColumn(String columnLabel) throws SQLException;
 

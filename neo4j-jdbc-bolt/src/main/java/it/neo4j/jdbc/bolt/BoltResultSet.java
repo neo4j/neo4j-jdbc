@@ -20,9 +20,12 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSet;
+import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalRelationship;
 import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 
 /**
  * @author AgileLARUS
@@ -169,8 +172,46 @@ public class BoltResultSet extends ResultSet {
 		return this.cursor.get(columnLabel).asDouble();
 	}
 
+	private Object generateObject(Object obj){
+		if (obj.getClass().equals(InternalNode.class)) {
+			InternalNode node = (InternalNode) obj;
+			HashMap<String, Object> map = new HashMap<>();
+			map.put("_id", node.identity().asLong());
+			map.put("_labels", node.labels());
+			node.properties().forEach(property -> map.put(property.key(), property.value().asObject()));
+			return map;
+		}
+		if (obj.getClass().equals(InternalRelationship.class)) {
+			InternalRelationship rel = (InternalRelationship) obj;
+			HashMap<String, Object> map = new HashMap<>();
+			map.put("_id", rel.identity().asLong());
+			map.put("_type", rel.type());
+			rel.properties().forEach(property -> map.put(property.key(), property.value().asObject()));
+			return map;
+		}
+		return obj;
+	}
+
 	@Override public Object getObject(int columnIndex) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
+		if (columnIndex - 1 > this.cursor.size()) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		Object obj = this.cursor.get(columnIndex - 1).asObject();
+		return this.generateObject(obj);
+	}
+
+	@Override public Object getObject(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
+		if (!this.cursor.containsKey(columnLabel)) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		Object obj = this.cursor.get(columnLabel).asObject();
+		return this.generateObject(obj);
 	}
 
 	@Override public boolean isClosed() throws SQLException {

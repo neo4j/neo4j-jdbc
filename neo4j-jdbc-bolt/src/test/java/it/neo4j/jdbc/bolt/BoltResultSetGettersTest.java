@@ -23,10 +23,14 @@ import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
+import org.neo4j.cypher.internal.frontend.v2_3.ast.functions.Str;
 import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -450,25 +454,21 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 	// ! Still needs tests for paths
 
-	@Ignore @Test public void getObjectByLabelShouldReturnObject() throws SQLException {
+	@Test public void getObjectByLabelShouldReturnObject() throws SQLException {
 		ResultCursor resultCursor = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
 		Assert.assertEquals("value1", resultSet.getObject("columnString").toString());
-		Assert.assertEquals("Object", resultSet.getObject("columnString").getClass().getName());
-		Assert.assertEquals(1, (int) resultSet.getObject("columnInt"));
-		Assert.assertEquals("Object", resultSet.getObject("columnInt").getClass().getName());
+		Assert.assertEquals(1L, resultSet.getObject("columnInt"));
 
 		resultSet.next();
-		Assert.assertEquals((short) 2, (short) resultSet.getObject("columnShort"));
-		Assert.assertEquals("Object", resultSet.getObject("columnShort").getClass().getName());
+		Assert.assertEquals(2L, resultSet.getObject("columnShort"));
 		Assert.assertEquals(20.16D, (double) resultSet.getObject("columnDouble"), 0);
-		Assert.assertEquals("Object", resultSet.getObject("columnDouble").getClass().getName());
 	}
 
-	@Ignore @Test public void getObjectByLabelShouldThrowExceptionNoLabel() throws SQLException {
+	@Test public void getObjectByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		ResultCursor resultCursor = ResultSetData
@@ -479,7 +479,7 @@ public class BoltResultSetGettersTest {
 		resultSet.getObject("not present");
 	}
 
-	@Ignore @Test public void getObjectByLabelShouldThrowExceptionClosed() throws SQLException {
+	@Test public void getObjectByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		ResultCursor resultCursor = ResultSetData
@@ -490,72 +490,69 @@ public class BoltResultSetGettersTest {
 		resultSet.getObject("not present");
 	}
 
-	@Ignore @Test public void getObjectByIndexShouldReturnObject() throws SQLException {
+	@Test public void getObjectByIndexShouldReturnObject() throws SQLException {
 		ResultCursor resultCursor = ResultSetData
-				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
 		Assert.assertEquals("value1", resultSet.getObject(2).toString());
-		Assert.assertEquals("Object", resultSet.getObject(2).getClass().getName());
-		Assert.assertEquals(1, (int) resultSet.getObject(1));
-		Assert.assertEquals("Object", resultSet.getObject(1).getClass().getName());
+		Assert.assertEquals(1L, resultSet.getObject(1));
 
 		resultSet.next();
-		Assert.assertEquals((short) 2, (short) resultSet.getObject(3));
-		Assert.assertEquals("Object", resultSet.getObject(3).getClass().getName());
-		Assert.assertEquals(20.16D, (double) resultSet.getObject(4), 0);
-		Assert.assertEquals("Object", resultSet.getObject(4).getClass().getName());
+		Assert.assertEquals(2L, resultSet.getObject(4));
+		Assert.assertEquals(20.16D, (double) resultSet.getObject(5), 0);
 	}
 
-	@Ignore @Test public void getObjectByIndexShouldThrowExceptionNoLabel() throws SQLException {
+	@Test public void getObjectByIndexShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		ResultCursor resultCursor = ResultSetData
-				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
 		resultSet.getObject(99);
 	}
 
-	@Ignore @Test public void getObjectByIndexShouldThrowExceptionClosed() throws SQLException {
+	@Test public void getObjectByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		ResultCursor resultCursor = ResultSetData
-				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.close();
 		resultSet.getObject(1);
 	}
 
-	@Ignore @Test public void getObjectShouldReturnCorrectNodeAsMap() throws SQLException {
+	@Test public void getObjectShouldReturnCorrectNodeAsMap() throws SQLException {
 		ResultCursor resultCursor = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
 
 		resultSet.next();
+
 		Assert.assertEquals(new HashMap<String, Object>() {
 			{
-				this.put("_id", 1);
-				this.put("_labels", new String[] { "label1", "label2" });
+				this.put("_id", 1L);
+				this.put("_labels", Arrays.asList("label1","label2"));
 				this.put("property1", "value1");
-				this.put("property2", 1);
+				this.put("property2", 1L);
 			}
 		}, resultSet.getObject("node"));
 
 		resultSet.next();
 		Assert.assertEquals(new HashMap<String, Object>() {
 			{
-				this.put("_id", 2);
-				this.put("_labels", new String[] { "label" });
-				this.put("property", 1.6f);
+				this.put("_id", 2L);
+				this.put("_labels", Collections.singletonList("label"));
+				this.put("property", (double) 1.6F);
 			}
 		}, resultSet.getObject(1));
 	}
 
-	@Ignore @Test public void getObjectShouldReturnCorrectRelationsAsMap() throws SQLException {
+	@Test public void getObjectShouldReturnCorrectRelationsAsMap() throws SQLException {
 		ResultCursor resultCursor = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_RELATIONS);
 		ResultSet resultSet = new BoltResultSet(resultCursor);
@@ -563,19 +560,19 @@ public class BoltResultSetGettersTest {
 		resultSet.next();
 		Assert.assertEquals(new HashMap<String, Object>() {
 			{
-				this.put("_id", 1);
+				this.put("_id", 1L);
 				this.put("_type", "type1");
 				this.put("property1", "value");
-				this.put("property2", 100);
+				this.put("property2", 100L);
 			}
 		}, resultSet.getObject("relation"));
 
 		resultSet.next();
 		Assert.assertEquals(new HashMap<String, Object>() {
 			{
-				this.put("_id", 2);
+				this.put("_id", 2L);
 				this.put("_type", "type2");
-				this.put("property", 2.6f);
+				this.put("property",(double) 2.6F);
 			}
 		}, resultSet.getObject(1));
 	}
