@@ -25,12 +25,14 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.driver.v1.Session;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author AgileLARUS
@@ -40,11 +42,15 @@ public class BoltStatementTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+	private Session mockSession(){
+		return mock(Session.class);
+	}
+
 	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
 	@Ignore @Test public void executeQueryShouldReturnCorrectResultSetStructure() throws SQLException {
-		Connection connection = new BoltConnection();
+		Connection connection = new BoltConnection(mockSession());
 
 		Statement statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
@@ -57,7 +63,7 @@ public class BoltStatementTest {
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection();
+		Connection connection = new BoltConnection(mockSession());
 		Statement statement = connection.createStatement();
 		statement.close();
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
@@ -66,14 +72,14 @@ public class BoltStatementTest {
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection();
+		Connection connection = new BoltConnection(mockSession());
 		connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL);
 	}
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection();
+		Connection connection = new BoltConnection(mockSession());
 		connection.prepareCall(StatementData.STATEMENT_MATCH_ALL);
 	}
 

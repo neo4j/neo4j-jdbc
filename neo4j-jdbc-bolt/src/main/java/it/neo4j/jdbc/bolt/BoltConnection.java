@@ -33,22 +33,29 @@ import java.sql.SQLFeatureNotSupportedException;
  */
 public class BoltConnection extends Connection {
 
-	private boolean closed   = false;
-	private boolean readOnly = false;
+	private boolean readOnly   = false;
+	private boolean autoCommit = true;
 	private Session session;
-
-	public BoltConnection() {
-
-	}
 
 	public BoltConnection(Session session) {
 		this.session = session;
 	}
 
+	private void checkClosed() throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
+	}
+
+	private void checkAutoCommit() throws SQLException {
+		if (this.autoCommit) {
+			throw new SQLException("Cannot commit when in autocommit");
+		}
+	}
+
 	@Override public void close() throws SQLException {
 		try {
-			if (!this.closed) {
-				this.closed = true;
+			if (!this.isClosed()) {
 				session.close();
 			}
 		} catch (Exception e) {
@@ -57,54 +64,50 @@ public class BoltConnection extends Connection {
 	}
 
 	@Override public boolean isClosed() throws SQLException {
-		return this.closed;
+		return !this.session.isOpen();
 	}
 
 	@Override public void setReadOnly(boolean readOnly) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("Connection already closed");
-		}
+		this.checkClosed();
 		this.readOnly = readOnly;
 	}
 
 	@Override public boolean isReadOnly() throws SQLException {
-		if (this.closed) {
-			throw new SQLException("Connection already closed");
-		}
+		this.checkClosed();
 		return this.readOnly;
 	}
 
 	@Override public int getTransactionIsolation() throws SQLException {
+		this.checkClosed();
 		throw new UnsupportedOperationException();
 	}
 
 	@Override public Statement createStatement() throws SQLException {
-		if (this.closed) {
-			throw new SQLException("Connection already closed");
-		}
+		this.checkClosed();
 		return new BoltStatement(this.session);
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
-		throw new UnsupportedOperationException();
+		this.autoCommit = autoCommit;
 	}
 
 	@Override public boolean getAutoCommit() throws SQLException {
-		throw new UnsupportedOperationException();
+		this.checkClosed();
+		return autoCommit;
 	}
 
 	@Override public void commit() throws SQLException {
-		throw new UnsupportedOperationException();
+		this.checkClosed();
+		this.checkAutoCommit();
 	}
 
 	@Override public void rollback() throws SQLException {
-		throw new UnsupportedOperationException();
+		this.checkClosed();
+		this.checkAutoCommit();
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("Connection already closed");
-		}
+		this.checkClosed();
 		// @formatter:off
 		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
 			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
@@ -122,9 +125,7 @@ public class BoltConnection extends Connection {
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("Connection already closed");
-		}
+		this.checkClosed();
 		// @formatter:off
 		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
 			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
