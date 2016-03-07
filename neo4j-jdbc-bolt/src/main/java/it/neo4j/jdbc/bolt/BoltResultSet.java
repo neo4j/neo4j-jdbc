@@ -172,7 +172,7 @@ public class BoltResultSet extends ResultSet {
 		return this.cursor.get(columnLabel).asDouble();
 	}
 
-	private Object generateObject(Object obj){
+	private Object generateObject(Object obj) {
 		if (obj.getClass().equals(InternalNode.class)) {
 			InternalNode node = (InternalNode) obj;
 			HashMap<String, Object> map = new HashMap<>();

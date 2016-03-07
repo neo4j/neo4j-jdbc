@@ -416,7 +416,7 @@ public class BoltConnectionTest {
 		connection.getTransactionIsolation();
 	}
 
-	@Ignore @Test public void getTransactionIsolationShouldReturnTransactionReadCommitted() throws SQLException {
+	@Test public void getTransactionIsolationShouldReturnTransactionReadCommitted() throws SQLException {
 		Connection connection = new BoltConnection(mockSessionOpen());
 
 		assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());

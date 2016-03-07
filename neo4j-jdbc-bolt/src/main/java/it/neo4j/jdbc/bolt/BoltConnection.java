@@ -37,6 +37,9 @@ public class BoltConnection extends Connection {
 	private boolean autoCommit = true;
 	private Session session;
 
+	private Statement statement;
+	private BoltTransaction transactionContainer = new BoltTransaction();
+
 	public BoltConnection(Session session) {
 		this.session = session;
 	}
@@ -79,16 +82,20 @@ public class BoltConnection extends Connection {
 
 	@Override public int getTransactionIsolation() throws SQLException {
 		this.checkClosed();
-		throw new UnsupportedOperationException();
+		return TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override public Statement createStatement() throws SQLException {
 		this.checkClosed();
-		return new BoltStatement(this.session);
+		this.statement = new BoltStatement(this, this.session, this.transactionContainer);
+		return this.statement;
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
 		this.autoCommit = autoCommit;
+		if (this.transactionContainer.getTransaction() != null) {
+			this.transactionContainer.getTransaction().success();
+		}
 	}
 
 	@Override public boolean getAutoCommit() throws SQLException {
@@ -99,11 +106,19 @@ public class BoltConnection extends Connection {
 	@Override public void commit() throws SQLException {
 		this.checkClosed();
 		this.checkAutoCommit();
+		if (this.transactionContainer.getTransaction() == null) {
+			throw new SQLException("The transaction is null");
+		}
+		this.transactionContainer.getTransaction().success();
 	}
 
 	@Override public void rollback() throws SQLException {
 		this.checkClosed();
 		this.checkAutoCommit();
+		if (this.transactionContainer.getTransaction() == null) {
+			throw new SQLException("The transaction is null");
+		}
+		this.transactionContainer.getTransaction().failure();
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
@@ -121,7 +136,7 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return new BoltStatement(this.session);
+		return new BoltStatement(this, this.session, this.transactionContainer);
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -144,6 +159,6 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return new BoltStatement(this.session);
+		return new BoltStatement(this, this.session, this.transactionContainer);
 	}
 }
