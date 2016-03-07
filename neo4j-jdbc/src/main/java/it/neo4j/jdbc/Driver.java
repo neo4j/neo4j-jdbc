@@ -37,7 +37,7 @@ public abstract class Driver implements java.sql.Driver {
 	@Override public abstract boolean acceptsURL(String url) throws SQLException;
 
 	@Override public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		return new DriverPropertyInfo[0];
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public int getMajorVersion() {
@@ -53,6 +53,6 @@ public abstract class Driver implements java.sql.Driver {
 	}
 
 	@Override public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		return null;
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 }
