@@ -34,23 +34,15 @@ import java.sql.SQLException;
  */
 public class BoltStatement extends Statement {
 
-	BoltStatement(Object statement) {
-
-	}
-
-	private Connection  connection;
+	private BoltConnection  connection;
 	private Transaction transaction;
 
 	/**
-	 *
 	 * @param connection
-	 * @param session
-	 * @param t The container where the Transaction will be put
 	 */
-	public BoltStatement(Connection connection, Session session, BoltTransaction t) {
+	public BoltStatement(BoltConnection connection) {
 		this.connection = connection;
-		this.transaction = session.beginTransaction();
-		t.setTransaction(this.transaction);
+		this.transaction = connection.getTransaction();
 	}
 
 	//Mustn't return null
@@ -58,11 +50,19 @@ public class BoltStatement extends Statement {
 		if(connection.isClosed()){
 			throw new SQLException("Connection already closed");
 		}
-		ResultCursor cur = this.transaction.run(sql);
+		ResultCursor cur;
 		if(connection.getAutoCommit()){
-			this.transaction.success();
+			Transaction t = this.connection.getSession().beginTransaction();
+			cur = t.run(sql);
+			t.success();
+			t.close();
+		} else {
+			cur = this.connection.getTransaction().run(sql);
 		}
 		return new BoltResultSet(cur);
-		//return new BoltResultSet(this.session.run(sql));
+	}
+
+	@Override public int executeUpdate(String sql) throws SQLException {
+		throw new UnsupportedOperationException();
 	}
 }

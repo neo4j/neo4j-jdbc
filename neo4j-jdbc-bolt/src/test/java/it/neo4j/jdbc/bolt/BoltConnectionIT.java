@@ -19,19 +19,18 @@
  */
 package it.neo4j.jdbc.bolt;
 
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
+import it.neo4j.jdbc.*;
+import it.neo4j.jdbc.bolt.data.StatementData;
+import org.junit.*;
 import org.neo4j.driver.v1.ResultCursor;
-import org.neo4j.driver.v1.Session;
+import org.neo4j.graphdb.Result;
 
 import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
@@ -41,15 +40,22 @@ public class BoltConnectionIT {
 
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
 
-	@Test public void commitShouldWorkFine() throws SQLException, ClassNotFoundException {
-		// Make sure Neo4j Driver is registered
-		Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
+	private String NEO4J_JDBC_BOLT_URL;
 
+	@BeforeClass public static void initialize() throws ClassNotFoundException {
+		Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
+	}
+
+	@Before public void setup() {
+		NEO4J_JDBC_BOLT_URL = "jdbc:" + neo4j.getBoltUrl();
+	}
+
+	@Test public void commitShouldWorkFine() throws SQLException {
 		// Connect (autoCommit = false)
-		Connection writer = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		writer.setAutoCommit(false);
 
-		Connection reader = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		// Creating a node with a transaction
 		try (Statement stmt = writer.createStatement()) {
@@ -57,31 +63,24 @@ public class BoltConnectionIT {
 
 			Statement stmtRead = reader.createStatement();
 			ResultSet rs = stmtRead.executeQuery("MATCH (n:CommitShouldWorkFine) RETURN n.result");
-			while (rs.next()) {
-				// Should fail only if the previous create is auto-committing
-				fail();
-			}
+			assertFalse(rs.next());
 
 			writer.commit();
 			rs = stmtRead.executeQuery("MATCH (n:CommitShouldWorkFine) RETURN n.result");
-			while (rs.next()) {
-				// Should find the created node, after the commit
-				assertEquals("ok", rs.getString("n.result"));
-			}
+			assertTrue(rs.next());
+			assertEquals("ok", rs.getString("n.result"));
+			assertFalse(rs.next());
 		}
 
 		writer.close();
 		reader.close();
 	}
 
-	@Test public void setAutoCommitShouldCommitFromFalseToTrue() throws SQLException, ClassNotFoundException {
-		// Make sure Neo4j Driver is registered
-		Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
-
+	@Test public void setAutoCommitShouldCommitFromFalseToTrue() throws SQLException {
 		// Connect (autoCommit = false)
-		Connection writer = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		writer.setAutoCommit(false);
-		Connection reader = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		// Creating a node with a transaction
 		try (Statement stmt = writer.createStatement()) {
@@ -89,73 +88,123 @@ public class BoltConnectionIT {
 
 			Statement stmtRead = reader.createStatement();
 			ResultSet rs = stmtRead.executeQuery("MATCH (n:SetAutoCommitSwitch) RETURN n.result");
-			while (rs.next()) {
-				// Should fail only if the previous create is auto-committing
-				fail();
-			}
+			assertFalse(rs.next());
 
 			writer.setAutoCommit(true);
 			rs = stmtRead.executeQuery("MATCH (n:SetAutoCommitSwitch) RETURN n.result");
-			while (rs.next()) {
-				// Should find the created node, after the setAutoCommit(true);
-				assertEquals("ok", rs.getString("n.result"));
-			}
+			assertTrue(rs.next());
+			assertEquals("ok", rs.getString("n.result"));
+			assertFalse(rs.next());
 		}
 
 		writer.close();
 		reader.close();
 	}
 
-	@Test public void rollbackShouldWorkFine() throws SQLException, ClassNotFoundException {
-		// Make sure Neo4j Driver is registered
-		Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
+	//FIXME red test
+	@Test public void setAutoCommitShouldWorkAfterMultipleChanges() throws SQLException {
+		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
-		// Connect (autoCommit = false)
-		Connection writer = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement writerStmt = writer.createStatement();
+		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
+		Statement readerStmt = reader.createStatement();
+		ResultSet rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		//Expect to read data
+		assertTrue(rs.next());
+		assertEquals(1, rs.getInt(1));
+
+		//Set autocommit to false
 		writer.setAutoCommit(false);
-		Connection reader = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
+		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		//Expect not to find new node
+		assertTrue(rs.next());
+		assertEquals(1, rs.getInt(1));
+		writer.commit();
+		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		//Expect to find 2 nodes
+		assertTrue(rs.next());
+		assertEquals(2, rs.getInt(1));
 
+		//Set autocommit to true again
+		writer.setAutoCommit(true);
+		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
+		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		//Expect to find 3 nodes
+		assertTrue(rs.next());
+		assertEquals(3, rs.getInt(1));
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
+
+	@Test public void rollbackShouldWorkFine() throws SQLException {
+		// Connect (autoCommit = false)
+		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+		writer.setAutoCommit(false);
+		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		// Creating a node with a transaction
-		try (Statement stmt = writer.createStatement()) {
-			stmt.executeQuery("CREATE (:RollbackShouldWorkFine{result:\"ok\"})");
+		Statement stmt = writer.createStatement();
+		stmt.executeQuery("CREATE (:RollbackShouldWorkFine{result:\"ok\"})");
 
-			Statement stmtRead = reader.createStatement();
-			ResultSet rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
-			while (rs.next()) {
-				// Should fail only if the previous create is auto-committing
-				fail();
-			}
+		Statement stmtRead = reader.createStatement();
+		ResultSet rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
+		assertFalse(rs.next());
 
-			writer.rollback();
-			rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
-			while (rs.next()) {
-				// Should fail, because
-				fail();
-			}
-		}
+		writer.rollback();
+		rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
+		assertFalse(rs.next());
 		assertTrue(true);
 
 		writer.close();
 		reader.close();
 	}
 
-	@Test public void autoCommitShouldWorkFine() throws SQLException, ClassNotFoundException {
-		// Make sure Neo4j Driver is registered
-		Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
-
+	@Test public void autoCommitShouldWorkFine() throws SQLException {
 		// Connect (autoCommit = true, by default)
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		// Creating a node
-		try (Statement stmt = con.createStatement()) {
-			stmt.executeQuery("CREATE (:AutoCommitShouldWorkFine{result:\"ok\"})");
-			ResultSet rs = stmt.executeQuery("MATCH (n:AutoCommitShouldWorkFine) RETURN n.result");
-			while (rs.next()) {
-				// Should find the created node
-				assertEquals("ok", rs.getString("n.result"));
-			}
-		}
+		Statement writeStatement = writer.createStatement();
+		writeStatement.executeQuery("CREATE (:Person)");
+		Statement readStatement = reader.createStatement();
+		ResultSet rs = readStatement.executeQuery("MATCH (n) RETURN n");
+		assertTrue(rs.next());
+		assertNotNull(rs.getObject(1));
+		assertFalse(rs.next());
 
-		con.close();
+		writer.close();
+		reader.close();
+	}
+
+	@Test public void moreStatementsFromOneConnection() throws SQLException {
+		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+		writer.setAutoCommit(false);
+		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+
+		Statement statOne = writer.createStatement();
+		Statement statTwo = writer.createStatement();
+
+		//TODO use executeUpdate
+		statOne.executeQuery("CREATE (:User {name:\"username\"})");
+		statTwo.executeQuery("CREATE (:Company {name:\"companyname\"})");
+
+		Statement statReader = reader.createStatement();
+		ResultSet rs = statReader.executeQuery("MATCH (n) RETURN n.name");
+
+		assertFalse(rs.next());
+
+		writer.commit();
+		rs = statReader.executeQuery("MATCH (n) RETURN n.name");
+
+		assertTrue(rs.next());
+		assertEquals("username", rs.getString(1));
+		assertTrue(rs.next());
+		assertEquals("companyname", rs.getString(1));
+		assertFalse(rs.next());
+
+		writer.close();
+		reader.close();
 	}
 }

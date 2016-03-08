@@ -29,6 +29,8 @@ import org.neo4j.driver.v1.Session;
 import java.sql.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Stefan Armbruster
@@ -61,9 +63,9 @@ public class SampleIT {
 		// Querying
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
-			while (rs.next()) {
-				assertEquals("testUser", rs.getString("n.name"));
-			}
+			assertTrue(rs.next());
+			assertEquals("testUser", rs.getString("n.name"));
+			assertFalse(rs.next());
 		}
 		con.close();
 	}

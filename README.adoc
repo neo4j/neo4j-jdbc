@@ -70,9 +70,9 @@ con.close();
 
 * ResultSet [IN PROGRESS]
 
-* Transactions [TODO]
+* Transactions [IN PROGRESS]
 
-* Metadata [TODO]
+* Metadata [IN PROGRESS]
 
 * Prepared Statements [TODO]
 

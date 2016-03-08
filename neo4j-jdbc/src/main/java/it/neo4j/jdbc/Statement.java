@@ -32,9 +32,7 @@ public abstract class Statement implements java.sql.Statement {
 
 	@Override public abstract ResultSet executeQuery(String sql) throws SQLException;
 
-	@Override public int executeUpdate(String sql) throws SQLException {
-		return 0;
-	}
+	@Override public abstract int executeUpdate(String sql) throws SQLException;
 
 	@Override public void close() throws SQLException {
 

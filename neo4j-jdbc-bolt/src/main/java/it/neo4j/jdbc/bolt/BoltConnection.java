@@ -23,6 +23,7 @@ import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.Statement;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Transaction;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -35,13 +36,19 @@ public class BoltConnection extends Connection {
 
 	private boolean readOnly   = false;
 	private boolean autoCommit = true;
-	private Session session;
-
-	private Statement statement;
-	private BoltTransaction transactionContainer = new BoltTransaction();
+	private Session     session;
+	private Transaction transaction;
 
 	public BoltConnection(Session session) {
 		this.session = session;
+	}
+
+	public Transaction getTransaction() {
+		return this.transaction;
+	}
+
+	public Session getSession() {
+		return this.session;
 	}
 
 	private void checkClosed() throws SQLException {
@@ -87,14 +94,26 @@ public class BoltConnection extends Connection {
 
 	@Override public Statement createStatement() throws SQLException {
 		this.checkClosed();
-		this.statement = new BoltStatement(this, this.session, this.transactionContainer);
-		return this.statement;
+		if (this.transaction == null && !this.autoCommit) {
+			this.transaction = this.session.beginTransaction();
+		}
+		return new BoltStatement(this);
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
-		this.autoCommit = autoCommit;
-		if (this.transactionContainer.getTransaction() != null) {
-			this.transactionContainer.getTransaction().success();
+		if(this.autoCommit != autoCommit) {
+			if(this.transaction != null && !this.autoCommit){
+				this.commit();
+			}
+
+			if(this.autoCommit) {
+				//Simply restart the transaction
+				this.transaction = this.session.beginTransaction();
+			} else {
+				this.transaction.close();
+			}
+
+			this.autoCommit = autoCommit;
 		}
 	}
 
@@ -106,19 +125,21 @@ public class BoltConnection extends Connection {
 	@Override public void commit() throws SQLException {
 		this.checkClosed();
 		this.checkAutoCommit();
-		if (this.transactionContainer.getTransaction() == null) {
+		if (this.transaction == null) {
 			throw new SQLException("The transaction is null");
 		}
-		this.transactionContainer.getTransaction().success();
+		this.transaction.success();
+		this.transaction.close();
+		this.transaction = this.session.beginTransaction();
 	}
 
 	@Override public void rollback() throws SQLException {
 		this.checkClosed();
 		this.checkAutoCommit();
-		if (this.transactionContainer.getTransaction() == null) {
+		if (this.transaction == null) {
 			throw new SQLException("The transaction is null");
 		}
-		this.transactionContainer.getTransaction().failure();
+		this.transaction.failure();
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
@@ -136,7 +157,7 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return new BoltStatement(this, this.session, this.transactionContainer);
+		return new BoltStatement(this);
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -159,6 +180,6 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return new BoltStatement(this, this.session, this.transactionContainer);
+		return new BoltStatement(this);
 	}
 }

@@ -34,22 +34,26 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isCaseSensitive(int column) throws SQLException {
+		//TODO check if is String
 		return false;
 	}
 
 	@Override public boolean isSearchable(int column) throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean isCurrency(int column) throws SQLException {
+		//TODO check if all fields have two decimal digits
 		return false;
 	}
 
 	@Override public int isNullable(int column) throws SQLException {
+		//TODO false
 		return 0;
 	}
 
 	@Override public boolean isSigned(int column) throws SQLException {
+		//TODO true if int/short/long
 		return false;
 	}
 

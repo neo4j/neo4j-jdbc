@@ -27,6 +27,7 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Transaction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -47,6 +48,8 @@ public class BoltConnectionTest {
 	private Session mockSessionOpen() {
 		Session session = mock(Session.class);
 		when(session.isOpen()).thenReturn(true);
+		Transaction transaction = mock(Transaction.class);
+		when(session.beginTransaction()).thenReturn(transaction);
 		return session;
 	}
 
@@ -211,7 +214,7 @@ public class BoltConnectionTest {
 				connection.createStatement(concurrencies[0], type);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
-
+				//Expected Exception
 			} catch (Exception e) {
 				fail();
 			}
@@ -222,7 +225,7 @@ public class BoltConnectionTest {
 				connection.createStatement(concurrency, types[0]);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
-
+				//Expected Exception
 			} catch (Exception e) {
 				fail();
 			}
@@ -273,7 +276,7 @@ public class BoltConnectionTest {
 				connection.createStatement(concurrencies[0], holdabilities[0], type);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
-
+				//Expected Exception
 			} catch (Exception e) {
 				fail();
 			}
@@ -284,7 +287,7 @@ public class BoltConnectionTest {
 				connection.createStatement(concurrency, holdabilities[0], types[0]);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
-
+				//Expected Exception
 			} catch (Exception e) {
 				fail();
 			}
@@ -294,7 +297,7 @@ public class BoltConnectionTest {
 			try {
 				connection.createStatement(concurrencies[0], holdability, types[0]);
 			} catch (SQLFeatureNotSupportedException e) {
-
+				//Expected Exception
 			} catch (Exception e) {
 				fail();
 			}
@@ -323,6 +326,28 @@ public class BoltConnectionTest {
 		assertFalse(connection.getAutoCommit());
 		connection.setAutoCommit(true);
 		assertTrue(connection.getAutoCommit());
+	}
+
+	@Test public void setAutoCommitShouldCommit() throws SQLException {
+		BoltConnection connection = new BoltConnection(mockSessionOpen());
+
+		connection.setAutoCommit(true);
+		verify(connection.getSession(), times(0)).beginTransaction();
+
+		connection.setAutoCommit(false);
+		verify(connection.getSession(), times(1)).beginTransaction();
+
+		connection.setAutoCommit(false);
+		verify(connection.getSession(), times(1)).beginTransaction();
+
+		connection.setAutoCommit(true);
+		verify(connection.getSession(), times(2)).beginTransaction();
+
+		connection.setAutoCommit(true);
+		verify(connection.getSession(), times(2)).beginTransaction();
+
+		connection.setAutoCommit(false);
+		verify(connection.getSession(), times(3)).beginTransaction();
 	}
 
 	/*------------------------------*/

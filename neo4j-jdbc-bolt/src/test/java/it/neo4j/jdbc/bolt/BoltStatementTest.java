@@ -26,12 +26,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.Transaction;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.Assert.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -42,7 +45,7 @@ public class BoltStatementTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	private Session mockSession(){
+	private Session mockSession() {
 		return mock(Session.class);
 	}
 
@@ -73,27 +76,95 @@ public class BoltStatementTest {
 		expectedEx.expect(SQLException.class);
 
 		Connection connection = new BoltConnection(mockSession());
-		connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL);
+		Statement statement = connection.prepareStatement(null);
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		Connection connection = new BoltConnection(mockSession());
-		connection.prepareCall(StatementData.STATEMENT_MATCH_ALL);
+		Statement statement = connection.prepareCall(null);
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltStatement(new Object() {
-			//TODO change with apropriate class and method
-			void executeQuery() throws InterruptedException {
-				Thread.sleep(1500);
-			}
+		Transaction transaction = mock(Transaction.class);
+
+		given(transaction.run(anyString())).willAnswer(invocation -> {
+			Thread.sleep(1500);
+			return null;
 		});
+
+		Session session = mock(Session.class);
+		given(session.beginTransaction()).willReturn(transaction);
+		given(session.isOpen()).willReturn(true);
+
+		Statement statement = new BoltStatement(new BoltConnection(session));
+
 		statement.setQueryTimeout(1);
-		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
+		statement.executeQuery(StatementData.STATEMENT_CREATE);
+
+		fail();
+	}
+
+
+	/*------------------------------*/
+	/*         executeUpdate        */
+	/*------------------------------*/
+
+	@Ignore @Test public void executeUpdateShouldRun() throws SQLException {
+		Connection connection = new BoltConnection(mockSession());
+
+		Statement statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.executeUpdate(StatementData.STATEMENT_CREATE);
+	}
+
+	@Ignore @Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = new BoltConnection(mockSession());
+		Statement statement = connection.createStatement();
+		statement.close();
+		statement.executeUpdate(StatementData.STATEMENT_CREATE);
+	}
+
+	@Ignore @Test public void executeUpdateShouldThrowExceptionOnPreparedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = new BoltConnection(mockSession());
+		Statement statement = connection.prepareStatement(null);
+		statement.executeUpdate(StatementData.STATEMENT_CREATE);
+	}
+
+	@Ignore @Test public void executeUpdateShouldThrowExceptionOnCallableStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = new BoltConnection(mockSession());
+		Statement statement = connection.prepareCall(null);
+		statement.executeUpdate(StatementData.STATEMENT_CREATE);
+	}
+
+	@Ignore @Test public void executeUpdateShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Transaction transaction = mock(Transaction.class);
+
+		given(transaction.run(anyString())).willAnswer(invocation -> {
+			Thread.sleep(1500);
+			return null;
+		});
+
+		Session session = mock(Session.class);
+		given(session.beginTransaction()).willReturn(transaction);
+		given(session.isOpen()).willReturn(true);
+
+		Statement statement = new BoltStatement(new BoltConnection(session));
+
+		statement.setQueryTimeout(1);
+		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 
 		fail();
 	}
