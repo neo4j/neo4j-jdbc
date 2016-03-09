@@ -39,7 +39,10 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isSearchable(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		if(column <= 0 || column > this.getColumnCount()){
+			return false;
+		}
+		return true;
 	}
 
 	@Override public boolean isCurrency(int column) throws SQLException {
