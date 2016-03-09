@@ -19,7 +19,6 @@
  */
 package it.neo4j.jdbc.bolt;
 
-import it.neo4j.jdbc.ResultSet;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,10 +28,7 @@ import org.neo4j.driver.internal.logging.DevNullLogger;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
+import java.sql.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;

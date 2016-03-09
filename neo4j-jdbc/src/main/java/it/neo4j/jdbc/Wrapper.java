@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 03/02/16
+ * Created on 09/03/16
  */
 package it.neo4j.jdbc;
 
@@ -25,13 +25,40 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Wrapper implements java.sql.Wrapper {
+public class Wrapper {
 
-	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+	@SuppressWarnings("unchecked") public static <T> T unwrap(Class<T> iface, Object obj) throws SQLException {
+		if (!isWrapperFor(iface, obj.getClass())) {
+			//Current class is not implementing the requested class
+			throw new SQLException();
+		}
+
+		return (T) obj;
 	}
 
-	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+	public static boolean isWrapperFor(Class<?> iface, Class cls) throws SQLException {
+		if (cls.getName().equals(iface.getName())) {
+			//iface is the cls class
+			return true;
+		}
+
+		for (Class c : cls.getInterfaces()) {
+			//Looking inside current class implementations
+			if (c.getName().equals(iface.getName())) {
+				//The cls class implements iface
+				return true;
+			} else if (isWrapperFor(iface, c)) {
+				//Recursively search inside cls' interface
+				return true;
+			}
+		}
+
+		if (cls.getSuperclass() != null) {
+			//Recursively search inside the cls' superclass
+			return isWrapperFor(iface, cls.getSuperclass());
+		} else {
+			//iface is not directly or indirectly implemented in cls
+			return false;
+		}
 	}
 }

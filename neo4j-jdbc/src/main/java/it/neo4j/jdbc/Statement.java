@@ -194,10 +194,10 @@ public abstract class Statement implements java.sql.Statement {
 	}
 
 	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return Wrapper.unwrap(iface, this);
 	}
 
 	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return Wrapper.isWrapperFor(iface, this.getClass());
 	}
 }

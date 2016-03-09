@@ -22,12 +22,9 @@ package it.neo4j.jdbc.bolt;
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;

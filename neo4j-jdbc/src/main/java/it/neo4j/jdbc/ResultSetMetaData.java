@@ -39,7 +39,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isSearchable(int column) throws SQLException {
-		if(column <= 0 || column > this.getColumnCount()){
+		if (column <= 0 || column > this.getColumnCount()) {
 			return false;
 		}
 		return true;
@@ -112,10 +112,10 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return Wrapper.unwrap(iface, this);
 	}
 
 	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return Wrapper.isWrapperFor(iface, this.getClass());
 	}
 }

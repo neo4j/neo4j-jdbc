@@ -19,10 +19,8 @@
  */
 package it.neo4j.jdbc.bolt;
 
-import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.Statement;
 import org.neo4j.driver.v1.ResultCursor;
-import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
 import java.sql.ResultSet;
@@ -34,8 +32,8 @@ import java.sql.SQLException;
  */
 public class BoltStatement extends Statement {
 
-	private BoltConnection  connection;
-	private Transaction transaction;
+	private BoltConnection connection;
+	private Transaction    transaction;
 
 	/**
 	 * @param connection
@@ -47,11 +45,11 @@ public class BoltStatement extends Statement {
 
 	//Mustn't return null
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		if(connection.isClosed()){
+		if (connection.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}
 		ResultCursor cur;
-		if(connection.getAutoCommit()){
+		if (connection.getAutoCommit()) {
 			Transaction t = this.connection.getSession().beginTransaction();
 			cur = t.run(sql);
 			t.success();

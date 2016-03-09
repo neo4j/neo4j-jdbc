@@ -101,12 +101,12 @@ public class BoltConnection extends Connection {
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
-		if(this.autoCommit != autoCommit) {
-			if(this.transaction != null && !this.autoCommit){
+		if (this.autoCommit != autoCommit) {
+			if (this.transaction != null && !this.autoCommit) {
 				this.commit();
 			}
 
-			if(this.autoCommit) {
+			if (this.autoCommit) {
 				//Simply restart the transaction
 				this.transaction = this.session.beginTransaction();
 			} else {

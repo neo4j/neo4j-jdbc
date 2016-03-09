@@ -19,16 +19,13 @@
  */
 package it.neo4j.jdbc.bolt;
 
-import it.neo4j.jdbc.*;
 import it.neo4j.jdbc.bolt.data.StatementData;
-import org.junit.*;
-import org.neo4j.driver.v1.ResultCursor;
-import org.neo4j.graphdb.Result;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
 import static org.junit.Assert.*;
 
@@ -101,7 +98,6 @@ public class BoltConnectionIT {
 		reader.close();
 	}
 
-	//FIXME red test
 	@Test public void setAutoCommitShouldWorkAfterMultipleChanges() throws SQLException {
 		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
@@ -134,6 +130,9 @@ public class BoltConnectionIT {
 		//Expect to find 3 nodes
 		assertTrue(rs.next());
 		assertEquals(3, rs.getInt(1));
+
+		writer.close();
+		reader.close();
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}

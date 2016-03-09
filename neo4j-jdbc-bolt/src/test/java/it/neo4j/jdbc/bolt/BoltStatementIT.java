@@ -20,13 +20,14 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.bolt.data.StatementData;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.sql.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS

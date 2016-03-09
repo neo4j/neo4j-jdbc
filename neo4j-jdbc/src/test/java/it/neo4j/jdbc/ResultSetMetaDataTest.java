@@ -20,18 +20,14 @@
 package it.neo4j.jdbc;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import java.sql.SQLException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +39,8 @@ public class ResultSetMetaDataTest {
 
 	private ResultSetMetaData rsmd;
 
+	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
 	@Before public void tearUp() throws SQLException {
 		this.rsmd = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
 	}
@@ -50,7 +48,7 @@ public class ResultSetMetaDataTest {
 	/*------------------------------*/
 	/*       isAutoIncrement        */
 	/*------------------------------*/
-	@Test public void isAutoIncrementShouldAlwaysReturnFalse() throws SQLException{
+	@Test public void isAutoIncrementShouldAlwaysReturnFalse() throws SQLException {
 		assertFalse(this.rsmd.isAutoIncrement(-1));
 		assertFalse(this.rsmd.isAutoIncrement(0));
 		assertFalse(this.rsmd.isAutoIncrement(1));
@@ -82,5 +80,46 @@ public class ResultSetMetaDataTest {
 		assertEquals(this.rsmd.isNullable(0), ResultSetMetaData.columnNoNulls);
 		assertEquals(this.rsmd.isNullable(-1), ResultSetMetaData.columnNoNulls);
 		assertEquals(this.rsmd.isNullable(1), ResultSetMetaData.columnNoNulls);
+	}
+
+	/*------------------------------*/
+	/*         isWrapperFor         */
+	/*------------------------------*/
+
+	@Test public void isWrapperForShouldReturnTrue() throws SQLException {
+		ResultSetMetaData resultSetMetaData = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
+
+		assertTrue(resultSetMetaData.isWrapperFor(it.neo4j.jdbc.ResultSetMetaData.class));
+		assertTrue(resultSetMetaData.isWrapperFor(java.sql.ResultSetMetaData.class));
+		assertTrue(resultSetMetaData.isWrapperFor(java.sql.Wrapper.class));
+	}
+
+	@Test public void isWrapperForShouldReturnFalse() throws SQLException {
+		ResultSetMetaData resultSetMetaData = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
+
+		assertFalse(resultSetMetaData.isWrapperFor(it.neo4j.jdbc.Statement.class));
+		assertFalse(resultSetMetaData.isWrapperFor(java.sql.Driver.class));
+		assertFalse(resultSetMetaData.isWrapperFor(it.neo4j.jdbc.ResultSet.class));
+		assertFalse(resultSetMetaData.isWrapperFor(java.sql.ResultSet.class));
+	}
+
+	/*------------------------------*/
+	/*            unwrap            */
+	/*------------------------------*/
+
+	@Test public void unwrapShouldReturnCorrectClass() throws SQLException {
+		ResultSetMetaData resultSetMetaData = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
+
+		assertNotNull(resultSetMetaData.unwrap(it.neo4j.jdbc.ResultSetMetaData.class));
+		assertNotNull(resultSetMetaData.unwrap(java.sql.ResultSetMetaData.class));
+		assertNotNull(resultSetMetaData.unwrap(java.sql.Wrapper.class));
+	}
+
+	@Test public void unwrapShouldThrowException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		ResultSetMetaData resultSetMetaData = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
+
+		resultSetMetaData.unwrap(Statement.class);
 	}
 }

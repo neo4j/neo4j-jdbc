@@ -218,10 +218,10 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return Wrapper.unwrap(iface, this);
 	}
 
 	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return Wrapper.isWrapperFor(iface, this.getClass());
 	}
 }

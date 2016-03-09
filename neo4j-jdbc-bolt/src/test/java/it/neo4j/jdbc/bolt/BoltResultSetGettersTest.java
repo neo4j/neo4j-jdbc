@@ -21,19 +21,19 @@ package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.cypher.internal.frontend.v2_3.ast.functions.Str;
 import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 /**
@@ -536,7 +536,7 @@ public class BoltResultSetGettersTest {
 		Assert.assertEquals(new HashMap<String, Object>() {
 			{
 				this.put("_id", 1L);
-				this.put("_labels", Arrays.asList("label1","label2"));
+				this.put("_labels", Arrays.asList("label1", "label2"));
 				this.put("property1", "value1");
 				this.put("property2", 1L);
 			}
@@ -572,7 +572,7 @@ public class BoltResultSetGettersTest {
 			{
 				this.put("_id", 2L);
 				this.put("_type", "type2");
-				this.put("property",(double) 2.6F);
+				this.put("property", (double) 2.6F);
 			}
 		}, resultSet.getObject(1));
 	}
