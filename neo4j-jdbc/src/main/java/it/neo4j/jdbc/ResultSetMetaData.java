@@ -30,7 +30,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	@Override public abstract int getColumnCount() throws SQLException;
 
 	@Override public boolean isAutoIncrement(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean isCaseSensitive(int column) throws SQLException {
@@ -51,8 +51,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public int isNullable(int column) throws SQLException {
-		//TODO false
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return columnNoNulls;
 	}
 
 	@Override public boolean isSigned(int column) throws SQLException {
@@ -64,9 +63,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getColumnLabel(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract String getColumnLabel(int column) throws SQLException;
 
 	@Override public abstract String getColumnName(int column) throws SQLException;
 

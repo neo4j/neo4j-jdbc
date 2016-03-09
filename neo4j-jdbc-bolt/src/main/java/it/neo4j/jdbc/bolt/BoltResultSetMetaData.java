@@ -43,6 +43,10 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 		return this.cursor.size();
 	}
 
+	@Override public String getColumnLabel(int column) throws SQLException {
+		return this.getColumnName(column);
+	}
+
 	@Override public String getColumnName(int column) throws SQLException {
 		if (this.cursor == null) {
 			throw new SQLException("The ResultCursor is null");

@@ -107,10 +107,47 @@ public class BoltResultSetMetaDataTest {
 	}
 
 	/*------------------------------*/
+	/*         getColumnLabel        */
+	/*------------------------------*/
+
+	@Test public void getColumnLabelShouldReturnCorrectColumnName() throws SQLException {
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
+
+		assertEquals("columnA", resultSet.getColumnLabel(1));
+	}
+
+	@Test public void getColumnLabelShouldThrowExceptionWhenEmptyCursor() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
+
+		resultSet.getColumnLabel(1);
+	}
+
+	@Test public void getColumnLabelShouldThrowExceptionWhenColumnOutOfRange() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
+
+		resultSet.getColumnLabel(99);
+	}
+
+	@Test public void getColumnLabelShouldThrowExceptionIfCursorNull() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(null);
+
+		resultSet.getColumnLabel(1);
+	}
+
+	/*------------------------------*/
 	/*         getSchemaName        */
 	/*------------------------------*/
 
-	@Test public void getSchemanNameShouldThrowUnsupportedException() throws SQLException {
+	@Test public void getSchemaNameShouldThrowUnsupportedException() throws SQLException {
 		expectedEx.expect(UnsupportedOperationException.class);
 
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(null);

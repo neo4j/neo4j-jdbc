@@ -19,13 +19,19 @@
  */
 package it.neo4j.jdbc;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.sql.SQLException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,25 +41,46 @@ import static org.mockito.Mockito.when;
  */
 public class ResultSetMetaDataTest {
 
+	private ResultSetMetaData rsmd;
+
+	@Before public void tearUp() throws SQLException {
+		this.rsmd = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
+	}
+
+	/*------------------------------*/
+	/*       isAutoIncrement        */
+	/*------------------------------*/
+	@Test public void isAutoIncrementShouldAlwaysReturnFalse() throws SQLException{
+		assertFalse(this.rsmd.isAutoIncrement(-1));
+		assertFalse(this.rsmd.isAutoIncrement(0));
+		assertFalse(this.rsmd.isAutoIncrement(1));
+	}
+
 	/*------------------------------*/
 	/*         isSearchable         */
 	/*------------------------------*/
 	@Test public void isSearchableShouldReturnTrueIfExistingColumnIndex() throws SQLException {
-		ResultSetMetaData rsmd = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
-		when(rsmd.getColumnCount()).thenReturn(2);
-		assertTrue(rsmd.isSearchable(1));
-		assertTrue(rsmd.isSearchable(2));
+		when(this.rsmd.getColumnCount()).thenReturn(2);
+		assertTrue(this.rsmd.isSearchable(1));
+		assertTrue(this.rsmd.isSearchable(2));
 	}
 
 	@Test public void isSearchableShouldAlwaysReturnFalseIfIndexLessThanZero() throws SQLException {
-		ResultSetMetaData rsmd = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
-		when(rsmd.getColumnCount()).thenReturn(2);
-		assertFalse(rsmd.isSearchable(-1));
+		when(this.rsmd.getColumnCount()).thenReturn(2);
+		assertFalse(this.rsmd.isSearchable(-1));
 	}
 
 	@Test public void isSearchableShouldAlwaysReturnFalseIfIndexOutOfRange() throws SQLException {
-		ResultSetMetaData rsmd = mock(ResultSetMetaData.class, Mockito.CALLS_REAL_METHODS);
-		when(rsmd.getColumnCount()).thenReturn(2);
-		assertFalse(rsmd.isSearchable(3));
+		when(this.rsmd.getColumnCount()).thenReturn(2);
+		assertFalse(this.rsmd.isSearchable(3));
+	}
+
+	/*------------------------------*/
+	/*          isNullable          */
+	/*------------------------------*/
+	@Test public void isNullableShouldReturnAlwaysNotNull() throws SQLException {
+		assertEquals(this.rsmd.isNullable(0), ResultSetMetaData.columnNoNulls);
+		assertEquals(this.rsmd.isNullable(-1), ResultSetMetaData.columnNoNulls);
+		assertEquals(this.rsmd.isNullable(1), ResultSetMetaData.columnNoNulls);
 	}
 }
