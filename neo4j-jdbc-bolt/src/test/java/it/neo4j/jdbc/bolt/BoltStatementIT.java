@@ -22,7 +22,6 @@ package it.neo4j.jdbc.bolt;
 import it.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.*;
@@ -62,7 +61,7 @@ public class BoltStatementIT {
 	/*         executeUpdate        */
 	/*------------------------------*/
 
-	@Ignore @Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
+	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
 		Statement statement = connection.createStatement();
 		int lines = statement.executeUpdate(StatementData.STATEMENT_CREATE);

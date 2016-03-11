@@ -27,9 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.neo4j.driver.v1.ResultCursor;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.*;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -38,6 +36,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
@@ -58,8 +57,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 	private BoltResultSet mockedRS;
 
-	private Session mockSession() {
-		return mock(Session.class);
+	private Session mockSessionOpen() {
+		Session session = mock(Session.class);
+		when(session.isOpen()).thenReturn(true);
+		return session;
 	}
 
 	private BoltConnection mockConnectionOpen() throws SQLException {
@@ -86,8 +87,8 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Before public void mockStatics() {
 		mockStatic(BoltResultSet.class);
 		this.mockedRS = mock(BoltResultSet.class);
-		PowerMockito.when(BoltResultSet.istantiate(anyObject(), anyBoolean())).thenReturn(mockedRS);
-		PowerMockito.when(BoltResultSet.istantiate(anyObject(), anyBoolean(), any(int[].class))).thenReturn(mockedRS);
+		PowerMockito.when(BoltResultSet.instantiate(anyObject(), anyBoolean())).thenReturn(mockedRS);
+		PowerMockito.when(BoltResultSet.instantiate(anyObject(), anyBoolean(), any(int[].class))).thenReturn(mockedRS);
 	}
 
 	/*------------------------------*/
@@ -99,19 +100,16 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
 
-
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
 		verifyStatic(times(1));
-		BoltResultSet.istantiate(null, false);
+		BoltResultSet.instantiate(null, false);
 
 		verify(mockedRS, times(1)).close();
 	}
 
 	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
-
-		//BoltResultSet mockResultSet = this.interceptBoltResultSetConstructor();
 
 		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
 
@@ -121,8 +119,6 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	}
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
-
-		//BoltResultSet mockResultSet = this.interceptBoltResultSetConstructor();
 
 		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
@@ -149,6 +145,15 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	}
 
 	/*------------------------------*/
+	/*           isClosed           */
+	/*------------------------------*/
+	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
+		Statement statement = new BoltStatement(mockConnectionOpen());
+
+		assertFalse(statement.isClosed());
+	}
+
+	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
 	@Test public void executeQueryShouldThrowExceptionWhenClosedConnection() throws SQLException {
@@ -161,15 +166,14 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Test public void executeQueryShouldReturnCorrectResultSetStructureConnectionNotAutocommit() throws Exception {
 		BoltConnection mockConnection = mockConnectionOpenWithTransactionThatReturns(null);
 
-
 		Statement statement = new BoltStatement(mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 
 		verifyStatic(times(1));
-		BoltResultSet.istantiate(null, false, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		BoltResultSet.instantiate(null, false, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
-	@Ignore @Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
+	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		BoltStatement statement = mock(BoltStatement.class);
@@ -182,7 +186,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSession());
+		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.prepareStatement(null);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -190,7 +194,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSession());
+		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.prepareCall(null);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -222,17 +226,25 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	/*         executeUpdate        */
 	/*------------------------------*/
 
-	@Ignore @Test public void executeUpdateShouldRun() throws SQLException {
-		Connection connection = new BoltConnection(mockSession());
+	@Test public void executeUpdateShouldRun() throws SQLException {
+		ResultCursor mockCursor = mock(ResultCursor.class);
+		ResultSummary mockSummary = mock(ResultSummary.class);
+		UpdateStatistics mockStats = mock(UpdateStatistics.class);
+		when(mockCursor.summarize()).thenReturn(mockSummary);
+		when(mockSummary.updateStatistics()).thenReturn(mockStats);
+		when(mockStats.nodesCreated()).thenReturn(1);
+		when(mockStats.nodesDeleted()).thenReturn(0);
 
-		Statement statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(mockCursor), ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
 
-	@Ignore @Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
+	@Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSession());
+		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.createStatement();
 		statement.close();
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
@@ -241,7 +253,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Ignore @Test public void executeUpdateShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSession());
+		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.prepareStatement(null);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
@@ -249,7 +261,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Ignore @Test public void executeUpdateShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSession());
+		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.prepareCall(null);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}

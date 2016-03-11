@@ -172,9 +172,7 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean isClosed() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean isClosed() throws SQLException;
 
 	@Override public void setPoolable(boolean poolable) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

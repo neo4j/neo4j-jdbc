@@ -36,7 +36,7 @@ public class BoltDatabaseMetaData extends DatabaseMetaData {
 	private BoltConnection connection;
 	private boolean debug = false;
 
-	public static BoltDatabaseMetaData istantiate(BoltConnection connection, boolean debug) {
+	public static BoltDatabaseMetaData instantiate(BoltConnection connection, boolean debug) {
 		BoltDatabaseMetaData boltDatabaseMetaData = null;
 
 		if (debug) {

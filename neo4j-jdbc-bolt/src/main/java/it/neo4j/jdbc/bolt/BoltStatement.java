@@ -23,6 +23,7 @@ import it.neo4j.jdbc.Statement;
 import org.mockito.Mockito;
 import org.neo4j.driver.v1.ResultCursor;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.UpdateStatistics;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,17 +36,19 @@ public class BoltStatement extends Statement {
 
 	private BoltConnection connection;
 	private Transaction    transaction;
-	private int[] rsParams;
-	private ResultSet currentResultSet;
-	private boolean closed;
+	private int[]          rsParams;
+	private ResultSet      currentResultSet;
+	private boolean        closed;
 
 	private boolean debug = false;
+
 	public static BoltStatement instantiate(BoltConnection connection, boolean debug, int... rsParams) {
 		BoltStatement boltStatement = null;
 
 		if (debug) {
 			boltStatement = Mockito.mock(BoltStatement.class,
-					Mockito.withSettings().useConstructor().outerInstance(connection).outerInstance(rsParams).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+					Mockito.withSettings().useConstructor().outerInstance(connection).outerInstance(rsParams).verboseLogging()
+							.defaultAnswer(Mockito.CALLS_REAL_METHODS));
 			boltStatement.debug = debug;
 		} else {
 			boltStatement = new BoltStatement(connection, rsParams);
@@ -56,18 +59,23 @@ public class BoltStatement extends Statement {
 
 	/**
 	 * Default Constructor
+	 *
 	 * @param connection
-	 * @param rsParams The params (type, concurrency and holdability) used to create a new ResultSet
+	 * @param rsParams   The params (type, concurrency and holdability) used to create a new ResultSet
 	 */
 	public BoltStatement(BoltConnection connection, int... rsParams) {
 		this.connection = connection;
 		this.transaction = connection.getTransaction();
 		this.rsParams = rsParams;
 		this.currentResultSet = null;
+		this.closed = false;
 	}
 
 	//Mustn't return null
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("Statement already closed");
+		}
 		if (connection.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}
@@ -80,25 +88,46 @@ public class BoltStatement extends Statement {
 		} else {
 			cur = this.connection.getTransaction().run(sql);
 		}
-		this.currentResultSet = BoltResultSet.istantiate(cur, this.debug, this.rsParams);
+		this.currentResultSet = BoltResultSet.instantiate(cur, this.debug, this.rsParams);
 		return currentResultSet;
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.isClosed()) {
+			throw new SQLException("Statement already closed");
+		}
+		if (connection.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
+		ResultCursor cur;
+		if (connection.getAutoCommit()) {
+			Transaction t = this.connection.getSession().beginTransaction();
+			cur = t.run(sql);
+			t.success();
+			t.close();
+		} else {
+			cur = this.connection.getTransaction().run(sql);
+		}
+
+		UpdateStatistics stats = cur.summarize().updateStatistics();
+		return stats.nodesCreated() + stats.nodesDeleted();
 	}
 
 	@Override public void close() throws SQLException {
-		if(this.closed){
+		if (this.closed) {
 			return;
 		}
-		if(this.currentResultSet != null){
+		if (this.currentResultSet != null) {
 			this.currentResultSet.close();
 		}
-		if(this.transaction != null){
+		if (this.transaction != null) {
 			this.transaction.failure();
 			this.transaction.close();
 		}
 		this.closed = true;
+	}
+
+	@Override public boolean isClosed() throws SQLException {
+		return closed;
 	}
 }

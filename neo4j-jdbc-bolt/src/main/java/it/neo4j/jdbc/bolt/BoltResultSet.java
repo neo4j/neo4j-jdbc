@@ -40,13 +40,14 @@ public class BoltResultSet extends ResultSet {
 	private int concurrency;
 	private int holdability;
 
-	private boolean debug  = false;
+	private boolean debug = false;
 
-	public static BoltResultSet istantiate(ResultCursor cursor, boolean debug, int... params) {
+	public static BoltResultSet instantiate(ResultCursor cursor, boolean debug, int... params) {
 		BoltResultSet boltResultSet = null;
 		if (debug) {
 			boltResultSet = Mockito.mock(BoltResultSet.class,
-					Mockito.withSettings().useConstructor().outerInstance(cursor).outerInstance(params).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+					Mockito.withSettings().useConstructor().outerInstance(cursor).outerInstance(params).verboseLogging()
+							.defaultAnswer(Mockito.CALLS_REAL_METHODS));
 			boltResultSet.debug = debug;
 		} else {
 			boltResultSet = new BoltResultSet(cursor, params);

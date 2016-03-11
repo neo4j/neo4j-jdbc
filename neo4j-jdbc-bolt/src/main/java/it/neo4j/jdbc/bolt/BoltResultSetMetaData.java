@@ -34,7 +34,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 	ResultCursor cursor = null;
 	boolean      debug  = false;
 
-	public static BoltResultSetMetaData istantiate(ResultCursor cursor, boolean debug) {
+	public static BoltResultSetMetaData instantiate(ResultCursor cursor, boolean debug) {
 		BoltResultSetMetaData boltResultSetMetaData = null;
 
 		if (debug) {

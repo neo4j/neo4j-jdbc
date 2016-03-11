@@ -23,7 +23,6 @@ import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.Statement;
 import org.mockito.Mockito;
-import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
@@ -44,7 +43,7 @@ public class BoltConnection extends Connection {
 	private Properties  properties;
 	private boolean debug = false;
 
-	public static BoltConnection istantiate(Session session, Properties properties) {
+	public static BoltConnection instantiate(Session session, Properties properties) {
 		BoltConnection boltConnection = null;
 		if (BoltConnection.hasDebug(properties)) {
 			boltConnection = Mockito.mock(BoltConnection.class,
