@@ -21,55 +21,161 @@ package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.bolt.data.StatementData;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.neo4j.driver.v1.ResultCursor;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltStatementTest {
+@RunWith(PowerMockRunner.class) @PrepareForTest({ BoltStatement.class, BoltResultSet.class }) public class BoltStatementTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
+	private BoltResultSet mockedRS;
 
 	private Session mockSession() {
 		return mock(Session.class);
 	}
 
+	private BoltConnection mockConnectionOpen() throws SQLException {
+		BoltConnection mockConnection = mock(BoltConnection.class);
+		when(mockConnection.isClosed()).thenReturn(false);
+		return mockConnection;
+	}
+
+	private BoltConnection mockConnectionClosed() throws SQLException {
+		BoltConnection mockConnection = mock(BoltConnection.class);
+		when(mockConnection.isClosed()).thenReturn(true);
+		return mockConnection;
+	}
+
+	private BoltConnection mockConnectionOpenWithTransactionThatReturns(ResultCursor cur) throws SQLException {
+		Transaction mockTransaction = mock(Transaction.class);
+		when(mockTransaction.run(anyString())).thenReturn(cur);
+
+		BoltConnection mockConnection = this.mockConnectionOpen();
+		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
+		return mockConnection;
+	}
+
+	@Before public void mockStatics() {
+		mockStatic(BoltResultSet.class);
+		this.mockedRS = mock(BoltResultSet.class);
+		PowerMockito.when(BoltResultSet.istantiate(anyObject(), anyBoolean())).thenReturn(mockedRS);
+		PowerMockito.when(BoltResultSet.istantiate(anyObject(), anyBoolean(), any(int[].class))).thenReturn(mockedRS);
+	}
+
+	/*------------------------------*/
+	/*             close            */
+	/*------------------------------*/
+	@Test public void closeShouldCloseExistingResultSet() throws Exception {
+
+		doNothing().when(mockedRS).close();
+
+		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
+
+
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
+
+		verifyStatic(times(1));
+		BoltResultSet.istantiate(null, false);
+
+		verify(mockedRS, times(1)).close();
+	}
+
+	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
+
+		//BoltResultSet mockResultSet = this.interceptBoltResultSetConstructor();
+
+		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
+
+		statement.close();
+
+		verify(mockedRS, never()).close();
+	}
+
+	@Test public void closeMultipleTimesIsNOOP() throws Exception {
+
+		//BoltResultSet mockResultSet = this.interceptBoltResultSetConstructor();
+
+		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
+		statement.close();
+		statement.close();
+
+		verify(mockedRS, times(1)).close();
+	}
+
+	@Test public void closeShouldCloseTheTransactionNotCommiting() throws Exception {
+
+		Transaction mockTransaction = mock(Transaction.class);
+
+		BoltConnection mockConnection = this.mockConnectionOpen();
+		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
+
+		Statement statement = new BoltStatement(mockConnection);
+
+		statement.close();
+
+		verify(mockTransaction, times(1)).failure();
+		verify(mockTransaction, times(1)).close();
+	}
+
 	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
-	@Ignore @Test public void executeQueryShouldReturnCorrectResultSetStructure() throws SQLException {
-		Connection connection = new BoltConnection(mockSession());
+	@Test public void executeQueryShouldThrowExceptionWhenClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
 
-		Statement statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
-		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
-		assertTrue(rs instanceof BoltResultSet);
-		assertEquals(ResultSet.TYPE_FORWARD_ONLY, rs.getType());
-		assertEquals(ResultSet.CONCUR_READ_ONLY, rs.getConcurrency());
-		assertEquals(ResultSet.HOLD_CURSORS_OVER_COMMIT, rs.getHoldability());
+		Statement statement = new BoltStatement(this.mockConnectionClosed(), 0, 0, 0);
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
+	}
+
+	@Test public void executeQueryShouldReturnCorrectResultSetStructureConnectionNotAutocommit() throws Exception {
+		BoltConnection mockConnection = mockConnectionOpenWithTransactionThatReturns(null);
+
+
+		Statement statement = new BoltStatement(mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
+
+		verifyStatic(times(1));
+		BoltResultSet.istantiate(null, false, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSession());
-		Statement statement = connection.createStatement();
-		statement.close();
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.executeQuery(anyString())).thenCallRealMethod();
+
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
 
@@ -103,7 +209,7 @@ public class BoltStatementTest {
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
 
-		Statement statement = new BoltStatement(new BoltConnection(session));
+		Statement statement = new BoltStatement(new BoltConnection(session), 0, 0, 0);
 
 		statement.setQueryTimeout(1);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
@@ -162,7 +268,7 @@ public class BoltStatementTest {
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
 
-		Statement statement = new BoltStatement(new BoltConnection(session));
+		Statement statement = new BoltStatement(new BoltConnection(session), 0, 0, 0);
 
 		statement.setQueryTimeout(1);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);

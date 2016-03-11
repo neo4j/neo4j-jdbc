@@ -35,28 +35,35 @@ public class BoltStatement extends Statement {
 
 	private BoltConnection connection;
 	private Transaction    transaction;
-	private boolean debug = false;
+	private int[] rsParams;
+	private ResultSet currentResultSet;
+	private boolean closed;
 
-	public static BoltStatement instantiate(BoltConnection connection, boolean debug) {
+	private boolean debug = false;
+	public static BoltStatement instantiate(BoltConnection connection, boolean debug, int... rsParams) {
 		BoltStatement boltStatement = null;
 
 		if (debug) {
 			boltStatement = Mockito.mock(BoltStatement.class,
-					Mockito.withSettings().useConstructor().outerInstance(connection).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+					Mockito.withSettings().useConstructor().outerInstance(connection).outerInstance(rsParams).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 			boltStatement.debug = debug;
 		} else {
-			boltStatement = new BoltStatement(connection);
+			boltStatement = new BoltStatement(connection, rsParams);
 		}
 
 		return boltStatement;
 	}
 
 	/**
+	 * Default Constructor
 	 * @param connection
+	 * @param rsParams The params (type, concurrency and holdability) used to create a new ResultSet
 	 */
-	public BoltStatement(BoltConnection connection) {
+	public BoltStatement(BoltConnection connection, int... rsParams) {
 		this.connection = connection;
 		this.transaction = connection.getTransaction();
+		this.rsParams = rsParams;
+		this.currentResultSet = null;
 	}
 
 	//Mustn't return null
@@ -73,10 +80,25 @@ public class BoltStatement extends Statement {
 		} else {
 			cur = this.connection.getTransaction().run(sql);
 		}
-		return BoltResultSet.istantiate(cur, this.debug);
+		this.currentResultSet = BoltResultSet.istantiate(cur, this.debug, this.rsParams);
+		return currentResultSet;
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override public void close() throws SQLException {
+		if(this.closed){
+			return;
+		}
+		if(this.currentResultSet != null){
+			this.currentResultSet.close();
+		}
+		if(this.transaction != null){
+			this.transaction.failure();
+			this.transaction.close();
+		}
+		this.closed = true;
 	}
 }

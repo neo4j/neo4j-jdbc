@@ -119,7 +119,7 @@ public class BoltConnection extends Connection {
 		if (this.transaction == null && !this.autoCommit) {
 			this.transaction = this.session.beginTransaction();
 		}
-		return BoltStatement.instantiate(this, this.debug);
+		return BoltStatement.instantiate(this, this.debug, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -179,7 +179,7 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return BoltStatement.instantiate(this, this.debug);
+		return BoltStatement.instantiate(this, this.debug, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -202,7 +202,7 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return BoltStatement.instantiate(this, this.debug);
+		return BoltStatement.instantiate(this, this.debug, resultSetType, resultSetConcurrency, resultSetHoldability);
 	}
 
 	public static boolean hasDebug(Properties properties) {

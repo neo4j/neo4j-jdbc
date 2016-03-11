@@ -36,23 +36,52 @@ public class BoltResultSet extends ResultSet {
 
 	private ResultCursor cursor;
 	private boolean closed = false;
+	private int type;
+	private int concurrency;
+	private int holdability;
+
 	private boolean debug  = false;
 
-	public static BoltResultSet istantiate(ResultCursor cursor, boolean debug) {
+	public static BoltResultSet istantiate(ResultCursor cursor, boolean debug, int... params) {
 		BoltResultSet boltResultSet = null;
 		if (debug) {
 			boltResultSet = Mockito.mock(BoltResultSet.class,
-					Mockito.withSettings().useConstructor().outerInstance(cursor).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+					Mockito.withSettings().useConstructor().outerInstance(cursor).outerInstance(params).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 			boltResultSet.debug = debug;
 		} else {
-			boltResultSet = new BoltResultSet(cursor);
+			boltResultSet = new BoltResultSet(cursor, params);
 		}
 
 		return boltResultSet;
 	}
 
-	public BoltResultSet(ResultCursor cursor) {
+	/**
+	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
+	 *
+	 * @param cursor The <code>ResultCursor</code> of this set
+	 * @param params At most three, type, concurrency and holdability.
+	 *               The defaults are <code>TYPE_FORWARD_ONLY</code>,
+	 *               <code>CONCUR_READ_ONLY</code>,
+	 *               <code>CLOSE_CURSORS_AT_COMMIT</code>.
+	 */
+	public BoltResultSet(ResultCursor cursor, int... params) {
 		this.cursor = cursor;
+		int paramsQty = params.length;
+		if (paramsQty > 0) {
+			this.type = params[0];
+		} else {
+			this.type = TYPE_FORWARD_ONLY;
+		}
+		if (paramsQty > 1) {
+			this.concurrency = params[1];
+		} else {
+			this.concurrency = CONCUR_READ_ONLY;
+		}
+		if (paramsQty > 1) {
+			this.holdability = params[1];
+		} else {
+			this.holdability = CLOSE_CURSORS_AT_COMMIT;
+		}
 	}
 
 	@Override public boolean next() throws SQLException {

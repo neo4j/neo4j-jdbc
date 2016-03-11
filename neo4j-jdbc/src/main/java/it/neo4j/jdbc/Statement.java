@@ -34,8 +34,7 @@ public abstract class Statement implements java.sql.Statement {
 
 	@Override public abstract int executeUpdate(String sql) throws SQLException;
 
-	@Override public void close() throws SQLException {
-	}
+	@Override public abstract void close() throws SQLException;
 
 	@Override public int getMaxFieldSize() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
