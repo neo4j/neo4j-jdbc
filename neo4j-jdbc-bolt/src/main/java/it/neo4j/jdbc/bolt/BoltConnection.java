@@ -22,11 +22,14 @@ package it.neo4j.jdbc.bolt;
 import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.Statement;
+import org.mockito.Mockito;
+import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Properties;
 
 /**
  * @author AgileLARUS
@@ -38,9 +41,28 @@ public class BoltConnection extends Connection {
 	private boolean autoCommit = true;
 	private Session     session;
 	private Transaction transaction;
+	private Properties  properties;
+	private boolean debug = false;
+
+	public static BoltConnection istantiate(Session session, Properties properties) {
+		BoltConnection boltConnection = null;
+		if (BoltConnection.hasDebug(properties)) {
+			boltConnection = Mockito.mock(BoltConnection.class,
+					Mockito.withSettings().useConstructor().outerInstance(session).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+			boltConnection.properties = properties;
+			boltConnection.debug = BoltConnection.hasDebug(properties);
+		} else {
+			boltConnection = new BoltConnection(session);
+			boltConnection.properties.putAll(properties);
+			boltConnection.debug = BoltConnection.hasDebug(properties);
+		}
+
+		return boltConnection;
+	}
 
 	public BoltConnection(Session session) {
 		this.session = session;
+		this.properties = new Properties();
 	}
 
 	public Transaction getTransaction() {
@@ -97,7 +119,7 @@ public class BoltConnection extends Connection {
 		if (this.transaction == null && !this.autoCommit) {
 			this.transaction = this.session.beginTransaction();
 		}
-		return new BoltStatement(this);
+		return BoltStatement.instantiate(this, this.debug);
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -157,7 +179,7 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return new BoltStatement(this);
+		return BoltStatement.instantiate(this, this.debug);
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -180,6 +202,10 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return new BoltStatement(this);
+		return BoltStatement.instantiate(this, this.debug);
+	}
+
+	public static boolean hasDebug(Properties properties) {
+		return "true".equalsIgnoreCase(properties.getProperty("debug", "false"));
 	}
 }

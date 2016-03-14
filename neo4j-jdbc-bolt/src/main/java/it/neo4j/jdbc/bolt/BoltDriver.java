@@ -20,7 +20,10 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Driver;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.neo4j.driver.v1.GraphDatabase;
+import org.powermock.api.mockito.PowerMockito;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -55,12 +58,14 @@ public class BoltDriver extends Driver {
 		if (acceptsURL(url)) {
 			url = url.replace("jdbc:", "");
 			try {
-				connection = new BoltConnection(GraphDatabase.driver(url).session());
+				Properties props = new Properties();
+				parseUrlProperties(url, props);
+				connection = BoltConnection.istantiate(GraphDatabase.driver(url).session(), props);
+
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}
-		}
-		return connection;
+		} return connection;
 	}
 
 	@Override public boolean acceptsURL(String url) throws SQLException {
@@ -74,5 +79,22 @@ public class BoltDriver extends Driver {
 			}
 		}
 		return false;
+	}
+
+	void parseUrlProperties(String s, Properties properties) {
+		if (s.contains("?")) {
+			String urlProps = s.substring(s.indexOf('?') + 1);
+			String[] props = urlProps.split(",");
+			for (String prop : props) {
+				int idx = prop.indexOf('=');
+				if (idx != -1) {
+					String key = prop.substring(0, idx);
+					String value = prop.substring(idx + 1);
+					properties.put(key, value);
+				} else {
+					properties.put(prop, "true");
+				}
+			}
+		}
 	}
 }

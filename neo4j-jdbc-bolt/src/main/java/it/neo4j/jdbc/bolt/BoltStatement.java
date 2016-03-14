@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Statement;
+import org.mockito.Mockito;
 import org.neo4j.driver.v1.ResultCursor;
 import org.neo4j.driver.v1.Transaction;
 
@@ -34,6 +35,21 @@ public class BoltStatement extends Statement {
 
 	private BoltConnection connection;
 	private Transaction    transaction;
+	private boolean debug = false;
+
+	public static BoltStatement instantiate(BoltConnection connection, boolean debug) {
+		BoltStatement boltStatement = null;
+
+		if (debug) {
+			boltStatement = Mockito.mock(BoltStatement.class,
+					Mockito.withSettings().useConstructor().outerInstance(connection).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+			boltStatement.debug = debug;
+		} else {
+			boltStatement = new BoltStatement(connection);
+		}
+
+		return boltStatement;
+	}
 
 	/**
 	 * @param connection
@@ -57,7 +73,7 @@ public class BoltStatement extends Statement {
 		} else {
 			cur = this.connection.getTransaction().run(sql);
 		}
-		return new BoltResultSet(cur);
+		return BoltResultSet.istantiate(cur, this.debug);
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {

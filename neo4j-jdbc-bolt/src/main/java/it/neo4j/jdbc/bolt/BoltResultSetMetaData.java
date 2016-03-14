@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSetMetaData;
+import org.mockito.Mockito;
 import org.neo4j.driver.v1.ResultCursor;
 
 import java.sql.SQLException;
@@ -31,6 +32,21 @@ import java.sql.SQLException;
 public class BoltResultSetMetaData extends ResultSetMetaData {
 
 	ResultCursor cursor = null;
+	boolean      debug  = false;
+
+	public static BoltResultSetMetaData istantiate(ResultCursor cursor, boolean debug) {
+		BoltResultSetMetaData boltResultSetMetaData = null;
+
+		if (debug) {
+			boltResultSetMetaData = Mockito.mock(BoltResultSetMetaData.class,
+					Mockito.withSettings().useConstructor().outerInstance(cursor).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+			boltResultSetMetaData.debug = debug;
+		} else {
+			boltResultSetMetaData = new BoltResultSetMetaData(cursor);
+		}
+
+		return boltResultSetMetaData;
+	}
 
 	BoltResultSetMetaData(ResultCursor cursor) {
 		this.cursor = cursor;

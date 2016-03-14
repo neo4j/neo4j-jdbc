@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSet;
+import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
 import org.neo4j.driver.v1.ResultCursor;
@@ -35,6 +36,20 @@ public class BoltResultSet extends ResultSet {
 
 	private ResultCursor cursor;
 	private boolean closed = false;
+	private boolean debug  = false;
+
+	public static BoltResultSet istantiate(ResultCursor cursor, boolean debug) {
+		BoltResultSet boltResultSet = null;
+		if (debug) {
+			boltResultSet = Mockito.mock(BoltResultSet.class,
+					Mockito.withSettings().useConstructor().outerInstance(cursor).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+			boltResultSet.debug = debug;
+		} else {
+			boltResultSet = new BoltResultSet(cursor);
+		}
+
+		return boltResultSet;
+	}
 
 	public BoltResultSet(ResultCursor cursor) {
 		this.cursor = cursor;

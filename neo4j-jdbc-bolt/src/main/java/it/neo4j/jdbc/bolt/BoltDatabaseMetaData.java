@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.DatabaseMetaData;
+import org.mockito.Mockito;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -33,6 +34,21 @@ import java.sql.SQLException;
 public class BoltDatabaseMetaData extends DatabaseMetaData {
 
 	private BoltConnection connection;
+	private boolean debug = false;
+
+	public static BoltDatabaseMetaData istantiate(BoltConnection connection, boolean debug) {
+		BoltDatabaseMetaData boltDatabaseMetaData = null;
+
+		if (debug) {
+			boltDatabaseMetaData = Mockito.mock(BoltDatabaseMetaData.class,
+					Mockito.withSettings().useConstructor().outerInstance(connection).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+			boltDatabaseMetaData.debug = debug;
+		} else {
+			boltDatabaseMetaData = new BoltDatabaseMetaData(connection);
+		}
+
+		return boltDatabaseMetaData;
+	}
 
 	public BoltDatabaseMetaData(BoltConnection connection) {
 		this.connection = connection;
