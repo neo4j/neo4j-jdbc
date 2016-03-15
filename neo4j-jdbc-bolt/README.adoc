@@ -4,3 +4,18 @@ This module implements the neo4j-jdbc driver with the BOLT protocol.
 
 This module is a JDBC-way wrapper of the https://github.com/neo4j/neo4j-java-driver[Neo4j-java] driver currently implementing an alpha
 version of the BOLT protocol for Java.
+
+== Special wrapping for neo4j nodes and relationships. ==
+
+Even if you can access each value in a `ResultSet` with multiple type-specific method, you might want to get a whole _node_ or _relationship_.
+
+This *can't* be done by default with JDBC standard methods, to allow this usage we re-invented the use of `getObject(*)` method.
+
+If the object you are trying to get is an `*instanceof* InternalNode` (thus being a neo4j Node) it will be returned wrapped in a `Map<String, Object>`. This map will contain all the object's properties where their names (`String`) are the keys. It will also contains two default values mapped as "`_id`", representing neo4j internal identity ID and "`_labels`", a `Collection` of all the labels of that node.
+
+If the object is instead an `*instanceof* InternalRelationship` (thus being a neo4j Relationship) it will be also returned as a `Map<String, Object>`. This map will contain all the object's properties and the two default "`_id`", the _internal_ neo4j ID and "`_type`" that is the _type_ of the relationship.
+
+IMPORTANT: You can't get an `InternalNode` or `InternalRelationship` directly 
+
+When the object is not recognized as one of the two specified it is treated as a standard object and returned _directly_.
+
