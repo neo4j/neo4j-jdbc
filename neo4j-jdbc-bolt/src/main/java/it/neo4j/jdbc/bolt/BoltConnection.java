@@ -22,7 +22,6 @@ package it.neo4j.jdbc.bolt;
 import it.neo4j.jdbc.Connection;
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.Statement;
-import org.mockito.Mockito;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
@@ -34,34 +33,22 @@ import java.util.Properties;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltConnection extends Connection {
+public class BoltConnection extends Connection implements Loggable {
 
 	private boolean readOnly   = false;
 	private boolean autoCommit = true;
 	private Session     session;
 	private Transaction transaction;
 	private Properties  properties;
-	private boolean debug = false;
+	private boolean loggable = false;
 
-	public static BoltConnection instantiate(Session session, Properties properties) {
-		BoltConnection boltConnection = null;
-		if (BoltConnection.hasDebug(properties)) {
-			boltConnection = Mockito.mock(BoltConnection.class,
-					Mockito.withSettings().useConstructor().outerInstance(session).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-			boltConnection.properties = properties;
-			boltConnection.debug = BoltConnection.hasDebug(properties);
-		} else {
-			boltConnection = new BoltConnection(session);
-			boltConnection.properties.putAll(properties);
-			boltConnection.debug = BoltConnection.hasDebug(properties);
-		}
-
-		return boltConnection;
+	public BoltConnection(Session session, Properties properties) {
+		this.session = session;
+		this.properties = properties;
 	}
 
 	public BoltConnection(Session session) {
-		this.session = session;
-		this.properties = new Properties();
+		this(session, new Properties());
 	}
 
 	public Transaction getTransaction() {
@@ -118,7 +105,8 @@ public class BoltConnection extends Connection {
 		if (this.transaction == null && !this.autoCommit) {
 			this.transaction = this.session.beginTransaction();
 		}
-		return BoltStatement.instantiate(this, this.debug, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return InstanceFactory.debug(BoltStatement.class,
+				new BoltStatement(this, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT), this.isLoggable());
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -178,7 +166,8 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return BoltStatement.instantiate(this, this.debug, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return InstanceFactory
+				.debug(BoltStatement.class, new BoltStatement(this, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT), this.isLoggable());
 	}
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -201,10 +190,18 @@ public class BoltConnection extends Connection {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return BoltStatement.instantiate(this, this.debug, resultSetType, resultSetConcurrency, resultSetHoldability);
+		return InstanceFactory.debug(BoltStatement.class, new BoltStatement(this, resultSetType, resultSetConcurrency, resultSetHoldability), this.isLoggable());
 	}
 
 	public static boolean hasDebug(Properties properties) {
 		return "true".equalsIgnoreCase(properties.getProperty("debug", "false"));
+	}
+
+	@Override public boolean isLoggable() {
+		return this.loggable;
+	}
+
+	@Override public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
 	}
 }

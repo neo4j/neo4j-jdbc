@@ -15,36 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 01/03/2016
+ * Created on 15/03/16
  */
 package it.neo4j.jdbc.bolt;
 
-import it.neo4j.jdbc.DatabaseMetaData;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
 /**
- * Provides metadata
- *
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltDatabaseMetaData extends DatabaseMetaData {
+public interface Loggable {
+	boolean isLoggable();
 
-	private BoltConnection connection;
-	private boolean debug = false;
-
-	public BoltDatabaseMetaData(BoltConnection connection, boolean debug) {
-		this.connection = connection;
-		this.debug = debug;
-	}
-
-	public BoltDatabaseMetaData(BoltConnection connection) {
-		this(connection, false);
-	}
-
-	@Override public Connection getConnection() throws SQLException {
-		return this.connection;
-	}
+	void setLoggable(boolean loggable);
 }

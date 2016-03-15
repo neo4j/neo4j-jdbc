@@ -20,7 +20,6 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Statement;
-import org.mockito.Mockito;
 import org.neo4j.driver.v1.ResultCursor;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.UpdateStatistics;
@@ -32,7 +31,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltStatement extends Statement {
+public class BoltStatement extends Statement implements Loggable {
 
 	private BoltConnection connection;
 	private Transaction    transaction;
@@ -40,22 +39,7 @@ public class BoltStatement extends Statement {
 	private ResultSet      currentResultSet;
 	private boolean        closed;
 
-	private boolean debug = false;
-
-	public static BoltStatement instantiate(BoltConnection connection, boolean debug, int... rsParams) {
-		BoltStatement boltStatement = null;
-
-		if (debug) {
-			boltStatement = Mockito.mock(BoltStatement.class,
-					Mockito.withSettings().useConstructor().outerInstance(connection).outerInstance(rsParams).verboseLogging()
-							.defaultAnswer(Mockito.CALLS_REAL_METHODS));
-			boltStatement.debug = debug;
-		} else {
-			boltStatement = new BoltStatement(connection, rsParams);
-		}
-
-		return boltStatement;
-	}
+	private boolean loggable = false;
 
 	/**
 	 * Default Constructor
@@ -88,7 +72,7 @@ public class BoltStatement extends Statement {
 		} else {
 			cur = this.connection.getTransaction().run(sql);
 		}
-		this.currentResultSet = BoltResultSet.instantiate(cur, this.debug, this.rsParams);
+		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(cur, this.rsParams), this.isLoggable());
 		return currentResultSet;
 	}
 
@@ -129,5 +113,13 @@ public class BoltStatement extends Statement {
 
 	@Override public boolean isClosed() throws SQLException {
 		return closed;
+	}
+
+	@Override public boolean isLoggable() {
+		return this.loggable;
+	}
+
+	@Override public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
 	}
 }

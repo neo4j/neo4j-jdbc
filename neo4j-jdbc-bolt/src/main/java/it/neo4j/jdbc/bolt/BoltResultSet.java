@@ -20,7 +20,6 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSet;
-import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
 import org.neo4j.driver.v1.ResultCursor;
@@ -32,7 +31,7 @@ import java.util.HashMap;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltResultSet extends ResultSet {
+public class BoltResultSet extends ResultSet implements Loggable{
 
 	private ResultCursor cursor;
 	private boolean closed = false;
@@ -40,21 +39,7 @@ public class BoltResultSet extends ResultSet {
 	private int concurrency;
 	private int holdability;
 
-	private boolean debug = false;
-
-	public static BoltResultSet instantiate(ResultCursor cursor, boolean debug, int... params) {
-		BoltResultSet boltResultSet = null;
-		if (debug) {
-			boltResultSet = Mockito.mock(BoltResultSet.class,
-					Mockito.withSettings().useConstructor().outerInstance(cursor).outerInstance(params).verboseLogging()
-							.defaultAnswer(Mockito.CALLS_REAL_METHODS));
-			boltResultSet.debug = debug;
-		} else {
-			boltResultSet = new BoltResultSet(cursor, params);
-		}
-
-		return boltResultSet;
-	}
+	private boolean loggable = false;
 
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
@@ -67,33 +52,17 @@ public class BoltResultSet extends ResultSet {
 	 */
 	public BoltResultSet(ResultCursor cursor, int... params) {
 		this.cursor = cursor;
-		int paramsQty = params.length;
-		if (paramsQty > 0) {
-			this.type = params[0];
-		} else {
-			this.type = TYPE_FORWARD_ONLY;
-		}
-		if (paramsQty > 1) {
-			this.concurrency = params[1];
-		} else {
-			this.concurrency = CONCUR_READ_ONLY;
-		}
-		if (paramsQty > 1) {
-			this.holdability = params[1];
-		} else {
-			this.holdability = CLOSE_CURSORS_AT_COMMIT;
-		}
+
+		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
+		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
+		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override public boolean next() throws SQLException {
 		if (this.cursor == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}
-		if (this.cursor.atEnd()) {
-			return false;
-		} else {
-			return this.cursor.next();
-		}
+		return !this.cursor.atEnd() && this.cursor.next();
 	}
 
 	@Override public void close() throws SQLException {
@@ -261,5 +230,13 @@ public class BoltResultSet extends ResultSet {
 
 	@Override public boolean isClosed() throws SQLException {
 		return this.closed;
+	}
+
+	@Override public boolean isLoggable() {
+		return this.loggable;
+	}
+
+	@Override public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
 	}
 }

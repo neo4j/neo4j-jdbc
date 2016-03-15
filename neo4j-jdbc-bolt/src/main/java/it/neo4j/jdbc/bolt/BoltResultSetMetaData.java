@@ -34,22 +34,13 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 	ResultCursor cursor = null;
 	boolean      debug  = false;
 
-	public static BoltResultSetMetaData instantiate(ResultCursor cursor, boolean debug) {
-		BoltResultSetMetaData boltResultSetMetaData = null;
-
-		if (debug) {
-			boltResultSetMetaData = Mockito.mock(BoltResultSetMetaData.class,
-					Mockito.withSettings().useConstructor().outerInstance(cursor).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-			boltResultSetMetaData.debug = debug;
-		} else {
-			boltResultSetMetaData = new BoltResultSetMetaData(cursor);
-		}
-
-		return boltResultSetMetaData;
+	BoltResultSetMetaData(ResultCursor cursor, boolean debug) {
+		this.cursor = cursor;
+		this.debug = debug;
 	}
 
 	BoltResultSetMetaData(ResultCursor cursor) {
-		this.cursor = cursor;
+		this(cursor, false);
 	}
 
 	@Override public int getColumnCount() throws SQLException {

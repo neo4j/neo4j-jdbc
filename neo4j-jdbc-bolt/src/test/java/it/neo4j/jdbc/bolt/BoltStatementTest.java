@@ -46,6 +46,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
  * @author AgileLARUS
@@ -84,11 +85,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		return mockConnection;
 	}
 
-	@Before public void mockStatics() {
-		mockStatic(BoltResultSet.class);
-		this.mockedRS = mock(BoltResultSet.class);
-		PowerMockito.when(BoltResultSet.instantiate(anyObject(), anyBoolean())).thenReturn(mockedRS);
-		PowerMockito.when(BoltResultSet.instantiate(anyObject(), anyBoolean(), any(int[].class))).thenReturn(mockedRS);
+	@Before public void interceptBoltResultSetConstructor() throws Exception{
+		mockedRS = mock(BoltResultSet.class);
+		doNothing().when(mockedRS).close();
+		whenNew(BoltResultSet.class).withAnyArguments().thenReturn(mockedRS);
 	}
 
 	/*------------------------------*/
@@ -96,23 +96,17 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
 
-		doNothing().when(mockedRS).close();
-
 		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
-
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
-		verifyStatic(times(1));
-		BoltResultSet.instantiate(null, false);
-
 		verify(mockedRS, times(1)).close();
+
 	}
 
 	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
 
 		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
-
 		statement.close();
 
 		verify(mockedRS, never()).close();
@@ -170,7 +164,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 
 		verifyStatic(times(1));
-		BoltResultSet.instantiate(null, false, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		new BoltResultSet(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {

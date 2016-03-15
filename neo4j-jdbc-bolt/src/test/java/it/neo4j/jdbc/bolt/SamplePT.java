@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.openjdk.jmh.annotations.*;
@@ -29,7 +30,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -91,13 +95,12 @@ public class SamplePT {
 		session.close();
 	}
 
-	@Benchmark public void testSimpleQueryWithDebugBoltDriver(Data data, Blackhole bh) {
-		org.neo4j.driver.v1.Driver driver = GraphDatabase.driver("bolt://localhost:7687?debug");
-
-		Session session = driver.session();
-
-		bh.consume(session.run(data.query));
-
-		session.close();
+	@Benchmark public void testSimpleQueryWithDebugJDBC(Data data, Blackhole bh) throws SQLException {
+		System.setOut(Mockito.mock(PrintStream.class));
+		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?debug");
+		Statement stmt = conn.createStatement();
+		bh.consume(stmt.executeQuery(data.query));
+		stmt.close();
+		conn.close();
 	}
 }
