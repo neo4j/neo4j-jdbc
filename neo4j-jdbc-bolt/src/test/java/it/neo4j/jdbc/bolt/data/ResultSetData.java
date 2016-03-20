@@ -22,14 +22,14 @@ package it.neo4j.jdbc.bolt.data;
 import org.junit.BeforeClass;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
-import org.neo4j.driver.internal.InternalResultCursor;
+import org.neo4j.driver.internal.InternalStatementResult;
 import org.neo4j.driver.internal.ParameterSupport;
 import org.neo4j.driver.internal.spi.Connection;
 import org.neo4j.driver.internal.spi.StreamCollector;
 import org.neo4j.driver.internal.value.FloatValue;
 import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.StringValue;
-import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
 
 import java.lang.reflect.Method;
@@ -49,6 +49,7 @@ public class ResultSetData {
 	public static List<Object[]> RECORD_LIST_EMPTY = Collections.emptyList();
 	public static List<Object[]> RECORD_LIST_ONE_ELEMENT;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS;
+	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_DIFF;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_NODES;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_RELATIONS;
@@ -56,6 +57,7 @@ public class ResultSetData {
 	public static String[] KEYS_RECORD_LIST_EMPTY                   = new String[] {};
 	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT             = new String[] { "columnA", "columnB" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS           = KEYS_RECORD_LIST_ONE_ELEMENT;
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF      = new String[] { "columnA", "columnB", "columnC" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED     = new String[] { "columnInt", "columnString", "columnFloat", "columnShort",
 			"columnDouble" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
@@ -117,6 +119,10 @@ public class ResultSetData {
 			}
 		}) });
 
+		RECORD_LIST_MORE_ELEMENTS_DIFF = new LinkedList<>();
+		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB" });
+		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB", "valueC" });
+
 		fixPublicForInternalResultCursor();
 	}
 
@@ -125,9 +131,9 @@ public class ResultSetData {
 	 */
 	private static void fixPublicForInternalResultCursor() {
 		try {
-			runResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("runResponseCollector");
+			runResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("runResponseCollector");
 			runResponseCollectorMethod.setAccessible(true);
-			pullAllResponseCollectorMethod = InternalResultCursor.class.getDeclaredMethod("pullAllResponseCollector");
+			pullAllResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("pullAllResponseCollector");
 			pullAllResponseCollectorMethod.setAccessible(true);
 		} catch (NoSuchMethodException e) {
 			throw new RuntimeException(e);
@@ -135,18 +141,18 @@ public class ResultSetData {
 	}
 
 	/**
-	 * hackish way to get a {@link InternalResultCursor}
+	 * hackish way to get a {@link InternalStatementResult}
 	 *
 	 * @param keys
 	 * @param data
 	 * @return
 	 */
-	public static ResultCursor buildResultCursor(String[] keys, List<Object[]> data) {
+	public static StatementResult buildResultCursor(String[] keys, List<Object[]> data) {
 
 		try {
 			Connection connection = mock(Connection.class);
 
-			InternalResultCursor cursor = new InternalResultCursor(connection, null, "<unknown>", ParameterSupport.NO_PARAMETERS);
+			InternalStatementResult cursor = new InternalStatementResult(connection, null);
 			StreamCollector responseCollector = (StreamCollector) runResponseCollectorMethod.invoke(cursor);
 			responseCollector.keys(keys);
 			responseCollector.done();
@@ -157,7 +163,7 @@ public class ResultSetData {
 			pullAllResponseCollector.done();
 			connection.run("<unknown>", ParameterSupport.NO_PARAMETERS, responseCollector);
 			connection.pullAll(pullAllResponseCollector);
-			connection.sendAll();
+			//connection.sendAll();
 
 			return cursor;
 		} catch (Exception e) {

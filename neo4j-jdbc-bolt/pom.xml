@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>1.0.0-M04</version>
+            <version>1.0.0-M05</version>
         </dependency>
 
         <dependency>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.neo4j.test</groupId>
             <artifactId>neo4j-harness</artifactId>
-            <version>3.0.0-M04</version>
+            <version>3.0.0-M05</version>
             <scope>test</scope>
         </dependency>
 

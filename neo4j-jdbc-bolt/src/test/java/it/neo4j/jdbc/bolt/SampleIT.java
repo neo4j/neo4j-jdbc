@@ -23,8 +23,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.ResultCursor;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.*;
 
@@ -37,7 +37,7 @@ public class SampleIT {
 
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
 
-	@Test public void shouldSimpleServerTestSucceed() {
+	@Test public void shouldSimpleServerTestSucceed() throws Exception {
 
 		// if we want to have raw access to neo4j instance, e.g. for populating the DB upfront:
 		neo4j.getGraphDatabase().execute("create ( )");
@@ -45,8 +45,9 @@ public class SampleIT {
 		// hitting the DB with a bolt request
 		Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());   // defaults to localhost:7687
 		Session session = driver.session();
-		ResultCursor rs = session.run("match (n) RETURN count(n)");
+		StatementResult rs = session.run("match (n) RETURN count(n)");
 		session.close();
+		driver.close();
 	}
 
 	@Test public void exampleTestInMemory() throws ClassNotFoundException, SQLException {

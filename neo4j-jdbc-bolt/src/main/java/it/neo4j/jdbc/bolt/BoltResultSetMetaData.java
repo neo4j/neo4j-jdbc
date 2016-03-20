@@ -20,8 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSetMetaData;
-import org.mockito.Mockito;
-import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
 
@@ -31,23 +30,23 @@ import java.sql.SQLException;
  */
 public class BoltResultSetMetaData extends ResultSetMetaData {
 
-	ResultCursor cursor = null;
-	boolean      debug  = false;
+	StatementResult iterator = null;
+	boolean         debug    = false;
 
-	BoltResultSetMetaData(ResultCursor cursor, boolean debug) {
-		this.cursor = cursor;
+	BoltResultSetMetaData(StatementResult iterator, boolean debug) {
+		this.iterator = iterator;
 		this.debug = debug;
 	}
 
-	BoltResultSetMetaData(ResultCursor cursor) {
-		this(cursor, false);
+	BoltResultSetMetaData(StatementResult iterator) {
+		this(iterator, false);
 	}
 
 	@Override public int getColumnCount() throws SQLException {
-		if (this.cursor == null) {
+		if (this.iterator == null) {
 			throw new SQLException("The ResultCursor is null");
 		}
-		return this.cursor.size();
+		return this.iterator.keys().size();
 	}
 
 	@Override public String getColumnLabel(int column) throws SQLException {
@@ -55,12 +54,12 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 	}
 
 	@Override public String getColumnName(int column) throws SQLException {
-		if (this.cursor == null) {
+		if (this.iterator == null) {
 			throw new SQLException("The ResultCursor is null");
 		}
-		if (column > this.cursor.size() || column < 1) {
+		if (column > this.iterator.keys().size() || column < 1) {
 			throw new SQLException("Column out of range");
 		}
-		return this.cursor.keys().get(column - 1);
+		return this.iterator.keys().get(column - 1);
 	}
 }

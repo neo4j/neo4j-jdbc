@@ -25,7 +25,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
 
@@ -48,14 +48,14 @@ public class BoltResultSetMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getColumnsCountShouldReturnCorrectNumberEmpty() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
+		StatementResult resultIterator = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultIterator);
 
 		assertEquals(0, resultSet.getColumnCount());
 	}
 
 	@Test public void getColumnsCountShouldReturnCorrectNumberMoreElements() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		assertEquals(2, resultSet.getColumnCount());
@@ -74,7 +74,7 @@ public class BoltResultSetMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getColumnNameShouldReturnCorrectColumnName() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		assertEquals("columnA", resultSet.getColumnName(1));
@@ -83,7 +83,7 @@ public class BoltResultSetMetaDataTest {
 	@Test public void getColumnNameShouldThrowExceptionWhenEmptyCursor() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		resultSet.getColumnName(1);
@@ -92,7 +92,7 @@ public class BoltResultSetMetaDataTest {
 	@Test public void getColumnNameShouldThrowExceptionWhenColumnOutOfRange() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		resultSet.getColumnName(99);
@@ -111,7 +111,7 @@ public class BoltResultSetMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getColumnLabelShouldReturnCorrectColumnName() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		assertEquals("columnA", resultSet.getColumnLabel(1));
@@ -120,7 +120,7 @@ public class BoltResultSetMetaDataTest {
 	@Test public void getColumnLabelShouldThrowExceptionWhenEmptyCursor() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		resultSet.getColumnLabel(1);
@@ -129,7 +129,7 @@ public class BoltResultSetMetaDataTest {
 	@Test public void getColumnLabelShouldThrowExceptionWhenColumnOutOfRange() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
+		StatementResult resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(resultCursor);
 
 		resultSet.getColumnLabel(99);

@@ -25,13 +25,12 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
 
 /**
  * @author AgileLARUS
@@ -50,16 +49,18 @@ public class BoltResultSetTest {
 	/*------------------------------*/
 
 	@Test public void isClosedReturnFalseWhenConnectionOpen() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = new BoltResultSet(resultCursor);
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		assertFalse(resultSet.isClosed());
 	}
 
 	//this method depends on the close() method
 	@Test public void isClosedReturnTrueWhenConnectionClosed() throws SQLException {
-		ResultCursor resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = new BoltResultSet(resultCursor);
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.close();
 		assertTrue(resultSet.isClosed());
@@ -69,27 +70,7 @@ public class BoltResultSetTest {
 	/*             close            */
 	/*------------------------------*/
 
-	@Test public void closeShouldCallTheCloseMethodOfTheCursor() throws SQLException {
-		ResultCursor mockedCursor = mock(ResultCursor.class);
-		ResultSet resultSet = new BoltResultSet(mockedCursor);
-
-		resultSet.close();
-
-		verify(mockedCursor, times(1)).close();
-	}
-
-	@Test public void closeCalledMoreThanOneTimeTheTimesAfterIsNOOP() throws SQLException {
-		ResultCursor mockedCursor = mock(ResultCursor.class);
-		ResultSet resultSet = new BoltResultSet(mockedCursor);
-
-		resultSet.close();
-		resultSet.close();
-		resultSet.close();
-
-		verify(mockedCursor, times(1)).close();
-	}
-
-	@Test public void closeShouldThrowExceptionIfCursorNull() throws SQLException {
+	@Test public void closeShouldThrowExceptionIfIteratorIsNull() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		ResultSet resultSet = new BoltResultSet(null);
 

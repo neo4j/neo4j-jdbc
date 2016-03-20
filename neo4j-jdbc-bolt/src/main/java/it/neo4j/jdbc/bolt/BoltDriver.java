@@ -57,7 +57,8 @@ public class BoltDriver extends Driver {
 			try {
 				Properties props = new Properties();
 				parseUrlProperties(url, props);
-				connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url).session(), props), BoltConnection.hasDebug(props));
+				connection = InstanceFactory
+						.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url).session(), props), BoltConnection.hasDebug(props));
 
 			} catch (Exception e) {
 				throw new SQLException(e);

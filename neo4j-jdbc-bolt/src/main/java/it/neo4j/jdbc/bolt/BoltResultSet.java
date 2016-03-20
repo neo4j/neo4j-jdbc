@@ -22,7 +22,8 @@ package it.neo4j.jdbc.bolt;
 import it.neo4j.jdbc.ResultSet;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalRelationship;
-import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -31,9 +32,10 @@ import java.util.HashMap;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltResultSet extends ResultSet implements Loggable{
+public class BoltResultSet extends ResultSet implements Loggable {
 
-	private ResultCursor cursor;
+	private StatementResult iterator;
+	private Record          current;
 	private boolean closed = false;
 	private int type;
 	private int concurrency;
@@ -44,14 +46,14 @@ public class BoltResultSet extends ResultSet implements Loggable{
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
 	 *
-	 * @param cursor The <code>ResultCursor</code> of this set
-	 * @param params At most three, type, concurrency and holdability.
-	 *               The defaults are <code>TYPE_FORWARD_ONLY</code>,
-	 *               <code>CONCUR_READ_ONLY</code>,
-	 *               <code>CLOSE_CURSORS_AT_COMMIT</code>.
+	 * @param iterator The <code>StatementResult</code> of this set
+	 * @param params   At most three, type, concurrency and holdability.
+	 *                 The defaults are <code>TYPE_FORWARD_ONLY</code>,
+	 *                 <code>CONCUR_READ_ONLY</code>,
+	 *                 <code>CLOSE_CURSORS_AT_COMMIT</code>.
 	 */
-	public BoltResultSet(ResultCursor cursor, int... params) {
-		this.cursor = cursor;
+	public BoltResultSet(StatementResult iterator, int... params) {
+		this.iterator = iterator;
 
 		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
 		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
@@ -59,148 +61,145 @@ public class BoltResultSet extends ResultSet implements Loggable{
 	}
 
 	@Override public boolean next() throws SQLException {
-		if (this.cursor == null) {
+		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}
-		return !this.cursor.atEnd() && this.cursor.next();
+		return (this.current = this.iterator.next()) != null;
 	}
 
 	@Override public void close() throws SQLException {
-		if (this.cursor == null) {
+		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}
-		if (!this.closed) {
-			this.cursor.close();
-			this.closed = true;
-		}
+		this.closed = true;
 	}
 
 	@Override public String getString(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnLabel).asString();
+		return this.current.get(columnLabel).asString();
 	}
 
 	@Override public int getInt(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnLabel).asInt();
+		return this.current.get(columnLabel).asInt();
 	}
 
 	@Override public int findColumn(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.iterator.keys().contains(columnLabel)) {
+			//if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		this.cursor.next();
-		return this.cursor.index(columnLabel);
+		return this.iterator.keys().indexOf(columnLabel) + 1;
 	}
 
 	@Override public String getString(int columnIndex) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (columnIndex - 1 > this.cursor.size()) {
+		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnIndex - 1).asString();
+		return this.current.get(columnIndex - 1).asString();
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (columnIndex - 1 > this.cursor.size()) {
+		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnIndex - 1).asInt();
+		return this.current.get(columnIndex - 1).asInt();
 	}
 
 	@Override public float getFloat(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnLabel).asFloat();
+		return this.current.get(columnLabel).asFloat();
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (columnIndex - 1 > this.cursor.size()) {
+		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnIndex - 1).asFloat();
+		return this.current.get(columnIndex - 1).asFloat();
 	}
 
 	@Override public short getShort(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return (short) this.cursor.get(columnLabel).asInt();
+		return (short) this.current.get(columnLabel).asInt();
 	}
 
 	@Override public short getShort(int columnIndex) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (columnIndex - 1 > this.cursor.size()) {
+		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return (short) this.cursor.get(columnIndex - 1).asInt();
+		return (short) this.current.get(columnIndex - 1).asInt();
 	}
 
 	@Override public double getDouble(int columnIndex) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (columnIndex - 1 > this.cursor.size()) {
+		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnIndex - 1).asDouble();
+		return this.current.get(columnIndex - 1).asDouble();
 	}
 
 	@Override public double getDouble(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.cursor.get(columnLabel).asDouble();
+		return this.current.get(columnLabel).asDouble();
 	}
 
 	private Object generateObject(Object obj) {
 		if (obj.getClass().equals(InternalNode.class)) {
 			InternalNode node = (InternalNode) obj;
 			HashMap<String, Object> map = new HashMap<>();
-			map.put("_id", node.identity().asLong());
+			map.put("_id", node.id());
 			map.put("_labels", node.labels());
-			node.properties().forEach(property -> map.put(property.key(), property.value().asObject()));
+			node.keys().forEach(key -> map.put(key, node.get(key).asObject()));
 			return map;
 		}
 		if (obj.getClass().equals(InternalRelationship.class)) {
 			InternalRelationship rel = (InternalRelationship) obj;
 			HashMap<String, Object> map = new HashMap<>();
-			map.put("_id", rel.identity().asLong());
+			map.put("_id", rel.id());
 			map.put("_type", rel.type());
-			rel.properties().forEach(property -> map.put(property.key(), property.value().asObject()));
+			rel.keys().forEach(key -> map.put(key, rel.get(key).asObject()));
 			return map;
 		}
 		return obj;
@@ -210,10 +209,10 @@ public class BoltResultSet extends ResultSet implements Loggable{
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (columnIndex - 1 > this.cursor.size()) {
+		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		Object obj = this.cursor.get(columnIndex - 1).asObject();
+		Object obj = this.current.get(columnIndex - 1).asObject();
 		return this.generateObject(obj);
 	}
 
@@ -221,10 +220,10 @@ public class BoltResultSet extends ResultSet implements Loggable{
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
 		}
-		if (!this.cursor.containsKey(columnLabel)) {
+		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		Object obj = this.cursor.get(columnLabel).asObject();
+		Object obj = this.current.get(columnLabel).asObject();
 		return this.generateObject(obj);
 	}
 

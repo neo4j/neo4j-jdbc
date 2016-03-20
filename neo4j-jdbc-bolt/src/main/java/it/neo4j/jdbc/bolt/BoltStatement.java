@@ -20,9 +20,9 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Statement;
-import org.neo4j.driver.v1.ResultCursor;
+import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.UpdateStatistics;
+import org.neo4j.driver.v1.summary.SummaryCounters;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -63,16 +63,16 @@ public class BoltStatement extends Statement implements Loggable {
 		if (connection.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}
-		ResultCursor cur;
+		StatementResult result;
 		if (connection.getAutoCommit()) {
 			Transaction t = this.connection.getSession().beginTransaction();
-			cur = t.run(sql);
+			result = t.run(sql);
 			t.success();
 			t.close();
 		} else {
-			cur = this.connection.getTransaction().run(sql);
+			result = this.connection.getTransaction().run(sql);
 		}
-		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(cur, this.rsParams), this.isLoggable());
+		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
 		return currentResultSet;
 	}
 
@@ -83,18 +83,18 @@ public class BoltStatement extends Statement implements Loggable {
 		if (connection.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}
-		ResultCursor cur;
+		StatementResult result;
 		if (connection.getAutoCommit()) {
 			Transaction t = this.connection.getSession().beginTransaction();
-			cur = t.run(sql);
+			result = t.run(sql);
 			t.success();
 			t.close();
 		} else {
-			cur = this.connection.getTransaction().run(sql);
+			result = this.connection.getTransaction().run(sql);
 		}
 
-		UpdateStatistics stats = cur.summarize().updateStatistics();
-		return stats.nodesCreated() + stats.nodesDeleted();
+		SummaryCounters stats = result.consume().counters();
+		return stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
 	}
 
 	@Override public void close() throws SQLException {

@@ -105,8 +105,9 @@ public class BoltConnection extends Connection implements Loggable {
 		if (this.transaction == null && !this.autoCommit) {
 			this.transaction = this.session.beginTransaction();
 		}
-		return InstanceFactory.debug(BoltStatement.class,
-				new BoltStatement(this, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT), this.isLoggable());
+		return InstanceFactory
+				.debug(BoltStatement.class, new BoltStatement(this, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT),
+						this.isLoggable());
 	}
 
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -190,7 +191,8 @@ public class BoltConnection extends Connection implements Loggable {
 			throw new SQLFeatureNotSupportedException();
 		}
 		// @formatter:on
-		return InstanceFactory.debug(BoltStatement.class, new BoltStatement(this, resultSetType, resultSetConcurrency, resultSetHoldability), this.isLoggable());
+		return InstanceFactory
+				.debug(BoltStatement.class, new BoltStatement(this, resultSetType, resultSetConcurrency, resultSetHoldability), this.isLoggable());
 	}
 
 	public static boolean hasDebug(Properties properties) {
