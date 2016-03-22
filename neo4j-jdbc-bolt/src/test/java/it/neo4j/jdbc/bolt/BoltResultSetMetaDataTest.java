@@ -30,6 +30,7 @@ import org.neo4j.driver.v1.StatementResult;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author AgileLARUS
@@ -153,5 +154,15 @@ public class BoltResultSetMetaDataTest {
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(null);
 
 		resultSet.getSchemaName(1);
+	}
+
+	/*------------------------------*/
+	/*        getCatalogName        */
+	/*------------------------------*/
+
+	@Test public void getCatalogNameShouldReturnEmptyString() throws SQLException{
+		ResultSetMetaData resultSet = new BoltResultSetMetaData(null);
+
+		assertEquals("", resultSet.getCatalogName(1));
 	}
 }

@@ -32,9 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.spy;
 
 /**
@@ -676,7 +674,7 @@ public class BoltResultSetGettersTest {
 		assertEquals(2L, resultSet.getLong("columnLong"));
 
 		resultSet.next();
-		assertEquals(6L,resultSet.getLong("columnLong"));
+		assertEquals(6L, resultSet.getLong("columnLong"));
 	}
 
 	@Test public void getLongByLabelShouldThrowExceptionNoLabel() throws SQLException {

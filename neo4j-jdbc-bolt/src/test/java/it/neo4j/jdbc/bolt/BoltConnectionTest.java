@@ -442,4 +442,39 @@ public class BoltConnectionTest {
 
 		assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
 	}
+
+	/*------------------------------*/
+	/*         setCatalog           */
+	/*------------------------------*/
+
+	@Test public void setCatalogShouldSilentlyIgnoreTheRequest() throws SQLException {
+		Connection connection = new BoltConnection(mockSessionOpen());
+
+		connection.setCatalog("catalog");
+		assertNull(connection.getCatalog());
+	}
+
+	@Test public void setCatalogShouldThrowExceptionWhenConnectionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = new BoltConnection(mockSessionClosed());
+		connection.setCatalog("catalog");
+	}
+
+	/*------------------------------*/
+	/*         getCatalog           */
+	/*------------------------------*/
+
+	@Test public void getCatalogShouldReturnNull() throws SQLException {
+		Connection connection = new BoltConnection(mockSessionOpen());
+
+		assertNull(connection.getCatalog());
+	}
+
+	@Test public void getCatalogShouldThrowExceptionWhenConnectionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = new BoltConnection(mockSessionClosed());
+		connection.getCatalog();
+	}
 }

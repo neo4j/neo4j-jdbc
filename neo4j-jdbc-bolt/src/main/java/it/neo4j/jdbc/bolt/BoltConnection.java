@@ -95,6 +95,16 @@ public class BoltConnection extends Connection implements Loggable {
 		return this.readOnly;
 	}
 
+	@Override public void setCatalog(String catalog) throws SQLException {
+		this.checkClosed();
+		return;
+	}
+
+	@Override public String getCatalog() throws SQLException {
+		this.checkClosed();
+		return null;
+	}
+
 	@Override public int getTransactionIsolation() throws SQLException {
 		this.checkClosed();
 		return TRANSACTION_READ_COMMITTED;

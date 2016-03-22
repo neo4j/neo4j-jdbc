@@ -67,13 +67,9 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public abstract boolean isReadOnly() throws SQLException;
 
-	@Override public void setCatalog(String catalog) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setCatalog(String catalog) throws SQLException;
 
-	@Override public String getCatalog() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract String getCatalog() throws SQLException;
 
 	@Override public void setTransactionIsolation(int level) throws SQLException {
 		throw new UnsupportedOperationException();

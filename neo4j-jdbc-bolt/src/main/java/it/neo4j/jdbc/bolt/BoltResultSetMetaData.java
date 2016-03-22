@@ -62,4 +62,8 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 		}
 		return this.iterator.keys().get(column - 1);
 	}
+
+	@Override public String getCatalogName(int column) throws SQLException {
+		return ""; //not applicable
+	}
 }

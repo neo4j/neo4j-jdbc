@@ -83,9 +83,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getCatalogName(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract String getCatalogName(int column) throws SQLException;
 
 	@Override public int getColumnType(int column) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
