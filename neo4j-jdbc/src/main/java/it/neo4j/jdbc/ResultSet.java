@@ -43,9 +43,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract String getString(int columnIndex) throws SQLException;
 
-	@Override public boolean getBoolean(int columnIndex) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean getBoolean(int columnIndex) throws SQLException;
 
 	@Override public byte getByte(int columnIndex) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -97,9 +95,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract String getString(String columnLabel) throws SQLException;
 
-	@Override public boolean getBoolean(String columnLabel) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean getBoolean(String columnLabel) throws SQLException;
 
 	@Override public byte getByte(String columnLabel) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

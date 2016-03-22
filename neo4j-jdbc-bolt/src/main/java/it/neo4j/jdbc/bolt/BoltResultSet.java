@@ -84,6 +84,16 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return this.current.get(columnLabel).asString();
 	}
 
+	@Override public boolean getBoolean(String columnLabel) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
+		if (!this.current.containsKey(columnLabel)) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return this.current.get(columnLabel).asBoolean();
+	}
+
 	@Override public int getInt(String columnLabel) throws SQLException {
 		if (this.closed) {
 			throw new SQLException("ResultSet was already closed");
@@ -113,6 +123,16 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			throw new SQLException("Column not present in ResultSet");
 		}
 		return this.current.get(columnIndex - 1).asString();
+	}
+
+	@Override public boolean getBoolean(int columnIndex) throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
+		if (columnIndex - 1 > this.current.size()) {
+			throw new SQLException("Column not present in ResultSet");
+		}
+		return this.current.get(columnIndex - 1).asBoolean();
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {

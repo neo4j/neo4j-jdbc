@@ -59,7 +59,7 @@ public class ResultSetData {
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS           = KEYS_RECORD_LIST_ONE_ELEMENT;
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF      = new String[] { "columnA", "columnB", "columnC" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED     = new String[] { "columnInt", "columnString", "columnFloat", "columnShort",
-			"columnDouble" };
+			"columnDouble", "columnBoolean" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
 
@@ -77,8 +77,8 @@ public class ResultSetData {
 
 		RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
 
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D });
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D, true });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D, false });
 
 		RECORD_LIST_MORE_ELEMENTS_NODES = new LinkedList<>();
 
@@ -159,7 +159,7 @@ public class ResultSetData {
 
 			StreamCollector pullAllResponseCollector = (StreamCollector) pullAllResponseCollectorMethod.invoke(cursor);
 
-			data.forEach(vals -> pullAllResponseCollector.record(values(vals)));
+			data.forEach(values -> pullAllResponseCollector.record(values(values)));
 			pullAllResponseCollector.done();
 			connection.run("<unknown>", ParameterSupport.NO_PARAMETERS, responseCollector);
 			connection.pullAll(pullAllResponseCollector);

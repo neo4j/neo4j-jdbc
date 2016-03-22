@@ -21,7 +21,6 @@ package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.ResultSet;
 import it.neo4j.jdbc.bolt.data.ResultSetData;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,6 +32,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 
 /**
@@ -55,8 +57,8 @@ public class BoltResultSetGettersTest {
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
-		Assert.assertEquals(1, resultSet.findColumn("columnA"));
-		Assert.assertEquals(2, resultSet.findColumn("columnB"));
+		assertEquals(1, resultSet.findColumn("columnA"));
+		assertEquals(2, resultSet.findColumn("columnB"));
 	}
 
 	@Test public void findColumnShouldReturnCorrectIndexOnDifferentColumns() throws SQLException {
@@ -64,9 +66,9 @@ public class BoltResultSetGettersTest {
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF, ResultSetData.RECORD_LIST_MORE_ELEMENTS_DIFF);
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
-		Assert.assertEquals(1, resultSet.findColumn("columnA"));
-		Assert.assertEquals(2, resultSet.findColumn("columnB"));
-		Assert.assertEquals(3, resultSet.findColumn("columnC"));
+		assertEquals(1, resultSet.findColumn("columnA"));
+		assertEquals(2, resultSet.findColumn("columnB"));
+		assertEquals(3, resultSet.findColumn("columnC"));
 	}
 
 	@Test public void findColumnShouldThrowExceptionOnWrongLabel() throws SQLException {
@@ -101,10 +103,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals("value1", resultSet.getString("columnString"));
+		assertEquals("value1", resultSet.getString("columnString"));
 
 		resultSet.next();
-		Assert.assertEquals("value2", resultSet.getString("columnString"));
+		assertEquals("value2", resultSet.getString("columnString"));
 	}
 
 	@Test public void getStringByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -136,10 +138,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals("value1", resultSet.getString(2));
+		assertEquals("value1", resultSet.getString(2));
 
 		resultSet.next();
-		Assert.assertEquals("value2", resultSet.getString(2));
+		assertEquals("value2", resultSet.getString(2));
 	}
 
 	@Test public void getStringByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -175,10 +177,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(1, resultSet.getInt("columnInt"));
+		assertEquals(1, resultSet.getInt("columnInt"));
 
 		resultSet.next();
-		Assert.assertEquals(2, resultSet.getInt("columnInt"));
+		assertEquals(2, resultSet.getInt("columnInt"));
 	}
 
 	@Test public void getIntByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -210,10 +212,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(1, resultSet.getInt(1));
+		assertEquals(1, resultSet.getInt(1));
 
 		resultSet.next();
-		Assert.assertEquals(2, resultSet.getInt(1));
+		assertEquals(2, resultSet.getInt(1));
 	}
 
 	@Test public void getIntByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -249,10 +251,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(0.1F, resultSet.getFloat("columnFloat"), 0);
+		assertEquals(0.1F, resultSet.getFloat("columnFloat"), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2F, resultSet.getFloat("columnFloat"), 0);
+		assertEquals(0.2F, resultSet.getFloat("columnFloat"), 0);
 	}
 
 	@Test public void getFloatByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -284,10 +286,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(0.1F, resultSet.getFloat(3), 0);
+		assertEquals(0.1F, resultSet.getFloat(3), 0);
 
 		resultSet.next();
-		Assert.assertEquals(0.2F, resultSet.getFloat(3), 0);
+		assertEquals(0.2F, resultSet.getFloat(3), 0);
 	}
 
 	@Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -323,10 +325,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(1, resultSet.getShort("columnShort"));
+		assertEquals(1, resultSet.getShort("columnShort"));
 
 		resultSet.next();
-		Assert.assertEquals(2, resultSet.getShort("columnShort"));
+		assertEquals(2, resultSet.getShort("columnShort"));
 	}
 
 	@Test public void getShortByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -358,10 +360,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(1, resultSet.getShort(1));
+		assertEquals(1, resultSet.getShort(1));
 
 		resultSet.next();
-		Assert.assertEquals(2, resultSet.getShort(1));
+		assertEquals(2, resultSet.getShort(1));
 	}
 
 	@Test public void getShortByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -397,10 +399,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(02.29D, resultSet.getDouble("columnDouble"), 0);
+		assertEquals(02.29D, resultSet.getDouble("columnDouble"), 0);
 
 		resultSet.next();
-		Assert.assertEquals(20.16D, resultSet.getDouble("columnDouble"), 0);
+		assertEquals(20.16D, resultSet.getDouble("columnDouble"), 0);
 	}
 
 	@Test public void getDoubleByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -432,10 +434,10 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(02.29D, resultSet.getDouble(5), 0);
+		assertEquals(02.29D, resultSet.getDouble(5), 0);
 
 		resultSet.next();
-		Assert.assertEquals(20.16D, resultSet.getDouble(5), 0);
+		assertEquals(20.16D, resultSet.getDouble(5), 0);
 	}
 
 	@Test public void getDoubleByIndexShouldThrowExceptionNoIndex() throws SQLException {
@@ -472,12 +474,12 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals("value1", resultSet.getObject("columnString").toString());
-		Assert.assertEquals(1L, resultSet.getObject("columnInt"));
+		assertEquals("value1", resultSet.getObject("columnString").toString());
+		assertEquals(1L, resultSet.getObject("columnInt"));
 
 		resultSet.next();
-		Assert.assertEquals(2L, resultSet.getObject("columnShort"));
-		Assert.assertEquals(20.16D, (double) resultSet.getObject("columnDouble"), 0);
+		assertEquals(2L, resultSet.getObject("columnShort"));
+		assertEquals(20.16D, (double) resultSet.getObject("columnDouble"), 0);
 	}
 
 	@Test public void getObjectByLabelShouldThrowExceptionNoLabel() throws SQLException {
@@ -508,12 +510,12 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals("value1", resultSet.getObject(2).toString());
-		Assert.assertEquals(1L, resultSet.getObject(1));
+		assertEquals("value1", resultSet.getObject(2).toString());
+		assertEquals(1L, resultSet.getObject(1));
 
 		resultSet.next();
-		Assert.assertEquals(2L, resultSet.getObject(4));
-		Assert.assertEquals(20.16D, (double) resultSet.getObject(5), 0);
+		assertEquals(2L, resultSet.getObject(4));
+		assertEquals(20.16D, (double) resultSet.getObject(5), 0);
 	}
 
 	@Test public void getObjectByIndexShouldThrowExceptionNoLabel() throws SQLException {
@@ -545,7 +547,7 @@ public class BoltResultSetGettersTest {
 
 		resultSet.next();
 
-		Assert.assertEquals(new HashMap<String, Object>() {
+		assertEquals(new HashMap<String, Object>() {
 			{
 				this.put("_id", 1L);
 				this.put("_labels", Arrays.asList("label1", "label2"));
@@ -555,7 +557,7 @@ public class BoltResultSetGettersTest {
 		}, resultSet.getObject("node"));
 
 		resultSet.next();
-		Assert.assertEquals(new HashMap<String, Object>() {
+		assertEquals(new HashMap<String, Object>() {
 			{
 				this.put("_id", 2L);
 				this.put("_labels", Collections.singletonList("label"));
@@ -570,7 +572,7 @@ public class BoltResultSetGettersTest {
 		ResultSet resultSet = new BoltResultSet(StatementResult);
 
 		resultSet.next();
-		Assert.assertEquals(new HashMap<String, Object>() {
+		assertEquals(new HashMap<String, Object>() {
 			{
 				this.put("_id", 1L);
 				this.put("_type", "type1");
@@ -580,12 +582,86 @@ public class BoltResultSetGettersTest {
 		}, resultSet.getObject("relation"));
 
 		resultSet.next();
-		Assert.assertEquals(new HashMap<String, Object>() {
+		assertEquals(new HashMap<String, Object>() {
 			{
 				this.put("_id", 2L);
 				this.put("_type", "type2");
 				this.put("property", (double) 2.6F);
 			}
 		}, resultSet.getObject(1));
+	}
+
+	/*------------------------------*/
+	/*           getBoolean         */
+	/*------------------------------*/
+
+	@Test public void getBooleanByLabelShouldReturnBoolean() throws SQLException {
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		assertTrue(resultSet.getBoolean("columnBoolean"));
+
+		resultSet.next();
+		assertFalse(resultSet.getBoolean("columnBoolean"));
+	}
+
+	@Test public void getBooleanByLabelShouldThrowExceptionNoLabel() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		resultSet.getBoolean("columnZ");
+	}
+
+	@Test public void getBooleanByLabelShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		//doNothing().when(spyCursor).close();
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getBoolean("columnBoolean");
+	}
+
+	@Test public void getBooleanByIndexShouldReturnBoolean() throws SQLException {
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		assertTrue(resultSet.getBoolean(6));
+
+		resultSet.next();
+		assertFalse(resultSet.getBoolean(6));
+	}
+
+	@Test public void getBooleanByIndexShouldThrowExceptionNoIndex() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		resultSet.getBoolean(99);
+	}
+
+	@Test public void getBooleanByIndexShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		//doNothing().when(spyCursor).close();
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getBoolean(6);
 	}
 }
