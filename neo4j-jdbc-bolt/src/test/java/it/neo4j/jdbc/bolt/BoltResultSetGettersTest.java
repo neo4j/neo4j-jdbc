@@ -623,7 +623,6 @@ public class BoltResultSetGettersTest {
 
 		StatementResult spyCursor = spy(
 				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
 		ResultSet resultSet = new BoltResultSet(spyCursor);
 
 		resultSet.close();
@@ -658,10 +657,81 @@ public class BoltResultSetGettersTest {
 
 		StatementResult spyCursor = spy(
 				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
 		ResultSet resultSet = new BoltResultSet(spyCursor);
 
 		resultSet.close();
 		resultSet.getBoolean(6);
+	}
+
+	/*------------------------------*/
+	/*            getFloat          */
+	/*------------------------------*/
+
+	@Test public void getLongByLabelShouldReturnLong() throws SQLException {
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		assertEquals(2L, resultSet.getLong("columnLong"));
+
+		resultSet.next();
+		assertEquals(6L,resultSet.getLong("columnLong"));
+	}
+
+	@Test public void getLongByLabelShouldThrowExceptionNoLabel() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		resultSet.getLong("columnZ");
+	}
+
+	@Test public void getLongByLabelShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getLong("columnLong");
+	}
+
+	@Test public void getLongByIndexShouldReturnLong() throws SQLException {
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		assertEquals(2L, resultSet.getLong(7));
+
+		resultSet.next();
+		assertEquals(6L, resultSet.getLong(7));
+	}
+
+	@Test public void getLongByIndexShouldThrowExceptionNoIndex() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult StatementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(StatementResult);
+
+		resultSet.next();
+		resultSet.getLong(99);
+	}
+
+	@Test public void getLongByIndexShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getLong(7);
 	}
 }

@@ -53,9 +53,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract int getInt(int columnIndex) throws SQLException;
 
-	@Override public long getLong(int columnIndex) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract long getLong(int columnIndex) throws SQLException;
 
 	@Override public abstract float getFloat(int columnIndex) throws SQLException;
 
@@ -105,9 +103,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract int getInt(String columnLabel) throws SQLException;
 
-	@Override public long getLong(String columnLabel) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract long getLong(String columnLabel) throws SQLException;
 
 	@Override public abstract float getFloat(String columnLabel) throws SQLException;
 
