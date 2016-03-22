@@ -32,10 +32,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,6 +42,24 @@ import java.util.concurrent.TimeUnit;
 public class SamplePT {
 
 	@Test public void launchBenchmark() throws Exception {
+
+		Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
+		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687");
+		Statement stmt = conn.createStatement();
+		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
+		if(rs.next()){
+			throw new Exception("Database localhost:7687 is not empty");
+		}
+		for (int i = 0; i < 100; i++) {
+			stmt.executeQuery("CREATE (:A {prop:" + (int) (Math.random() * 100) + "})" + (Math.random() * 10 > 5 ?
+					"-[:X]->(:B {prop:'" + (int)(Math.random() * 100) + "'})" :
+					""));
+		}
+		stmt.executeQuery("CREATE (:C)");
+		stmt.executeQuery("MATCH (b:B), (c:C) MERGE (c)<-[:Y]-(b)");
+		stmt.close();
+		conn.close();
+
 		// @formatter:off
 		Options opt = new OptionsBuilder()
 				.include(this.getClass().getName() + ".*")

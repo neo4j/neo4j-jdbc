@@ -7,7 +7,7 @@ Being a graph database, Neo4J it's not serving data in a relational way and the 
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4J.
 
 *Note*: this project is at an alpha-level stage and is currently in development so the APIs will not be stable. Please try it out and give us
-feedback and suggestions but don't use this in a production environment (yet).
+feedback and suggestions but don't use it in a production environment (yet).
 
 
 The driver can be used with:
@@ -19,6 +19,8 @@ The driver will be implemented also for:
 * HTTP connection
 
 * direct file connection
+
+* embedded connection
 
 
 This project is composed by the following modules:
@@ -72,7 +74,7 @@ mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*IT test
 mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*PT test
 --------------------------------------------------
 
-WARNING: Must have a neo4j (M04) stand alone with Bolt protocol on port 7687 (default)
+WARNING: Must have a neo4j (M05) stand alone with Bolt protocol on port 7687 (default)
 
 ===== Server =====
 
@@ -80,23 +82,35 @@ WARNING: Must have a neo4j (M04) stand alone with Bolt protocol on port 7687 (de
 
 * Connect with URLs in the form jdbc:bolt://<host>:<port>/, e.g. jdbc:bolt://localhost/
 
-=== Currently in development (Bolt module) ===
+=== Release 3.0 Schedule ===
 
-* Connection [IN PROGRESS]
+Milestone 01 [RELEASED]
 
-* Statement [IN PROGRESS]
+* Basic snippet working
 
-* Driver [IN PROGRESS]
+* Logging
 
-* ResultSet [IN PROGRESS]
+* Performance tests
 
-* Transactions [IN PROGRESS]
+* M04 of Neo4j and Bolt driver
 
-* Metadata [IN PROGRESS]
+* Transactions working
 
-* Prepared Statements [TODO]
+* executeQuery + executeUpdate working
 
-* Parameters [TODO]
+* ResultSet getters managing nodes and relationships
+
+Milestone 02 [2016-04-10]
+
+* ResultSet getters managing paths [TODO]
+
+* Prepared statements [TODO]
+
+* M05 of Neo4j and Bolt driver [DONE]
+
+* Authentication [DOING]
+
+* Pentaho support [TODO]
 
 === Thank you ===
 
