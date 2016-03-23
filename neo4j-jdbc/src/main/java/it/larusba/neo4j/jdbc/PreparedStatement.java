@@ -42,9 +42,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setNull(int parameterIndex, int sqlType) throws SQLException;
 
 	@Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -54,33 +52,21 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setShort(int parameterIndex, short x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setShort(int parameterIndex, short x) throws SQLException;
 
-	@Override public void setInt(int parameterIndex, int x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setInt(int parameterIndex, int x) throws SQLException;
 
-	@Override public void setLong(int parameterIndex, long x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setLong(int parameterIndex, long x) throws SQLException;
 
-	@Override public void setFloat(int parameterIndex, float x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setFloat(int parameterIndex, float x) throws SQLException;
 
-	@Override public void setDouble(int parameterIndex, double x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setDouble(int parameterIndex, double x) throws SQLException;
 
 	@Override public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setString(int parameterIndex, String x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setString(int parameterIndex, String x) throws SQLException;
 
 	@Override public void setBytes(int parameterIndex, byte[] x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -110,9 +96,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void clearParameters() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void clearParameters() throws SQLException;
 
 	@Override public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -262,9 +246,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void close() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void close() throws SQLException;
 
 	@Override public int getMaxFieldSize() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -402,9 +384,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean isClosed() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean isClosed() throws SQLException;
 
 	@Override public void setPoolable(boolean poolable) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

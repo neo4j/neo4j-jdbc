@@ -26,10 +26,11 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
 import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Transaction;
 
 import java.sql.*;
 
+import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.mockSessionClosed;
+import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.mockSessionOpen;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -40,18 +41,6 @@ import static org.mockito.Mockito.*;
 public class BoltConnectionTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
-
-	private Session mockSessionOpen() {
-		Session session = mock(Session.class);
-		when(session.isOpen()).thenReturn(true);
-		Transaction transaction = mock(Transaction.class);
-		when(session.beginTransaction()).thenReturn(transaction);
-		return session;
-	}
-
-	private Session mockSessionClosed() {
-		return mock(Session.class);
-	}
 
 	/*------------------------------*/
 	/*           isClosed           */

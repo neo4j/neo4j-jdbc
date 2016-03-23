@@ -37,6 +37,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
@@ -55,33 +56,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 	private BoltResultSet mockedRS;
 
-	private Session mockSessionOpen() {
-		Session session = mock(Session.class);
-		when(session.isOpen()).thenReturn(true);
-		return session;
-	}
-
-	private BoltConnection mockConnectionOpen() throws SQLException {
-		BoltConnection mockConnection = mock(BoltConnection.class);
-		when(mockConnection.isClosed()).thenReturn(false);
-		return mockConnection;
-	}
-
-	private BoltConnection mockConnectionClosed() throws SQLException {
-		BoltConnection mockConnection = mock(BoltConnection.class);
-		when(mockConnection.isClosed()).thenReturn(true);
-		return mockConnection;
-	}
-
-	private BoltConnection mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
-		Transaction mockTransaction = mock(Transaction.class);
-		when(mockTransaction.run(anyString())).thenReturn(cur);
-
-		BoltConnection mockConnection = this.mockConnectionOpen();
-		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
-		return mockConnection;
-	}
-
 	@Before public void interceptBoltResultSetConstructor() throws Exception {
 		mockedRS = mock(BoltResultSet.class);
 		doNothing().when(mockedRS).close();
@@ -93,7 +67,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
 
-		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(null));
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
@@ -103,7 +77,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
 
-		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(null));
 		statement.close();
 
 		verify(mockedRS, never()).close();
@@ -111,7 +85,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
 
-		Statement statement = new BoltStatement(this.mockConnectionOpenWithTransactionThatReturns(null));
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(null));
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 		statement.close();
@@ -124,7 +98,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 		Transaction mockTransaction = mock(Transaction.class);
 
-		BoltConnection mockConnection = this.mockConnectionOpen();
+		BoltConnection mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 
 		Statement statement = new BoltStatement(mockConnection);
@@ -150,7 +124,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeQueryShouldThrowExceptionWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltStatement(this.mockConnectionClosed(), 0, 0, 0);
+		Statement statement = new BoltStatement(mockConnectionClosed(), 0, 0, 0);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
 

@@ -55,11 +55,15 @@ public class BoltStatement extends Statement implements Loggable {
 		this.closed = false;
 	}
 
-	//Mustn't return null
-	@Override public ResultSet executeQuery(String sql) throws SQLException {
+	private void checkClosed() throws SQLException{
 		if (this.isClosed()) {
 			throw new SQLException("Statement already closed");
 		}
+	}
+
+	//Mustn't return null
+	@Override public ResultSet executeQuery(String sql) throws SQLException {
+		this.checkClosed();
 		if (connection.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}
@@ -77,9 +81,7 @@ public class BoltStatement extends Statement implements Loggable {
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
-		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
-		}
+		this.checkClosed();
 		if (connection.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}

@@ -51,18 +51,18 @@ public class BoltResultSetGettersTest {
 	/*          findColumn          */
 	/*------------------------------*/
 	@Test public void findColumnShouldReturnCorrectIndex() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		assertEquals(1, resultSet.findColumn("columnA"));
 		assertEquals(2, resultSet.findColumn("columnB"));
 	}
 
 	@Test public void findColumnShouldReturnCorrectIndexOnDifferentColumns() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF, ResultSetData.RECORD_LIST_MORE_ELEMENTS_DIFF);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		assertEquals(1, resultSet.findColumn("columnA"));
 		assertEquals(2, resultSet.findColumn("columnB"));
@@ -72,9 +72,9 @@ public class BoltResultSetGettersTest {
 	@Test public void findColumnShouldThrowExceptionOnWrongLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.findColumn("columnZ");
@@ -96,9 +96,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getStringByLabelShouldReturnString() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString("columnString"));
@@ -110,9 +110,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getStringByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getString("columnZ");
@@ -131,9 +131,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getStringByIndexShouldReturnString() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString(2));
@@ -145,9 +145,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getStringByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getString(99);
@@ -170,9 +170,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getIntByLabelShouldReturnInt() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt("columnInt"));
@@ -184,9 +184,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getIntByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getInt("columnZ");
@@ -205,9 +205,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getIntByIndexShouldReturnInt() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt(1));
@@ -219,9 +219,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getIntByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getInt(99);
@@ -244,9 +244,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getFloatByLabelShouldReturnFloat() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(0.1F, resultSet.getFloat("columnFloat"), 0);
@@ -258,9 +258,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getFloatByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getFloat("columnZ");
@@ -279,9 +279,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getFloatByIndexShouldReturnFloat() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(0.1F, resultSet.getFloat(3), 0);
@@ -293,9 +293,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getFloatByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getFloat(99);
@@ -318,9 +318,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getShortByLabelShouldReturnShort() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getShort("columnShort"));
@@ -332,9 +332,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getShortByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getShort("columnZ");
@@ -353,9 +353,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getShortByIndexShouldReturnShort() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getShort(1));
@@ -367,9 +367,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getShortByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getShort(99);
@@ -392,9 +392,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getDoubleByLabelShouldReturnDouble() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(02.29D, resultSet.getDouble("columnDouble"), 0);
@@ -406,9 +406,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getDoubleByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getDouble("columnZ");
@@ -427,9 +427,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getDoubleByIndexShouldReturnDouble() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(02.29D, resultSet.getDouble(5), 0);
@@ -441,9 +441,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getDoubleByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getDouble(99);
@@ -467,9 +467,9 @@ public class BoltResultSetGettersTest {
 	// ! Still needs tests for paths
 
 	@Test public void getObjectByLabelShouldReturnObject() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getObject("columnString").toString());
@@ -483,9 +483,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getObjectByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getObject("not present");
@@ -494,18 +494,18 @@ public class BoltResultSetGettersTest {
 	@Test public void getObjectByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.close();
 		resultSet.getObject("not present");
 	}
 
 	@Test public void getObjectByIndexShouldReturnObject() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getObject(2).toString());
@@ -519,9 +519,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getObjectByIndexShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getObject(99);
@@ -530,9 +530,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getObjectByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.close();
 		resultSet.getObject(1);
@@ -565,9 +565,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getObjectShouldReturnCorrectRelationsAsMap() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_RELATIONS);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(new HashMap<String, Object>() {
@@ -594,9 +594,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getBooleanByLabelShouldReturnBoolean() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertTrue(resultSet.getBoolean("columnBoolean"));
@@ -608,9 +608,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getBooleanByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getBoolean("columnZ");
@@ -628,9 +628,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getBooleanByIndexShouldReturnBoolean() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertTrue(resultSet.getBoolean(6));
@@ -642,9 +642,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getBooleanByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getBoolean(99);
@@ -666,9 +666,9 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 
 	@Test public void getLongByLabelShouldReturnLong() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(2L, resultSet.getLong("columnLong"));
@@ -680,9 +680,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getLongByLabelShouldThrowExceptionNoLabel() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getLong("columnZ");
@@ -700,9 +700,9 @@ public class BoltResultSetGettersTest {
 	}
 
 	@Test public void getLongByIndexShouldReturnLong() throws SQLException {
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(2L, resultSet.getLong(7));
@@ -714,9 +714,9 @@ public class BoltResultSetGettersTest {
 	@Test public void getLongByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult StatementResult = ResultSetData
+		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		resultSet.getLong(99);
