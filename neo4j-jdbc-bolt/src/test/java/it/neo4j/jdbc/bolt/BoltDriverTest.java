@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
+import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -61,7 +62,7 @@ import static org.junit.Assert.*;
 
 	@Test public void shouldConnectCreateConnection() throws SQLException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver("bolt://test")).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
 
 		Driver driver = new BoltDriver();
 		Connection connection = driver.connect("jdbc:bolt://test", null);

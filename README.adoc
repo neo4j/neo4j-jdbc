@@ -80,7 +80,9 @@ WARNING: Must have a neo4j (M05) stand alone with Bolt protocol on port 7687 (de
 
 * Install a Neo4j 3.0 server and start it with the BOLT protocol enabled
 
-* Connect with URLs in the form jdbc:bolt://<host>:<port>/, e.g. jdbc:bolt://localhost/
+* Connect with URLs in the form jdbc:bolt://<host>:<port>/ e.g. jdbc:bolt://localhost/
+
+* You can also set comma separated parameters in the URL for authentication and debug mode, e.g. jdbc:bolt://localhost/?user=neo4j,password=neo4j,debug=true
 
 === Release 3.0 Schedule ===
 
@@ -94,7 +96,7 @@ Milestone 01 [RELEASED]
 
 * M04 of Neo4j and Bolt driver
 
-* Transactions working
+* Transactions working (both manual and autocommit)
 
 * executeQuery + executeUpdate working
 
@@ -108,9 +110,13 @@ Milestone 02 [2016-04-10]
 
 * M05 of Neo4j and Bolt driver [DONE]
 
-* Authentication [DOING]
+* Authentication [DONE]
 
 * Pentaho support [TODO]
+
+Milestone 03 [2016-04-20]
+
+* Batching [TODO]
 
 === Thank you ===
 

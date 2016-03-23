@@ -20,6 +20,7 @@
 package it.neo4j.jdbc.bolt;
 
 import it.neo4j.jdbc.Driver;
+import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.GraphDatabase;
 
 import java.sql.Connection;
@@ -57,14 +58,14 @@ public class BoltDriver extends Driver {
 			try {
 				Properties props = new Properties();
 				parseUrlProperties(url, props);
-				connection = InstanceFactory
-						.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url).session(), props), BoltConnection.hasDebug(props));
-
+				connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
+						(props.containsKey("user") && props.containsKey("password") ?
+								AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :
+								AuthTokens.none())).session()), BoltConnection.hasDebug(props));
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}
-		}
-		return connection;
+		} return connection;
 	}
 
 	@Override public boolean acceptsURL(String url) throws SQLException {
