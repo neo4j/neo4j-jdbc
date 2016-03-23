@@ -33,7 +33,7 @@ This project is composed by the following modules:
 
 ---------------------------------------------
 // Make sure Neo4j Driver is registered
-Class.forName("it.neo4j.jdbc.bolt.BoltDriver");
+Class.forName("BoltDriver");
 
 // Connect
 Connection con = DriverManager.getConnection("jdbc:bolt://localhost");
@@ -52,7 +52,7 @@ con.close();
 
 * Add the JDBC driver jar file to your project
 
-* Load the driver using the class "it.neo4j.jdbc.bolt.BoltDriver" for BOLT protocol
+* Load the driver using the class "BoltDriver" for BOLT protocol
 
 * Execute queries using the Cyper graph query language
 

@@ -8,12 +8,12 @@
     <description>Common module for every implementation of the Neo4j JDBC Driver</description>
 
     <parent>
-        <groupId>it.neo4j</groupId>
+        <groupId>it.larus-ba</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>it.neo4j</groupId>
+    <groupId>it.larus-ba</groupId>
     <artifactId>neo4j-jdbc</artifactId>
     <version>3.0-SNAPSHOT</version>
 
