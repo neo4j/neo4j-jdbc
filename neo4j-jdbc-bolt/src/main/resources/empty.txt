@@ -1,4 +1,4 @@
-TODOLIST:
+ziotob's (secret) TODOLIST:
 
 Test databaseMetadata
 Test Statement closed closes ResultSet

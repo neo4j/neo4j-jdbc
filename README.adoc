@@ -106,9 +106,11 @@ Milestone 02 [2016-04-10]
 
 * ResultSet getters managing paths [TODO]
 
-* Prepared statements [TODO]
+* Prepared statements [IN PROGRESS]
 
-* M05 of Neo4j and Bolt driver [DONE]
+* M05 of Neo4j [DONE]
+
+* RC1 Neo4j bolt driver [DONE]
 
 * Authentication [DONE]
 
