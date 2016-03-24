@@ -19,6 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
+import it.larusba.neo4j.jdbc.ParameterMetaData;
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import org.neo4j.driver.v1.Transaction;
 
@@ -73,6 +74,14 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		this.parameters.put(new Integer(index).toString(), o);
 	}
 
+	/**
+	 * Method that returns the number of parameters
+	 * @return
+	 */
+	public int getParametersNumber(){
+		return this.parametersNumber;
+	}
+
 	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
 		this.checkClosed();
 		this.checkParamsNumber(parameterIndex);
@@ -94,6 +103,12 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 			throw new SQLFeatureNotSupportedException("The Type you specified is not supported");
 		}
 		this.insertParameter(parameterIndex, null);
+	}
+
+	@Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
 	}
 
 	@Override public void setShort(int parameterIndex, short x) throws SQLException {
@@ -135,6 +150,12 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	@Override public void clearParameters() throws SQLException {
 		this.checkClosed();
 		this.parameters.clear();
+	}
+
+	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
+		this.checkClosed();
+		ParameterMetaData pmd = new BoltParameterMetaData(this);
+		return pmd;
 	}
 
 	@Override public void close() throws SQLException {

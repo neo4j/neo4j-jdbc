@@ -26,6 +26,9 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
 import java.sql.SQLException;
@@ -39,24 +42,26 @@ import static java.sql.Types.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
+@RunWith(PowerMockRunner.class) @PrepareForTest({BoltPreparedStatement.class })
 public class BoltPreparedStatementTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	PreparedStatement preparedStatementOneParam;
-	PreparedStatement preparedStatementTwoParam;
+	PreparedStatement preparedStatementTwoParams;
 
 	private BoltResultSet mockedRS;
 
 	@Before public void interceptBoltResultSetConstructor() throws Exception {
 		this.preparedStatementOneParam = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null), "MATCH n RETURN n WHERE n.name = ?");
-		this.preparedStatementTwoParam = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null),
+		this.preparedStatementTwoParams = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null),
 				"MATCH n RETURN n WHERE n.name = ? AND n.surname = ?");
 
 		this.mockedRS = mock(BoltResultSet.class);
@@ -110,8 +115,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(10, value.get("1"));
 
-		this.preparedStatementTwoParam.setInt(2, 125);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setInt(2, 125);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(125, value.get("2"));
 	}
 
@@ -124,7 +129,7 @@ public class BoltPreparedStatementTest {
 	@Test public void setIntShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarkerTwoParams() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		this.preparedStatementTwoParam.setInt(99, 10);
+		this.preparedStatementTwoParams.setInt(99, 10);
 	}
 
 	@Test public void setIntShouldThrowExceptionIfClosedPreparedStatement() throws SQLException {
@@ -143,8 +148,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(10L, value.get("1"));
 
-		this.preparedStatementTwoParam.setLong(2, 125L);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setLong(2, 125L);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(125L, value.get("2"));
 	}
 
@@ -170,8 +175,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(10.5F, value.get("1"));
 
-		this.preparedStatementTwoParam.setFloat(2, 125.5F);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setFloat(2, 125.5F);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(125.5F, value.get("2"));
 	}
 
@@ -197,8 +202,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(10.5, value.get("1"));
 
-		this.preparedStatementTwoParam.setDouble(2, 125.5);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setDouble(2, 125.5);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(125.5, value.get("2"));
 	}
 
@@ -224,8 +229,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals((short) 10, value.get("1"));
 
-		this.preparedStatementTwoParam.setShort(2, (short) 125);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setShort(2, (short) 125);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals((short) 125, value.get("2"));
 	}
 
@@ -243,7 +248,7 @@ public class BoltPreparedStatementTest {
 	}
 
 	/*------------------------------*/
-	/*           setString           */
+	/*           setString          */
 	/*------------------------------*/
 
 	@Test public void setStringShouldInsertTheCorrectStringValue() throws SQLException {
@@ -251,8 +256,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals("string", value.get("1"));
 
-		this.preparedStatementTwoParam.setString(2, "text");
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setString(2, "text");
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals("text", value.get("2"));
 	}
 
@@ -270,7 +275,7 @@ public class BoltPreparedStatementTest {
 	}
 
 	/*------------------------------*/
-	/*           setNull           */
+	/*            setNull           */
 	/*------------------------------*/
 
 	@Test public void setNullShouldInsertTheCorrectNullValue() throws SQLException {
@@ -278,8 +283,8 @@ public class BoltPreparedStatementTest {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(null, value.get("1"));
 
-		this.preparedStatementTwoParam.setNull(2, NULL);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParam, "parameters");
+		this.preparedStatementTwoParams.setNull(2, NULL);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(null, value.get("2"));
 	}
 
@@ -381,6 +386,54 @@ public class BoltPreparedStatementTest {
 		this.preparedStatementOneParam.close();
 
 		this.preparedStatementOneParam.clearParameters();
+	}
+
+	/*------------------------------*/
+	/*          setBoolean          */
+	/*------------------------------*/
+
+	@Test public void setBooleanShouldInsertTheCorrectBooleanValue() throws SQLException {
+		this.preparedStatementOneParam.setBoolean(1, true);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(true, value.get("1"));
+
+		this.preparedStatementTwoParams.setBoolean(2, false);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
+		assertEquals(false, value.get("2"));
+	}
+
+	@Test public void setBooleanShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		this.preparedStatementOneParam.setBoolean(99, true);
+	}
+
+	@Test public void setBooleanShouldThrowExceptionIfClosedPreparedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		this.preparedStatementOneParam.close();
+		this.preparedStatementOneParam.setBoolean(1, true);
+	}
+
+
+	/*------------------------------*/
+	/*     getParameterMetaData     */
+	/*------------------------------*/
+
+	@Test public void getParameterMetaDataShouldReturnANewParameterMetaData() throws Exception {
+		whenNew(BoltParameterMetaData.class).withAnyArguments().thenReturn(null);
+
+		this.preparedStatementOneParam.getParameterMetaData();
+
+		verifyNew(BoltParameterMetaData.class).withArguments(this.preparedStatementOneParam);
+
+	}
+
+	@Test public void getParameterMetaDataShouldThrowExceptionIfCalledOnClosedStatement() throws Exception {
+		expectedEx.expect(SQLException.class);
+
+		this.preparedStatementOneParam.close();
+		this.preparedStatementOneParam.getParameterMetaData();
 	}
 
 }

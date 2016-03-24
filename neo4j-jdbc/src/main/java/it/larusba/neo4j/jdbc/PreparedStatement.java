@@ -44,9 +44,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 
 	@Override public abstract void setNull(int parameterIndex, int sqlType) throws SQLException;
 
-	@Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setBoolean(int parameterIndex, boolean x) throws SQLException;
 
 	@Override public void setByte(int parameterIndex, byte x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -158,9 +156,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public java.sql.ParameterMetaData getParameterMetaData() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract ParameterMetaData getParameterMetaData() throws SQLException;
 
 	@Override public void setRowId(int parameterIndex, RowId x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
