@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -43,7 +42,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
@@ -94,7 +93,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		verify(mockedRS, times(1)).close();
 	}
 
-	@Test public void closeShouldCloseTheTransactionNotCommiting() throws Exception {
+	@Test public void closeShouldCloseTheTransactionNotCommitting() throws Exception {
 
 		Transaction mockTransaction = mock(Transaction.class);
 
@@ -114,7 +113,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
 		Statement statement = new BoltStatement(mockConnectionOpen());
-
 		assertFalse(statement.isClosed());
 	}
 
@@ -134,8 +132,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		Statement statement = new BoltStatement(mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 
-		verifyStatic(times(1));
-		new BoltResultSet(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		verifyNew(BoltResultSet.class).withArguments(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
@@ -252,5 +249,38 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 
 		fail();
+	}
+
+	/*------------------------------*/
+	/*    getResultSetConcurrency   */
+	/*------------------------------*/
+	@Test public void getResultSetConcurrencyShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement statement = new BoltStatement(mockConnectionClosed());
+		statement.close();
+		statement.getResultSetConcurrency();
+	}
+
+	/*------------------------------*/
+	/*    getResultSetHoldability   */
+	/*------------------------------*/
+	@Test public void getResultSetHoldabilityShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement statement = new BoltStatement(mockConnectionClosed());
+		statement.close();
+		statement.getResultSetHoldability();
+	}
+
+	/*------------------------------*/
+	/*       getResultSetType       */
+	/*------------------------------*/
+	@Test public void getResultSetTypeShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement statement = new BoltStatement(mockConnectionClosed());
+		statement.close();
+		statement.getResultSetType();
 	}
 }

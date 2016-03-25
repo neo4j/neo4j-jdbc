@@ -35,9 +35,7 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public abstract Statement createStatement() throws SQLException;
 
-	@Override public PreparedStatement prepareStatement(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract PreparedStatement prepareStatement(String sql) throws SQLException;
 
 	@Override public java.sql.CallableStatement prepareCall(String sql) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -87,9 +85,7 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException;
 
-	@Override public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException;
 
 	@Override public java.sql.CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -103,13 +99,9 @@ public abstract class Connection implements java.sql.Connection {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setHoldability(int holdability) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setHoldability(int holdability) throws SQLException;
 
-	@Override public int getHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getHoldability() throws SQLException;
 
 	@Override public Savepoint setSavepoint() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -129,9 +121,8 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException;
 
-	@Override public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+			throws SQLException;
 
 	@Override public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

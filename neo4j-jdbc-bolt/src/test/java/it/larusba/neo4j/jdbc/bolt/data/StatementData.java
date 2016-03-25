@@ -24,9 +24,11 @@ package it.larusba.neo4j.jdbc.bolt.data;
  * @since 3.0.0
  */
 public class StatementData {
-	public static String STATEMENT_MATCH_ALL        = "MATCH (n) RETURN n;";
-	public static String STATEMENT_MATCH_ALL_STRING = "MATCH (n:User) RETURN n.name";
-	public static String STATEMENT_CREATE           = "CREATE (n:User {name:\"test\"});";
-	public static String STATEMENT_CREATE_REV       = "MATCH (n:User {name:\"test\"}) DELETE n;";
-	public static String STATEMENT_COUNT            = "MATCH (n) RETURN COUNT(n);";
+	public static String STATEMENT_MATCH_ALL                   = "MATCH (n) RETURN n;";
+	public static String STATEMENT_MATCH_ALL_STRING            = "MATCH (n:User) RETURN n.name";
+	public static String STATEMENT_CREATE                      = "CREATE (n:User {name:\"test\"});";
+	public static String STATEMENT_CREATE_REV                  = "MATCH (n:User {name:\"test\"}) DELETE n;";
+	public static String STATEMENT_COUNT                       = "MATCH (n) RETURN COUNT(n);";
+	public static String STATEMENT_CREATE_TWO_PROPERTIES       = "CREATE (n:User {name:\"test\", surname:\"testAgain\"});";
+	public static String STATEMENT_MATCH_ALL_STRING_PARAMETRIC = "MATCH (n) WHERE n.name = ? RETURN n.surname;";
 }

@@ -243,13 +243,9 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getType() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getType() throws SQLException;
 
-	@Override public int getConcurrency() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getConcurrency() throws SQLException;
 
 	@Override public boolean rowUpdated() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -567,9 +563,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getHoldability() throws SQLException;
 
 	@Override public abstract boolean isClosed() throws SQLException;
 

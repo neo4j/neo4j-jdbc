@@ -34,9 +34,7 @@ import java.util.Calendar;
  */
 public abstract class PreparedStatement implements java.sql.PreparedStatement {
 
-	@Override public ResultSet executeQuery() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract ResultSet executeQuery() throws SQLException;
 
 	@Override public int executeUpdate() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -320,13 +318,9 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getResultSetConcurrency() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getResultSetConcurrency() throws SQLException;
 
-	@Override public int getResultSetType() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getResultSetType() throws SQLException;
 
 	@Override public void addBatch(String sql) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -376,9 +370,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getResultSetHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getResultSetHoldability() throws SQLException;
 
 	@Override public abstract boolean isClosed() throws SQLException;
 

@@ -19,6 +19,8 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
+import it.larusba.neo4j.jdbc.bolt.data.StatementData;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,18 +44,53 @@ public class BoltConnectionTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+	BoltConnection openConnection;
+	BoltConnection closedConnection;
+
+	@Before public void tearUp() {
+		openConnection = new BoltConnection(mockSessionOpen());
+		closedConnection = new BoltConnection(mockSessionClosed());
+	}
+
+	/*------------------------------*/
+	/*        setHoldability        */
+	/*------------------------------*/
+
+	@Test public void setHoldabilityShouldSetTheHoldability() throws SQLException {
+		openConnection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		assertEquals(ResultSet.HOLD_CURSORS_OVER_COMMIT, openConnection.getHoldability());
+		openConnection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, openConnection.getHoldability());
+	}
+
+	@Test public void setHoldabilityShouldThrowExceptionIfHoldabilityIsNotSupported() throws SQLException {
+		expectedEx.expect(SQLFeatureNotSupportedException.class);
+		openConnection.setHoldability(999);
+	}
+
+	@Test public void setHoldabilityShouldThrowExceptionWhenCalledOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		closedConnection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+	}
+
+	/*------------------------------*/
+	/*        getHoldability        */
+	/*------------------------------*/
+
+	@Test public void getHoldabilityShouldThrowExceptionWhenCalledOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		closedConnection.getHoldability();
+	}
+
 	/*------------------------------*/
 	/*           isClosed           */
 	/*------------------------------*/
 	@Test public void isClosedShouldReturnFalse() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-		assertFalse(connection.isClosed());
+		assertFalse(openConnection.isClosed());
 	}
 
 	@Test public void isClosedShouldReturnTrue() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.close();
-		assertTrue(connection.isClosed());
+		assertTrue(closedConnection.isClosed());
 	}
 
 	/*------------------------------*/
@@ -88,64 +125,52 @@ public class BoltConnectionTest {
 	/*          isReadOnly          */
 	/*------------------------------*/
 	@Test public void isReadOnlyShouldReturnFalse() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-		assertFalse(connection.isReadOnly());
+		assertFalse(openConnection.isReadOnly());
 	}
 
 	@Test public void isReadOnlyShouldReturnTrue() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-		connection.setReadOnly(true);
-		assertTrue(connection.isReadOnly());
+		openConnection.setReadOnly(true);
+		assertTrue(openConnection.isReadOnly());
 	}
 
 	@Test public void isReadOnlyShouldThrowExceptionWhenCalledOnAClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.close();
-		connection.isReadOnly();
+		closedConnection.isReadOnly();
 	}
 
 	/*------------------------------*/
 	/*         setReadOnly          */
 	/*------------------------------*/
 	@Test public void setReadOnlyShouldSetReadOnlyTrue() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-		assertFalse(connection.isReadOnly());
-		connection.setReadOnly(true);
-		assertTrue(connection.isReadOnly());
+		assertFalse(openConnection.isReadOnly());
+		openConnection.setReadOnly(true);
+		assertTrue(openConnection.isReadOnly());
 	}
 
 	@Test public void setReadOnlyShouldSetReadOnlyFalse() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-		assertFalse(connection.isReadOnly());
-		connection.setReadOnly(false);
-		assertFalse(connection.isReadOnly());
+		assertFalse(openConnection.isReadOnly());
+		openConnection.setReadOnly(false);
+		assertFalse(openConnection.isReadOnly());
 	}
 
 	@Test public void setReadOnlyShouldSetReadOnlyFalseAfterSetItTrue() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-		assertFalse(connection.isReadOnly());
-		connection.setReadOnly(true);
-		assertTrue(connection.isReadOnly());
-		connection.setReadOnly(false);
-		assertFalse(connection.isReadOnly());
+		assertFalse(openConnection.isReadOnly());
+		openConnection.setReadOnly(true);
+		assertTrue(openConnection.isReadOnly());
+		openConnection.setReadOnly(false);
+		assertFalse(openConnection.isReadOnly());
 	}
 
 	@Test public void setReadOnlyShouldThrowExceptionIfCalledOnAClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.close();
-		connection.setReadOnly(true);
+		closedConnection.setReadOnly(true);
 	}
 
 	/*------------------------------*/
 	/*        createStatement       */
 	/*------------------------------*/
 
-	//this test depends on BoltStatement implementation
-	@Ignore @Test public void createStatementNoParamsShouldReturnNewStatement() throws SQLException {
+	@Test public void createStatementNoParamsShouldReturnNewStatement() throws SQLException {
 		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.createStatement();
 
@@ -157,13 +182,10 @@ public class BoltConnectionTest {
 
 	@Test public void createStatementNoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.close();
-		connection.createStatement();
+		closedConnection.createStatement();
 	}
 
-	//this test depends on BoltStatement implementation
-	@Ignore @Test public void createStatementTwoParamsShouldReturnNewStatement() throws SQLException {
+	@Test public void createStatementTwoParamsShouldReturnNewStatement() throws SQLException {
 		Connection connection = new BoltConnection(mockSessionOpen());
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
@@ -181,22 +203,19 @@ public class BoltConnectionTest {
 
 	@Test public void createStatementTwoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.close();
-		connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+		closedConnection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 	}
 
 	//Must be managed only the types specified in the createStatementTwoParamsShouldReturnNewStatement test
 	//This test doesn't cover all integers different from supported ones
 	@Test public void createStatementTwoParamsShouldThrowExceptionOnWrongParams() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
 
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
 
 		for (int type : types) {
 			try {
-				connection.createStatement(concurrencies[0], type);
+				openConnection.createStatement(concurrencies[0], type);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
 				//Expected Exception
@@ -207,7 +226,7 @@ public class BoltConnectionTest {
 
 		for (int concurrency : concurrencies) {
 			try {
-				connection.createStatement(concurrency, types[0]);
+				openConnection.createStatement(concurrency, types[0]);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
 				//Expected Exception
@@ -217,8 +236,7 @@ public class BoltConnectionTest {
 		}
 	}
 
-	//this test depends on BoltStatement implementation
-	@Ignore @Test public void createStatementThreeParamsShouldReturnNewStatement() throws SQLException {
+	@Test public void createStatementThreeParamsShouldReturnNewStatement() throws SQLException {
 		Connection connection = new BoltConnection(mockSessionOpen());
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
@@ -242,23 +260,19 @@ public class BoltConnectionTest {
 
 	@Test public void createStatementThreeParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.close();
-		connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		closedConnection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	//Must be managed only the types specified in the createStatementThreeParamsShouldReturnNewStatement test
 	//This test doesn't cover all integers different from supported ones
 	@Test public void createStatementThreeParamsShouldThrowExceptionOnWrongParams() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
 		int[] holdabilities = { ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT };
 
 		for (int type : types) {
 			try {
-				connection.createStatement(concurrencies[0], holdabilities[0], type);
+				openConnection.createStatement(concurrencies[0], holdabilities[0], type);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
 				//Expected Exception
@@ -269,7 +283,7 @@ public class BoltConnectionTest {
 
 		for (int concurrency : concurrencies) {
 			try {
-				connection.createStatement(concurrency, holdabilities[0], types[0]);
+				openConnection.createStatement(concurrency, holdabilities[0], types[0]);
 				fail();
 			} catch (SQLFeatureNotSupportedException e) {
 				//Expected Exception
@@ -280,7 +294,145 @@ public class BoltConnectionTest {
 
 		for (int holdability : holdabilities) {
 			try {
-				connection.createStatement(concurrencies[0], holdability, types[0]);
+				openConnection.createStatement(concurrencies[0], holdability, types[0]);
+			} catch (SQLFeatureNotSupportedException e) {
+				//Expected Exception
+			} catch (Exception e) {
+				fail();
+			}
+		}
+	}
+
+	/*------------------------------*/
+	/*        prepareStatement       */
+	/*------------------------------*/
+
+	@Test public void prepareStatementNoParamsShouldReturnNewStatement() throws SQLException {
+		Connection connection = new BoltConnection(mockSessionOpen());
+		Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
+
+		assertTrue(statement instanceof BoltPreparedStatement);
+		assertEquals(connection.getHoldability(), statement.getResultSetHoldability());
+		assertEquals(ResultSet.CONCUR_READ_ONLY, statement.getResultSetConcurrency());
+		assertEquals(ResultSet.TYPE_FORWARD_ONLY, statement.getResultSetType());
+	}
+
+	@Test public void prepareStatementNoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		closedConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
+	}
+
+	@Test public void prepareStatementTwoParamsShouldReturnNewStatement() throws SQLException {
+		Connection connection = new BoltConnection(mockSessionOpen());
+		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
+		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
+
+		for (int type : types) {
+			Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, type, concurrencies[0]);
+			assertEquals(type, statement.getResultSetType());
+		}
+
+		for (int concurrency : concurrencies) {
+			Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, types[0], concurrency);
+			assertEquals(concurrency, statement.getResultSetConcurrency());
+		}
+	}
+
+	@Test public void prepareStatementTwoParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		closedConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+	}
+
+	//Must be managed only the types specified in the prepareStatementTwoParamsShouldReturnNewStatement test
+	//This test doesn't cover all integers different from supported ones
+	@Test public void prepareStatementTwoParamsShouldThrowExceptionOnWrongParams() throws SQLException {
+
+		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
+		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
+
+		for (int type : types) {
+			try {
+				openConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, concurrencies[0], type);
+				fail();
+			} catch (SQLFeatureNotSupportedException e) {
+				//Expected Exception
+			} catch (Exception e) {
+				fail();
+			}
+		}
+
+		for (int concurrency : concurrencies) {
+			try {
+				openConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, concurrency, types[0]);
+				fail();
+			} catch (SQLFeatureNotSupportedException e) {
+				//Expected Exception
+			} catch (Exception e) {
+				fail();
+			}
+		}
+	}
+
+	@Test public void prepareStatementThreeParamsShouldReturnNewStatement() throws SQLException {
+		Connection connection = new BoltConnection(mockSessionOpen());
+		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
+		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
+		int[] holdabilities = { ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT };
+
+		for (int type : types) {
+			Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, type, concurrencies[0], holdabilities[0]);
+			assertEquals(type, statement.getResultSetType());
+		}
+
+		for (int concurrency : concurrencies) {
+			Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, types[0], concurrency, holdabilities[0]);
+			assertEquals(concurrency, statement.getResultSetConcurrency());
+		}
+
+		for (int holdability : holdabilities) {
+			Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, types[0], concurrencies[0], holdability);
+			assertEquals(holdability, statement.getResultSetHoldability());
+		}
+	}
+
+	@Test public void prepareStatementThreeParamsShouldThrowExceptionOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		closedConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+	}
+
+	//Must be managed only the types specified in the prepareStatementThreeParamsShouldReturnNewStatement test
+	//This test doesn't cover all integers different from supported ones
+	@Test public void prepareStatementThreeParamsShouldThrowExceptionOnWrongParams() throws SQLException {
+		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
+		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
+		int[] holdabilities = { ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT };
+
+		for (int type : types) {
+			try {
+				openConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, concurrencies[0], holdabilities[0], type);
+				fail();
+			} catch (SQLFeatureNotSupportedException e) {
+				//Expected Exception
+			} catch (Exception e) {
+				fail();
+			}
+		}
+
+		for (int concurrency : concurrencies) {
+			try {
+				openConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, concurrency, holdabilities[0], types[0]);
+				fail();
+			} catch (SQLFeatureNotSupportedException e) {
+				//Expected Exception
+			} catch (Exception e) {
+				fail();
+			}
+		}
+
+		for (int holdability : holdabilities) {
+			try {
+				openConnection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC, concurrencies[0], holdability, types[0]);
 			} catch (SQLFeatureNotSupportedException e) {
 				//Expected Exception
 			} catch (Exception e) {
@@ -305,34 +457,30 @@ public class BoltConnectionTest {
 	}
 
 	@Test public void setAutoCommitShouldSetWhatIsPassed() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		connection.setAutoCommit(false);
-		assertFalse(connection.getAutoCommit());
-		connection.setAutoCommit(true);
-		assertTrue(connection.getAutoCommit());
+		openConnection.setAutoCommit(false);
+		assertFalse(openConnection.getAutoCommit());
+		openConnection.setAutoCommit(true);
+		assertTrue(openConnection.getAutoCommit());
 	}
 
 	@Test public void setAutoCommitShouldCommit() throws SQLException {
-		BoltConnection connection = new BoltConnection(mockSessionOpen());
+		openConnection.setAutoCommit(true);
+		verify(openConnection.getSession(), times(0)).beginTransaction();
 
-		connection.setAutoCommit(true);
-		verify(connection.getSession(), times(0)).beginTransaction();
+		openConnection.setAutoCommit(false);
+		verify(openConnection.getSession(), times(1)).beginTransaction();
 
-		connection.setAutoCommit(false);
-		verify(connection.getSession(), times(1)).beginTransaction();
+		openConnection.setAutoCommit(false);
+		verify(openConnection.getSession(), times(1)).beginTransaction();
 
-		connection.setAutoCommit(false);
-		verify(connection.getSession(), times(1)).beginTransaction();
+		openConnection.setAutoCommit(true);
+		verify(openConnection.getSession(), times(2)).beginTransaction();
 
-		connection.setAutoCommit(true);
-		verify(connection.getSession(), times(2)).beginTransaction();
+		openConnection.setAutoCommit(true);
+		verify(openConnection.getSession(), times(2)).beginTransaction();
 
-		connection.setAutoCommit(true);
-		verify(connection.getSession(), times(2)).beginTransaction();
-
-		connection.setAutoCommit(false);
-		verify(connection.getSession(), times(3)).beginTransaction();
+		openConnection.setAutoCommit(false);
+		verify(openConnection.getSession(), times(3)).beginTransaction();
 	}
 
 	/*------------------------------*/
@@ -342,31 +490,22 @@ public class BoltConnectionTest {
 	@Test public void getAutoCommitShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltConnection(mockSessionClosed());
-
-		connection.close();
-		connection.getAutoCommit();
+		closedConnection.getAutoCommit();
 	}
 
 	@Test public void getAutoCommitShouldReturnTrueByDefault() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		assertTrue(connection.getAutoCommit());
+		assertTrue(openConnection.getAutoCommit());
 	}
 
 	@Test public void getAutoCommitShouldReturnFalse() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		connection.setAutoCommit(false);
-		assertFalse(connection.getAutoCommit());
+		openConnection.setAutoCommit(false);
+		assertFalse(openConnection.getAutoCommit());
 	}
 
 	@Test public void getAutoCommitShouldReturnTrue() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		connection.setAutoCommit(false);
-		connection.setAutoCommit(true);
-		assertTrue(connection.getAutoCommit());
+		openConnection.setAutoCommit(false);
+		openConnection.setAutoCommit(true);
+		assertTrue(openConnection.getAutoCommit());
 	}
 
 	/*------------------------------*/
@@ -375,20 +514,13 @@ public class BoltConnectionTest {
 
 	@Test public void commitShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-
-		connection.close();
-		connection.commit();
+		closedConnection.commit();
 	}
 
 	@Test public void commitShouldThrowExceptionIfInAutoCommitIsTrue() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		connection.setAutoCommit(true);
-		connection.commit();
+		openConnection.setAutoCommit(true);
+		openConnection.commit();
 	}
 
 	/*------------------------------*/
@@ -397,20 +529,13 @@ public class BoltConnectionTest {
 
 	@Test public void rollbackShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-
-		connection.close();
-		connection.rollback();
+		closedConnection.rollback();
 	}
 
 	@Test public void rollbackShouldThrowExceptionIfInAutoCommitIsTrue() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		connection.setAutoCommit(true);
-		connection.rollback();
+		openConnection.setAutoCommit(true);
+		openConnection.rollback();
 	}
 
 	/*------------------------------*/
@@ -419,17 +544,11 @@ public class BoltConnectionTest {
 
 	@Test public void getTransactionIsolationShouldThrowExceptionIfConnectionIsClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-
-		connection.close();
-		connection.getTransactionIsolation();
+		closedConnection.getTransactionIsolation();
 	}
 
 	@Test public void getTransactionIsolationShouldReturnTransactionReadCommitted() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
+		assertEquals(Connection.TRANSACTION_READ_COMMITTED, openConnection.getTransactionIsolation());
 	}
 
 	/*------------------------------*/
@@ -437,17 +556,13 @@ public class BoltConnectionTest {
 	/*------------------------------*/
 
 	@Test public void setCatalogShouldSilentlyIgnoreTheRequest() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		connection.setCatalog("catalog");
-		assertNull(connection.getCatalog());
+		openConnection.setCatalog("catalog");
+		assertNull(openConnection.getCatalog());
 	}
 
 	@Test public void setCatalogShouldThrowExceptionWhenConnectionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.setCatalog("catalog");
+		closedConnection.setCatalog("catalog");
 	}
 
 	/*------------------------------*/
@@ -455,15 +570,11 @@ public class BoltConnectionTest {
 	/*------------------------------*/
 
 	@Test public void getCatalogShouldReturnNull() throws SQLException {
-		Connection connection = new BoltConnection(mockSessionOpen());
-
-		assertNull(connection.getCatalog());
+		assertNull(openConnection.getCatalog());
 	}
 
 	@Test public void getCatalogShouldThrowExceptionWhenConnectionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
-
-		Connection connection = new BoltConnection(mockSessionClosed());
-		connection.getCatalog();
+		closedConnection.getCatalog();
 	}
 }

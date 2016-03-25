@@ -21,11 +21,8 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 
-import java.sql.SQLException;
-
 /**
  * @author AgileLARUS
- *
  * @since 3.0.0
  */
 public class BoltParameterMetaData extends ParameterMetaData implements Loggable {
@@ -33,7 +30,7 @@ public class BoltParameterMetaData extends ParameterMetaData implements Loggable
 	private boolean loggable = false;
 	private BoltPreparedStatement preparedStatement;
 
-	public BoltParameterMetaData(BoltPreparedStatement preparedStatement){
+	public BoltParameterMetaData(BoltPreparedStatement preparedStatement) {
 		this.preparedStatement = preparedStatement;
 	}
 

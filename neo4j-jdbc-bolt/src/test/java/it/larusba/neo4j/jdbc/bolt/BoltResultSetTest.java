@@ -19,8 +19,8 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
-import it.larusba.neo4j.jdbc.bolt.data.ResultSetData;
 import it.larusba.neo4j.jdbc.ResultSet;
+import it.larusba.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;

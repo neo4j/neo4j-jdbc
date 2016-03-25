@@ -47,12 +47,12 @@ public class SamplePT {
 		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687");
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
-		if(rs.next()){
+		if (rs.next()) {
 			throw new Exception("Database localhost:7687 is not empty");
 		}
 		for (int i = 0; i < 100; i++) {
 			stmt.executeQuery("CREATE (:A {prop:" + (int) (Math.random() * 100) + "})" + (Math.random() * 10 > 5 ?
-					"-[:X]->(:B {prop:'" + (int)(Math.random() * 100) + "'})" :
+					"-[:X]->(:B {prop:'" + (int) (Math.random() * 100) + "'})" :
 					""));
 		}
 		stmt.executeQuery("CREATE (:C)");

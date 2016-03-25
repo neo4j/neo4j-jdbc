@@ -61,28 +61,26 @@ public class PreparedStatementBuilderTest {
 		String raw = "MATCH statement RETURN same WHERE thisIs = \"a string ?\"\n" +
 				"AND thereIsAPlaceholder = ?\n" +
 				"AND another = ?";
-		assertEquals("MATCH statement RETURN same WHERE thisIs = \"a string ?\"\nAND thereIsAPlaceholder = {1}\nAND another = {2}",
-				replacePlaceholders(raw));
+		assertEquals("MATCH statement RETURN same WHERE thisIs = \"a string ?\"\nAND thereIsAPlaceholder = {1}\nAND another = {2}", replacePlaceholders(raw));
 	}
 
-	@Test public void placeholdersCountShouldCountCorrectlyIfNoPlaceholdersArePresent(){
+	@Test public void placeholdersCountShouldCountCorrectlyIfNoPlaceholdersArePresent() {
 		String raw = "MATCH n RETURN n";
 		assertEquals(0, PreparedStatementBuilder.placeholdersCount(raw));
 	}
 
-	@Test public void placeholdersCountShouldCountCorrectlyIfOneLine(){
+	@Test public void placeholdersCountShouldCountCorrectlyIfOneLine() {
 		String raw = "MATCH n RETURN n WHERE param = ?";
 		assertEquals(1, PreparedStatementBuilder.placeholdersCount(raw));
 	}
 
-	@Test public void placeholdersCountShouldCountCorrectlyIfOneLineString(){
+	@Test public void placeholdersCountShouldCountCorrectlyIfOneLineString() {
 		String raw = "MATCH n RETURN n WHERE param = ? AND paramString = \"string?\"";
 		assertEquals(1, PreparedStatementBuilder.placeholdersCount(raw));
 	}
 
-	@Test public void placeholdersCountShouldCountCorrectlyIfOneLineStringMultiline(){
-		String raw = "MATCH n RETURN n WHERE param = ? AND paramString = \"string?\"\n"+
-				"AND param2 = ?";
+	@Test public void placeholdersCountShouldCountCorrectlyIfOneLineStringMultiline() {
+		String raw = "MATCH n RETURN n WHERE param = ? AND paramString = \"string?\"\n" + "AND param2 = ?";
 		assertEquals(2, PreparedStatementBuilder.placeholdersCount(raw));
 	}
 }

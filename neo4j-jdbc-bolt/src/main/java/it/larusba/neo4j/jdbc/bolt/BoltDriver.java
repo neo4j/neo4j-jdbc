@@ -65,7 +65,8 @@ public class BoltDriver extends Driver {
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}
-		} return connection;
+		}
+		return connection;
 	}
 
 	@Override public boolean acceptsURL(String url) throws SQLException {

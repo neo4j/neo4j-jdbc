@@ -32,9 +32,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * This class is a factory to create all the mocks that are used in multiple tests
- * 
- * @author AgileLARUS
  *
+ * @author AgileLARUS
  * @since 3.0.0
  */
 public class Mocker {

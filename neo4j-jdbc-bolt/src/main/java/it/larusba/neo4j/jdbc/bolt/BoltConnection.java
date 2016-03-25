@@ -25,6 +25,7 @@ import it.larusba.neo4j.jdbc.Statement;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
@@ -41,6 +42,7 @@ public class BoltConnection extends Connection implements Loggable {
 	private Transaction transaction;
 	private Properties  properties;
 	private boolean loggable = false;
+	private int holdability;
 
 	public BoltConnection(Session session, Properties properties) {
 		this.session = session;
@@ -63,6 +65,37 @@ public class BoltConnection extends Connection implements Loggable {
 		if (this.isClosed()) {
 			throw new SQLException("Connection already closed");
 		}
+	}
+
+	private void checkConcurrencyParams(int resultSetConcurrency) throws SQLException {
+		// @formatter:off
+		if( resultSetConcurrency != ResultSet.CONCUR_UPDATABLE &&
+			resultSetConcurrency != ResultSet.CONCUR_READ_ONLY
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
+	}
+
+	private void checkTypeParams(int resultSetType) throws SQLException {
+		// @formatter:off
+		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
+			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
+			resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
+	}
+
+	private void checkHoldabilityParams(int resultSetHoldability) throws SQLException {
+		// @formatter:off
+		if( resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT &&
+			resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
 	}
 
 	private void checkAutoCommit() throws SQLException {
@@ -120,6 +153,13 @@ public class BoltConnection extends Connection implements Loggable {
 						this.isLoggable());
 	}
 
+	@Override public PreparedStatement prepareStatement(String sql) throws SQLException {
+		this.checkClosed();
+		return InstanceFactory.debug(BoltPreparedStatement.class,
+				new BoltPreparedStatement(this, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT),
+				this.isLoggable());
+	}
+
 	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
 		if (this.autoCommit != autoCommit) {
 			if (this.transaction != null && !this.autoCommit) {
@@ -164,45 +204,50 @@ public class BoltConnection extends Connection implements Loggable {
 
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
 		this.checkClosed();
-		// @formatter:off
-		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
-			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
-			resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE
-		){
-			throw new SQLFeatureNotSupportedException();
-		}
-		if( resultSetConcurrency != ResultSet.CONCUR_UPDATABLE &&
-			resultSetConcurrency != ResultSet.CONCUR_READ_ONLY
-		){
-			throw new SQLFeatureNotSupportedException();
-		}
-		// @formatter:on
+		this.checkTypeParams(resultSetType);
+		this.checkConcurrencyParams(resultSetConcurrency);
 		return InstanceFactory
 				.debug(BoltStatement.class, new BoltStatement(this, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT), this.isLoggable());
 	}
 
+	@Override public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+		this.checkClosed();
+		this.checkTypeParams(resultSetType);
+		this.checkConcurrencyParams(resultSetConcurrency);
+		return InstanceFactory.debug(BoltPreparedStatement.class,
+				new BoltPreparedStatement(this, sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT), this.isLoggable());
+	}
+
+	@Override public void setHoldability(int holdability) throws SQLException {
+		this.checkClosed();
+		if (holdability != ResultSet.HOLD_CURSORS_OVER_COMMIT && holdability != ResultSet.CLOSE_CURSORS_AT_COMMIT) {
+			throw new SQLFeatureNotSupportedException("Holdability " + holdability + " not supported.");
+		}
+		this.holdability = holdability;
+	}
+
+	@Override public int getHoldability() throws SQLException {
+		this.checkClosed();
+		return (this.holdability > 0) ? this.holdability : BoltResultSet.DEFAULT_HOLDABILITY;
+	}
+
 	@Override public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		this.checkClosed();
-		// @formatter:off
-		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
-			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
-			resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE
-		){
-			throw new SQLFeatureNotSupportedException();
-		}
-		if( resultSetConcurrency != ResultSet.CONCUR_UPDATABLE &&
-			resultSetConcurrency != ResultSet.CONCUR_READ_ONLY
-		){
-			throw new SQLFeatureNotSupportedException();
-		}
-		if( resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT &&
-			resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT
-		){
-			throw new SQLFeatureNotSupportedException();
-		}
-		// @formatter:on
+		this.checkTypeParams(resultSetType);
+		this.checkConcurrencyParams(resultSetConcurrency);
+		this.checkHoldabilityParams(resultSetHoldability);
 		return InstanceFactory
 				.debug(BoltStatement.class, new BoltStatement(this, resultSetType, resultSetConcurrency, resultSetHoldability), this.isLoggable());
+	}
+
+	@Override public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+		this.checkClosed();
+		this.checkTypeParams(resultSetType);
+		this.checkConcurrencyParams(resultSetConcurrency);
+		this.checkHoldabilityParams(resultSetHoldability);
+		return InstanceFactory
+				.debug(BoltPreparedStatement.class, new BoltPreparedStatement(this, sql, resultSetType, resultSetConcurrency, resultSetHoldability),
+						this.isLoggable());
 	}
 
 	public static boolean hasDebug(Properties properties) {

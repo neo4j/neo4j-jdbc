@@ -112,13 +112,9 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getResultSetConcurrency() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getResultSetConcurrency() throws SQLException;
 
-	@Override public int getResultSetType() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getResultSetType() throws SQLException;
 
 	@Override public void addBatch(String sql) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -168,9 +164,7 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getResultSetHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getResultSetHoldability() throws SQLException;
 
 	@Override public abstract boolean isClosed() throws SQLException;
 

@@ -31,13 +31,12 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
 import java.util.HashMap;
 
-import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.mockConnectionOpen;
-import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.mockConnectionOpenWithTransactionThatReturns;
+import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.*;
 import static java.sql.Types.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,8 +48,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class) @PrepareForTest({BoltPreparedStatement.class })
-public class BoltPreparedStatementTest {
+@RunWith(PowerMockRunner.class) @PrepareForTest({ BoltPreparedStatement.class, BoltResultSet.class }) public class BoltPreparedStatementTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -101,7 +99,7 @@ public class BoltPreparedStatementTest {
 	/*           isClosed           */
 	/*------------------------------*/
 	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
-		Statement statement = new BoltStatement(mockConnectionOpen());
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), "");
 
 		assertFalse(statement.isClosed());
 	}
@@ -373,14 +371,14 @@ public class BoltPreparedStatementTest {
 	@Test public void clearParametersShouldDeleteAllParameters() throws SQLException {
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 
-		value.put("1","string");
+		value.put("1", "string");
 		assertEquals(1, value.size());
 
 		this.preparedStatementOneParam.clearParameters();
 		assertEquals(0, value.size());
 	}
 
-	@Test public void clearParametersShouldThrowExceptionIfStatementClosed() throws SQLException{
+	@Test public void clearParametersShouldThrowExceptionIfStatementClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		this.preparedStatementOneParam.close();
@@ -434,6 +432,69 @@ public class BoltPreparedStatementTest {
 
 		this.preparedStatementOneParam.close();
 		this.preparedStatementOneParam.getParameterMetaData();
+	}
+
+	/*------------------------------*/
+	/*    getResultSetConcurrency   */
+	/*------------------------------*/
+	@Test public void getResultSetConcurrencyShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "");
+		statement.close();
+		statement.getResultSetConcurrency();
+	}
+
+	/*------------------------------*/
+	/*    getResultSetHoldability   */
+	/*------------------------------*/
+	@Test public void getResultSetHoldabilityShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "");
+		statement.close();
+		statement.getResultSetHoldability();
+	}
+
+	/*------------------------------*/
+	/*       getResultSetType       */
+	/*------------------------------*/
+	@Test public void getResultSetTypeShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "");
+		statement.close();
+		statement.getResultSetType();
+	}
+
+	/*------------------------------*/
+	/*          executeQuery        */
+	/*------------------------------*/
+	@Test public void executeQueryShouldThrowExceptionWhenClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "", 0, 0, 0);
+		statement.executeQuery();
+	}
+
+	@Test public void executeQueryShouldReturnCorrectResultSetStructureConnectionNotAutocommit() throws Exception {
+		BoltConnection mockConnection = mockConnectionOpenWithTransactionThatReturns(null);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnection, "", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.executeQuery();
+
+		verifyNew(BoltResultSet.class).withArguments(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+	}
+
+	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.executeQuery()).thenCallRealMethod();
+
+		statement.executeQuery();
 	}
 
 }

@@ -55,7 +55,7 @@ public class BoltStatement extends Statement implements Loggable {
 		this.closed = false;
 	}
 
-	private void checkClosed() throws SQLException{
+	private void checkClosed() throws SQLException {
 		if (this.isClosed()) {
 			throw new SQLException("Statement already closed");
 		}
@@ -111,6 +111,39 @@ public class BoltStatement extends Statement implements Loggable {
 			this.transaction.close();
 		}
 		this.closed = true;
+	}
+
+	@Override public int getResultSetConcurrency() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getConcurrency();
+		}
+		if (this.rsParams.length > 1) {
+			return this.rsParams[1];
+		}
+		return BoltResultSet.DEFAULT_CONCURRENCY;
+	}
+
+	@Override public int getResultSetType() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getType();
+		}
+		if (this.rsParams.length > 0) {
+			return this.rsParams[0];
+		}
+		return BoltResultSet.DEFAULT_TYPE;
+	}
+
+	@Override public int getResultSetHoldability() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getHoldability();
+		}
+		if (this.rsParams.length > 2) {
+			return this.rsParams[2];
+		}
+		return BoltResultSet.DEFAULT_HOLDABILITY;
 	}
 
 	@Override public boolean isClosed() throws SQLException {

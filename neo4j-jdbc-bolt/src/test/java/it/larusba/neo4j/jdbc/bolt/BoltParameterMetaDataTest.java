@@ -24,7 +24,6 @@ import org.junit.rules.ExpectedException;
 
 /**
  * @author AgileLARUS
- *
  * @since 3.0.0
  */
 public class BoltParameterMetaDataTest {

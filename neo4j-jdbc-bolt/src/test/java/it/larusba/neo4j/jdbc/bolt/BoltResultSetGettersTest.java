@@ -732,4 +732,64 @@ public class BoltResultSetGettersTest {
 		resultSet.close();
 		resultSet.getLong(7);
 	}
+
+	/*------------------------------*/
+	/*         getHoldability       */
+	/*------------------------------*/
+
+	@Test public void getHoldabilityShouldThrowExceptionOnClosedRS() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getHoldability();
+	}
+
+	@Test public void getHoldabilityShouldReturnCorrectHoldability() throws SQLException {
+		ResultSet resultSet = new BoltResultSet(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, resultSet.getHoldability());
+	}
+
+	/*------------------------------*/
+	/*            getType           */
+	/*------------------------------*/
+
+	@Test public void getTypeShouldThrowExceptionOnClosedRS() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getType();
+	}
+
+	@Test public void getTypeShouldReturnCorrectType() throws SQLException {
+		ResultSet resultSet = new BoltResultSet(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		assertEquals(ResultSet.TYPE_FORWARD_ONLY, resultSet.getType());
+	}
+
+	/*------------------------------*/
+	/*        getConcurrency        */
+	/*------------------------------*/
+
+	@Test public void getConcurrencyShouldThrowExceptionOnClosedRS() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(
+				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getConcurrency();
+	}
+
+	@Test public void getConcurrencyShouldReturnCorrectConcurrency() throws SQLException {
+		ResultSet resultSet = new BoltResultSet(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		assertEquals(ResultSet.CONCUR_READ_ONLY, resultSet.getConcurrency());
+	}
 }

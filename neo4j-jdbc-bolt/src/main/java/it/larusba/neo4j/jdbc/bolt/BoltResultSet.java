@@ -41,6 +41,10 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private int concurrency;
 	private int holdability;
 
+	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
+	public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
+	public static final int DEFAULT_HOLDABILITY = CLOSE_CURSORS_AT_COMMIT;
+
 	private boolean loggable = false;
 
 	/**
@@ -60,6 +64,12 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
 	}
 
+	private void checkClosed() throws SQLException {
+		if (this.closed) {
+			throw new SQLException("ResultSet was already closed");
+		}
+	}
+
 	@Override public boolean next() throws SQLException {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
@@ -75,9 +85,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public String getString(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -85,9 +93,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -95,9 +101,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public int getInt(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -105,9 +109,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public long getLong(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -115,9 +117,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public int findColumn(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.iterator.keys().contains(columnLabel)) {
 			//if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
@@ -125,10 +125,23 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return this.iterator.keys().indexOf(columnLabel) + 1;
 	}
 
+	@Override public int getType() throws SQLException {
+		checkClosed();
+		return this.type;
+	}
+
+	@Override public int getConcurrency() throws SQLException {
+		checkClosed();
+		return this.concurrency;
+	}
+
+	@Override public int getHoldability() throws SQLException {
+		checkClosed();
+		return this.holdability;
+	}
+
 	@Override public String getString(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -136,9 +149,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -146,9 +157,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -156,9 +165,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public long getLong(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -166,9 +173,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public float getFloat(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -176,9 +181,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -186,9 +189,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public short getShort(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -196,9 +197,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public short getShort(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -206,9 +205,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public double getDouble(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -216,9 +213,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public double getDouble(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -246,9 +241,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public Object getObject(int columnIndex) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (columnIndex - 1 > this.current.size()) {
 			throw new SQLException("Column not present in ResultSet");
 		}
@@ -257,9 +250,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public Object getObject(String columnLabel) throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
+		checkClosed();
 		if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}

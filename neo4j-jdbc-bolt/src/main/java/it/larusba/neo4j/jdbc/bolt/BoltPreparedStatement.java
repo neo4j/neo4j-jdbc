@@ -22,6 +22,7 @@ package it.larusba.neo4j.jdbc.bolt;
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
+import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 
 import java.sql.ResultSet;
@@ -41,6 +42,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	private Transaction    transaction;
 	private ResultSet      currentResultSet;
 	private boolean        closed;
+	private int[]          rsParams;
 
 	private boolean loggable = false;
 
@@ -48,11 +50,13 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	private HashMap<String, Object> parameters;
 	int parametersNumber;
 
-	public BoltPreparedStatement(BoltConnection connection, String rawStatement) {
+	public BoltPreparedStatement(BoltConnection connection, String rawStatement, int... rsParams) {
 		this.connection = connection;
 		this.transaction = connection.getTransaction();
 		this.currentResultSet = null;
 		this.closed = false;
+
+		this.rsParams = rsParams;
 
 		this.statement = PreparedStatementBuilder.replacePlaceholders(rawStatement);
 		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(rawStatement);
@@ -73,6 +77,24 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 
 	private void insertParameter(int index, Object o) {
 		this.parameters.put(new Integer(index).toString(), o);
+	}
+
+	@Override public ResultSet executeQuery() throws SQLException {
+		this.checkClosed();
+		if (connection.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
+		StatementResult result;
+		if (connection.getAutoCommit()) {
+			Transaction t = this.connection.getSession().beginTransaction();
+			result = t.run(this.statement, this.parameters);
+			t.success();
+			t.close();
+		} else {
+			result = this.connection.getTransaction().run(this.statement, this.parameters);
+		}
+		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
+		return currentResultSet;
 	}
 
 	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
@@ -163,6 +185,39 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 			this.transaction.close();
 		}
 		this.closed = true;
+	}
+
+	@Override public int getResultSetConcurrency() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getConcurrency();
+		}
+		if (this.rsParams.length > 1) {
+			return this.rsParams[1];
+		}
+		return BoltResultSet.DEFAULT_CONCURRENCY;
+	}
+
+	@Override public int getResultSetType() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getType();
+		}
+		if (this.rsParams.length > 0) {
+			return this.rsParams[0];
+		}
+		return BoltResultSet.DEFAULT_TYPE;
+	}
+
+	@Override public int getResultSetHoldability() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getHoldability();
+		}
+		if (this.rsParams.length > 2) {
+			return this.rsParams[2];
+		}
+		return BoltResultSet.DEFAULT_HOLDABILITY;
 	}
 
 	@Override public boolean isClosed() throws SQLException {
