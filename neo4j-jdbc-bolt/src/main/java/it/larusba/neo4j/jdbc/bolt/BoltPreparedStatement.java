@@ -21,6 +21,7 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 import it.larusba.neo4j.jdbc.PreparedStatement;
+import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.neo4j.driver.v1.Transaction;
 
 import java.sql.ResultSet;
@@ -47,14 +48,14 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	private HashMap<String, Object> parameters;
 	int parametersNumber;
 
-	public BoltPreparedStatement(BoltConnection connection, String statement) {
+	public BoltPreparedStatement(BoltConnection connection, String rawStatement) {
 		this.connection = connection;
 		this.transaction = connection.getTransaction();
 		this.currentResultSet = null;
 		this.closed = false;
 
-		this.statement = statement;
-		this.parametersNumber = (int) statement.chars().filter(ch -> ch == '.').count();
+		this.statement = PreparedStatementBuilder.replacePlaceholders(rawStatement);
+		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(rawStatement);
 		this.parameters = new HashMap<>(this.parametersNumber);
 	}
 
@@ -72,14 +73,6 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 
 	private void insertParameter(int index, Object o) {
 		this.parameters.put(new Integer(index).toString(), o);
-	}
-
-	/**
-	 * Method that returns the number of parameters
-	 * @return
-	 */
-	public int getParametersNumber(){
-		return this.parametersNumber;
 	}
 
 	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
