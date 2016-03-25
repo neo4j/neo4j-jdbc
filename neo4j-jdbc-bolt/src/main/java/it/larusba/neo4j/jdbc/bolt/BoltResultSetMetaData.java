@@ -23,30 +23,28 @@ import it.larusba.neo4j.jdbc.ResultSetMetaData;
 import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltResultSetMetaData extends ResultSetMetaData {
+public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable {
 
 	StatementResult iterator = null;
-	boolean         debug    = false;
+	private boolean      loggable = false;
+	private List<String> keys     = null;
 
-	BoltResultSetMetaData(StatementResult iterator, boolean debug) {
+	BoltResultSetMetaData(StatementResult iterator, List<String> keys) {
 		this.iterator = iterator;
-		this.debug = debug;
-	}
-
-	BoltResultSetMetaData(StatementResult iterator) {
-		this(iterator, false);
+		this.keys = keys;
 	}
 
 	@Override public int getColumnCount() throws SQLException {
 		if (this.iterator == null) {
-			throw new SQLException("The ResultCursor is null");
+			throw new SQLException("ResultCursor not initialized");
 		}
-		return this.iterator.keys().size();
+		return this.keys.size();
 	}
 
 	@Override public String getColumnLabel(int column) throws SQLException {
@@ -54,16 +52,21 @@ public class BoltResultSetMetaData extends ResultSetMetaData {
 	}
 
 	@Override public String getColumnName(int column) throws SQLException {
-		if (this.iterator == null) {
-			throw new SQLException("The ResultCursor is null");
-		}
-		if (column > this.iterator.keys().size() || column < 1) {
+		if (this.keys == null || column > this.keys.size() || column <= 0) {
 			throw new SQLException("Column out of range");
 		}
-		return this.iterator.keys().get(column - 1);
+		return this.keys.get(column - 1);
 	}
 
 	@Override public String getCatalogName(int column) throws SQLException {
 		return ""; //not applicable
+	}
+
+	@Override public boolean isLoggable() {
+		return this.loggable;
+	}
+
+	@Override public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
 	}
 }

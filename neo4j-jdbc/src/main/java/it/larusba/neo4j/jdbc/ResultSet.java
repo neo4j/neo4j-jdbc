@@ -59,6 +59,10 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract double getDouble(int columnIndex) throws SQLException;
 
+	@Override public abstract Array getArray(int columnIndex) throws SQLException;
+
+	@Override public abstract Array getArray(String columnLabel) throws SQLException;
+
 	@Override public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -153,9 +157,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
 
 	@Override public abstract Object getObject(int columnIndex) throws SQLException;
 
@@ -459,9 +461,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public Array getArray(int columnIndex) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
 
 	@Override public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -479,9 +478,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public Array getArray(String columnLabel) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
 
 	@Override public Date getDate(int columnIndex, Calendar cal) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -539,11 +535,11 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void updateArray(int columnIndex, Array x) throws SQLException {
+	@Override public void updateArray(int columnIndex, java.sql.Array x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void updateArray(String columnLabel, Array x) throws SQLException {
+	@Override public void updateArray(String columnLabel, java.sql.Array x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 

@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
-            <version>1.0.0-RC1</version>
+            <version>${neo4j.java.driver.version}</version>
         </dependency>
 
         <dependency>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>1.6.4</version>
+            <version>${powermock.version}</version>
         </dependency>
 
         <!-- dependencies for integration tests to spin up a neo4j bolt server in process -->
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.neo4j.test</groupId>
             <artifactId>neo4j-harness</artifactId>
-            <version>3.0.0-M05</version>
+            <version>${neo4j.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -76,6 +76,9 @@
 
     <properties>
         <jmh.version>1.11.3</jmh.version>
+        <neo4j.java.driver.version>1.0.0-RC1</neo4j.java.driver.version>
+        <neo4j.version>3.0.0-M05</neo4j.version>
+        <powermock.version>1.6.4</powermock.version>
     </properties>
 
     <build>

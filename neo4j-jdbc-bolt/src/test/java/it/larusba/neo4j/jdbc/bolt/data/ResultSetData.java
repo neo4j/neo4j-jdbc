@@ -33,10 +33,7 @@ import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static org.mockito.Mockito.mock;
 import static org.neo4j.driver.v1.Values.values;
@@ -53,6 +50,7 @@ public class ResultSetData {
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_NODES;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_RELATIONS;
+	public static List<Object[]> RECORD_LIST_WITH_ARRAY;
 
 	public static String[] KEYS_RECORD_LIST_EMPTY                   = new String[] {};
 	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT             = new String[] { "columnA", "columnB" };
@@ -62,6 +60,7 @@ public class ResultSetData {
 			"columnBoolean", "columnLong" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
+	public static String[] KEYS_RECORD_LIST_WITH_ARRAY				= new String[] { "array" };
 
 	private static Method runResponseCollectorMethod;
 	private static Method pullAllResponseCollectorMethod;
@@ -122,6 +121,12 @@ public class ResultSetData {
 		RECORD_LIST_MORE_ELEMENTS_DIFF = new LinkedList<>();
 		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB" });
 		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB", "valueC" });
+
+		RECORD_LIST_WITH_ARRAY = new ArrayList<>();
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new String[]{ "a", "b", "c" } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Integer[]{ 5, 10, 99 } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Boolean[]{ true, false, false } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Double[]{ 6.5, 4.3, 2.1 } });
 
 		fixPublicForInternalResultCursor();
 	}

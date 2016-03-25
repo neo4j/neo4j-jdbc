@@ -58,6 +58,10 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 
 	@Override public abstract void setDouble(int parameterIndex, double x) throws SQLException;
 
+	@Override public ResultSet executeQuery(String sql) throws SQLException {
+		throw new SQLException("Method executeQuery(String) cannot be called on PreparedStatement");
+	}
+
 	@Override public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -126,7 +130,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setArray(int parameterIndex, Array x) throws SQLException {
+	@Override public void setArray(int parameterIndex, java.sql.Array x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
@@ -232,12 +236,9 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new SQLException("Method executeUpdate(String) cannot be called on PreparedStatement");
 	}
 
 	@Override public abstract void close() throws SQLException;

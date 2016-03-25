@@ -153,6 +153,17 @@ public class BoltResultSetGettersTest {
 		resultSet.getString(99);
 	}
 
+	@Test public void getStringByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getString(0);
+	}
+
 	@Test public void getStringByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -163,6 +174,24 @@ public class BoltResultSetGettersTest {
 
 		resultSet.close();
 		resultSet.getString(2);
+	}
+
+	@Test public void getStringByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals("value1", resultSet.getString("node.property1"));
+	}
+
+	@Test public void getStringByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals("value1", resultSet.getString(5));
 	}
 
 	/*------------------------------*/
@@ -227,6 +256,17 @@ public class BoltResultSetGettersTest {
 		resultSet.getInt(99);
 	}
 
+	@Test public void getIntByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getInt(0);
+	}
+
 	@Test public void getIntByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -237,6 +277,26 @@ public class BoltResultSetGettersTest {
 
 		resultSet.close();
 		resultSet.getInt(1);
+	}
+
+	@Test public void getIntByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals(1, resultSet.getInt("node.id"));
+		assertEquals(1, resultSet.getInt("node.property2"));
+	}
+
+	@Test public void getIntByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals(1, resultSet.getInt(2));
+		assertEquals(1, resultSet.getInt(4));
 	}
 
 	/*------------------------------*/
@@ -299,6 +359,17 @@ public class BoltResultSetGettersTest {
 
 		resultSet.next();
 		resultSet.getFloat(99);
+	}
+
+	@Test public void getFloatByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getFloat(0);
 	}
 
 	@Test public void getFloatByIndexShouldThrowExceptionClosed() throws SQLException {
@@ -375,6 +446,17 @@ public class BoltResultSetGettersTest {
 		resultSet.getShort(99);
 	}
 
+	@Test public void getShortByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getShort(0);
+	}
+
 	@Test public void getShortByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -444,9 +526,19 @@ public class BoltResultSetGettersTest {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(statementResult);
-
 		resultSet.next();
 		resultSet.getDouble(99);
+	}
+
+	@Test public void getDoubleByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getDouble(0);
 	}
 
 	@Test public void getDoubleByIndexShouldThrowExceptionClosed() throws SQLException {
@@ -516,7 +608,7 @@ public class BoltResultSetGettersTest {
 		assertEquals(20.16D, (double) resultSet.getObject(5), 0);
 	}
 
-	@Test public void getObjectByIndexShouldThrowExceptionNoLabel() throws SQLException {
+	@Test public void getObjectByIndexShouldThrowExceptionNoIndex() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		StatementResult statementResult = ResultSetData
@@ -525,6 +617,17 @@ public class BoltResultSetGettersTest {
 
 		resultSet.next();
 		resultSet.getObject(99);
+	}
+
+	@Test public void getObjectByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getObject(0);
 	}
 
 	@Test public void getObjectByIndexShouldThrowExceptionClosed() throws SQLException {
@@ -650,6 +753,17 @@ public class BoltResultSetGettersTest {
 		resultSet.getBoolean(99);
 	}
 
+	@Test public void getBooleanByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getBoolean(0);
+	}
+
 	@Test public void getBooleanByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -662,7 +776,7 @@ public class BoltResultSetGettersTest {
 	}
 
 	/*------------------------------*/
-	/*            getFloat          */
+	/*            getLong          */
 	/*------------------------------*/
 
 	@Test public void getLongByLabelShouldReturnLong() throws SQLException {
@@ -720,6 +834,17 @@ public class BoltResultSetGettersTest {
 
 		resultSet.next();
 		resultSet.getLong(99);
+	}
+
+	@Test public void getLongByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getLong(0);
 	}
 
 	@Test public void getLongByIndexShouldThrowExceptionClosed() throws SQLException {
@@ -791,5 +916,126 @@ public class BoltResultSetGettersTest {
 	@Test public void getConcurrencyShouldReturnCorrectConcurrency() throws SQLException {
 		ResultSet resultSet = new BoltResultSet(null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 		assertEquals(ResultSet.CONCUR_READ_ONLY, resultSet.getConcurrency());
+	}
+
+	/*------------------------------*/
+	/*            getArray          */
+	/*------------------------------*/
+	@Test public void getArrayByLabelShouldReturnArray() throws SQLException {
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals("a", ((String[]) resultSet.getArray("array").getArray())[0]);
+		assertEquals("b", ((String[]) resultSet.getArray("array").getArray())[1]);
+		assertEquals("c", ((String[]) resultSet.getArray("array").getArray())[2]);
+
+		resultSet.next();
+		assertEquals(5L, (long) ((Long[]) resultSet.getArray("array").getArray())[0]);
+		assertEquals(10L, (long) ((Long[]) resultSet.getArray("array").getArray())[1]);
+		assertEquals(99L, (long) ((Long[]) resultSet.getArray("array").getArray())[2]);
+
+		resultSet.next();
+		assertEquals(true, ((Boolean[]) resultSet.getArray("array").getArray())[0]);
+		assertEquals(false, ((Boolean[]) resultSet.getArray("array").getArray())[1]);
+		assertEquals(false, ((Boolean[]) resultSet.getArray("array").getArray())[2]);
+
+		resultSet.next();
+		assertEquals(6.5, ((Double[]) resultSet.getArray("array").getArray())[0], 0);
+		assertEquals(4.3, ((Double[]) resultSet.getArray("array").getArray())[1], 0);
+		assertEquals(2.1, ((Double[]) resultSet.getArray("array").getArray())[2], 0);
+	}
+
+	@Test public void getArrayByLabelShouldThrowExceptionNoLabel() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getLong("columnZ");
+	}
+
+	@Test public void getArrayByLabelShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getLong("array");
+	}
+
+	@Test public void getArrayByIndexShouldReturnArray() throws SQLException {
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals("a", ((String[]) resultSet.getArray(1).getArray())[0]);
+		assertEquals("b", ((String[]) resultSet.getArray(1).getArray())[1]);
+		assertEquals("c", ((String[]) resultSet.getArray(1).getArray())[2]);
+
+		resultSet.next();
+		assertEquals(5L, (long) ((Long[]) resultSet.getArray(1).getArray())[0]);
+		assertEquals(10L, (long) ((Long[]) resultSet.getArray(1).getArray())[1]);
+		assertEquals(99L, (long) ((Long[]) resultSet.getArray(1).getArray())[2]);
+
+		resultSet.next();
+		assertEquals(true, ((Boolean[]) resultSet.getArray(1).getArray())[0]);
+		assertEquals(false, ((Boolean[]) resultSet.getArray(1).getArray())[1]);
+		assertEquals(false, ((Boolean[]) resultSet.getArray(1).getArray())[2]);
+
+		resultSet.next();
+		assertEquals(6.5, ((Double[]) resultSet.getArray(1).getArray())[0], 0);
+		assertEquals(4.3, ((Double[]) resultSet.getArray(1).getArray())[1], 0);
+		assertEquals(2.1, ((Double[]) resultSet.getArray(1).getArray())[2], 0);
+	}
+
+	@Test public void getArrayByIndexShouldThrowExceptionNoIndex() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getLong(99);
+	}
+
+	@Test public void getArrayByIndexShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		resultSet.getLong(0);
+	}
+
+	@Test public void getArrayByIndexShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult spyCursor = spy(ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY));
+		ResultSet resultSet = new BoltResultSet(spyCursor);
+
+		resultSet.close();
+		resultSet.getLong(7);
+	}
+
+	@Test public void getArrayByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray("node.labels").getArray());
+	}
+
+	@Test public void getArrayByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray(3).getArray());
 	}
 }

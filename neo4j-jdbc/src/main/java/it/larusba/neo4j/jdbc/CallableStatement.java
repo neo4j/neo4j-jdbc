@@ -600,7 +600,7 @@ public abstract class CallableStatement implements java.sql.CallableStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setArray(int parameterIndex, Array x) throws SQLException {
+	@Override public void setArray(int parameterIndex, java.sql.Array x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
@@ -709,7 +709,7 @@ public abstract class CallableStatement implements java.sql.CallableStatement {
 	}
 
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new SQLException("Method executeQuery(String) cannot be called on PreparedStatement");
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {

@@ -51,15 +51,20 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
-            <version>1.6.2</version>
+            <version>${powermock.version}</version>
         </dependency>
     </dependencies>
+
+    <properties>
+        <powermock.version>1.6.2</powermock.version>
+        <junit.version>4.12</junit.version>
+    </properties>
 
     <profiles>
         <profile>

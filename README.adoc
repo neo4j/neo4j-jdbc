@@ -106,7 +106,7 @@ Milestone 02 [2016-04-10]
 
 * ResultSet getters managing paths [TODO]
 
-* Prepared statements [IN PROGRESS]
+* Prepared statements [DONE]
 
 * M05 of Neo4j [DONE]
 
@@ -115,6 +115,8 @@ Milestone 02 [2016-04-10]
 * Authentication [DONE]
 
 * Pentaho support [TODO]
+
+* Flattening of results [DONE]
 
 Milestone 03 [2016-04-20]
 

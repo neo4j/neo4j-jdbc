@@ -77,7 +77,7 @@ public class BoltStatement extends Statement implements Loggable {
 			result = this.connection.getTransaction().run(sql);
 		}
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
-		return currentResultSet;
+		return this.currentResultSet;
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {

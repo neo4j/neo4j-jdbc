@@ -3,3 +3,4 @@ ziotob's (secret) TODOLIST:
 Test databaseMetadata
 Test Statement closed closes ResultSet
 Test Statement re-executed closes ResultSet
+Multi-Thread test
