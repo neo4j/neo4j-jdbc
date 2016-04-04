@@ -20,6 +20,7 @@
 package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.Connection;
+import it.larusba.neo4j.jdbc.DatabaseMetaData;
 import it.larusba.neo4j.jdbc.ResultSet;
 import it.larusba.neo4j.jdbc.Statement;
 import org.neo4j.driver.v1.Session;
@@ -116,6 +117,10 @@ public class BoltConnection extends Connection implements Loggable {
 
 	@Override public boolean isClosed() throws SQLException {
 		return !this.session.isOpen();
+	}
+
+	@Override public DatabaseMetaData getMetaData() throws SQLException {
+		return new BoltDatabaseMetaData(this);
 	}
 
 	@Override public void setReadOnly(boolean readOnly) throws SQLException {

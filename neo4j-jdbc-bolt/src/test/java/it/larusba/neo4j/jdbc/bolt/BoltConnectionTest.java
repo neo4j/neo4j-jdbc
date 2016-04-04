@@ -577,4 +577,15 @@ public class BoltConnectionTest {
 		expectedEx.expect(SQLException.class);
 		closedConnection.getCatalog();
 	}
+
+	/*------------------------------*/
+	/*         getMetaData          */
+	/*------------------------------*/
+
+	@Test public void getMetaDataShouldWork() throws SQLException {
+		Session session = mock(Session.class);
+		when(session.isOpen()).thenReturn(true).thenReturn(false);
+		Connection connection = new BoltConnection(session);
+		assertNotNull(connection.getMetaData());
+	}
 }

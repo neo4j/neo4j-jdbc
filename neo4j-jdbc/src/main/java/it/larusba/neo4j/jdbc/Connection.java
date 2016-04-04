@@ -57,9 +57,7 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public abstract boolean isClosed() throws SQLException;
 
-	@Override public it.larusba.neo4j.jdbc.DatabaseMetaData getMetaData() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract it.larusba.neo4j.jdbc.DatabaseMetaData getMetaData() throws SQLException;
 
 	@Override public abstract void setReadOnly(boolean readOnly) throws SQLException;
 
