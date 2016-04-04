@@ -16,6 +16,7 @@
     <groupId>it.larus-ba</groupId>
     <artifactId>neo4j-jdbc</artifactId>
     <version>3.0-M02</version>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
