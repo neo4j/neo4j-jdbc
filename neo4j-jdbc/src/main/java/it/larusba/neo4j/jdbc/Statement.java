@@ -80,9 +80,7 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean execute(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean execute(String sql) throws SQLException;
 
 	@Override public ResultSet getResultSet() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

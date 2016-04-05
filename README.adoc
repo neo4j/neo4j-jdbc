@@ -104,7 +104,7 @@ Milestone 01 [RELEASED]
 
 Milestone 02 [2016-04-10]
 
-* ResultSet getters managing paths [TODO]
+* ResultSet getters managing paths [IN PROGRESS]
 
 * Prepared statements [DONE]
 
@@ -114,7 +114,7 @@ Milestone 02 [2016-04-10]
 
 * Authentication [DONE]
 
-* Pentaho support [TODO]
+* Pentaho support [IN PROGRESS]
 
 * Flattening of results [DONE]
 

@@ -37,6 +37,7 @@ public class BoltStatement extends Statement implements Loggable {
 	private Transaction    transaction;
 	private int[]          rsParams;
 	private ResultSet      currentResultSet;
+	private int            currentUpdateCount;
 	private boolean        closed;
 
 	private boolean loggable = false;
@@ -52,6 +53,7 @@ public class BoltStatement extends Statement implements Loggable {
 		this.transaction = connection.getTransaction();
 		this.rsParams = rsParams;
 		this.currentResultSet = null;
+		this.currentUpdateCount = -1;
 		this.closed = false;
 	}
 
@@ -156,5 +158,18 @@ public class BoltStatement extends Statement implements Loggable {
 
 	@Override public void setLoggable(boolean loggable) {
 		this.loggable = loggable;
+	}
+
+	@Override public boolean execute(String sql) throws SQLException {
+		boolean result = false;
+		if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
+				.contains("create")) {
+			this.currentUpdateCount = this.executeUpdate(sql);
+		} else {
+			this.currentResultSet = this.executeQuery(sql);
+			result = true;
+		}
+
+		return result;
 	}
 }

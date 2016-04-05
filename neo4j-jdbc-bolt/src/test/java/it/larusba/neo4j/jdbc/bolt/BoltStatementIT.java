@@ -43,7 +43,6 @@ public class BoltStatementIT {
 	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
-
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
@@ -60,7 +59,6 @@ public class BoltStatementIT {
 	/*------------------------------*/
 	/*         executeUpdate        */
 	/*------------------------------*/
-
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
 		Statement statement = connection.createStatement();
@@ -72,6 +70,30 @@ public class BoltStatementIT {
 
 		lines = statement.executeUpdate(StatementData.STATEMENT_CREATE_REV);
 		assertEquals(2, lines);
+
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*            execute           */
+	/*------------------------------*/
+	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
+		assertFalse(result);
+
+		result = statement.execute(StatementData.STATEMENT_CREATE_REV);
+		assertFalse(result);
+
+		connection.close();
+	}
+
+	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		boolean result = statement.execute(StatementData.STATEMENT_MATCH_ALL);
+		assertTrue(result);
 
 		connection.close();
 	}
