@@ -172,4 +172,20 @@ public class BoltStatement extends Statement implements Loggable {
 
 		return result;
 	}
+
+	@Override public int getUpdateCount() throws SQLException {
+		this.checkClosed();
+		if (this.currentResultSet != null) {
+			this.currentUpdateCount = -1;
+		}
+		return this.currentUpdateCount;
+	}
+
+	@Override public ResultSet getResultSet() throws SQLException {
+		this.checkClosed();
+		if (this.currentUpdateCount != -1) {
+			this.currentResultSet = null;
+		}
+		return this.currentResultSet;
+	}
 }

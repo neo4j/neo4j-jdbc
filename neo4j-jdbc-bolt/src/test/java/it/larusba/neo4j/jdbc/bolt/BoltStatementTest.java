@@ -27,7 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
@@ -41,9 +41,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -406,6 +404,70 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		statement.execute(StatementData.STATEMENT_CREATE);
 
 		fail();
+	}
+
+	/*------------------------------*/
+	/*        getUpdateCount        */
+	/*------------------------------*/
+	@Test public void getUpdateCountShouldReturnOne() throws SQLException {
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(false);
+		when(statement.getUpdateCount()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "currentResultSet", null);
+		Whitebox.setInternalState(statement, "currentUpdateCount", 1);
+
+		assertEquals(1, statement.getUpdateCount());
+	}
+
+	@Test public void getUpdateCountShouldReturnMinusOne() throws SQLException {
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(false);
+		when(statement.getUpdateCount()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "currentResultSet", mock(BoltResultSet.class));
+
+		assertEquals(-1, statement.getUpdateCount());
+	}
+
+	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException{
+		expectedEx.expect(SQLException.class);
+
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.getUpdateCount()).thenCallRealMethod();
+
+		statement.getUpdateCount();
+	}
+
+	/*------------------------------*/
+	/*         getResultSet         */
+	/*------------------------------*/
+	@Test public void getResultSetShouldNotReturnNull() throws SQLException {
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(false);
+		when(statement.getResultSet()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "currentResultSet", mock(BoltResultSet.class));
+		Whitebox.setInternalState(statement, "currentUpdateCount", -1);
+
+		assertTrue(statement.getResultSet() != null);
+	}
+
+	@Test public void getResultSetShouldReturnNull() throws SQLException {
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(false);
+		when(statement.getResultSet()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "currentUpdateCount", 1);
+
+		assertEquals(null, statement.getResultSet());
+	}
+
+	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException{
+		expectedEx.expect(SQLException.class);
+
+		BoltStatement statement = mock(BoltStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.getResultSet()).thenCallRealMethod();
+
+		statement.getResultSet();
 	}
 
 }
