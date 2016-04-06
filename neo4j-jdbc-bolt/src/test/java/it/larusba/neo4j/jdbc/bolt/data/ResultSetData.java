@@ -20,10 +20,7 @@
 package it.larusba.neo4j.jdbc.bolt.data;
 
 import org.junit.BeforeClass;
-import org.neo4j.driver.internal.InternalNode;
-import org.neo4j.driver.internal.InternalRelationship;
-import org.neo4j.driver.internal.InternalStatementResult;
-import org.neo4j.driver.internal.ParameterSupport;
+import org.neo4j.driver.internal.*;
 import org.neo4j.driver.internal.spi.Connection;
 import org.neo4j.driver.internal.spi.StreamCollector;
 import org.neo4j.driver.internal.value.FloatValue;
@@ -31,6 +28,10 @@ import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.StringValue;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.types.Entity;
+import org.neo4j.driver.v1.types.Node;
+import org.neo4j.driver.v1.types.Path;
+import org.neo4j.graphdb.Relationship;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -49,6 +50,7 @@ public class ResultSetData {
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_DIFF;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_NODES;
+	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_PATHS;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_RELATIONS;
 	public static List<Object[]> RECORD_LIST_WITH_ARRAY;
 
@@ -59,11 +61,15 @@ public class ResultSetData {
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED     = new String[] { "columnInt", "columnString", "columnFloat", "columnShort", "columnDouble",
 			"columnBoolean", "columnLong" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
+	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS     = new String[] { "path" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
-	public static String[] KEYS_RECORD_LIST_WITH_ARRAY				= new String[] { "array" };
+	public static String[] KEYS_RECORD_LIST_WITH_ARRAY              = new String[] { "array" };
 
 	private static Method runResponseCollectorMethod;
 	private static Method pullAllResponseCollectorMethod;
+
+	private static Path path1;
+	private static Path path2;
 
 	@BeforeClass public static void initialize() {
 		RECORD_LIST_ONE_ELEMENT = new LinkedList<>();
@@ -118,17 +124,109 @@ public class ResultSetData {
 			}
 		}) });
 
+		setUpPaths();
+
+		RECORD_LIST_MORE_ELEMENTS_PATHS = new LinkedList<>();
+		RECORD_LIST_MORE_ELEMENTS_PATHS.add(new Object[] { path1, path2 });
+
 		RECORD_LIST_MORE_ELEMENTS_DIFF = new LinkedList<>();
 		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB" });
 		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB", "valueC" });
 
 		RECORD_LIST_WITH_ARRAY = new ArrayList<>();
-		RECORD_LIST_WITH_ARRAY.add(new Object[] { new String[]{ "a", "b", "c" } });
-		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Integer[]{ 5, 10, 99 } });
-		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Boolean[]{ true, false, false } });
-		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Double[]{ 6.5, 4.3, 2.1 } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new String[] { "a", "b", "c" } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Integer[] { 5, 10, 99 } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Boolean[] { true, false, false } });
+		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Double[] { 6.5, 4.3, 2.1 } });
 
 		fixPublicForInternalResultCursor();
+	}
+
+	private static void setUpPaths() {
+
+		Node node1 = new InternalNode(1, new LinkedList<String>(){
+			{
+				this.add("label1");
+			}
+		}, new HashMap<String, Value>(){
+			{
+				this.put("property", new StringValue("value"));
+			}
+		});
+
+		Node node2 = new InternalNode(2, new LinkedList<String>(){
+			{
+				this.add("label1");
+			}
+		}, new HashMap<String, Value>(){
+			{
+				this.put("property", new StringValue("value2"));
+			}
+		});
+
+		org.neo4j.driver.v1.types.Relationship rel1 = new InternalRelationship(3, 1, 2, "type", new HashMap<String, Value>(){
+			{
+				this.put("relProperty", new StringValue("value3"));
+			}
+		});
+
+		List<Entity> entities1 = new ArrayList<>();
+		entities1.add(node1);
+		entities1.add(rel1);
+		entities1.add(node2);
+
+		path1 = new InternalPath(entities1);
+
+		Node node3 = new InternalNode(4, new LinkedList<String>(){
+			{
+				this.add("label1");
+			}
+		}, new HashMap<String, Value>(){
+			{
+				this.put("property", new StringValue("value"));
+			}
+		});
+
+		Node node4 = new InternalNode(5, new LinkedList<String>(){
+			{
+				this.add("label1");
+			}
+		}, new HashMap<String, Value>(){
+			{
+				this.put("property", new StringValue("value2"));
+			}
+		});
+
+		Node node5 = new InternalNode(6, new LinkedList<String>(){
+			{
+				this.add("label1");
+			}
+		}, new HashMap<String, Value>(){
+			{
+				this.put("property", new StringValue("value3"));
+			}
+		});
+
+		org.neo4j.driver.v1.types.Relationship rel2 = new InternalRelationship(7, 4, 5, "type", new HashMap<String, Value>(){
+			{
+				this.put("relProperty", new StringValue("value4"));
+			}
+		});
+
+		org.neo4j.driver.v1.types.Relationship rel3 = new InternalRelationship(8, 6, 5, "type", new HashMap<String, Value>(){
+			{
+				this.put("relProperty", new StringValue("value5"));
+			}
+		});
+
+		List<Entity> entities2 = new ArrayList<>();
+		entities2.add(node3);
+		entities2.add(rel2);
+		entities2.add(node4);
+		entities2.add(rel3);
+		entities2.add(node5);
+
+		path2 = new InternalPath(entities2);
 	}
 
 	/**

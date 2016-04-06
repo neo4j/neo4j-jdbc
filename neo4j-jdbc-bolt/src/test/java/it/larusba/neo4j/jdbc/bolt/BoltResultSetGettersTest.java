@@ -22,6 +22,7 @@ package it.larusba.neo4j.jdbc.bolt;
 import it.larusba.neo4j.jdbc.ResultSet;
 import it.larusba.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -556,7 +557,6 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 	/*           getObject          */
 	/*------------------------------*/
-	// ! Still needs tests for paths
 
 	@Test public void getObjectByLabelShouldReturnObject() throws SQLException {
 		StatementResult statementResult = ResultSetData
@@ -688,6 +688,85 @@ public class BoltResultSetGettersTest {
 				this.put("_id", 2L);
 				this.put("_type", "type2");
 				this.put("property", (double) 2.6F);
+			}
+		}, resultSet.getObject(1));
+	}
+
+	@Ignore @Test public void getObjectShouldReturnCorrectPathAsMap() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_PATHS);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals(new HashMap<String, Object>() {
+			{
+				this.put("_desc", Arrays.asList("(n1)", "[r1]", "(n2)"));
+				this.put("(n1)", new HashMap<String, Object>(){
+					{
+						this.put("_id", 1L);
+						this.put("_labels", Arrays.asList("label1"));
+						this.put("property", "value");
+					}
+				});
+				this.put("[r1]", new HashMap<String, Object>(){
+					{
+						this.put("_id", 3L);
+						this.put("_type", "type");
+						this.put("relProperty", "value3");
+						this.put("_direction", true);
+					}
+				});
+				this.put("(n2)", new HashMap<String, Object>(){
+					{
+						this.put("_id", 2L);
+						this.put("_labels", Arrays.asList("label1"));
+						this.put("property", "value2");
+					}
+				});
+			}
+		}, resultSet.getObject("path"));
+
+		resultSet.next();
+		assertEquals(new HashMap<String, Object>() {
+			{
+				this.put("_desc", Arrays.asList("(n1)", "[r1]", "(n2)", "[r2]", "(n3)"));
+				this.put("(n1)", new HashMap<String, Object>(){
+					{
+						this.put("_id", 4L);
+						this.put("_labels", Arrays.asList("label1"));
+						this.put("property", "value");
+					}
+				});
+				this.put("[r1]", new HashMap<String, Object>(){
+					{
+						this.put("_id", 7L);
+						this.put("_type", "type");
+						this.put("relProperty", "value4");
+						this.put("_direction", true);
+					}
+				});
+				this.put("(n2)", new HashMap<String, Object>(){
+					{
+						this.put("_id", 5L);
+						this.put("_labels", Arrays.asList("label1"));
+						this.put("property", "value2");
+					}
+				});
+				this.put("[r2]", new HashMap<String, Object>(){
+					{
+						this.put("_id", 8L);
+						this.put("_type", "type");
+						this.put("relProperty", "value5");
+						this.put("_direction", false);
+					}
+				});
+				this.put("(n3)", new HashMap<String, Object>(){
+					{
+						this.put("_id", 6L);
+						this.put("_labels", Arrays.asList("label1"));
+						this.put("property", "value3");
+					}
+				});
 			}
 		}, resultSet.getObject(1));
 	}

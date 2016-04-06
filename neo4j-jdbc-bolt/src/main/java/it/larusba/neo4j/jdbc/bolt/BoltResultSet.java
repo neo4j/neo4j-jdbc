@@ -24,6 +24,7 @@ import it.larusba.neo4j.jdbc.ResultSet;
 import it.larusba.neo4j.jdbc.ResultSetMetaData;
 import it.larusba.neo4j.jdbc.impl.ListArray;
 import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalPath;
 import org.neo4j.driver.internal.InternalRelationship;
 import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.ListValue;
@@ -315,6 +316,9 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			map.put("_type", rel.type());
 			rel.keys().forEach(key -> map.put(key, rel.get(key).asObject()));
 			result = map;
+		}
+		if(obj.getClass().equals(InternalPath.class)) {
+			throw new UnsupportedOperationException("Not implemented yet");
 		}
 		return result;
 	}
