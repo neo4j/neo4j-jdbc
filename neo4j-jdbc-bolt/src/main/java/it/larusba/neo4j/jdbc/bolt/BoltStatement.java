@@ -39,6 +39,7 @@ public class BoltStatement extends Statement implements Loggable {
 	private ResultSet      currentResultSet;
 	private int            currentUpdateCount;
 	private boolean        closed;
+	private int            maxRows;
 
 	private boolean loggable = false;
 
@@ -55,6 +56,7 @@ public class BoltStatement extends Statement implements Loggable {
 		this.currentResultSet = null;
 		this.currentUpdateCount = -1;
 		this.closed = false;
+		this.maxRows = 0;
 	}
 
 	private void checkClosed() throws SQLException {
@@ -116,6 +118,14 @@ public class BoltStatement extends Statement implements Loggable {
 			this.transaction.close();
 		}
 		this.closed = true;
+	}
+
+	@Override public int getMaxRows() throws SQLException {
+		return this.maxRows;
+	}
+
+	@Override public void setMaxRows(int max) throws SQLException {
+		this.maxRows = max;
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {

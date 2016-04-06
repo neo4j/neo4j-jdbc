@@ -19,9 +19,14 @@
  */
 package it.larusba.neo4j.jdbc;
 
+import it.larusba.neo4j.jdbc.impl.ListResultSet;
+
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author AgileLARUS
@@ -66,7 +71,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getDatabaseProductName() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "Neo4j";
 	}
 
 	@Override public String getDatabaseProductVersion() throws SQLException {
@@ -74,7 +79,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getDriverName() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "Neo4j JDBC Driver";
 	}
 
 	@Override public String getDriverVersion() throws SQLException {
@@ -130,19 +135,19 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getIdentifierQuoteString() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "\"";
 	}
 
 	@Override public String getSQLKeywords() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "";
 	}
 
 	@Override public String getNumericFunctions() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "";
 	}
 
 	@Override public String getStringFunctions() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "";
 	}
 
 	@Override public String getSystemFunctions() throws SQLException {
@@ -150,7 +155,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getTimeDateFunctions() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "";
 	}
 
 	@Override public String getSearchStringEscape() throws SQLException {
@@ -218,7 +223,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsMultipleResultSets() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean supportsMultipleTransactions() throws SQLException {
@@ -278,7 +283,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getCatalogTerm() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return null;
 	}
 
 	@Override public boolean isCatalogAtStart() throws SQLException {
@@ -286,11 +291,11 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getCatalogSeparator() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "";
 	}
 
 	@Override public boolean supportsSchemasInDataManipulation() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean supportsSchemasInProcedureCalls() throws SQLException {
@@ -298,7 +303,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsSchemasInTableDefinitions() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean supportsSchemasInIndexDefinitions() throws SQLException {
@@ -310,15 +315,15 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsCatalogsInDataManipulation() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
@@ -474,7 +479,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public int getDefaultTransactionIsolation() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return 0;
 	}
 
 	@Override public boolean supportsTransactions() throws SQLException {
@@ -515,15 +520,16 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public ResultSet getSchemas() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
 	}
 
 	@Override public ResultSet getCatalogs() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
 	}
 
 	@Override public ResultSet getTableTypes() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		List<Object> list = Arrays.asList("TABLE");
+		return new ListResultSet(Arrays.asList(list), Arrays.asList("TABLE_TYPE"));
 	}
 
 	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
@@ -564,7 +570,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public ResultSet getTypeInfo() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
 	}
 
 	@Override public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {

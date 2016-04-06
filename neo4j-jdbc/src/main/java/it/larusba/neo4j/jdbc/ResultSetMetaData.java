@@ -46,8 +46,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isCurrency(int column) throws SQLException {
-		//TODO check if all fields have two decimal digits
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public int isNullable(int column) throws SQLException {
@@ -55,8 +54,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isSigned(int column) throws SQLException {
-		//TODO true if int/short/long
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public int getColumnDisplaySize(int column) throws SQLException {
@@ -72,7 +70,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public int getPrecision(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return 0;
 	}
 
 	@Override public int getScale(int column) throws SQLException {
@@ -85,13 +83,9 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 
 	@Override public abstract String getCatalogName(int column) throws SQLException;
 
-	@Override public int getColumnType(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getColumnType(int column) throws SQLException;
 
-	@Override public String getColumnTypeName(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract String getColumnTypeName(int column) throws SQLException;
 
 	@Override public boolean isReadOnly(int column) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

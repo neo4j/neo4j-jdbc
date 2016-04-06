@@ -20,9 +20,13 @@
 package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.ResultSetMetaData;
+import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.types.Type;
+import org.omg.CORBA.INTERNAL;
 
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 /**
@@ -60,6 +64,40 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 
 	@Override public String getCatalogName(int column) throws SQLException {
 		return ""; //not applicable
+	}
+
+	@Override public int getColumnType(int column) throws SQLException {
+		Type type = this.iterator.peek().get(column - 1).type();
+
+		int resultType = 0;
+
+		if(InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)){
+			resultType = Types.VARCHAR;
+		}
+		if(InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)){
+			resultType = Types.INTEGER;
+		}
+		if(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)){
+			resultType = Types.BOOLEAN;
+		}
+		if(InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)){
+			resultType = Types.FLOAT;
+		}
+		if(InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)){
+			resultType = Types.JAVA_OBJECT;
+		}
+		if(InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)){
+			resultType = Types.JAVA_OBJECT;
+		}
+		if(InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)){
+			resultType = Types.JAVA_OBJECT;
+		}
+
+		return resultType;
+	}
+
+	@Override public String getColumnTypeName(int column) throws SQLException {
+		return this.iterator.peek().get(column - 1).type().name();
 	}
 
 	@Override public boolean isLoggable() {

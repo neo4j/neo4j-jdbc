@@ -44,13 +44,9 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxRows() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getMaxRows() throws SQLException;
 
-	@Override public void setMaxRows(int max) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void setMaxRows(int max) throws SQLException;
 
 	@Override public void setEscapeProcessing(boolean enable) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
