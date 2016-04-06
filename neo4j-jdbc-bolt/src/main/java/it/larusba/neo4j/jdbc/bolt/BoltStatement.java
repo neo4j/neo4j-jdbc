@@ -79,6 +79,7 @@ public class BoltStatement extends Statement implements Loggable {
 			result = this.connection.getTransaction().run(sql);
 		}
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
+		this.currentUpdateCount = -1;
 		return this.currentResultSet;
 	}
 
@@ -98,7 +99,9 @@ public class BoltStatement extends Statement implements Loggable {
 		}
 
 		SummaryCounters stats = result.consume().counters();
-		return stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+		this.currentResultSet = null;
+		return this.currentUpdateCount;
 	}
 
 	@Override public void close() throws SQLException {
@@ -164,9 +167,9 @@ public class BoltStatement extends Statement implements Loggable {
 		boolean result = false;
 		if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
 				.contains("create")) {
-			this.currentUpdateCount = this.executeUpdate(sql);
+			this.executeUpdate(sql);
 		} else {
-			this.currentResultSet = this.executeQuery(sql);
+			this.executeQuery(sql);
 			result = true;
 		}
 
