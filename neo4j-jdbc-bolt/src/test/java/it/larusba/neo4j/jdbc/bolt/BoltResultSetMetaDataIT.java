@@ -27,7 +27,6 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.driver.v1.types.Node;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

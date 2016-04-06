@@ -24,6 +24,7 @@ import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.summary.SummaryCounters;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,6 +42,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	private BoltConnection connection;
 	private Transaction    transaction;
 	private ResultSet      currentResultSet;
+	private int            currentUpdateCount;
 	private boolean        closed;
 	private int[]          rsParams;
 
@@ -95,6 +97,27 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		}
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
 		return currentResultSet;
+	}
+
+	@Override public int executeUpdate() throws SQLException {
+		this.checkClosed();
+		if (connection.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
+		StatementResult result;
+		if (connection.getAutoCommit()) {
+			Transaction t = this.connection.getSession().beginTransaction();
+			result = t.run(this.statement, this.parameters);
+			t.success();
+			t.close();
+		} else {
+			result = this.connection.getTransaction().run(this.statement, this.parameters);
+		}
+
+		SummaryCounters stats = result.consume().counters();
+		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+		this.currentResultSet = null;
+		return this.currentUpdateCount;
 	}
 
 	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {

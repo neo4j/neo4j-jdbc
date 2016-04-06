@@ -36,9 +36,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 
 	@Override public abstract ResultSet executeQuery() throws SQLException;
 
-	@Override public int executeUpdate() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int executeUpdate() throws SQLException;
 
 	@Override public abstract void setNull(int parameterIndex, int sqlType) throws SQLException;
 

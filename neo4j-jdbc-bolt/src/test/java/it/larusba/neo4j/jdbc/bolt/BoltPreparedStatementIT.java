@@ -57,5 +57,28 @@ public class BoltPreparedStatementIT {
 		connection.close();
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
+
+	/*------------------------------*/
+	/*         executeUpdate        */
+	/*------------------------------*/
+	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+		int lines = statement.executeUpdate();
+		assertEquals(1, lines);
+
+		lines = statement.executeUpdate();
+		assertEquals(1, lines);
+
+		statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC_REV);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+		lines = statement.executeUpdate();
+		assertEquals(2, lines);
+
+		connection.close();
+	}
 }
 

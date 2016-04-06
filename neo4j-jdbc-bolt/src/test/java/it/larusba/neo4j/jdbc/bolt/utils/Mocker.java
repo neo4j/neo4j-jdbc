@@ -25,7 +25,10 @@ import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -65,6 +68,7 @@ public class Mocker {
 	public static BoltConnection mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
 		Transaction mockTransaction = mock(Transaction.class);
 		when(mockTransaction.run(anyString())).thenReturn(cur);
+		when(mockTransaction.run(anyString(), any(HashMap.class))).thenReturn(cur);
 
 		BoltConnection mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);

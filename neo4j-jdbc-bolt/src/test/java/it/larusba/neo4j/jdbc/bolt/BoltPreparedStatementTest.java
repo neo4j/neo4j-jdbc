@@ -22,11 +22,13 @@ package it.larusba.neo4j.jdbc.bolt;
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.summary.ResultSummary;
+import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -70,7 +72,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	/*             close            */
 	/*------------------------------*/
-	@Ignore @Test public void closeShouldCloseExistingResultSet() throws Exception {
+	@Test public void closeShouldCloseExistingResultSet() throws Exception {
 		PreparedStatement prStatement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null), "");
 		prStatement.executeQuery();
 		prStatement.close();
@@ -85,9 +87,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		verify(this.mockedRS, never()).close();
 	}
 
-	@Ignore @Test public void closeMultipleTimesIsNOOP() throws Exception {
+	@Test public void closeMultipleTimesIsNOOP() throws Exception {
 		PreparedStatement prStatement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null), "");
-		prStatement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
+		prStatement.executeQuery();
 		prStatement.close();
 		prStatement.close();
 		prStatement.close();
@@ -116,6 +118,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		this.preparedStatementTwoParams.setInt(2, 125);
 		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(125, value.get("2"));
+	}
+
+	@Test public void setIntShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setInt(1, 10);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(10, value.get("1"));
+
+		this.preparedStatementOneParam.setInt(1, 99);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(99, value.get("1"));
 	}
 
 	@Test public void setIntShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -151,6 +163,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(125L, value.get("2"));
 	}
 
+	@Test public void setLongShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setLong(1, 10L);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(10L, value.get("1"));
+
+		this.preparedStatementOneParam.setLong(1, 99L);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(99L, value.get("1"));
+	}
+
 	@Test public void setLongShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -176,6 +198,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		this.preparedStatementTwoParams.setFloat(2, 125.5F);
 		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals(125.5F, value.get("2"));
+	}
+
+	@Test public void setFloatShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setFloat(1, 10.5F);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(10.5F, value.get("1"));
+
+		this.preparedStatementOneParam.setFloat(1, 55.5F);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(55.5F, value.get("1"));
 	}
 
 	@Test public void setFloatShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -205,6 +237,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(125.5, value.get("2"));
 	}
 
+	@Test public void setDoubleShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setDouble(1, 10.5);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(10.5, value.get("1"));
+
+		this.preparedStatementOneParam.setDouble(1, 55.5);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(55.5, value.get("1"));
+	}
+
 	@Test public void setDoubleShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -232,6 +274,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals((short) 125, value.get("2"));
 	}
 
+	@Test public void setShortShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setShort(1, (short) 10);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals((short) 10, value.get("1"));
+
+		this.preparedStatementOneParam.setShort(1, (short) 20);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals((short) 20, value.get("1"));
+	}
+
 	@Test public void setShortShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -257,6 +309,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		this.preparedStatementTwoParams.setString(2, "text");
 		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
 		assertEquals("text", value.get("2"));
+	}
+
+	@Test public void setStringShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setString(1, "string");
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals("string", value.get("1"));
+
+		this.preparedStatementOneParam.setString(1, "otherString");
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals("otherString", value.get("1"));
 	}
 
 	@Test public void setStringShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -400,6 +462,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(false, value.get("2"));
 	}
 
+	@Test public void setBooleanShouldOverrideOldValue() throws SQLException {
+		this.preparedStatementOneParam.setBoolean(1, true);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(true, value.get("1"));
+
+		this.preparedStatementOneParam.setBoolean(1, false);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(false, value.get("1"));
+	}
+
 	@Test public void setBooleanShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
@@ -495,6 +567,44 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(statement.executeQuery()).thenCallRealMethod();
 
 		statement.executeQuery();
+	}
+
+	/*------------------------------*/
+	/*         executeUpdate        */
+	/*------------------------------*/
+
+	@Test public void executeUpdateShouldRun() throws SQLException {
+		StatementResult mockResult = mock(StatementResult.class);
+		ResultSummary mockSummary = mock(ResultSummary.class);
+		SummaryCounters mockSummaryCounters = mock(SummaryCounters.class);
+
+		when(mockResult.consume()).thenReturn(mockSummary);
+		when(mockSummary.counters()).thenReturn(mockSummaryCounters);
+		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
+		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
+				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.setString(1,"test");
+		statement.setString(2,"test2");
+		statement.executeUpdate();
+	}
+
+	@Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.executeUpdate()).thenCallRealMethod();
+
+		statement.executeUpdate();
+	}
+
+	@Test public void executeUpdateShouldThrowExceptionOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "", 0, 0, 0);
+		statement.executeUpdate();
 	}
 
 }
