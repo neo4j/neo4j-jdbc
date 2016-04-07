@@ -126,8 +126,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeQueryShouldRun() throws SQLException {
 		StatementResult mockResult = mock(StatementResult.class);
 
-		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
 	}
 
@@ -209,8 +209,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
-		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
 
@@ -300,8 +300,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldRunQuery() throws SQLException {
 		StatementResult mockResult = mock(StatementResult.class);
 
-		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
 
@@ -315,8 +315,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
-		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = new BoltStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
+				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.execute(StatementData.STATEMENT_CREATE);
 	}
 
@@ -428,7 +428,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(-1, statement.getUpdateCount());
 	}
 
-	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException{
+	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		BoltStatement statement = mock(BoltStatement.class);
@@ -460,7 +460,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(null, statement.getResultSet());
 	}
 
-	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException{
+	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		BoltStatement statement = mock(BoltStatement.class);
