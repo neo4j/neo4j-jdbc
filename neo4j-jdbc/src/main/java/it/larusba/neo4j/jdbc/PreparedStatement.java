@@ -104,9 +104,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean execute() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean execute() throws SQLException;
 
 	@Override public void addBatch() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

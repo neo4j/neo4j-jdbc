@@ -55,7 +55,7 @@ public class BoltPreparedStatementIT {
 		assertEquals("testAgain", rs.getString(1));
 		assertFalse(rs.next());
 		connection.close();
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
 	}
 
 	/*------------------------------*/
@@ -77,6 +77,40 @@ public class BoltPreparedStatementIT {
 		statement.setString(2, "test2");
 		lines = statement.executeUpdate();
 		assertEquals(2, lines);
+
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*            execute           */
+	/*------------------------------*/
+	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
+		statement.setString(1, "test");
+		boolean result = statement.execute();
+		assertTrue(result);
+
+		connection.close();
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+	}
+
+	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+
+		boolean result = statement.execute();
+		assertFalse(result);
+
+		statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC_REV);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+
+		result = statement.execute();
+		assertFalse(result);
 
 		connection.close();
 	}

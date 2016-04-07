@@ -96,6 +96,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 			result = this.connection.getTransaction().run(this.statement, this.parameters);
 		}
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
+		this.currentUpdateCount = -1;
 		return currentResultSet;
 	}
 
@@ -253,5 +254,18 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 
 	@Override public void setLoggable(boolean loggable) {
 		this.loggable = loggable;
+	}
+
+	@Override public boolean execute() throws SQLException {
+		boolean result = false;
+		if (statement.contains("DELETE") || statement.contains("MERGE") || statement.contains("CREATE") || statement.contains("delete") || statement
+				.contains("merge") || statement.contains("create")) {
+			this.executeUpdate();
+		} else {
+			this.executeQuery();
+			result = true;
+		}
+
+		return result;
 	}
 }

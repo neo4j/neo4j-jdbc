@@ -22,6 +22,7 @@ package it.larusba.neo4j.jdbc.bolt;
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -572,7 +573,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	/*         executeUpdate        */
 	/*------------------------------*/
-
 	@Test public void executeUpdateShouldRun() throws SQLException {
 		StatementResult mockResult = mock(StatementResult.class);
 		ResultSummary mockSummary = mock(ResultSummary.class);
@@ -607,4 +607,73 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		statement.executeUpdate();
 	}
 
+	/*------------------------------*/
+	/*            execute           */
+	/*------------------------------*/
+	@Test public void executeShouldRunQuery() throws SQLException {
+		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
+		when(statement.executeQuery()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_MATCH_ALL);
+
+		statement.execute();
+	}
+
+	@Test public void executeShouldRunUpdate() throws SQLException {
+		StatementResult mockResult = mock(StatementResult.class);
+		ResultSummary mockSummary = mock(ResultSummary.class);
+		SummaryCounters mockSummaryCounters = mock(SummaryCounters.class);
+
+		when(mockResult.consume()).thenReturn(mockSummary);
+		when(mockSummary.counters()).thenReturn(mockSummaryCounters);
+		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
+		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
+				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.setString(1,"test");
+		statement.setString(2,"test2");
+		statement.execute();
+	}
+
+	@Test public void executeShouldThrowExceptionOnQueryOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.execute()).thenCallRealMethod();
+		when(statement.executeQuery()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_MATCH_ALL);
+
+		statement.execute();
+	}
+
+	@Test public void executeShouldThrowExceptionOnUpdateOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
+		when(statement.isClosed()).thenReturn(true);
+		when(statement.execute()).thenCallRealMethod();
+		when(statement.executeUpdate()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_CREATE);
+
+		statement.execute();
+	}
+
+	@Test public void executeShouldThrowExceptionOnQueryOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "", 0, 0, 0);
+		when(statement.executeQuery()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_MATCH_ALL);
+		statement.execute();
+	}
+
+	@Test public void executeShouldThrowExceptionOnUpdateOnClosedConnection() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionClosed(), "", 0, 0, 0);
+		when(statement.executeUpdate()).thenCallRealMethod();
+		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_CREATE);
+		statement.execute();
+	}
 }
