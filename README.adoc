@@ -102,9 +102,9 @@ Milestone 01 [RELEASED]
 
 * ResultSet getters managing nodes and relationships
 
-Milestone 02 [2016-04-10]
+Milestone 02 [2016-04-12]
 
-* ResultSet getters managing paths [IN PROGRESS]
+* ResultSet getters managing paths [DONE]
 
 * Prepared statements [DONE]
 

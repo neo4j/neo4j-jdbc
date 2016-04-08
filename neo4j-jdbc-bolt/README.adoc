@@ -13,7 +13,9 @@ This *can't* be done by default with JDBC standard methods, to allow this usage 
 
 If the object you are trying to get is an `*instanceof* InternalNode` (thus being a neo4j Node) it will be returned wrapped in a `Map<String, Object>`. This map will contain all the object's properties where their names (`String`) are the keys. It will also contains two default values mapped as "`_id`", representing neo4j internal identity ID and "`_labels`", a `Collection` of all the labels of that node.
 
-If the object is instead an `*instanceof* InternalRelationship` (thus being a neo4j Relationship) it will be also returned as a `Map<String, Object>`. This map will contain all the object's properties and the two default "`_id`", the _internal_ neo4j ID and "`_type`" that is the _type_ of the relationship.
+If the object is instead an `*instanceof* InternalRelationship` (thus being a neo4j Relationship) it will be also returned as a `Map<String, Object>`. This map will contain all the object's properties and the four default: "`_id`" the _internal_ neo4j ID, "`_type`" that is the _type_ of the relationship, "`_startId`" that is the _internal_ neo4j Node ID where the relation starts from, "`_endId`" that is the _internal_ neo4j Node ID where the relation ends.
+
+If the object is instead an `*instanceof* InternalPath` (thus being a neo4j Path) it will be also returned as an `ArrayList<Map<String, Object>>`. this list will contain an alternation of Node and Relationship converted following the below two lines' specifications.
 
 IMPORTANT: You can't get an `InternalNode` or `InternalRelationship` directly 
 

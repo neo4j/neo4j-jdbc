@@ -29,6 +29,7 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -679,6 +680,8 @@ public class BoltResultSetGettersTest {
 				this.put("_type", "type1");
 				this.put("property1", "value");
 				this.put("property2", 100L);
+				this.put("_startId", 1L);
+				this.put("_endId", 2L);
 			}
 		}, resultSet.getObject("relation"));
 
@@ -688,35 +691,37 @@ public class BoltResultSetGettersTest {
 				this.put("_id", 2L);
 				this.put("_type", "type2");
 				this.put("property", (double) 2.6F);
+				this.put("_startId", 3L);
+				this.put("_endId", 4L);
 			}
 		}, resultSet.getObject(1));
 	}
 
-	@Ignore @Test public void getObjectShouldReturnCorrectPathAsMap() throws SQLException {
+	@Test public void getObjectShouldReturnCorrectPathAsMap() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_PATHS);
 		ResultSet resultSet = new BoltResultSet(statementResult);
 
-		resultSet.next();
-		assertEquals(new HashMap<String, Object>() {
+		assertTrue(resultSet.next());
+		assertEquals(new ArrayList<Object>() {
 			{
-				this.put("_desc", Arrays.asList("(n1)", "[r1]", "(n2)"));
-				this.put("(n1)", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 1L);
 						this.put("_labels", Arrays.asList("label1"));
 						this.put("property", "value");
 					}
 				});
-				this.put("[r1]", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 3L);
 						this.put("_type", "type");
 						this.put("relProperty", "value3");
-						this.put("_direction", true);
+						this.put("_startId", 1L);
+						this.put("_endId", 2L);
 					}
 				});
-				this.put("(n2)", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 2L);
 						this.put("_labels", Arrays.asList("label1"));
@@ -726,41 +731,42 @@ public class BoltResultSetGettersTest {
 			}
 		}, resultSet.getObject("path"));
 
-		resultSet.next();
-		assertEquals(new HashMap<String, Object>() {
+		assertTrue(resultSet.next());
+		assertEquals(new ArrayList<Object>() {
 			{
-				this.put("_desc", Arrays.asList("(n1)", "[r1]", "(n2)", "[r2]", "(n3)"));
-				this.put("(n1)", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 4L);
 						this.put("_labels", Arrays.asList("label1"));
 						this.put("property", "value");
 					}
 				});
-				this.put("[r1]", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 7L);
 						this.put("_type", "type");
 						this.put("relProperty", "value4");
-						this.put("_direction", true);
+						this.put("_startId", 4L);
+						this.put("_endId", 5L);
 					}
 				});
-				this.put("(n2)", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 5L);
 						this.put("_labels", Arrays.asList("label1"));
 						this.put("property", "value2");
 					}
 				});
-				this.put("[r2]", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 8L);
 						this.put("_type", "type");
 						this.put("relProperty", "value5");
-						this.put("_direction", false);
+						this.put("_startId", 6L);
+						this.put("_endId", 5L);
 					}
 				});
-				this.put("(n3)", new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>(){
 					{
 						this.put("_id", 6L);
 						this.put("_labels", Arrays.asList("label1"));

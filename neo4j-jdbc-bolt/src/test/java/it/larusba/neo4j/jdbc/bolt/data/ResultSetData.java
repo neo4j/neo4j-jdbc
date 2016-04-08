@@ -31,7 +31,6 @@ import org.neo4j.driver.v1.Value;
 import org.neo4j.driver.v1.types.Entity;
 import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
-import org.neo4j.graphdb.Relationship;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -111,14 +110,14 @@ public class ResultSetData {
 
 		RECORD_LIST_MORE_ELEMENTS_RELATIONS = new LinkedList<>();
 
-		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(1, 0, 0, "type1", new HashMap<String, Value>() {
+		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(1, 1, 2, "type1", new HashMap<String, Value>() {
 			{
 				this.put("property1", new StringValue("value"));
 				this.put("property2", new IntegerValue(100));
 			}
 		}) });
 
-		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(2, 0, 0, "type2", new HashMap<String, Value>() {
+		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(2, 3, 4, "type2", new HashMap<String, Value>() {
 			{
 				this.put("property", new FloatValue(2.6f));
 			}
@@ -127,7 +126,8 @@ public class ResultSetData {
 		setUpPaths();
 
 		RECORD_LIST_MORE_ELEMENTS_PATHS = new LinkedList<>();
-		RECORD_LIST_MORE_ELEMENTS_PATHS.add(new Object[] { path1, path2 });
+		RECORD_LIST_MORE_ELEMENTS_PATHS.add(new Object[] { path1 });
+		RECORD_LIST_MORE_ELEMENTS_PATHS.add(new Object[] { path2 });
 
 		RECORD_LIST_MORE_ELEMENTS_DIFF = new LinkedList<>();
 		RECORD_LIST_MORE_ELEMENTS_DIFF.add(new Object[] { "valueA", "valueB" });
@@ -144,27 +144,27 @@ public class ResultSetData {
 
 	private static void setUpPaths() {
 
-		Node node1 = new InternalNode(1, new LinkedList<String>(){
+		Node node1 = new InternalNode(1, new LinkedList<String>() {
 			{
 				this.add("label1");
 			}
-		}, new HashMap<String, Value>(){
+		}, new HashMap<String, Value>() {
 			{
 				this.put("property", new StringValue("value"));
 			}
 		});
 
-		Node node2 = new InternalNode(2, new LinkedList<String>(){
+		Node node2 = new InternalNode(2, new LinkedList<String>() {
 			{
 				this.add("label1");
 			}
-		}, new HashMap<String, Value>(){
+		}, new HashMap<String, Value>() {
 			{
 				this.put("property", new StringValue("value2"));
 			}
 		});
 
-		org.neo4j.driver.v1.types.Relationship rel1 = new InternalRelationship(3, 1, 2, "type", new HashMap<String, Value>(){
+		org.neo4j.driver.v1.types.Relationship rel1 = new InternalRelationship(3, 1, 2, "type", new HashMap<String, Value>() {
 			{
 				this.put("relProperty", new StringValue("value3"));
 			}
@@ -177,43 +177,43 @@ public class ResultSetData {
 
 		path1 = new InternalPath(entities1);
 
-		Node node3 = new InternalNode(4, new LinkedList<String>(){
+		Node node3 = new InternalNode(4, new LinkedList<String>() {
 			{
 				this.add("label1");
 			}
-		}, new HashMap<String, Value>(){
+		}, new HashMap<String, Value>() {
 			{
 				this.put("property", new StringValue("value"));
 			}
 		});
 
-		Node node4 = new InternalNode(5, new LinkedList<String>(){
+		Node node4 = new InternalNode(5, new LinkedList<String>() {
 			{
 				this.add("label1");
 			}
-		}, new HashMap<String, Value>(){
+		}, new HashMap<String, Value>() {
 			{
 				this.put("property", new StringValue("value2"));
 			}
 		});
 
-		Node node5 = new InternalNode(6, new LinkedList<String>(){
+		Node node5 = new InternalNode(6, new LinkedList<String>() {
 			{
 				this.add("label1");
 			}
-		}, new HashMap<String, Value>(){
+		}, new HashMap<String, Value>() {
 			{
 				this.put("property", new StringValue("value3"));
 			}
 		});
 
-		org.neo4j.driver.v1.types.Relationship rel2 = new InternalRelationship(7, 4, 5, "type", new HashMap<String, Value>(){
+		org.neo4j.driver.v1.types.Relationship rel2 = new InternalRelationship(7, 4, 5, "type", new HashMap<String, Value>() {
 			{
 				this.put("relProperty", new StringValue("value4"));
 			}
 		});
 
-		org.neo4j.driver.v1.types.Relationship rel3 = new InternalRelationship(8, 6, 5, "type", new HashMap<String, Value>(){
+		org.neo4j.driver.v1.types.Relationship rel3 = new InternalRelationship(8, 6, 5, "type", new HashMap<String, Value>() {
 			{
 				this.put("relProperty", new StringValue("value5"));
 			}

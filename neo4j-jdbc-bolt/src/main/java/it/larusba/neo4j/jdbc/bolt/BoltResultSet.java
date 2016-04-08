@@ -33,13 +33,10 @@ import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
 import org.neo4j.driver.v1.types.Node;
+import org.neo4j.driver.v1.types.Path;
 
 import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author AgileLARUS
@@ -314,11 +311,22 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			HashMap<String, Object> map = new HashMap<>();
 			map.put("_id", rel.id());
 			map.put("_type", rel.type());
+			map.put("_startId", rel.startNodeId());
+			map.put("_endId", rel.endNodeId());
 			rel.keys().forEach(key -> map.put(key, rel.get(key).asObject()));
 			result = map;
 		}
-		if(obj.getClass().equals(InternalPath.class)) {
-			throw new UnsupportedOperationException("Not implemented yet");
+		if (obj.getClass().equals(InternalPath.class)) {
+			InternalPath path = (InternalPath) obj;
+			List<Object> list = new ArrayList<Object>();
+			list.add(this.generateObject(path.start()));
+			Iterator<Path.Segment> it = path.iterator();
+			while (it.hasNext()) {
+				Path.Segment segment = it.next();
+				list.add(this.generateObject(segment.relationship()));
+				list.add(this.generateObject(segment.end()));
+			}
+			result = list;
 		}
 		return result;
 	}
