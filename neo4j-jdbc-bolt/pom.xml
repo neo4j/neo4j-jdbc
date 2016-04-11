@@ -51,7 +51,6 @@
         </dependency>
 
         <!-- dependencies for integration tests to spin up a neo4j bolt server in process -->
-
         <dependency>
             <groupId>org.neo4j.test</groupId>
             <artifactId>neo4j-harness</artifactId>
@@ -60,7 +59,6 @@
         </dependency>
 
         <!-- Performance tests dependencies -->
-
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
@@ -117,6 +115,4 @@
             </plugin>
         </plugins>
     </build>
-
-
 </project>
