@@ -59,7 +59,7 @@ public class HttpDriver extends Driver {
                 parseUrlProperties(url, info);
                 String host = neo4jUrl.getHost();
                 int port = 7474;
-                if(neo4jUrl.getPort() > 0) {
+                if (neo4jUrl.getPort() > 0) {
                     port = neo4jUrl.getPort();
                 }
                 connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, info), HttpConnection.hasDebug(info));

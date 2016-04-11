@@ -59,8 +59,8 @@ public class Neo4jStatement {
     /**
      * Default constructor.
      *
-     * @param statement Cypher query
-     * @param parameters List of named params for the cypher query
+     * @param statement    Cypher query
+     * @param parameters   List of named params for the cypher query
      * @param includeStats Do we need to include stats
      */
     public Neo4jStatement(String statement, Map<String, Object> parameters, Boolean includeStats) {
@@ -72,7 +72,7 @@ public class Neo4jStatement {
     /**
      * Constructor withtout stats
      *
-     * @param statement Cypher query
+     * @param statement  Cypher query
      * @param parameters List of named params for the cypher query
      */
     public Neo4jStatement(String statement, Map<String, Object> parameters) {

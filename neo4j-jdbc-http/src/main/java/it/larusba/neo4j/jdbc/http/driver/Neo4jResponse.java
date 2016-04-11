@@ -40,7 +40,7 @@ public class Neo4jResponse {
      * Construct the object directly from the HttpResponse.
      *
      * @param response Http response
-     * @param mapper Jackson object mapper
+     * @param mapper   Jackson object mapper
      * @throws SQLException
      */
     public Neo4jResponse(HttpResponse response, ObjectMapper mapper) throws SQLException {

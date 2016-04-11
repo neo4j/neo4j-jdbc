@@ -27,18 +27,20 @@ import it.larusba.neo4j.jdbc.ParameterMetaData;
  */
 public class HttpParameterMetaData extends ParameterMetaData implements Loggable {
 
-	private boolean loggable = false;
-	private HttpPreparedStatement preparedStatement;
+    private boolean loggable = false;
+    private HttpPreparedStatement preparedStatement;
 
-	public HttpParameterMetaData(HttpPreparedStatement preparedStatement) {
-		this.preparedStatement = preparedStatement;
-	}
+    public HttpParameterMetaData(HttpPreparedStatement preparedStatement) {
+        this.preparedStatement = preparedStatement;
+    }
 
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
+    @Override
+    public boolean isLoggable() {
+        return this.loggable;
+    }
 
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
-	}
+    @Override
+    public void setLoggable(boolean loggable) {
+        this.loggable = loggable;
+    }
 }

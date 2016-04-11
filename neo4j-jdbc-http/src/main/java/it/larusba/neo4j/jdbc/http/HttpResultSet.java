@@ -31,15 +31,15 @@ import java.sql.SQLException;
  */
 public class HttpResultSet extends ResultSet implements Loggable {
 
-	@Override
-	public boolean next() throws SQLException {
-		return false;
-	}
+    @Override
+    public boolean next() throws SQLException {
+        return false;
+    }
 
-	@Override
-	public void close() throws SQLException {
+    @Override
+    public void close() throws SQLException {
 
-	}
+    }
 
 	@Override public boolean wasNull() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -50,128 +50,128 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		return null;
 	}
 
-	@Override
-	public boolean getBoolean(int columnIndex) throws SQLException {
-		return false;
-	}
+    @Override
+    public boolean getBoolean(int columnIndex) throws SQLException {
+        return false;
+    }
 
-	@Override
-	public short getShort(int columnIndex) throws SQLException {
-		return 0;
-	}
+    @Override
+    public short getShort(int columnIndex) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getInt(int columnIndex) throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getInt(int columnIndex) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public long getLong(int columnIndex) throws SQLException {
-		return 0;
-	}
+    @Override
+    public long getLong(int columnIndex) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public float getFloat(int columnIndex) throws SQLException {
-		return 0;
-	}
+    @Override
+    public float getFloat(int columnIndex) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public double getDouble(int columnIndex) throws SQLException {
-		return 0;
-	}
+    @Override
+    public double getDouble(int columnIndex) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public Array getArray(int columnIndex) throws SQLException {
-		return null;
-	}
+    @Override
+    public Array getArray(int columnIndex) throws SQLException {
+        return null;
+    }
 
-	@Override
-	public Array getArray(String columnLabel) throws SQLException {
-		return null;
-	}
+    @Override
+    public Array getArray(String columnLabel) throws SQLException {
+        return null;
+    }
 
-	@Override
-	public String getString(String columnLabel) throws SQLException {
-		return null;
-	}
+    @Override
+    public String getString(String columnLabel) throws SQLException {
+        return null;
+    }
 
-	@Override
-	public boolean getBoolean(String columnLabel) throws SQLException {
-		return false;
-	}
+    @Override
+    public boolean getBoolean(String columnLabel) throws SQLException {
+        return false;
+    }
 
-	@Override
-	public short getShort(String columnLabel) throws SQLException {
-		return 0;
-	}
+    @Override
+    public short getShort(String columnLabel) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getInt(String columnLabel) throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getInt(String columnLabel) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public long getLong(String columnLabel) throws SQLException {
-		return 0;
-	}
+    @Override
+    public long getLong(String columnLabel) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public float getFloat(String columnLabel) throws SQLException {
-		return 0;
-	}
+    @Override
+    public float getFloat(String columnLabel) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public double getDouble(String columnLabel) throws SQLException {
-		return 0;
-	}
+    @Override
+    public double getDouble(String columnLabel) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public ResultSetMetaData getMetaData() throws SQLException {
-		return null;
-	}
+    @Override
+    public ResultSetMetaData getMetaData() throws SQLException {
+        return null;
+    }
 
-	@Override
-	public Object getObject(int columnIndex) throws SQLException {
-		return null;
-	}
+    @Override
+    public Object getObject(int columnIndex) throws SQLException {
+        return null;
+    }
 
-	@Override
-	public Object getObject(String columnLabel) throws SQLException {
-		return null;
-	}
+    @Override
+    public Object getObject(String columnLabel) throws SQLException {
+        return null;
+    }
 
-	@Override
-	public int findColumn(String columnLabel) throws SQLException {
-		return 0;
-	}
+    @Override
+    public int findColumn(String columnLabel) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getType() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getType() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getConcurrency() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getConcurrency() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getHoldability() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getHoldability() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public boolean isClosed() throws SQLException {
-		return false;
-	}
+    @Override
+    public boolean isClosed() throws SQLException {
+        return false;
+    }
 
-	@Override
-	public boolean isLoggable() {
-		return false;
-	}
+    @Override
+    public boolean isLoggable() {
+        return false;
+    }
 
-	@Override
-	public void setLoggable(boolean loggable) {
+    @Override
+    public void setLoggable(boolean loggable) {
 
-	}
+    }
 }

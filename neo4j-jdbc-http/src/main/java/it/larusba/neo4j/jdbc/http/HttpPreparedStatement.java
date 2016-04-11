@@ -32,10 +32,10 @@ import java.sql.SQLException;
  */
 public class HttpPreparedStatement extends PreparedStatement implements Loggable {
 
-	@Override
-	public ResultSet executeQuery() throws SQLException {
-		return null;
-	}
+    @Override
+    public ResultSet executeQuery() throws SQLException {
+        return null;
+    }
 
 	@Override public int executeUpdate() throws SQLException {
 		return 0;
@@ -44,47 +44,47 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 	@Override
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+    @Override
+    public void setBoolean(int parameterIndex, boolean x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setShort(int parameterIndex, short x) throws SQLException {
+    @Override
+    public void setShort(int parameterIndex, short x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setInt(int parameterIndex, int x) throws SQLException {
+    @Override
+    public void setInt(int parameterIndex, int x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setLong(int parameterIndex, long x) throws SQLException {
+    @Override
+    public void setLong(int parameterIndex, long x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setFloat(int parameterIndex, float x) throws SQLException {
+    @Override
+    public void setFloat(int parameterIndex, float x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setDouble(int parameterIndex, double x) throws SQLException {
+    @Override
+    public void setDouble(int parameterIndex, double x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void setString(int parameterIndex, String x) throws SQLException {
+    @Override
+    public void setString(int parameterIndex, String x) throws SQLException {
 
-	}
+    }
 
-	@Override
-	public void clearParameters() throws SQLException {
+    @Override
+    public void clearParameters() throws SQLException {
 
-	}
+    }
 
 	@Override public boolean execute() throws SQLException {
 		return false;
@@ -99,10 +99,10 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 		return null;
 	}
 
-	@Override
-	public void close() throws SQLException {
+    @Override
+    public void close() throws SQLException {
 
-	}
+    }
 
 	@Override public ResultSet getResultSet() throws SQLException {
 		return null;
@@ -117,28 +117,28 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 		return 0;
 	}
 
-	@Override
-	public int getResultSetType() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getResultSetType() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getResultSetHoldability() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getResultSetHoldability() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public boolean isClosed() throws SQLException {
-		return false;
-	}
+    @Override
+    public boolean isClosed() throws SQLException {
+        return false;
+    }
 
-	@Override
-	public boolean isLoggable() {
-		return false;
-	}
+    @Override
+    public boolean isLoggable() {
+        return false;
+    }
 
-	@Override
-	public void setLoggable(boolean loggable) {
+    @Override
+    public void setLoggable(boolean loggable) {
 
-	}
+    }
 }

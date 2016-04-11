@@ -32,19 +32,20 @@ import java.sql.SQLException;
  */
 public class HttpDatabaseMetaData extends DatabaseMetaData {
 
-	private HttpConnection connection;
-	private boolean debug = false;
+    private HttpConnection connection;
+    private boolean debug = false;
 
-	public HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
-		this.connection = connection;
-		this.debug = debug;
-	}
+    public HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
+        this.connection = connection;
+        this.debug = debug;
+    }
 
-	public HttpDatabaseMetaData(HttpConnection connection) {
-		this(connection, false);
-	}
+    public HttpDatabaseMetaData(HttpConnection connection) {
+        this(connection, false);
+    }
 
-	@Override public Connection getConnection() throws SQLException {
-		return this.connection;
-	}
+    @Override
+    public Connection getConnection() throws SQLException {
+        return this.connection;
+    }
 }

@@ -23,7 +23,6 @@ import it.larusba.neo4j.jdbc.Connection;
 import it.larusba.neo4j.jdbc.DatabaseMetaData;
 import it.larusba.neo4j.jdbc.http.driver.CypherExecutor;
 
-import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -41,8 +40,8 @@ public class HttpConnection extends Connection implements Loggable {
     /**
      * Default constructor.
      *
-     * @param host Hostname of the Neo4j instance.
-     * @param port HTTP port of the Neo4j instance.
+     * @param host       Hostname of the Neo4j instance.
+     * @param port       HTTP port of the Neo4j instance.
      * @param properties Properties of the url connection.
      */
     public HttpConnection(String host, Integer port, Properties properties) throws SQLException {

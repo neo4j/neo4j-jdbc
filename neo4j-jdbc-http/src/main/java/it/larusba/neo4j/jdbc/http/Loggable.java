@@ -24,7 +24,7 @@ package it.larusba.neo4j.jdbc.http;
  * @since 3.0.0
  */
 public interface Loggable {
-	boolean isLoggable();
+    boolean isLoggable();
 
-	void setLoggable(boolean loggable);
+    void setLoggable(boolean loggable);
 }

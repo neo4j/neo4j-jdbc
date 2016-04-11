@@ -33,7 +33,7 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 	private boolean      loggable = false;
 	private List<String> keys     = null;
 
-	HttpResultSetMetaData(List<String> keys) {
+	public HttpResultSetMetaData(List<String> keys) {
 		this.keys = keys;
 	}
 
@@ -41,12 +41,12 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 		return this.keys.size();
 	}
 
-	@Override public int getColumnDisplaySize(int column) throws SQLException {
-		return 0;
-	}
-
 	@Override public String getColumnLabel(int column) throws SQLException {
 		return this.getColumnName(column);
+	}
+
+	@Override public int getColumnDisplaySize(int column) throws SQLException {
+		return 0;
 	}
 
 	@Override public String getColumnName(int column) throws SQLException {

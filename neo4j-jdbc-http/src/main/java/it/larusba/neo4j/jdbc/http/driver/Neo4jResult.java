@@ -1,6 +1,5 @@
 package it.larusba.neo4j.jdbc.http.driver;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

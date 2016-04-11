@@ -26,20 +26,20 @@ import java.sql.SQLException;
 
 public class HttpStatement extends Statement implements Loggable {
 
-	@Override
-	public ResultSet executeQuery(String cypher) throws SQLException {
-		return null;
-	}
+    @Override
+    public ResultSet executeQuery(String cypher) throws SQLException {
+        return null;
+    }
 
-	@Override
-	public int executeUpdate(String cypher) throws SQLException {
-		return 0;
-	}
+    @Override
+    public int executeUpdate(String cypher) throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public void close() throws SQLException {
+    @Override
+    public void close() throws SQLException {
 
-	}
+    }
 
 	@Override public int getMaxRows() throws SQLException {
 		return 0;
@@ -62,32 +62,32 @@ public class HttpStatement extends Statement implements Loggable {
 	}
 
 	@Override
-	public int getResultSetConcurrency() throws SQLException {
-		return 0;
-	}
+    public int getResultSetConcurrency() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getResultSetType() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getResultSetType() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public int getResultSetHoldability() throws SQLException {
-		return 0;
-	}
+    @Override
+    public int getResultSetHoldability() throws SQLException {
+        return 0;
+    }
 
-	@Override
-	public boolean isClosed() throws SQLException {
-		return false;
-	}
+    @Override
+    public boolean isClosed() throws SQLException {
+        return false;
+    }
 
-	@Override
-	public boolean isLoggable() {
-		return false;
-	}
+    @Override
+    public boolean isLoggable() {
+        return false;
+    }
 
-	@Override
-	public void setLoggable(boolean loggable) {
+    @Override
+    public void setLoggable(boolean loggable) {
 
-	}
+    }
 }
