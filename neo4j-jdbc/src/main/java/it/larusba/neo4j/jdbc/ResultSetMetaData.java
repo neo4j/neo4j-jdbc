@@ -57,9 +57,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return false;
 	}
 
-	@Override public int getColumnDisplaySize(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int getColumnDisplaySize(int column) throws SQLException;
 
 	@Override public abstract String getColumnLabel(int column) throws SQLException;
 
@@ -74,7 +72,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public int getScale(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return 0;
 	}
 
 	@Override public String getTableName(int column) throws SQLException {

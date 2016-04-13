@@ -21,6 +21,7 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 import it.larusba.neo4j.jdbc.PreparedStatement;
+import it.larusba.neo4j.jdbc.ResultSetMetaData;
 import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
@@ -267,6 +268,12 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		}
 
 		return result;
+	}
+
+	@Override public ResultSetMetaData getMetaData() throws SQLException {
+		return InstanceFactory.debug(BoltResultSetMetaData.class,
+				new BoltResultSetMetaData(((BoltResultSet) this.currentResultSet).getIterator(), ((BoltResultSet) this.currentResultSet).getKeys()),
+				this.isLoggable());
 	}
 
 	@Override public int getUpdateCount() throws SQLException {

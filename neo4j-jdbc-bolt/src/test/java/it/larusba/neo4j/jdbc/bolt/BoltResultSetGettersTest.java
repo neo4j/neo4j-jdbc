@@ -26,6 +26,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.SQLException;
@@ -36,6 +38,7 @@ import java.util.HashMap;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * @author AgileLARUS
@@ -1122,5 +1125,31 @@ public class BoltResultSetGettersTest {
 
 		resultSet.next();
 		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray(3).getArray());
+	}
+
+	/*------------------------------*/
+	/*            wasNull           */
+	/*------------------------------*/
+	@Test public void wasNullShouldThrowExceptionOnClosedResultSet() throws SQLException{
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.close();
+		resultSet.wasNull();
+	}
+
+	@Test public void wasNullShouldReturnFalse() throws SQLException{
+		ResultSet resultSet = Mockito.mock(BoltResultSet.class);
+		Whitebox.setInternalState(resultSet, "wasNull", false);
+		resultSet.wasNull();
+	}
+
+	@Test public void wasNullShouldReturnTrue() throws SQLException{
+		ResultSet resultSet = Mockito.mock(BoltResultSet.class);
+		Whitebox.setInternalState(resultSet, "wasNull", true);
+		resultSet.wasNull();
 	}
 }

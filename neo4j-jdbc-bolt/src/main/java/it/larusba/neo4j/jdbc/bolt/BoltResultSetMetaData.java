@@ -51,6 +51,23 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 		return this.keys.size();
 	}
 
+	@Override public int getColumnDisplaySize(int column) throws SQLException {
+		int type = this.getColumnType(column);
+		int value = 0;
+		if (type == Types.VARCHAR) {
+			value = 40;
+		} else if (type == Types.INTEGER) {
+			value = 10;
+		} else if (type == Types.BOOLEAN) {
+			value = 5;
+		} else if (type == Types.FLOAT) {
+			value = 15;
+		} else if (type == Types.JAVA_OBJECT) {
+			value = 60;
+		}
+		return value;
+	}
+
 	@Override public String getColumnLabel(int column) throws SQLException {
 		return this.getColumnName(column);
 	}

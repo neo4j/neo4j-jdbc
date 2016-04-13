@@ -50,6 +50,10 @@ public class ListResultSet extends it.larusba.neo4j.jdbc.ResultSet {
 		this.closed = true;
 	}
 
+	@Override public boolean wasNull() throws SQLException {
+		return false;
+	}
+
 	private Object get(int columnIndex) throws SQLException {
 		if (this.isClosed()) {
 			throw new SQLException("ResultSet already closed");

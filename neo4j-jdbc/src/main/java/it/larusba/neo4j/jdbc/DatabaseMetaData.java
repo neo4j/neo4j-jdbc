@@ -483,7 +483,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsTransactions() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return true;
 	}
 
 	@Override public boolean supportsTransactionIsolationLevel(int level) throws SQLException {

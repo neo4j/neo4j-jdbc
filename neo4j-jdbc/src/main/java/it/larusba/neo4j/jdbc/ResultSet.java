@@ -37,9 +37,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract void close() throws SQLException;
 
-	@Override public boolean wasNull() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract boolean wasNull() throws SQLException;
 
 	@Override public abstract String getString(int columnIndex) throws SQLException;
 

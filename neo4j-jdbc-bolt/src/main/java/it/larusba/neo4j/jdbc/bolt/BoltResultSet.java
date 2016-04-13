@@ -51,6 +51,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private int type;
 	private int concurrency;
 	private int holdability;
+	private boolean wasNull;
 
 	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
 	public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
@@ -122,6 +123,11 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.closed = true;
 	}
 
+	@Override public boolean wasNull() throws SQLException {
+		checkClosed();
+		return this.wasNull;
+	}
+
 	@Override public String getString(String columnLabel) throws SQLException {
 		checkClosed();
 		return this.fetchValueFromLabel(columnLabel).asString();
@@ -172,6 +178,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			//No value found
 			throw new SQLException("Column not present in ResultSet");
 		}
+		this.wasNull = value.isNull();
 		return value;
 	}
 
@@ -193,6 +200,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			//No value found
 			throw new SQLException("Column not present in ResultSet");
 		}
+		this.wasNull = value.isNull();
 		return value;
 	}
 
@@ -353,5 +361,13 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public void setLoggable(boolean loggable) {
 		this.loggable = loggable;
+	}
+
+	public StatementResult getIterator() {
+		return this.iterator;
+	}
+
+	public List<String> getKeys() {
+		return this.keys;
 	}
 }

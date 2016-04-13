@@ -130,9 +130,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
 
 	@Override public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
