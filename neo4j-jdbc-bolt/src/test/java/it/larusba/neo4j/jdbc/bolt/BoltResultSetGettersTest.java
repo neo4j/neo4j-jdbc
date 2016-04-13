@@ -38,7 +38,6 @@ import java.util.HashMap;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * @author AgileLARUS
@@ -197,6 +196,46 @@ public class BoltResultSetGettersTest {
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString(5));
+	}
+
+	@Ignore @Test public void getStringShouldReturnStringOnNode() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals("{\"id\":1, \"labels\":[\"label1\", \"label2\"], \"property1\":\"value1\", \"property2\":1}", resultSet.getString("node"));
+
+		resultSet.next();
+		assertEquals("{\"id:\":2, \"labels\":[\"label\"], \"property\":1.6}", resultSet.getString(1));
+	}
+
+	@Ignore @Test public void getStringShouldReturnStringOnRelationship() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_RELATIONS);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals("{\"id\":1, \"type\":\"type1\", \"startId\":1, \"endId\":2, \"property1\":\"value\", \"property2\":100}", resultSet.getString("relation"));
+
+		resultSet.next();
+		assertEquals("\"id\":2 \"type\":\"type2\", \"startId\":3, \"endId\":4, \"property\":2.6", resultSet.getString(1));
+	}
+
+	@Ignore @Test public void getStringShouldReturnStringOnPath() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_PATHS);
+		ResultSet resultSet = new BoltResultSet(statementResult);
+
+		resultSet.next();
+		assertEquals(
+				"[{\"id\":1, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":3, \"type\":\"type\", \"startId\":1, \"endId\": 2, \"relProperty\":\"value3\"}, {\"id\":2, \"labels\":[\"label1\"], \"property\":\"value2\"}]",
+				resultSet.getString("path"));
+
+		resultSet.next();
+		assertEquals(
+				"[{\"id\":4, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":7, \"type\":\"type\", \"startId\":4, \"endId\": 5, \"relProperty\":\"value4\"}, {\"id\":5, \"labels\":[\"label1\"], \"property\":\"value2\"} , {\"id\":8, \"type\":\"type\", \"startId\":6, \"endId\": 5, \"relProperty\":\"value5\"}, {\"id\":6, \"labels\":[\"label1\"], \"property\":\"value3\"}]",
+				resultSet.getString(1));
 	}
 
 	/*------------------------------*/
@@ -708,14 +747,14 @@ public class BoltResultSetGettersTest {
 		assertTrue(resultSet.next());
 		assertEquals(new ArrayList<Object>() {
 			{
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 1L);
 						this.put("_labels", Arrays.asList("label1"));
 						this.put("property", "value");
 					}
 				});
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 3L);
 						this.put("_type", "type");
@@ -724,7 +763,7 @@ public class BoltResultSetGettersTest {
 						this.put("_endId", 2L);
 					}
 				});
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 2L);
 						this.put("_labels", Arrays.asList("label1"));
@@ -737,14 +776,14 @@ public class BoltResultSetGettersTest {
 		assertTrue(resultSet.next());
 		assertEquals(new ArrayList<Object>() {
 			{
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 4L);
 						this.put("_labels", Arrays.asList("label1"));
 						this.put("property", "value");
 					}
 				});
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 7L);
 						this.put("_type", "type");
@@ -753,14 +792,14 @@ public class BoltResultSetGettersTest {
 						this.put("_endId", 5L);
 					}
 				});
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 5L);
 						this.put("_labels", Arrays.asList("label1"));
 						this.put("property", "value2");
 					}
 				});
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 8L);
 						this.put("_type", "type");
@@ -769,7 +808,7 @@ public class BoltResultSetGettersTest {
 						this.put("_endId", 5L);
 					}
 				});
-				this.add(new HashMap<String, Object>(){
+				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 6L);
 						this.put("_labels", Arrays.asList("label1"));
@@ -1130,7 +1169,7 @@ public class BoltResultSetGettersTest {
 	/*------------------------------*/
 	/*            wasNull           */
 	/*------------------------------*/
-	@Test public void wasNullShouldThrowExceptionOnClosedResultSet() throws SQLException{
+	@Test public void wasNullShouldThrowExceptionOnClosedResultSet() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		StatementResult statementResult = ResultSetData
@@ -1141,13 +1180,13 @@ public class BoltResultSetGettersTest {
 		resultSet.wasNull();
 	}
 
-	@Test public void wasNullShouldReturnFalse() throws SQLException{
+	@Test public void wasNullShouldReturnFalse() throws SQLException {
 		ResultSet resultSet = Mockito.mock(BoltResultSet.class);
 		Whitebox.setInternalState(resultSet, "wasNull", false);
 		resultSet.wasNull();
 	}
 
-	@Test public void wasNullShouldReturnTrue() throws SQLException{
+	@Test public void wasNullShouldReturnTrue() throws SQLException {
 		ResultSet resultSet = Mockito.mock(BoltResultSet.class);
 		Whitebox.setInternalState(resultSet, "wasNull", true);
 		resultSet.wasNull();
