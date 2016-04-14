@@ -59,7 +59,7 @@ public class Neo4jBoltRule implements TestRule {
 	}
 
 	public String getBoltUrl() {
-		return String.format("bolt://%s", hostAndPort);
+		return String.format("bolt://%s?noSsl", hostAndPort);
 	}
 
 	public GraphDatabaseService getGraphDatabase() {

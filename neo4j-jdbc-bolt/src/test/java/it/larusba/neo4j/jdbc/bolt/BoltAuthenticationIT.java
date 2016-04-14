@@ -50,10 +50,10 @@ public class BoltAuthenticationIT {
 
 	@Test public void shouldAuthenticate() throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?user=neo4j,password=neo4j");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=neo4j,password=neo4j");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("The credentials you provided were valid, but must be changed before you can use this instance.");
 		}
@@ -63,10 +63,10 @@ public class BoltAuthenticationIT {
 
 	@Test public void shouldNotAuthenticateBecauseOfABadUserAndPassword() throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?user=teapot,password=teapot");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=teapot,password=teapot");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
@@ -76,10 +76,10 @@ public class BoltAuthenticationIT {
 
 	@Test public void shouldNotAuthenticateBecauseOfABadUser() throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?user=teapot,password=neo4j");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=teapot,password=neo4j");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
@@ -89,10 +89,10 @@ public class BoltAuthenticationIT {
 
 	@Test public void shouldNotAuthenticateBecauseOfABadPassword() throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?user=neo4j,password=teapot");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=neo4j,password=teapot");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
@@ -105,7 +105,7 @@ public class BoltAuthenticationIT {
 		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
@@ -115,10 +115,10 @@ public class BoltAuthenticationIT {
 
 	@Test public void shouldNotAuthenticateBecauseNoPasswordIsProvided() throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?user=neo4j");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=neo4j");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
@@ -128,10 +128,10 @@ public class BoltAuthenticationIT {
 
 	@Test public void shouldNotAuthenticateBecauseNoUserIsProvided() throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?password=neo4j");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",password=neo4j");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
+			stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
 			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}

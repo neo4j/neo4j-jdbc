@@ -26,14 +26,14 @@ import it.larusba.neo4j.jdbc.impl.ListArray;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalPath;
 import org.neo4j.driver.internal.InternalRelationship;
-import org.neo4j.driver.internal.value.IntegerValue;
-import org.neo4j.driver.internal.value.ListValue;
-import org.neo4j.driver.internal.value.StringValue;
+import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.exceptions.value.Uncoercible;
 import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
+import org.neo4j.driver.v1.types.Relationship;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -48,9 +48,9 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private Record          current;
 	private List<String>    keys;
 	private boolean closed = false;
-	private int type;
-	private int concurrency;
-	private int holdability;
+	private int     type;
+	private int     concurrency;
+	private int     holdability;
 	private boolean wasNull;
 
 	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
@@ -135,7 +135,108 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public String getString(String columnLabel) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromLabel(columnLabel).asString();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		try {
+			return value.asString();
+		} catch (Uncoercible e) {
+			String result = "";
+			if (value instanceof NodeValue) {
+				result = this.convertNodeToString(value.asNode());
+			} else if (value instanceof RelationshipValue) {
+				result = this.convertRelationshipToString(value.asRelationship());
+			} else if (value instanceof PathValue) {
+				result = this.convertPathToString(value.asPath());
+			}
+			return result;
+		}
+	}
+
+	private String convertToJSONProperty(String key, Object value) {
+		String result = key == null ? "" : "\"" + key + "\":";
+
+		if (value instanceof String) {
+			result += "\"" + value + "\"";
+		} else if (value instanceof Number) {
+			result += value;
+		} else if (value instanceof StringValue) {
+			result += "\"" + ((StringValue) value).asString() + "\"";
+		} else if (value instanceof IntegerValue) {
+			result += ((IntegerValue) value).asInt();
+		} else if (value instanceof FloatValue) {
+			result += ((FloatValue) value).asFloat();
+		} else if (value instanceof BooleanValue) {
+			result += ((BooleanValue) value).asBoolean();
+		} else if (value instanceof ListValue) {
+			result += "[";
+			result += this.convertToJSONProperty(null, ((ListValue) value).asList());
+			result += "]";
+		} else if (value instanceof List) {
+			String prefix = "";
+			result += "[";
+			for (Object obj : (List) value) {
+				result += prefix + this.convertToJSONProperty(null, obj);
+				prefix = ", ";
+			}
+			result += "]";
+		} else if (value instanceof Iterable) {
+			String prefix = "";
+			result += "[";
+			for (Object obj : (Iterable) value) {
+				result += prefix + this.convertToJSONProperty(null, obj);
+				prefix = ", ";
+			}
+			result += "]";
+		}
+
+		return result;
+	}
+
+	private String convertNodeToString(Node node) {
+		String result = "{";
+
+		result += this.convertToJSONProperty("id", node.id()) + ", ";
+
+		result += this.convertToJSONProperty("labels", node.labels()) + (node.size() > 0 ? ", " : "");
+
+		String prefix = "";
+		for (String key : node.keys()) {
+			result += prefix + this.convertToJSONProperty(key, node.get(key));
+			prefix = ", ";
+		}
+
+		return result + "}";
+	}
+
+	private String convertRelationshipToString(Relationship rel) {
+		String result = "{";
+
+		result += this.convertToJSONProperty("id", rel.id()) + ", ";
+
+		result += this.convertToJSONProperty("type", rel.type()) + ", ";
+
+		result += this.convertToJSONProperty("startId", rel.startNodeId()) + ", ";
+		result += this.convertToJSONProperty("endId", rel.endNodeId()) + (rel.size() > 0 ? ", " : "");
+
+		String prefix = "";
+		for (String key : rel.keys()) {
+			result += prefix + this.convertToJSONProperty(key, rel.get(key));
+			prefix = ", ";
+		}
+
+		return result + "}";
+	}
+
+	private String convertPathToString(Path path) {
+		String result = "[";
+
+		result += this.convertNodeToString(path.start());
+
+		for (Path.Segment s : path) {
+			result += ", " + this.convertRelationshipToString(s.relationship());
+			result += ", " + this.convertNodeToString(s.end());
+		}
+
+		return result + "]";
 	}
 
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {
@@ -245,7 +346,20 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public String getString(int columnIndex) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromIndex(columnIndex).asString();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		try {
+			return value.asString();
+		} catch (Uncoercible e) {
+			String result = "";
+			if (value instanceof NodeValue) {
+				result = this.convertNodeToString(value.asNode());
+			} else if (value instanceof RelationshipValue) {
+				result = this.convertRelationshipToString(value.asRelationship());
+			} else if (value instanceof PathValue) {
+				result = this.convertPathToString(value.asPath());
+			}
+			return result;
+		}
 	}
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
@@ -311,7 +425,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	private Object generateObject(Object obj) {
 		Object result = obj;
-		if (obj.getClass().equals(InternalNode.class)) {
+		if (obj instanceof InternalNode) {
 			InternalNode node = (InternalNode) obj;
 			HashMap<String, Object> map = new HashMap<>();
 			map.put("_id", node.id());
@@ -319,7 +433,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			node.keys().forEach(key -> map.put(key, node.get(key).asObject()));
 			result = map;
 		}
-		if (obj.getClass().equals(InternalRelationship.class)) {
+		if (obj instanceof InternalRelationship) {
 			InternalRelationship rel = (InternalRelationship) obj;
 			HashMap<String, Object> map = new HashMap<>();
 			map.put("_id", rel.id());
@@ -329,16 +443,14 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			rel.keys().forEach(key -> map.put(key, rel.get(key).asObject()));
 			result = map;
 		}
-		if (obj.getClass().equals(InternalPath.class)) {
+		if (obj instanceof InternalPath) {
 			InternalPath path = (InternalPath) obj;
-			List<Object> list = new ArrayList<Object>();
+			List<Object> list = new ArrayList<>();
 			list.add(this.generateObject(path.start()));
-			Iterator<Path.Segment> it = path.iterator();
-			while (it.hasNext()) {
-				Path.Segment segment = it.next();
+			path.forEach(segment -> {
 				list.add(this.generateObject(segment.relationship()));
 				list.add(this.generateObject(segment.end()));
-			}
+			});
 			result = list;
 		}
 		return result;

@@ -61,7 +61,7 @@ public class BoltDriver extends Driver {
 			try {
 				Properties props = new Properties();
 				parseUrlProperties(url, props);
-				if (props.containsKey("ssl")) {
+				if (!props.containsKey("noSsl")) {
 					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
 							(props.containsKey("user") && props.containsKey("password") ?
 									AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :

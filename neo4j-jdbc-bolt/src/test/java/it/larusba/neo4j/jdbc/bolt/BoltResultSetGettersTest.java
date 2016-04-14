@@ -22,7 +22,6 @@ package it.larusba.neo4j.jdbc.bolt;
 import it.larusba.neo4j.jdbc.ResultSet;
 import it.larusba.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -198,43 +197,43 @@ public class BoltResultSetGettersTest {
 		assertEquals("value1", resultSet.getString(5));
 	}
 
-	@Ignore @Test public void getStringShouldReturnStringOnNode() throws SQLException {
+	@Test public void getStringShouldReturnStringOnNode() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
 		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
-		assertEquals("{\"id\":1, \"labels\":[\"label1\", \"label2\"], \"property1\":\"value1\", \"property2\":1}", resultSet.getString("node"));
+		assertEquals("{\"id\":1, \"labels\":[\"label1\", \"label2\"], \"property2\":1, \"property1\":\"value1\"}", resultSet.getString("node"));
 
 		resultSet.next();
-		assertEquals("{\"id:\":2, \"labels\":[\"label\"], \"property\":1.6}", resultSet.getString(1));
+		assertEquals("{\"id\":2, \"labels\":[\"label\"], \"property\":1.6}", resultSet.getString(1));
 	}
 
-	@Ignore @Test public void getStringShouldReturnStringOnRelationship() throws SQLException {
+	@Test public void getStringShouldReturnStringOnRelationship() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_RELATIONS);
 		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
-		assertEquals("{\"id\":1, \"type\":\"type1\", \"startId\":1, \"endId\":2, \"property1\":\"value\", \"property2\":100}", resultSet.getString("relation"));
+		assertEquals("{\"id\":1, \"type\":\"type1\", \"startId\":1, \"endId\":2, \"property2\":100, \"property1\":\"value\"}", resultSet.getString("relation"));
 
 		resultSet.next();
-		assertEquals("\"id\":2 \"type\":\"type2\", \"startId\":3, \"endId\":4, \"property\":2.6", resultSet.getString(1));
+		assertEquals("{\"id\":2, \"type\":\"type2\", \"startId\":3, \"endId\":4, \"property\":2.6}", resultSet.getString(1));
 	}
 
-	@Ignore @Test public void getStringShouldReturnStringOnPath() throws SQLException {
+	@Test public void getStringShouldReturnStringOnPath() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_PATHS);
 		ResultSet resultSet = new BoltResultSet(statementResult);
 
 		resultSet.next();
 		assertEquals(
-				"[{\"id\":1, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":3, \"type\":\"type\", \"startId\":1, \"endId\": 2, \"relProperty\":\"value3\"}, {\"id\":2, \"labels\":[\"label1\"], \"property\":\"value2\"}]",
+				"[{\"id\":1, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":3, \"type\":\"type\", \"startId\":1, \"endId\":2, \"relProperty\":\"value3\"}, {\"id\":2, \"labels\":[\"label1\"], \"property\":\"value2\"}]",
 				resultSet.getString("path"));
 
 		resultSet.next();
 		assertEquals(
-				"[{\"id\":4, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":7, \"type\":\"type\", \"startId\":4, \"endId\": 5, \"relProperty\":\"value4\"}, {\"id\":5, \"labels\":[\"label1\"], \"property\":\"value2\"} , {\"id\":8, \"type\":\"type\", \"startId\":6, \"endId\": 5, \"relProperty\":\"value5\"}, {\"id\":6, \"labels\":[\"label1\"], \"property\":\"value3\"}]",
+				"[{\"id\":4, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":7, \"type\":\"type\", \"startId\":4, \"endId\":5, \"relProperty\":\"value4\"}, {\"id\":5, \"labels\":[\"label1\"], \"property\":\"value2\"}, {\"id\":8, \"type\":\"type\", \"startId\":6, \"endId\":5, \"relProperty\":\"value5\"}, {\"id\":6, \"labels\":[\"label1\"], \"property\":\"value3\"}]",
 				resultSet.getString(1));
 	}
 
@@ -750,7 +749,7 @@ public class BoltResultSetGettersTest {
 				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 1L);
-						this.put("_labels", Arrays.asList("label1"));
+						this.put("_labels", Collections.singletonList("label1"));
 						this.put("property", "value");
 					}
 				});
@@ -766,7 +765,7 @@ public class BoltResultSetGettersTest {
 				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 2L);
-						this.put("_labels", Arrays.asList("label1"));
+						this.put("_labels", Collections.singletonList("label1"));
 						this.put("property", "value2");
 					}
 				});
@@ -779,7 +778,7 @@ public class BoltResultSetGettersTest {
 				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 4L);
-						this.put("_labels", Arrays.asList("label1"));
+						this.put("_labels", Collections.singletonList("label1"));
 						this.put("property", "value");
 					}
 				});
@@ -795,7 +794,7 @@ public class BoltResultSetGettersTest {
 				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 5L);
-						this.put("_labels", Arrays.asList("label1"));
+						this.put("_labels", Collections.singletonList("label1"));
 						this.put("property", "value2");
 					}
 				});
@@ -811,7 +810,7 @@ public class BoltResultSetGettersTest {
 				this.add(new HashMap<String, Object>() {
 					{
 						this.put("_id", 6L);
-						this.put("_labels", Arrays.asList("label1"));
+						this.put("_labels", Collections.singletonList("label1"));
 						this.put("property", "value3");
 					}
 				});

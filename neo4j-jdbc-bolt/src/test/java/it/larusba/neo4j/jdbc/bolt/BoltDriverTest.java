@@ -64,7 +64,7 @@ import static org.mockito.Matchers.eq;
 
 	@Test public void shouldConnectCreateConnection() throws SQLException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(eq("bolt://test"), eq(AuthTokens.none()), Matchers.anyObject())).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
 
 		Driver driver = new BoltDriver();
 		Connection connection = driver.connect("jdbc:bolt://test", null);
