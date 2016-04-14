@@ -76,8 +76,8 @@
 
     <properties>
         <jmh.version>1.11.3</jmh.version>
-        <neo4j.java.driver.version>1.0.0-RC1</neo4j.java.driver.version>
-        <neo4j.version>3.0.0-M05</neo4j.version>
+        <neo4j.java.driver.version>1.0.0-RC2</neo4j.java.driver.version>
+        <neo4j.version>3.0.0-RC1</neo4j.version>
         <powermock.version>1.6.4</powermock.version>
     </properties>
 

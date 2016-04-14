@@ -3,7 +3,6 @@ package it.larusba.neo4j.jdbc.bolt;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.neo4j.bolt.BoltKernelExtension;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
@@ -14,8 +13,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.neo4j.bolt.BoltKernelExtension.EncryptionLevel.OPTIONAL;
-import static org.neo4j.bolt.BoltKernelExtension.Settings.connector;
+import static org.neo4j.graphdb.factory.GraphDatabaseSettings.BoltConnector.EncryptionLevel.OPTIONAL;
+import static org.neo4j.graphdb.factory.GraphDatabaseSettings.boltConnector;
 
 /**
  * provide an embedded in-memory Neo4j instance with bolt enabled
@@ -42,13 +41,13 @@ public class Neo4jBoltRule implements TestRule {
 
 			@Override public void evaluate() throws Throwable {
 				Map<Setting<?>, String> settings = new HashMap<>();
-				settings.put(connector(0, BoltKernelExtension.Settings.enabled), "true");
-				settings.put(connector(0, BoltKernelExtension.Settings.tls_level), OPTIONAL.name());
+				settings.put(boltConnector("0").enabled, "true");
+				settings.put(boltConnector("0").encryption_level, OPTIONAL.name());
 				settings.put(GraphDatabaseSettings.auth_enabled, Boolean.toString(requireAuth));
 
 				InetSocketAddress inetAddr = Ports.findFreePort("localhost", new int[] { 7687, 64 * 1024 - 1 });
 				hostAndPort = String.format("%s:%d", inetAddr.getHostName(), inetAddr.getPort());
-				settings.put(connector(0, BoltKernelExtension.Settings.socket_address), hostAndPort);
+				settings.put(boltConnector("0").address, hostAndPort);
 				graphDatabase = new TestGraphDatabaseFactory().newImpermanentDatabase(settings);
 				try {
 					statement.evaluate();
