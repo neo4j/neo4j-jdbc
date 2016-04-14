@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.neo4j.graphdb.factory.GraphDatabaseSettings.BoltConnector.EncryptionLevel.OPTIONAL;
+import static org.neo4j.graphdb.factory.GraphDatabaseSettings.BoltConnector.EncryptionLevel.DISABLED;
 import static org.neo4j.graphdb.factory.GraphDatabaseSettings.boltConnector;
 
 /**
@@ -42,7 +42,7 @@ public class Neo4jBoltRule implements TestRule {
 			@Override public void evaluate() throws Throwable {
 				Map<Setting<?>, String> settings = new HashMap<>();
 				settings.put(boltConnector("0").enabled, "true");
-				settings.put(boltConnector("0").encryption_level, OPTIONAL.name());
+				settings.put(boltConnector("0").encryption_level, DISABLED.name());
 				settings.put(GraphDatabaseSettings.auth_enabled, Boolean.toString(requireAuth));
 
 				InetSocketAddress inetAddr = Ports.findFreePort("localhost", new int[] { 7687, 64 * 1024 - 1 });

@@ -21,14 +21,14 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.neo4j.driver.v1.*;
 import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.*;
+import java.sql.Statement;
 
 import static org.junit.Assert.*;
+import static org.neo4j.driver.v1.Config.build;
 
 /**
  * @author Stefan Armbruster
@@ -42,8 +42,13 @@ public class SampleIT {
 		// if we want to have raw access to neo4j instance, e.g. for populating the DB upfront:
 		neo4j.getGraphDatabase().execute("create ( )");
 
+		//Creating config without SSL
+		Config.ConfigBuilder builder = build();
+		builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+		Config config = builder.toConfig();
+
 		// hitting the DB with a bolt request
-		Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());   // defaults to localhost:7687
+		Driver driver = GraphDatabase.driver(neo4j.getBoltUrl(), config);   // defaults to localhost:7687
 		Session session = driver.session();
 		StatementResult rs = session.run("match (n) RETURN count(n)");
 		session.close();

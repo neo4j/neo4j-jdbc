@@ -21,12 +21,15 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.Driver;
 import org.neo4j.driver.v1.AuthTokens;
+import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+
+import static org.neo4j.driver.v1.Config.build;
 
 /**
  * @author AgileLARUS
@@ -58,10 +61,20 @@ public class BoltDriver extends Driver {
 			try {
 				Properties props = new Properties();
 				parseUrlProperties(url, props);
-				connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
-						(props.containsKey("user") && props.containsKey("password") ?
-								AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :
-								AuthTokens.none())).session()), BoltConnection.hasDebug(props));
+				if (props.containsKey("ssl")) {
+					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
+							(props.containsKey("user") && props.containsKey("password") ?
+									AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :
+									AuthTokens.none())).session()), BoltConnection.hasDebug(props));
+				} else {
+					Config.ConfigBuilder builder = build();
+					builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+					Config config = builder.toConfig();
+					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
+							(props.containsKey("user") && props.containsKey("password") ?
+									AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :
+									AuthTokens.none()), config).session()), BoltConnection.hasDebug(props));
+				}
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}

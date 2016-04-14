@@ -76,7 +76,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 		this.keys = new ArrayList<>();
 
-		if (this.iterator != null && this.iterator.peek() != null
+		if (this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null
 				&& this.iterator.peek().fields().stream().filter(pair -> ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())).count()
 				== this.iterator.keys().size()) {
 			//Flatten the result
@@ -113,7 +113,12 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}
-		return (this.current = this.iterator.next()) != null;
+		if (this.iterator.hasNext()) {
+			this.current = this.iterator.next();
+		} else {
+			this.current = null;
+		}
+		return this.current != null;
 	}
 
 	@Override public void close() throws SQLException {

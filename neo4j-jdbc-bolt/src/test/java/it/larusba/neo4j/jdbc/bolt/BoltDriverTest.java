@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
@@ -39,6 +40,7 @@ import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
 
 /**
  * @author AgileLARUS
@@ -62,7 +64,7 @@ import static org.junit.Assert.*;
 
 	@Test public void shouldConnectCreateConnection() throws SQLException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(eq("bolt://test"), eq(AuthTokens.none()), Matchers.anyObject())).thenReturn(mockedDriver);
 
 		Driver driver = new BoltDriver();
 		Connection connection = driver.connect("jdbc:bolt://test", null);

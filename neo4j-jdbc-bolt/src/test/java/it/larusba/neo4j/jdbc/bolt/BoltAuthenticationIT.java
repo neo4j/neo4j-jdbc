@@ -55,7 +55,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("The credentials have expired and need to be updated.");
+			result = e.getMessage().contains("The credentials you provided were valid, but must be changed before you can use this instance.");
 		}
 		con.close();
 		assertTrue(result);
@@ -68,7 +68,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("The client provided an incorrect username and/or password.");
+			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
 		con.close();
 		assertTrue(result);
@@ -81,7 +81,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("The client provided an incorrect username and/or password.");
+			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
 		con.close();
 		assertTrue(result);
@@ -94,7 +94,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("The client provided an incorrect username and/or password.");
+			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
 		con.close();
 		assertTrue(result);
@@ -107,7 +107,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("Authorization token must contain: 'scheme : basic'");
+			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
 		con.close();
 		assertTrue(result);
@@ -120,7 +120,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("Authorization token must contain: 'scheme : basic'");
+			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
 		con.close();
 		assertTrue(result);
@@ -133,7 +133,7 @@ public class BoltAuthenticationIT {
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
 		} catch (ClientException e) {
-			result = e.getMessage().contains("Authorization token must contain: 'scheme : basic'");
+			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
 		con.close();
 		assertTrue(result);
