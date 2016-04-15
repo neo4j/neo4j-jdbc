@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 19/02/16
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
@@ -28,108 +28,100 @@ import java.util.Map;
 
 public class HttpStatement extends Statement implements Loggable {
 
-    private HttpConnection connection;
-    private ResultSet resultSet;
-    private boolean loggable = false;
+	private HttpConnection connection;
+	private ResultSet      resultSet;
+	private boolean loggable = false;
 
-    public HttpStatement(HttpConnection httpConnection) {
-        this.connection = httpConnection;
-    }
+	public HttpStatement(HttpConnection httpConnection) {
+		this.connection = httpConnection;
+	}
 
-    @Override
-    public ResultSet executeQuery(String cypher) throws SQLException {
-        checkClosed();
-        if (connection.isClosed()) {
-            throw new SQLException("Connection already closed");
-        }
+	@Override public ResultSet executeQuery(String cypher) throws SQLException {
+		checkClosed();
+		if (connection.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
 
-        Neo4jResponse response = connection.executeQuery(cypher, null, null);
-        this.resultSet = new HttpResultSet(response.results.get(0));
-        return resultSet;
-    }
+		Neo4jResponse response = connection.executeQuery(cypher, null, null);
+		this.resultSet = new HttpResultSet(response.results.get(0));
+		return resultSet;
+	}
 
-    @Override
-    public int executeUpdate(String cypher) throws SQLException {
-        checkClosed();
-        if (connection.isClosed()) {
-            throw new SQLException("Connection already closed");
-        }
+	@Override public int executeUpdate(String cypher) throws SQLException {
+		checkClosed();
+		if (connection.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
 
-        Neo4jResponse response = connection.executeQuery(cypher, null, Boolean.TRUE);
-        Map<String, Object> stats = response.results.get(0).stats;
-        int result = (int) stats.get("nodes_created");
-        result += (int) stats.get("nodes_deleted");
-        result += (int) stats.get("relationships_created");
-        result += (int) stats.get("relationship_deleted");
-        return result;
-    }
+		Neo4jResponse response = connection.executeQuery(cypher, null, Boolean.TRUE);
+		Map<String, Object> stats = response.results.get(0).stats;
+		int result = (int) stats.get("nodes_created");
+		result += (int) stats.get("nodes_deleted");
+		result += (int) stats.get("relationships_created");
+		result += (int) stats.get("relationship_deleted");
+		return result;
+	}
 
-    /**
-     * Check if this statement is closed or not.
-     * @throws SQLException
-     */
-    private void checkClosed() throws SQLException {
-        if (this.isClosed()) {
-            throw new SQLException("Statement already closed");
-        }
-    }
+	/**
+	 * Check if this statement is closed or not.
+	 *
+	 * @throws SQLException
+	 */
+	private void checkClosed() throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("Statement already closed");
+		}
+	}
 
-    @Override
-    public void close() throws SQLException {
-        if (resultSet != null) {
-            resultSet.close();
-        }
-        connection = null;
-        resultSet = null;
-    }
+	@Override public void close() throws SQLException {
+		if (resultSet != null) {
+			resultSet.close();
+		}
+		connection = null;
+		resultSet = null;
+	}
 
 	@Override public int getMaxRows() throws SQLException {
-		return 0;
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public void setMaxRows(int max) throws SQLException {
-
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public boolean execute(String sql) throws SQLException {
-		return false;
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public ResultSet getResultSet() throws SQLException {
-		return null;
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public int getUpdateCount() throws SQLException {
-		return 0;
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override
-    public int getResultSetConcurrency() throws SQLException {
-        return ResultSet.CONCUR_READ_ONLY;
-    }
+	@Override public int getResultSetConcurrency() throws SQLException {
+		return ResultSet.CONCUR_READ_ONLY;
+	}
 
-    @Override
-    public int getResultSetType() throws SQLException {
-        return ResultSet.TYPE_FORWARD_ONLY;
-    }
+	@Override public int getResultSetType() throws SQLException {
+		return ResultSet.TYPE_FORWARD_ONLY;
+	}
 
-    @Override
-    public int getResultSetHoldability() throws SQLException {
-        return ResultSet.CLOSE_CURSORS_AT_COMMIT;
-    }
+	@Override public int getResultSetHoldability() throws SQLException {
+		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+	}
 
-    @Override
-    public boolean isClosed() throws SQLException {
-        return connection == null;
-    }
+	@Override public boolean isClosed() throws SQLException {
+		return connection == null;
+	}
 
-    @Override
-    public boolean isLoggable() {
-        return loggable;
-    }
+	@Override public boolean isLoggable() {
+		return loggable;
+	}
 
-    @Override
-    public void setLoggable(boolean loggable) {
-        this.loggable = loggable;
-    }
+	@Override public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
+	}
 }

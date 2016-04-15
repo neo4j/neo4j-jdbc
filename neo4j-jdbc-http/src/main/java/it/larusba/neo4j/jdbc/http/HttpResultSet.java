@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 11/02/16
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
@@ -38,294 +38,266 @@ import java.util.List;
  */
 public class HttpResultSet extends ResultSet implements Loggable {
 
-    /**
-     * Jackson mapper to make toString() method for complex object.
-     */
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+	/**
+	 * Jackson mapper to make toString() method for complex object.
+	 */
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    /**
-     * Neo4j query result.
-     */
-    private Neo4jResult result;
+	/**
+	 * Neo4j query result.
+	 */
+	private Neo4jResult result;
 
-    /**
-     * Cursor position of this iterator.
-     */
-    private int row = -1;
+	/**
+	 * Cursor position of this iterator.
+	 */
+	private int row = -1;
 
-    /**
-     * The current row of the iterator.
-     */
-    private List<Object> currentRow;
+	/**
+	 * The current row of the iterator.
+	 */
+	private List<Object> currentRow;
 
-    private boolean loggable;
-    private boolean isClosed = false;
+	private boolean loggable;
+	private boolean isClosed = false;
 
-    /**
-     * Default constructor.
-     *
-     * @param result A Neo4j query result.
-     */
-    public HttpResultSet(Neo4jResult result) {
-        this.result = result;
-        this.row = -1;
-    }
+	/**
+	 * Default constructor.
+	 *
+	 * @param result A Neo4j query result.
+	 */
+	public HttpResultSet(Neo4jResult result) {
+		this.result = result;
+		this.row = -1;
+	}
 
-    /**
-     * Check if this connection is closed or not.
-     * If it's closed, then we throw a SQLException, otherwise we do nothing.
-     *
-     * @throws SQLException
-     */
-    private void checkClosed() throws SQLException {
-        if (isClosed()) {
-            throw new SQLException("Connection is closed.");
-        }
-    }
+	/**
+	 * Check if this connection is closed or not.
+	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
+	 *
+	 * @throws SQLException
+	 */
+	private void checkClosed() throws SQLException {
+		if (isClosed()) {
+			throw new SQLException("Connection is closed.");
+		}
+	}
 
-    /**
-     * Retrieve the object that math the asked column.
-     *
-     * @param column Index of the column to retrieve
-     * @return
-     * @throws SQLDataException
-     */
-    private Object get(int column) throws SQLDataException {
-        if (column < 1 || column > result.columns.size()) {
-            throw new SQLDataException("Column " + column + " is invalid");
-        }
+	/**
+	 * Retrieve the object that math the asked column.
+	 *
+	 * @param column Index of the column to retrieve
+	 * @return
+	 * @throws SQLDataException
+	 */
+	private Object get(int column) throws SQLDataException {
+		if (column < 1 || column > result.columns.size()) {
+			throw new SQLDataException("Column " + column + " is invalid");
+		}
 
-        Object value = currentRow.get(column -1);
-        return value;
-    }
+		Object value = currentRow.get(column - 1);
+		return value;
+	}
 
-    /**
-     * Retrieve a Numeric object from the currentRow that correspond to the column index.
-     *
-     * @param columnIndex Index of the column
-     * @return 0 if null, otherwise a number
-     * @throws SQLException If the object cannot be cast to Number
-     */
-    private Number getNumber(int columnIndex) throws SQLException {
-        Number num = 0;
-        Object value = get(columnIndex);
+	/**
+	 * Retrieve a Numeric object from the currentRow that correspond to the column index.
+	 *
+	 * @param columnIndex Index of the column
+	 * @return 0 if null, otherwise a number
+	 * @throws SQLException If the object cannot be cast to Number
+	 */
+	private Number getNumber(int columnIndex) throws SQLException {
+		Number num = 0;
+		Object value = get(columnIndex);
 
-        if (value != null && (value instanceof Number)) {
-            num = (Number) value;
-        }else {
-            throw new SQLDataException("Value is not a number" + value);
+		if (value != null && (value instanceof Number)) {
+			num = (Number) value;
+		} else {
+			throw new SQLDataException("Value is not a number" + value);
 
-        }
-        return num;
-    }
+		}
+		return num;
+	}
 
-    @Override
-    public boolean next() throws SQLException {
-        checkClosed();
-        row++;
-        if (row < result.rows.size()) {
-            currentRow = (List<Object>) result.rows.get(row).get("row");
-            return true;
-        } else {
-            currentRow = null;
-            return false;
-        }
-    }
+	@Override public boolean next() throws SQLException {
+		checkClosed();
+		row++;
+		if (row < result.rows.size()) {
+			currentRow = (List<Object>) result.rows.get(row).get("row");
+			return true;
+		} else {
+			currentRow = null;
+			return false;
+		}
+	}
 
-    @Override
-    public void close() throws SQLException {
-        checkClosed();
-        result = null;
-        row = -1;
-        isClosed = true;
-        currentRow = null;
-    }
+	@Override public void close() throws SQLException {
+		checkClosed();
+		result = null;
+		row = -1;
+		isClosed = true;
+		currentRow = null;
+	}
 
-    @Override public boolean wasNull() throws SQLException {
-        return false;
-    }
+	@Override public boolean wasNull() throws SQLException {
+		return false;
+	}
 
-    @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
-        return new HttpResultSetMetaData(result);
-    }
+	@Override public ResultSetMetaData getMetaData() throws SQLException {
+		return new HttpResultSetMetaData(result);
+	}
 
-    @Override
-    public String getString(int columnIndex) throws SQLException {
-        String object;
+	@Override public String getString(int columnIndex) throws SQLException {
+		String object;
 
-        checkClosed();
-        Object value = get(columnIndex);
+		checkClosed();
+		Object value = get(columnIndex);
 
-        final Class<?> type = value.getClass();
+		final Class<?> type = value.getClass();
 
-        if (String.class.equals(type)) {
-            object = (String) value;
-        } else {
-            if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
-                object = value.toString();
-            } else {
-                try {
-                    object = OBJECT_MAPPER.writeValueAsString(value);
-                } catch (Exception e) {
-                    throw new SQLException("Couldn't convert value " + value + " of type " + type + " to JSON " + e.getMessage());
-                }
-            }
-        }
+		if (String.class.equals(type)) {
+			object = (String) value;
+		} else {
+			if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
+				object = value.toString();
+			} else {
+				try {
+					object = OBJECT_MAPPER.writeValueAsString(value);
+				} catch (Exception e) {
+					throw new SQLException("Couldn't convert value " + value + " of type " + type + " to JSON " + e.getMessage());
+				}
+			}
+		}
 
-        return object;
-    }
+		return object;
+	}
 
-    @Override
-    public boolean getBoolean(int columnIndex) throws SQLException {
-        checkClosed();
-        return (Boolean) get(columnIndex);
-    }
+	@Override public boolean getBoolean(int columnIndex) throws SQLException {
+		checkClosed();
+		return (Boolean) get(columnIndex);
+	}
 
-    @Override
-    public short getShort(int columnIndex) throws SQLException {
-        checkClosed();
-        return getNumber( columnIndex ).shortValue();
-    }
+	@Override public short getShort(int columnIndex) throws SQLException {
+		checkClosed();
+		return getNumber(columnIndex).shortValue();
+	}
 
-    @Override
-    public int getInt(int columnIndex) throws SQLException {
-        checkClosed();
-        return getNumber( columnIndex ).intValue();
-    }
+	@Override public int getInt(int columnIndex) throws SQLException {
+		checkClosed();
+		return getNumber(columnIndex).intValue();
+	}
 
-    @Override
-    public long getLong(int columnIndex) throws SQLException {
-        checkClosed();
-        return getNumber( columnIndex ).longValue();
-    }
+	@Override public long getLong(int columnIndex) throws SQLException {
+		checkClosed();
+		return getNumber(columnIndex).longValue();
+	}
 
-    @Override
-    public float getFloat(int columnIndex) throws SQLException {
-        checkClosed();
-        return getNumber( columnIndex ).floatValue();
-    }
+	@Override public float getFloat(int columnIndex) throws SQLException {
+		checkClosed();
+		return getNumber(columnIndex).floatValue();
+	}
 
-    @Override
-    public double getDouble(int columnIndex) throws SQLException {
-        checkClosed();
-        return getNumber( columnIndex ).doubleValue();
-    }
+	@Override public double getDouble(int columnIndex) throws SQLException {
+		checkClosed();
+		return getNumber(columnIndex).doubleValue();
+	}
 
-    @Override
-    public Array getArray(int columnIndex) throws SQLException {
-        checkClosed();
-        // Default list for null array
-        List result = new ArrayList<String>();
-        Object obj = get(columnIndex);
-        if(obj != null) {
-            if(!obj.getClass().isArray()) {
-                throw new SQLException("Column " + columnIndex + " is not an Array");
-            }
+	@Override public Array getArray(int columnIndex) throws SQLException {
+		checkClosed();
+		// Default list for null array
+		List result = new ArrayList<String>();
+		Object obj = get(columnIndex);
+		if (obj != null) {
+			if (!obj.getClass().isArray()) {
+				throw new SQLException("Column " + columnIndex + " is not an Array");
+			}
 
-            result = Arrays.asList((Array) obj);
-        }
-        return new ListArray(result, Array.getObjectType(result.get(0)));
-    }
+			result = Arrays.asList((Array) obj);
+		}
+		return new ListArray(result, Array.getObjectType(result.get(0)));
+	}
 
-    @Override
-    public Object getObject(int columnIndex) throws SQLException {
-        checkClosed();
-        return get(columnIndex);
-    }
+	@Override public Object getObject(int columnIndex) throws SQLException {
+		checkClosed();
+		return get(columnIndex);
+	}
 
-    @Override
-    public String getString(String columnLabel) throws SQLException {
-        return getString(findColumn(columnLabel));
-    }
+	@Override public String getString(String columnLabel) throws SQLException {
+		return getString(findColumn(columnLabel));
+	}
 
-    @Override
-    public boolean getBoolean(String columnLabel) throws SQLException {
-        return getBoolean(findColumn(columnLabel));
-    }
+	@Override public boolean getBoolean(String columnLabel) throws SQLException {
+		return getBoolean(findColumn(columnLabel));
+	}
 
-    @Override
-    public short getShort(String columnLabel) throws SQLException {
-        return getShort(findColumn(columnLabel));
-    }
+	@Override public short getShort(String columnLabel) throws SQLException {
+		return getShort(findColumn(columnLabel));
+	}
 
-    @Override
-    public int getInt(String columnLabel) throws SQLException {
-        return getInt(findColumn(columnLabel));
-    }
+	@Override public int getInt(String columnLabel) throws SQLException {
+		return getInt(findColumn(columnLabel));
+	}
 
-    @Override
-    public long getLong(String columnLabel) throws SQLException {
-        return getLong(findColumn(columnLabel));
-    }
+	@Override public long getLong(String columnLabel) throws SQLException {
+		return getLong(findColumn(columnLabel));
+	}
 
-    @Override
-    public float getFloat(String columnLabel) throws SQLException {
-        return getFloat(findColumn(columnLabel));
-    }
+	@Override public float getFloat(String columnLabel) throws SQLException {
+		return getFloat(findColumn(columnLabel));
+	}
 
-    @Override
-    public double getDouble(String columnLabel) throws SQLException {
-        return getDouble(findColumn(columnLabel));
-    }
+	@Override public double getDouble(String columnLabel) throws SQLException {
+		return getDouble(findColumn(columnLabel));
+	}
 
-    @Override
-    public Array getArray(String columnLabel) throws SQLException {
-        return getArray(findColumn(columnLabel));
-    }
+	@Override public Array getArray(String columnLabel) throws SQLException {
+		return getArray(findColumn(columnLabel));
+	}
 
-    @Override
-    public Object getObject(String columnLabel) throws SQLException {
-        return getObject(findColumn(columnLabel));
-    }
+	@Override public Object getObject(String columnLabel) throws SQLException {
+		return getObject(findColumn(columnLabel));
+	}
 
-    @Override
-    public int findColumn(String columnLabel) throws SQLException {
-        checkClosed();
+	@Override public int findColumn(String columnLabel) throws SQLException {
+		checkClosed();
 
-        // The indexOf return -1 if not found
-        int index = -1;
-        if(columnLabel != null) {
-            index = result.columns.indexOf(columnLabel);
-        }
+		// The indexOf return -1 if not found
+		int index = -1;
+		if (columnLabel != null) {
+			index = result.columns.indexOf(columnLabel);
+		}
 
-        // To respect the specification
-        if(index == -1) {
-            throw new SQLException("Column " + columnLabel + " is not defined");
-        }
+		// To respect the specification
+		if (index == -1) {
+			throw new SQLException("Column " + columnLabel + " is not defined");
+		}
 
-        return index;
-    }
+		return index;
+	}
 
-    @Override
-    public int getType() throws SQLException {
-        checkClosed();
-        return TYPE_FORWARD_ONLY;
-    }
+	@Override public int getType() throws SQLException {
+		checkClosed();
+		return TYPE_FORWARD_ONLY;
+	}
 
-    @Override
-    public int getConcurrency() throws SQLException {
-        return CONCUR_READ_ONLY;
-    }
+	@Override public int getConcurrency() throws SQLException {
+		return CONCUR_READ_ONLY;
+	}
 
-    @Override
-    public int getHoldability() throws SQLException {
-        return CLOSE_CURSORS_AT_COMMIT;
-    }
+	@Override public int getHoldability() throws SQLException {
+		return CLOSE_CURSORS_AT_COMMIT;
+	}
 
-    @Override
-    public boolean isClosed() throws SQLException {
-        return this.isClosed;
-    }
+	@Override public boolean isClosed() throws SQLException {
+		return this.isClosed;
+	}
 
-    @Override
-    public boolean isLoggable() {
-        return this.loggable;
-    }
+	@Override public boolean isLoggable() {
+		return this.loggable;
+	}
 
-    @Override
-    public void setLoggable(boolean loggable) {
-        this.loggable = loggable;
-    }
+	@Override public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
+	}
 
 }

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 01/03/2016
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
@@ -32,20 +32,19 @@ import java.sql.SQLException;
  */
 public class HttpDatabaseMetaData extends DatabaseMetaData {
 
-    private HttpConnection connection;
-    private boolean debug = false;
+	private HttpConnection connection;
+	private boolean debug = false;
 
-    public HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
-        this.connection = connection;
-        this.debug = debug;
-    }
+	public HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
+		this.connection = connection;
+		this.debug = debug;
+	}
 
-    public HttpDatabaseMetaData(HttpConnection connection) {
-        this(connection, false);
-    }
+	public HttpDatabaseMetaData(HttpConnection connection) {
+		this(connection, false);
+	}
 
-    @Override
-    public Connection getConnection() throws SQLException {
-        return this.connection;
-    }
+	@Override public Connection getConnection() throws SQLException {
+		return this.connection;
+	}
 }

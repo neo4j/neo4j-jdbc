@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 15/03/16
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
@@ -26,11 +26,11 @@ import org.mockito.Mockito;
  * @since 3.0.0
  */
 public class InstanceFactory {
-    public static <T extends Loggable> T debug(Class<T> cls, T obj, boolean log) {
-        if (log) {
-            obj.setLoggable(true);
-            obj = Mockito.mock(cls, Mockito.withSettings().spiedInstance(obj).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-        }
-        return obj;
-    }
+	public static <T extends Loggable> T debug(Class<T> cls, T obj, boolean log) {
+		if (log) {
+			obj.setLoggable(true);
+			obj = Mockito.mock(cls, Mockito.withSettings().spiedInstance(obj).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		}
+		return obj;
+	}
 }

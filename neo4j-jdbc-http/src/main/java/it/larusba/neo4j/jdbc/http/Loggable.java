@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 15/03/16
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
@@ -24,7 +24,7 @@ package it.larusba.neo4j.jdbc.http;
  * @since 3.0.0
  */
 public interface Loggable {
-    boolean isLoggable();
+	boolean isLoggable();
 
-    void setLoggable(boolean loggable);
+	void setLoggable(boolean loggable);
 }

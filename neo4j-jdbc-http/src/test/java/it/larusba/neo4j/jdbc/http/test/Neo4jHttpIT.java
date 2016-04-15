@@ -17,24 +17,16 @@
  * <p>
  * Created on 15/4/2016
  */
-package it.larusba.neo4j.jdbc.http;
+package it.larusba.neo4j.jdbc.http.test;
 
-import it.larusba.neo4j.jdbc.ParameterMetaData;
+import org.junit.ClassRule;
+import org.neo4j.harness.junit.Neo4jRule;
 
-public class HttpParameterMetaData extends ParameterMetaData implements Loggable {
+import java.io.File;
 
-	private boolean loggable = false;
-	private HttpPreparedStatement preparedStatement;
+public class Neo4jHttpIT extends Neo4jHttpUnitTest {
 
-	public HttpParameterMetaData(HttpPreparedStatement preparedStatement) {
-		this.preparedStatement = preparedStatement;
-	}
+	@ClassRule public static Neo4jRule neo4j = new Neo4jRule()
+			.withFixture(new File(Neo4jHttpUnitTest.class.getClassLoader().getResource("data/movie.cyp").getFile()));
 
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
-	}
 }

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 23/02/16
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
@@ -33,41 +33,40 @@ import java.util.Properties;
  */
 public class HttpDriver extends Driver {
 
-    // Register the driver class
-    static {
-        try {
-            DriverManager.registerDriver(new HttpDriver());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+	// Register the driver class
+	static {
+		try {
+			DriverManager.registerDriver(new HttpDriver());
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 
-    /**
-     * Default constructor.
-     */
-    public HttpDriver() {
-        super("http");
-    }
+	/**
+	 * Default constructor.
+	 */
+	public HttpDriver() {
+		super("http");
+	}
 
-    @Override
-    public Connection connect(String url, Properties info) throws SQLException {
-        Connection connection = null;
-        try {
-            if (acceptsURL(url)) {
-                URL neo4jUrl = new URL(url.replace("jdbc:", ""));
-                info = (info == null ? info : new Properties());
-                parseUrlProperties(url, info);
-                String host = neo4jUrl.getHost();
-                int port = 7474;
-                if (neo4jUrl.getPort() > 0) {
-                    port = neo4jUrl.getPort();
-                }
-                connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, info), HttpConnection.hasDebug(info));
-            }
-        } catch (MalformedURLException e) {
-            throw new SQLException(e);
-        }
-        return connection;
-    }
+	@Override public Connection connect(String url, Properties info) throws SQLException {
+		info = (info == null ? info : new Properties());
+		Connection connection = null;
+		try {
+			if (acceptsURL(url)) {
+				URL neo4jUrl = new URL(url.replace("jdbc:", ""));
+				parseUrlProperties(url, info);
+				String host = neo4jUrl.getHost();
+				int port = 7474;
+				if (neo4jUrl.getPort() > 0) {
+					port = neo4jUrl.getPort();
+				}
+				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, info), HttpConnection.hasDebug(info));
+			}
+		} catch (MalformedURLException e) {
+			throw new SQLException(e);
+		}
+		return connection;
+	}
 
 }

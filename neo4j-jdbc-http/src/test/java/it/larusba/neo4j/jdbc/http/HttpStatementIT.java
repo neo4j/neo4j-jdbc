@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 08/03/16
+ * Created on 15/4/2016
  */
 package it.larusba.neo4j.jdbc.http;
 
-import it.larusba.neo4j.jdbc.http.test.Neo4jHttpITTest;
+import it.larusba.neo4j.jdbc.http.test.Neo4jHttpIT;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -27,46 +27,43 @@ import java.sql.*;
 
 import static org.junit.Assert.*;
 
-public class HttpStatementIT extends Neo4jHttpITTest {
+public class HttpStatementIT extends Neo4jHttpIT {
 
-    @BeforeClass
-    public static void initialize() throws ClassNotFoundException, SQLException {
-        Class.forName("it.larusba.neo4j.jdbc.http.HttpDriver");
-    }
+	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
+		Class.forName("it.larusba.neo4j.jdbc.http.HttpDriver");
+	}
 
 	/*------------------------------*/
-    /*          executeQuery        */
-	/*------------------------------*/
+	/*          executeQuery        */
+    /*------------------------------*/
 
-    @Test
-    public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
-        Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery("MATCH (m:Movie { title:\"The Matrix\"}) RETURN m.title");
+	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Statement statement = connection.createStatement();
+		ResultSet rs = statement.executeQuery("MATCH (m:Movie { title:\"The Matrix\"}) RETURN m.title");
 
-        assertTrue(rs.next());
-        assertEquals("The Matrix", rs.getString(1));
-        assertFalse(rs.next());
-        connection.close();
-    }
+		assertTrue(rs.next());
+		assertEquals("The Matrix", rs.getString(1));
+		assertFalse(rs.next());
+		connection.close();
+	}
 
 	/*------------------------------*/
 	/*         executeUpdate        */
 	/*------------------------------*/
 
-    @Test
-    public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-        Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
-        Statement statement = connection.createStatement();
-        int lines = statement.executeUpdate("CREATE (n:User {name:\"test\"})");
-        assertEquals(1, lines);
+	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Statement statement = connection.createStatement();
+		int lines = statement.executeUpdate("CREATE (n:User {name:\"test\"})");
+		assertEquals(1, lines);
 
-        lines = statement.executeUpdate("CREATE (n:User {name:\"test\"})");
-        assertEquals(1, lines);
+		lines = statement.executeUpdate("CREATE (n:User {name:\"test\"})");
+		assertEquals(1, lines);
 
-        lines = statement.executeUpdate("MATCH (n:User {name:\"test\"}) DELETE n");
-        assertEquals(2, lines);
+		lines = statement.executeUpdate("MATCH (n:User {name:\"test\"}) DELETE n");
+		assertEquals(2, lines);
 
-        connection.close();
-    }
+		connection.close();
+	}
 }
