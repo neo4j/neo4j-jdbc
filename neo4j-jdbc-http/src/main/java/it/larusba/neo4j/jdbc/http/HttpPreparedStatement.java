@@ -22,19 +22,23 @@ package it.larusba.neo4j.jdbc.http;
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.ResultSetMetaData;
+import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
+import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.HashMap;
 
-/**
- * @author AgileLARUS
- * @since 3.0.0
- */
+import static java.sql.Types.*;
+
 public class HttpPreparedStatement extends PreparedStatement implements Loggable {
 
     private HttpConnection connection;
     private ResultSet resultSet;
     private String cypher;
+    private HashMap<String, Object> parameters;
+    private int parametersNumber;
     private boolean loggable = false;
 
     /**
@@ -46,75 +50,127 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
     public HttpPreparedStatement(HttpConnection httpConnection, String cypher) {
         super();
         this.connection = httpConnection;
-        this.cypher = cypher;
+        this.cypher =  PreparedStatementBuilder.replacePlaceholders(cypher);
+        this.parametersNumber = PreparedStatementBuilder.placeholdersCount(cypher);
+        this.parameters = new HashMap<>(this.parametersNumber);
+    }
+
+    /**
+     * Check if this statement is closed or not.
+     *
+     * @throws SQLException
+     */
+    private void checkClosed() throws SQLException {
+        if (this.isClosed()) {
+            throw new SQLException("Statement already closed");
+        }
+    }
+
+    private void checkParamsNumber(int parameterIndex) throws SQLException {
+        if (parameterIndex > this.parametersNumber) {
+            throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
+        }
+    }
+
+    private void insertParameter(int index, Object o) {
+        this.parameters.put(new Integer(index).toString(), o);
     }
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        return null;
+        checkClosed();
+        if (connection.isClosed()) {
+            throw new SQLException("Connection already closed");
+        }
+
+        Neo4jResponse response = connection.executeQuery(cypher, parameters, Boolean.FALSE);
+        this.resultSet = new HttpResultSet(response.results.get(0));
+        return resultSet;
     }
 
-	@Override public int executeUpdate() throws SQLException {
-		return 0;
-	}
-
-	@Override
-	public void setNull(int parameterIndex, int sqlType) throws SQLException {
-
+    @Override public int executeUpdate() throws SQLException {
+        return 0;
     }
 
-    @Override
-    public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-
+    @Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        //@formatter:off
+        if(	sqlType == ARRAY ||
+                sqlType == BLOB ||
+                sqlType == CLOB ||
+                sqlType == DATALINK ||
+                sqlType == JAVA_OBJECT ||
+                sqlType == NCHAR ||
+                sqlType == NCLOB ||
+                sqlType == NVARCHAR ||
+                sqlType == LONGNVARCHAR ||
+                sqlType == REF ||
+                sqlType == ROWID ||
+                sqlType == SQLXML ||
+                sqlType == STRUCT){
+            //@formatter:on
+            throw new SQLFeatureNotSupportedException("The Type you specified is not supported");
+        }
+        this.insertParameter(parameterIndex, null);
     }
 
-    @Override
-    public void setShort(int parameterIndex, short x) throws SQLException {
-
+    @Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-    @Override
-    public void setInt(int parameterIndex, int x) throws SQLException {
-
+    @Override public void setShort(int parameterIndex, short x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-    @Override
-    public void setLong(int parameterIndex, long x) throws SQLException {
-
+    @Override public void setInt(int parameterIndex, int x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-    @Override
-    public void setFloat(int parameterIndex, float x) throws SQLException {
-
+    @Override public void setLong(int parameterIndex, long x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-    @Override
-    public void setDouble(int parameterIndex, double x) throws SQLException {
-
+    @Override public void setFloat(int parameterIndex, float x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-    @Override
-    public void setString(int parameterIndex, String x) throws SQLException {
-
+    @Override public void setDouble(int parameterIndex, double x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-    @Override
-    public void clearParameters() throws SQLException {
-
+    @Override public void setString(int parameterIndex, String x) throws SQLException {
+        this.checkClosed();
+        this.checkParamsNumber(parameterIndex);
+        this.insertParameter(parameterIndex, x);
     }
 
-	@Override public boolean execute() throws SQLException {
+    @Override public void clearParameters() throws SQLException {
+        this.checkClosed();
+        this.parameters.clear();
+    }@Override public boolean execute() throws SQLException {
 		return false;
-	}
-
-	@Override public ResultSetMetaData getMetaData() throws SQLException {
+	}@Override public ResultSetMetaData getMetaData() throws SQLException {
 		return null;
 	}
 
-	@Override
-	public ParameterMetaData getParameterMetaData() throws SQLException {
-		return null;
-	}
+    @Override public ParameterMetaData getParameterMetaData() throws SQLException {
+        this.checkClosed();
+        ParameterMetaData pmd = new HttpParameterMetaData(this);
+        return pmd;
+    }
 
     @Override
     public void close() throws SQLException {
@@ -123,17 +179,13 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
         }
         connection = null;
         resultSet = null;
-    }
-
-	@Override public ResultSet getResultSet() throws SQLException {
+    }@Override public ResultSet getResultSet() throws SQLException {
 		return null;
-	}
-
-	@Override public int getUpdateCount() throws SQLException {
+	}@Override public int getUpdateCount() throws SQLException {
 		return 0;
 	}
 
-	@Override
+    @Override
     public int getResultSetConcurrency() throws SQLException {
         return ResultSet.CONCUR_READ_ONLY;
     }

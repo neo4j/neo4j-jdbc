@@ -38,6 +38,11 @@ public class HttpStatement extends Statement implements Loggable {
 
     @Override
     public ResultSet executeQuery(String cypher) throws SQLException {
+        checkClosed();
+        if (connection.isClosed()) {
+            throw new SQLException("Connection already closed");
+        }
+
         Neo4jResponse response = connection.executeQuery(cypher, null, null);
         this.resultSet = new HttpResultSet(response.results.get(0));
         return resultSet;
@@ -45,6 +50,11 @@ public class HttpStatement extends Statement implements Loggable {
 
     @Override
     public int executeUpdate(String cypher) throws SQLException {
+        checkClosed();
+        if (connection.isClosed()) {
+            throw new SQLException("Connection already closed");
+        }
+
         Neo4jResponse response = connection.executeQuery(cypher, null, Boolean.TRUE);
         Map<String, Object> stats = response.results.get(0).stats;
         int result = (int) stats.get("nodes_created");
@@ -52,6 +62,16 @@ public class HttpStatement extends Statement implements Loggable {
         result += (int) stats.get("relationships_created");
         result += (int) stats.get("relationship_deleted");
         return result;
+    }
+
+    /**
+     * Check if this statement is closed or not.
+     * @throws SQLException
+     */
+    private void checkClosed() throws SQLException {
+        if (this.isClosed()) {
+            throw new SQLException("Statement already closed");
+        }
     }
 
     @Override
