@@ -34,7 +34,7 @@ public class Neo4jResponse {
     /**
      * List of Neo4j error.
      */
-    public List<Map<String, String>> errors;
+    public List<SQLException> errors;
 
     /**
      * Construct the object directly from the HttpResponse.
@@ -62,7 +62,10 @@ public class Neo4jResponse {
                     Map body = mapper.readValue(is, Map.class);
 
                     // Error parsing
-                    this.errors = (List<Map<String, String>>) body.get("errors");
+                    this.errors = new ArrayList<>();
+                    for (Map<String, String> error : (List<Map<String, String>>) body.get("errors")) {
+                        errors.add(new SQLException(error.getOrDefault("messages", ""), error.getOrDefault("code", "")));
+                    }
 
                     // Data parsing
                     this.results = new ArrayList<>();
@@ -98,16 +101,16 @@ public class Neo4jResponse {
      */
     public String displayErrors() {
         StringBuffer sb = new StringBuffer();
-        sb.append("Some errors occured : \n");
-        for (Map<String, String> error : errors) {
-            sb.append("[")
-                    .append(error.get("code"))
-                    .append("]");
-            if (error.containsKey("message")) {
-                sb.append(":")
-                        .append(error.get("message"));
+        if (hasErrors()) {
+            sb.append("Some errors occurred : \n");
+            for (SQLException error : errors) {
+                sb.append("[")
+                        .append(error.getSQLState())
+                        .append("]")
+                        .append(":")
+                        .append(error.getMessage())
+                        .append("\n");
             }
-            sb.append("\n");
         }
         return sb.toString();
     }

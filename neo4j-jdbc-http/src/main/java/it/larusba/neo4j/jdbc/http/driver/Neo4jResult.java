@@ -11,17 +11,17 @@ public class Neo4jResult {
     /**
      * List of columns.
      */
-    private List<String> columns;
+    public List<String> columns;
 
     /**
      * List of data row.
      */
-    private List<Map> rows;
+    public List<Map> rows;
 
     /**
      * List fof stats
      */
-    private Map<String, String> stats;
+    public Map<String, Object> stats;
 
     /**
      * Constructor.
@@ -33,7 +33,7 @@ public class Neo4jResult {
         this.rows = (List<Map>) map.get("data");
 
         if (map.containsKey("stats")) {
-            this.stats = (Map<String, String>) map.get("stats");
+            this.stats = (Map<String, Object>) map.get("stats");
         }
     }
 }

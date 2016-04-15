@@ -61,6 +61,7 @@ public class CypherExecutor {
      * @param host       Hostname of the Neo4j instance.
      * @param port       HTTP port of the Neo4j instance.
      * @param properties Properties of the url connection.
+     * @throws SQLException
      */
     public CypherExecutor(String host, Integer port, Properties properties) throws SQLException {
         // Create the http client builder
@@ -105,6 +106,7 @@ public class CypherExecutor {
      *
      * @param queries List of cypher query object
      * @return A list of Neo4j response
+     * @throws SQLException
      */
     public Neo4jResponse executeQueries(List<Neo4jStatement> queries) throws SQLException {
         // Prepare the headers query
@@ -122,6 +124,7 @@ public class CypherExecutor {
      * Execute a cypher query.
      *
      * @param query Cypher query object.
+     * @throws SQLException
      */
     public Neo4jResponse executeQuery(Neo4jStatement query) throws SQLException {
         List<Neo4jStatement> queries = new ArrayList<>();
@@ -132,16 +135,16 @@ public class CypherExecutor {
     /**
      * Commit the current transaction.
      *
-     * @throws IOException
+     * @throws SQLException
      */
     public void commit() throws SQLException {
         if (this.getOpenTransactionId() > 0) {
             HttpPost request = new HttpPost(currentTransactionUrl + "/commit");
             Neo4jResponse response = this.executeHttpRequest(request);
-
             if (response.hasErrors()) {
                 throw new SQLException(response.displayErrors());
             }
+            this.currentTransactionUrl = this.transactionUrl;
         } else {
             throw new SQLException("There is no transaction to commit");
         }
@@ -150,24 +153,34 @@ public class CypherExecutor {
     /**
      * Rollback the current transaction.
      *
-     * @throws IOException
+     * @throws SQLException if there is no transaction to rollback
      */
     public void rollback() throws SQLException {
         if (this.getOpenTransactionId() > 0) {
             // Prepare the request
             HttpDelete request = new HttpDelete(currentTransactionUrl);
-            // TODO: check the response
-            this.executeHttpRequest(request);
+            Neo4jResponse response = this.executeHttpRequest(request);
+            if (response.code != 200 & response.hasErrors()) {
+                throw new SQLException(response.displayErrors());
+            }
+            this.currentTransactionUrl = this.transactionUrl;
         } else {
             throw new SQLException("There is no transaction to rollback");
         }
     }
 
+    /**
+     * Getter for AutoCommit.
+     */
+    public Boolean getAutoCommit() {
+        return autoCommit;
+    }
 
     /**
      * Setter for autocommit.
      *
      * @param autoCommit
+     * @throws SQLException
      */
     public void setAutoCommit(Boolean autoCommit) throws SQLException {
         // we only do something if there is a change
@@ -201,7 +214,7 @@ public class CypherExecutor {
 
     /**
      * Retrieve the transaction id from an url.
-     *
+     * @param url An url
      * @return The transaction id if there is an opened transaction, <code>-1</code> otherwise
      */
     protected Integer getTransactionId(String url) {
@@ -230,7 +243,7 @@ public class CypherExecutor {
     /**
      * Give the default http client default header for Neo4j API.
      *
-     * @return
+     * @return List of default headers.
      */
     protected Header[] getDefaultHeaders() {
         Header[] headers = new Header[2];
@@ -244,7 +257,7 @@ public class CypherExecutor {
      * Execute the http client request.
      *
      * @param request The request to make
-     * @throws IOException
+     * @throws SQLException
      */
     protected Neo4jResponse executeHttpRequest(HttpRequestBase request) throws SQLException {
         Neo4jResponse result = null;

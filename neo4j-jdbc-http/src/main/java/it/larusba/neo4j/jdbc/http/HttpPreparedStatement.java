@@ -32,6 +32,23 @@ import java.sql.SQLException;
  */
 public class HttpPreparedStatement extends PreparedStatement implements Loggable {
 
+    private HttpConnection connection;
+    private ResultSet resultSet;
+    private String cypher;
+    private boolean loggable = false;
+
+    /**
+     * Default constructor.
+     *
+     * @param httpConnection The Neo4j http connection.
+     * @param cypher The prepared cypher query
+     */
+    public HttpPreparedStatement(HttpConnection httpConnection, String cypher) {
+        super();
+        this.connection = httpConnection;
+        this.cypher = cypher;
+    }
+
     @Override
     public ResultSet executeQuery() throws SQLException {
         return null;
@@ -101,7 +118,11 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 
     @Override
     public void close() throws SQLException {
-
+        if (resultSet != null) {
+            resultSet.close();
+        }
+        connection = null;
+        resultSet = null;
     }
 
 	@Override public ResultSet getResultSet() throws SQLException {
@@ -113,32 +134,32 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override
-	public int getResultSetConcurrency() throws SQLException {
-		return 0;
-	}
+    public int getResultSetConcurrency() throws SQLException {
+        return ResultSet.CONCUR_READ_ONLY;
+    }
 
     @Override
     public int getResultSetType() throws SQLException {
-        return 0;
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        return 0;
+        return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return false;
+        return connection == null;
     }
 
     @Override
     public boolean isLoggable() {
-        return false;
+        return loggable;
     }
 
     @Override
     public void setLoggable(boolean loggable) {
-
+        this.loggable = loggable;
     }
 }

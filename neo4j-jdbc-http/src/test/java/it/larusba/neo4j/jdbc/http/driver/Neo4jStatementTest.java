@@ -1,7 +1,7 @@
 package it.larusba.neo4j.jdbc.http.driver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.larusba.neo4j.jdbc.http.Neo4jHttpUnitTest;
+import it.larusba.neo4j.jdbc.http.test.Neo4jHttpUnitTest;
 import org.junit.Test;
 
 import java.util.List;

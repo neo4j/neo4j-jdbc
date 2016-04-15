@@ -163,7 +163,7 @@ public abstract class Statement implements java.sql.Statement {
 	}
 
 	@Override public boolean isCloseOnCompletion() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return false;
 	}
 
 	@Override public <T> T unwrap(Class<T> iface) throws SQLException {

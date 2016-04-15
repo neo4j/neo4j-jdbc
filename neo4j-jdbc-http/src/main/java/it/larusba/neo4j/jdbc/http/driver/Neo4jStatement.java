@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,22 +64,22 @@ public class Neo4jStatement {
      * @param parameters   List of named params for the cypher query
      * @param includeStats Do we need to include stats
      */
-    public Neo4jStatement(String statement, Map<String, Object> parameters, Boolean includeStats) {
-        this.statement = statement;
-        this.parameters = parameters;
-        this.includeStats = includeStats;
-    }
-
-    /**
-     * Constructor withtout stats
-     *
-     * @param statement  Cypher query
-     * @param parameters List of named params for the cypher query
-     */
-    public Neo4jStatement(String statement, Map<String, Object> parameters) {
-        this.statement = statement;
-        this.parameters = parameters;
-        this.includeStats = Boolean.FALSE;
+    public Neo4jStatement(String statement, Map<String, Object> parameters, Boolean includeStats) throws SQLException {
+        if (statement != null && !statement.equals("")) {
+            this.statement = statement;
+        } else {
+            throw new SQLException("Creating a NULL query");
+        }
+        if (parameters != null) {
+            this.parameters = parameters;
+        } else {
+            this.parameters = new HashMap();
+        }
+        if (includeStats != null) {
+            this.includeStats = includeStats;
+        } else {
+            this.includeStats = Boolean.FALSE;
+        }
     }
 
     /**

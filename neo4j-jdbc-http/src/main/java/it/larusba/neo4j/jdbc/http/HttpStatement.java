@@ -20,25 +20,47 @@
 package it.larusba.neo4j.jdbc.http;
 
 import it.larusba.neo4j.jdbc.Statement;
+import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class HttpStatement extends Statement implements Loggable {
 
+    private HttpConnection connection;
+    private ResultSet resultSet;
+    private boolean loggable = false;
+
+    public HttpStatement(HttpConnection httpConnection) {
+        this.connection = httpConnection;
+    }
+
     @Override
     public ResultSet executeQuery(String cypher) throws SQLException {
-        return null;
+        Neo4jResponse response = connection.executeQuery(cypher, null, null);
+        this.resultSet = new HttpResultSet(response.results.get(0));
+        return resultSet;
     }
 
     @Override
     public int executeUpdate(String cypher) throws SQLException {
-        return 0;
+        Neo4jResponse response = connection.executeQuery(cypher, null, Boolean.TRUE);
+        Map<String, Object> stats = response.results.get(0).stats;
+        int result = (int) stats.get("nodes_created");
+        result += (int) stats.get("nodes_deleted");
+        result += (int) stats.get("relationships_created");
+        result += (int) stats.get("relationship_deleted");
+        return result;
     }
 
     @Override
     public void close() throws SQLException {
-
+        if (resultSet != null) {
+            resultSet.close();
+        }
+        connection = null;
+        resultSet = null;
     }
 
 	@Override public int getMaxRows() throws SQLException {
@@ -63,31 +85,31 @@ public class HttpStatement extends Statement implements Loggable {
 
 	@Override
     public int getResultSetConcurrency() throws SQLException {
-        return 0;
+        return ResultSet.CONCUR_READ_ONLY;
     }
 
     @Override
     public int getResultSetType() throws SQLException {
-        return 0;
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        return 0;
+        return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return false;
+        return connection == null;
     }
 
     @Override
     public boolean isLoggable() {
-        return false;
+        return loggable;
     }
 
     @Override
     public void setLoggable(boolean loggable) {
-
+        this.loggable = loggable;
     }
 }

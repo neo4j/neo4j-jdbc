@@ -22,17 +22,18 @@ package it.larusba.neo4j.jdbc.http;
 import it.larusba.neo4j.jdbc.Connection;
 import it.larusba.neo4j.jdbc.DatabaseMetaData;
 import it.larusba.neo4j.jdbc.http.driver.CypherExecutor;
+import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
+import it.larusba.neo4j.jdbc.http.driver.Neo4jStatement;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Properties;
 
-/**
- *
- */
 public class HttpConnection extends Connection implements Loggable {
 
     private boolean readOnly = false;
+    private boolean isClosed = false;
     private boolean loggable = false;
     private Properties properties;
     private CypherExecutor executor;
@@ -43,50 +44,147 @@ public class HttpConnection extends Connection implements Loggable {
      * @param host       Hostname of the Neo4j instance.
      * @param port       HTTP port of the Neo4j instance.
      * @param properties Properties of the url connection.
+     * @throws SQLException
      */
     public HttpConnection(String host, Integer port, Properties properties) throws SQLException {
         this.properties = properties;
         this.executor = new CypherExecutor(host, port, properties);
     }
 
-    @Override
-    public java.sql.Statement createStatement() throws SQLException {
-        return null;
+    /**
+     * Execute a cypher query.
+     *
+     * @param query      Cypher query
+     * @param parameters Parameter of the cypher query
+     * @param stats      Do we need to include stats ?
+     * @return
+     * @throws SQLException
+     */
+    public Neo4jResponse executeQuery(final String query, Map<String, Object> parameters, Boolean stats) throws SQLException {
+        checkClosed();
+        checkReadOnly(query);
+        return executor.executeQuery(new Neo4jStatement(query, parameters, stats));
+    }
+
+    /**
+     * Check if can execute the query into the current mode (ie. readonly or not).
+     * If we can't an SQLException is throw.
+     *
+     * @param query Cypher query
+     * @throws SQLException
+     */
+    private void checkReadOnly(String query) throws SQLException {
+        if (readOnly && isMutating(query)) {
+            throw new SQLException("Mutating Query in readonly mode: " + query);
+        }
+    }
+
+    /**
+     * Detect some cypher keyword to know if this query mutated the graph.
+     * /!\ This not enough now due to procedure procedure.
+     *
+     * @param query Cypher query
+     * @return
+     */
+    private boolean isMutating(String query) {
+        return query.matches("(?is).*\\b(create|relate|delete|set)\\b.*");
     }
 
     @Override
-    public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return null;
+    public java.sql.Statement createStatement() throws SQLException {
+        this.checkClosed();
+        return InstanceFactory.debug(HttpStatement.class, new HttpStatement(this), this.isLoggable());
+    }
+
+    @Override
+    public java.sql.Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+        this.checkClosed();
+        return InstanceFactory.debug(HttpStatement.class, new HttpStatement(this), this.isLoggable());
+    }
+
+    @Override
+    public java.sql.Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        this.checkClosed();
+        return InstanceFactory.debug(HttpStatement.class, new HttpStatement(this), this.isLoggable());
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String cypher) throws SQLException {
+        this.checkClosed();
+        return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String cypher, int resultSetType, int resultSetConcurrency) throws SQLException {
+        this.checkClosed();
+        return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String cypher, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        this.checkClosed();
+        return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
+    }
+
+    @Override
+    public String nativeSQL(String sql) throws SQLException {
+        //TODO : make some query modification for some software
+        return sql;
     }
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-
+        this.executor.setAutoCommit(autoCommit);
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        return false;
+        return this.executor.getAutoCommit();
     }
 
     @Override
     public void commit() throws SQLException {
+        checkClosed();
+        if (getAutoCommit()) {
+            throw new SQLException("Commit called on auto-committed connection");
+        }
         executor.commit();
     }
 
     @Override
     public void rollback() throws SQLException {
+        checkClosed();
+        if (this.getAutoCommit()) {
+            throw new SQLException("Rollback called on auto-committed connection");
+        }
         executor.rollback();
     }
 
     @Override
-    public void close() throws SQLException {
-        executor.close();
+    public boolean isClosed() throws SQLException {
+        return isClosed;
+    }
+
+    /**
+     * Check if this connection is closed or not.
+     * If it's closed, then we throw a SQLException, otherwise we do nothing.
+     *
+     * @throws SQLException
+     */
+    private void checkClosed() throws SQLException {
+        if (isClosed()) {
+            throw new SQLException("Connection is closed.");
+        }
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
-        return false;
+    public void close() throws SQLException {
+        checkClosed();
+        if(!this.getAutoCommit()) {
+            executor.rollback();
+        }
+        executor.close();
+        isClosed = true;
     }
 
     @Override public DatabaseMetaData getMetaData() throws SQLException {
@@ -105,12 +203,13 @@ public class HttpConnection extends Connection implements Loggable {
 
     @Override
     public void setCatalog(String catalog) throws SQLException {
-
+        this.checkClosed();
     }
 
     @Override
     public String getCatalog() throws SQLException {
-        return null;
+        this.checkClosed();
+        return "Default";
     }
 
     @Override
@@ -119,18 +218,8 @@ public class HttpConnection extends Connection implements Loggable {
     }
 
     @Override
-    public java.sql.Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
-    }
-
-    @Override
-    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
-    }
-
-    @Override
     public void setHoldability(int holdability) throws SQLException {
-
+        //nothing
     }
 
     @Override
@@ -139,23 +228,13 @@ public class HttpConnection extends Connection implements Loggable {
     }
 
     @Override
-    public java.sql.Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        return null;
-    }
-
-    @Override
-    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        return null;
-    }
-
-    @Override
     public boolean isLoggable() {
-        return false;
+        return loggable;
     }
 
     @Override
     public void setLoggable(boolean loggable) {
-
+        this.loggable = loggable;
     }
 
     public static boolean hasDebug(Properties properties) {

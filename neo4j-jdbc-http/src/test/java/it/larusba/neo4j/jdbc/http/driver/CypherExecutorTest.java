@@ -1,13 +1,17 @@
 package it.larusba.neo4j.jdbc.http.driver;
 
-import it.larusba.neo4j.jdbc.http.Neo4jHttpUnitTest;
+import it.larusba.neo4j.jdbc.http.test.Neo4jHttpUnitTest;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
 
 public class CypherExecutorTest extends Neo4jHttpUnitTest {
 
@@ -15,8 +19,8 @@ public class CypherExecutorTest extends Neo4jHttpUnitTest {
 
     @Before
     public void before() throws IOException, SQLException {
-        String host = this.neo4j.httpsURI().getHost();
-        Integer port = this.neo4j.httpsURI().getPort();
+        String host = "azertyuiop";
+        Integer port = 1234;
         Properties properties = new Properties();
         this.executor = new CypherExecutor(host, port, properties);
     }
@@ -46,12 +50,22 @@ public class CypherExecutorTest extends Neo4jHttpUnitTest {
     }
 
     @Test
-    public void makeAQueryShoudlSucceed() throws Exception {
-        List<Neo4jStatement> queries = getRandomNeo4jStatementFromCSV("data/queries.csv", -1).get("object");
-        Neo4jResponse response = executor.executeQueries(queries);
+    public void executeQueryOnDownServerShouldFail() throws Exception {
+        expectedEx.expect(SQLException.class);
 
-        Assert.assertEquals(queries.size(), response.results.size());
-        Assert.assertFalse(response.hasErrors());
+        List<Neo4jStatement> queries = getRandomNeo4jStatementFromCSV("data/queries.csv", 1).get("object");
+        executor.executeQueries(queries);
+    }
+
+    @Test
+    public void executeEmptyQueryShouldFail() throws Exception {
+        expectedEx.expect(SQLException.class);
+        executor.executeQuery(new Neo4jStatement("", null, null));
+    }
+
+    @After
+    public void after() throws SQLException {
+        executor.close();
     }
 
 }

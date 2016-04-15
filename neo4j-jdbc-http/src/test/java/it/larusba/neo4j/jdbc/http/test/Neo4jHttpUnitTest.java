@@ -1,22 +1,22 @@
-package it.larusba.neo4j.jdbc.http;
+package it.larusba.neo4j.jdbc.http.test;
 
 import au.com.bytecode.opencsv.CSVReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jStatement;
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.neo4j.harness.junit.Neo4jRule;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 
 public class Neo4jHttpUnitTest  {
 
-    @ClassRule
-    public static Neo4jRule neo4j = new Neo4jRule().withFixture(  new File(Neo4jHttpUnitTest.class.getClassLoader().getResource
-            ("data/movie.cyp").getFile()));
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
 
     private final static int CSV_STATEMENT = 0;
     private final static int CSV_PARAMETERS = 1;
@@ -69,7 +69,7 @@ public class Neo4jHttpUnitTest  {
      * @return The corresponding QUery object
      * @throws IOException
      */
-    protected Neo4jStatement transformCsvLineToNeo4jStatement(String[] line) throws IOException {
+    protected Neo4jStatement transformCsvLineToNeo4jStatement(String[] line) throws SQLException, IOException {
         String statement = line[CSV_STATEMENT];
         Map parameters = (Map) new ObjectMapper().readValue(line[CSV_PARAMETERS], HashMap.class);
         Boolean withStat = Boolean.valueOf(line[CSV_INCLUDESTATS]);

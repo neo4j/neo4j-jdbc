@@ -20,59 +20,62 @@
 package it.larusba.neo4j.jdbc.http;
 
 import it.larusba.neo4j.jdbc.ResultSetMetaData;
+import it.larusba.neo4j.jdbc.http.driver.Neo4jResult;
 
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * @author AgileLARUS
- * @since 3.0.0
- */
 public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable {
 
-	private boolean      loggable = false;
-	private List<String> keys     = null;
+    private boolean loggable = false;
+    private List<String> keys = null;
 
-	public HttpResultSetMetaData(List<String> keys) {
-		this.keys = keys;
-	}
+    HttpResultSetMetaData(Neo4jResult result) {
+        this.keys = result.columns;
+    }
 
-	@Override public int getColumnCount() throws SQLException {
-		return this.keys.size();
-	}
+    @Override
+    public int getColumnCount() throws SQLException {
+        return this.keys.size();
+    }
 
-	@Override public String getColumnLabel(int column) throws SQLException {
-		return this.getColumnName(column);
-	}
+    @Override public int getColumnDisplaySize(int column) throws SQLException {
+        return 0;
+    }
 
-	@Override public int getColumnDisplaySize(int column) throws SQLException {
-		return 0;
-	}
+    @Override
+    public String getColumnLabel(int column) throws SQLException {
+        return this.getColumnName(column);
+    }
 
-	@Override public String getColumnName(int column) throws SQLException {
-		if (this.keys == null || column > this.keys.size() || column <= 0) {
-			throw new SQLException("Column out of range");
-		}
-		return this.keys.get(column - 1);
-	}
+    @Override
+    public String getColumnName(int column) throws SQLException {
+        if (this.keys == null || column > this.keys.size() || column <= 0) {
+            throw new SQLException("Column out of range");
+        }
+        return this.keys.get(column - 1);
+    }
 
-	@Override public String getCatalogName(int column) throws SQLException {
-		return ""; //not applicable
-	}
+    @Override
+    public String getCatalogName(int column) throws SQLException {
+        return ""; //not applicable
+    }
 
-	@Override public int getColumnType(int column) throws SQLException {
-		return 0;
-	}
+    @Override public int getColumnType(int column) throws SQLException {
+        return 0;
+    }
 
-	@Override public String getColumnTypeName(int column) throws SQLException {
-		return null;
-	}
+    @Override public String getColumnTypeName(int column) throws SQLException {
+        return null;
+    }
 
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
+    @Override
+    public boolean isLoggable() {
+        return this.loggable;
+    }
 
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
-	}
+    @Override
+    public void setLoggable(boolean loggable) {
+        this.loggable = loggable;
+    }
 }
