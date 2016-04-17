@@ -21,7 +21,6 @@ package it.larusba.neo4j.jdbc;
 
 import it.larusba.neo4j.jdbc.impl.ListResultSet;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
@@ -53,7 +52,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 * Permit to load version and driver name from a property file.
 	 */
 	public DatabaseMetaData() {
-		try (InputStream stream = getClass().getClassLoader().getResourceAsStream("./neo4j-jdbc-driver.properties")){
+		try (InputStream stream = DatabaseMetaData.class.getResourceAsStream("/neo4j-jdbc-driver.properties")){
 			Properties properties = new Properties();
 			properties.load(stream);
 			this.driverName = properties.getProperty("driver.name");
@@ -61,6 +60,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		} catch (Exception e) {
 			this.driverName = "Neo4j JDBC Driver";
 			this.driverVersion = "Unknown";
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -117,11 +117,11 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public int getDriverMajorVersion() {
-		return this.getDriverVersionPart(1);
+		return this.extractVersionPart(driverVersion, 1);
 	}
 
 	@Override public int getDriverMinorVersion() {
-		return this.getDriverVersionPart(2);
+		return this.extractVersionPart(driverVersion, 2);
 	}
 
 	@Override public boolean usesLocalFiles() throws SQLException {
@@ -193,7 +193,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getExtraNameCharacters() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return "";
 	}
 
 	@Override public boolean supportsAlterTableWithAddColumn() throws SQLException {
@@ -771,21 +771,22 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	/**
-	 * Extract a part of the driver version.
+	 * Extract a part of a Version
 	 *
+	 * @param version The string representation of a version
 	 * @param position 1 for the major, 2 for minor and 3 for revision
 	 * @return The corresponding driver version part if it's possible, otherwise -1
 	 */
-	private int getDriverVersionPart(int position) {
-		int version = -1;
+	protected int extractVersionPart(String version, int position) {
+		int result = -1;
 		try {
 			Matcher matcher = VERSION_REGEX.matcher(this.getDriverVersion());
 			if(matcher.find()) {
-				version = Integer.valueOf(matcher.group(position));
+				result = Integer.valueOf(matcher.group(position));
 			}
 		} catch (SQLException e) {
 			// silent exception, but there is the default value
 		}
-		return version;
+		return result;
 	}
 }

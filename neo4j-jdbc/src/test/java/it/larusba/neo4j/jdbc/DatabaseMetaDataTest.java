@@ -91,12 +91,12 @@ public class DatabaseMetaDataTest {
 
 	@Test public void getDriverMajorVersionShouldBeCorrect() throws SQLException {
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertNotNull(databaseMetaData.getDriverVersion());
+		assertNotEquals(-1, databaseMetaData.getDriverVersion());
 	}
 
 	@Test public void getDriverMinorVersionShouldBeCorrect() throws SQLException {
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertNotNull(databaseMetaData.getDriverVersion());
+		assertNotEquals(-1, databaseMetaData.getDriverVersion());
 	}
 
 	@Test public void getDriverVersionShouldReturnNegativeNumberOnBadVersion() throws SQLException {
