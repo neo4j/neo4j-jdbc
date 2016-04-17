@@ -28,6 +28,8 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * @author AgileLARUS
@@ -76,5 +78,44 @@ public class DatabaseMetaDataTest {
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, Mockito.CALLS_REAL_METHODS);
 
 		databaseMetaData.unwrap(ResultSet.class);
+	}
+
+	/*------------------------------*/
+	/*     Driver Metadata          */
+	/*------------------------------*/
+
+	@Test public void getDriverVersionShouldBeCorrect() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertNotNull(databaseMetaData.getDriverVersion());
+	}
+
+	@Test public void getDriverMajorVersionShouldBeCorrect() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertNotNull(databaseMetaData.getDriverVersion());
+	}
+
+	@Test public void getDriverMinorVersionShouldBeCorrect() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertNotNull(databaseMetaData.getDriverVersion());
+	}
+
+	@Test public void getDriverVersionShouldReturnNegativeNumberOnBadVersion() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+
+		when(databaseMetaData.getDriverVersion()).thenReturn("Unknown");
+		assertEquals(-1, databaseMetaData.getDriverMajorVersion());
+		assertEquals(-1, databaseMetaData.getDriverMinorVersion());
+	}
+
+	@Test public void getDriverVersionShouldBeCorrectOnSomeExampleVersions() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+
+		when(databaseMetaData.getDriverVersion()).thenReturn("3.0");
+		assertEquals(3, databaseMetaData.getDriverMajorVersion());
+		assertEquals(0, databaseMetaData.getDriverMinorVersion());
+
+		when(databaseMetaData.getDriverVersion()).thenReturn("3.1.1-SNAPSHOT");
+		assertEquals(3, databaseMetaData.getDriverMajorVersion());
+		assertEquals(1, databaseMetaData.getDriverMinorVersion());
 	}
 }

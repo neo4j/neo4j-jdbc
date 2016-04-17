@@ -21,18 +21,48 @@ package it.larusba.neo4j.jdbc;
 
 import it.larusba.neo4j.jdbc.impl.ListResultSet;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
 public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
+
+	/**
+	 * The regex to parse the version driver.
+	 * NUMBER + . + NUMBER + .|- + STRING
+	 */
+	private final static Pattern VERSION_REGEX = Pattern.compile("^(\\d+)\\.(\\d+)(\\.|-)?(.*)?$");
+
+	private String driverName;
+	private String driverVersion;
+
+	/**
+	 * Default constructor.
+	 * Permit to load version and driver name from a property file.
+	 */
+	public DatabaseMetaData() {
+		try (InputStream stream = getClass().getClassLoader().getResourceAsStream("./neo4j-jdbc-driver.properties")){
+			Properties properties = new Properties();
+			properties.load(stream);
+			this.driverName = properties.getProperty("driver.name");
+			this.driverVersion = properties.getProperty("driver.version");
+		} catch (Exception e) {
+			this.driverName = "Neo4j JDBC Driver";
+			this.driverVersion = "Unknown";
+		}
+	}
 
 	@Override public boolean allProceduresAreCallable() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -79,19 +109,19 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getDriverName() throws SQLException {
-		return "Neo4j JDBC Driver";
+		return this.driverName;
 	}
 
 	@Override public String getDriverVersion() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return this.driverVersion;
 	}
 
 	@Override public int getDriverMajorVersion() {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return this.getDriverVersionPart(1);
 	}
 
 	@Override public int getDriverMinorVersion() {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return this.getDriverVersionPart(2);
 	}
 
 	@Override public boolean usesLocalFiles() throws SQLException {
@@ -738,5 +768,24 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	/**
+	 * Extract a part of the driver version.
+	 *
+	 * @param position 1 for the major, 2 for minor and 3 for revision
+	 * @return The corresponding driver version part if it's possible, otherwise -1
+	 */
+	private int getDriverVersionPart(int position) {
+		int version = -1;
+		try {
+			Matcher matcher = VERSION_REGEX.matcher(this.getDriverVersion());
+			if(matcher.find()) {
+				version = Integer.valueOf(matcher.group(position));
+			}
+		} catch (SQLException e) {
+			// silent exception, but there is the default value
+		}
+		return version;
 	}
 }
