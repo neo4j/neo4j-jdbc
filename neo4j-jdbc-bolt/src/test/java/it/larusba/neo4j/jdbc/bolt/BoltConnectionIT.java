@@ -24,10 +24,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.neo4j.driver.v1.Session;
 
 import java.sql.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author AgileLARUS
@@ -205,5 +208,14 @@ public class BoltConnectionIT {
 
 		writer.close();
 		reader.close();
+	}
+
+	/*------------------------------*/
+	/*         getMetaData          */
+	/*------------------------------*/
+
+	@Test public void getMetaDataShouldWork() throws SQLException {
+		Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+		assertNotNull(connection.getMetaData());
 	}
 }

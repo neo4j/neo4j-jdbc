@@ -20,6 +20,9 @@
 package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.DatabaseMetaData;
+import org.neo4j.driver.v1.Record;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Transaction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -32,6 +35,7 @@ import java.sql.SQLException;
  */
 public class BoltDatabaseMetaData extends DatabaseMetaData {
 
+	private String databaseVersion = "Unknown";
 	private BoltConnection connection;
 	private boolean debug = false;
 
@@ -39,6 +43,20 @@ public class BoltDatabaseMetaData extends DatabaseMetaData {
 		super();
 		this.connection = connection;
 		this.debug = debug;
+
+		// compute database version
+		if (connection != null && connection.getSession() != null) {
+			try(Transaction tx = connection.getSession().beginTransaction()) {
+				StatementResult rs = tx.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
+				if (rs != null && rs.hasNext()) {
+					Record record = rs.next();
+					if (record.containsKey("version")) {
+						databaseVersion = record.get("version").asString();
+					}
+				}
+			}
+		}
+
 	}
 
 	public BoltDatabaseMetaData(BoltConnection connection) {
@@ -47,5 +65,17 @@ public class BoltDatabaseMetaData extends DatabaseMetaData {
 
 	@Override public Connection getConnection() throws SQLException {
 		return this.connection;
+	}
+
+	@Override public String getDatabaseProductVersion() throws SQLException {
+		return databaseVersion;
+	}
+
+	@Override public int getDatabaseMajorVersion() {
+		return extractVersionPart(databaseVersion, 1);
+	}
+
+	@Override public int getDatabaseMinorVersion() {
+		return extractVersionPart(databaseVersion, 2);
 	}
 }

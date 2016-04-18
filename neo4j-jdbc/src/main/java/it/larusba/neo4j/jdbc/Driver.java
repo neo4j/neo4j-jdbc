@@ -50,7 +50,7 @@ public abstract class Driver implements java.sql.Driver {
 	@Override public abstract boolean acceptsURL(String url) throws SQLException;
 
 	@Override public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return new DriverPropertyInfo[0];
 	}
 
 	@Override public int getMajorVersion() {
