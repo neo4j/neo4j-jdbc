@@ -33,17 +33,212 @@ import java.util.concurrent.Executor;
  */
 public abstract class Connection implements java.sql.Connection {
 
-	@Override public abstract Statement createStatement() throws SQLException;
+	/**
+	 * Is the connection is in readonly mode ?
+	 */
+	private boolean readOnly = false;
 
-	@Override public abstract PreparedStatement prepareStatement(String sql) throws SQLException;
+	/**
+	 * JDBC driver properties.
+	 */
+	protected Properties properties;
 
-	@Override public java.sql.CallableStatement prepareCall(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+	protected int         holdability;
+
+	/**
+	 * Default constructor with properties.
+	 *
+	 * @param properties Driver properties
+	 * @param defaultHoldability
+	 */
+	protected Connection(Properties properties, int defaultHoldability) {
+		this.properties = properties;
+		this.holdability = defaultHoldability;
 	}
 
+	public static boolean hasDebug(Properties properties) {
+		return "true".equalsIgnoreCase(properties.getProperty("debug", "false"));
+	}
+
+	/*---------------------------------------*/
+	/*       Some useful check method        */
+	/*---------------------------------------*/
+
+	/**
+	 * Check if this connection is closed or not.
+	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
+	 *
+	 * @throws SQLException
+	 */
+	protected void checkClosed() throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("Connection already closed");
+		}
+	}
+
+	/**
+	 * Method to check if we are into autocommit mode.
+	 * If we do, then it throw an exception.
+	 * This method is for using into commit and rollback method.
+	 *
+	 * @throws SQLException
+	 */
+	protected void checkAutoCommit() throws SQLException {
+		if (this.getAutoCommit()) {
+			throw new SQLException("Cannot commit when in autocommit");
+		}
+	}
+
+	/**
+	 * Check if can execute the query into the current mode (ie. readonly or not).
+	 * If we can't an SQLException is throw.
+	 *
+	 * @param query Cypher query
+	 * @throws SQLException
+	 */
+	protected void checkReadOnly(String query) throws SQLException {
+		if (isReadOnly() && isMutating(query)) {
+			throw new SQLException("Mutating Query in readonly mode: " + query);
+		}
+	}
+
+	/**
+	 * Detect some cypher keyword to know if this query mutated the graph.
+	 * /!\ This not enough now due to procedure procedure.
+	 *
+	 * @param query Cypher query
+	 * @return
+	 */
+	private boolean isMutating(String query) {
+		return query.matches("(?is).*\\b(create|relate|delete|set)\\b.*");
+	}
+
+	/**
+	 * Check if the holdability parameter is conform to specification.
+	 * If it doesn't, we throw an exception.
+	 *
+	 * @param resultSetHoldability The holdability value to check
+	 * @throws SQLException
+	 * @See {@link java.sql.Connection#setHoldability(int)}
+	 */
+	protected void checkHoldabilityParams(int resultSetHoldability) throws SQLException {
+		// @formatter:off
+		if( resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT &&
+			resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
+	}
+
+	/**
+	 * Check if the concurrency parameter is conform to specification.
+	 * If it doesn't, we throw an exception.
+	 *
+	 * @param resultSetConcurrency The concurrency value to check
+	 * @throws SQLException
+	 */
+	protected void checkConcurrencyParams(int resultSetConcurrency) throws SQLException {
+		// @formatter:off
+		if( resultSetConcurrency != ResultSet.CONCUR_UPDATABLE &&
+			resultSetConcurrency != ResultSet.CONCUR_READ_ONLY
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
+	}
+
+	/**
+	 * Check if the resultset type parameter is conform to specification.
+	 * If it doesn't, we throw an exception.
+	 *
+	 * @param resultSetType The concurrency value to check
+	 * @throws SQLException
+	 */
+	protected void checkTypeParams(int resultSetType) throws SQLException {
+		// @formatter:off
+		if( resultSetType != ResultSet.TYPE_FORWARD_ONLY &&
+			resultSetType != ResultSet.TYPE_SCROLL_INSENSITIVE &&
+			resultSetType != ResultSet.TYPE_SCROLL_SENSITIVE
+		){
+			throw new SQLFeatureNotSupportedException();
+		}
+		// @formatter:on
+	}
+
+	/*------------------------------------*/
+	/*       Default implementation       */
+	/*------------------------------------*/
+
+	@Override public void setReadOnly(boolean readOnly) throws SQLException {
+		this.checkClosed();
+		this.readOnly = readOnly;
+	}
+
+	@Override public boolean isReadOnly() throws SQLException {
+		this.checkClosed();
+		return this.readOnly;
+	}
+
+	@Override public void setHoldability(int holdability) throws SQLException {
+		this.checkClosed();
+		this.checkHoldabilityParams(holdability);
+		this.holdability = holdability;
+	}
+
+	@Override public int getHoldability() throws SQLException {
+		this.checkClosed();
+		return this.holdability;
+	}
+
+	/**
+	 * Default implementation of setCatalog.
+	 * Neo4j doesn't implement catalog feature, so we do nothing to avoid some tools exception.
+	 */
+	@Override public void setCatalog(String catalog) throws SQLException {
+		this.checkClosed();
+		return;
+	}
+
+	/**
+	 * Default implementation of getCatalog.
+	 * Neo4j doesn't implement catalog feature, so return <code>null</code> (@see {@link java.sql.Connection#getCatalog})
+	 */
+	@Override public String getCatalog() throws SQLException {
+		this.checkClosed();
+		return null;
+	}
+
+	/**
+	 * Default implementation of getTransactionIsolation.
+	 */
+	@Override public int getTransactionIsolation() throws SQLException {
+		this.checkClosed();
+		return TRANSACTION_READ_COMMITTED;
+	}
+
+	/**
+	 * Default implementation of nativeSQL.
+	 * Here we should implement some hacks for JDBC tools if needed.
+	 * This method must be used before running a query.
+	 */
 	@Override public String nativeSQL(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return sql;
 	}
+
+	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
+		return it.larusba.neo4j.jdbc.Wrapper.unwrap(iface, this);
+	}
+
+	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return it.larusba.neo4j.jdbc.Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	/*-----------------------------*/
+	/*       Abstract method       */
+	/*-----------------------------*/
+
+	@Override public abstract it.larusba.neo4j.jdbc.DatabaseMetaData getMetaData() throws SQLException;
 
 	@Override public abstract void setAutoCommit(boolean autoCommit) throws SQLException;
 
@@ -53,25 +248,34 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override abstract public void rollback() throws SQLException;
 
+	@Override public abstract Statement createStatement() throws SQLException;
+
+	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException;
+
+	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException;
+
+	@Override public abstract PreparedStatement prepareStatement(String sql) throws SQLException;
+
+	@Override public abstract PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException;
+
+	@Override public abstract PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+			throws SQLException;
+
 	@Override public abstract void close() throws SQLException;
 
 	@Override public abstract boolean isClosed() throws SQLException;
 
-	@Override public abstract it.larusba.neo4j.jdbc.DatabaseMetaData getMetaData() throws SQLException;
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
 
-	@Override public abstract void setReadOnly(boolean readOnly) throws SQLException;
-
-	@Override public abstract boolean isReadOnly() throws SQLException;
-
-	@Override public abstract void setCatalog(String catalog) throws SQLException;
-
-	@Override public abstract String getCatalog() throws SQLException;
-
-	@Override public void setTransactionIsolation(int level) throws SQLException {
-		throw new UnsupportedOperationException();
+	@Override public java.sql.CallableStatement prepareCall(String sql) throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override abstract public int getTransactionIsolation() throws SQLException;
+	@Override public void setTransactionIsolation(int level) throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
 
 	@Override public SQLWarning getWarnings() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -80,10 +284,6 @@ public abstract class Connection implements java.sql.Connection {
 	@Override public void clearWarnings() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException;
-
-	@Override public abstract PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException;
 
 	@Override public java.sql.CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -96,10 +296,6 @@ public abstract class Connection implements java.sql.Connection {
 	@Override public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	@Override public abstract void setHoldability(int holdability) throws SQLException;
-
-	@Override public abstract int getHoldability() throws SQLException;
 
 	@Override public Savepoint setSavepoint() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -116,11 +312,6 @@ public abstract class Connection implements java.sql.Connection {
 	@Override public void releaseSavepoint(Savepoint savepoint) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	@Override public abstract Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException;
-
-	@Override public abstract PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-			throws SQLException;
 
 	@Override public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -202,11 +393,4 @@ public abstract class Connection implements java.sql.Connection {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		return it.larusba.neo4j.jdbc.Wrapper.unwrap(iface, this);
-	}
-
-	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return it.larusba.neo4j.jdbc.Wrapper.isWrapperFor(iface, this.getClass());
-	}
 }

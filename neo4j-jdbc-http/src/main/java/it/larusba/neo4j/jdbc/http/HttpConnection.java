@@ -21,6 +21,7 @@ package it.larusba.neo4j.jdbc.http;
 
 import it.larusba.neo4j.jdbc.Connection;
 import it.larusba.neo4j.jdbc.DatabaseMetaData;
+import it.larusba.neo4j.jdbc.ResultSet;
 import it.larusba.neo4j.jdbc.http.driver.CypherExecutor;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jStatement;
@@ -32,11 +33,9 @@ import java.util.Properties;
 
 public class HttpConnection extends Connection implements Loggable {
 
-	private boolean readOnly = false;
+	private CypherExecutor executor;
 	private boolean isClosed = false;
 	private boolean loggable = false;
-	private Properties     properties;
-	private CypherExecutor executor;
 
 	/**
 	 * Default constructor.
@@ -47,7 +46,7 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @throws SQLException
 	 */
 	public HttpConnection(String host, Integer port, Properties properties) throws SQLException {
-		this.properties = properties;
+		super(properties, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 		this.executor = new CypherExecutor(host, port, properties);
 	}
 
@@ -66,29 +65,49 @@ public class HttpConnection extends Connection implements Loggable {
 		return executor.executeQuery(new Neo4jStatement(query, parameters, stats));
 	}
 
-	/**
-	 * Check if can execute the query into the current mode (ie. readonly or not).
-	 * If we can't an SQLException is throw.
-	 *
-	 * @param query Cypher query
-	 * @throws SQLException
-	 */
-	private void checkReadOnly(String query) throws SQLException {
-		if (readOnly && isMutating(query)) {
-			throw new SQLException("Mutating Query in readonly mode: " + query);
-		}
+	@Override public DatabaseMetaData getMetaData() throws SQLException {
+		return new HttpDatabaseMetaData(this);
 	}
 
-	/**
-	 * Detect some cypher keyword to know if this query mutated the graph.
-	 * /!\ This not enough now due to procedure procedure.
-	 *
-	 * @param query Cypher query
-	 * @return
-	 */
-	private boolean isMutating(String query) {
-		return query.matches("(?is).*\\b(create|relate|delete|set)\\b.*");
+	/*------------------------------*/
+	/*       Commit, rollback       */
+	/*------------------------------*/
+
+	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
+		this.executor.setAutoCommit(autoCommit);
 	}
+
+	@Override public boolean getAutoCommit() throws SQLException {
+		return this.executor.getAutoCommit();
+	}
+
+	@Override public void commit() throws SQLException {
+		checkClosed();
+		checkAutoCommit();
+		executor.commit();
+	}
+
+	@Override public void rollback() throws SQLException {
+		checkClosed();
+		checkAutoCommit();
+		executor.rollback();
+	}
+
+	/*-------------------------*/
+	/*       Holdability       */
+	/*-------------------------*/
+
+	@Override public void setHoldability(int holdability) throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
+
+	@Override public int getHoldability() throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
+
+	/*------------------------------*/
+	/*       Create Statement       */
+	/*------------------------------*/
 
 	@Override public java.sql.Statement createStatement() throws SQLException {
 		this.checkClosed();
@@ -104,6 +123,10 @@ public class HttpConnection extends Connection implements Loggable {
 		this.checkClosed();
 		return InstanceFactory.debug(HttpStatement.class, new HttpStatement(this), this.isLoggable());
 	}
+
+	/*-------------------------------*/
+	/*       Prepare Statement       */
+	/*-------------------------------*/
 
 	@Override public PreparedStatement prepareStatement(String cypher) throws SQLException {
 		this.checkClosed();
@@ -121,53 +144,12 @@ public class HttpConnection extends Connection implements Loggable {
 		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
 	}
 
-	@Override public String nativeSQL(String sql) throws SQLException {
-		//TODO : make some query modification for some software
-		return sql;
-	}
-
-	@Override public void setAutoCommit(boolean autoCommit) throws SQLException {
-		this.executor.setAutoCommit(autoCommit);
-	}
-
-	@Override public boolean getAutoCommit() throws SQLException {
-		return this.executor.getAutoCommit();
-	}
-
-	@Override public void commit() throws SQLException {
-		checkClosed();
-		if (getAutoCommit()) {
-			throw new SQLException("Commit called on auto-committed connection");
-		}
-		executor.commit();
-	}
-
-	@Override public void rollback() throws SQLException {
-		checkClosed();
-		if (this.getAutoCommit()) {
-			throw new SQLException("Rollback called on auto-committed connection");
-		}
-		executor.rollback();
-	}
+	/*-------------------*/
+	/*       Close       */
+	/*-------------------*/
 
 	@Override public boolean isClosed() throws SQLException {
 		return isClosed;
-	}
-
-	@Override public DatabaseMetaData getMetaData() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	/**
-	 * Check if this connection is closed or not.
-	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
-	 *
-	 * @throws SQLException
-	 */
-	private void checkClosed() throws SQLException {
-		if (isClosed()) {
-			throw new SQLException("Connection is closed.");
-		}
 	}
 
 	@Override public void close() throws SQLException {
@@ -179,34 +161,9 @@ public class HttpConnection extends Connection implements Loggable {
 		isClosed = true;
 	}
 
-	@Override public void setReadOnly(boolean readOnly) throws SQLException {
-		this.readOnly = readOnly;
-	}
-
-	@Override public boolean isReadOnly() throws SQLException {
-		return this.readOnly;
-	}
-
-	@Override public void setCatalog(String catalog) throws SQLException {
-		this.checkClosed();
-	}
-
-	@Override public String getCatalog() throws SQLException {
-		this.checkClosed();
-		return "Default";
-	}
-
-	@Override public int getTransactionIsolation() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public void setHoldability(int holdability) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public int getHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return loggable;
@@ -216,7 +173,4 @@ public class HttpConnection extends Connection implements Loggable {
 		this.loggable = loggable;
 	}
 
-	public static boolean hasDebug(Properties properties) {
-		return "true".equalsIgnoreCase(properties.getProperty("debug", "false"));
-	}
 }
