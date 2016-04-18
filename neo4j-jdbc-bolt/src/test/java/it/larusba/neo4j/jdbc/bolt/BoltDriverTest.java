@@ -37,6 +37,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.*;
@@ -67,7 +68,7 @@ import static org.mockito.Matchers.eq;
 		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
 
 		Driver driver = new BoltDriver();
-		Connection connection = driver.connect("jdbc:bolt://test", null);
+		Connection connection = driver.connect("jdbc:bolt://test", new Properties());
 		assertNotNull(connection);
 	}
 

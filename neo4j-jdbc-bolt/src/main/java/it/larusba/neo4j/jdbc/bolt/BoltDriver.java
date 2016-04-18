@@ -59,21 +59,20 @@ public class BoltDriver extends Driver {
 		if (acceptsURL(url)) {
 			url = url.replace("jdbc:", "");
 			try {
-				Properties props = new Properties();
-				parseUrlProperties(url, props);
-				if (!props.containsKey("noSsl")) {
+				parseUrlProperties(url, info);
+				if (!info.containsKey("noSsl")) {
 					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
-							(props.containsKey("user") && props.containsKey("password") ?
-									AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :
-									AuthTokens.none())).session()), BoltConnection.hasDebug(props));
+							(info.containsKey("user") && info.containsKey("password") ?
+									AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
+									AuthTokens.none())).session()), BoltConnection.hasDebug(info));
 				} else {
 					Config.ConfigBuilder builder = build();
 					builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
 					Config config = builder.toConfig();
 					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
-							(props.containsKey("user") && props.containsKey("password") ?
-									AuthTokens.basic(props.getProperty("user"), props.getProperty("password")) :
-									AuthTokens.none()), config).session()), BoltConnection.hasDebug(props));
+							(info.containsKey("user") && info.containsKey("password") ?
+									AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
+									AuthTokens.none()), config).session()), BoltConnection.hasDebug(info));
 				}
 			} catch (Exception e) {
 				throw new SQLException(e);
