@@ -25,6 +25,7 @@ import it.larusba.neo4j.jdbc.ResultSetMetaData;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -198,6 +199,10 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 
 	@Override public int getResultSetType() throws SQLException {
 		return ResultSet.TYPE_FORWARD_ONLY;
+	}
+
+	@Override public Connection getConnection() throws SQLException {
+		return this.connection;
 	}
 
 	@Override public int getResultSetHoldability() throws SQLException {

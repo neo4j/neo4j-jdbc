@@ -22,6 +22,7 @@ package it.larusba.neo4j.jdbc.http;
 import it.larusba.neo4j.jdbc.Statement;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
@@ -107,6 +108,10 @@ public class HttpStatement extends Statement implements Loggable {
 
 	@Override public int getResultSetType() throws SQLException {
 		return ResultSet.TYPE_FORWARD_ONLY;
+	}
+
+	@Override public Connection getConnection() throws SQLException {
+		return this.connection;
 	}
 
 	@Override public int getResultSetHoldability() throws SQLException {
