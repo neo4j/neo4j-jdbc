@@ -20,6 +20,7 @@
 package it.larusba.neo4j.jdbc.http;
 
 import it.larusba.neo4j.jdbc.Driver;
+import it.larusba.neo4j.jdbc.InstanceFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;

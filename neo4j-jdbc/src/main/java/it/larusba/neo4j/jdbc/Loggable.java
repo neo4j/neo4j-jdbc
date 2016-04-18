@@ -1,4 +1,5 @@
-/**
+/*
+ *
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -15,9 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 15/03/16
+ * Created on 19/4/2016
+ *
  */
-package it.larusba.neo4j.jdbc.bolt;
+package it.larusba.neo4j.jdbc;
 
 /**
  * @author AgileLARUS

@@ -19,6 +19,8 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
+import it.larusba.neo4j.jdbc.InstanceFactory;
+import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.Statement;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;

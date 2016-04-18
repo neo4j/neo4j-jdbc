@@ -19,9 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
-import it.larusba.neo4j.jdbc.Array;
-import it.larusba.neo4j.jdbc.ResultSet;
-import it.larusba.neo4j.jdbc.ResultSetMetaData;
+import it.larusba.neo4j.jdbc.*;
 import it.larusba.neo4j.jdbc.impl.ListArray;
 import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.driver.internal.InternalPath;

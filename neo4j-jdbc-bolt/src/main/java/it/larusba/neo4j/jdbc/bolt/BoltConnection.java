@@ -19,16 +19,12 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
-import it.larusba.neo4j.jdbc.Connection;
-import it.larusba.neo4j.jdbc.DatabaseMetaData;
-import it.larusba.neo4j.jdbc.ResultSet;
-import it.larusba.neo4j.jdbc.Statement;
+import it.larusba.neo4j.jdbc.*;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
 /**

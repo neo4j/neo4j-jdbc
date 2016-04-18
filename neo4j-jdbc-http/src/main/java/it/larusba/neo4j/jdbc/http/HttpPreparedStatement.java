@@ -19,6 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.http;
 
+import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.ResultSetMetaData;

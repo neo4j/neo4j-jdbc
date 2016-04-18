@@ -20,6 +20,7 @@
 package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.Driver;
+import it.larusba.neo4j.jdbc.InstanceFactory;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;

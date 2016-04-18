@@ -19,9 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.http;
 
-import it.larusba.neo4j.jdbc.Connection;
-import it.larusba.neo4j.jdbc.DatabaseMetaData;
-import it.larusba.neo4j.jdbc.ResultSet;
+import it.larusba.neo4j.jdbc.*;
 import it.larusba.neo4j.jdbc.http.driver.CypherExecutor;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jStatement;
@@ -130,18 +128,18 @@ public class HttpConnection extends Connection implements Loggable {
 
 	@Override public PreparedStatement prepareStatement(String cypher) throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
+		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, cypher), this.isLoggable());
 	}
 
 	@Override public PreparedStatement prepareStatement(String cypher, int resultSetType, int resultSetConcurrency) throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
+		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, cypher), this.isLoggable());
 	}
 
 	@Override public PreparedStatement prepareStatement(String cypher, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, nativeSQL(cypher)), this.isLoggable());
+		return InstanceFactory.debug(HttpPreparedStatement.class, new HttpPreparedStatement(this, cypher), this.isLoggable());
 	}
 
 	/*-------------------*/

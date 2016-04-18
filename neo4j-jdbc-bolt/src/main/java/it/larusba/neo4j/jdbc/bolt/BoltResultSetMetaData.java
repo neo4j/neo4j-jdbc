@@ -19,11 +19,11 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
+import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.ResultSetMetaData;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.types.Type;
-import org.omg.CORBA.INTERNAL;
 
 import java.sql.SQLException;
 import java.sql.Types;

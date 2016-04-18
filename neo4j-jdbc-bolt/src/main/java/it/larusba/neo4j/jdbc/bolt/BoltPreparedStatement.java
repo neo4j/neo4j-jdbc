@@ -19,9 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
-import it.larusba.neo4j.jdbc.ParameterMetaData;
-import it.larusba.neo4j.jdbc.PreparedStatement;
-import it.larusba.neo4j.jdbc.ResultSetMetaData;
+import it.larusba.neo4j.jdbc.*;
 import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;

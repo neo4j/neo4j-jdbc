@@ -19,6 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
+import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.ParameterMetaData;
 
 /**

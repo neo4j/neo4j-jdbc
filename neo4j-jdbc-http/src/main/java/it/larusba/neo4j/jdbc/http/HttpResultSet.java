@@ -21,6 +21,7 @@ package it.larusba.neo4j.jdbc.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.larusba.neo4j.jdbc.Array;
+import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.ResultSet;
 import it.larusba.neo4j.jdbc.ResultSetMetaData;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResult;
