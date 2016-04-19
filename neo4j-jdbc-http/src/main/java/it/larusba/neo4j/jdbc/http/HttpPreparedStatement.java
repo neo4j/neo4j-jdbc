@@ -19,10 +19,7 @@
  */
 package it.larusba.neo4j.jdbc.http;
 
-import it.larusba.neo4j.jdbc.Loggable;
-import it.larusba.neo4j.jdbc.ParameterMetaData;
-import it.larusba.neo4j.jdbc.PreparedStatement;
-import it.larusba.neo4j.jdbc.ResultSetMetaData;
+import it.larusba.neo4j.jdbc.*;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 
@@ -31,16 +28,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashMap;
+import java.util.Map;
 
 import static java.sql.Types.*;
 
 public class HttpPreparedStatement extends PreparedStatement implements Loggable {
 
-	private HttpConnection          connection;
-	private ResultSet               resultSet;
-	private String                  cypher;
-	private HashMap<String, Object> parameters;
-	private int                     parametersNumber;
 	private boolean loggable = false;
 
 	/**
@@ -50,32 +43,7 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 	 * @param cypher         The prepared cypher query
 	 */
 	public HttpPreparedStatement(HttpConnection httpConnection, String cypher) {
-		super();
-		this.connection = httpConnection;
-		this.cypher = PreparedStatementBuilder.replacePlaceholders(cypher);
-		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(cypher);
-		this.parameters = new HashMap<>(this.parametersNumber);
-	}
-
-	/**
-	 * Check if this statement is closed or not.
-	 *
-	 * @throws SQLException
-	 */
-	private void checkClosed() throws SQLException {
-		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
-		}
-	}
-
-	private void checkParamsNumber(int parameterIndex) throws SQLException {
-		if (parameterIndex > this.parametersNumber) {
-			throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
-		}
-	}
-
-	private void insertParameter(int index, Object o) {
-		this.parameters.put(new Integer(index).toString(), o);
+		super(httpConnection, cypher);
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
@@ -84,114 +52,52 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 			throw new SQLException("Connection already closed");
 		}
 
-		Neo4jResponse response = connection.executeQuery(cypher, parameters, Boolean.FALSE);
-		this.resultSet = new HttpResultSet(response.results.get(0));
-		return resultSet;
+		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(statement, parameters, Boolean.FALSE);
+		this.currentResultSet = new HttpResultSet(response.results.get(0));
+		return currentResultSet;
 	}
 
 	@Override public int executeUpdate() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		//@formatter:off
-        if(	sqlType == ARRAY ||
-                sqlType == BLOB ||
-                sqlType == CLOB ||
-                sqlType == DATALINK ||
-                sqlType == JAVA_OBJECT ||
-                sqlType == NCHAR ||
-                sqlType == NCLOB ||
-                sqlType == NVARCHAR ||
-                sqlType == LONGNVARCHAR ||
-                sqlType == REF ||
-                sqlType == ROWID ||
-                sqlType == SQLXML ||
-                sqlType == STRUCT){
-            //@formatter:on
-			throw new SQLFeatureNotSupportedException("The Type you specified is not supported");
-		}
-		this.insertParameter(parameterIndex, null);
-	}
-
-	@Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setShort(int parameterIndex, short x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setInt(int parameterIndex, int x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setLong(int parameterIndex, long x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setFloat(int parameterIndex, float x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setDouble(int parameterIndex, double x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setString(int parameterIndex, String x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void clearParameters() throws SQLException {
-		this.checkClosed();
-		this.parameters.clear();
-	}
 
 	@Override public boolean execute() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		checkClosed();
+
+		// execute the query
+		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(this.statement, this.parameters, Boolean.TRUE);
+
+		// Parse stats
+		this.currentUpdateCount = 0;
+		if (response.results.get(0) != null && response.results.get(0).stats != null) {
+			Map<String, Object> stats = response.results.get(0).stats;
+			int updated = (int) stats.get("nodes_created");
+			updated += (int) stats.get("nodes_deleted");
+			updated += (int) stats.get("relationships_created");
+			updated += (int) stats.get("relationship_deleted");
+			this.currentUpdateCount = updated;
+		}
+
+		// Parse response data
+		this.currentResultSet = null;
+		if (response.results.get(0) != null) {
+			this.currentResultSet = new HttpResultSet(response.results.get(0));
+		}
+
+		return (this.currentResultSet != null);
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return InstanceFactory.debug(HttpResultSetMetaData.class,
+				new HttpResultSetMetaData(((HttpResultSet) this.currentResultSet).result),
+				this.isLoggable());
 	}
 
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
 		this.checkClosed();
 		ParameterMetaData pmd = new HttpParameterMetaData(this);
 		return pmd;
-	}
-
-	@Override public void close() throws SQLException {
-		if (resultSet != null) {
-			resultSet.close();
-		}
-		connection = null;
-		resultSet = null;
-	}
-
-	@Override public ResultSet getResultSet() throws SQLException {
-		checkClosed();
-		return this.resultSet;
-	}
-
-	@Override public int getUpdateCount() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {
@@ -202,17 +108,13 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 		return ResultSet.TYPE_FORWARD_ONLY;
 	}
 
-	@Override public Connection getConnection() throws SQLException {
-		return this.connection;
-	}
-
 	@Override public int getResultSetHoldability() throws SQLException {
 		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
-	@Override public boolean isClosed() throws SQLException {
-		return connection == null;
-	}
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return loggable;

@@ -23,84 +23,52 @@ import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.Statement;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
 public class HttpStatement extends Statement implements Loggable {
 
-	private HttpConnection connection;
-	private ResultSet      resultSet;
 	private boolean loggable = false;
 
 	public HttpStatement(HttpConnection httpConnection) {
-		this.connection = httpConnection;
+		super(httpConnection);
 	}
 
 	@Override public ResultSet executeQuery(String cypher) throws SQLException {
-		checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
-		}
-
-		Neo4jResponse response = connection.executeQuery(cypher, null, null);
-		this.resultSet = new HttpResultSet(response.results.get(0));
-		return resultSet;
+		this.execute(cypher);
+		return currentResultSet;
 	}
 
 	@Override public int executeUpdate(String cypher) throws SQLException {
+		this.execute(cypher);
+		return currentUpdateCount;
+	}
+
+	@Override public boolean execute(String cypher) throws SQLException {
 		checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
+
+		// execute the query
+		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(cypher, null, Boolean.TRUE);
+
+		// Parse stats
+		this.currentUpdateCount = 0;
+		if (response.results.get(0) != null && response.results.get(0).stats != null) {
+			Map<String, Object> stats = response.results.get(0).stats;
+			int updated = (int) stats.get("nodes_created");
+			updated += (int) stats.get("nodes_deleted");
+			updated += (int) stats.get("relationships_created");
+			updated += (int) stats.get("relationship_deleted");
+			this.currentUpdateCount = updated;
 		}
 
-		Neo4jResponse response = connection.executeQuery(cypher, null, Boolean.TRUE);
-		Map<String, Object> stats = response.results.get(0).stats;
-		int result = (int) stats.get("nodes_created");
-		result += (int) stats.get("nodes_deleted");
-		result += (int) stats.get("relationships_created");
-		result += (int) stats.get("relationship_deleted");
-		return result;
-	}
-
-	/**
-	 * Check if this statement is closed or not.
-	 *
-	 * @throws SQLException
-	 */
-	private void checkClosed() throws SQLException {
-		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
+		// Parse response data
+		this.currentResultSet = null;
+		if (response.results.get(0) != null) {
+			this.currentResultSet = new HttpResultSet(response.results.get(0));
 		}
-	}
 
-	@Override public void close() throws SQLException {
-		if (resultSet != null) {
-			resultSet.close();
-		}
-		connection = null;
-		resultSet = null;
-	}
-
-	@Override public int getMaxRows() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public void setMaxRows(int max) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public boolean execute(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public ResultSet getResultSet() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public int getUpdateCount() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		return (this.currentResultSet != null);
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {
@@ -111,17 +79,13 @@ public class HttpStatement extends Statement implements Loggable {
 		return ResultSet.TYPE_FORWARD_ONLY;
 	}
 
-	@Override public Connection getConnection() throws SQLException {
-		return this.connection;
-	}
-
 	@Override public int getResultSetHoldability() throws SQLException {
 		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
-	@Override public boolean isClosed() throws SQLException {
-		return connection == null;
-	}
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return loggable;

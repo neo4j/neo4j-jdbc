@@ -568,9 +568,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.executeQuery()).thenCallRealMethod();
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
 
 		statement.executeQuery();
 	}
@@ -599,9 +598,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.executeUpdate()).thenCallRealMethod();
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
 
 		statement.executeUpdate();
 	}
@@ -645,11 +643,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnQueryOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.execute()).thenCallRealMethod();
-		when(statement.executeQuery()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_MATCH_ALL);
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
 
 		statement.execute();
 	}
@@ -657,11 +652,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnUpdateOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.execute()).thenCallRealMethod();
-		when(statement.executeUpdate()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_CREATE);
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), StatementData.STATEMENT_CREATE);
+		statement.close();
 
 		statement.execute();
 	}
@@ -709,9 +701,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.getUpdateCount()).thenCallRealMethod();
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
 
 		statement.getUpdateCount();
 	}
@@ -741,9 +732,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.getResultSet()).thenCallRealMethod();
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		statement.close();
 
 		statement.getResultSet();
 	}

@@ -40,13 +40,8 @@ import java.util.List;
  */
 public class BoltStatement extends Statement implements Loggable {
 
-	private BoltConnection connection;
 	private Transaction    transaction;
 	private int[]          rsParams;
-	private ResultSet      currentResultSet;
-	private int            currentUpdateCount;
-	private boolean        closed;
-	private int            maxRows;
 	private List<String>   batchStatements;
 
 	private boolean loggable = false;
@@ -58,56 +53,39 @@ public class BoltStatement extends Statement implements Loggable {
 	 * @param rsParams   The params (type, concurrency and holdability) used to create a new ResultSet
 	 */
 	public BoltStatement(BoltConnection connection, int... rsParams) {
-		this.connection = connection;
+		super(connection);
 		this.transaction = connection.getTransaction();
 		this.rsParams = rsParams;
-		this.currentResultSet = null;
-		this.currentUpdateCount = -1;
-		this.closed = false;
-		this.maxRows = 0;
 		this.batchStatements = new ArrayList<>();
 	}
 
-	private void checkClosed() throws SQLException {
-		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
-		}
-	}
-
-	//Mustn't return null
-	@Override public ResultSet executeQuery(String sql) throws SQLException {
+	private StatementResult executeInternal(String sql) throws SQLException {
 		this.checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
-		}
+
 		StatementResult result;
-		if (connection.getAutoCommit()) {
-			Transaction t = this.connection.getSession().beginTransaction();
+		if (this.getConnection().getAutoCommit()) {
+			Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction();
 			result = t.run(sql);
 			t.success();
 			t.close();
 		} else {
-			result = this.connection.getTransaction().run(sql);
+			result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
 		}
+
+		return result;
+	}
+
+	//Mustn't return null
+	@Override public ResultSet executeQuery(String sql) throws SQLException {
+		StatementResult result = executeInternal(sql);
+
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
 		this.currentUpdateCount = -1;
 		return this.currentResultSet;
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
-		this.checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
-		}
-		StatementResult result;
-		if (connection.getAutoCommit()) {
-			Transaction t = this.connection.getSession().beginTransaction();
-			result = t.run(sql);
-			t.success();
-			t.close();
-		} else {
-			result = this.connection.getTransaction().run(sql);
-		}
+		StatementResult result = executeInternal(sql);
 
 		SummaryCounters stats = result.consume().counters();
 		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
@@ -115,26 +93,17 @@ public class BoltStatement extends Statement implements Loggable {
 		return this.currentUpdateCount;
 	}
 
-	@Override public void close() throws SQLException {
-		if (this.closed) {
-			return;
+	@Override public boolean execute(String sql) throws SQLException {
+		boolean result = false;
+		if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
+				.contains("create")) {
+			this.executeUpdate(sql);
+		} else {
+			this.executeQuery(sql);
+			result = true;
 		}
-		if (this.currentResultSet != null) {
-			this.currentResultSet.close();
-		}
-		if (this.transaction != null) {
-			this.transaction.failure();
-			this.transaction.close();
-		}
-		this.closed = true;
-	}
 
-	@Override public int getMaxRows() throws SQLException {
-		return this.maxRows;
-	}
-
-	@Override public void setMaxRows(int max) throws SQLException {
-		this.maxRows = max;
+		return result;
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {
@@ -159,6 +128,21 @@ public class BoltStatement extends Statement implements Loggable {
 		return BoltResultSet.DEFAULT_TYPE;
 	}
 
+	@Override public int getResultSetHoldability() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getHoldability();
+		}
+		if (this.rsParams.length > 2) {
+			return this.rsParams[2];
+		}
+		return BoltResultSet.DEFAULT_HOLDABILITY;
+	}
+
+	/*-------------------*/
+	/*       Batch       */
+	/*-------------------*/
+
 	@Override public void addBatch(String sql) throws SQLException {
 		this.checkClosed();
 		this.batchStatements.add(sql);
@@ -178,9 +162,9 @@ public class BoltStatement extends Statement implements Loggable {
 			for (String query : this.batchStatements) {
 				StatementResult res;
 				if (this.connection.getAutoCommit()) {
-					res = this.connection.getSession().run(query);
+					res = ((BoltConnection) connection).getSession().run(query);
 				} else {
-					res = this.connection.getTransaction().run(query);
+					res = ((BoltConnection) connection).getTransaction().run(query);
 				}
 				SummaryCounters count = res.consume().counters();
 				result = Arrays.copyOf(result, result.length + 1);
@@ -193,25 +177,28 @@ public class BoltStatement extends Statement implements Loggable {
 		return result;
 	}
 
-	@Override public Connection getConnection() throws SQLException {
-		checkClosed();
-		return this.connection;
+	/*-------------------*/
+	/*       Close       */
+	/*-------------------*/
+
+	/**
+	 * Override the default implementation to close the transaction.
+	 */
+	@Override public void close() throws SQLException {
+		if (!this.isClosed()) {
+			super.close();
+
+			// closing transaction
+			if (this.transaction != null) {
+				this.transaction.failure();
+				this.transaction.close();
+			}
+		}
 	}
 
-	@Override public int getResultSetHoldability() throws SQLException {
-		this.checkClosed();
-		if (currentResultSet != null) {
-			return currentResultSet.getHoldability();
-		}
-		if (this.rsParams.length > 2) {
-			return this.rsParams[2];
-		}
-		return BoltResultSet.DEFAULT_HOLDABILITY;
-	}
-
-	@Override public boolean isClosed() throws SQLException {
-		return closed;
-	}
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return this.loggable;
@@ -221,32 +208,4 @@ public class BoltStatement extends Statement implements Loggable {
 		this.loggable = loggable;
 	}
 
-	@Override public boolean execute(String sql) throws SQLException {
-		boolean result = false;
-		if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
-				.contains("create")) {
-			this.executeUpdate(sql);
-		} else {
-			this.executeQuery(sql);
-			result = true;
-		}
-
-		return result;
-	}
-
-	@Override public int getUpdateCount() throws SQLException {
-		this.checkClosed();
-		if (this.currentResultSet != null) {
-			this.currentUpdateCount = -1;
-		}
-		return this.currentUpdateCount;
-	}
-
-	@Override public ResultSet getResultSet() throws SQLException {
-		this.checkClosed();
-		if (this.currentUpdateCount != -1) {
-			this.currentResultSet = null;
-		}
-		return this.currentResultSet;
-	}
 }

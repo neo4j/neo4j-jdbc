@@ -126,7 +126,9 @@ public class BoltConnection extends Connection implements Loggable {
 		this.transaction.failure();
 	}
 
-	/*------------------------------*/
+	/*--------------------------c boolean isClosed() throws SQLException {
+		return !this.session.isOpen();
+	}----*/
 	/*       Create Statement       */
 	/*------------------------------*/
 
@@ -190,6 +192,10 @@ public class BoltConnection extends Connection implements Loggable {
 	/*       Close       */
 	/*-------------------*/
 
+	@Override public boolean isClosed() throws SQLException {
+		return !this.session.isOpen();
+	}
+
 	@Override public void close() throws SQLException {
 		try {
 			if (!this.isClosed()) {
@@ -198,10 +204,6 @@ public class BoltConnection extends Connection implements Loggable {
 		} catch (Exception e) {
 			throw new SQLException("A database access error has occurred");
 		}
-	}
-
-	@Override public boolean isClosed() throws SQLException {
-		return !this.session.isOpen();
 	}
 
 	/*--------------------*/

@@ -119,6 +119,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	/*           isClosed           */
 	/*------------------------------*/
+
 	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
 		Statement statement = new BoltStatement(mockConnectionOpen());
 		assertFalse(statement.isClosed());
@@ -155,9 +156,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltStatement statement = mock(BoltStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.executeQuery(anyString())).thenCallRealMethod();
+		Statement statement = new BoltStatement(mockConnectionOpen());
+		statement.close();
 
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -342,10 +342,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnQueryOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltStatement statement = mock(BoltStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.execute(anyString())).thenCallRealMethod();
-		when(statement.executeQuery(anyString())).thenCallRealMethod();
+		Statement statement = new BoltStatement(mockConnectionOpen());
+		statement.close();
 
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -353,10 +351,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnUpdateOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltStatement statement = mock(BoltStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.execute(anyString())).thenCallRealMethod();
-		when(statement.executeUpdate(anyString())).thenCallRealMethod();
+		Statement statement = new BoltStatement(mockConnectionOpen());
+		statement.close();
 
 		statement.execute(StatementData.STATEMENT_CREATE);
 	}
@@ -366,7 +362,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 		Connection connection = new BoltConnection(mockSessionOpen());
 		Statement statement = connection.prepareStatement("");
-		when(statement.executeQuery(anyString())).thenCallRealMethod();
 
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -436,9 +431,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltStatement statement = mock(BoltStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.getUpdateCount()).thenCallRealMethod();
+		Statement statement = new BoltStatement(mockConnectionOpen());
+		statement.close();
 
 		statement.getUpdateCount();
 	}
@@ -468,9 +462,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		BoltStatement statement = mock(BoltStatement.class);
-		when(statement.isClosed()).thenReturn(true);
-		when(statement.getResultSet()).thenCallRealMethod();
+		Statement statement = new BoltStatement(mockConnectionOpen());
+		statement.close();
 
 		statement.getResultSet();
 	}

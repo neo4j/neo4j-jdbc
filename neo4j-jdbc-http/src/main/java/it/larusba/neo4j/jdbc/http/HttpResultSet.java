@@ -47,7 +47,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	/**
 	 * Neo4j query result.
 	 */
-	private Neo4jResult result;
+	protected Neo4jResult result;
 
 	/**
 	 * Cursor position of this iterator.

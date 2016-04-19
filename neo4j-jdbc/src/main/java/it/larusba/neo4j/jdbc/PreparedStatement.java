@@ -19,30 +19,174 @@
  */
 package it.larusba.neo4j.jdbc;
 
+import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Calendar;
+import java.util.HashMap;
+
+import static java.sql.Types.*;
 
 /**
+ * Don't forget to close some attribute (like currentResultSet and currentUpdateCount) or your implementation.
+ *
  * @author AgileLARUS
  * @since 3.0.0
  */
 public abstract class PreparedStatement extends Statement implements java.sql.PreparedStatement {
 
-	/*----------------------------*/
-	/*       Execute method       */
-	/*----------------------------*/
+	protected String                  statement;
+	protected HashMap<String, Object> parameters;
+	protected int                     parametersNumber;
+
+	/**
+	 * Default constructor with connection and statement.
+	 *
+	 * @param connection   The JDBC connection
+	 * @param rawStatement The prepared statement
+	 */
+	protected PreparedStatement(Connection connection, String rawStatement) {
+		super(connection);
+		this.statement = PreparedStatementBuilder.replacePlaceholders(rawStatement);
+		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(rawStatement);
+		this.parameters = new HashMap<>(this.parametersNumber);
+	}
+
+	/*----------------------------------------*/
+	/*       Some useful, check method        */
+	/*----------------------------------------*/
+
+	/**
+	 * Check if the connection is closed or not.
+	 * If it is, we throw an exception.
+	 *
+	 * @throws SQLException
+	 */
+	protected void checkClosed() throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("Statement already closed");
+		}
+	}
+
+	/**
+	 * Check if the given parameter index is not out of bound.
+	 * If its is we throw an exception.
+	 *
+	 * @param parameterIndex The index parameter to check
+	 * @throws SQLException
+	 */
+	protected void checkParamsNumber(int parameterIndex) throws SQLException {
+		if (parameterIndex > this.parametersNumber) {
+			throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
+		}
+	}
+
+	/**
+	 * Insert a parameter into the map.
+	 *
+	 * @param index The index/key of the parameter
+	 * @param obj The value of the parameter
+	 */
+	protected void insertParameter(int index, Object obj) {
+		this.parameters.put(new Integer(index).toString(), obj);
+	}
+
+	/*------------------------------------*/
+	/*       Default implementation       */
+	/*------------------------------------*/
+
+	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		//@formatter:off
+		if(	sqlType == ARRAY ||
+			sqlType == BLOB ||
+			sqlType == CLOB ||
+			sqlType == DATALINK ||
+			sqlType == JAVA_OBJECT ||
+			sqlType == NCHAR ||
+			sqlType == NCLOB ||
+			sqlType == NVARCHAR ||
+			sqlType == LONGNVARCHAR ||
+			sqlType == REF ||
+			sqlType == ROWID ||
+			sqlType == SQLXML ||
+			sqlType == STRUCT){
+		//@formatter:on
+			throw new SQLFeatureNotSupportedException("The Type you specified is not supported");
+		}
+		this.insertParameter(parameterIndex, null);
+	}
+
+	@Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setShort(int parameterIndex, short x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setInt(int parameterIndex, int x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setLong(int parameterIndex, long x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setFloat(int parameterIndex, float x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setDouble(int parameterIndex, double x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setString(int parameterIndex, String x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void clearParameters() throws SQLException {
+		this.checkClosed();
+		this.parameters.clear();
+	}
+
+	/*-----------------------------*/
+	/*       Abstract method       */
+	/*-----------------------------*/
 
 	@Override public abstract boolean execute() throws SQLException;
 
 	@Override public abstract ResultSet executeQuery() throws SQLException;
 
 	@Override public abstract int executeUpdate() throws SQLException;
+
+	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
+
+	@Override public abstract ParameterMetaData getParameterMetaData() throws SQLException;
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
 
 	@Override public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
 		throw new SQLException("Method execute(String, int) cannot be called on PreparedStatement");
@@ -79,36 +223,6 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	@Override public int executeUpdate(String sql, String[] columnNames) throws SQLException {
 		throw new SQLException("Method executeUpdate(String, String[]) cannot be called on PreparedStatement");
 	}
-
-	/*------------------------------*/
-	/*       ResultSet method       */
-	/*------------------------------*/
-
-	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
-
-	/*------------------------------*/
-	/*       Parameter method       */
-	/*------------------------------*/
-
-	@Override public abstract ParameterMetaData getParameterMetaData() throws SQLException;
-
-	@Override public abstract void clearParameters() throws SQLException;
-
-	@Override public abstract void setShort(int parameterIndex, short x) throws SQLException;
-
-	@Override public abstract void setInt(int parameterIndex, int x) throws SQLException;
-
-	@Override public abstract void setLong(int parameterIndex, long x) throws SQLException;
-
-	@Override public abstract void setFloat(int parameterIndex, float x) throws SQLException;
-
-	@Override public abstract void setDouble(int parameterIndex, double x) throws SQLException;
-
-	@Override public abstract void setNull(int parameterIndex, int sqlType) throws SQLException;
-
-	@Override public abstract void setBoolean(int parameterIndex, boolean x) throws SQLException;
-
-	@Override public abstract void setString(int parameterIndex, String x) throws SQLException;
 
 	@Override public void setByte(int parameterIndex, byte x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -269,10 +383,6 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	@Override public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	/*--------------------------*/
-	/*       Batch method       */
-	/*--------------------------*/
 
 	@Override public void addBatch() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");

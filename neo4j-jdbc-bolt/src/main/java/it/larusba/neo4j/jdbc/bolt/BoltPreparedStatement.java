@@ -20,15 +20,16 @@
 package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.*;
-import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 
-import java.sql.*;
+import java.sql.BatchUpdateException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
-import static java.sql.Types.*;
+import static java.util.Arrays.*;
 
 /**
  * @author AgileLARUS
@@ -36,65 +37,22 @@ import static java.sql.Types.*;
  */
 public class BoltPreparedStatement extends PreparedStatement implements Loggable {
 
-	private BoltConnection connection;
-	private Transaction    transaction;
-	private ResultSet      currentResultSet;
-	private int            currentUpdateCount;
-	private boolean        closed;
-	private int[]          rsParams;
-
+	private Transaction transaction;
+	private int[]       rsParams;
 	private boolean loggable = false;
-
-	private String                  statement;
-	private HashMap<String, Object> parameters;
-	int parametersNumber;
-
 	private List<HashMap<String, Object>> batchParameters;
 
 	public BoltPreparedStatement(BoltConnection connection, String rawStatement, int... rsParams) {
-		this.connection = connection;
+		super(connection, rawStatement);
 		this.transaction = connection.getTransaction();
-		this.currentResultSet = null;
-		this.closed = false;
-
 		this.rsParams = rsParams;
-
-		this.statement = PreparedStatementBuilder.replacePlaceholders(rawStatement);
-		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(rawStatement);
-		this.parameters = new HashMap<>(this.parametersNumber);
 		this.batchParameters = new ArrayList<>();
-	}
-
-	private void checkClosed() throws SQLException {
-		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
-		}
-	}
-
-	private void checkParamsNumber(int parameterIndex) throws SQLException {
-		if (parameterIndex > this.parametersNumber) {
-			throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
-		}
-	}
-
-	private void insertParameter(int index, Object o) {
-		this.parameters.put(Integer.toString(index), o);
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
 		this.checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
-		}
-		StatementResult result;
-		if (connection.getAutoCommit()) {
-			Transaction t = this.connection.getSession().beginTransaction();
-			result = t.run(this.statement, this.parameters);
-			t.success();
-			t.close();
-		} else {
-			result = this.connection.getTransaction().run(this.statement, this.parameters);
-		}
+		StatementResult result = executeInternal();
+
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
 		this.currentUpdateCount = -1;
 		return currentResultSet;
@@ -102,18 +60,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 
 	@Override public int executeUpdate() throws SQLException {
 		this.checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
-		}
-		StatementResult result;
-		if (connection.getAutoCommit()) {
-			Transaction t = this.connection.getSession().beginTransaction();
-			result = t.run(this.statement, this.parameters);
-			t.success();
-			t.close();
-		} else {
-			result = this.connection.getTransaction().run(this.statement, this.parameters);
-		}
+		StatementResult result = executeInternal();
 
 		SummaryCounters stats = result.consume().counters();
 		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
@@ -121,74 +68,33 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		return this.currentUpdateCount;
 	}
 
-	@Override public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		//@formatter:off
-		if(	sqlType == ARRAY ||
-			sqlType == BLOB ||
-			sqlType == CLOB ||
-			sqlType == DATALINK ||
-			sqlType == JAVA_OBJECT ||
-			sqlType == NCHAR ||
-			sqlType == NCLOB ||
-			sqlType == NVARCHAR ||
-			sqlType == LONGNVARCHAR ||
-			sqlType == REF ||
-			sqlType == ROWID ||
-			sqlType == SQLXML ||
-			sqlType == STRUCT){
-		//@formatter:on
-			throw new SQLFeatureNotSupportedException("The Type you specified is not supported");
+	@Override public boolean execute() throws SQLException {
+		boolean result = false;
+		if (statement.contains("DELETE") || statement.contains("MERGE") || statement.contains("CREATE") || statement.contains("delete") || statement
+				.contains("merge") || statement.contains("create")) {
+			this.executeUpdate();
+		} else {
+			this.executeQuery();
+			result = true;
 		}
-		this.insertParameter(parameterIndex, null);
+
+		return result;
 	}
 
-	@Override public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+	private StatementResult executeInternal() throws SQLException {
 		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
 
-	@Override public void setShort(int parameterIndex, short x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
+		StatementResult result;
+		if (this.getConnection().getAutoCommit()) {
+			Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction();
+			result = t.run(this.statement, this.parameters);
+			t.success();
+			t.close();
+		} else {
+			result = ((BoltConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
+		}
 
-	@Override public void setInt(int parameterIndex, int x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setLong(int parameterIndex, long x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setFloat(int parameterIndex, float x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setDouble(int parameterIndex, double x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void setString(int parameterIndex, String x) throws SQLException {
-		this.checkClosed();
-		this.checkParamsNumber(parameterIndex);
-		this.insertParameter(parameterIndex, x);
-	}
-
-	@Override public void clearParameters() throws SQLException {
-		this.checkClosed();
-		this.parameters.clear();
+		return result;
 	}
 
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
@@ -197,18 +103,10 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		return pmd;
 	}
 
-	@Override public void close() throws SQLException {
-		if (this.closed) {
-			return;
-		}
-		if (this.currentResultSet != null) {
-			this.currentResultSet.close();
-		}
-		if (this.transaction != null) {
-			this.transaction.failure();
-			this.transaction.close();
-		}
-		this.closed = true;
+	@Override public ResultSetMetaData getMetaData() throws SQLException {
+		return InstanceFactory.debug(BoltResultSetMetaData.class,
+				new BoltResultSetMetaData(((BoltResultSet) this.currentResultSet).getIterator(), ((BoltResultSet) this.currentResultSet).getKeys()),
+				this.isLoggable());
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {
@@ -233,6 +131,27 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		return BoltResultSet.DEFAULT_TYPE;
 	}
 
+	@Override public int getResultSetHoldability() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getHoldability();
+		}
+		if (this.rsParams.length > 2) {
+			return this.rsParams[2];
+		}
+		return BoltResultSet.DEFAULT_HOLDABILITY;
+	}
+
+	/*-------------------*/
+	/*       Batch       */
+	/*-------------------*/
+
+	@Override public void addBatch() throws SQLException {
+		this.checkClosed();
+		this.batchParameters.add(new HashMap<>(this.parameters));
+		this.parameters.clear();
+	}
+
 	@Override public void clearBatch() throws SQLException {
 		this.checkClosed();
 		this.batchParameters.clear();
@@ -246,12 +165,12 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 			for (Map<String, Object> parameter : this.batchParameters) {
 				StatementResult res;
 				if(this.connection.getAutoCommit()) {
-					res = this.connection.getSession().run(this.statement, parameter);
+					res = ((BoltConnection) this.connection).getSession().run(this.statement, parameter);
 				} else {
-					res = this.connection.getTransaction().run(this.statement, parameter);
+					res = ((BoltConnection) this.connection).getTransaction().run(this.statement, parameter);
 				}
 				SummaryCounters count = res.consume().counters();
-				result = Arrays.copyOf(result, result.length + 1);
+				result = copyOf(result, result.length + 1);
 				result[result.length - 1] = count.nodesCreated() + count.nodesDeleted();
 			}
 		} catch (Exception e) {
@@ -261,25 +180,28 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		return result;
 	}
 
-	@Override public Connection getConnection() throws SQLException {
-		this.checkClosed();
-		return this.connection;
+	/*-------------------*/
+	/*       Close       */
+	/*-------------------*/
+
+	/**
+	 * Override the default implementation to close the transaction.
+	 */
+	@Override public void close() throws SQLException {
+		if (!this.isClosed()) {
+			super.close();
+
+			// closing transaction
+			if (this.transaction != null) {
+				this.transaction.failure();
+				this.transaction.close();
+			}
+		}
 	}
 
-	@Override public int getResultSetHoldability() throws SQLException {
-		this.checkClosed();
-		if (currentResultSet != null) {
-			return currentResultSet.getHoldability();
-		}
-		if (this.rsParams.length > 2) {
-			return this.rsParams[2];
-		}
-		return BoltResultSet.DEFAULT_HOLDABILITY;
-	}
-
-	@Override public boolean isClosed() throws SQLException {
-		return this.closed;
-	}
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return this.loggable;
@@ -287,46 +209,5 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 
 	@Override public void setLoggable(boolean loggable) {
 		this.loggable = loggable;
-	}
-
-	@Override public boolean execute() throws SQLException {
-		boolean result = false;
-		if (statement.contains("DELETE") || statement.contains("MERGE") || statement.contains("CREATE") || statement.contains("delete") || statement
-				.contains("merge") || statement.contains("create")) {
-			this.executeUpdate();
-		} else {
-			this.executeQuery();
-			result = true;
-		}
-
-		return result;
-	}
-
-	@Override public void addBatch() throws SQLException {
-		this.checkClosed();
-		this.batchParameters.add(new HashMap<>(this.parameters));
-		this.parameters.clear();
-	}
-
-	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		return InstanceFactory.debug(BoltResultSetMetaData.class,
-				new BoltResultSetMetaData(((BoltResultSet) this.currentResultSet).getIterator(), ((BoltResultSet) this.currentResultSet).getKeys()),
-				this.isLoggable());
-	}
-
-	@Override public int getUpdateCount() throws SQLException {
-		this.checkClosed();
-		if (this.currentResultSet != null) {
-			this.currentUpdateCount = -1;
-		}
-		return this.currentUpdateCount;
-	}
-
-	@Override public ResultSet getResultSet() throws SQLException {
-		this.checkClosed();
-		if (this.currentUpdateCount != -1) {
-			this.currentResultSet = null;
-		}
-		return this.currentResultSet;
 	}
 }
