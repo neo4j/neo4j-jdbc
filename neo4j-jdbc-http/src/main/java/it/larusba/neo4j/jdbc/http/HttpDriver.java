@@ -34,6 +34,8 @@ import java.util.Properties;
  */
 public class HttpDriver extends Driver {
 
+	public final static String JDBC_HTTP_PREFIX = "http";
+
 	// Register the driver class
 	static {
 		try {
@@ -47,7 +49,7 @@ public class HttpDriver extends Driver {
 	 * Default constructor.
 	 */
 	public HttpDriver() {
-		super("http");
+		super(JDBC_HTTP_PREFIX);
 	}
 
 	@Override public Connection connect(String url, Properties info) throws SQLException {
@@ -64,9 +66,13 @@ public class HttpDriver extends Driver {
 				}
 				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, info), HttpConnection.hasDebug(info));
 			}
+			else {
+				throw new SQLException("JDBC url is not bad");
+			}
 		} catch (MalformedURLException e) {
 			throw new SQLException(e);
 		}
+
 		return connection;
 	}
 

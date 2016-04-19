@@ -38,24 +38,12 @@ public abstract class Driver implements java.sql.Driver {
 	protected static final String JDBC_PREFIX = "jdbc";
 
 	/**
-	 * Driver pefix for the connection url.
+	 * Driver prefix for the connection url.
 	 */
 	protected String DRIVER_PREFIX;
 
-	public static String DRIVERS_BOLT = "it.larusba.neo4j.jdbc.bolt.BoltDriver";
-	public static String DRIVERS_HTTP = "it.larusba.neo4j.jdbc.http.HttpDriver";
-	public static String[] DRIVERS = new String[] { DRIVERS_BOLT, DRIVERS_HTTP };
-	static {
-		for (String driver : DRIVERS) {
-			try {
-				Class.forName(driver);
-			} catch (ClassNotFoundException e) {
-			}
-		}
-	}
-
 	/**
-	 * Default constructor.
+	 * Constructor for extended class.
 	 *
 	 * @param prefix Prefix of the driver for the connection url.
 	 */
@@ -91,8 +79,15 @@ public abstract class Driver implements java.sql.Driver {
 		}
 		String[] pieces = url.split(":");
 		if (pieces.length > 2) {
-			if (JDBC_PREFIX.equals(pieces[0]) && DRIVER_PREFIX.equals(pieces[1])) {
-				return true;
+			if (JDBC_PREFIX.equals(pieces[0])) {
+				if (DRIVER_PREFIX != null) {
+					if(DRIVER_PREFIX.equals(pieces[1])) {
+						return true;
+					}
+				}
+				else {
+					return true;
+				}
 			}
 		}
 		return false;

@@ -38,6 +38,8 @@ import static org.neo4j.driver.v1.Config.build;
  */
 public class BoltDriver extends Driver {
 
+	public final static String JDBC_BOLT_PREFIX = "bolt";
+
 	static {
 		try {
 			DriverManager.registerDriver(new BoltDriver());
@@ -50,7 +52,7 @@ public class BoltDriver extends Driver {
      * Default constructor.
      */
     public BoltDriver() {
-        super("bolt");
+        super(JDBC_BOLT_PREFIX);
     }
 
 	@Override public Connection connect(String url, Properties info) throws SQLException {

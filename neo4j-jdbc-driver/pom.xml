@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>Neo4j JDBC Driver Packaging</name>
+    <description>Module to package Neo4j JDBC Driver into one jar</description>
+
+    <parent>
+        <groupId>it.larus-ba</groupId>
+        <artifactId>neo4j-jdbc-parent</artifactId>
+        <version>3.0-M02</version>
+    </parent>
+
+    <groupId>it.larus-ba</groupId>
+    <artifactId>neo4j-jdbc-driver</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>it.larus-ba</groupId>
+            <artifactId>neo4j-jdbc-bolt</artifactId>
+            <version>3.0-M02</version>
+        </dependency>
+        <dependency>
+            <groupId>it.larus-ba</groupId>
+            <artifactId>neo4j-jdbc-http</artifactId>
+            <version>3.0-M02</version>
+        </dependency>
+    </dependencies>
+
+</project>

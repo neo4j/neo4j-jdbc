@@ -119,7 +119,7 @@ public abstract class Connection implements java.sql.Connection {
 	 *
 	 * @param resultSetHoldability The holdability value to check
 	 * @throws SQLException
-	 * @See {@link java.sql.Connection#setHoldability(int)}
+	 * {@link java.sql.Connection#setHoldability(int)}
 	 */
 	protected void checkHoldabilityParams(int resultSetHoldability) throws SQLException {
 		// @formatter:off
