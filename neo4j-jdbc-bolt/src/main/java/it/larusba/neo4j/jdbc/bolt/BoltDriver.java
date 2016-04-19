@@ -55,6 +55,7 @@ public class BoltDriver extends Driver {
 		if (url == null) {
 			throw new SQLException("null is not a valid url");
 		}
+		info = (info == null ? info : new Properties());
 		Connection connection = null;
 		if (acceptsURL(url)) {
 			url = url.replace("jdbc:", "");
