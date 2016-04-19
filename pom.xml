@@ -10,6 +10,7 @@
 
     <name>Neo4j JDBC Driver Parent</name>
     <description>Parent POM for Neo4j JDBC Driver and Modules</description>
+    <url>https://github.com/larusba/neo4j-jdbc</url>
 
     <modules>
         <module>neo4j-jdbc</module>
@@ -46,6 +47,12 @@
             <email>gianmarco.laggia@larus-ba.it</email>
         </developer>
     </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:larusba/neo4j-jdbc.git</connection>
+        <developerConnection>scm:git:git@github.com:larusba/neo4j-jdbc.git</developerConnection>
+        <url>git@github.com:larusba/neo4j-jdbc.git</url>
+    </scm>
 
     <dependencies>
         <dependency>
@@ -139,4 +146,20 @@
             </build>
         </profile>
     </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.3</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
