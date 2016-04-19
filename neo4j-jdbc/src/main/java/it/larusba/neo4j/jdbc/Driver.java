@@ -38,7 +38,7 @@ public abstract class Driver implements java.sql.Driver {
 	protected static final String JDBC_PREFIX = "jdbc";
 
 	/**
-	 * Driver perfix for the connection url.
+	 * Driver pefix for the connection url.
 	 */
 	protected String DRIVER_PREFIX;
 

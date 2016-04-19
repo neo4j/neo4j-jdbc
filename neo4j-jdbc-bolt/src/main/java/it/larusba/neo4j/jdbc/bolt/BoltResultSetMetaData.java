@@ -35,15 +35,24 @@ import java.util.List;
  */
 public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable {
 
-	StatementResult iterator = null;
-	private boolean      loggable = false;
-	private List<String> keys     = null;
+	private StatementResult iterator = null;
+	private boolean         loggable = false;
 
+	/**
+	 * Default constructor with result iterator and list of column name.
+	 *
+	 * @param iterator The result iterator
+	 * @param keys     List of column name (ie. key)
+	 */
 	BoltResultSetMetaData(StatementResult iterator, List<String> keys) {
+		super(keys);
 		this.iterator = iterator;
-		this.keys = keys;
 	}
 
+	/**
+	 * Override the default implementation.
+	 * If the result iterator is not initialized, we throw an exception.
+	 */
 	@Override public int getColumnCount() throws SQLException {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
@@ -51,62 +60,30 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 		return this.keys.size();
 	}
 
-	@Override public int getColumnDisplaySize(int column) throws SQLException {
-		int type = this.getColumnType(column);
-		int value = 0;
-		if (type == Types.VARCHAR) {
-			value = 40;
-		} else if (type == Types.INTEGER) {
-			value = 10;
-		} else if (type == Types.BOOLEAN) {
-			value = 5;
-		} else if (type == Types.FLOAT) {
-			value = 15;
-		} else if (type == Types.JAVA_OBJECT) {
-			value = 60;
-		}
-		return value;
-	}
-
-	@Override public String getColumnLabel(int column) throws SQLException {
-		return this.getColumnName(column);
-	}
-
-	@Override public String getColumnName(int column) throws SQLException {
-		if (this.keys == null || column > this.keys.size() || column <= 0) {
-			throw new SQLException("Column out of range");
-		}
-		return this.keys.get(column - 1);
-	}
-
-	@Override public String getCatalogName(int column) throws SQLException {
-		return ""; //not applicable
-	}
-
 	@Override public int getColumnType(int column) throws SQLException {
 		Type type = this.iterator.peek().get(column - 1).type();
 
 		int resultType = 0;
 
-		if(InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
 			resultType = Types.VARCHAR;
 		}
-		if(InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
 			resultType = Types.INTEGER;
 		}
-		if(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
 			resultType = Types.BOOLEAN;
 		}
-		if(InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
 			resultType = Types.FLOAT;
 		}
-		if(InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
 			resultType = Types.JAVA_OBJECT;
 		}
-		if(InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)) {
 			resultType = Types.JAVA_OBJECT;
 		}
-		if(InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)){
+		if (InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)) {
 			resultType = Types.JAVA_OBJECT;
 		}
 
@@ -116,6 +93,10 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	@Override public String getColumnTypeName(int column) throws SQLException {
 		return this.iterator.peek().get(column - 1).type().name();
 	}
+
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return this.loggable;

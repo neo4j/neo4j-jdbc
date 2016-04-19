@@ -20,6 +20,9 @@
 package it.larusba.neo4j.jdbc;
 
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author AgileLARUS
@@ -27,15 +30,73 @@ import java.sql.SQLException;
  */
 public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 
-	@Override public abstract int getColumnCount() throws SQLException;
+	/**
+	 * List of column of the ResultSet
+	 */
+	protected final List<String> keys;
+
+	/**
+	 * Default constructor with the list of column.
+	 *
+	 * @param keys List of column of the ResultSet
+	 */
+	protected ResultSetMetaData(List<String> keys) {
+		if (keys != null) {
+			this.keys = keys;
+		}
+		else {
+			this.keys = new ArrayList<>();
+		}
+	}
+
+	/*------------------------------------*/
+	/*       Default implementation       */
+	/*------------------------------------*/
+
+	@Override public int getColumnCount() throws SQLException {
+		int result = 0;
+		// just a preventing test for mockito
+		// otherwise it's not needed
+		if(this.keys != null) {
+			result = this.keys.size();
+		}
+		return result;
+	}
+
+	@Override public String getColumnLabel(int column) throws SQLException {
+		return this.getColumnName(column);
+	}
+
+	@Override public String getColumnName(int column) throws SQLException {
+		if (this.keys == null || column > this.keys.size() || column <= 0) {
+			throw new SQLException("Column out of range");
+		}
+		return this.keys.get(column - 1);
+	}
+
+	@Override public String getCatalogName(int column) throws SQLException {
+		return ""; //not applicable
+	}
+
+	@Override public int getColumnDisplaySize(int column) throws SQLException {
+		int type = this.getColumnType(column);
+		int value = 0;
+		if (type == Types.VARCHAR) {
+			value = 40;
+		} else if (type == Types.INTEGER) {
+			value = 10;
+		} else if (type == Types.BOOLEAN) {
+			value = 5;
+		} else if (type == Types.FLOAT) {
+			value = 15;
+		} else if (type == Types.JAVA_OBJECT) {
+			value = 60;
+		}
+		return value;
+	}
 
 	@Override public boolean isAutoIncrement(int column) throws SQLException {
 		return false;
-	}
-
-	@Override public boolean isCaseSensitive(int column) throws SQLException {
-		//TODO check if is String
-		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	@Override public boolean isSearchable(int column) throws SQLException {
@@ -57,16 +118,6 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return false;
 	}
 
-	@Override public abstract int getColumnDisplaySize(int column) throws SQLException;
-
-	@Override public abstract String getColumnLabel(int column) throws SQLException;
-
-	@Override public abstract String getColumnName(int column) throws SQLException;
-
-	@Override public String getSchemaName(int column) throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
 	@Override public int getPrecision(int column) throws SQLException {
 		return 0;
 	}
@@ -75,15 +126,37 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return 0;
 	}
 
-	@Override public String getTableName(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
+		return Wrapper.unwrap(iface, this);
 	}
 
-	@Override public abstract String getCatalogName(int column) throws SQLException;
+	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	/*-----------------------------*/
+	/*       Abstract method       */
+	/*-----------------------------*/
 
 	@Override public abstract int getColumnType(int column) throws SQLException;
 
 	@Override public abstract String getColumnTypeName(int column) throws SQLException;
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
+
+	@Override public String getSchemaName(int column) throws SQLException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override public boolean isCaseSensitive(int column) throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
+
+	@Override public String getTableName(int column) throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
 
 	@Override public boolean isReadOnly(int column) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -101,11 +174,4 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		return Wrapper.unwrap(iface, this);
-	}
-
-	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return Wrapper.isWrapperFor(iface, this.getClass());
-	}
 }

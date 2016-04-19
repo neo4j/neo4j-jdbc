@@ -282,10 +282,12 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public int getConcurrency() throws SQLException {
+		checkClosed();
 		return CONCUR_READ_ONLY;
 	}
 
 	@Override public int getHoldability() throws SQLException {
+		checkClosed();
 		return CLOSE_CURSORS_AT_COMMIT;
 	}
 

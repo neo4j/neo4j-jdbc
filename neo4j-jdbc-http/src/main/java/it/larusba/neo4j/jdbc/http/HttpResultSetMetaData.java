@@ -29,33 +29,12 @@ import java.util.List;
 public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable {
 
 	private boolean      loggable = false;
-	private List<String> keys     = null;
 
+	/**
+	 * Default constructor.
+	 */
 	HttpResultSetMetaData(Neo4jResult result) {
-		this.keys = result.columns;
-	}
-
-	@Override public int getColumnCount() throws SQLException {
-		return this.keys.size();
-	}
-
-	@Override public int getColumnDisplaySize(int column) throws SQLException {
-		return 0;
-	}
-
-	@Override public String getColumnLabel(int column) throws SQLException {
-		return this.getColumnName(column);
-	}
-
-	@Override public String getColumnName(int column) throws SQLException {
-		if (this.keys == null || column > this.keys.size() || column <= 0) {
-			throw new SQLException("Column out of range");
-		}
-		return this.keys.get(column - 1);
-	}
-
-	@Override public String getCatalogName(int column) throws SQLException {
-		return ""; //not applicable
+		super(result.columns);
 	}
 
 	@Override public int getColumnType(int column) throws SQLException {
@@ -65,6 +44,10 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 	@Override public String getColumnTypeName(int column) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
+
+	/*--------------------*/
+	/*       Logger       */
+	/*--------------------*/
 
 	@Override public boolean isLoggable() {
 		return this.loggable;

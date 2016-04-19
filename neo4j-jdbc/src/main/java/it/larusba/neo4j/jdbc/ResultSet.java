@@ -33,33 +33,83 @@ import java.util.Map;
  */
 public abstract class ResultSet implements java.sql.ResultSet {
 
+	/*------------------------------------*/
+	/*       Default implementation       */
+	/*------------------------------------*/
+
+	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
+		return Wrapper.unwrap(iface, this);
+	}
+
+	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	/*-----------------------------*/
+	/*       Abstract method       */
+	/*-----------------------------*/
+
+	@Override public abstract int getType() throws SQLException;
+
+	@Override public abstract int getConcurrency() throws SQLException;
+
+	@Override public abstract int getHoldability() throws SQLException;
+
+	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
+
+	@Override public abstract int findColumn(String columnLabel) throws SQLException;
+
 	@Override public abstract boolean next() throws SQLException;
 
 	@Override public abstract void close() throws SQLException;
+
+	@Override public abstract boolean isClosed() throws SQLException;
 
 	@Override public abstract boolean wasNull() throws SQLException;
 
 	@Override public abstract String getString(int columnIndex) throws SQLException;
 
+	@Override public abstract String getString(String columnLabel) throws SQLException;
+
 	@Override public abstract boolean getBoolean(int columnIndex) throws SQLException;
 
-	@Override public byte getByte(int columnIndex) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public abstract short getShort(int columnIndex) throws SQLException;
-
-	@Override public abstract int getInt(int columnIndex) throws SQLException;
-
-	@Override public abstract long getLong(int columnIndex) throws SQLException;
-
-	@Override public abstract float getFloat(int columnIndex) throws SQLException;
-
-	@Override public abstract double getDouble(int columnIndex) throws SQLException;
+	@Override public abstract boolean getBoolean(String columnLabel) throws SQLException;
 
 	@Override public abstract Array getArray(int columnIndex) throws SQLException;
 
 	@Override public abstract Array getArray(String columnLabel) throws SQLException;
+
+	@Override public abstract short getShort(int columnIndex) throws SQLException;
+
+	@Override public abstract short getShort(String columnLabel) throws SQLException;
+
+	@Override public abstract int getInt(int columnIndex) throws SQLException;
+
+	@Override public abstract int getInt(String columnLabel) throws SQLException;
+
+	@Override public abstract long getLong(int columnIndex) throws SQLException;
+
+	@Override public abstract long getLong(String columnLabel) throws SQLException;
+
+	@Override public abstract float getFloat(int columnIndex) throws SQLException;
+
+	@Override public abstract float getFloat(String columnLabel) throws SQLException;
+
+	@Override public abstract double getDouble(int columnIndex) throws SQLException;
+
+	@Override public abstract double getDouble(String columnLabel) throws SQLException;
+
+	@Override public abstract Object getObject(int columnIndex) throws SQLException;
+
+	@Override public abstract Object getObject(String columnLabel) throws SQLException;
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
+
+	@Override public byte getByte(int columnIndex) throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
 
 	@Override public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -93,23 +143,9 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public abstract String getString(String columnLabel) throws SQLException;
-
-	@Override public abstract boolean getBoolean(String columnLabel) throws SQLException;
-
 	@Override public byte getByte(String columnLabel) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	@Override public abstract short getShort(String columnLabel) throws SQLException;
-
-	@Override public abstract int getInt(String columnLabel) throws SQLException;
-
-	@Override public abstract long getLong(String columnLabel) throws SQLException;
-
-	@Override public abstract float getFloat(String columnLabel) throws SQLException;
-
-	@Override public abstract double getDouble(String columnLabel) throws SQLException;
 
 	@Override public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -154,14 +190,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	@Override public String getCursorName() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
-
-	@Override public abstract Object getObject(int columnIndex) throws SQLException;
-
-	@Override public abstract Object getObject(String columnLabel) throws SQLException;
-
-	@Override public abstract int findColumn(String columnLabel) throws SQLException;
 
 	@Override public Reader getCharacterStream(int columnIndex) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -242,10 +270,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	@Override public int getFetchSize() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
-
-	@Override public abstract int getType() throws SQLException;
-
-	@Override public abstract int getConcurrency() throws SQLException;
 
 	@Override public boolean rowUpdated() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -557,10 +581,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public abstract int getHoldability() throws SQLException;
-
-	@Override public abstract boolean isClosed() throws SQLException;
-
 	@Override public void updateNString(int columnIndex, String nString) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -737,11 +757,4 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		return Wrapper.unwrap(iface, this);
-	}
-
-	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return Wrapper.isWrapperFor(iface, this.getClass());
-	}
 }
