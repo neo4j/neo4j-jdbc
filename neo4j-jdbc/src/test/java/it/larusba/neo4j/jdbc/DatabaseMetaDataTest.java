@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
 
 import java.sql.SQLException;
 
@@ -85,22 +86,22 @@ public class DatabaseMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getDriverVersionShouldBeCorrect() throws SQLException {
-		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		DatabaseMetaData databaseMetaData = new DatabaseMetaData(null, false){};
 		assertNotNull(databaseMetaData.getDriverVersion());
 	}
 
 	@Test public void getDriverMajorVersionShouldBeCorrect() throws SQLException {
-		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		DatabaseMetaData databaseMetaData = new DatabaseMetaData(null, false){};
 		assertNotEquals(-1, databaseMetaData.getDriverVersion());
 	}
 
 	@Test public void getDriverMinorVersionShouldBeCorrect() throws SQLException {
-		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		DatabaseMetaData databaseMetaData = new DatabaseMetaData(null, false){};
 		assertNotEquals(-1, databaseMetaData.getDriverVersion());
 	}
 
 	@Test public void getDriverVersionShouldReturnNegativeNumberOnBadVersion() throws SQLException {
-		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 
 		when(databaseMetaData.getDriverVersion()).thenReturn("Unknown");
 		assertEquals(-1, databaseMetaData.getDriverMajorVersion());
@@ -108,7 +109,7 @@ public class DatabaseMetaDataTest {
 	}
 
 	@Test public void getDriverVersionShouldBeCorrectOnSomeExampleVersions() throws SQLException {
-		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().useConstructor().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 
 		when(databaseMetaData.getDriverVersion()).thenReturn("3.0");
 		assertEquals(3, databaseMetaData.getDriverMajorVersion());
@@ -118,4 +119,5 @@ public class DatabaseMetaDataTest {
 		assertEquals(3, databaseMetaData.getDriverMajorVersion());
 		assertEquals(1, databaseMetaData.getDriverMinorVersion());
 	}
+
 }

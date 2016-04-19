@@ -44,14 +44,40 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 */
 	private final static Pattern VERSION_REGEX = Pattern.compile("^(\\d+)\\.(\\d+)(\\.|-)?(.*)?$");
 
+	/**
+	 * Name of the driver.
+	 */
 	private String driverName;
+
+	/**
+	 * Version of the driver.
+	 */
 	private String driverVersion;
+
+	/**
+	 * Database version.
+	 */
+	protected String databaseVersion = "Unknown";
+
+	/**
+	 * The JDBC connection.
+	 */
+	private Connection connection;
+
+	/**
+	 * Do we are in debug mode ?
+	 */
+	protected boolean debug = false;
 
 	/**
 	 * Default constructor.
 	 * Permit to load version and driver name from a property file.
 	 */
-	public DatabaseMetaData() {
+	public DatabaseMetaData(Connection connection, boolean debug) {
+		this.connection = connection;
+		this.debug = debug;
+
+		// Compute driver version, name, ...
 		try (InputStream stream = DatabaseMetaData.class.getResourceAsStream("/neo4j-jdbc-driver.properties")){
 			Properties properties = new Properties();
 			properties.load(stream);
@@ -64,6 +90,163 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		}
 	}
 
+	/**
+	 * Extract a part of a Version
+	 *
+	 * @param version The string representation of a version
+	 * @param position 1 for the major, 2 for minor and 3 for revision
+	 * @return The corresponding driver version part if it's possible, otherwise -1
+	 */
+	protected int extractVersionPart(String version, int position) {
+		int result = -1;
+		try {
+			Matcher matcher = VERSION_REGEX.matcher(this.getDriverVersion());
+			if(matcher.find()) {
+				result = Integer.valueOf(matcher.group(position));
+			}
+		} catch (SQLException e) {
+			// silent exception, but there is the default value
+		}
+		return result;
+	}
+
+	public <T> T unwrap(Class<T> iface) throws SQLException {
+		return Wrapper.unwrap(iface, this);
+	}
+
+	public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	/*------------------------------------*/
+	/*       Default implementation       */
+	/*------------------------------------*/
+
+	@Override public java.sql.Connection getConnection() throws SQLException {
+		return this.connection;
+	}
+
+	@Override public String getDriverName() throws SQLException {
+		return this.driverName;
+	}
+
+	@Override public String getDriverVersion() throws SQLException {
+		return this.driverVersion;
+	}
+
+	@Override public int getDriverMajorVersion() {
+		return this.extractVersionPart(driverVersion, 1);
+	}
+
+	@Override public int getDriverMinorVersion() {
+		return this.extractVersionPart(driverVersion, 2);
+	}
+
+	@Override public String getDatabaseProductName() throws SQLException {
+		return "Neo4j";
+	}
+
+	@Override public String getDatabaseProductVersion() throws SQLException {
+		return this.databaseVersion;
+	}
+
+	@Override public int getDatabaseMajorVersion() throws SQLException {
+		return this.extractVersionPart(driverVersion, 1);
+	}
+
+	@Override public int getDatabaseMinorVersion() throws SQLException {
+		return this.extractVersionPart(driverVersion, 2);
+	}
+
+	@Override public int getJDBCMajorVersion() throws SQLException {
+		return 4;
+	}
+
+	@Override public int getJDBCMinorVersion() throws SQLException {
+		return 0;
+	}
+
+	@Override public String getIdentifierQuoteString() throws SQLException {
+		return "\"";
+	}
+
+	@Override public String getSQLKeywords() throws SQLException {
+		return "";
+	}
+
+	@Override public String getNumericFunctions() throws SQLException {
+		return "";
+	}
+
+	@Override public String getStringFunctions() throws SQLException {
+		return "";
+	}
+
+	@Override public String getTimeDateFunctions() throws SQLException {
+		return "";
+	}
+
+	@Override public String getExtraNameCharacters() throws SQLException {
+		return "";
+	}
+
+	@Override public boolean supportsMultipleResultSets() throws SQLException {
+		return false;
+	}
+
+	@Override public String getCatalogTerm() throws SQLException {
+		return null;
+	}
+
+	@Override public String getCatalogSeparator() throws SQLException {
+		return "";
+	}
+
+	@Override public boolean supportsSchemasInDataManipulation() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean supportsSchemasInTableDefinitions() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean supportsCatalogsInDataManipulation() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean supportsCatalogsInProcedureCalls() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean supportsCatalogsInTableDefinitions() throws SQLException {
+		return false;
+	}
+
+	@Override public int getDefaultTransactionIsolation() throws SQLException {
+		return 0;
+	}
+
+	@Override public boolean supportsTransactions() throws SQLException {
+		return true;
+	}
+
+	@Override public ResultSet getSchemas() throws SQLException {
+		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
+	}
+
+	@Override public ResultSet getCatalogs() throws SQLException {
+		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
+	}
+
+	@Override public ResultSet getTableTypes() throws SQLException {
+		List<Object> list = Arrays.asList("TABLE");
+		return new ListResultSet(Arrays.asList(list), Arrays.asList("TABLE_TYPE"));
+	}
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
+
 	@Override public boolean allProceduresAreCallable() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -72,14 +255,17 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
+	// this can be implemented
 	@Override public String getURL() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
+	// this can be implemented
 	@Override public String getUserName() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
+	// it's always false with neo4j no ?
 	@Override public boolean isReadOnly() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -98,30 +284,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public String getDatabaseProductName() throws SQLException {
-		return "Neo4j";
-	}
-
-	@Override public String getDatabaseProductVersion() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public String getDriverName() throws SQLException {
-		return this.driverName;
-	}
-
-	@Override public String getDriverVersion() throws SQLException {
-		return this.driverVersion;
-	}
-
-	@Override public int getDriverMajorVersion() {
-		return this.extractVersionPart(driverVersion, 1);
-	}
-
-	@Override public int getDriverMinorVersion() {
-		return this.extractVersionPart(driverVersion, 2);
 	}
 
 	@Override public boolean usesLocalFiles() throws SQLException {
@@ -164,36 +326,12 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getIdentifierQuoteString() throws SQLException {
-		return "\"";
-	}
-
-	@Override public String getSQLKeywords() throws SQLException {
-		return "";
-	}
-
-	@Override public String getNumericFunctions() throws SQLException {
-		return "";
-	}
-
-	@Override public String getStringFunctions() throws SQLException {
-		return "";
-	}
-
 	@Override public String getSystemFunctions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getTimeDateFunctions() throws SQLException {
-		return "";
-	}
-
 	@Override public String getSearchStringEscape() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public String getExtraNameCharacters() throws SQLException {
-		return "";
 	}
 
 	@Override public boolean supportsAlterTableWithAddColumn() throws SQLException {
@@ -252,10 +390,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsMultipleResultSets() throws SQLException {
-		return false;
-	}
-
 	@Override public boolean supportsMultipleTransactions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -312,28 +446,12 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getCatalogTerm() throws SQLException {
-		return null;
-	}
-
 	@Override public boolean isCatalogAtStart() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getCatalogSeparator() throws SQLException {
-		return "";
-	}
-
-	@Override public boolean supportsSchemasInDataManipulation() throws SQLException {
-		return false;
-	}
-
 	@Override public boolean supportsSchemasInProcedureCalls() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public boolean supportsSchemasInTableDefinitions() throws SQLException {
-		return false;
 	}
 
 	@Override public boolean supportsSchemasInIndexDefinitions() throws SQLException {
@@ -342,18 +460,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public boolean supportsCatalogsInDataManipulation() throws SQLException {
-		return false;
-	}
-
-	@Override public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-		return false;
-	}
-
-	@Override public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-		return false;
 	}
 
 	@Override public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
@@ -508,14 +614,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getDefaultTransactionIsolation() throws SQLException {
-		return 0;
-	}
-
-	@Override public boolean supportsTransactions() throws SQLException {
-		return true;
-	}
-
 	@Override public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -547,19 +645,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public ResultSet getSchemas() throws SQLException {
-		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
-	}
-
-	@Override public ResultSet getCatalogs() throws SQLException {
-		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
-	}
-
-	@Override public ResultSet getTableTypes() throws SQLException {
-		List<Object> list = Arrays.asList("TABLE");
-		return new ListResultSet(Arrays.asList(list), Arrays.asList("TABLE_TYPE"));
 	}
 
 	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
@@ -659,8 +744,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public abstract java.sql.Connection getConnection() throws SQLException;
-
 	@Override public boolean supportsSavepoints() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -694,22 +777,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public int getResultSetHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public int getDatabaseMajorVersion() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public int getDatabaseMinorVersion() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public int getJDBCMajorVersion() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public int getJDBCMinorVersion() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
@@ -762,31 +829,4 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public <T> T unwrap(Class<T> iface) throws SQLException {
-		return Wrapper.unwrap(iface, this);
-	}
-
-	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return Wrapper.isWrapperFor(iface, this.getClass());
-	}
-
-	/**
-	 * Extract a part of a Version
-	 *
-	 * @param version The string representation of a version
-	 * @param position 1 for the major, 2 for minor and 3 for revision
-	 * @return The corresponding driver version part if it's possible, otherwise -1
-	 */
-	protected int extractVersionPart(String version, int position) {
-		int result = -1;
-		try {
-			Matcher matcher = VERSION_REGEX.matcher(this.getDriverVersion());
-			if(matcher.find()) {
-				result = Integer.valueOf(matcher.group(position));
-			}
-		} catch (SQLException e) {
-			// silent exception, but there is the default value
-		}
-		return result;
-	}
 }

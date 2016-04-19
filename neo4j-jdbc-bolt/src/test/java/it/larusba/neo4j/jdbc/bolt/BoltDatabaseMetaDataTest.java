@@ -45,10 +45,8 @@ public class BoltDatabaseMetaDataTest {
 
 	@Test public void getConnectionShouldGetConnection() throws SQLException, NoSuchFieldException, IllegalAccessException {
 		BoltConnection connection = Mockito.mock(BoltConnection.class);
-		BoltDatabaseMetaData boltDatabaseMetaData = new BoltDatabaseMetaData(null);
-		Field field = BoltDatabaseMetaData.class.getDeclaredField("connection");
-		field.setAccessible(true);
-		field.set(boltDatabaseMetaData, connection);
+		BoltDatabaseMetaData boltDatabaseMetaData = new BoltDatabaseMetaData(connection);
+
 		assertEquals(connection, boltDatabaseMetaData.getConnection());
 	}
 }

@@ -35,14 +35,8 @@ import java.sql.SQLException;
  */
 public class BoltDatabaseMetaData extends DatabaseMetaData {
 
-	private String databaseVersion = "Unknown";
-	private BoltConnection connection;
-	private boolean debug = false;
-
 	public BoltDatabaseMetaData(BoltConnection connection, boolean debug) {
-		super();
-		this.connection = connection;
-		this.debug = debug;
+		super(connection, debug);
 
 		// compute database version
 		if (connection != null && connection.getSession() != null) {
@@ -63,19 +57,4 @@ public class BoltDatabaseMetaData extends DatabaseMetaData {
 		this(connection, false);
 	}
 
-	@Override public Connection getConnection() throws SQLException {
-		return this.connection;
-	}
-
-	@Override public String getDatabaseProductVersion() throws SQLException {
-		return databaseVersion;
-	}
-
-	@Override public int getDatabaseMajorVersion() {
-		return extractVersionPart(databaseVersion, 1);
-	}
-
-	@Override public int getDatabaseMinorVersion() {
-		return extractVersionPart(databaseVersion, 2);
-	}
 }
