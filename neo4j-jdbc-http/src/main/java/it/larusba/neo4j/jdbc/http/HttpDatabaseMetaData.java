@@ -35,6 +35,11 @@ public class HttpDatabaseMetaData extends DatabaseMetaData {
 
 	public HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
 		super(connection, debug);
+
+		// compute database version
+		if (connection != null && connection.executor != null ) {
+			this.databaseVersion = connection.executor.getServerVersion();
+		}
 	}
 
 	public HttpDatabaseMetaData(HttpConnection connection) {

@@ -113,6 +113,10 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		Assert.assertEquals(2, response.results.get(0).rows.size());
 	}
 
+	@Test public void getServerVersionShouldSucceed() throws SQLException {
+		Assert.assertNotEquals("Unknown", executor.getServerVersion());
+	}
+
 	@After public void after() throws SQLException {
 		executor.close();
 	}

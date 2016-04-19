@@ -24,10 +24,7 @@ import org.apache.http.Header;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -37,9 +34,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -213,8 +212,38 @@ public class CypherExecutor {
 	}
 
 	/**
+	 * Retrieve the Neo4j version from the server.
+	 *
+	 * @return A string that represent the neo4j server version
+	 */
+	public String getServerVersion() {
+		String result = "Unknown";
+
+		// Prepare the headers query
+		HttpGet request = new HttpGet(this.transactionUrl.replace("/db/data/transaction", "/db/manage/server/version"));
+
+		// Adding default headers to the request
+		for (Header header : this.getDefaultHeaders()) {
+			request.addHeader(header.getName(), header.getValue());
+		}
+
+		// Make the request
+		try (CloseableHttpResponse response = http.execute(request)) {
+			try (InputStream is = response.getEntity().getContent()) {
+				Map body = mapper.readValue(is, Map.class);
+				result = (String) body.getOrDefault("version", result);
+			}
+		} catch (Exception e) {
+			// do nothing there is the default value
+		}
+
+		return result;
+	}
+
+	/**
 	 * Close all thing in this object.
 	 */
+
 	public void close() throws SQLException {
 		try {
 			http.close();

@@ -31,7 +31,7 @@ import java.util.Properties;
 
 public class HttpConnection extends Connection implements Loggable {
 
-	private CypherExecutor executor;
+	protected CypherExecutor executor;
 	private boolean isClosed = false;
 	private boolean loggable = false;
 
