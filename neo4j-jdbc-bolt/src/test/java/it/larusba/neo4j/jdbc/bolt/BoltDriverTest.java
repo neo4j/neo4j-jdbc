@@ -68,7 +68,7 @@ import static org.mockito.Matchers.eq;
 		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
 
 		Driver driver = new BoltDriver();
-		Connection connection = driver.connect("jdbc:bolt://test", new Properties());
+		Connection connection = driver.connect("jdbc:bolt://test", null);
 		assertNotNull(connection);
 	}
 
