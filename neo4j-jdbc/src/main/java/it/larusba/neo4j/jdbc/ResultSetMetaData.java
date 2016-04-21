@@ -134,13 +134,19 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return Wrapper.isWrapperFor(iface, this.getClass());
 	}
 
-	/*-----------------------------*/
-	/*       Abstract method       */
-	/*-----------------------------*/
+	/**
+	 * By default, every field are string ...
+	 */
+	@Override public int getColumnType(int column) throws SQLException {
+		return Types.VARCHAR;
+	}
 
-	@Override public abstract int getColumnType(int column) throws SQLException;
-
-	@Override public abstract String getColumnTypeName(int column) throws SQLException;
+	/**
+	 * By default, every field are string ...
+	 */
+	@Override public String getColumnTypeName(int column) throws SQLException {
+		return "String";
+	}
 
 	/*---------------------------------*/
 	/*       Not implemented yet       */

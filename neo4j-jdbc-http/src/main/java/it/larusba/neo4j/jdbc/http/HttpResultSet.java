@@ -59,6 +59,11 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 */
 	private List<Object> currentRow;
 
+	/**
+	 * Is the last read column was null.
+	 */
+	private boolean wasNull = false;
+
 	private boolean loggable;
 	private boolean isClosed = false;
 
@@ -85,7 +90,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	/**
-	 * Retrieve the object that math the asked column.
+	 * Retrieve the object that match the asked column.
 	 *
 	 * @param column Index of the column to retrieve
 	 * @return
@@ -97,6 +102,13 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		}
 
 		Object value = currentRow.get(column - 1);
+
+		if(value == null) {
+			wasNull = true;
+		}
+		else{
+			wasNull = false;
+		}
 		return value;
 	}
 
@@ -141,7 +153,8 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public boolean wasNull() throws SQLException {
-		return false;
+		checkClosed();
+		return this.wasNull;
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
@@ -149,27 +162,28 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public String getString(int columnIndex) throws SQLException {
-		String object;
+		String object = null;
 
 		checkClosed();
 		Object value = get(columnIndex);
 
-		final Class<?> type = value.getClass();
+		if(value != null) {
+			final Class<?> type = value.getClass();
 
-		if (String.class.equals(type)) {
-			object = (String) value;
-		} else {
-			if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
-				object = value.toString();
+			if (String.class.equals(type)) {
+				object = (String) value;
 			} else {
-				try {
-					object = OBJECT_MAPPER.writeValueAsString(value);
-				} catch (Exception e) {
-					throw new SQLException("Couldn't convert value " + value + " of type " + type + " to JSON " + e.getMessage());
+				if (type.isPrimitive() || Number.class.isAssignableFrom(type)) {
+					object = value.toString();
+				} else {
+					try {
+						object = OBJECT_MAPPER.writeValueAsString(value);
+					} catch (Exception e) {
+						throw new SQLException("Couldn't convert value " + value + " of type " + type + " to JSON " + e.getMessage());
+					}
 				}
 			}
 		}
-
 		return object;
 	}
 
@@ -273,7 +287,8 @@ public class HttpResultSet extends ResultSet implements Loggable {
 			throw new SQLException("Column " + columnLabel + " is not defined");
 		}
 
-		return index;
+		// here we make +1 because column index for JDBC start at 1, not 0 like an arraylist
+		return index + 1;
 	}
 
 	@Override public int getType() throws SQLException {

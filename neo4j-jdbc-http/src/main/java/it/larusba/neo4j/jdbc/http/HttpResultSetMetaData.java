@@ -37,14 +37,6 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 		super(result.columns);
 	}
 
-	@Override public int getColumnType(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public String getColumnTypeName(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
 	/*--------------------*/
 	/*       Logger       */
 	/*--------------------*/

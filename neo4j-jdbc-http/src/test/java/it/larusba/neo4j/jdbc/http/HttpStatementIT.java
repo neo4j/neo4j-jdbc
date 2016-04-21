@@ -48,6 +48,18 @@ public class HttpStatementIT extends Neo4jHttpIT {
 		connection.close();
 	}
 
+	@Test public void executeQueryWithNullResponseValueShouldExecuteAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Statement statement = connection.createStatement();
+		ResultSet rs = statement.executeQuery("MATCH (n:Person) RETURN n.title AS title");
+
+		assertTrue(rs.next());
+		assertEquals("null", rs.getString("title"));
+		assertTrue(rs.wasNull());
+
+		connection.close();
+	}
+
 	/*------------------------------*/
 	/*         executeUpdate        */
 	/*------------------------------*/
