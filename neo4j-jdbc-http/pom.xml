@@ -7,7 +7,7 @@
     <parent>
         <groupId>it.larus-ba</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
-        <version>3.0-M02</version>
+        <version>3.0-M03</version>
     </parent>
 
     <artifactId>neo4j-jdbc-http</artifactId>

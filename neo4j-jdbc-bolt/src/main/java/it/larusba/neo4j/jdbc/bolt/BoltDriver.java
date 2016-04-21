@@ -55,21 +55,20 @@ public class BoltDriver extends Driver {
         super(JDBC_BOLT_PREFIX);
     }
 
-	@Override public Connection connect(String url, Properties info) throws SQLException {
+	@Override public Connection connect(String url, Properties props) throws SQLException {
 		if (url == null) {
 			throw new SQLException("null is not a valid url");
 		}
-		info = (info != null ? info : new Properties());
 		Connection connection = null;
 		if (acceptsURL(url)) {
 			url = url.replace("jdbc:", "");
 			try {
-				parseUrlProperties(url, info);
+				Properties info = parseUrlProperties(url, props);
 				if (!info.containsKey("noSsl")) {
 					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
 							(info.containsKey("user") && info.containsKey("password") ?
 									AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
-									AuthTokens.none())).session()), BoltConnection.hasDebug(info));
+									AuthTokens.none())).session(), info), BoltConnection.hasDebug(info));
 				} else {
 					Config.ConfigBuilder builder = build();
 					builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
@@ -77,7 +76,7 @@ public class BoltDriver extends Driver {
 					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
 							(info.containsKey("user") && info.containsKey("password") ?
 									AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
-									AuthTokens.none()), config).session()), BoltConnection.hasDebug(info));
+									AuthTokens.none()), config).session(), info), BoltConnection.hasDebug(info));
 				}
 			} catch (Exception e) {
 				throw new SQLException(e);

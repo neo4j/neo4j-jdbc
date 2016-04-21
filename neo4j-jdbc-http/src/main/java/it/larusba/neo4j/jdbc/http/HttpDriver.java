@@ -52,13 +52,12 @@ public class HttpDriver extends Driver {
 		super(JDBC_HTTP_PREFIX);
 	}
 
-	@Override public Connection connect(String url, Properties info) throws SQLException {
-		info = (info == null ? info : new Properties());
+	@Override public Connection connect(String url, Properties params) throws SQLException {
 		Connection connection = null;
 		try {
 			if (acceptsURL(url)) {
 				URL neo4jUrl = new URL(url.replace("jdbc:", ""));
-				parseUrlProperties(url, info);
+				Properties info = parseUrlProperties(url, params);
 				String host = neo4jUrl.getHost();
 				int port = 7474;
 				if (neo4jUrl.getPort() > 0) {

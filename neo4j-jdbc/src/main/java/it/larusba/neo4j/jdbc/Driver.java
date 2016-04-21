@@ -97,9 +97,13 @@ public abstract class Driver implements java.sql.Driver {
 	 * Parse the url string and construct a properties object.
 	 *
 	 * @param url The url to parse
-	 * @param properties The properties
+	 * @param params The properties
 	 */
-	protected Properties parseUrlProperties(String url, Properties properties) {
+	protected Properties parseUrlProperties(String url, Properties params) {
+		Properties properties = new Properties();
+		if(params != null) {
+			properties = params;
+		}
 		if (url.contains("?")) {
 			String urlProps = url.substring(url.indexOf('?') + 1);
 			String[] props = urlProps.split(",");
@@ -114,6 +118,7 @@ public abstract class Driver implements java.sql.Driver {
 				}
 			}
 		}
+
 		return properties;
 	}
 }
