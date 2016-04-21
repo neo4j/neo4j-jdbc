@@ -170,6 +170,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		return "\"";
 	}
 
+	// Here make a list of cypher keyword ?
 	@Override public String getSQLKeywords() throws SQLException {
 		return "";
 	}
@@ -241,6 +242,14 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	@Override public ResultSet getTableTypes() throws SQLException {
 		List<Object> list = Arrays.asList("TABLE");
 		return new ListResultSet(Arrays.asList(list), Arrays.asList("TABLE_TYPE"));
+	}
+
+	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
+		return null;
+	}
+
+	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
+		return null;
 	}
 
 	/*---------------------------------*/
@@ -634,16 +643,8 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
 	@Override public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
 			throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 

@@ -35,7 +35,7 @@ public abstract class Statement implements java.sql.Statement {
 	protected int        maxRows;
 
 	/**
-	 * Default constructor with JDBC connection.s
+	 * Default constructor with JDBC connection.
 	 *
 	 * @param connection The JDBC connection
 	 */
@@ -43,7 +43,7 @@ public abstract class Statement implements java.sql.Statement {
 		this.connection = connection;
 		this.currentResultSet = null;
 		this.currentUpdateCount = -1;
-		this.maxRows = 0;
+		this.maxRows = Integer.parseInt(connection.properties.getProperty("maxRows", "0"));
 	}
 
 	/**
@@ -115,6 +115,41 @@ public abstract class Statement implements java.sql.Statement {
 		return it.larusba.neo4j.jdbc.Wrapper.isWrapperFor(iface, this.getClass());
 	}
 
+	/**
+	 * Some tools call this method, so this just a workaround to make it work.
+	 * If you set the fetch at Integer.MIN_VALUE, or if you put maxRows to -1, there is no exception.
+	 * It's pretty much the same hack as the mysql connector.
+	 */
+	@Override public void setFetchSize(int rows) throws SQLException {
+		this.checkClosed();
+		if (rows != Integer.MIN_VALUE && (this.getMaxRows() > 0 && rows > this.getMaxRows())) {
+			throw new UnsupportedOperationException("Not implemented yet. => maxRow :" + getMaxRows() + " rows :" + rows);
+		}
+	}
+
+	/**
+	 * Some tools call this method, so for now just respond false.
+	 */
+	@Override public boolean getMoreResults() throws SQLException {
+		this.checkClosed();
+		return false;
+	}
+
+	/**
+	 * Some tool call this method, so for now just respond  null.
+	 * It will be possible to implement this an explain.
+	 */
+	@Override public SQLWarning getWarnings() throws SQLException {
+		return null;
+	}
+
+	/**
+	 * Some tool call this method.
+	 */
+	@Override public void clearWarnings() throws SQLException {
+		// nothing yet
+	}
+
 	/*-----------------------------*/
 	/*       Abstract method       */
 	/*-----------------------------*/
@@ -159,10 +194,6 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean getMoreResults() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
 	@Override public int getMaxFieldSize() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -183,14 +214,6 @@ public abstract class Statement implements java.sql.Statement {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public SQLWarning getWarnings() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public void clearWarnings() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
 	@Override public void setCursorName(String name) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
@@ -200,10 +223,6 @@ public abstract class Statement implements java.sql.Statement {
 	}
 
 	@Override public int getFetchDirection() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public void setFetchSize(int rows) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
