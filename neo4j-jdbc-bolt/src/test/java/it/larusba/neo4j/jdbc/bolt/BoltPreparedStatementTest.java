@@ -21,6 +21,7 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.PreparedStatement;
 import it.larusba.neo4j.jdbc.bolt.data.StatementData;
+import it.larusba.neo4j.jdbc.bolt.utils.Mocker;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -732,7 +733,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(null, statement.getResultSet());
 	}
 
-	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException{
+	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
@@ -740,5 +741,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(statement.getResultSet()).thenCallRealMethod();
 
 		statement.getResultSet();
+	}
+
+	/*------------------------------*/
+	/*           addBatch           */
+	/*------------------------------*/
+
+	@Ignore @Test public void addBatchShouldThrowException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "");
+		stmt.addBatch("");
 	}
 }

@@ -24,8 +24,13 @@ import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author AgileLARUS
@@ -40,6 +45,7 @@ public class BoltStatement extends Statement implements Loggable {
 	private int            currentUpdateCount;
 	private boolean        closed;
 	private int            maxRows;
+	private List<String>   batchStatements;
 
 	private boolean loggable = false;
 
@@ -57,6 +63,7 @@ public class BoltStatement extends Statement implements Loggable {
 		this.currentUpdateCount = -1;
 		this.closed = false;
 		this.maxRows = 0;
+		this.batchStatements = new ArrayList<>();
 	}
 
 	private void checkClosed() throws SQLException {
@@ -148,6 +155,40 @@ public class BoltStatement extends Statement implements Loggable {
 			return this.rsParams[0];
 		}
 		return BoltResultSet.DEFAULT_TYPE;
+	}
+
+	@Override public void addBatch(String sql) throws SQLException {
+		this.checkClosed();
+		this.batchStatements.add(sql);
+	}
+
+	@Override public void clearBatch() throws SQLException {
+		this.checkClosed();
+		this.batchStatements.clear();
+	}
+
+	@Override public int[] executeBatch() throws SQLException {
+		this.checkClosed();
+
+		int[] result = new int[0];
+
+		try {
+			for (String query : this.batchStatements) {
+				StatementResult res = this.connection.getSession().run(query);
+				SummaryCounters count = res.consume().counters();
+				result = Arrays.copyOf(result, result.length + 1);
+				result[result.length - 1] = count.nodesCreated() + count.nodesDeleted();
+			}
+		} catch (Exception e) {
+			throw new BatchUpdateException(result, e);
+		}
+
+		return result;
+	}
+
+	@Override public Connection getConnection() throws SQLException {
+		checkClosed();
+		return this.connection;
 	}
 
 	@Override public int getResultSetHoldability() throws SQLException {

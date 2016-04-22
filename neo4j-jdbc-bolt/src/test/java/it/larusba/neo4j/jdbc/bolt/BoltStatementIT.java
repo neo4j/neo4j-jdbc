@@ -97,4 +97,39 @@ public class BoltStatementIT {
 
 		connection.close();
 	}
+
+	/*------------------------------*/
+	/*         executeBatch         */
+	/*------------------------------*/
+	@Test public void executeBatchShouldWork() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+
+		int[] result = statement.executeBatch();
+
+		assertArrayEquals(new int[]{1, 1, 1}, result);
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
+
+	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+		statement.addBatch("wrong query");
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+
+		try {
+			statement.executeBatch();
+			fail();
+		} catch (BatchUpdateException e){
+			assertArrayEquals(new int[]{1, 1}, e.getUpdateCounts());
+		}
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
 }

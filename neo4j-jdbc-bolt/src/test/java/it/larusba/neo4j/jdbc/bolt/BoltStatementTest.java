@@ -21,12 +21,14 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.Connection;
 import it.larusba.neo4j.jdbc.bolt.data.StatementData;
+import it.larusba.neo4j.jdbc.bolt.utils.Mocker;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
@@ -36,9 +38,12 @@ import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.*;
 import static org.junit.Assert.*;
@@ -52,7 +57,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class) @PrepareForTest({ BoltStatement.class, BoltResultSet.class }) public class BoltStatementTest {
+@RunWith(PowerMockRunner.class) @PrepareForTest({ BoltStatement.class, BoltResultSet.class, Session.class }) public class BoltStatementTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -470,4 +475,130 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		statement.getResultSet();
 	}
 
+
+	/*------------------------------*/
+	/*           addBatch           */
+	/*------------------------------*/
+
+	@Test public void addBatchShouldAddStringToStack() throws SQLException {
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
+		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
+		stmt.addBatch(str1);
+		stmt.addBatch(str2);
+
+		assertEquals(Arrays.asList(str1, str2), Whitebox.getInternalState(stmt, "batchStatements"));
+	}
+
+	@Test public void addBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+		stmt.close();
+		stmt.addBatch("");
+	}
+
+	/*------------------------------*/
+	/*          clearBatch          */
+	/*------------------------------*/
+
+	@Test public void clearBatchShouldWork() throws SQLException {
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+		stmt.addBatch("MATCH n WHERE id(n) = 1 SET n.property=1");
+		stmt.addBatch("MATCH n WHERE id(n) = 2 SET n.property=2");
+		stmt.clearBatch();
+
+		assertEquals(Collections.EMPTY_LIST, Whitebox.getInternalState(stmt, "batchStatements"));
+	}
+
+	@Test public void clearBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+		stmt.close();
+		stmt.clearBatch();
+	}
+
+	/*------------------------------*/
+	/*         executeBatch         */
+	/*------------------------------*/
+
+	@Test public void executeBatchShouldWork() throws SQLException {
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
+		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
+		stmt.addBatch(str1);
+		stmt.addBatch(str2);
+
+		Session session = Mockito.mock(Session.class);
+		StatementResult stmtResult = Mockito.mock(StatementResult.class);
+		ResultSummary resultSummary = Mockito.mock(ResultSummary.class);
+		SummaryCounters summaryCounters = Mockito.mock(SummaryCounters.class);
+
+		Mockito.when(session.run(anyString())).thenReturn(stmtResult);
+		Mockito.when(stmtResult.consume()).thenReturn(resultSummary);
+		Mockito.when(resultSummary.counters()).thenReturn(summaryCounters);
+		Mockito.when(summaryCounters.nodesCreated()).thenReturn(1);
+		Mockito.when(summaryCounters.nodesDeleted()).thenReturn(0);
+
+		BoltConnection connection = (BoltConnection) stmt.getConnection();
+		Mockito.when(connection.getSession()).thenReturn(session);
+
+		assertArrayEquals(new int[] { 1, 1 }, stmt.executeBatch());
+	}
+
+	@Test public void executeBatchShouldThrowExceptionOnError() throws SQLException {
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
+		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
+		stmt.addBatch(str1);
+		stmt.addBatch(str2);
+
+		Session session = Mockito.mock(Session.class);
+
+		Mockito.when(session.run(anyString())).thenThrow(Exception.class);
+
+		BoltConnection connection = (BoltConnection) stmt.getConnection();
+		Mockito.when(connection.getSession()).thenReturn(session);
+
+		try {
+			stmt.executeBatch();
+			fail();
+		} catch (BatchUpdateException e) {
+			assertArrayEquals(new int[0], e.getUpdateCounts());
+		}
+	}
+
+	@Test public void executeBatchShouldThrowExceptionOnClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement stmt = new BoltStatement(Mocker.mockConnectionClosed());
+		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
+		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
+		stmt.addBatch(str1);
+		stmt.addBatch(str2);
+		stmt.close();
+
+		stmt.executeBatch();
+	}
+
+	/*------------------------------*/
+	/*         getConnection        */
+	/*------------------------------*/
+
+	@Test public void getConnectionShouldWork() throws SQLException {
+		Statement stmt = new BoltStatement(Mocker.mockConnectionOpen());
+
+		assertNotNull(stmt.getConnection());
+		assertEquals(Mocker.mockConnectionOpen().getClass(), stmt.getConnection().getClass());
+	}
+
+	@Test public void getConnectionShouldThrowExceptionOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Statement stmt = new BoltStatement(Mocker.mockConnectionClosed());
+		stmt.close();
+
+		stmt.getConnection();
+	}
 }

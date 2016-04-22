@@ -106,21 +106,13 @@ public abstract class Statement implements java.sql.Statement {
 
 	@Override public abstract int getResultSetType() throws SQLException;
 
-	@Override public void addBatch(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void addBatch(String sql) throws SQLException;
 
-	@Override public void clearBatch() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void clearBatch() throws SQLException;
 
-	@Override public int[] executeBatch() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int[] executeBatch() throws SQLException;
 
-	@Override public Connection getConnection() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract Connection getConnection() throws SQLException;
 
 	@Override public boolean getMoreResults(int current) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
