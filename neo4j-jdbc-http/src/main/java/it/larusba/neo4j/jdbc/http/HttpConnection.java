@@ -151,8 +151,7 @@ public class HttpConnection extends Connection implements Loggable {
 	}
 
 	@Override public void close() throws SQLException {
-		checkClosed();
-		if (!this.getAutoCommit()) {
+		if (!this.getAutoCommit() && executor.getOpenTransactionId() > 0) {
 			executor.rollback();
 		}
 		executor.close();

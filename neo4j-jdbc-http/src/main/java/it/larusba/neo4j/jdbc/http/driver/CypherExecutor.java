@@ -275,9 +275,9 @@ public class CypherExecutor {
 	/**
 	 * Retrieve the current transaction id.
 	 *
-	 * @return The transaction id
+	 * @return The transaction id, or <code>-1</code> if there is no transaction.
 	 */
-	protected Integer getOpenTransactionId() {
+	public Integer getOpenTransactionId() {
 		return getTransactionId(this.currentTransactionUrl);
 	}
 
