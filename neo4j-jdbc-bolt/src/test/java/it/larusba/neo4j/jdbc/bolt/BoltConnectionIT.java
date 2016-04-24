@@ -108,7 +108,7 @@ public class BoltConnectionIT {
 		Statement writerStmt = writer.createStatement();
 		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
 		Statement readerStmt = reader.createStatement();
-		ResultSet rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		ResultSet rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT_NODES);
 		//Expect to read data
 		assertTrue(rs.next());
 		assertEquals(1, rs.getInt(1));
@@ -116,12 +116,12 @@ public class BoltConnectionIT {
 		//Set autocommit to false
 		writer.setAutoCommit(false);
 		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
-		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT_NODES);
 		//Expect not to find new node
 		assertTrue(rs.next());
 		assertEquals(1, rs.getInt(1));
 		writer.commit();
-		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT_NODES);
 		//Expect to find 2 nodes
 		assertTrue(rs.next());
 		assertEquals(2, rs.getInt(1));
@@ -129,7 +129,7 @@ public class BoltConnectionIT {
 		//Set autocommit to true again
 		writer.setAutoCommit(true);
 		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
-		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT);
+		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT_NODES);
 		//Expect to find 3 nodes
 		assertTrue(rs.next());
 		assertEquals(3, rs.getInt(1));

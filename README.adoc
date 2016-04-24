@@ -120,11 +120,17 @@ Milestone 02 [RELEASED]
 
 * JSON string for nodes, relationships and paths
 
-Milestone 03 [2016-04-23]
+Milestone 03 [RELEASED]
 
-* Batching [DONE]
+* Batch processing
 
-* Bug fix [DONE]
+* Bug fix
+
+Release Candidate 01 [TO BE PLANNED]
+
+* Callable Statements
+
+* Support for more Metadata
 
 === Thank you ===
 

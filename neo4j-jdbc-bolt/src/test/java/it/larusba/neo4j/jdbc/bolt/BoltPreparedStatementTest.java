@@ -28,6 +28,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.summary.ResultSummary;
 import org.neo4j.driver.v1.summary.SummaryCounters;
@@ -35,16 +37,17 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
+import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 import static it.larusba.neo4j.jdbc.bolt.utils.Mocker.*;
 import static java.sql.Types.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
@@ -585,10 +588,11 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
-		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
-				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
-		statement.setString(1,"test");
-		statement.setString(2,"test2");
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(mockResult),
+				StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.setString(1, "test");
+		statement.setString(2, "test2");
 		statement.executeUpdate();
 	}
 
@@ -630,10 +634,11 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
-		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
-				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
-		statement.setString(1,"test");
-		statement.setString(2,"test2");
+		PreparedStatement statement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(mockResult),
+				StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		statement.setString(1, "test");
+		statement.setString(2, "test2");
 		statement.execute();
 	}
 
@@ -701,7 +706,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		assertEquals(-1, statement.getUpdateCount());
 	}
 
-	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException{
+	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		BoltPreparedStatement statement = mock(BoltPreparedStatement.class);
@@ -747,10 +752,142 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*           addBatch           */
 	/*------------------------------*/
 
-	@Ignore @Test public void addBatchShouldThrowException() throws SQLException {
+	@Test public void addBatchShouldAddParametersToStack() throws SQLException {
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "MATCH n WHERE id(n) = ? SET n.property=1");
+		stmt.setInt(1, 1);
+		stmt.addBatch();
+		stmt.setInt(1, 2);
+		stmt.addBatch();
+
+		assertEquals(Arrays.asList(new HashMap<String, Object>() {
+			{
+				this.put("1", 1);
+			}
+		}, new HashMap<String, Object>() {
+			{
+				this.put("1", 2);
+			}
+		}), Whitebox.getInternalState(stmt, "batchParameters"));
+	}
+
+	@Test public void addBatchShouldClearParameters() throws SQLException {
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "MATCH n WHERE id(n) = ? SET n.property=1");
+		stmt.setInt(1, 1);
+		stmt.addBatch();
+
+		assertEquals(Collections.EMPTY_MAP, Whitebox.getInternalState(stmt, "parameters"));
+	}
+
+	@Test public void addBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "");
-		stmt.addBatch("");
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "?");
+		stmt.setInt(1, 1);
+		stmt.close();
+		stmt.addBatch();
+	}
+
+	/*------------------------------*/
+	/*          clearBatch          */
+	/*------------------------------*/
+
+	@Test public void clearBatchShouldWork() throws SQLException {
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "?");
+		stmt.setInt(1, 1);
+		stmt.clearBatch();
+
+		assertEquals(Collections.EMPTY_LIST, Whitebox.getInternalState(stmt, "batchParameters"));
+	}
+
+	@Test public void clearBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "?");
+		stmt.close();
+		stmt.clearBatch();
+	}
+
+	/*------------------------------*/
+	/*         executeBatch         */
+	/*------------------------------*/
+
+	@Test public void executeBatchShouldWork() throws SQLException {
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "MATCH n WHERE id(n) = ? SET n.property=1");
+		stmt.setInt(1, 1);
+		stmt.addBatch();
+		stmt.setInt(1, 2);
+		stmt.addBatch();
+
+		Session session = Mockito.mock(Session.class);
+		StatementResult stmtResult = Mockito.mock(StatementResult.class);
+		ResultSummary resultSummary = Mockito.mock(ResultSummary.class);
+		SummaryCounters summaryCounters = Mockito.mock(SummaryCounters.class);
+
+		Mockito.when(session.run(anyString(), anyMap())).thenReturn(stmtResult);
+		Mockito.when(stmtResult.consume()).thenReturn(resultSummary);
+		Mockito.when(resultSummary.counters()).thenReturn(summaryCounters);
+		Mockito.when(summaryCounters.nodesCreated()).thenReturn(1);
+		Mockito.when(summaryCounters.nodesDeleted()).thenReturn(0);
+
+		BoltConnection connection = (BoltConnection) stmt.getConnection();
+		Mockito.when(connection.getAutoCommit()).thenReturn(true);
+		Mockito.when(connection.getSession()).thenReturn(session);
+
+		assertArrayEquals(new int[] { 1, 1 }, stmt.executeBatch());
+	}
+
+	@Test public void executeBatchShouldThrowExceptionOnError() throws SQLException {
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "?");
+		stmt.setInt(1, 1);
+		stmt.addBatch();
+		stmt.setInt(1, 2);
+		stmt.addBatch();
+
+		Session session = Mockito.mock(Session.class);
+
+		Mockito.when(session.run(anyString(), anyMap())).thenThrow(Exception.class);
+
+		BoltConnection connection = (BoltConnection) stmt.getConnection();
+		Mockito.when(connection.getSession()).thenReturn(session);
+
+		try {
+			stmt.executeBatch();
+			fail();
+		} catch (BatchUpdateException e) {
+			assertArrayEquals(new int[0], e.getUpdateCounts());
+		}
+	}
+
+	@Test public void executeBatchShouldThrowExceptionOnClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionClosed(), "?");
+		stmt.setInt(1, 1);
+		stmt.addBatch();
+		stmt.setInt(1, 2);
+		stmt.addBatch();
+		stmt.close();
+
+		stmt.executeBatch();
+	}
+
+	/*------------------------------*/
+	/*         getConnection        */
+	/*------------------------------*/
+
+	@Test public void getConnectionShouldWork() throws SQLException {
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionOpen(), "?");
+
+		assertNotNull(stmt.getConnection());
+		assertEquals(Mocker.mockConnectionOpen().getClass(), stmt.getConnection().getClass());
+	}
+
+	@Test public void getConnectionShouldThrowExceptionOnClosedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement stmt = new BoltPreparedStatement(Mocker.mockConnectionClosed(), "?");
+		stmt.close();
+
+		stmt.getConnection();
 	}
 }

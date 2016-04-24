@@ -27,10 +27,8 @@ import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.util.HashMap;
+import java.sql.*;
+import java.util.*;
 
 import static java.sql.Types.*;
 
@@ -53,6 +51,8 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	private HashMap<String, Object> parameters;
 	int parametersNumber;
 
+	private List<HashMap<String, Object>> batchParameters;
+
 	public BoltPreparedStatement(BoltConnection connection, String rawStatement, int... rsParams) {
 		this.connection = connection;
 		this.transaction = connection.getTransaction();
@@ -64,6 +64,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		this.statement = PreparedStatementBuilder.replacePlaceholders(rawStatement);
 		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(rawStatement);
 		this.parameters = new HashMap<>(this.parametersNumber);
+		this.batchParameters = new ArrayList<>();
 	}
 
 	private void checkClosed() throws SQLException {
@@ -79,7 +80,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	private void insertParameter(int index, Object o) {
-		this.parameters.put(new Integer(index).toString(), o);
+		this.parameters.put(Integer.toString(index), o);
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
@@ -234,6 +235,39 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		return BoltResultSet.DEFAULT_TYPE;
 	}
 
+	@Override public void clearBatch() throws SQLException {
+		this.checkClosed();
+		this.batchParameters.clear();
+	}
+
+	@Override public int[] executeBatch() throws SQLException {
+		this.checkClosed();
+		int[] result = new int[0];
+
+		try {
+			for (Map<String, Object> parameter : this.batchParameters) {
+				StatementResult res;
+				if(this.connection.getAutoCommit()) {
+					res = this.connection.getSession().run(this.statement, parameter);
+				} else {
+					res = this.connection.getTransaction().run(this.statement, parameter);
+				}
+				SummaryCounters count = res.consume().counters();
+				result = Arrays.copyOf(result, result.length + 1);
+				result[result.length - 1] = count.nodesCreated() + count.nodesDeleted();
+			}
+		} catch (Exception e) {
+			throw new BatchUpdateException(result, e);
+		}
+
+		return result;
+	}
+
+	@Override public Connection getConnection() throws SQLException {
+		this.checkClosed();
+		return this.connection;
+	}
+
 	@Override public int getResultSetHoldability() throws SQLException {
 		this.checkClosed();
 		if (currentResultSet != null) {
@@ -268,6 +302,12 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		}
 
 		return result;
+	}
+
+	@Override public void addBatch() throws SQLException {
+		this.checkClosed();
+		this.batchParameters.add(new HashMap<>(this.parameters));
+		this.parameters.clear();
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {

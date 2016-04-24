@@ -543,6 +543,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 		BoltConnection connection = (BoltConnection) stmt.getConnection();
 		Mockito.when(connection.getSession()).thenReturn(session);
+		Mockito.when(connection.getAutoCommit()).thenReturn(true);
 
 		assertArrayEquals(new int[] { 1, 1 }, stmt.executeBatch());
 	}

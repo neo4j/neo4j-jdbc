@@ -33,7 +33,6 @@ public class StatementData {
 	public static String STATEMENT_MATCH_NODES_RELATIONS                = "MATCH (n:User)-[r:CONNECTED_IN]->(s:Session) RETURN n, r, s";
 	public static String STATEMENT_CREATE                               = "CREATE (n:User {name:\"test\"});";
 	public static String STATEMENT_CREATE_REV                           = "MATCH (n:User {name:\"test\"}) DELETE n;";
-	public static String STATEMENT_COUNT                                = "MATCH (n) RETURN COUNT(n);";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES                = "CREATE (n:User {name:\"test\", surname:\"testAgain\"});";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES_REV            = "MATCH (n:USer {name:\"test\", surname:\"testAgain\"}) DETACH DELETE n;";
 	public static String STATEMENT_MATCH_ALL_STRING_PARAMETRIC          = "MATCH (n) WHERE n.name = ? RETURN n.surname;";
@@ -41,4 +40,6 @@ public class StatementData {
 	public static String STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV  = "MATCH (s:Session) DETACH DELETE s;";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC     = "CREATE (n:User {name:?, surname:?});";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC_REV = "MATCH (n:User {name:?, surname:?}) DETACH DELETE n;";
+	public static String STATEMENT_CLEAR_DB                              = "MATCH (n) DETACH DELETE n;";
+	public static String STATEMENT_COUNT_NODES                          = "MATCH (n) RETURN count(n) AS total;";
 }

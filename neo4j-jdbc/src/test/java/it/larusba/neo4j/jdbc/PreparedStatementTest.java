@@ -19,6 +19,7 @@
  */
 package it.larusba.neo4j.jdbc;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -80,5 +81,17 @@ public class PreparedStatementTest {
 		PreparedStatement preparedStatement = mock(PreparedStatement.class, Mockito.CALLS_REAL_METHODS);
 
 		preparedStatement.unwrap(ResultSet.class);
+	}
+
+	/*------------------------------*/
+	/*           addBatch           */
+	/*------------------------------*/
+
+	@Test public void addBatchShouldThrowException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		PreparedStatement stmt = Mockito.mock(PreparedStatement.class, Mockito.CALLS_REAL_METHODS);
+
+		stmt.addBatch("");
 	}
 }

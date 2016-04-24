@@ -23,6 +23,7 @@ import it.larusba.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.neo4j.graphdb.Result;
 
 import java.sql.*;
 
@@ -104,6 +105,7 @@ public class BoltStatementIT {
 	@Test public void executeBatchShouldWork() throws SQLException {
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
 		Statement statement = connection.createStatement();
+		connection.setAutoCommit(true);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -113,10 +115,13 @@ public class BoltStatementIT {
 		assertArrayEquals(new int[]{1, 1, 1}, result);
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+
+		connection.close();
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		connection.setAutoCommit(true);
 		Statement statement = connection.createStatement();
 		statement.addBatch(StatementData.STATEMENT_CREATE);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -131,5 +136,35 @@ public class BoltStatementIT {
 		}
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		connection.close();
+	}
+
+	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		connection.setAutoCommit(false);
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+		statement.addBatch(StatementData.STATEMENT_CREATE);
+
+		Result res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
+		while(res.hasNext()){
+			assertEquals(0L, res.next().get("total"));
+		}
+
+		int[] result = statement.executeBatch();
+
+		assertArrayEquals(new int[]{1, 1, 1}, result);
+
+		connection.commit();
+
+		res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
+		while(res.hasNext()){
+			assertEquals(3L, res.next().get("total"));
+		}
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+
+		connection.close();
 	}
 }

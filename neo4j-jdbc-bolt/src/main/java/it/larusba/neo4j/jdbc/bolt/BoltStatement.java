@@ -52,7 +52,7 @@ public class BoltStatement extends Statement implements Loggable {
 	/**
 	 * Default Constructor
 	 *
-	 * @param connection
+	 * @param connection The connection used for sharing the transaction between statements
 	 * @param rsParams   The params (type, concurrency and holdability) used to create a new ResultSet
 	 */
 	public BoltStatement(BoltConnection connection, int... rsParams) {
@@ -174,7 +174,12 @@ public class BoltStatement extends Statement implements Loggable {
 
 		try {
 			for (String query : this.batchStatements) {
-				StatementResult res = this.connection.getSession().run(query);
+				StatementResult res;
+				if (this.connection.getAutoCommit()) {
+					res = this.connection.getSession().run(query);
+				} else {
+					res = this.connection.getTransaction().run(query);
+				}
 				SummaryCounters count = res.consume().counters();
 				result = Arrays.copyOf(result, result.length + 1);
 				result[result.length - 1] = count.nodesCreated() + count.nodesDeleted();

@@ -23,8 +23,11 @@ import it.larusba.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.neo4j.graphdb.Result;
 
 import java.sql.*;
+import java.util.Arrays;
+import java.util.HashMap;
 
 import static org.junit.Assert.*;
 
@@ -93,7 +96,7 @@ public class BoltPreparedStatementIT {
 		assertTrue(result);
 
 		connection.close();
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
@@ -112,6 +115,89 @@ public class BoltPreparedStatementIT {
 		result = statement.execute();
 		assertFalse(result);
 
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*         executeBatch         */
+	/*------------------------------*/
+	@Test public void executeBatchShouldWork() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		connection.setAutoCommit(true);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+		statement.addBatch();
+		statement.setString(1, "test3");
+		statement.setString(2, "test4");
+		statement.addBatch();
+		statement.setString(1, "test5");
+		statement.setString(2, "test6");
+		statement.addBatch();
+
+		int[] result = statement.executeBatch();
+
+		assertArrayEquals(new int[]{1, 1, 1}, result);
+
+		connection.close();
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+	}
+
+	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		connection.setAutoCommit(true);
+		PreparedStatement statement = connection.prepareStatement("wrong cypher statement ?");
+		statement.setString(1, "test1");
+		statement.addBatch();
+		statement.setString(1, "test3");
+		statement.addBatch();
+		statement.setString(1, "test5");
+		statement.addBatch();
+
+		try {
+			statement.executeBatch();
+			fail();
+		} catch (BatchUpdateException e){
+			assertArrayEquals(new int[0], e.getUpdateCounts());
+		}
+
+		connection.close();
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+	}
+
+	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		connection.setAutoCommit(false);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+		statement.addBatch();
+		statement.setString(1, "test3");
+		statement.setString(2, "test4");
+		statement.addBatch();
+		statement.setString(1, "test5");
+		statement.setString(2, "test6");
+		statement.addBatch();
+
+		Result res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
+		while(res.hasNext()){
+			assertEquals(0L, res.next().get("total"));
+		}
+
+		int[] result = statement.executeBatch();
+
+		assertArrayEquals(new int[]{1, 1, 1}, result);
+
+		connection.commit();
+
+		res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
+		while(res.hasNext()){
+			assertEquals(3L, res.next().get("total"));
+		}
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 		connection.close();
 	}
 }

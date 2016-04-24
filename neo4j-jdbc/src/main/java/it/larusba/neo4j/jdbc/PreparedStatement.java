@@ -106,9 +106,7 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 
 	@Override public abstract boolean execute() throws SQLException;
 
-	@Override public void addBatch() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void addBatch() throws SQLException;
 
 	@Override public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
@@ -314,20 +312,14 @@ public abstract class PreparedStatement implements java.sql.PreparedStatement {
 	@Override public abstract int getResultSetType() throws SQLException;
 
 	@Override public void addBatch(String sql) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw new SQLException("Method addBatch(String) cannot be called on PreparedStatement");
 	}
 
-	@Override public void clearBatch() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract void clearBatch() throws SQLException;
 
-	@Override public int[] executeBatch() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract int[] executeBatch() throws SQLException;
 
-	@Override public Connection getConnection() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
+	@Override public abstract Connection getConnection() throws SQLException;
 
 	@Override public boolean getMoreResults(int current) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
