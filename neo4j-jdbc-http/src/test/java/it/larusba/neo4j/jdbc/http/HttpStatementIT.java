@@ -67,15 +67,22 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
-		int lines = statement.executeUpdate("CREATE (n:User {name:\"test\"})");
-		assertEquals(1, lines);
 
-		lines = statement.executeUpdate("CREATE (n:User {name:\"test\"})");
-		assertEquals(1, lines);
+		// Node insertion
+		int lines = statement.executeUpdate("CREATE (n:User {name:\"test1\"})");
+		assertEquals("Stats on node insertion (1) failed", 1, lines);
+		lines = statement.executeUpdate("CREATE (n:User {name:\"test2\"})");
+		assertEquals("Stats on node insertion (2) failed",1, lines);
 
-		lines = statement.executeUpdate("MATCH (n:User {name:\"test\"}) DELETE n");
-		assertEquals(2, lines);
+		// Relation insertion
+		lines = statement.executeUpdate("MATCH (from:User {name:\"test1\"}), (to:User {name:\"test1\"}) CREATE (from)-[:TEST {name:\"test\"}]->(to)");
+		assertEquals("Stats on relation insertion failed",1, lines);
+
+		// Deletion
+		lines = statement.executeUpdate("MATCH (n:User) DETACH DELETE n");
+		assertEquals("Stats on node deletion failed", 3, lines);
 
 		connection.close();
 	}
+
 }
