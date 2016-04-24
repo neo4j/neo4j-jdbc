@@ -31,10 +31,6 @@ import static org.junit.Assert.*;
 
 public class HttpConnectionIT extends Neo4jHttpIT {
 
-	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
-		Class.forName("it.larusba.neo4j.jdbc.http.HttpDriver");
-	}
-
 	@Test
 	public void autocommitShouldWork() throws SQLException {
 		// Write something

@@ -48,17 +48,14 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 
 	@Override public ResultSet executeQuery() throws SQLException {
 		checkClosed();
-		if (connection.isClosed()) {
-			throw new SQLException("Connection already closed");
-		}
 
-		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(statement, parameters, Boolean.FALSE);
-		this.currentResultSet = new HttpResultSet(response.results.get(0));
+		this.execute();
 		return currentResultSet;
 	}
 
 	@Override public int executeUpdate() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		this.execute();
+		return currentUpdateCount;
 	}
 
 

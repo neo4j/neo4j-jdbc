@@ -19,12 +19,14 @@
  */
 package it.larusba.neo4j.jdbc.http.test;
 
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.neo4j.harness.junit.Neo4jRule;
 
 import java.io.File;
+import java.sql.SQLException;
 
 public class Neo4jHttpIT extends Neo4jHttpUnitTest {
 
@@ -32,6 +34,10 @@ public class Neo4jHttpIT extends Neo4jHttpUnitTest {
 			.withFixture(new File(Neo4jHttpUnitTest.class.getClassLoader().getResource("data/movie.cyp").getFile()));
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
+	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
+		Class.forName("it.larusba.neo4j.jdbc.http.HttpDriver");
+	}
 
 	public String getJDBCUrl() {
 		return "jdbc:" + neo4j.httpURI().toString();

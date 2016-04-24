@@ -29,16 +29,12 @@ import static org.junit.Assert.*;
 
 public class HttpPreparedStatementIT extends Neo4jHttpIT {
 
-	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
-		Class.forName("it.larusba.neo4j.jdbc.http.HttpDriver");
-	}
-
 	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
 		PreparedStatement statement = connection.prepareStatement("MATCH (m:Movie) WHERE m.title= ? RETURN m.title");
 		statement.setString(1, "The Matrix");
 		ResultSet rs = statement.executeQuery();
@@ -46,6 +42,19 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 		assertTrue(rs.next());
 		assertEquals("The Matrix", rs.getString(1));
 		assertFalse(rs.next());
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*          executeUpdate        */
+	/*------------------------------*/
+
+	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		PreparedStatement statement = connection.prepareStatement("CREATE (n:TestExecuteUpdateShouldExecuteAndReturnCorrectData {value:?})");
+		statement.setString(1, "AZERTYUIOP");
+
+		assertEquals(1, statement.executeUpdate());
 		connection.close();
 	}
 }

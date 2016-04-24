@@ -103,10 +103,9 @@ public class HttpResultSet extends ResultSet implements Loggable {
 
 		Object value = currentRow.get(column - 1);
 
-		if(value == null) {
+		if (value == null) {
 			wasNull = true;
-		}
-		else{
+		} else {
 			wasNull = false;
 		}
 		return value;
@@ -120,14 +119,16 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 * @throws SQLException If the object cannot be cast to Number
 	 */
 	private Number getNumber(int columnIndex) throws SQLException {
-		Number num = 0;
+		Number num = null;
 		Object value = get(columnIndex);
 
-		if (value != null && (value instanceof Number)) {
-			num = (Number) value;
-		} else {
-			throw new SQLDataException("Value is not a number" + value);
+		if (value != null) {
+			if (value instanceof Number) {
+				num = (Number) value;
+			} else {
+				throw new SQLDataException("Value is not a number" + value);
 
+			}
 		}
 		return num;
 	}
@@ -167,7 +168,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		checkClosed();
 		Object value = get(columnIndex);
 
-		if(value != null) {
+		if (value != null) {
 			final Class<?> type = value.getClass();
 
 			if (String.class.equals(type)) {
@@ -189,32 +190,51 @@ public class HttpResultSet extends ResultSet implements Loggable {
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
 		checkClosed();
-		return (Boolean) get(columnIndex);
+		Boolean result = (Boolean) get(columnIndex);
+		if(result == null)
+			return false;
+		else
+			return result;
 	}
 
 	@Override public short getShort(int columnIndex) throws SQLException {
 		checkClosed();
-		return getNumber(columnIndex).shortValue();
+		if(getNumber(columnIndex) == null)
+			return 0;
+		else
+			return getNumber(columnIndex).shortValue();
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
 		checkClosed();
-		return getNumber(columnIndex).intValue();
+		if(getNumber(columnIndex) == null)
+			return 0;
+		else
+			return getNumber(columnIndex).intValue();
 	}
 
 	@Override public long getLong(int columnIndex) throws SQLException {
 		checkClosed();
-		return getNumber(columnIndex).longValue();
+		if(getNumber(columnIndex)== null)
+			return 0;
+		else
+			return getNumber(columnIndex).longValue();
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
 		checkClosed();
-		return getNumber(columnIndex).floatValue();
+		if(getNumber(columnIndex) == null)
+			return 0;
+		else
+			return getNumber(columnIndex).floatValue();
 	}
 
 	@Override public double getDouble(int columnIndex) throws SQLException {
 		checkClosed();
-		return getNumber(columnIndex).doubleValue();
+		if(getNumber(columnIndex) == null)
+			return 0;
+		else
+			return getNumber(columnIndex).doubleValue();
 	}
 
 	@Override public Array getArray(int columnIndex) throws SQLException {
