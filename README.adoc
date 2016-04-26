@@ -126,11 +126,7 @@ Milestone 03 [RELEASED]
 
 * Bug fix
 
-Release Candidate 01 [TO BE PLANNED]
-
-* Callable Statements
-
-* Support for more Metadata
+* Neo4j Java Driver 1.0.0
 
 === Thank you ===
 
