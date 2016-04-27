@@ -20,7 +20,6 @@
 package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.bolt.data.StatementData;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
@@ -38,10 +37,6 @@ import static org.junit.Assert.*;
 public class BoltPreparedStatementIT {
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
-
-	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
-		Class.forName("it.larusba.neo4j.jdbc.bolt.BoltDriver");
-	}
 
 	/*------------------------------*/
 	/*          executeQuery        */

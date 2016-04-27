@@ -43,7 +43,6 @@ public class SamplePT {
 
 	@Test public void launchBenchmark() throws Exception {
 
-		Class.forName("BoltDriver");
 		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687");
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
@@ -83,10 +82,6 @@ public class SamplePT {
 	}
 
 	@State(Scope.Thread) public static class Data {
-		@Setup public static void initialize() throws ClassNotFoundException, SQLException, IOException {
-			Class.forName("BoltDriver");
-		}
-
 		public String query = "MATCH (n) RETURN n";
 	}
 
