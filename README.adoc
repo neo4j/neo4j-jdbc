@@ -59,7 +59,7 @@ mvn clean test
 
 * Run integration tests:
 -------------------------------------------------
-mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*IT test
+mvn clean test -Pintegration-test
 -------------------------------------------------
 
 * Run performance tests:

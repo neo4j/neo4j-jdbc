@@ -54,7 +54,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 		ResultSet rs = statement.executeQuery("MATCH (n:Person) RETURN n.title AS title");
 
 		assertTrue(rs.next());
-		assertEquals("null", rs.getString("title"));
+		assertNull(rs.getString("title"));
 		assertTrue(rs.wasNull());
 
 		connection.close();
