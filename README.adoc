@@ -13,18 +13,17 @@ The driver can be used with:
 
 The driver will be implemented also for:
 
-* HTTP connection
-
 * direct file connection
-
 * embedded connection
 
 
 This project is composed by the following modules:
 
-* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the bolt protocol
-
 * https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
+* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
+* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the bolt protocol
+* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - Http] - module supporting the http protocol
+
 
 === Minimum viable snippet ===
 
@@ -65,7 +64,7 @@ mvn clean test -Pintegration-test
 * Run performance tests:
 
 --------------------------------------------------
-mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*PT test
+mvn clean test -Pperformance-test
 --------------------------------------------------
 
 WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (default)

@@ -4,39 +4,23 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Neo4j JDBC Driver</name>
-    <description>Common module for every implementation of the Neo4j JDBC Driver</description>
-
+    <!-- ========== -->
+    <!-- = Parent = -->
+    <!-- ========== -->
     <parent>
         <groupId>it.larus-ba</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
         <version>3.0-M03</version>
     </parent>
 
+    <!-- =========== -->
+    <!-- = General = -->
+    <!-- =========== -->
     <groupId>it.larus-ba</groupId>
     <artifactId>neo4j-jdbc</artifactId>
     <version>3.0-M03</version>
     <packaging>jar</packaging>
-
-    <build>
-        <!-- Enable filter resources -->
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <name>Neo4j JDBC Driver</name>
+    <description>Common module for every implementation of the Neo4j JDBC Driver</description>
 
 </project>

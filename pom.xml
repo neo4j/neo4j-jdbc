@@ -3,15 +3,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- =========== -->
+    <!-- = General = -->
+    <!-- =========== -->
     <groupId>it.larus-ba</groupId>
     <artifactId>neo4j-jdbc-parent</artifactId>
     <version>3.0-M03</version>
     <packaging>pom</packaging>
-
     <name>Neo4j JDBC Driver Parent</name>
     <description>Parent POM for Neo4j JDBC Driver and Modules</description>
     <url>https://github.com/larusba/neo4j-jdbc</url>
 
+    <!-- =========== -->
+    <!-- = Modules = -->
+    <!-- =========== -->
     <modules>
         <module>neo4j-jdbc</module>
         <module>neo4j-jdbc-bolt</module>
@@ -19,6 +24,9 @@
         <module>neo4j-jdbc-driver</module>
     </modules>
 
+    <!-- =========== -->
+    <!-- = Licence = -->
+    <!-- =========== -->
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -27,11 +35,17 @@
         </license>
     </licenses>
 
+    <!-- ================ -->
+    <!-- = Organization = -->
+    <!-- ================ -->
     <organization>
         <name>LARUS Business Automation Srl</name>
         <url>http://www.larus-ba.it</url>
     </organization>
 
+    <!-- ============== -->
+    <!-- = Developers = -->
+    <!-- ============== -->
     <developers>
         <developer>
             <id>albertodeste</id>
@@ -50,38 +64,66 @@
         </developer>
     </developers>
 
+    <!-- ============================= -->
+    <!-- = Source Control management = -->
+    <!-- ============================= -->
     <scm>
         <connection>scm:git:git@github.com:larusba/neo4j-jdbc.git</connection>
         <developerConnection>scm:git:git@github.com:larusba/neo4j-jdbc.git</developerConnection>
         <url>git@github.com:larusba/neo4j-jdbc.git</url>
     </scm>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito</artifactId>
-            <version>${powermock.version}</version>
-        </dependency>
-        <!-- Deps to Neo4j for test -->
-        <dependency>
-            <groupId>org.neo4j</groupId>
-            <artifactId>neo4j-kernel</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j.test</groupId>
-            <artifactId>neo4j-harness</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <!-- ============================= -->
+    <!-- = Properties                = -->
+    <!-- ============================= -->
+    <properties>
+        <!-- General -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
 
+        <!-- Deps version -->
+        <powermock.version>1.6.2</powermock.version>
+        <junit.version>4.12</junit.version>
+        <jmh.version>1.11.3</jmh.version>
+        <powermock.version>1.6.4</powermock.version>
+        <neo4j.java.driver.version>1.0.0-RC2</neo4j.java.driver.version>
+        <neo4j.version>3.0.0-RC1</neo4j.version>
+        <httpclient.version>4.3.4</httpclient.version>
+        <jackson.version>2.7.0</jackson.version>
+
+        <!-- Plugin version -->
+        <maven.plugin.compiler>3.5.1</maven.plugin.compiler>
+        <maven.plugin.resources>2.7</maven.plugin.resources>
+        <maven.plugin.nexus-staging>1.6.3</maven.plugin.nexus-staging>
+        <maven.plugin.shade>2.4.3</maven.plugin.shade>
+        <maven.plugin.javadoc>2.9.1</maven.plugin.javadoc>
+        <maven.plugin.source>2.2.1</maven.plugin.source>
+        <maven.plugin.gpg>1.5</maven.plugin.gpg>
+        <maven.plugin.surefire>2.12.4</maven.plugin.surefire>
+    </properties>
+
+    <!-- ============================= -->
+    <!-- = Dependency management     = -->
+    <!-- ============================= -->
     <dependencyManagement>
         <dependencies>
+            <!-- Inter-module dependencies -->
+            <dependency>
+                <groupId>it.larus-ba</groupId>
+                <artifactId>neo4j-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>it.larus-ba</groupId>
+                <artifactId>neo4j-jdbc-bolt</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>it.larus-ba</groupId>
+                <artifactId>neo4j-jdbc-http</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- Deps to the HTTP client -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -94,40 +136,166 @@
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+
+            <!-- Deps to Neo4j java driver -->
+            <dependency>
+                <groupId>org.neo4j.driver</groupId>
+                <artifactId>neo4j-java-driver</artifactId>
+                <version>${neo4j.java.driver.version}</version>
+            </dependency>
             <!-- Deps to Neo4j -->
             <dependency>
                 <groupId>org.neo4j</groupId>
                 <artifactId>neo4j-kernel</artifactId>
                 <version>${neo4j.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.neo4j.test</groupId>
                 <artifactId>neo4j-harness</artifactId>
                 <version>${neo4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Deps to test framework -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-module-junit4</artifactId>
+                <version>${powermock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-mockito</artifactId>
+                <version>${powermock.version}</version>
+            </dependency>
+
+            <!-- Deps for performance tests -->
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <properties>
-        <encoding>UTF-8</encoding>
-        <powermock.version>1.6.2</powermock.version>
-        <junit.version>4.12</junit.version>
-        <jmh.version>1.11.3</jmh.version>
-        <powermock.version>1.6.4</powermock.version>
-        <neo4j.java.driver.version>1.0.0-RC2</neo4j.java.driver.version>
-        <neo4j.version>3.0.0-RC1</neo4j.version>
-        <httpclient.version>4.3.4</httpclient.version>
-        <jackson.version>2.7.0</jackson.version>
-    </properties>
+    <!-- ============================= -->
+    <!-- = Dependency                = -->
+    <!-- ============================= -->
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+        </dependency>
+        <!-- Deps to Neo4j for test -->
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-kernel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.test</groupId>
+            <artifactId>neo4j-harness</artifactId>
+        </dependency>
+    </dependencies>
+    <!-- ========= -->
+    <!-- = Build = -->
+    <!-- ========= -->
+    <build>
+        <!-- Enable filter resources -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${maven.plugin.nexus-staging}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.plugin.compiler}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven.plugin.source}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.plugin.javadoc}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.plugin.shade}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
+    <!-- =========== -->
+    <!-- = Profile = -->
+    <!-- =========== -->
     <profiles>
+        <!-- Profile used in the release process -->
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
@@ -141,7 +309,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>2.2.1</version>
+                        <version>${maven.plugin.source}</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -154,7 +322,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.9.1</version>
+                        <version>${maven.plugin.javadoc}</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -167,7 +335,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
+                        <version>${maven.plugin.gpg}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -181,7 +349,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.3</version>
+                        <version>${maven.plugin.nexus-staging}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
@@ -192,6 +360,8 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Just run IT test -->
         <profile>
             <id>integration-test</id>
             <build>
@@ -199,6 +369,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.plugin.surefire}</version>
                         <configuration>
                             <includes>
                                 <include>**/*IT.java</include>
@@ -208,70 +379,53 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Just run Performance test -->
+        <profile>
+            <id>performance-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.plugin.surefire}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*PT.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.3</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>2.2.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <!-- =========================== -->
+    <!-- = Distribution management = -->
+    <!-- =========================== -->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <!-- ================ -->
+    <!-- = Repositories = -->
+    <!-- ================ -->
+    <repositories>
+        <!-- Adding neo4j repository to have snapshot -->
+        <repository>
+            <id>neo4j-snapshot-repository</id>
+            <name>Neo4j Maven 2 snapshot repository</name>
+            <url>http://m2.neo4j.org/content/repositories/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
 
 </project>
