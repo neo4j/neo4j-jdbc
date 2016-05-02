@@ -23,16 +23,22 @@ import it.larusba.neo4j.jdbc.Loggable;
 import it.larusba.neo4j.jdbc.Statement;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
 
+import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HttpStatement extends Statement implements Loggable {
 
+	private List<String> batchStatements;
 	private boolean loggable = false;
 
 	public HttpStatement(HttpConnection httpConnection) {
 		super(httpConnection);
+		batchStatements = new ArrayList<>();
 	}
 
 	@Override public ResultSet executeQuery(String cypher) throws SQLException {
@@ -53,14 +59,7 @@ public class HttpStatement extends Statement implements Loggable {
 
 		// Parse stats
 		this.currentUpdateCount = 0;
-		if (response.results.get(0) != null && response.results.get(0).stats != null) {
-			Map<String, Object> stats = response.results.get(0).stats;
-			int updated = (int) stats.get("nodes_created");
-			updated += (int) stats.get("nodes_deleted");
-			updated += (int) stats.get("relationships_created");
-			updated += (int) stats.get("relationship_deleted");
-			this.currentUpdateCount = updated;
-		}
+		this.currentUpdateCount = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(0));
 
 		// Parse response data
 		this.currentResultSet = null;
@@ -81,6 +80,48 @@ public class HttpStatement extends Statement implements Loggable {
 
 	@Override public int getResultSetHoldability() throws SQLException {
 		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+	}
+
+	/*-------------------*/
+	/*       Batch       */
+	/*-------------------*/
+
+	@Override public void addBatch(String sql) throws SQLException {
+		this.checkClosed();
+		this.batchStatements.add(sql);
+	}
+
+	@Override public void clearBatch() throws SQLException {
+		this.checkClosed();
+		this.batchStatements.clear();
+	}
+
+	@Override public int[] executeBatch() throws SQLException {
+		this.checkClosed();
+
+		// execute batch queries
+		List<Map<String, Object>> parameters = new ArrayList<>();
+		for (int i = 0; i < batchStatements.size(); i++) {
+			parameters.add(new HashMap());
+		}
+		Neo4jResponse response = ((HttpConnection) getConnection()).executeQueries(batchStatements, parameters, Boolean.TRUE);
+
+		// proceed the result
+		int[] result = new int[response.results.size()];
+		for (int i = 0; i < response.results.size(); i++) {
+			result[i] = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(i));
+		}
+
+		// we check if there is some error into the response => batch exception
+		if (response.errors != null && response.errors.size() > 0) {
+			throw new BatchUpdateException(result, response.errors.get(0).getCause());
+		}
+		// if no exception and we don't have the same cardiniality between queries & result => batch exception
+		if (response.results.size() != batchStatements.size()) {
+			throw new BatchUpdateException("Result size doesn't match queries size", result);
+		}
+
+		return result;
 	}
 
 	/*--------------------*/

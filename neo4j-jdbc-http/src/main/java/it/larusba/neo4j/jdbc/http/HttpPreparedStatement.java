@@ -21,19 +21,18 @@ package it.larusba.neo4j.jdbc.http;
 
 import it.larusba.neo4j.jdbc.*;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
-import it.larusba.neo4j.jdbc.utils.PreparedStatementBuilder;
 
-import java.sql.Connection;
+import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import static java.sql.Types.*;
 
 public class HttpPreparedStatement extends PreparedStatement implements Loggable {
 
+	private List<Map<String, Object>> batchParameters;
 	private boolean loggable = false;
 
 	/**
@@ -44,6 +43,7 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 	 */
 	public HttpPreparedStatement(HttpConnection httpConnection, String cypher) {
 		super(httpConnection, cypher);
+		batchParameters = new ArrayList<>();
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
@@ -58,7 +58,6 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 		return currentUpdateCount;
 	}
 
-
 	@Override public boolean execute() throws SQLException {
 		checkClosed();
 
@@ -66,15 +65,7 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(this.statement, this.parameters, Boolean.TRUE);
 
 		// Parse stats
-		this.currentUpdateCount = 0;
-		if (response.results.get(0) != null && response.results.get(0).stats != null) {
-			Map<String, Object> stats = response.results.get(0).stats;
-			int updated = (int) stats.get("nodes_created");
-			updated += (int) stats.get("nodes_deleted");
-			updated += (int) stats.get("relationships_created");
-			updated += (int) stats.get("relationship_deleted");
-			this.currentUpdateCount = updated;
-		}
+		this.currentUpdateCount = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(0));
 
 		// Parse response data
 		this.currentResultSet = null;
@@ -86,9 +77,7 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		return InstanceFactory.debug(HttpResultSetMetaData.class,
-				new HttpResultSetMetaData(((HttpResultSet) this.currentResultSet).result),
-				this.isLoggable());
+		return InstanceFactory.debug(HttpResultSetMetaData.class, new HttpResultSetMetaData(((HttpResultSet) this.currentResultSet).result), this.isLoggable());
 	}
 
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
@@ -107,6 +96,49 @@ public class HttpPreparedStatement extends PreparedStatement implements Loggable
 
 	@Override public int getResultSetHoldability() throws SQLException {
 		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+	}
+
+	/*-------------------*/
+	/*       Batch       */
+	/*-------------------*/
+
+	@Override public void addBatch() throws SQLException {
+		this.checkClosed();
+		this.batchParameters.add(new HashMap<>(this.parameters));
+		this.parameters.clear();
+	}
+
+	@Override public void clearBatch() throws SQLException {
+		this.checkClosed();
+		this.batchParameters.clear();
+	}
+
+	@Override public int[] executeBatch() throws SQLException {
+		this.checkClosed();
+
+		List<String> queries = new ArrayList<>();
+		for (int i = 0; i < batchParameters.size(); i++) {
+			queries.add(this.statement);
+		}
+		// execute batch queries
+		Neo4jResponse response = ((HttpConnection) getConnection()).executeQueries(queries, batchParameters, Boolean.TRUE);
+
+		// proceed the result
+		int[] result = new int[response.results.size()];
+		for (int i = 0; i < response.results.size(); i++) {
+			result[i] = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(i));
+		}
+
+		// we check if there is some error into the response => batch exception
+		if (response.errors != null && response.errors.size() > 0) {
+			throw new BatchUpdateException(result, response.errors.get(0).getCause());
+		}
+		// if no exception and we don't have the same cardiniality between queries & result => batch exception
+		if (response.results.size() != batchParameters.size()) {
+			throw new BatchUpdateException("Result size doesn't match queries size", result);
+		}
+
+		return result;
 	}
 
 	/*--------------------*/

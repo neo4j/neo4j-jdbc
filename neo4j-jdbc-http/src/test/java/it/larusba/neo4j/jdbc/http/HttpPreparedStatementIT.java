@@ -22,6 +22,7 @@ package it.larusba.neo4j.jdbc.http;
 import it.larusba.neo4j.jdbc.http.test.Neo4jHttpIT;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.neo4j.graphdb.Result;
 
 import java.sql.*;
 
@@ -55,6 +56,81 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 		statement.setString(1, "AZERTYUIOP");
 
 		assertEquals(1, statement.executeUpdate());
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*         executeBatch         */
+	/*------------------------------*/
+	@Test public void executeBatchShouldWork() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		PreparedStatement statement = connection.prepareStatement("CREATE (:TestExecuteBatchShouldWork { name:?, value:?})");
+		connection.setAutoCommit(true);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+		statement.addBatch();
+		statement.setString(1, "test3");
+		statement.setString(2, "test4");
+		statement.addBatch();
+		statement.setString(1, "test5");
+		statement.setString(2, "test6");
+		statement.addBatch();
+
+		int[] result = statement.executeBatch();
+		assertArrayEquals(new int[]{1, 1, 1}, result);
+
+		connection.close();
+	}
+
+	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		connection.setAutoCommit(true);
+		PreparedStatement statement = connection.prepareStatement("wrong cypher statement ?");
+		statement.setString(1, "test1");
+		statement.addBatch();
+		statement.setString(1, "test3");
+		statement.addBatch();
+		statement.setString(1, "test5");
+		statement.addBatch();
+
+		try {
+			statement.executeBatch();
+			fail();
+		} catch (BatchUpdateException e){
+			assertArrayEquals(new int[0], e.getUpdateCounts());
+		}
+
+		connection.close();
+	}
+
+	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		PreparedStatement statement = connection.prepareStatement("CREATE (:TestExecuteBatchShouldWorkWithTransaction { name:?, value:?})");
+		connection.setAutoCommit(false);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+		statement.addBatch();
+		statement.setString(1, "test3");
+		statement.setString(2, "test4");
+		statement.addBatch();
+		statement.setString(1, "test5");
+		statement.setString(2, "test6");
+		statement.addBatch();
+
+		int[] result = statement.executeBatch();
+
+		Result res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction) RETURN count(n) AS total");
+		while(res.hasNext()){
+			assertEquals(0L, res.next().get("total"));
+		}
+		assertArrayEquals(new int[]{1, 1, 1}, result);
+
+		connection.commit();
+		res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction) RETURN count(n) AS total");
+		while(res.hasNext()){
+			assertEquals(3L, res.next().get("total"));
+		}
+
 		connection.close();
 	}
 }

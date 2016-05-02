@@ -22,10 +22,13 @@ package it.larusba.neo4j.jdbc.http;
 import it.larusba.neo4j.jdbc.*;
 import it.larusba.neo4j.jdbc.http.driver.CypherExecutor;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jResponse;
+import it.larusba.neo4j.jdbc.http.driver.Neo4jResult;
 import it.larusba.neo4j.jdbc.http.driver.Neo4jStatement;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -51,6 +54,34 @@ public class HttpConnection extends Connection implements Loggable {
 	/**
 	 * Execute a cypher query.
 	 *
+	 * @param queries    List of cypher queries
+	 * @param parameters Parameter of the cypher queries (match by index)
+	 * @param stats      Do we need to include stats ?
+	 * @return
+	 * @throws SQLException
+	 */
+	public Neo4jResponse executeQueries(final List<String> queries, List<Map<String, Object>> parameters, Boolean stats) throws SQLException {
+		checkClosed();
+
+		if(queries.size() != parameters.size()) {
+			throw new SQLException("Query and parameter list haven't the same cardinality");
+		}
+
+		List<Neo4jStatement> neo4jStatements = new ArrayList<>();
+		for(int i=0;i<queries.size();i++) {
+			String query = queries.get(i);
+			Map<String, Object> params = parameters.get(i);
+
+			checkReadOnly(query);
+			neo4jStatements.add(new Neo4jStatement(query, params, stats));
+		}
+
+		return executor.executeQueries(neo4jStatements);
+	}
+
+	/**
+	 * Execute a cypher query.
+	 *
 	 * @param query      Cypher query
 	 * @param parameters Parameter of the cypher query
 	 * @param stats      Do we need to include stats ?
@@ -61,6 +92,24 @@ public class HttpConnection extends Connection implements Loggable {
 		checkClosed();
 		checkReadOnly(query);
 		return executor.executeQuery(new Neo4jStatement(query, parameters, stats));
+	}
+
+	/**
+	 * Calcul the number of updated elements.
+	 *
+	 * @param result A Neo4j result
+	 * @return
+	 */
+	public int computeResultUpdateCount(Neo4jResult result) {
+		int updated = 0;
+		if (result != null && result.stats != null) {
+			Map<String, Object> stats = result.stats;
+			updated += (int) stats.get("nodes_created");
+			updated += (int) stats.get("nodes_deleted");
+			updated += (int) stats.get("relationships_created");
+			updated += (int) stats.get("relationship_deleted");
+		}
+		return updated;
 	}
 
 	@Override public DatabaseMetaData getMetaData() throws SQLException {
