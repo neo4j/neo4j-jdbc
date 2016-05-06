@@ -84,10 +84,10 @@
         <!-- Deps version -->
         <powermock.version>1.6.2</powermock.version>
         <junit.version>4.12</junit.version>
-        <jmh.version>1.11.3</jmh.version>
+        <jmh.version>1.12</jmh.version>
         <powermock.version>1.6.4</powermock.version>
-        <neo4j.java.driver.version>1.0.0-RC2</neo4j.java.driver.version>
-        <neo4j.version>3.0.0-RC1</neo4j.version>
+        <neo4j.java.driver.version>1.0.0</neo4j.java.driver.version>
+        <neo4j.version>3.0.0</neo4j.version>
         <httpclient.version>4.3.4</httpclient.version>
         <jackson.version>2.7.0</jackson.version>
 
