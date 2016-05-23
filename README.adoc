@@ -6,13 +6,10 @@ With this driver you will be able to interact with a Neo4J database using also t
 Being a graph database, Neo4J is not serving data in a relational way and the exact purpose of this project is to allow
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4J.
 
-*Note*: this project is at an alpha-level stage and is currently in development so the APIs will not be stable. Please try it out and give us
-feedback and suggestions but don't use it in a production environment (yet).
-
 
 The driver can be used with:
 
-* every kind of Neo4J server exposing services through the BOLT protocol (3.0+)
+* every kind of Neo4J server exposing services through the BOLT protocol (3.0.X)
 
 The driver will be implemented also for:
 
@@ -71,11 +68,11 @@ mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*IT test
 mvn clean -fneo4j-jdbc-bolt/pom.xml -Dtest=*PT test
 --------------------------------------------------
 
-WARNING: Must have a neo4j (RC1) stand alone with Bolt protocol on port 7687 (default)
+WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (default)
 
 ===== Server =====
 
-* Install a Neo4j 3.0 server and start it with the BOLT protocol enabled
+* Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled
 
 * Connect with URLs in the form jdbc:bolt://<host>:<port>/ e.g. jdbc:bolt://localhost/
 
@@ -123,7 +120,9 @@ Milestone 03 [RELEASED]
 
 * Bug fix
 
-* Neo4j Java Driver 1.0.0
+* Neo4j Java Driver 1.0.1
+
+* Neo4j 3.0.1
 
 === Thank you ===
 
