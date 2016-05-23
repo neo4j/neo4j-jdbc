@@ -69,6 +69,7 @@
     </dependencies>
 
     <properties>
+        <encoding>UTF-8</encoding>
         <powermock.version>1.6.2</powermock.version>
         <junit.version>4.12</junit.version>
     </properties>
