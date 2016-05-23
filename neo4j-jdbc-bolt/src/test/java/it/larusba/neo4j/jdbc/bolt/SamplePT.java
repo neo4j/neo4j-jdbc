@@ -44,7 +44,6 @@ public class SamplePT {
 
 	@Test public void launchBenchmark() throws Exception {
 
-		Class.forName("it.larusba.neo4j.jdbc.Driver");
 		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test");
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
@@ -85,7 +84,6 @@ public class SamplePT {
 
 	@State(Scope.Thread) public static class Data {
 		@Setup public static void initialize() throws ClassNotFoundException, SQLException, IOException {
-			Class.forName("it.larusba.neo4j.jdbc.Driver");
 		}
 
 		public String query = "MATCH (n) RETURN n";

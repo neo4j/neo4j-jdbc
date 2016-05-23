@@ -24,7 +24,6 @@ import org.junit.*;
 
 import java.sql.*;
 import java.util.Map;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -37,10 +36,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltResultSetMetaDataIT {
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
-
-	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
-		Class.forName("it.larusba.neo4j.jdbc.bolt.BoltDriver");
-	}
 
 	@Before public void setUp() {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);

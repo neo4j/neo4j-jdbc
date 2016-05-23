@@ -21,7 +21,6 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import it.larusba.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.neo4j.driver.v1.Session;
@@ -41,10 +40,6 @@ public class BoltConnectionIT {
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
 
 	private String NEO4J_JDBC_BOLT_URL;
-
-	@BeforeClass public static void initialize() throws ClassNotFoundException {
-		Class.forName("it.larusba.neo4j.jdbc.bolt.BoltDriver");
-	}
 
 	@Before public void setup() {
 		NEO4J_JDBC_BOLT_URL = "jdbc:" + neo4j.getBoltUrl();

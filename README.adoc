@@ -32,9 +32,6 @@ This project is composed by the following modules:
 === Minimum viable snippet ===
 
 ---------------------------------------------
-// Make sure Neo4j Driver is registered
-Class.forName("it.larusba.neo4j.jdbc.Driver");
-
 // Connect
 Connection con = DriverManager.getConnection("jdbc:bolt://localhost");
 
