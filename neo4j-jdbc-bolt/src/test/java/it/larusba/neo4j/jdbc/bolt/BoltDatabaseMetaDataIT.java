@@ -21,7 +21,6 @@
  */
 package it.larusba.neo4j.jdbc.bolt;
 
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -42,10 +41,6 @@ import static org.junit.Assert.assertNotNull;
 public class BoltDatabaseMetaDataIT {
 
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();
-
-	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
-		Class.forName("it.larusba.neo4j.jdbc.bolt.BoltDriver");
-	}
 
 	@Test public void getDatabaseVersionShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
 		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());

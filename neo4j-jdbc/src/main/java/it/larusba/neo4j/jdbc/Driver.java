@@ -32,19 +32,6 @@ import java.util.logging.Logger;
  */
 public abstract class Driver implements java.sql.Driver {
 
-	public static String DRIVERS_BOLT = "it.larusba.neo4j.jdbc.bolt.BoltDriver";
-
-	public static String[] DRIVERS = new String[]{DRIVERS_BOLT};
-
-	static {
-		for(String driver : DRIVERS) {
-			try {
-				Class.forName(driver);
-			} catch (ClassNotFoundException e) {
-			}
-		}
-	}
-
 	@Override public abstract Connection connect(String url, Properties info) throws SQLException;
 
 	@Override public abstract boolean acceptsURL(String url) throws SQLException;
