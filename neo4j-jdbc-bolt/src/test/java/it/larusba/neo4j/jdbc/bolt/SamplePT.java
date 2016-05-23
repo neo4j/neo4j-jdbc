@@ -21,6 +21,7 @@ package it.larusba.neo4j.jdbc.bolt;
 
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.openjdk.jmh.annotations.*;
@@ -43,8 +44,8 @@ public class SamplePT {
 
 	@Test public void launchBenchmark() throws Exception {
 
-		Class.forName("BoltDriver");
-		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687");
+		Class.forName("it.larusba.neo4j.jdbc.Driver");
+		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test");
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
 		if (rs.next()) {
@@ -84,14 +85,14 @@ public class SamplePT {
 
 	@State(Scope.Thread) public static class Data {
 		@Setup public static void initialize() throws ClassNotFoundException, SQLException, IOException {
-			Class.forName("BoltDriver");
+			Class.forName("it.larusba.neo4j.jdbc.Driver");
 		}
 
 		public String query = "MATCH (n) RETURN n";
 	}
 
 	@Benchmark public void testSimpleQueryJDBC(Data data, Blackhole bh) throws ClassNotFoundException, SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687");
+		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test");
 		Statement stmt = conn.createStatement();
 		bh.consume(stmt.executeQuery(data.query));
 		stmt.close();
@@ -99,7 +100,7 @@ public class SamplePT {
 	}
 
 	@Benchmark public void testSimpleQueryBoltDriver(Data data, Blackhole bh) {
-		org.neo4j.driver.v1.Driver driver = GraphDatabase.driver("bolt://localhost:7687");
+		org.neo4j.driver.v1.Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "test"));
 
 		Session session = driver.session();
 
@@ -110,7 +111,7 @@ public class SamplePT {
 
 	@Benchmark public void testSimpleQueryWithDebugJDBC(Data data, Blackhole bh) throws SQLException {
 		System.setOut(Mockito.mock(PrintStream.class));
-		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?debug");
+		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test,debug");
 		Statement stmt = conn.createStatement();
 		bh.consume(stmt.executeQuery(data.query));
 		stmt.close();
