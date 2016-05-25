@@ -25,7 +25,6 @@ import it.larusba.neo4j.jdbc.InstanceFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -36,19 +35,10 @@ public class HttpDriver extends Driver {
 
 	public final static String JDBC_HTTP_PREFIX = "http";
 
-	// Register the driver class
-	static {
-		try {
-			DriverManager.registerDriver(new HttpDriver());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
 	/**
 	 * Default constructor.
 	 */
-	public HttpDriver() {
+	public HttpDriver() throws SQLException {
 		super(JDBC_HTTP_PREFIX);
 	}
 

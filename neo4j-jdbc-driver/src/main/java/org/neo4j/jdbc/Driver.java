@@ -27,22 +27,12 @@ import it.larusba.neo4j.jdbc.http.HttpDriver;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 public class Driver extends it.larusba.neo4j.jdbc.Driver {
-
-	// Register the driver class
-	static {
-		try {
-			DriverManager.registerDriver(new Driver());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
 
 	/**
 	 * Prefix/class hashMap of all available Driver.
@@ -55,7 +45,7 @@ public class Driver extends it.larusba.neo4j.jdbc.Driver {
 	/**
 	 * Default constructor.
 	 */
-	public Driver() {
+	public Driver() throws SQLException {
 		super(null);
 	}
 

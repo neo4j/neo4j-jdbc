@@ -56,9 +56,6 @@ public class SampleIT {
 	}
 
 	@Test public void exampleTestInMemory() throws ClassNotFoundException, SQLException {
-		// Make sure Neo4j Driver is registered
-		Class.forName("it.larusba.neo4j.jdbc.bolt.BoltDriver");
-
 		neo4j.getGraphDatabase().execute("create (:User{name:\"testUser\"})");
 
 		// Connect
