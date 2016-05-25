@@ -131,6 +131,8 @@ We'd also like to thank for their precious support:
 
 * https://twitter.com/mesirii[Michael Hunger], NEO TECHNOLOGY - Head of Developer Relations, Caretaker Neo4j Community
 
+* https://twitter.com/logisima[Benoît Simard], NEO TECHNOLOGY - Technical Consultant at Neo Technology
+
 === License ===
 
 Copyright (c) 2016 http://www.larus-ba.it[LARUS Business Automation]
