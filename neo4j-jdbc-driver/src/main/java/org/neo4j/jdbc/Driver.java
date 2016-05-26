@@ -22,8 +22,8 @@
 
 package org.neo4j.jdbc;
 
-import it.larusba.neo4j.jdbc.bolt.BoltDriver;
-import it.larusba.neo4j.jdbc.http.HttpDriver;
+import org.neo4j.jdbc.bolt.BoltDriver;
+import org.neo4j.jdbc.http.HttpDriver;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
@@ -32,12 +32,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class Driver extends it.larusba.neo4j.jdbc.Driver {
+public class Driver extends BaseDriver {
 
 	/**
 	 * Prefix/class hashMap of all available Driver.
 	 */
-	private final Map<String, Class> DRIVERS = new HashMap() {{
+	private final Map<String, Class> DRIVERS = new HashMap<String, Class>() {{
 		put(BoltDriver.JDBC_BOLT_PREFIX, BoltDriver.class);
 		put(HttpDriver.JDBC_HTTP_PREFIX, HttpDriver.class);
 	}};
@@ -59,8 +59,8 @@ public class Driver extends it.larusba.neo4j.jdbc.Driver {
 	 * @return The driver
 	 * @throws SQLException
 	 */
-	private it.larusba.neo4j.jdbc.Driver getDriver(String url) throws SQLException {
-		it.larusba.neo4j.jdbc.Driver driver = null;
+	private BaseDriver getDriver(String url) throws SQLException {
+		BaseDriver driver = null;
 
 		if (url == null) {
 			throw new SQLException("null is not a valid url");
@@ -76,7 +76,7 @@ public class Driver extends it.larusba.neo4j.jdbc.Driver {
 				// We look into driver map is it known
 				if (DRIVERS.containsKey(prefix)) {
 					Constructor constructor = DRIVERS.get(prefix).getDeclaredConstructor();
-					driver = (it.larusba.neo4j.jdbc.Driver) constructor.newInstance();
+					driver = (BaseDriver) constructor.newInstance();
 				}
 			}
 		} catch (Exception e) {

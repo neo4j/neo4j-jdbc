@@ -6,7 +6,7 @@
     <!-- =========== -->
     <!-- = General = -->
     <!-- =========== -->
-    <groupId>it.larus-ba</groupId>
+    <groupId>org.neo4j</groupId>
     <artifactId>neo4j-jdbc-parent</artifactId>
     <version>3.0-M03</version>
     <packaging>pom</packaging>
@@ -109,17 +109,17 @@
         <dependencies>
             <!-- Inter-module dependencies -->
             <dependency>
-                <groupId>it.larus-ba</groupId>
+                <groupId>org.neo4j</groupId>
                 <artifactId>neo4j-jdbc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>it.larus-ba</groupId>
+                <groupId>org.neo4j</groupId>
                 <artifactId>neo4j-jdbc-bolt</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>it.larus-ba</groupId>
+                <groupId>org.neo4j</groupId>
                 <artifactId>neo4j-jdbc-http</artifactId>
                 <version>${project.version}</version>
             </dependency>

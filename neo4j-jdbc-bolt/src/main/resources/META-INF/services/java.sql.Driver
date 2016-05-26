@@ -1,2 +1,2 @@
-it.larusba.neo4j.jdbc.bolt.BoltDriver
+org.neo4j.jdbc.bolt.BoltDriver
 

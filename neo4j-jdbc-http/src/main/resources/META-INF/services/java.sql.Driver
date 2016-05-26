@@ -1,2 +1,2 @@
-it.larusba.neo4j.jdbc.http.HttpDriver
+org.neo4j.jdbc.http.HttpDriver
 

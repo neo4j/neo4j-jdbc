@@ -8,7 +8,7 @@
     <!-- = Parent = -->
     <!-- ========== -->
     <parent>
-        <groupId>it.larus-ba</groupId>
+        <groupId>org.neo4j</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
         <version>3.0-M03</version>
     </parent>
@@ -25,7 +25,7 @@
     <!-- ================ -->
     <dependencies>
         <dependency>
-            <groupId>it.larus-ba</groupId>
+            <groupId>org.neo4j</groupId>
             <artifactId>neo4j-jdbc</artifactId>
         </dependency>
         <!-- Deps to the HTTP client -->

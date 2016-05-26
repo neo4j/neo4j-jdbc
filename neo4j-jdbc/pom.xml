@@ -8,7 +8,7 @@
     <!-- = Parent = -->
     <!-- ========== -->
     <parent>
-        <groupId>it.larus-ba</groupId>
+        <groupId>org.neo4j</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
         <version>3.0-M03</version>
     </parent>
@@ -16,7 +16,7 @@
     <!-- =========== -->
     <!-- = General = -->
     <!-- =========== -->
-    <groupId>it.larus-ba</groupId>
+    <groupId>org.neo4j</groupId>
     <artifactId>neo4j-jdbc</artifactId>
     <version>3.0-M03</version>
     <packaging>jar</packaging>
