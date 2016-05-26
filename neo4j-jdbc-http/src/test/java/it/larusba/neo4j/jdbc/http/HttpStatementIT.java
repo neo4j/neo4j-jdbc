@@ -20,7 +20,6 @@
 package it.larusba.neo4j.jdbc.http;
 
 import it.larusba.neo4j.jdbc.http.test.Neo4jHttpIT;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
 
@@ -29,10 +28,6 @@ import java.sql.*;
 import static org.junit.Assert.*;
 
 public class HttpStatementIT extends Neo4jHttpIT {
-
-	@BeforeClass public static void initialize() throws ClassNotFoundException, SQLException {
-		Class.forName("it.larusba.neo4j.jdbc.http.HttpDriver");
-	}
 
 	/*------------------------------*/
 	/*          executeQuery        */

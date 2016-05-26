@@ -26,7 +26,6 @@ import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -40,18 +39,10 @@ public class BoltDriver extends Driver {
 
 	public final static String JDBC_BOLT_PREFIX = "bolt";
 
-	static {
-		try {
-			DriverManager.registerDriver(new BoltDriver());
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
     /**
      * Default constructor.
      */
-    public BoltDriver() {
+    public BoltDriver() throws SQLException {
         super(JDBC_BOLT_PREFIX);
     }
 
