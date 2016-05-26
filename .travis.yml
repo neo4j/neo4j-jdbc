@@ -8,7 +8,6 @@ script:
   - mvn clean test -Pintegration-test
   #- mvn clean test -Pperformance-test
 
-# whitelist
 branches:
  only:
    - master
