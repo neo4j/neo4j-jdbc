@@ -12,6 +12,3 @@ script:
 branches:
  only:
    - master
-  
-notifications:
-  slack: larus-ba:otcexf1c5NioYQEIG8uK1HaY

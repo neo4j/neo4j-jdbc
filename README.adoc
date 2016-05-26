@@ -1,11 +1,15 @@
-== Neo4j JDBC Driver image:https://travis-ci.org/larusba/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/larusba/neo4j-jdbc"] ==
+== Neo4j JDBC Driver
+
+image:https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"]
+
+This driver was mainly developed by http://larus-ba.it[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j.
+*Thank you* so much for all your work.
 
 This is the Neo4j JDBC driver that supports various types of database connections.
 With this driver you will be able to interact with a Neo4J database using also the new BOLT protocol.
 
 Being a graph database, Neo4J is not serving data in a relational way and the exact purpose of this project is to allow
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4J.
-
 
 The driver can be used with:
 
@@ -19,13 +23,13 @@ The driver will be implemented also for:
 
 This project is composed by the following modules:
 
-* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
-* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
-* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the bolt protocol
-* https://github.com/larusba/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - Http] - module supporting the http protocol
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the bolt protocol
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - Http] - module supporting the http protocol
 
 
-=== Minimum viable snippet ===
+=== Minimum viable snippet
 
 ---------------------------------------------
 // Connect
@@ -41,15 +45,12 @@ try (Statement stmt = con.createStatement()) {
 con.close();
 ---------------------------------------------
 
-=== Usage ===
+=== Usage
 
 * Add the JDBC driver jar file to your project
-
-* Load the driver using the class "BoltDriver" for BOLT protocol
-
 * Execute queries using the Cyper graph query language
 
-=== Tests usage ===
+=== Tests usage
 
 * Run all unitary tests:
 -------------------------------------------------
@@ -69,7 +70,7 @@ mvn clean test -Pperformance-test
 
 WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (default)
 
-===== Server =====
+===== Server
 
 * Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled
 
@@ -123,23 +124,20 @@ Milestone 03 [RELEASED]
 
 * Neo4j 3.0.1
 
-=== Thank you ===
+Release Candidate 1
 
-We'd also like to thank for their precious support:
+* Move to github.com/neo4j-contrib
 
-* https://twitter.com/darthvader42[Stefan Armbruster], NEO TECHNOLOGY - Presales Engineer for EMEA
+* Changed package to `org.neo4j`
 
-* https://twitter.com/mesirii[Michael Hunger], NEO TECHNOLOGY - Head of Developer Relations, Caretaker Neo4j Community
+* Released to Neo4j's maven repository
 
-* https://twitter.com/logisima[Benoît Simard], NEO TECHNOLOGY - Technical Consultant at Neo Technology
 
-=== License ===
+=== License
 
-Copyright (c) 2016 http://www.larus-ba.it[LARUS Business Automation]
+Copyright (c) 2016 http://www.larus-ba.it[LARUS Business Automation], http://neo4j.com[Neo4j]
 
-This file is part of the "LARUS Integration Framework for Neo4j".
-
-The "LARUS Integration Framework for Neo4j" is licensed under the Apache License, Version 2.0 (the "License");
+The "Neo4j JDBC Driver" is licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 
 You may obtain a copy of the License at
@@ -152,3 +150,35 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 See the License for the specific language governing permissions and
 limitations under the License.
+
+
+=== Thank you
+
+We'd like to thank:
+
+The core development team:
+
+* https://twitter.com/ziotobiad[Alberto D'Este], Larus-BA - Software Developer
+
+* http://twitter.com/mfalcier[Marco Falcier], Larus-BA - Software Developer
+
+* http://twitter.com/glaggia[Gianmarco Laggia], Larus-BA - Software Developer
+
+* http://twitter.com/logisima[Benoît Simard], Neo4j - Technical Consultant at Neo Technology
+
+Contributors:
+
+* Michael Vitz
+
+* Angelo Busato
+
+* Enrico Marin
+
+Supporters:
+
+* http://twitter.com/inserpio[Lorenzo Speranzoni], Larus-BA - Founder and CEO
+
+* http://twitter.com/darthvader42[Stefan Armbruster], Neo4j - Customer Success Engineer for EMEA
+
+* http://twitter.com/mesirii[Michael Hunger], Neo4j - Caretaker Neo4j Community
+
