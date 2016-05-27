@@ -8,6 +8,9 @@ This driver was mainly developed by http://larus-ba.it[Larus BA, Italy], a certi
 This is the Neo4j JDBC driver that supports various types of database connections.
 With this driver you will be able to interact with a Neo4J database using also the new BOLT protocol.
 
+[NOTE]
+The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
+
 Being a graph database, Neo4J is not serving data in a relational way and the exact purpose of this project is to allow
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4J.
 
