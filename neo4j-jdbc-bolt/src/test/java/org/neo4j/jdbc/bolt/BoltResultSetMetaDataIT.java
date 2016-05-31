@@ -19,13 +19,14 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.neo4j.jdbc.bolt.data.StatementData;
-import org.junit.*;
 
 import java.sql.*;
 import java.util.Map;
-import org.junit.ClassRule;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -164,5 +165,19 @@ public class BoltResultSetMetaDataIT {
 		con.close();
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
+	}
+
+	@Test public void getColumnTypeShouldSucceed() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+
+		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+
+		try (Statement stmt = con.createStatement()) {
+			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
+			while (rs.next()) {
+				ResultSetMetaData rsm = rs.getMetaData();
+				assertEquals(12, rsm.getColumnType(1));
+			}
+		}
 	}
 }

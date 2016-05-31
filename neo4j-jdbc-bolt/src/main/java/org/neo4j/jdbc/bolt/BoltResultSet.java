@@ -44,6 +44,7 @@ import java.util.*;
 public class BoltResultSet extends ResultSet implements Loggable {
 
 	private StatementResult iterator;
+	private ResultSetMetaData metaData;
 	private Record          current;
 	private List<String>    keys;
 	private boolean closed = false;
@@ -103,6 +104,8 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
 		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
 		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
+
+		this.metaData = InstanceFactory.debug(BoltResultSetMetaData.class, new BoltResultSetMetaData(this.iterator, this.keys), this.isLoggable());
 	}
 
 	private boolean flatteningTypes(StatementResult statementResult){
@@ -435,7 +438,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		return InstanceFactory.debug(BoltResultSetMetaData.class, new BoltResultSetMetaData(this.iterator, this.keys), this.isLoggable());
+		return metaData;
 	}
 
 	private Object generateObject(Object obj) {

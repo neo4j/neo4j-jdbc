@@ -19,11 +19,12 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.Loggable;
-import org.neo4j.jdbc.ResultSetMetaData;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.exceptions.NoSuchRecordException;
 import org.neo4j.driver.v1.types.Type;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.ResultSetMetaData;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -37,6 +38,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 
 	private StatementResult iterator = null;
 	private boolean         loggable = false;
+	public int[] columnType;
 
 	/**
 	 * Default constructor with result iterator and list of column name.
@@ -47,6 +49,17 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	BoltResultSetMetaData(StatementResult iterator, List<String> keys) {
 		super(keys);
 		this.iterator = iterator;
+		this.columnType = new int[keys.size() + 1];
+
+		// we init columnType with the first record
+		// in case first == last record
+		for (int i = 1; i <= keys.size(); i++) {
+			try {
+				getColumnType(i);
+			} catch (SQLException e) {
+				//nothing
+			}
+		}
 	}
 
 	/**
@@ -61,33 +74,46 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	}
 
 	@Override public int getColumnType(int column) throws SQLException {
-		Type type = this.iterator.peek().get(column - 1).type();
+		try {
+			int resultType = 0;
 
-		int resultType = 0;
+			// Compute column type with the next record
+			Type type = this.iterator.peek().get(column - 1).type();
 
-		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
-			resultType = Types.VARCHAR;
-		}
-		if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
-			resultType = Types.INTEGER;
-		}
-		if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
-			resultType = Types.BOOLEAN;
-		}
-		if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
-			resultType = Types.FLOAT;
-		}
-		if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
-		}
-		if (InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
-		}
-		if (InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
+			if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
+				resultType = Types.VARCHAR;
+			}
+			if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
+				resultType = Types.INTEGER;
+			}
+			if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
+				resultType = Types.BOOLEAN;
+			}
+			if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
+				resultType = Types.FLOAT;
+			}
+			if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
+				resultType = Types.JAVA_OBJECT;
+			}
+			if (InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)) {
+				resultType = Types.JAVA_OBJECT;
+			}
+			if (InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)) {
+				resultType = Types.JAVA_OBJECT;
+			}
+
+			// we store the column type if it's different to null (the default value)
+			if (resultType > 0) {
+				columnType[column] = resultType;
+			}
+
+		} catch (NoSuchRecordException e) {
+			// Silent exception !
+			// here there is no next record (case for the last record)
+			// if last = first case is treated into the constructor
 		}
 
-		return resultType;
+		return columnType[column];
 	}
 
 	@Override public String getColumnTypeName(int column) throws SQLException {
