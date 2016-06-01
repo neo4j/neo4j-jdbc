@@ -182,12 +182,12 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		expectedEx.expect(SQLException.class);
 
 		Transaction transaction = mock(Transaction.class);
-
+/*
 		given(transaction.run(anyString())).willAnswer(invocation -> {
 			Thread.sleep(1500);
 			return null;
 		});
-
+*/
 		Session session = mock(Session.class);
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
@@ -248,12 +248,12 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		expectedEx.expect(SQLException.class);
 
 		Transaction transaction = mock(Transaction.class);
-
+/*
 		given(transaction.run(anyString())).willAnswer(invocation -> {
 			Thread.sleep(1500);
 			return null;
 		});
-
+*/
 		Session session = mock(Session.class);
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
@@ -388,12 +388,12 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		expectedEx.expect(SQLException.class);
 
 		Transaction transaction = mock(Transaction.class);
-
+/*
 		given(transaction.run(anyString())).willAnswer(invocation -> {
 			Thread.sleep(1500);
 			return null;
 		});
-
+*/
 		Session session = mock(Session.class);
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);

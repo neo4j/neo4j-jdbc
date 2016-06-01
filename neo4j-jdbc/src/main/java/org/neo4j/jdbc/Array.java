@@ -37,8 +37,8 @@ public abstract class Array implements java.sql.Array {
 	public static List<Integer> TYPES_UNSUPPORTED = Arrays
 			.asList(Types.ARRAY, Types.BIGINT, Types.BINARY, Types.BIT, Types.BLOB, Types.CHAR, Types.CLOB, Types.DATALINK, Types.DATE, Types.DECIMAL,
 					Types.DISTINCT, Types.FLOAT, Types.LONGNVARCHAR, Types.LONGVARBINARY, Types.NCHAR, Types.NCLOB, Types.NUMERIC, Types.NVARCHAR, Types.OTHER,
-					Types.REAL, Types.REF, Types.REF_CURSOR, Types.ROWID, Types.SMALLINT, Types.SQLXML, Types.STRUCT, Types.TIME, Types.TIME_WITH_TIMEZONE,
-					Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE, Types.TINYINT, Types.VARBINARY);
+					Types.REAL, Types.REF, /*Types.REF_CURSOR,*/ Types.ROWID, Types.SMALLINT, Types.SQLXML, Types.STRUCT, Types.TIME, /*Types.TIME_WITH_TIMEZONE,*/
+					Types.TIMESTAMP, /*Types.TIMESTAMP_WITH_TIMEZONE,*/ Types.TINYINT, Types.VARBINARY);
 
 	@Override public String getBaseTypeName() throws SQLException {
 		throw new SQLFeatureNotSupportedException("Feature not supported");

@@ -25,10 +25,7 @@ import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -78,11 +75,13 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		this.debug = debug;
 
 		// Compute driver version, name, ...
-		try (InputStream stream = DatabaseMetaData.class.getResourceAsStream("/neo4j-jdbc-driver.properties")){
+		try {
+			InputStream stream = DatabaseMetaData.class.getResourceAsStream("/neo4j-jdbc-driver.properties");
 			Properties properties = new Properties();
 			properties.load(stream);
 			this.driverName = properties.getProperty("driver.name");
 			this.driverVersion = properties.getProperty("driver.version");
+			stream.close();
 		} catch (Exception e) {
 			this.driverName = "Neo4j JDBC Driver";
 			this.driverVersion = "Unknown";
@@ -93,7 +92,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/**
 	 * Extract a part of a Version
 	 *
-	 * @param version The string representation of a version
+	 * @param version  The string representation of a version
 	 * @param position 1 for the major, 2 for minor and 3 for revision
 	 * @return The corresponding driver version part if it's possible, otherwise -1
 	 */
@@ -101,7 +100,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		int result = -1;
 		try {
 			Matcher matcher = VERSION_REGEX.matcher(this.getDriverVersion());
-			if(matcher.find()) {
+			if (matcher.find()) {
 				result = Integer.valueOf(matcher.group(position));
 			}
 		} catch (SQLException e) {
@@ -122,133 +121,133 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/*       Default implementation       */
 	/*------------------------------------*/
 
-	@Override public java.sql.Connection getConnection() throws SQLException {
+	public java.sql.Connection getConnection() throws SQLException {
 		return this.connection;
 	}
 
-	@Override public String getDriverName() throws SQLException {
+	public String getDriverName() throws SQLException {
 		return this.driverName;
 	}
 
-	@Override public String getDriverVersion() throws SQLException {
+	public String getDriverVersion() throws SQLException {
 		return this.driverVersion;
 	}
 
-	@Override public int getDriverMajorVersion() {
+	public int getDriverMajorVersion() {
 		return this.extractVersionPart(driverVersion, 1);
 	}
 
-	@Override public int getDriverMinorVersion() {
+	public int getDriverMinorVersion() {
 		return this.extractVersionPart(driverVersion, 2);
 	}
 
-	@Override public String getDatabaseProductName() throws SQLException {
+	public String getDatabaseProductName() throws SQLException {
 		return "Neo4j";
 	}
 
-	@Override public String getDatabaseProductVersion() throws SQLException {
+	public String getDatabaseProductVersion() throws SQLException {
 		return this.databaseVersion;
 	}
 
-	@Override public int getDatabaseMajorVersion() throws SQLException {
+	public int getDatabaseMajorVersion() throws SQLException {
 		return this.extractVersionPart(driverVersion, 1);
 	}
 
-	@Override public int getDatabaseMinorVersion() throws SQLException {
+	public int getDatabaseMinorVersion() throws SQLException {
 		return this.extractVersionPart(driverVersion, 2);
 	}
 
-	@Override public int getJDBCMajorVersion() throws SQLException {
+	public int getJDBCMajorVersion() throws SQLException {
 		return 4;
 	}
 
-	@Override public int getJDBCMinorVersion() throws SQLException {
+	public int getJDBCMinorVersion() throws SQLException {
 		return 0;
 	}
 
-	@Override public String getIdentifierQuoteString() throws SQLException {
+	public String getIdentifierQuoteString() throws SQLException {
 		return "\"";
 	}
 
 	// Here make a list of cypher keyword ?
-	@Override public String getSQLKeywords() throws SQLException {
+	public String getSQLKeywords() throws SQLException {
 		return "";
 	}
 
-	@Override public String getNumericFunctions() throws SQLException {
+	public String getNumericFunctions() throws SQLException {
 		return "";
 	}
 
-	@Override public String getStringFunctions() throws SQLException {
+	public String getStringFunctions() throws SQLException {
 		return "";
 	}
 
-	@Override public String getTimeDateFunctions() throws SQLException {
+	public String getTimeDateFunctions() throws SQLException {
 		return "";
 	}
 
-	@Override public String getExtraNameCharacters() throws SQLException {
+	public String getExtraNameCharacters() throws SQLException {
 		return "";
 	}
 
-	@Override public boolean supportsMultipleResultSets() throws SQLException {
+	public boolean supportsMultipleResultSets() throws SQLException {
 		return false;
 	}
 
-	@Override public String getCatalogTerm() throws SQLException {
+	public String getCatalogTerm() throws SQLException {
 		return null;
 	}
 
-	@Override public String getCatalogSeparator() throws SQLException {
+	public String getCatalogSeparator() throws SQLException {
 		return "";
 	}
 
-	@Override public boolean supportsSchemasInDataManipulation() throws SQLException {
+	public boolean supportsSchemasInDataManipulation() throws SQLException {
 		return false;
 	}
 
-	@Override public boolean supportsSchemasInTableDefinitions() throws SQLException {
+	public boolean supportsSchemasInTableDefinitions() throws SQLException {
 		return false;
 	}
 
-	@Override public boolean supportsCatalogsInDataManipulation() throws SQLException {
+	public boolean supportsCatalogsInDataManipulation() throws SQLException {
 		return false;
 	}
 
-	@Override public boolean supportsCatalogsInProcedureCalls() throws SQLException {
+	public boolean supportsCatalogsInProcedureCalls() throws SQLException {
 		return false;
 	}
 
-	@Override public boolean supportsCatalogsInTableDefinitions() throws SQLException {
+	public boolean supportsCatalogsInTableDefinitions() throws SQLException {
 		return false;
 	}
 
-	@Override public int getDefaultTransactionIsolation() throws SQLException {
+	public int getDefaultTransactionIsolation() throws SQLException {
 		return 0;
 	}
 
-	@Override public boolean supportsTransactions() throws SQLException {
+	public boolean supportsTransactions() throws SQLException {
 		return true;
 	}
 
-	@Override public ResultSet getSchemas() throws SQLException {
-		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
+	public ResultSet getSchemas() throws SQLException {
+		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
-	@Override public ResultSet getCatalogs() throws SQLException {
-		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
+	public ResultSet getCatalogs() throws SQLException {
+		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
-	@Override public ResultSet getTableTypes() throws SQLException {
-		List<Object> list = Arrays.asList("TABLE");
-		return new ListResultSet(Arrays.asList(list), Arrays.asList("TABLE_TYPE"));
+	public ResultSet getTableTypes() throws SQLException {
+		List<Object> list = Collections.<Object>singletonList("TABLE");
+		return new ListResultSet(Collections.singletonList(list), Collections.singletonList("TABLE_TYPE"));
 	}
 
-	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
+	public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
 		return null;
 	}
 
-	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
+	public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
 		return null;
 	}
 
@@ -256,577 +255,575 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/*       Not implemented yet       */
 	/*---------------------------------*/
 
-	@Override public boolean allProceduresAreCallable() throws SQLException {
+	public boolean allProceduresAreCallable() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean allTablesAreSelectable() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	// this can be implemented
-	@Override public String getURL() throws SQLException {
+	public boolean allTablesAreSelectable() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	// this can be implemented
-	@Override public String getUserName() throws SQLException {
+	public String getURL() throws SQLException {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
+
+	// this can be implemented
+	public String getUserName() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
 	// it's always false with neo4j no ?
-	@Override public boolean isReadOnly() throws SQLException {
+	public boolean isReadOnly() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean nullsAreSortedHigh() throws SQLException {
+	public boolean nullsAreSortedHigh() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean nullsAreSortedLow() throws SQLException {
+	public boolean nullsAreSortedLow() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean nullsAreSortedAtStart() throws SQLException {
+	public boolean nullsAreSortedAtStart() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
+	public boolean nullsAreSortedAtEnd() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean usesLocalFiles() throws SQLException {
+	public boolean usesLocalFiles() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean usesLocalFilePerTable() throws SQLException {
+	public boolean usesLocalFilePerTable() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsMixedCaseIdentifiers() throws SQLException {
+	public boolean supportsMixedCaseIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean storesUpperCaseIdentifiers() throws SQLException {
+	public boolean storesUpperCaseIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean storesLowerCaseIdentifiers() throws SQLException {
+	public boolean storesLowerCaseIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean storesMixedCaseIdentifiers() throws SQLException {
+	public boolean storesMixedCaseIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
+	public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
+	public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
+	public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
+	public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getSystemFunctions() throws SQLException {
+	public String getSystemFunctions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getSearchStringEscape() throws SQLException {
+	public String getSearchStringEscape() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsAlterTableWithAddColumn() throws SQLException {
+	public boolean supportsAlterTableWithAddColumn() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsAlterTableWithDropColumn() throws SQLException {
+	public boolean supportsAlterTableWithDropColumn() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsColumnAliasing() throws SQLException {
+	public boolean supportsColumnAliasing() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean nullPlusNonNullIsNull() throws SQLException {
+	public boolean nullPlusNonNullIsNull() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsConvert() throws SQLException {
+	public boolean supportsConvert() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsConvert(int fromType, int toType) throws SQLException {
+	public boolean supportsConvert(int fromType, int toType) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsTableCorrelationNames() throws SQLException {
+	public boolean supportsTableCorrelationNames() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsDifferentTableCorrelationNames() throws SQLException {
+	public boolean supportsDifferentTableCorrelationNames() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsExpressionsInOrderBy() throws SQLException {
+	public boolean supportsExpressionsInOrderBy() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsOrderByUnrelated() throws SQLException {
+	public boolean supportsOrderByUnrelated() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsGroupBy() throws SQLException {
+	public boolean supportsGroupBy() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsGroupByUnrelated() throws SQLException {
+	public boolean supportsGroupByUnrelated() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsGroupByBeyondSelect() throws SQLException {
+	public boolean supportsGroupByBeyondSelect() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsLikeEscapeClause() throws SQLException {
+	public boolean supportsLikeEscapeClause() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsMultipleTransactions() throws SQLException {
+	public boolean supportsMultipleTransactions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsNonNullableColumns() throws SQLException {
+	public boolean supportsNonNullableColumns() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsMinimumSQLGrammar() throws SQLException {
+	public boolean supportsMinimumSQLGrammar() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsCoreSQLGrammar() throws SQLException {
+	public boolean supportsCoreSQLGrammar() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsExtendedSQLGrammar() throws SQLException {
+	public boolean supportsExtendedSQLGrammar() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsANSI92EntryLevelSQL() throws SQLException {
+	public boolean supportsANSI92EntryLevelSQL() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsANSI92IntermediateSQL() throws SQLException {
+	public boolean supportsANSI92IntermediateSQL() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsANSI92FullSQL() throws SQLException {
+	public boolean supportsANSI92FullSQL() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsIntegrityEnhancementFacility() throws SQLException {
+	public boolean supportsIntegrityEnhancementFacility() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsOuterJoins() throws SQLException {
+	public boolean supportsOuterJoins() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsFullOuterJoins() throws SQLException {
+	public boolean supportsFullOuterJoins() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsLimitedOuterJoins() throws SQLException {
+	public boolean supportsLimitedOuterJoins() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getSchemaTerm() throws SQLException {
+	public String getSchemaTerm() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public String getProcedureTerm() throws SQLException {
+	public String getProcedureTerm() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean isCatalogAtStart() throws SQLException {
+	public boolean isCatalogAtStart() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSchemasInProcedureCalls() throws SQLException {
+	public boolean supportsSchemasInProcedureCalls() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSchemasInIndexDefinitions() throws SQLException {
+	public boolean supportsSchemasInIndexDefinitions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
+	public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
+	public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
+	public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsPositionedDelete() throws SQLException {
+	public boolean supportsPositionedDelete() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsPositionedUpdate() throws SQLException {
+	public boolean supportsPositionedUpdate() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSelectForUpdate() throws SQLException {
+	public boolean supportsSelectForUpdate() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsStoredProcedures() throws SQLException {
+	public boolean supportsStoredProcedures() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSubqueriesInComparisons() throws SQLException {
+	public boolean supportsSubqueriesInComparisons() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSubqueriesInExists() throws SQLException {
+	public boolean supportsSubqueriesInExists() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSubqueriesInIns() throws SQLException {
+	public boolean supportsSubqueriesInIns() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSubqueriesInQuantifieds() throws SQLException {
+	public boolean supportsSubqueriesInQuantifieds() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsCorrelatedSubqueries() throws SQLException {
+	public boolean supportsCorrelatedSubqueries() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsUnion() throws SQLException {
+	public boolean supportsUnion() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsUnionAll() throws SQLException {
+	public boolean supportsUnionAll() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
+	public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
+	public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
+	public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
+	public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxBinaryLiteralLength() throws SQLException {
+	public int getMaxBinaryLiteralLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxCharLiteralLength() throws SQLException {
+	public int getMaxCharLiteralLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxColumnNameLength() throws SQLException {
+	public int getMaxColumnNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxColumnsInGroupBy() throws SQLException {
+	public int getMaxColumnsInGroupBy() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxColumnsInIndex() throws SQLException {
+	public int getMaxColumnsInIndex() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxColumnsInOrderBy() throws SQLException {
+	public int getMaxColumnsInOrderBy() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxColumnsInSelect() throws SQLException {
+	public int getMaxColumnsInSelect() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxColumnsInTable() throws SQLException {
+	public int getMaxColumnsInTable() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxConnections() throws SQLException {
+	public int getMaxConnections() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxCursorNameLength() throws SQLException {
+	public int getMaxCursorNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxIndexLength() throws SQLException {
+	public int getMaxIndexLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxSchemaNameLength() throws SQLException {
+	public int getMaxSchemaNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxProcedureNameLength() throws SQLException {
+	public int getMaxProcedureNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxCatalogNameLength() throws SQLException {
+	public int getMaxCatalogNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxRowSize() throws SQLException {
+	public int getMaxRowSize() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
+	public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxStatementLength() throws SQLException {
+	public int getMaxStatementLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxStatements() throws SQLException {
+	public int getMaxStatements() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxTableNameLength() throws SQLException {
+	public int getMaxTableNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxTablesInSelect() throws SQLException {
+	public int getMaxTablesInSelect() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getMaxUserNameLength() throws SQLException {
+	public int getMaxUserNameLength() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
+	public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
+	public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
+	public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
+	public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
+	public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
-			throws SQLException {
+	public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
+	public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
+	public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
+	public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
+	public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
+	public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
+	public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
+	public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema,
+	public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema,
 			String foreignTable) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getTypeInfo() throws SQLException {
-		return new ListResultSet(Collections.emptyList(), Collections.emptyList());
+	public ResultSet getTypeInfo() throws SQLException {
+		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
-	@Override public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
+	public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsResultSetType(int type) throws SQLException {
+	public boolean supportsResultSetType(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
+	public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean ownUpdatesAreVisible(int type) throws SQLException {
+	public boolean ownUpdatesAreVisible(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean ownDeletesAreVisible(int type) throws SQLException {
+	public boolean ownDeletesAreVisible(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean ownInsertsAreVisible(int type) throws SQLException {
+	public boolean ownInsertsAreVisible(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean othersUpdatesAreVisible(int type) throws SQLException {
+	public boolean othersUpdatesAreVisible(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean othersDeletesAreVisible(int type) throws SQLException {
+	public boolean othersDeletesAreVisible(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean othersInsertsAreVisible(int type) throws SQLException {
+	public boolean othersInsertsAreVisible(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean updatesAreDetected(int type) throws SQLException {
+	public boolean updatesAreDetected(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean deletesAreDetected(int type) throws SQLException {
+	public boolean deletesAreDetected(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean insertsAreDetected(int type) throws SQLException {
+	public boolean insertsAreDetected(int type) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsBatchUpdates() throws SQLException {
+	public boolean supportsBatchUpdates() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
+	public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsSavepoints() throws SQLException {
+	public boolean supportsSavepoints() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsNamedParameters() throws SQLException {
+	public boolean supportsNamedParameters() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsMultipleOpenResults() throws SQLException {
+	public boolean supportsMultipleOpenResults() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsGetGeneratedKeys() throws SQLException {
+	public boolean supportsGetGeneratedKeys() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
+	public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
+	public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
+	public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsResultSetHoldability(int holdability) throws SQLException {
+	public boolean supportsResultSetHoldability(int holdability) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getResultSetHoldability() throws SQLException {
+	public int getResultSetHoldability() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public int getSQLStateType() throws SQLException {
+	public int getSQLStateType() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean locatorsUpdateCopy() throws SQLException {
+	public boolean locatorsUpdateCopy() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsStatementPooling() throws SQLException {
+	public boolean supportsStatementPooling() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public RowIdLifetime getRowIdLifetime() throws SQLException {
+	public RowIdLifetime getRowIdLifetime() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
+	public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
+	public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getClientInfoProperties() throws SQLException {
+	public ResultSet getClientInfoProperties() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
+	public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)
-			throws SQLException {
+	public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+	public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
-	@Override public boolean generatedKeyAlwaysReturned() throws SQLException {
+	public boolean generatedKeyAlwaysReturned() throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 

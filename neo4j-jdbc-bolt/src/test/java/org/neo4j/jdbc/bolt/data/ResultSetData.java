@@ -262,7 +262,9 @@ public class ResultSetData {
 
 			StreamCollector pullAllResponseCollector = (StreamCollector) pullAllResponseCollectorMethod.invoke(cursor);
 
-			data.forEach(values -> pullAllResponseCollector.record(values(values)));
+			for(Object[] values : data){
+				pullAllResponseCollector.record(values(values));
+			}
 			pullAllResponseCollector.done();
 			connection.run("<unknown>", ParameterSupport.NO_PARAMETERS, responseCollector);
 			connection.pullAll(pullAllResponseCollector);

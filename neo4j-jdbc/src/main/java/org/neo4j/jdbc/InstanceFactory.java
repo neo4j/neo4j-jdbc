@@ -21,7 +21,7 @@
  */
 package org.neo4j.jdbc;
 
-import org.mockito.Mockito;
+//import org.mockito.Mockito;
 
 /**
  * @author AgileLARUS
@@ -29,10 +29,11 @@ import org.mockito.Mockito;
  */
 public class InstanceFactory {
 	public static <T extends Loggable> T debug(Class<T> cls, T obj, boolean log) {
-		if (log) {
+/*		if (log) {
 			obj.setLoggable(true);
 			obj = Mockito.mock(cls, Mockito.withSettings().spiedInstance(obj).verboseLogging().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 		}
+*/
 		return obj;
 	}
 }

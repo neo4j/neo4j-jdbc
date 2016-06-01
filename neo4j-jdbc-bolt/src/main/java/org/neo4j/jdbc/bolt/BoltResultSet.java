@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.neo4j.driver.v1.util.Pair;
 import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.driver.internal.InternalNode;
@@ -75,21 +76,24 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.keys = new ArrayList<>();
 
 		if (this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null
-				&& this.iterator.peek().fields().stream().filter(pair -> ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())).count()
-				== this.iterator.keys().size()) {
+				&& this.flatteningTypes(this.iterator)) {
 			//Flatten the result
-			this.iterator.peek().fields().forEach(pair -> {
+			for (Pair<String, Value> pair : this.iterator.peek().fields()){
 				keys.add(pair.key());
 				if (ACCEPTED_TYPES_FOR_FLATTENING.get(0).equals(pair.value().type().name())) {
 					keys.add(pair.key() + ".id");
 					keys.add(pair.key() + ".labels");
-					pair.value().asNode().keys().forEach(key -> keys.add(pair.key() + "." + key));
+					for(String key : pair.value().asNode().keys()){
+						keys.add(pair.key() + "." + key);
+					}
 				} else if (ACCEPTED_TYPES_FOR_FLATTENING.get(1).equals(pair.value().type().name())) {
 					keys.add(pair.key() + ".id");
 					keys.add(pair.key() + ".type");
-					pair.value().asRelationship().keys().forEach(key -> keys.add(pair.key() + "." + key));
+					for(String key : pair.value().asRelationship().keys()){
+						keys.add(pair.key() + "." + key);
+					}
 				}
-			});
+			}
 			this.flattened = true;
 		} else if (this.iterator != null) {
 			//Keys are exactly the ones returned from the iterator
@@ -99,6 +103,19 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
 		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
 		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
+	}
+
+	private boolean flatteningTypes(StatementResult statementResult){
+		boolean result = true;
+
+		for(Pair<String, Value> pair : statementResult.peek().fields()){
+			if(!ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())){
+				result = false;
+				break;
+			}
+		}
+
+		return result;
 	}
 
 	private void checkClosed() throws SQLException {
@@ -428,7 +445,9 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			HashMap<String, Object> map = new HashMap<>();
 			map.put("_id", node.id());
 			map.put("_labels", node.labels());
-			node.keys().forEach(key -> map.put(key, node.get(key).asObject()));
+			for (String key : node.keys()){
+				map.put(key, node.get(key).asObject());
+			}
 			result = map;
 		}
 		if (obj instanceof InternalRelationship) {
@@ -438,17 +457,19 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			map.put("_type", rel.type());
 			map.put("_startId", rel.startNodeId());
 			map.put("_endId", rel.endNodeId());
-			rel.keys().forEach(key -> map.put(key, rel.get(key).asObject()));
+			for(String key : rel.keys()){
+				map.put(key, rel.get(key).asObject());
+			}
 			result = map;
 		}
 		if (obj instanceof InternalPath) {
 			InternalPath path = (InternalPath) obj;
 			List<Object> list = new ArrayList<>();
 			list.add(this.generateObject(path.start()));
-			path.forEach(segment -> {
+			for(Path.Segment segment : path){
 				list.add(this.generateObject(segment.relationship()));
 				list.add(this.generateObject(segment.end()));
-			});
+			}
 			result = list;
 		}
 		return result;
