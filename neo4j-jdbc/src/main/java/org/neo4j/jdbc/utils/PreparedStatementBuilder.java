@@ -59,14 +59,14 @@ public class PreparedStatementBuilder {
 	 * @param raw
 	 * @return
 	 */
-	public static int placeholdersCount(String raw) {
-		int count = 0;
-		String regex = "\\?(?=[^\"]*(?:\"[^\"]*\"[^\"]*)*$)";
+	public static int namedParameterCount(String raw) {
+		int max = 0;
+		String regex = "\\{\\s*`?\\s*(\\d+)\\s*`?\\s*\\}(?=[^\"]*(\"[^\"]*\"[^\"]*)*$)";
 		Matcher matcher = Pattern.compile(regex).matcher(raw);
 		while (matcher.find()) {
-			count++;
+			max = Math.max(Integer.parseInt(matcher.group(1)),max);
 		}
-		return count;
+		return max;
 	}
 
 }

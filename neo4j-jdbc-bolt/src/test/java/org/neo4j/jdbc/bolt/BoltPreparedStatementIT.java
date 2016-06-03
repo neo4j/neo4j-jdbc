@@ -54,6 +54,20 @@ public class BoltPreparedStatementIT {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
 	}
 
+	@Test public void executeQueryWithNamedParamShouldExecuteAndReturnCorrectData() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
+		statement.setString(1, "test");
+		ResultSet rs = statement.executeQuery();
+
+		assertTrue(rs.next());
+		assertEquals("testAgain", rs.getString(1));
+		assertFalse(rs.next());
+		connection.close();
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+	}
+
 	/*------------------------------*/
 	/*         executeUpdate        */
 	/*------------------------------*/

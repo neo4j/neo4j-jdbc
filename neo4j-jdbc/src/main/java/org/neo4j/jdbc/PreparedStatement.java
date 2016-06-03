@@ -53,7 +53,7 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	protected PreparedStatement(Connection connection, String rawStatement) {
 		super(connection);
 		this.statement = PreparedStatementBuilder.replacePlaceholders(rawStatement);
-		this.parametersNumber = PreparedStatementBuilder.placeholdersCount(rawStatement);
+		this.parametersNumber = PreparedStatementBuilder.namedParameterCount(statement);
 		this.parameters = new HashMap<>(this.parametersNumber);
 	}
 
@@ -93,7 +93,7 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	 * @param obj The value of the parameter
 	 */
 	protected void insertParameter(int index, Object obj) {
-		this.parameters.put(new Integer(index).toString(), obj);
+		this.parameters.put(Integer.toString(index), obj);
 	}
 
 	/*------------------------------------*/
