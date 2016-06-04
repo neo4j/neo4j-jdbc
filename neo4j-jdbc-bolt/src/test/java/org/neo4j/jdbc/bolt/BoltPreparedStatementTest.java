@@ -40,6 +40,7 @@ import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -496,7 +497,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 
 	@Test public void setObjectShouldInsertTheCorrectObjectValue() throws SQLException {
-		Object obj = new Object();
+		Object obj = new HashMap<>();
 		this.preparedStatementOneParam.setObject(1, obj);
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(obj, value.get("1"));
@@ -507,12 +508,12 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	}
 
 	@Test public void setObjectShouldOverrideOldValue() throws SQLException {
-		Object obj = new Object();
+		Object obj = new HashMap<>();
 		this.preparedStatementOneParam.setObject(1, obj);
 		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(obj, value.get("1"));
 
-		Object newObj = new Object();
+		Object newObj = new ArrayList<>();;
 		this.preparedStatementOneParam.setObject(1, newObj);
 		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
 		assertEquals(newObj, value.get("1"));
@@ -521,16 +522,21 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void setObjectShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		this.preparedStatementOneParam.setObject(99, new Object());
+		this.preparedStatementOneParam.setObject(99, new HashMap<>());
 	}
 
 	@Test public void setObjectShouldThrowExceptionIfClosedPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		this.preparedStatementOneParam.close();
-		this.preparedStatementOneParam.setObject(1, new Object());
+		this.preparedStatementOneParam.setObject(1, new HashMap<>());
 	}
 
+	@Test public void setObjectShouldThrowExceptionIfObjectIsNotSupported() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		this.preparedStatementOneParam.setObject(1, new Object());
+	}
 
 	/*------------------------------*/
 	/*     getParameterMetaData     */
