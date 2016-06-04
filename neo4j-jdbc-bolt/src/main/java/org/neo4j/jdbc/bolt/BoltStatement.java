@@ -183,25 +183,6 @@ public class BoltStatement extends Statement implements Loggable {
 		return result;
 	}
 
-	/*-------------------*/
-	/*       Close       */
-	/*-------------------*/
-
-	/**
-	 * Override the default implementation to close the transaction.
-	 */
-	@Override public void close() throws SQLException {
-		if (!this.isClosed()) {
-			super.close();
-
-			// closing transaction
-			if (this.transaction != null) {
-				this.transaction.failure();
-				this.transaction.close();
-			}
-		}
-	}
-
 	/*--------------------*/
 	/*       Logger       */
 	/*--------------------*/

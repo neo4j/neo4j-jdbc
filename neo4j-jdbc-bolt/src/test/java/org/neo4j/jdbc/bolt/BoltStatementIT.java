@@ -179,4 +179,20 @@ public class BoltStatementIT {
 
 		connection.close();
 	}
+
+	/*------------------------------*/
+	/*             close            */
+	/*------------------------------*/
+	@Test public void closeShouldNotCloseTransaction() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl())) {
+			connection.setAutoCommit(false);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN true AS result");
+			statement.close();
+
+			assertTrue(((BoltConnection) connection).getTransaction().isOpen());
+		}
+	}
+
 }

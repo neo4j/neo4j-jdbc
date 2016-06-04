@@ -101,7 +101,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		verify(mockedRS, times(1)).close();
 	}
 
-	@Test public void closeShouldCloseTheTransactionNotCommitting() throws Exception {
+	@Test public void closeShouldNotTouchTheTransaction() throws Exception {
 
 		Transaction mockTransaction = mock(Transaction.class);
 
@@ -112,8 +112,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 		statement.close();
 
-		verify(mockTransaction, times(1)).failure();
-		verify(mockTransaction, times(1)).close();
+		verify(mockTransaction, never()).failure();
+		verify(mockTransaction, never()).success();
+		verify(mockTransaction, never()).close();
 	}
 
 	/*------------------------------*/
