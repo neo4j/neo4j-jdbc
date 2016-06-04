@@ -492,6 +492,47 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 
 	/*------------------------------*/
+	/*          setObject           */
+	/*------------------------------*/
+
+	@Test public void setObjectShouldInsertTheCorrectObjectValue() throws SQLException {
+		Object obj = new Object();
+		this.preparedStatementOneParam.setObject(1, obj);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(obj, value.get("1"));
+
+		this.preparedStatementTwoParams.setObject(2, obj);
+		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
+		assertEquals(obj, value.get("2"));
+	}
+
+	@Test public void setObjectShouldOverrideOldValue() throws SQLException {
+		Object obj = new Object();
+		this.preparedStatementOneParam.setObject(1, obj);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(obj, value.get("1"));
+
+		Object newObj = new Object();
+		this.preparedStatementOneParam.setObject(1, newObj);
+		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertEquals(newObj, value.get("1"));
+	}
+
+	@Test public void setObjectShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		this.preparedStatementOneParam.setObject(99, new Object());
+	}
+
+	@Test public void setObjectShouldThrowExceptionIfClosedPreparedStatement() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		this.preparedStatementOneParam.close();
+		this.preparedStatementOneParam.setObject(1, new Object());
+	}
+
+
+	/*------------------------------*/
 	/*     getParameterMetaData     */
 	/*------------------------------*/
 

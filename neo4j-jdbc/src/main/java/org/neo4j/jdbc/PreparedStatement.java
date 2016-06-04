@@ -165,6 +165,12 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 		this.insertParameter(parameterIndex, x);
 	}
 
+	@Override public void setObject(int parameterIndex, Object x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
 	@Override public void clearParameters() throws SQLException {
 		this.checkClosed();
 		this.parameters.clear();
@@ -261,10 +267,6 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	}
 
 	@Override public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public void setObject(int parameterIndex, Object x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
