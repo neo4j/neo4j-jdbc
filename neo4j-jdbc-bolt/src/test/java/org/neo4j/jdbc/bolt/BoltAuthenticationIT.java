@@ -22,9 +22,11 @@ package org.neo4j.jdbc.bolt;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.neo4j.driver.v1.exceptions.ClientException;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -49,7 +51,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("The credentials you provided were valid, but must be changed before you can use this instance.");
 		}
 		con.close();
@@ -62,7 +64,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
 		con.close();
@@ -75,7 +77,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
 		con.close();
@@ -88,7 +90,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("The client is unauthorized due to authentication failure.");
 		}
 		con.close();
@@ -101,7 +103,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
 		con.close();
@@ -114,7 +116,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
 		con.close();
@@ -127,7 +129,7 @@ public class BoltAuthenticationIT {
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (ClientException e) {
+		} catch (SQLException e) {
 			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
 		}
 		con.close();
