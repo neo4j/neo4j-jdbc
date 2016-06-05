@@ -49,11 +49,11 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	BoltResultSetMetaData(StatementResult iterator, List<String> keys) {
 		super(keys);
 		this.iterator = iterator;
-		this.columnType = new int[keys.size() + 1];
+		this.columnType = new int[this.keys.size() + 1];
 
 		// we init columnType with the first record
 		// in case first == last record
-		for (int i = 1; i <= keys.size(); i++) {
+		for (int i = 1; i <= this.keys.size(); i++) {
 			try {
 				getColumnType(i);
 			} catch (SQLException e) {
