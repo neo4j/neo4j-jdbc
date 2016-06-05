@@ -19,6 +19,8 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -35,6 +37,8 @@ import static org.junit.Assert.*;
 public class BoltStatementIT {
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+
+	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	/*------------------------------*/
 	/*          executeQuery        */
@@ -92,6 +96,19 @@ public class BoltStatementIT {
 		assertTrue(result);
 
 		connection.close();
+	}
+
+	@Test public void executeBadCypherQueryShouldReturnAnSQLException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		try {
+			statement.execute("AZERTYUIOP");
+		}
+		finally {
+			connection.close();
+		}
 	}
 
 	/*------------------------------*/

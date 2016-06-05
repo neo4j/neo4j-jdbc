@@ -19,12 +19,12 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.InstanceFactory;
-import org.neo4j.jdbc.Loggable;
-import org.neo4j.jdbc.Statement;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.SummaryCounters;
+import org.neo4j.jdbc.InstanceFactory;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.Statement;
 
 import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
@@ -39,9 +39,9 @@ import java.util.List;
  */
 public class BoltStatement extends Statement implements Loggable {
 
-	private Transaction    transaction;
-	private int[]          rsParams;
-	private List<String>   batchStatements;
+	private Transaction  transaction;
+	private int[]        rsParams;
+	private List<String> batchStatements;
 
 	private boolean loggable = false;
 
@@ -61,17 +61,23 @@ public class BoltStatement extends Statement implements Loggable {
 	private StatementResult executeInternal(String sql) throws SQLException {
 		this.checkClosed();
 
-		StatementResult result;
-		if (this.getConnection().getAutoCommit()) {
-			Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction();
-			result = t.run(sql);
-			t.success();
-			t.close();
-		} else {
-			result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
-		}
+		try {
 
-		return result;
+			StatementResult result;
+			if (this.getConnection().getAutoCommit()) {
+				try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
+					result = t.run(sql);
+					t.success();
+				}
+			} else {
+				result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
+			}
+
+			return result;
+
+		} catch (RuntimeException e) {
+			throw new SQLException(e);
+		}
 	}
 
 	//Mustn't return null
