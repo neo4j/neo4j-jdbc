@@ -239,8 +239,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public ResultSet getTableTypes() throws SQLException {
-		List<Object> list = Collections.<Object>singletonList("TABLE");
-		return new ListResultSet(Collections.singletonList(list), Collections.singletonList("TABLE_TYPE"));
+		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
