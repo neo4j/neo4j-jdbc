@@ -83,7 +83,7 @@ public class Neo4jResponse {
 					// Error parsing
 					this.errors = new ArrayList<>();
 					for (Map<String, String> error : (List<Map<String, String>>) body.get("errors")) {
-						errors.add(new SQLException(error.getOrDefault("messages", ""), error.getOrDefault("code", "")));
+						errors.add(new SQLException(error.getOrDefault("message", ""), error.getOrDefault("code", "")));
 					}
 
 					// Data parsing

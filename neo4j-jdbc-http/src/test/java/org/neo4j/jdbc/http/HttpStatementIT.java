@@ -56,6 +56,19 @@ public class HttpStatementIT extends Neo4jHttpIT {
 		connection.close();
 	}
 
+	@Test public void executeBadCypherQueryShouldReturnAnSQLException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Statement statement = connection.createStatement();
+		try {
+			statement.execute("AZERTYUIOP");
+		}
+		finally {
+			connection.close();
+		}
+	}
+
 	/*------------------------------*/
 	/*         executeUpdate        */
 	/*------------------------------*/

@@ -57,6 +57,10 @@ public class HttpStatement extends Statement implements Loggable {
 		// execute the query
 		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(cypher, null, Boolean.TRUE);
 
+		if(response.hasErrors()) {
+			throw new SQLException(response.displayErrors());
+		}
+
 		// Parse stats
 		this.currentUpdateCount = 0;
 		this.currentUpdateCount = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(0));
