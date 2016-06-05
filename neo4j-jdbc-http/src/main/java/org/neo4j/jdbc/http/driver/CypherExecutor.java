@@ -231,7 +231,9 @@ public class CypherExecutor {
 		try (CloseableHttpResponse response = http.execute(request)) {
 			try (InputStream is = response.getEntity().getContent()) {
 				Map body = mapper.readValue(is, Map.class);
-				result = (String) body.getOrDefault("version", result);
+				if(body.get("version") != null) {
+					result = (String) body.get("version");
+				}
 			}
 		} catch (Exception e) {
 			// do nothing there is the default value
