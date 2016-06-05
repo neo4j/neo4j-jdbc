@@ -21,6 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.exceptions.ClientException;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.neo4j.jdbc.InstanceFactory;
 import org.neo4j.jdbc.Loggable;
@@ -75,8 +76,8 @@ public class BoltStatement extends Statement implements Loggable {
 
 			return result;
 
-		} catch (RuntimeException e) {
-			throw new SQLException(e);
+		} catch (ClientException e) {
+			throw new SQLException(e.getMessage());
 		}
 	}
 
