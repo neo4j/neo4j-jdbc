@@ -66,13 +66,13 @@ import static org.mockito.Matchers.eq;
 		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
 
 		BaseDriver driver = new BoltDriver();
-		Connection connection = driver.connect("jdbc:bolt://test", null);
+		Connection connection = driver.connect("jdbc:neo4j:bolt://test", null);
 		assertNotNull(connection);
 	}
 
 	@Test public void shouldConnectReturnNullIfUrlNotValid() throws SQLException {
 		BaseDriver driver = new BoltDriver();
-		assertNull(driver.connect("jdbc:http://localhost:7474", null));
+		assertNull(driver.connect("jdbc:neo4j:http://localhost:7474", null));
 		assertNull(driver.connect("bolt://localhost:7474", null));
 		assertNull(driver.connect("jdbcbolt://localhost:7474", null));
 	}
@@ -88,7 +88,7 @@ import static org.mockito.Matchers.eq;
 		expectedEx.expect(SQLException.class);
 
 		BaseDriver driver = new BoltDriver();
-		driver.connect("jdbc:bolt://somehost:9999", null);
+		driver.connect("jdbc:neo4j:bolt://somehost:9999", null);
 	}
 
 	/*------------------------------*/
@@ -96,14 +96,14 @@ import static org.mockito.Matchers.eq;
 	/*------------------------------*/
 	@Test public void shouldAcceptURLOK() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		BaseDriver driver = new BoltDriver();
-		assertTrue(driver.acceptsURL("jdbc:bolt://localhost:7474"));
-		assertTrue(driver.acceptsURL("jdbc:bolt://192.168.0.1:7474"));
-		assertTrue(driver.acceptsURL("jdbc:bolt://localhost:8080"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:7474"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://192.168.0.1:7474"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:8080"));
 	}
 
 	@Test public void shouldAcceptURLKO() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		BaseDriver driver = new BoltDriver();
-		assertFalse(driver.acceptsURL("jdbc:http://localhost:7474"));
+		assertFalse(driver.acceptsURL("jdbc:neo4j:http://localhost:7474"));
 		assertFalse(driver.acceptsURL("jdbc:file://192.168.0.1:7474"));
 		assertFalse(driver.acceptsURL("bolt://localhost:7474"));
 	}

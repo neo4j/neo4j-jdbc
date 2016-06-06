@@ -44,7 +44,7 @@ public class SamplePT {
 
 	@Test public void launchBenchmark() throws Exception {
 
-		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test");
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test");
 		Statement stmt = conn.createStatement();
 		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
 		if (rs.next()) {
@@ -90,7 +90,7 @@ public class SamplePT {
 	}
 
 	@Benchmark public void testSimpleQueryJDBC(Data data, Blackhole bh) throws ClassNotFoundException, SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test");
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test");
 		Statement stmt = conn.createStatement();
 		bh.consume(stmt.executeQuery(data.query));
 		stmt.close();
@@ -109,7 +109,7 @@ public class SamplePT {
 
 	@Benchmark public void testSimpleQueryWithDebugJDBC(Data data, Blackhole bh) throws SQLException {
 		System.setOut(Mockito.mock(PrintStream.class));
-		Connection conn = DriverManager.getConnection("jdbc:bolt://localhost:7687?user=neo4j,password=test,debug");
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test,debug");
 		Statement stmt = conn.createStatement();
 		bh.consume(stmt.executeQuery(data.query));
 		stmt.close();

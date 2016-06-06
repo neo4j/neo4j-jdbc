@@ -36,7 +36,7 @@ This project is composed by the following modules:
 
 ---------------------------------------------
 // Connect
-Connection con = DriverManager.getConnection("jdbc:bolt://localhost");
+Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost");
 
 // Querying
 try (Statement stmt = con.createStatement()) {
@@ -77,9 +77,9 @@ WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (
 
 * Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled
 
-* Connect with URLs in the form jdbc:bolt://<host>:<port>/ e.g. jdbc:bolt://localhost/
+* Connect with URLs in the form jdbc:neo4j:bolt://<host>:<port>/ e.g. jdbc:neo4j:bolt://localhost/
 
-* You can also set comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:bolt://localhost/?user=neo4j,password=neo4j,debug=true,noSsl
+* You can also set comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:neo4j:bolt://localhost/?user=neo4j,password=neo4j,debug=true,noSsl
 
 === Release 3.0 Schedule ===
 

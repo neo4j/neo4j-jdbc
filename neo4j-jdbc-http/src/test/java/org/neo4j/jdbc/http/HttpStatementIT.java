@@ -34,7 +34,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	/*------------------------------*/
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery("MATCH (m:Movie { title:\"The Matrix\"}) RETURN m.title");
 
@@ -45,7 +45,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	}
 
 	@Test public void executeQueryWithNullResponseValueShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery("MATCH (n:Person) RETURN n.title AS title");
 
@@ -74,7 +74,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	/*------------------------------*/
 
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 
 		// Node insertion
@@ -98,7 +98,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(true);
 		statement.addBatch("CREATE (:TestExecuteBatchShouldWork {name:\"test1\"})");
@@ -112,7 +112,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		connection.setAutoCommit(true);
 		Statement statement = connection.createStatement();
 		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWhenError {name:\"test1\"})");
@@ -131,7 +131,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction {name:\"test1\"})");

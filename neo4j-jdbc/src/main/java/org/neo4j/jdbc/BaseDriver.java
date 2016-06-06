@@ -33,7 +33,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 	/**
 	 * JDBC prefix for the connection url.
 	 */
-	protected static final String JDBC_PREFIX = "jdbc";
+	protected static final String JDBC_PREFIX = "jdbc:neo4j";
 
 	/**
 	 * Driver prefix for the connection url.
@@ -77,10 +77,10 @@ public abstract class BaseDriver implements java.sql.Driver {
 			throw new SQLException("null is not a valid url");
 		}
 		String[] pieces = url.split(":");
-		if (pieces.length > 2) {
-			if (JDBC_PREFIX.equals(pieces[0])) {
+		if (pieces.length > 3) {
+			if (url.startsWith(JDBC_PREFIX+":")) {
 				if (DRIVER_PREFIX != null) {
-					if(DRIVER_PREFIX.equals(pieces[1])) {
+					if(DRIVER_PREFIX.equals(pieces[2])) {
 						return true;
 					}
 				}

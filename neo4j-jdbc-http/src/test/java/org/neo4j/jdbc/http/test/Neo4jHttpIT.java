@@ -34,7 +34,7 @@ public class Neo4jHttpIT extends Neo4jHttpUnitTest {
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	public String getJDBCUrl() {
-		return "jdbc:" + neo4j.httpURI().toString();
+		return "jdbc:neo4j:" + neo4j.httpURI().toString();
 	}
 
 }

@@ -52,7 +52,7 @@ public class BoltDriver extends BaseDriver {
 		}
 		Connection connection = null;
 		if (acceptsURL(url)) {
-			url = url.replace("jdbc:", "");
+			url = url.replace("jdbc:neo4j:", "");
 			try {
 				Properties info = parseUrlProperties(url, props);
 				if (!info.containsKey("noSsl")) {

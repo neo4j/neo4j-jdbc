@@ -40,7 +40,7 @@ public class BoltConnectionIT {
 	private String NEO4J_JDBC_BOLT_URL;
 
 	@Before public void setup() {
-		NEO4J_JDBC_BOLT_URL = "jdbc:" + neo4j.getBoltUrl();
+		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + neo4j.getBoltUrl();
 	}
 
 	@Test public void commitShouldWorkFine() throws SQLException {

@@ -62,7 +62,7 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		PreparedStatement statement = connection.prepareStatement("CREATE (:TestExecuteBatchShouldWork { name:?, value:?})");
 		connection.setAutoCommit(true);
 		statement.setString(1, "test1");
@@ -82,7 +82,7 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		connection.setAutoCommit(true);
 		PreparedStatement statement = connection.prepareStatement("wrong cypher statement ?");
 		statement.setString(1, "test1");
@@ -103,7 +103,7 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		PreparedStatement statement = connection.prepareStatement("CREATE (:TestExecuteBatchShouldWorkWithTransaction { name:?, value:?})");
 		connection.setAutoCommit(false);
 		statement.setString(1, "test1");

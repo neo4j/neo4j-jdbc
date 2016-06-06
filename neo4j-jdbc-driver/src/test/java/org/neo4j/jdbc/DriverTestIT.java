@@ -43,13 +43,13 @@ public class DriverTestIT {
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
 		BaseDriver driver = new Driver();
-		Connection connection = driver.connect("jdbc:http://localhost:7474", new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:http://localhost:7474", new Properties());
 		Assert.assertTrue(connection instanceof HttpConnection);
 	}
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
 		BaseDriver driver = new Driver();
-		Connection connection = driver.connect("jdbc:" + neo4j.boltURI() + "/?noSsl", new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?noSsl", new Properties());
 		Assert.assertTrue(connection instanceof BoltConnection);
 	}
 

@@ -54,7 +54,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnNodeWithMultipleNodes() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_MORE);
@@ -79,7 +79,7 @@ public class BoltResultSetMetaDataIT {
 	}
 
 	@Test public void shouldAddVirtualColumnsOnNodeAndPreserveResultSet() throws SQLException {
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
@@ -101,7 +101,7 @@ public class BoltResultSetMetaDataIT {
 	}
 
 	@Test public void shouldNotAddVirtualColumnsOnNodeIfNotOnlyNodes() throws SQLException {
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_MISC);
@@ -117,7 +117,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnRelationsWithMultipleRelations() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_RELATIONS);
@@ -139,7 +139,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnRelationsAndNodesWithMultiple() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -170,7 +170,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void getColumnTypeShouldSucceed() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 
-		Connection con = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
