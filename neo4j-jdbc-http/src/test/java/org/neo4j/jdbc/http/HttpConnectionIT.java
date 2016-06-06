@@ -156,7 +156,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 	@Test
 	public void holdabilityShouldFail() throws SQLException {
 		expectedEx.expect(UnsupportedOperationException.class);
-		expectedEx.expectMessage("Not implemented yet.");
+		expectedEx.expectMessage("Method setHoldability in class org.neo4j.jdbc.http.HttpConnection is not yet implemented.");
 
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());

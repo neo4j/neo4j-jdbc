@@ -19,6 +19,8 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.utils.ExceptionBuilder;
+
 import java.sql.*;
 import java.sql.Connection;
 import java.util.Properties;
@@ -69,7 +71,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 	}
 
 	@Override public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean acceptsURL(String url) throws SQLException {

@@ -24,6 +24,7 @@ import org.neo4j.jdbc.http.driver.CypherExecutor;
 import org.neo4j.jdbc.http.driver.Neo4jResponse;
 import org.neo4j.jdbc.http.driver.Neo4jResult;
 import org.neo4j.jdbc.http.driver.Neo4jStatement;
+import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -145,11 +146,11 @@ public class HttpConnection extends Connection implements Loggable {
 	/*-------------------------*/
 
 	@Override public void setHoldability(int holdability) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public int getHoldability() throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	/*------------------------------*/

@@ -19,6 +19,8 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.utils.ExceptionBuilder;
+
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -157,27 +159,27 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isCaseSensitive(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public String getTableName(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean isReadOnly(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean isWritable(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean isDefinitelyWritable(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public String getColumnClassName(int column) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 }
