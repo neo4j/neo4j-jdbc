@@ -28,7 +28,10 @@ import java.net.URL;
 import java.sql.*;
 import java.sql.ResultSet;
 import java.util.Calendar;
+import java.util.Iterator;
+import java.util.List;
 import java.util.HashMap;
+import java.util.Map;
 
 import static java.sql.Types.*;
 
@@ -83,6 +86,40 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	protected void checkParamsNumber(int parameterIndex) throws SQLException {
 		if (parameterIndex > this.parametersNumber) {
 			throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
+		}
+	}
+
+	/** Check if the given object is a valid type that Neo4J can handle.
+	 * If it's not we throw an exception.
+	 *
+	 * @param obj The object to check
+	 * @throws SQLException
+     */
+	protected void checkValidObject(Object obj) throws SQLException {
+		// TODO: this may belong into org.neo4j.driver.v1.Values
+		if (!(
+				obj == null ||
+				obj instanceof Boolean ||
+				obj instanceof String ||
+				obj instanceof Character ||
+				obj instanceof Long ||
+				obj instanceof Short ||
+				obj instanceof Byte ||
+				obj instanceof Integer ||
+				obj instanceof Double ||
+				obj instanceof Float ||
+				obj instanceof List ||
+				obj instanceof Iterable ||
+				obj instanceof Map ||
+				obj instanceof Iterator ||
+				obj instanceof boolean[] ||
+				obj instanceof String[] ||
+				obj instanceof long[] ||
+				obj instanceof int[] ||
+				obj instanceof double[] ||
+				obj instanceof float[] ||
+				obj instanceof Object[])) {
+			throw new SQLException("Object of type '" + obj.getClass() + "' isn't supported");
 		}
 	}
 
@@ -162,6 +199,13 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	@Override public void setString(int parameterIndex, String x) throws SQLException {
 		this.checkClosed();
 		this.checkParamsNumber(parameterIndex);
+		this.insertParameter(parameterIndex, x);
+	}
+
+	@Override public void setObject(int parameterIndex, Object x) throws SQLException {
+		this.checkClosed();
+		this.checkParamsNumber(parameterIndex);
+		this.checkValidObject(x);
 		this.insertParameter(parameterIndex, x);
 	}
 
@@ -261,10 +305,6 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	}
 
 	@Override public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-		throw new UnsupportedOperationException("Not implemented yet.");
-	}
-
-	@Override public void setObject(int parameterIndex, Object x) throws SQLException {
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 
