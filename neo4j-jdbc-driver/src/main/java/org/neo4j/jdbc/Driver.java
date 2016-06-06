@@ -59,7 +59,7 @@ public class Driver extends BaseDriver {
 	 * @return The driver
 	 * @throws SQLException
 	 */
-	private BaseDriver getDriver(String url) throws SQLException {
+	BaseDriver getDriver(String url) throws SQLException {
 		BaseDriver driver = null;
 
 		if (url == null) {
@@ -67,16 +67,17 @@ public class Driver extends BaseDriver {
 		}
 
 		try {
-
 			// We search the driver prefix from the url
-			String[] pieces = url.split(":");
-			if (pieces.length > 2 && JDBC_PREFIX.equals(pieces[0])) {
-				String prefix = pieces[1];
+			if (url.startsWith(JDBC_PREFIX+":")) {
+				String[] pieces = url.split(":");
+				if (pieces.length > 3) {
+					String prefix = pieces[2];
 
-				// We look into driver map is it known
-				if (DRIVERS.containsKey(prefix)) {
-					Constructor constructor = DRIVERS.get(prefix).getDeclaredConstructor();
-					driver = (BaseDriver) constructor.newInstance();
+					// We look into driver map is it known
+					if (DRIVERS.containsKey(prefix)) {
+						Constructor constructor = DRIVERS.get(prefix).getDeclaredConstructor();
+						driver = (BaseDriver) constructor.newInstance();
+					}
 				}
 			}
 		} catch (Exception e) {

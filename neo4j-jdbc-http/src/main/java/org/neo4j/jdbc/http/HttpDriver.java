@@ -46,7 +46,7 @@ public class HttpDriver extends BaseDriver {
 		Connection connection = null;
 		try {
 			if (acceptsURL(url)) {
-				URL neo4jUrl = new URL(url.replace("jdbc:http:", ""));
+				URL neo4jUrl = new URL(url.replace("jdbc:neo4j:", ""));
 				Properties info = parseUrlProperties(url, params);
 				String host = neo4jUrl.getHost();
 				int port = 7474;
