@@ -180,4 +180,18 @@ public class BoltResultSetMetaDataIT {
 			}
 		}
 	}
+
+	@Test public void getColumnTypeNameShouldSucceed() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+
+		try (Statement stmt = con.createStatement()) {
+			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
+			while (rs.next()) {
+				ResultSetMetaData rsm = rs.getMetaData();
+				assertEquals("STRING", rsm.getColumnTypeName(1));
+			}
+		}
+	}
 }
