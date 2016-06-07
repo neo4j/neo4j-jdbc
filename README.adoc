@@ -55,12 +55,12 @@ con.close();
 
 === Tests usage
 
-* Run all unitary tests:
+* Run all unitary tests & integration tests :
 -------------------------------------------------
 mvn clean test
 -------------------------------------------------
 
-* Run integration tests:
+* Run only integration tests:
 -------------------------------------------------
 mvn clean test -Pintegration-test
 -------------------------------------------------

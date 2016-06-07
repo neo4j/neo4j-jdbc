@@ -5,7 +5,6 @@ jdk:
 
 script: 
   - mvn clean test
-  - mvn clean test -Pintegration-test
   #- mvn clean test -Pperformance-test
 
 branches:
