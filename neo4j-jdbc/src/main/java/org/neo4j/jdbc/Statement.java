@@ -47,7 +47,7 @@ public abstract class Statement implements java.sql.Statement {
 		this.currentUpdateCount = -1;
 
 		this.maxRows = 0;
-		if(connection != null && connection.properties != null) {
+		if (connection != null && connection.properties != null) {
 			this.maxRows = Integer.parseInt(connection.properties.getProperty("maxRows", "0"));
 		}
 	}
@@ -73,20 +73,35 @@ public abstract class Statement implements java.sql.Statement {
 		return this.connection;
 	}
 
+	/**
+	 * /!\ Like javadoc said, this method should be called one times.
+	 * Bolt statement always return two results : ResulSet & updatecount.
+	 * Because each time we retrieve a data we set it to the default value
+	 * here we have two cases :
+	 *  - if there a resultset => we tell it by responding -1
+	 *  - otherwise we give the updatecount and reset its value to default
+	 */
 	@Override public int getUpdateCount() throws SQLException {
 		this.checkClosed();
+		int update = this.currentUpdateCount;
+
 		if (this.currentResultSet != null) {
+			update = -1;
+		}
+		else {
 			this.currentUpdateCount = -1;
 		}
-		return this.currentUpdateCount;
+		return update;
 	}
 
+	/**
+	 * Like javadoc said, this method should be called one times.
+	 */
 	@Override public ResultSet getResultSet() throws SQLException {
 		this.checkClosed();
-		if (this.currentUpdateCount != -1) {
-			this.currentResultSet = null;
-		}
-		return this.currentResultSet;
+		ResultSet rs = this.currentResultSet;
+		this.currentResultSet = null;
+		return rs;
 	}
 
 	@Override public int getMaxRows() throws SQLException {
@@ -108,7 +123,7 @@ public abstract class Statement implements java.sql.Statement {
 			if (this.currentResultSet != null) {
 				this.currentResultSet.close();
 			}
-			this.currentUpdateCount = 0;
+			this.currentUpdateCount = -1;
 			this.connection = null;
 		}
 	}
@@ -138,7 +153,11 @@ public abstract class Statement implements java.sql.Statement {
 	 */
 	@Override public boolean getMoreResults() throws SQLException {
 		this.checkClosed();
-		return false;
+		if (this.currentResultSet == null && this.currentUpdateCount == -1) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 	/**
