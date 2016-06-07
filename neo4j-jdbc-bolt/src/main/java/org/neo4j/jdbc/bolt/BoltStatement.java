@@ -62,54 +62,61 @@ public class BoltStatement extends Statement implements Loggable {
 	private StatementResult executeInternal(String sql) throws SQLException {
 		this.checkClosed();
 
-		try {
-
-			StatementResult result;
-			if (this.getConnection().getAutoCommit()) {
-				try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
-					result = t.run(sql);
-					t.success();
-				}
-			} else {
-				result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
+		StatementResult result;
+		if (this.getConnection().getAutoCommit()) {
+			try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
+				result = t.run(sql);
+				t.success();
 			}
+		} else {
+			result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
+		}
 
-			return result;
+		return result;
 
+	}
+
+	//Mustn't return null
+	@Override public ResultSet executeQuery(String sql) throws SQLException {
+		try {
+			StatementResult result = executeInternal(sql);
+
+			this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
+			this.currentUpdateCount = -1;
+			return this.currentResultSet;
 		} catch (ClientException e) {
 			throw new SQLException(e.getMessage());
 		}
 	}
 
-	//Mustn't return null
-	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		StatementResult result = executeInternal(sql);
-
-		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
-		this.currentUpdateCount = -1;
-		return this.currentResultSet;
-	}
-
 	@Override public int executeUpdate(String sql) throws SQLException {
-		StatementResult result = executeInternal(sql);
+		try {
+			StatementResult result = executeInternal(sql);
 
-		SummaryCounters stats = result.consume().counters();
-		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
-		this.currentResultSet = null;
-		return this.currentUpdateCount;
+			SummaryCounters stats = result.consume().counters();
+			this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+			this.currentResultSet = null;
+			return this.currentUpdateCount;
+		} catch (ClientException e) {
+			throw new SQLException(e.getMessage());
+		}
 	}
 
 	@Override public boolean execute(String sql) throws SQLException {
-		boolean result = false;
-		if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
-				.contains("create")) {
-			this.executeUpdate(sql);
-		} else {
-			this.executeQuery(sql);
-			result = true;
-		}
+		try {
+			boolean result = false;
+			if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
+					.contains("create")) {
+				this.executeUpdate(sql);
+			} else {
+				this.executeQuery(sql);
+				result = true;
+			}
 
-		return result;
+			return result;
+		} catch (ClientException e) {
+			throw new SQLException(e.getMessage());
+		}
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {

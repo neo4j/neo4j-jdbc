@@ -98,10 +98,28 @@ public class BoltStatementIT {
 		connection.close();
 	}
 
-	@Test public void executeBadCypherQueryShouldReturnAnSQLException() throws SQLException {
+	@Test public void executeBadCypherQueryOnAutoCommitShouldReturnAnSQLException() throws SQLException {
 		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("Invalid input");
 
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+
+		Statement statement = connection.createStatement();
+		try {
+			statement.execute("AZERTYUIOP");
+		}
+		finally {
+			connection.close();
+		}
+	}
+
+	@Test public void executeBadCypherQueryWithoutAutoCommitShouldReturnAnSQLException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("Invalid input");
+
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		connection.setAutoCommit(false);
+
 		Statement statement = connection.createStatement();
 		try {
 			statement.execute("AZERTYUIOP");
