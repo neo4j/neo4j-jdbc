@@ -75,10 +75,10 @@ public abstract class Statement implements java.sql.Statement {
 
 	/**
 	 * /!\ Like javadoc said, this method should be called one times.
-	 * Bolt statement always return two results : ResulSet & updatecount.
+	 * Bolt statement always return two results : ResulSet and updatecount.
 	 * Because each time we retrieve a data we set it to the default value
 	 * here we have two cases :
-	 *  - if there a resultset => we tell it by responding -1
+	 *  - if there a resultset : we tell it by responding -1
 	 *  - otherwise we give the updatecount and reset its value to default
 	 */
 	@Override public int getUpdateCount() throws SQLException {
