@@ -307,35 +307,35 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsMixedCaseIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return true;
 	}
 
 	@Override public boolean storesUpperCaseIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean storesLowerCaseIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean storesMixedCaseIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return true;
 	}
 
 	@Override public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public String getSystemFunctions() throws SQLException {

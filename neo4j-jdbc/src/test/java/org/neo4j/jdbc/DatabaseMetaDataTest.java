@@ -119,4 +119,43 @@ public class DatabaseMetaDataTest {
 		assertEquals(1, databaseMetaData.getDriverMinorVersion());
 	}
 
+	@Test public void storesUpperCaseIdentifiersShouldBeReturnFalse() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.storesUpperCaseIdentifiers());
+	}
+
+	@Test public void storesLowerCaseIdentifiersShouldBeReturnFalse() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.storesLowerCaseIdentifiers());
+	}
+
+	@Test public void storesMixedCaseIdentifiersShouldBeReturnTrue() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.storesMixedCaseIdentifiers());
+	}
+
+	@Test public void storesUpperCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.storesUpperCaseQuotedIdentifiers());
+	}
+
+	@Test public void storesLowerCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.storesLowerCaseQuotedIdentifiers());
+	}
+
+	@Test public void storesMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.storesMixedCaseQuotedIdentifiers());
+	}
+
+	@Test public void supportsMixedCaseIdentifiersShouldBeReturnTrue() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsMixedCaseIdentifiers());
+	}
+
+	@Test public void supportsMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsMixedCaseQuotedIdentifiers());
+	}
 }
