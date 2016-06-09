@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -43,9 +43,9 @@ public abstract class Connection implements java.sql.Connection {
 	/**
 	 * JDBC driver properties.
 	 */
-	protected Properties properties;
+	Properties properties;
 
-	protected int         holdability;
+	private int         holdability;
 
 	/**
 	 * Default constructor with properties.
@@ -70,7 +70,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * Check if this connection is closed or not.
 	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
 	 *
-	 * @throws SQLException
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {
@@ -83,7 +82,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * If we do, then it throw an exception.
 	 * This method is for using into commit and rollback method.
 	 *
-	 * @throws SQLException
 	 */
 	protected void checkAutoCommit() throws SQLException {
 		if (this.getAutoCommit()) {
@@ -96,7 +94,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * If we can't an SQLException is throw.
 	 *
 	 * @param query Cypher query
-	 * @throws SQLException
 	 */
 	protected void checkReadOnly(String query) throws SQLException {
 		if (isReadOnly() && isMutating(query)) {
@@ -120,7 +117,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * If it doesn't, we throw an exception.
 	 *
 	 * @param resultSetHoldability The holdability value to check
-	 * @throws SQLException
 	 * {@link java.sql.Connection#setHoldability(int)}
 	 */
 	protected void checkHoldabilityParams(int resultSetHoldability) throws SQLException {
@@ -138,7 +134,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * If it doesn't, we throw an exception.
 	 *
 	 * @param resultSetConcurrency The concurrency value to check
-	 * @throws SQLException
 	 */
 	protected void checkConcurrencyParams(int resultSetConcurrency) throws SQLException {
 		// @formatter:off
@@ -155,7 +150,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * If it doesn't, we throw an exception.
 	 *
 	 * @param resultSetType The concurrency value to check
-	 * @throws SQLException
 	 */
 	protected void checkTypeParams(int resultSetType) throws SQLException {
 		// @formatter:off
@@ -395,4 +389,7 @@ public abstract class Connection implements java.sql.Connection {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
+	public String getUserName() {
+		return properties.getProperty("user");
+	}
 }

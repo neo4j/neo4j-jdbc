@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -67,7 +67,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/**
 	 * Do we are in debug mode ?
 	 */
-	protected boolean debug = false;
+	private boolean debug = false;
 
 	/**
 	 * Default constructor.
@@ -97,7 +97,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 * @param position 1 for the major, 2 for minor and 3 for revision
 	 * @return The corresponding driver version part if it's possible, otherwise -1
 	 */
-	protected int extractVersionPart(String version, int position) {
+	private int extractVersionPart(String version, int position) {
 		int result = -1;
 		try {
 			Matcher matcher = VERSION_REGEX.matcher(this.getDriverVersion());
@@ -274,7 +274,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	// this can be implemented
 	@Override public String getUserName() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return connection.getUserName();
 	}
 
 	// it's always false with neo4j no ?

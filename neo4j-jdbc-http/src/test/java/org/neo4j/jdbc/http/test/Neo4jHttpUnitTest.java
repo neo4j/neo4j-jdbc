@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -87,7 +87,7 @@ public class Neo4jHttpUnitTest {
 	 * @return The corresponding QUery object
 	 * @throws IOException
 	 */
-	protected Neo4jStatement transformCsvLineToNeo4jStatement(String[] line) throws SQLException, IOException {
+    private Neo4jStatement transformCsvLineToNeo4jStatement(String[] line) throws SQLException, IOException {
 		String statement = line[CSV_STATEMENT];
 		Map parameters = (Map) new ObjectMapper().readValue(line[CSV_PARAMETERS], HashMap.class);
 		Boolean withStat = Boolean.valueOf(line[CSV_INCLUDESTATS]);

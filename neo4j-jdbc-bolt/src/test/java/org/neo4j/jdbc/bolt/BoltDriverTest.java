@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.BaseDriver;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,8 +27,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
+import org.neo4j.driver.v1.AuthToken;
 import org.neo4j.driver.v1.AuthTokens;
+import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.jdbc.BaseDriver;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -39,7 +41,6 @@ import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
 
 /**
  * @author AgileLARUS
@@ -63,7 +64,7 @@ import static org.mockito.Matchers.eq;
 
 	@Test public void shouldConnectCreateConnection() throws SQLException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver("bolt://test", AuthTokens.none())).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq("bolt://test"), Mockito.eq(AuthTokens.none()),Mockito.any(Config.class))).thenReturn(mockedDriver);
 
 		BaseDriver driver = new BoltDriver();
 		Connection connection = driver.connect("jdbc:neo4j:bolt://test", null);

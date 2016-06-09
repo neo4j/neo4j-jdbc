@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -46,7 +46,7 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 
 	protected String                  statement;
 	protected HashMap<String, Object> parameters;
-	protected int                     parametersNumber;
+	private int                     parametersNumber;
 
 	/**
 	 * Default constructor with connection and statement.
@@ -69,7 +69,6 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	 * Check if the connection is closed or not.
 	 * If it is, we throw an exception.
 	 *
-	 * @throws SQLException
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {
@@ -82,9 +81,8 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	 * If its is we throw an exception.
 	 *
 	 * @param parameterIndex The index parameter to check
-	 * @throws SQLException
 	 */
-	protected void checkParamsNumber(int parameterIndex) throws SQLException {
+    private void checkParamsNumber(int parameterIndex) throws SQLException {
 		if (parameterIndex > this.parametersNumber) {
 			throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
 		}
@@ -94,9 +92,8 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	 * If it's not we throw an exception.
 	 *
 	 * @param obj The object to check
-	 * @throws SQLException
      */
-	protected void checkValidObject(Object obj) throws SQLException {
+    private void checkValidObject(Object obj) throws SQLException {
 		// TODO: this may belong into org.neo4j.driver.v1.Values
 		if (!(
 				obj == null ||
@@ -130,7 +127,7 @@ public abstract class PreparedStatement extends Statement implements java.sql.Pr
 	 * @param index The index/key of the parameter
 	 * @param obj The value of the parameter
 	 */
-	protected void insertParameter(int index, Object obj) {
+    private void insertParameter(int index, Object obj) {
 		this.parameters.put(Integer.toString(index), obj);
 	}
 

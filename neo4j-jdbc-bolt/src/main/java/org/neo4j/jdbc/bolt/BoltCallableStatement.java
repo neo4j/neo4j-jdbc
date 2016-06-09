@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -26,5 +26,5 @@ import org.neo4j.jdbc.CallableStatement;
  *
  * @since 3.0.0
  */
-public class BoltCallableStatement extends CallableStatement {
+class BoltCallableStatement extends CallableStatement {
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -27,10 +27,10 @@ import org.neo4j.jdbc.DatabaseMetaData;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class HttpDatabaseMetaData extends DatabaseMetaData {
+class HttpDatabaseMetaData extends DatabaseMetaData {
 
 
-	public HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
+	private HttpDatabaseMetaData(HttpConnection connection, boolean debug) {
 		super(connection, debug);
 
 		// compute database version

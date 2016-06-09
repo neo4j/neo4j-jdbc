@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -35,7 +35,7 @@ import java.util.Properties;
 
 public class HttpConnection extends Connection implements Loggable {
 
-	protected CypherExecutor executor;
+	CypherExecutor executor;
 	private boolean isClosed = false;
 	private boolean loggable = false;
 
@@ -45,7 +45,6 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @param host       Hostname of the Neo4j instance.
 	 * @param port       HTTP port of the Neo4j instance.
 	 * @param properties Properties of the url connection.
-	 * @throws SQLException
 	 */
 	public HttpConnection(String host, Integer port, Properties properties) throws SQLException {
 		super(properties, ResultSet.CLOSE_CURSORS_AT_COMMIT);
@@ -59,7 +58,6 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @param parameters Parameter of the cypher queries (match by index)
 	 * @param stats      Do we need to include stats ?
 	 * @return
-	 * @throws SQLException
 	 */
 	public Neo4jResponse executeQueries(final List<String> queries, List<Map<String, Object>> parameters, Boolean stats) throws SQLException {
 		checkClosed();
@@ -87,7 +85,6 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @param parameters Parameter of the cypher query
 	 * @param stats      Do we need to include stats ?
 	 * @return
-	 * @throws SQLException
 	 */
 	public Neo4jResponse executeQuery(final String query, Map<String, Object> parameters, Boolean stats) throws SQLException {
 		checkClosed();

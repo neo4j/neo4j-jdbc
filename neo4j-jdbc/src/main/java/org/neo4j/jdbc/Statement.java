@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -34,7 +34,7 @@ public abstract class Statement implements java.sql.Statement {
 	protected Connection connection;
 	protected ResultSet  currentResultSet;
 	protected int        currentUpdateCount;
-	protected int        maxRows;
+	private int        maxRows;
 
 	/**
 	 * Default constructor with JDBC connection.
@@ -56,7 +56,6 @@ public abstract class Statement implements java.sql.Statement {
 	 * Check if this statement is closed or not.
 	 * If it is, we throw an exception.
 	 *
-	 * @throws SQLException
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {

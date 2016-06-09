@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -19,11 +19,9 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.BaseDriver;
 import org.neo4j.jdbc.InstanceFactory;
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Config;
-import org.neo4j.driver.v1.GraphDatabase;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -52,28 +50,28 @@ public class BoltDriver extends BaseDriver {
 		}
 		Connection connection = null;
 		if (acceptsURL(url)) {
-			url = url.replace("jdbc:neo4j:", "");
+			url = url.replace(BaseDriver.JDBC_PREFIX, "");
 			try {
 				Properties info = parseUrlProperties(url, props);
-				if (!info.containsKey("noSsl")) {
-					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
-							(info.containsKey("user") && info.containsKey("password") ?
-									AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
-									AuthTokens.none())).session(), info), BoltConnection.hasDebug(info));
-				} else {
-					Config.ConfigBuilder builder = build();
-					builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
-					Config config = builder.toConfig();
-					connection = InstanceFactory.debug(BoltConnection.class, new BoltConnection(GraphDatabase.driver(url,
-							(info.containsKey("user") && info.containsKey("password") ?
-									AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
-									AuthTokens.none()), config).session(), info), BoltConnection.hasDebug(info));
-				}
+				Config.ConfigBuilder builder = build();
+				if (info.containsKey("noSsl")) builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+				Config config = builder.toConfig();
+				AuthToken authToken = getAuthToken(info);
+				Driver driver = GraphDatabase.driver(url, authToken, config);
+				Session session = driver.session();
+				BoltConnection boltConnection = new BoltConnection(session, info);
+				connection = InstanceFactory.debug(BoltConnection.class, boltConnection, BoltConnection.hasDebug(info));
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}
 		}
 		return connection;
+	}
+
+	private AuthToken getAuthToken(Properties info) {
+		return info.containsKey("user") && info.containsKey("password") ?
+                AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
+                AuthTokens.none();
 	}
 
 

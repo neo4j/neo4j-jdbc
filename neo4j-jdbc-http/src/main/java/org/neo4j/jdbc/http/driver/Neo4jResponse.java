@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -60,7 +60,6 @@ public class Neo4jResponse {
 	 *
 	 * @param response Http response
 	 * @param mapper   Jackson object mapper
-	 * @throws SQLException
 	 */
 	public Neo4jResponse(HttpResponse response, ObjectMapper mapper) throws SQLException {
 		// Parse response headers
@@ -127,7 +126,7 @@ public class Neo4jResponse {
 	 * @return A String with all errors
 	 */
 	public String displayErrors() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (hasErrors()) {
 			sb.append("Some errors occurred : \n");
 			for (SQLException error : errors) {

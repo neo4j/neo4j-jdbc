@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -60,8 +60,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	PreparedStatement preparedStatementOneParam;
-	PreparedStatement preparedStatementTwoParams;
+	private PreparedStatement preparedStatementOneParam;
+	private PreparedStatement preparedStatementTwoParams;
 
 	private BoltResultSet mockedRS;
 

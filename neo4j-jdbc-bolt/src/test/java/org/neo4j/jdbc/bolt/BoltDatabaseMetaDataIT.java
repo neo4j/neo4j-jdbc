@@ -40,10 +40,11 @@ public class BoltDatabaseMetaDataIT {
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
 	@Test public void getDatabaseVersionShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),"user","password");
 
 		assertNotNull(connection.getMetaData().getDatabaseProductVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
+		assertEquals("user", connection.getMetaData().getUserName());
 	}
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -35,7 +35,7 @@ public class ExceptionBuilder {
 		if (stackTraceElements.length > 2) {
 			StackTraceElement caller = stackTraceElements[2];
 
-			StringBuffer sb = new StringBuffer().append("Method ").append(caller.getMethodName()).append(" in class ").append(caller.getClassName())
+			StringBuilder sb = new StringBuilder().append("Method ").append(caller.getMethodName()).append(" in class ").append(caller.getClassName())
 					.append(" is not yet implemented.");
 
 			return new UnsupportedOperationException(sb.toString());

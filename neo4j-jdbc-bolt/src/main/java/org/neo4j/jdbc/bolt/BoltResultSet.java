@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -60,7 +60,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private boolean loggable  = false;
 	private boolean flattened = false;
 
-	public static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
+	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
 
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
@@ -442,40 +442,35 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	private Object generateObject(Object obj) {
-		Object result = obj;
-		if (obj instanceof InternalNode) {
-			InternalNode node = (InternalNode) obj;
-			HashMap<String, Object> map = new HashMap<>();
+		if (obj instanceof Node) {
+			Node node = (Node) obj;
+			Map<String, Object> map = new HashMap<>();
 			map.put("_id", node.id());
 			map.put("_labels", node.labels());
-			for (String key : node.keys()){
-				map.put(key, node.get(key).asObject());
-			}
-			result = map;
+			map.putAll(node.asMap());
+			return map;
 		}
-		if (obj instanceof InternalRelationship) {
-			InternalRelationship rel = (InternalRelationship) obj;
-			HashMap<String, Object> map = new HashMap<>();
+		if (obj instanceof Relationship) {
+			Relationship rel = (Relationship) obj;
+			Map<String, Object> map = new HashMap<>(16);
 			map.put("_id", rel.id());
 			map.put("_type", rel.type());
 			map.put("_startId", rel.startNodeId());
 			map.put("_endId", rel.endNodeId());
-			for(String key : rel.keys()){
-				map.put(key, rel.get(key).asObject());
-			}
-			result = map;
+			map.putAll(rel.asMap());
+			return map;
 		}
-		if (obj instanceof InternalPath) {
-			InternalPath path = (InternalPath) obj;
-			List<Object> list = new ArrayList<>();
+		if (obj instanceof Path) {
+			Path path = (Path) obj;
+			List<Object> list = new ArrayList<>(path.length());
 			list.add(this.generateObject(path.start()));
 			for(Path.Segment segment : path){
 				list.add(this.generateObject(segment.relationship()));
 				list.add(this.generateObject(segment.end()));
 			}
-			result = list;
+			return list;
 		}
-		return result;
+		return obj;
 	}
 
 	@Override public Object getObject(int columnIndex) throws SQLException {

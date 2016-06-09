@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -64,7 +64,7 @@ public class Neo4jStatement {
 	 * @return The JSON string that correspond to the body of the API call
 	 */
 	public static String toJson(List<Neo4jStatement> queries, ObjectMapper mapper) throws SQLException {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		try {
 			sb.append("{\"statements\":");
 			sb.append(mapper.writeValueAsString(queries));

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -29,6 +29,7 @@ import org.neo4j.jdbc.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author AgileLARUS
@@ -38,7 +39,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 
 	private StatementResult iterator = null;
 	private boolean         loggable = false;
-	public Type[] columnType;
+	private Type[] columnType;
 
 	/**
 	 * Default constructor with result iterator and list of column name.
@@ -69,6 +70,47 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 		return this.keys.size();
 	}
 
+	@Override
+	public String getColumnClassName(int column) throws SQLException {
+		Type type = this.getColumnDriverTypeOrDefault(column, columnType[column]);
+
+		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
+			return String.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
+			return Long.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
+			return Boolean.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
+			return Double.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
+			return Object.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)) {
+			return Object.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)) {
+			return Object.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.MAP().equals(type)) {
+			return Map.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.ANY().equals(type)) {
+			return Object.class.getName();
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.NULL().equals(type)) {
+			return null;
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.LIST().equals(type)) {
+			return List.class.getName();
+		}
+
+		return Object.class.getName();
+	}
+
 	@Override public int getColumnType(int column) throws SQLException {
 		Type type = this.getColumnDriverTypeOrDefault(column, columnType[column]);
 		int resultType = 0;
@@ -83,7 +125,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 			resultType = Types.BOOLEAN;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
-			resultType = Types.FLOAT;
+			resultType = Types.NUMERIC;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
 			resultType = Types.JAVA_OBJECT;
@@ -93,6 +135,18 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)) {
 			resultType = Types.JAVA_OBJECT;
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.MAP().equals(type)) {
+			resultType = Types.JAVA_OBJECT;
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.ANY().equals(type)) {
+			resultType = Types.JAVA_OBJECT;
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.NULL().equals(type)) {
+			resultType = Types.NULL;
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.LIST().equals(type)) {
+			resultType = Types.ARRAY;
 		}
 
 		return resultType;

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -173,24 +174,33 @@ public class BoltResultSetMetaDataIT {
 		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
+			ResultSet rs = stmt.executeQuery("MATCH (n) return 'a',1,1.0,[1,2,3],{a:1},null,n,n.name");
 			while (rs.next()) {
 				ResultSetMetaData rsm = rs.getMetaData();
-				assertEquals(12, rsm.getColumnType(1));
-			}
-		}
-	}
-
-	@Test public void getColumnTypeNameShouldSucceed() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
-
-		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
-			while (rs.next()) {
-				ResultSetMetaData rsm = rs.getMetaData();
+				assertEquals(Types.VARCHAR, rsm.getColumnType(1));
 				assertEquals("STRING", rsm.getColumnTypeName(1));
+				assertEquals(String.class.getName(), rsm.getColumnClassName(1));
+				assertEquals(Types.INTEGER, rsm.getColumnType(2));
+				assertEquals("INTEGER", rsm.getColumnTypeName(2));
+				assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
+				assertEquals(Types.NUMERIC, rsm.getColumnType(3));
+				assertEquals("FLOAT", rsm.getColumnTypeName(3));
+				assertEquals(Double.class.getName(), rsm.getColumnClassName(3));
+				assertEquals(Types.ARRAY, rsm.getColumnType(4));
+				assertEquals("LIST OF ANY?", rsm.getColumnTypeName(4));
+				assertEquals(List.class.getName(), rsm.getColumnClassName(4));
+				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(5));
+				assertEquals("MAP", rsm.getColumnTypeName(5));
+				assertEquals(Map.class.getName(), rsm.getColumnClassName(5));
+				assertEquals(Types.NULL, rsm.getColumnType(6));
+				assertEquals("NULL", rsm.getColumnTypeName(6));
+				assertEquals(null, rsm.getColumnClassName(6));
+				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(7));
+				assertEquals("NODE", rsm.getColumnTypeName(7));
+				assertEquals(Object.class.getName(), rsm.getColumnClassName(7));
+				assertEquals(Types.VARCHAR, rsm.getColumnType(8));
+				assertEquals("STRING", rsm.getColumnTypeName(8));
+				assertEquals(String.class.getName(), rsm.getColumnClassName(8));
 			}
 		}
 	}

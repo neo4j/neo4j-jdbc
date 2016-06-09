@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -44,8 +44,8 @@ public class BoltConnectionTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	BoltConnection openConnection;
-	BoltConnection closedConnection;
+	private BoltConnection openConnection;
+	private BoltConnection closedConnection;
 
 	@Before public void tearUp() {
 		openConnection = new BoltConnection(mockSessionOpen());

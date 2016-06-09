@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -33,7 +33,7 @@ public class Neo4jHttpIT extends Neo4jHttpUnitTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	public String getJDBCUrl() {
+	protected String getJDBCUrl() {
 		return "jdbc:neo4j:" + neo4j.httpURI().toString();
 	}
 

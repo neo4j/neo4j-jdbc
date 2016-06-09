@@ -24,7 +24,7 @@ import static org.neo4j.graphdb.factory.GraphDatabaseSettings.boltConnector;
  */
 public class Neo4jBoltRule implements TestRule {
 
-	public        String               hostAndPort;
+	private String               hostAndPort;
 	private       GraphDatabaseService graphDatabase;
 	private final boolean              requireAuth;
 

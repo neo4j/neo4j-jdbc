@@ -31,7 +31,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 
-/**
+/*
  * Created by bsimard on 25/04/16.
  */
 public class HttpResultSetIT extends Neo4jHttpIT {

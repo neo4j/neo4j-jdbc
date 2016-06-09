@@ -57,9 +57,8 @@ public class Driver extends BaseDriver {
 	 * Retrieve the correspondig driver from the JDBC url.
 	 * @param url The JDBC url
 	 * @return The driver
-	 * @throws SQLException
 	 */
-	BaseDriver getDriver(String url) throws SQLException {
+	private BaseDriver getDriver(String url) throws SQLException {
 		BaseDriver driver = null;
 
 		if (url == null) {
@@ -68,7 +67,7 @@ public class Driver extends BaseDriver {
 
 		try {
 			// We search the driver prefix from the url
-			if (url.startsWith(JDBC_PREFIX+":")) {
+			if (url.startsWith(JDBC_PREFIX)) {
 				String[] pieces = url.split(":");
 				if (pieces.length > 3) {
 					String prefix = pieces[2];

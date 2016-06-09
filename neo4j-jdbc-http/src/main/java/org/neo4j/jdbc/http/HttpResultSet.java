@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -47,7 +47,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	/**
 	 * Neo4j query result.
 	 */
-	protected Neo4jResult result;
+	Neo4jResult result;
 
 	/**
 	 * Cursor position of this iterator.
@@ -81,7 +81,6 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 * Check if this connection is closed or not.
 	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
 	 *
-	 * @throws SQLException
 	 */
 	private void checkClosed() throws SQLException {
 		if (isClosed()) {

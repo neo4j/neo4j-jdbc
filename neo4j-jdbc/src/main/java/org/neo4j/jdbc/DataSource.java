@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class DataSource implements javax.sql.DataSource {
+abstract class DataSource implements javax.sql.DataSource {
 
 	@Override public Connection getConnection() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();

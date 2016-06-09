@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -35,12 +35,12 @@ public abstract class BaseDriver implements java.sql.Driver {
 	/**
 	 * JDBC prefix for the connection url.
 	 */
-	protected static final String JDBC_PREFIX = "jdbc:neo4j";
+	protected static final String JDBC_PREFIX = "jdbc:neo4j:";
 
 	/**
 	 * Driver prefix for the connection url.
 	 */
-	protected String DRIVER_PREFIX;
+	private String DRIVER_PREFIX;
 
 	/**
 	 * Constructor for extended class.
@@ -80,7 +80,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 		}
 		String[] pieces = url.split(":");
 		if (pieces.length > 3) {
-			if (url.startsWith(JDBC_PREFIX+":")) {
+			if (url.startsWith(JDBC_PREFIX)) {
 				if (DRIVER_PREFIX != null) {
 					if(DRIVER_PREFIX.equals(pieces[2])) {
 						return true;

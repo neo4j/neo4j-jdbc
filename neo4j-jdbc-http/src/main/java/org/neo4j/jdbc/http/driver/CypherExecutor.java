@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -35,6 +35,8 @@ import org.apache.http.message.BasicHeader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,14 +51,14 @@ public class CypherExecutor {
 	/**
 	 * URL of the transaction endpoint.
 	 */
-	protected final String transactionUrl;
+	final String transactionUrl;
 
 	/**
 	 * Autocommit transaction.
 	 * Must be null at creation time.
 	 * Initiation of this property is made by its setter, that is called from the constructor.
 	 */
-	protected Boolean autoCommit;
+	private Boolean autoCommit;
 
 	/**
 	 * The http client.
@@ -71,7 +73,7 @@ public class CypherExecutor {
 	/**
 	 * Jackson mapper object.
 	 */
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final static ObjectMapper mapper = new ObjectMapper();
 
 	/**
 	 * Default constructor.
@@ -79,36 +81,44 @@ public class CypherExecutor {
 	 * @param host       Hostname of the Neo4j instance.
 	 * @param port       HTTP port of the Neo4j instance.
 	 * @param properties Properties of the url connection.
-	 * @throws SQLException
 	 */
 	public CypherExecutor(String host, Integer port, Properties properties) throws SQLException {
 		// Create the http client builder
 		HttpClientBuilder builder = HttpClients.custom();
+
 		// Adding authentication to the http client if needed
-		if (properties.containsKey("user") && properties.containsKey("password")) {
-			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			credsProvider.setCredentials(new AuthScope(host, port),
-					new UsernamePasswordCredentials(properties.get("user").toString(), properties.get("password").toString()));
-			builder.setDefaultCredentialsProvider(credsProvider);
-		}
+		CredentialsProvider credentialsProvider = getCredentialsProvider(host, port, properties);
+		if (credentialsProvider!=null) builder.setDefaultCredentialsProvider(credentialsProvider);
+
 		// Setting user-agent
-		StringBuilder sb = new StringBuilder();
-		sb.append("Neo4j JDBC Driver");
-		if (properties.containsKey("userAgent")) {
-			sb.append(" via ");
-			sb.append(properties.getProperty("userAgent"));
-		}
-		builder.setUserAgent(sb.toString());
+		String userAgent = properties.getProperty("userAgent");
+		builder.setUserAgent("Neo4j JDBC Driver" + (userAgent != null ? " via "+userAgent : ""));
 		// Create the http client
 		this.http = builder.build();
 
 		// Create the url endpoint
-		StringBuffer sbEndpoint = new StringBuffer();
-		sbEndpoint.append("http://").append(host).append(":").append(port).append("/db/data/transaction");
-		this.transactionUrl = sbEndpoint.toString();
+		this.transactionUrl = createTransactionUrl(host, port);
 
 		// Setting autocommit
 		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autoCommit", "true")));
+	}
+
+	private String createTransactionUrl(String host, Integer port) throws SQLException {
+		try {
+			return new URL("http",host,port,"/db/data/transaction").toString();
+		} catch (MalformedURLException e) {
+			throw new SQLException("Invalid server URL",e);
+		}
+	}
+
+	private CredentialsProvider getCredentialsProvider(String host, Integer port, Properties properties) {
+		if (properties.containsKey("user") && properties.containsKey("password")) {
+			CredentialsProvider credsProvider = new BasicCredentialsProvider();
+			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(properties.get("user").toString(), properties.get("password").toString());
+			credsProvider.setCredentials(new AuthScope(host, port), credentials);
+			return credsProvider;
+		}
+		return null;
 	}
 
 	/**
@@ -116,14 +126,13 @@ public class CypherExecutor {
 	 *
 	 * @param queries List of cypher query object
 	 * @return A list of Neo4j response
-	 * @throws SQLException
 	 */
 	public Neo4jResponse executeQueries(List<Neo4jStatement> queries) throws SQLException {
 		// Prepare the headers query
 		HttpPost request = new HttpPost(currentTransactionUrl);
 
 		// Prepare body request
-		StringEntity requestEntity = new StringEntity(Neo4jStatement.toJson(queries, this.mapper), ContentType.APPLICATION_JSON);
+		StringEntity requestEntity = new StringEntity(Neo4jStatement.toJson(queries, mapper), ContentType.APPLICATION_JSON);
 		request.setEntity(requestEntity);
 
 		// Make the request
@@ -134,7 +143,6 @@ public class CypherExecutor {
 	 * Execute a cypher query.
 	 *
 	 * @param query Cypher query object.
-	 * @throws SQLException
 	 */
 	public Neo4jResponse executeQuery(Neo4jStatement query) throws SQLException {
 		List<Neo4jStatement> queries = new ArrayList<>();
@@ -145,7 +153,6 @@ public class CypherExecutor {
 	/**
 	 * Commit the current transaction.
 	 *
-	 * @throws SQLException
 	 */
 	public void commit() throws SQLException {
 		if (this.getOpenTransactionId() > 0) {
@@ -190,7 +197,6 @@ public class CypherExecutor {
 	 * Setter for autocommit.
 	 *
 	 * @param autoCommit
-	 * @throws SQLException
 	 */
 	public void setAutoCommit(Boolean autoCommit) throws SQLException {
 		// we only do something if there is a change
@@ -203,7 +209,7 @@ public class CypherExecutor {
 					this.commit();
 				}
 				this.autoCommit = Boolean.TRUE;
-				this.currentTransactionUrl = new StringBuffer().append(this.transactionUrl).append("/commit").toString();
+				this.currentTransactionUrl = this.transactionUrl + "/commit";
 			} else {
 				this.autoCommit = Boolean.FALSE;
 				this.currentTransactionUrl = this.transactionUrl;
@@ -260,7 +266,7 @@ public class CypherExecutor {
 	 * @param url An url
 	 * @return The transaction id if there is an opened transaction, <code>-1</code> otherwise
 	 */
-	protected Integer getTransactionId(String url) {
+	Integer getTransactionId(String url) {
 		Integer transactId = -1;
 		if (url != null && url.contains(transactionUrl)) {
 			String[] tab = url.split("/");
@@ -288,7 +294,7 @@ public class CypherExecutor {
 	 *
 	 * @return List of default headers.
 	 */
-	protected Header[] getDefaultHeaders() {
+	private Header[] getDefaultHeaders() {
 		Header[] headers = new Header[2];
 		headers[0] = new BasicHeader("Accept", ContentType.APPLICATION_JSON.toString());
 		headers[1] = new BasicHeader("X-Stream", "true");
@@ -300,9 +306,8 @@ public class CypherExecutor {
 	 * Execute the http client request.
 	 *
 	 * @param request The request to make
-	 * @throws SQLException
 	 */
-	protected Neo4jResponse executeHttpRequest(HttpRequestBase request) throws SQLException {
+	private Neo4jResponse executeHttpRequest(HttpRequestBase request) throws SQLException {
 		Neo4jResponse result = null;
 
 		// Adding default headers to the request
@@ -312,11 +317,11 @@ public class CypherExecutor {
 
 		// Make the request
 		try (CloseableHttpResponse response = http.execute(request)) {
-			result = new Neo4jResponse(response, this.mapper);
+			result = new Neo4jResponse(response, mapper);
 			if (result.location != null) {
 				// Here we reconstruct the location in case of a proxy, but in this case you should redirect write queries to the master.
 				Integer transactionId = this.getTransactionId(result.location);
-				this.currentTransactionUrl = new StringBuffer().append(this.transactionUrl).append("/").append(transactionId).toString();
+				this.currentTransactionUrl = this.transactionUrl + "/" + transactionId;
 			}
 		} catch (Exception e) {
 			throw new SQLException(e);

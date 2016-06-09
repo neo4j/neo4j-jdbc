@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -26,7 +26,7 @@ import org.junit.rules.ExpectedException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltParameterMetaDataTest {
+class BoltParameterMetaDataTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 

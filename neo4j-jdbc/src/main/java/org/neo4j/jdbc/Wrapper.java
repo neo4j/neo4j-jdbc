@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
@@ -25,7 +25,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class Wrapper {
+class Wrapper {
 
 	@SuppressWarnings("unchecked") public static <T> T unwrap(Class<T> iface, Object obj) throws SQLException {
 		if (!isWrapperFor(iface, obj.getClass())) {
