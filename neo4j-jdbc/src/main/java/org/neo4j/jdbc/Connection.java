@@ -62,6 +62,16 @@ public abstract class Connection implements java.sql.Connection {
 		return "true".equalsIgnoreCase(properties.getProperty("debug", "false"));
 	}
 
+	/**
+	 * Get the user of thie connection.
+	 *
+	 * @return
+	 */
+	public String getUserName() {
+		return properties.getProperty("user");
+	}
+
+
 	/*---------------------------------------*/
 	/*       Some useful check method        */
 	/*---------------------------------------*/
@@ -390,7 +400,4 @@ public abstract class Connection implements java.sql.Connection {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	public String getUserName() {
-		return properties.getProperty("user");
-	}
 }

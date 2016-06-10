@@ -255,6 +255,14 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		return "\\";
 	}
 
+	@Override public String getUserName() throws SQLException {
+		return connection.getUserName();
+	}
+
+	@Override public boolean isReadOnly() throws SQLException {
+		return connection.isReadOnly();
+	}
+
 	/*---------------------------------*/
 	/*       Not implemented yet       */
 	/*---------------------------------*/
@@ -269,16 +277,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	// this can be implemented
 	@Override public String getURL() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	// this can be implemented
-	@Override public String getUserName() throws SQLException {
-		return connection.getUserName();
-	}
-
-	// it's always false with neo4j no ?
-	@Override public boolean isReadOnly() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
