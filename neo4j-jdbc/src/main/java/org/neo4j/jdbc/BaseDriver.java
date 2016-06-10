@@ -125,6 +125,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 					properties.put(prop.toLowerCase(), "true");
 				}
 			}
+			properties.put("user", getUser(properties));
 		}
 
 		return properties;
@@ -136,5 +137,13 @@ public abstract class BaseDriver implements java.sql.Driver {
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	protected String getUser(Properties properties) {
+		String user = properties.getProperty("user");
+		if (user!=null && !user.trim().isEmpty()) return user;
+		user = properties.getProperty("username");
+		if (user!=null && !user.trim().isEmpty()) return user;
+		return "neo4j";
 	}
 }

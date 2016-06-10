@@ -69,12 +69,9 @@ public class BoltDriver extends BaseDriver {
 	}
 
 	private AuthToken getAuthToken(Properties properties) {
-		if (properties.containsKey("password")) {
-			String user = properties.getProperty("user", properties.getProperty("username", "neo4j"));
-			return AuthTokens.basic(user, properties.getProperty("password"));
+		if (properties.containsKey("user") && properties.containsKey("password")) {
+			return AuthTokens.basic(properties.getProperty("user"), properties.getProperty("password"));
 		}
 		return AuthTokens.none();
 	}
-
-
 }

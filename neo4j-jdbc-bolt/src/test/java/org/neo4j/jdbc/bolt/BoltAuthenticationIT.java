@@ -50,10 +50,15 @@ public class BoltAuthenticationIT {
 		shouldAuthenticate(parameters);
 	}
 
+	@Test public void shouldAuthenticateUserUsername() throws SQLException {
+		shouldAuthenticate(",user=,username=neo4j,password=neo4j");
+	}
 	@Test public void shouldAuthenticateUsername() throws SQLException {
 		shouldAuthenticate(",username=neo4j,password=neo4j");
 	}
-
+	@Test public void shouldAuthenticateUsernameUser() throws SQLException {
+		shouldAuthenticate(",username=,user=neo4j,password=neo4j");
+	}
 	@Test public void shouldAuthenticateDefaultUser() throws SQLException {
 		shouldAuthenticate(",password=neo4j");
 	}
