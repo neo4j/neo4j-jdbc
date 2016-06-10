@@ -38,6 +38,38 @@ import java.util.Map;
  */
 public abstract class CallableStatement implements java.sql.CallableStatement {
 
+	/*---------------------------------------*/
+	/*       Some useful check method        */
+	/*---------------------------------------*/
+
+	/**
+	 * Check if this connection is closed or not.
+	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
+	 *
+	 */
+	protected void checkClosed() throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("CallableStatement already closed");
+		}
+	}
+
+	/*------------------------------------*/
+	/*       Default implementation       */
+	/*------------------------------------*/
+
+	@Override public SQLWarning getWarnings() throws SQLException {
+		checkClosed();
+		return null;
+	}
+
+	@Override public void clearWarnings() throws SQLException {
+		checkClosed();
+	}
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
+
 	@Override public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
@@ -751,14 +783,6 @@ public abstract class CallableStatement implements java.sql.CallableStatement {
 	}
 
 	@Override public void cancel() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public SQLWarning getWarnings() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void clearWarnings() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

@@ -230,6 +230,15 @@ public abstract class Connection implements java.sql.Connection {
 		return org.neo4j.jdbc.Wrapper.isWrapperFor(iface, this.getClass());
 	}
 
+	@Override public SQLWarning getWarnings() throws SQLException {
+		checkClosed();
+		return null;
+	}
+
+	@Override public void clearWarnings() throws SQLException {
+		checkClosed();
+	}
+
 	/*-----------------------------*/
 	/*       Abstract method       */
 	/*-----------------------------*/
@@ -270,14 +279,6 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	@Override public void setTransactionIsolation(int level) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public SQLWarning getWarnings() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void clearWarnings() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

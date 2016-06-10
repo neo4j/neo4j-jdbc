@@ -164,6 +164,7 @@ public abstract class Statement implements java.sql.Statement {
 	 * It will be possible to implement this an explain.
 	 */
 	@Override public SQLWarning getWarnings() throws SQLException {
+		this.checkClosed();
 		return null;
 	}
 
@@ -171,6 +172,7 @@ public abstract class Statement implements java.sql.Statement {
 	 * Some tool call this method.
 	 */
 	@Override public void clearWarnings() throws SQLException {
+		this.checkClosed();
 		// nothing yet
 	}
 
