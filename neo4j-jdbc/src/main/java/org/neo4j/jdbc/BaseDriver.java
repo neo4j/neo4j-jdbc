@@ -21,6 +21,9 @@ package org.neo4j.jdbc;
 
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.sql.*;
 import java.sql.Connection;
 import java.util.Map;
@@ -110,7 +113,8 @@ public abstract class BaseDriver implements java.sql.Driver {
 		}
 		if (url.contains("?")) {
 			String urlProps = url.substring(url.indexOf('?') + 1);
-			String[] props = urlProps.split(",");
+			urlProps = decodeUrlComponent(urlProps);
+			String[] props = urlProps.split("[,&]");
 			for (String prop : props) {
 				int idx = prop.indexOf('=');
 				if (idx != -1) {
@@ -124,5 +128,13 @@ public abstract class BaseDriver implements java.sql.Driver {
 		}
 
 		return properties;
+	}
+
+	private String decodeUrlComponent(String urlProps) {
+		try {
+			return URLDecoder.decode(urlProps, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
