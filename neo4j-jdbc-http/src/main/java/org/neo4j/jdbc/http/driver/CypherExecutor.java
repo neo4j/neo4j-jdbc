@@ -112,9 +112,10 @@ public class CypherExecutor {
 	}
 
 	private CredentialsProvider getCredentialsProvider(String host, Integer port, Properties properties) {
-		if (properties.containsKey("user") && properties.containsKey("password")) {
+		if (properties.containsKey("password")) {
+			String user = properties.getProperty("user", properties.getProperty("username", "neo4j"));
 			CredentialsProvider credsProvider = new BasicCredentialsProvider();
-			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(properties.get("user").toString(), properties.get("password").toString());
+			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, properties.getProperty("password"));
 			credsProvider.setCredentials(new AuthScope(host, port), credentials);
 			return credsProvider;
 		}

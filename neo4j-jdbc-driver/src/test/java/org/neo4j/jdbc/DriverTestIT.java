@@ -46,6 +46,11 @@ public class DriverTestIT {
 		Connection connection = driver.connect("jdbc:neo4j:http://localhost:7474", new Properties());
 		Assert.assertTrue(connection instanceof HttpConnection);
 	}
+	@Test public void shouldReturnAHttpConnection2() throws SQLException {
+		BaseDriver driver = new Driver();
+		Connection connection = driver.connect("jdbc:neo4j:http:localhost:7474", new Properties());
+		Assert.assertTrue(connection instanceof HttpConnection);
+	}
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
 		BaseDriver driver = new Driver();

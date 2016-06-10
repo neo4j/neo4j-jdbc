@@ -46,8 +46,21 @@ public class BoltAuthenticationIT {
 	}
 
 	@Test public void shouldAuthenticate() throws SQLException {
+		String parameters = ",user=neo4j,password=neo4j";
+		shouldAuthenticate(parameters);
+	}
+
+	@Test public void shouldAuthenticateUsername() throws SQLException {
+		shouldAuthenticate(",username=neo4j,password=neo4j");
+	}
+
+	@Test public void shouldAuthenticateDefaultUser() throws SQLException {
+		shouldAuthenticate(",password=neo4j");
+	}
+
+	private void shouldAuthenticate(String parameters) throws SQLException {
 		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=neo4j,password=neo4j");
+		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + parameters);
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");
@@ -57,6 +70,7 @@ public class BoltAuthenticationIT {
 		con.close();
 		assertTrue(result);
 	}
+
 
 	@Test public void shouldNotAuthenticateBecauseOfABadUserAndPassword() throws SQLException {
 		boolean result = false;
@@ -113,19 +127,6 @@ public class BoltAuthenticationIT {
 	@Test public void shouldNotAuthenticateBecauseNoPasswordIsProvided() throws SQLException {
 		boolean result = false;
 		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=neo4j");
-		assertNotNull(con);
-		try (Statement stmt = con.createStatement()) {
-			stmt.executeQuery("MATCH (n:User) RETURN n.name");
-		} catch (SQLException e) {
-			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
-		}
-		con.close();
-		assertTrue(result);
-	}
-
-	@Test public void shouldNotAuthenticateBecauseNoUserIsProvided() throws SQLException {
-		boolean result = false;
-		Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",password=neo4j");
 		assertNotNull(con);
 		try (Statement stmt = con.createStatement()) {
 			stmt.executeQuery("MATCH (n:User) RETURN n.name");

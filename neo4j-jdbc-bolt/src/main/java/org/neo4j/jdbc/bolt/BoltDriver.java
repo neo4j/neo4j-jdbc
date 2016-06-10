@@ -50,7 +50,7 @@ public class BoltDriver extends BaseDriver {
 		}
 		Connection connection = null;
 		if (acceptsURL(url)) {
-			url = url.replace(BaseDriver.JDBC_PREFIX, "");
+			url = url.replace(BaseDriver.JDBC_PREFIX, "").replaceAll("^("+JDBC_BOLT_PREFIX+":)([^/])","$1//$2");
 			try {
 				Properties info = parseUrlProperties(url, props);
 				Config.ConfigBuilder builder = build();
@@ -68,10 +68,12 @@ public class BoltDriver extends BaseDriver {
 		return connection;
 	}
 
-	private AuthToken getAuthToken(Properties info) {
-		return info.containsKey("user") && info.containsKey("password") ?
-                AuthTokens.basic(info.getProperty("user"), info.getProperty("password")) :
-                AuthTokens.none();
+	private AuthToken getAuthToken(Properties properties) {
+		if (properties.containsKey("password")) {
+			String user = properties.getProperty("user", properties.getProperty("username", "neo4j"));
+			return AuthTokens.basic(user, properties.getProperty("password"));
+		}
+		return AuthTokens.none();
 	}
 
 
