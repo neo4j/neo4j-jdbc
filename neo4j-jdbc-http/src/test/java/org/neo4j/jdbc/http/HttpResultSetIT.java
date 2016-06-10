@@ -40,7 +40,7 @@ public class HttpResultSetIT extends Neo4jHttpIT {
 	public void paramConversionShouldWork() throws SQLException {
 		Connection connection = DriverManager.getConnection(getJDBCUrl());
 		Statement statement = connection.createStatement();
-		ResultSet rs = statement.executeQuery("CREATE (n:TestParamConvertionShouldWork { string:\"AZERTYUIOP\", bool:true, float:3.14, integer:7, array:[1,2,3,4]}) RETURN n, n.string, n.bool, n.float, n.integer, n.array, n.nop");
+		ResultSet rs = statement.executeQuery("CREATE (n:TestParamConvertionShouldWork_" + secureMode.toString() + " { string:\"AZERTYUIOP\", bool:true, float:3.14, integer:7, array:[1,2,3,4]}) RETURN n, n.string, n.bool, n.float, n.integer, n.array, n.nop");
 
 		assertEquals(statement, rs.getStatement());
 		assertTrue(rs.next());

@@ -54,7 +54,7 @@ public class Driver extends BaseDriver {
 	}
 
 	/**
-	 * Retrieve the correspondig driver from the JDBC url.
+	 * Retrieve the corresponding driver from the JDBC url.
 	 * @param url The JDBC url
 	 * @return The driver
 	 */
@@ -73,9 +73,11 @@ public class Driver extends BaseDriver {
 					String prefix = pieces[2];
 
 					// We look into driver map is it known
-					if (DRIVERS.containsKey(prefix)) {
-						Constructor constructor = DRIVERS.get(prefix).getDeclaredConstructor();
-						driver = (BaseDriver) constructor.newInstance();
+					for(String key : DRIVERS.keySet()) {
+						if (prefix.matches(key)) {
+							Constructor constructor = DRIVERS.get(key).getDeclaredConstructor();
+							driver = (BaseDriver) constructor.newInstance();
+						}
 					}
 				}
 			}

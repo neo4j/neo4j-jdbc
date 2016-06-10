@@ -54,6 +54,11 @@ public class CypherExecutor {
 	final String transactionUrl;
 
 	/**
+	 * If we are in https or not.
+	 */
+	private Boolean secure;
+
+	/**
 	 * Autocommit transaction.
 	 * Must be null at creation time.
 	 * Initiation of this property is made by its setter, that is called from the constructor.
@@ -80,15 +85,19 @@ public class CypherExecutor {
 	 *
 	 * @param host       Hostname of the Neo4j instance.
 	 * @param port       HTTP port of the Neo4j instance.
+	 * @param secure	 If the connection used SSL.
 	 * @param properties Properties of the url connection.
 	 */
-	public CypherExecutor(String host, Integer port, Properties properties) throws SQLException {
+	public CypherExecutor(String host, Integer port, Boolean secure, Properties properties) throws SQLException {
+		this.secure = secure;
+
 		// Create the http client builder
 		HttpClientBuilder builder = HttpClients.custom();
 
 		// Adding authentication to the http client if needed
 		CredentialsProvider credentialsProvider = getCredentialsProvider(host, port, properties);
-		if (credentialsProvider!=null) builder.setDefaultCredentialsProvider(credentialsProvider);
+		if (credentialsProvider != null)
+			builder.setDefaultCredentialsProvider(credentialsProvider);
 
 		// Setting user-agent
 		String userAgent = properties.getProperty("useragent");
@@ -97,17 +106,20 @@ public class CypherExecutor {
 		this.http = builder.build();
 
 		// Create the url endpoint
-		this.transactionUrl = createTransactionUrl(host, port);
+		this.transactionUrl = createTransactionUrl(host, port, secure);
 
 		// Setting autocommit
-		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autocommit", "true")));
+		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autoCommit", "true")));
 	}
 
-	private String createTransactionUrl(String host, Integer port) throws SQLException {
+	private String createTransactionUrl(String host, Integer port, Boolean secure) throws SQLException {
 		try {
-			return new URL("http",host,port,"/db/data/transaction").toString();
+			if(secure)
+				return new URL("https", host, port, "/db/data/transaction").toString();
+			else
+				return new URL("http", host, port, "/db/data/transaction").toString();
 		} catch (MalformedURLException e) {
-			throw new SQLException("Invalid server URL",e);
+			throw new SQLException("Invalid server URL", e);
 		}
 	}
 
@@ -238,7 +250,7 @@ public class CypherExecutor {
 		try (CloseableHttpResponse response = http.execute(request)) {
 			try (InputStream is = response.getEntity().getContent()) {
 				Map body = mapper.readValue(is, Map.class);
-				if(body.get("version") != null) {
+				if (body.get("version") != null) {
 					result = (String) body.get("version");
 				}
 			}

@@ -22,19 +22,35 @@ package org.neo4j.jdbc.http.test;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.neo4j.harness.junit.Neo4jRule;
 
 import java.io.File;
+import java.util.Arrays;
 
-public class Neo4jHttpIT extends Neo4jHttpUnitTest {
+@RunWith(Parameterized.class)
+public abstract class Neo4jHttpIT extends Neo4jHttpUnitTest {
+
+	@Parameterized.Parameters
+	public static Iterable<? extends Object> data() {
+		return Arrays.asList(Boolean.FALSE, Boolean.TRUE);
+	}
+
+	@Parameterized.Parameter
+	public Boolean secureMode;
 
 	@ClassRule public static Neo4jRule neo4j = new Neo4jRule()
 			.withFixture(new File(Neo4jHttpUnitTest.class.getClassLoader().getResource("data/movie.cyp").getFile()));
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+
 	protected String getJDBCUrl() {
-		return "jdbc:neo4j:" + neo4j.httpURI().toString();
+		if(secureMode)
+			return "jdbc:neo4j:" + neo4j.httpsURI().toString();
+		else
+			return "jdbc:neo4j:" + neo4j.httpURI().toString();
 	}
 
 }

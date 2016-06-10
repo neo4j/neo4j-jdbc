@@ -33,7 +33,7 @@ import java.util.Properties;
  */
 public class HttpDriver extends BaseDriver {
 
-	public final static String JDBC_HTTP_PREFIX = "http";
+	public final static String JDBC_HTTP_PREFIX = "http(s)*";
 
 	/**
 	 * Default constructor.
@@ -49,11 +49,19 @@ public class HttpDriver extends BaseDriver {
 				URL neo4jUrl = new URL(url.replace("jdbc:neo4j:", "").replaceAll("^("+JDBC_HTTP_PREFIX+":)([^/])","$1//$2"));
 				Properties info = parseUrlProperties(url, params);
 				String host = neo4jUrl.getHost();
+				Boolean secure = Boolean.FALSE;
+				// default port for http
 				int port = 7474;
+				// default port for https
+				if(neo4jUrl.getProtocol().equals("https")) {
+					port = 7473;
+					secure = Boolean.TRUE;
+				}
+				// if a port a specified, we take it
 				if (neo4jUrl.getPort() > 0) {
 					port = neo4jUrl.getPort();
 				}
-				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, info), HttpConnection.hasDebug(info));
+				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, secure, info), HttpConnection.hasDebug(info));
 			}
 			else {
 				throw new SQLException("JDBC url is not bad");

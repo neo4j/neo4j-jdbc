@@ -86,7 +86,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 		if (pieces.length > 3) {
 			if (url.startsWith(JDBC_PREFIX)) {
 				if (DRIVER_PREFIX != null) {
-					if(DRIVER_PREFIX.equals(pieces[2])) {
+					if(pieces[2].matches(DRIVER_PREFIX)) {
 						return true;
 					}
 				}

@@ -40,7 +40,7 @@ public class CypherExecutorTest extends Neo4jHttpUnitTest {
 		String host = "azertyuiop";
 		Integer port = 1234;
 		Properties properties = new Properties();
-		this.executor = new CypherExecutor(host, port, properties);
+		this.executor = new CypherExecutor(host, port, false,  properties);
 	}
 
 	@Test public void getTransactionIdShouldReturnCorrectId() {

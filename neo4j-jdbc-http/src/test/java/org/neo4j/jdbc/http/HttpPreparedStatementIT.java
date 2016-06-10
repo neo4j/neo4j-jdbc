@@ -104,7 +104,7 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
 		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
-		PreparedStatement statement = connection.prepareStatement("CREATE (:TestExecuteBatchShouldWorkWithTransaction { name:?, value:?})");
+		PreparedStatement statement = connection.prepareStatement("CREATE (:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + " { name:?, value:?})");
 		connection.setAutoCommit(false);
 		statement.setString(1, "test1");
 		statement.setString(2, "test2");
@@ -118,14 +118,14 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 
 		int[] result = statement.executeBatch();
 
-		Result res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction) RETURN count(n) AS total");
+		Result res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
 		while(res.hasNext()){
 			assertEquals(0L, res.next().get("total"));
 		}
 		assertArrayEquals(new int[]{1, 1, 1}, result);
 
 		connection.commit();
-		res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction) RETURN count(n) AS total");
+		res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
 		while(res.hasNext()){
 			assertEquals(3L, res.next().get("total"));
 		}

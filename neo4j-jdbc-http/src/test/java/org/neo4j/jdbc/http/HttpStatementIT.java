@@ -134,16 +134,16 @@ public class HttpStatementIT extends Neo4jHttpIT {
 		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
-		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction {name:\"test1\"})");
-		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction  {name:\"test2\"})");
-		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction  {name:\"test3\"})");
+		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + " {name:\"test1\"})");
+		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + "  {name:\"test2\"})");
+		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + "  {name:\"test3\"})");
 
 		// Check the result
 		int[] result = statement.executeBatch();
 		assertArrayEquals(new int[] { 1, 1, 1 }, result);
 
 		// Check if it's not yet saved into db
-		Result res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction) RETURN count(n) AS total");
+		Result res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
 		while (res.hasNext()) {
 			assertEquals(0L, res.next().get("total"));
 		}
@@ -151,7 +151,7 @@ public class HttpStatementIT extends Neo4jHttpIT {
 		connection.commit();
 
 		// Check if it's saved into db
-		res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction) RETURN count(n) AS total");
+		res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
 		while (res.hasNext()) {
 			assertEquals(3L, res.next().get("total"));
 		}

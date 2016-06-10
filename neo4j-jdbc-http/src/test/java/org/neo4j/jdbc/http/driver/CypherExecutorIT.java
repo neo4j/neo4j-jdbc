@@ -40,7 +40,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		Integer port = this.neo4j.httpsURI().getPort();
 		Properties properties = new Properties();
 		properties.put("userAgent", "Unit Test");
-		this.executor = new CypherExecutor(host, port, properties);
+		this.executor = new CypherExecutor(host, port, false, properties);
 	}
 
 	@Test public void executeQueryShouldSucceed() throws Exception {

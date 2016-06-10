@@ -21,8 +21,8 @@
  */
 package org.neo4j.jdbc.http;
 
-import org.neo4j.jdbc.http.test.Neo4jHttpIT;
 import org.junit.Test;
+import org.neo4j.jdbc.http.test.Neo4jHttpIT;
 
 import java.sql.*;
 
@@ -35,11 +35,11 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(true);
-		writer.createStatement().execute("CREATE (n:TestAutocommitShouldWork {value:\"AZERTYUIOP\"})");
+		writer.createStatement().execute("CREATE (n:TestAutocommitShouldWork_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
 
 		// Let's check that it's saved
 		Connection reader = DriverManager.getConnection(getJDBCUrl());
-		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestAutocommitShouldWork) RETURN n.value");
+		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestAutocommitShouldWork_" + secureMode.toString() + ") RETURN n.value");
 		assertTrue(rs.next());
 		assertEquals(rs.getString("n.value"), "AZERTYUIOP");
 		assertFalse(rs.next());
@@ -53,16 +53,16 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(false);
-		writer.createStatement().execute("CREATE (n:TestCommitShouldWork {value:\"AZERTYUIOP\"})");
+		writer.createStatement().execute("CREATE (n:TestCommitShouldWork_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
 
 		// Let's check that it's not saved for now
 		Connection reader = DriverManager.getConnection(getJDBCUrl());
-		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestCommitShouldWork) RETURN n.value");
+		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestCommitShouldWork_" + secureMode.toString() + ") RETURN n.value");
 		assertFalse(rs.next());
 
 		// let's commit and see the result
 		writer.commit();
-		rs = reader.createStatement().executeQuery("MATCH (n:TestCommitShouldWork) RETURN n.value");
+		rs = reader.createStatement().executeQuery("MATCH (n:TestCommitShouldWork_" + secureMode.toString() + ") RETURN n.value");
 		assertTrue(rs.next());
 		assertEquals(rs.getString("n.value"), "AZERTYUIOP");
 		assertFalse(rs.next());
@@ -76,12 +76,12 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(false);
-		writer.createStatement().execute("CREATE (n:TestChangeCommitModeOnOpendTransactionShouldFail {value:\"AZERTYUIOP\"})");
+		writer.createStatement().execute("CREATE (n:TestChangeCommitModeOnOpendTransactionShouldFail_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
 		writer.setAutoCommit(true);
 
 		// Let's check that it's saved
 		Connection reader = DriverManager.getConnection(getJDBCUrl());
-		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestChangeCommitModeOnOpendTransactionShouldFail) RETURN n.value");
+		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestChangeCommitModeOnOpendTransactionShouldFail_" + secureMode.toString() + ") RETURN n.value");
 		assertTrue(rs.next());
 		assertEquals(rs.getString("n.value"), "AZERTYUIOP");
 		assertFalse(rs.next());
@@ -95,12 +95,12 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(false);
-		writer.createStatement().execute("CREATE (n:TestRollbackShouldWork {value:\"AZERTYUIOP\"})");
+		writer.createStatement().execute("CREATE (n:TestRollbackShouldWork_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
 		writer.rollback();
 
 		// Let's check that it's not saved for now
 		Connection reader = DriverManager.getConnection(getJDBCUrl());
-		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestRollbackShouldWork ) RETURN n.value");
+		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestRollbackShouldWork_" + secureMode.toString() + " ) RETURN n.value");
 		assertFalse(rs.next());
 
 		writer.close();
@@ -114,7 +114,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(true);
-		writer.createStatement().execute("CREATE (n:TestRollbackOnAutocommitShouldFail {value:\"AZERTYUIOP\"})");
+		writer.createStatement().execute("CREATE (n:TestRollbackOnAutocommitShouldFail_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
 		writer.rollback();
 
 		writer.close();
@@ -142,12 +142,12 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 	public void closeOnOpenTransactionShouldRollback() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
-		writer.createStatement().execute("CREATE (n:TestCloseOnOpenTransactionSouldRollback {value:\"AZERTYUIOP\"})");
+		writer.createStatement().execute("CREATE (n:TestCloseOnOpenTransactionSouldRollback_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
 		writer.close();
 
 		// Let's check that it's not saved for now
 		Connection reader = DriverManager.getConnection(getJDBCUrl());
-		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestRollbackShouldWork ) RETURN n.value");
+		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestRollbackShouldWork_" + secureMode.toString() + " ) RETURN n.value");
 		assertFalse(rs.next());
 
 		reader.close();
