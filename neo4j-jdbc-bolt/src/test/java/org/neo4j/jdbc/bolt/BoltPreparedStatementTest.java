@@ -73,13 +73,12 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 		this.mockedRS = mock(BoltResultSet.class);
 		doNothing().when(this.mockedRS).close();
-		whenNew(BoltResultSet.class).withAnyArguments().thenReturn(this.mockedRS);
+		whenNew(BoltResultSet.class).withArguments(anyObject(), anyObject()).thenReturn(this.mockedRS);
 	}
 
 	/*------------------------------*/
 	/*             close            */
 	/*------------------------------*/
-	@Ignore("TODO LARUS")
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
 		PreparedStatement prStatement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null), "");
 		prStatement.executeQuery();
@@ -95,7 +94,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		verify(this.mockedRS, never()).close();
 	}
 
-	@Ignore("TODO LARUS")
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
 		PreparedStatement prStatement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null), "");
 		prStatement.executeQuery();
