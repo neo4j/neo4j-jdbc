@@ -64,30 +64,23 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 */
 	private boolean wasNull = false;
 
-	private boolean loggable;
-	private boolean isClosed = false;
+	/**
+	 * Statement that have produced this ResultSet.
+	 */
 	private Statement statement;
+
+	private boolean loggable;
 
 	/**
 	 * Default constructor.
 	 *
+	 * @param statement Statement of this resultset.
 	 * @param result A Neo4j query result.
 	 */
 	public HttpResultSet(Statement statement, Neo4jResult result) {
 		this.statement = statement;
 		this.result = result;
 		this.row = -1;
-	}
-
-	/**
-	 * Check if this connection is closed or not.
-	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
-	 *
-	 */
-	private void checkClosed() throws SQLException {
-		if (isClosed()) {
-			throw new SQLException("Connection is closed.");
-		}
 	}
 
 	/**

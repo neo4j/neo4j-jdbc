@@ -79,4 +79,17 @@ public class ResultSetTest {
 
 		resultSet.unwrap(Statement.class);
 	}
+
+	/*-----------------------------*/
+	/*            warning          */
+	/*-----------------------------*/
+	@Test public void getWarningsShouldReturnNull() throws SQLException {
+		ResultSet resultSet = mock(ResultSet.class, Mockito.CALLS_REAL_METHODS);
+		assertNull(resultSet.getWarnings());
+	}
+
+	@Test public void clearWarningsShouldNotThrowException() throws SQLException {
+		ResultSet resultSet = mock(ResultSet.class, Mockito.CALLS_REAL_METHODS);
+		resultSet.clearWarnings();
+	}
 }

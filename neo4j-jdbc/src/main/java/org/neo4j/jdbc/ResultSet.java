@@ -35,6 +35,36 @@ import java.util.Map;
  */
 public abstract class ResultSet implements java.sql.ResultSet {
 
+	/**
+	 * Close state of this ResultSet.
+	 */
+	protected boolean isClosed = false;
+
+
+	/*----------------------------------------*/
+	/*       Some useful, check method        */
+	/*----------------------------------------*/
+
+	/**
+	 * Check if the connection is closed or not.
+	 * If it is, we throw an exception.
+	 */
+	protected void checkClosed() throws SQLException {
+		if (this.isClosed()) {
+			throw new SQLException("Statement already closed");
+		}
+	}
+
+	/**
+	 * Check if the ResultSet is closed.
+	 *
+	 * @return
+	 * @throws SQLException
+	 */
+	public boolean isClosed() throws SQLException {
+		return this.isClosed;
+	}
+
 	/*------------------------------------*/
 	/*       Default implementation       */
 	/*------------------------------------*/
@@ -45,6 +75,15 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	@Override public SQLWarning getWarnings() throws SQLException {
+		checkClosed();
+		return null;
+	}
+
+	@Override public void clearWarnings() throws SQLException {
+		checkClosed();
 	}
 
 	/*-----------------------------*/
@@ -64,8 +103,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	@Override public abstract boolean next() throws SQLException;
 
 	@Override public abstract void close() throws SQLException;
-
-	@Override public abstract boolean isClosed() throws SQLException;
 
 	@Override public abstract boolean wasNull() throws SQLException;
 
@@ -178,14 +215,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	}
 
 	@Override public InputStream getBinaryStream(String columnLabel) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public SQLWarning getWarnings() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void clearWarnings() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

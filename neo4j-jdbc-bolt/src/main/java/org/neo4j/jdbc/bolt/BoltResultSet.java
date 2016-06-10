@@ -48,7 +48,6 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private ResultSetMetaData metaData;
 	private Record          current;
 	private List<String>    keys;
-	private boolean closed = false;
 	private int     type;
 	private int     concurrency;
 	private int     holdability;
@@ -124,12 +123,6 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return result;
 	}
 
-	private void checkClosed() throws SQLException {
-		if (this.closed) {
-			throw new SQLException("ResultSet was already closed");
-		}
-	}
-
 	@Override public boolean next() throws SQLException {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
@@ -146,7 +139,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}
-		this.closed = true;
+		this.isClosed = true;
 	}
 
 	@Override public boolean wasNull() throws SQLException {
@@ -486,10 +479,6 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		checkClosed();
 		Object obj = this.fetchValueFromLabel(columnLabel).asObject();
 		return this.generateObject(obj);
-	}
-
-	@Override public boolean isClosed() throws SQLException {
-		return this.closed;
 	}
 
 	@Override public boolean isLoggable() {
