@@ -54,7 +54,7 @@ public class BoltDriver extends BaseDriver {
 			try {
 				Properties info = parseUrlProperties(url, props);
 				Config.ConfigBuilder builder = build();
-				if (info.containsKey("noSsl")) builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+				if (info.containsKey("nossl")) builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
 				Config config = builder.toConfig();
 				AuthToken authToken = getAuthToken(info);
 				Driver driver = GraphDatabase.driver(url, authToken, config);

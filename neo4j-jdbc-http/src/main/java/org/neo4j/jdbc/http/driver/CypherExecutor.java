@@ -91,7 +91,7 @@ public class CypherExecutor {
 		if (credentialsProvider!=null) builder.setDefaultCredentialsProvider(credentialsProvider);
 
 		// Setting user-agent
-		String userAgent = properties.getProperty("userAgent");
+		String userAgent = properties.getProperty("useragent");
 		builder.setUserAgent("Neo4j JDBC Driver" + (userAgent != null ? " via "+userAgent : ""));
 		// Create the http client
 		this.http = builder.build();
@@ -100,7 +100,7 @@ public class CypherExecutor {
 		this.transactionUrl = createTransactionUrl(host, port);
 
 		// Setting autocommit
-		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autoCommit", "true")));
+		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autocommit", "true")));
 	}
 
 	private String createTransactionUrl(String host, Integer port) throws SQLException {

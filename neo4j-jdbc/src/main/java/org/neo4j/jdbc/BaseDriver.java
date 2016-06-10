@@ -23,6 +23,7 @@ import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 import java.sql.*;
 import java.sql.Connection;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -103,7 +104,9 @@ public abstract class BaseDriver implements java.sql.Driver {
 	protected Properties parseUrlProperties(String url, Properties params) {
 		Properties properties = new Properties();
 		if(params != null) {
-			properties = params;
+			for (Map.Entry<Object, Object> entry : params.entrySet()) {
+				properties.put(entry.getKey().toString().toLowerCase(),entry.getValue());
+			}
 		}
 		if (url.contains("?")) {
 			String urlProps = url.substring(url.indexOf('?') + 1);
@@ -113,9 +116,9 @@ public abstract class BaseDriver implements java.sql.Driver {
 				if (idx != -1) {
 					String key = prop.substring(0, idx);
 					String value = prop.substring(idx + 1);
-					properties.put(key, value);
+					properties.put(key.toLowerCase(), value);
 				} else {
-					properties.put(prop, "true");
+					properties.put(prop.toLowerCase(), "true");
 				}
 			}
 		}
