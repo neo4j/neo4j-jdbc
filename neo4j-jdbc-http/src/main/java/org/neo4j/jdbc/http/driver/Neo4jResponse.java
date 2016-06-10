@@ -95,8 +95,10 @@ public class Neo4jResponse {
 
 					// Data parsing
 					this.results = new ArrayList<>();
-					for (Map map : (List<Map>) body.get("results")) {
-						results.add(new Neo4jResult(map));
+					if (body.containsKey("results")) {
+						for (Map map : (List<Map>) body.get("results")) {
+							results.add(new Neo4jResult(map));
+						}
 					}
 
 				} catch (Exception e) {

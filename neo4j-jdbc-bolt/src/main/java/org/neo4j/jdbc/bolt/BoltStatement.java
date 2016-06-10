@@ -85,8 +85,12 @@ public class BoltStatement extends Statement implements Loggable {
 			this.currentUpdateCount = -1;
 			return this.currentResultSet;
 		} catch (ClientException e) {
-			throw new SQLException(e.getMessage());
+			throw wrapException(e);
 		}
+	}
+
+	private SQLException wrapException(ClientException e) {
+		return new SQLException(e.neo4jErrorCode()+": "+e.getMessage(),e);
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
@@ -98,7 +102,7 @@ public class BoltStatement extends Statement implements Loggable {
 			this.currentResultSet = null;
 			return this.currentUpdateCount;
 		} catch (ClientException e) {
-			throw new SQLException(e.getMessage());
+			throw wrapException(e);
 		}
 	}
 
@@ -115,7 +119,7 @@ public class BoltStatement extends Statement implements Loggable {
 
 			return result;
 		} catch (ClientException e) {
-			throw new SQLException(e.getMessage());
+			throw wrapException(e);
 		}
 	}
 

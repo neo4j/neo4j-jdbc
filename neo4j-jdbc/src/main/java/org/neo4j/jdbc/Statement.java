@@ -119,7 +119,7 @@ public abstract class Statement implements java.sql.Statement {
 
 	@Override public void close() throws SQLException {
 		if (!this.isClosed()) {
-			if (this.currentResultSet != null) {
+			if (this.currentResultSet != null && !this.currentResultSet.isClosed()) {
 				this.currentResultSet.close();
 			}
 			this.currentUpdateCount = -1;
