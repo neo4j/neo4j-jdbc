@@ -51,7 +51,7 @@ public class BoltResultSetTest {
 	@Test public void isClosedReturnFalseWhenConnectionOpen() throws SQLException {
 		StatementResult StatementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(null, StatementResult);
 
 		assertFalse(resultSet.isClosed());
 	}
@@ -60,7 +60,7 @@ public class BoltResultSetTest {
 	@Test public void isClosedReturnTrueWhenConnectionClosed() throws SQLException {
 		StatementResult StatementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = new BoltResultSet(StatementResult);
+		ResultSet resultSet = new BoltResultSet(null, StatementResult);
 
 		resultSet.close();
 		assertTrue(resultSet.isClosed());
@@ -72,7 +72,7 @@ public class BoltResultSetTest {
 
 	@Test public void closeShouldThrowExceptionIfIteratorIsNull() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		ResultSet resultSet = new BoltResultSet(null);
+		ResultSet resultSet = new BoltResultSet(null, null);
 
 		resultSet.close();
 	}

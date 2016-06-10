@@ -27,9 +27,9 @@ import org.junit.Test;
 
 import java.sql.*;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /*
  * Created by bsimard on 25/04/16.
@@ -42,6 +42,7 @@ public class HttpResultSetIT extends Neo4jHttpIT {
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery("CREATE (n:TestParamConvertionShouldWork { string:\"AZERTYUIOP\", bool:true, float:3.14, integer:7, array:[1,2,3,4]}) RETURN n, n.string, n.bool, n.float, n.integer, n.array, n.nop");
 
+		assertEquals(statement, rs.getStatement());
 		assertTrue(rs.next());
 
 		// Testing string
@@ -53,10 +54,10 @@ public class HttpResultSetIT extends Neo4jHttpIT {
 		assertEquals(true, rs.getBoolean(3));
 
 		// Testing float / double
-		assertEquals("Float conversion failed", Float.valueOf("3.14"), rs.getFloat("n.float"));
-		assertEquals("Float conversion failed", Float.valueOf("3.14"), rs.getFloat(4));
-		assertEquals("Double conversion failed", Double.valueOf("3.14"), rs.getDouble("n.float"));
-		assertEquals("Double conversion failed", Double.valueOf("3.14"), rs.getDouble(4));
+		assertEquals("Float conversion failed", 3.14f, rs.getFloat("n.float"),0);
+		assertEquals("Float conversion failed", 3.14f, rs.getFloat(4),0);
+		assertEquals("Double conversion failed", 3.14d, rs.getDouble("n.float"),0);
+		assertEquals("Double conversion failed", 3.14d, rs.getDouble(4),0);
 
 		// Testing integer, long
 		assertEquals("Integer conversion failed",7, rs.getInt("n.integer"));
@@ -77,9 +78,9 @@ public class HttpResultSetIT extends Neo4jHttpIT {
 		assertTrue(rs.wasNull());
 		assertEquals("Null for boolean", false, rs.getBoolean("n.nop"));
 		assertTrue(rs.wasNull());
-		assertEquals("Null for float", Float.valueOf("0.0").floatValue(), rs.getFloat("n.nop"));
+		assertEquals("Null for float", 0f, rs.getFloat("n.nop"),0);
 		assertTrue(rs.wasNull());
-		assertEquals("Null for double", Double.valueOf("0.0").doubleValue(), rs.getDouble("n.nop"));
+		assertEquals("Null for double", 0d, rs.getDouble("n.nop"),0);
 		assertTrue(rs.wasNull());
 		assertEquals("Null for long", 0, rs.getLong("n.nop"));
 		assertTrue(rs.wasNull());

@@ -53,7 +53,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		this.checkClosed();
 		StatementResult result = executeInternal();
 
-		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(result, this.rsParams), this.isLoggable());
+		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
 		this.currentUpdateCount = -1;
 		return currentResultSet;
 	}

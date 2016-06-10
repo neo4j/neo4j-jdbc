@@ -68,7 +68,7 @@ public class HttpStatement extends Statement implements Loggable {
 		// Parse response data
 		this.currentResultSet = null;
 		if (response.results.get(0) != null) {
-			this.currentResultSet = new HttpResultSet(response.results.get(0));
+			this.currentResultSet = new HttpResultSet(this,response.results.get(0));
 		}
 
 		return (this.currentResultSet != null);

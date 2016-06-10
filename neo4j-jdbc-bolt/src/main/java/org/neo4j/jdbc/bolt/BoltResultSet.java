@@ -21,10 +21,11 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.v1.util.Pair;
 import org.neo4j.jdbc.*;
+import org.neo4j.jdbc.Array;
+import org.neo4j.jdbc.ResultSet;
+import org.neo4j.jdbc.ResultSetMetaData;
+import org.neo4j.jdbc.Statement;
 import org.neo4j.jdbc.impl.ListArray;
-import org.neo4j.driver.internal.InternalNode;
-import org.neo4j.driver.internal.InternalPath;
-import org.neo4j.driver.internal.InternalRelationship;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
@@ -34,7 +35,7 @@ import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
 import org.neo4j.driver.v1.types.Relationship;
 
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 
 /**
@@ -61,17 +62,19 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private boolean flattened = false;
 
 	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
+	private Statement statement;
 
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
 	 *
+	 * @param statement
 	 * @param iterator The <code>StatementResult</code> of this set
 	 * @param params   At most three, type, concurrency and holdability.
-	 *                 The defaults are <code>TYPE_FORWARD_ONLY</code>,
-	 *                 <code>CONCUR_READ_ONLY</code>,
-	 *                 <code>CLOSE_CURSORS_AT_COMMIT</code>.
+ *                 The defaults are <code>TYPE_FORWARD_ONLY</code>,
+ *                 <code>CONCUR_READ_ONLY</code>,
 	 */
-	public BoltResultSet(StatementResult iterator, int... params) {
+	public BoltResultSet(Statement statement, StatementResult iterator, int... params) {
+		this.statement = statement;
 		this.iterator = iterator;
 
 		this.keys = new ArrayList<>();
@@ -503,5 +506,10 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	public List<String> getKeys() {
 		return this.keys;
+	}
+
+	@Override
+	public java.sql.Statement getStatement() throws SQLException {
+		return statement;
 	}
 }

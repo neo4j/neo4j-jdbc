@@ -59,6 +59,8 @@ public class BoltResultSetMetaDataIT {
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_MORE);
+
+			assertEquals(stmt, rs.getStatement());
 			ResultSetMetaData rsm = rs.getMetaData();
 
 			int i = 1;

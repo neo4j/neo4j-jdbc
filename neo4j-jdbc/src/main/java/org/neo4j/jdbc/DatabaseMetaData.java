@@ -487,11 +487,11 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsSelectForUpdate() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsStoredProcedures() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSubqueriesInComparisons() throws SQLException {
