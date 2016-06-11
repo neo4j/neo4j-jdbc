@@ -256,52 +256,15 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getUserName() throws SQLException {
-		return connection.getUserName();
+		return this.connection.getUserName();
 	}
 
 	@Override public boolean isReadOnly() throws SQLException {
-		return connection.isReadOnly();
+		return this.connection.isReadOnly();
 	}
 
-	/*---------------------------------*/
-	/*       Not implemented yet       */
-	/*---------------------------------*/
-
-	@Override public boolean allProceduresAreCallable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean allTablesAreSelectable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	// this can be implemented
 	@Override public String getURL() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedHigh() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedLow() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedAtStart() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean usesLocalFiles() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean usesLocalFilePerTable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return this.connection.url;
 	}
 
 	@Override public boolean supportsMixedCaseIdentifiers() throws SQLException {
@@ -334,6 +297,50 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
 		return false;
+	}
+
+	@Override public boolean supportsSelectForUpdate() throws SQLException {
+		return false;
+	}
+
+	@Override public boolean supportsStoredProcedures() throws SQLException {
+		return false;
+	}
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
+
+	@Override public boolean allProceduresAreCallable() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean allTablesAreSelectable() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean nullsAreSortedHigh() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean nullsAreSortedLow() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean nullsAreSortedAtStart() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean usesLocalFiles() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public boolean usesLocalFilePerTable() throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public String getSystemFunctions() throws SQLException {
@@ -482,14 +489,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public boolean supportsPositionedUpdate() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean supportsSelectForUpdate() throws SQLException {
-		return false;
-	}
-
-	@Override public boolean supportsStoredProcedures() throws SQLException {
-		return false;
 	}
 
 	@Override public boolean supportsSubqueriesInComparisons() throws SQLException {

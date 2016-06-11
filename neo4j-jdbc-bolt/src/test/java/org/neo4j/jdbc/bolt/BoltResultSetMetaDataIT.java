@@ -179,27 +179,35 @@ public class BoltResultSetMetaDataIT {
 			ResultSet rs = stmt.executeQuery("MATCH (n) return 'a',1,1.0,[1,2,3],{a:1},null,n,n.name");
 			while (rs.next()) {
 				ResultSetMetaData rsm = rs.getMetaData();
+
 				assertEquals(Types.VARCHAR, rsm.getColumnType(1));
 				assertEquals("STRING", rsm.getColumnTypeName(1));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(1));
+
 				assertEquals(Types.INTEGER, rsm.getColumnType(2));
 				assertEquals("INTEGER", rsm.getColumnTypeName(2));
 				assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
+
 				assertEquals(Types.NUMERIC, rsm.getColumnType(3));
 				assertEquals("FLOAT", rsm.getColumnTypeName(3));
 				assertEquals(Double.class.getName(), rsm.getColumnClassName(3));
+
 				assertEquals(Types.ARRAY, rsm.getColumnType(4));
 				assertEquals("LIST OF ANY?", rsm.getColumnTypeName(4));
 				assertEquals(List.class.getName(), rsm.getColumnClassName(4));
+
 				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(5));
 				assertEquals("MAP", rsm.getColumnTypeName(5));
 				assertEquals(Map.class.getName(), rsm.getColumnClassName(5));
-				assertEquals(Types.NULL, rsm.getColumnType(6));
-				assertEquals("NULL", rsm.getColumnTypeName(6));
-				assertEquals(null, rsm.getColumnClassName(6));
+				// If null, it's the default column class, ie string
+				assertEquals(Types.VARCHAR, rsm.getColumnType(6));
+				assertEquals("STRING", rsm.getColumnTypeName(6));
+				assertEquals(String.class.getName(), rsm.getColumnClassName(6));
+
 				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(7));
 				assertEquals("NODE", rsm.getColumnTypeName(7));
 				assertEquals(Object.class.getName(), rsm.getColumnClassName(7));
+
 				assertEquals(Types.VARCHAR, rsm.getColumnType(8));
 				assertEquals("STRING", rsm.getColumnTypeName(8));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(8));

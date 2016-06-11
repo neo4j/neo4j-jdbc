@@ -19,13 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.v1.util.Pair;
-import org.neo4j.jdbc.*;
-import org.neo4j.jdbc.Array;
-import org.neo4j.jdbc.ResultSet;
-import org.neo4j.jdbc.ResultSetMetaData;
-import org.neo4j.jdbc.Statement;
-import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
@@ -34,8 +27,11 @@ import org.neo4j.driver.v1.exceptions.value.Uncoercible;
 import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
 import org.neo4j.driver.v1.types.Relationship;
+import org.neo4j.driver.v1.util.Pair;
+import org.neo4j.jdbc.*;
+import org.neo4j.jdbc.impl.ListArray;
 
-import java.sql.*;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -44,14 +40,14 @@ import java.util.*;
  */
 public class BoltResultSet extends ResultSet implements Loggable {
 
-	private StatementResult iterator;
+	private StatementResult   iterator;
 	private ResultSetMetaData metaData;
-	private Record          current;
-	private List<String>    keys;
-	private int     type;
-	private int     concurrency;
-	private int     holdability;
-	private boolean wasNull;
+	private Record            current;
+	private List<String>      keys;
+	private int               type;
+	private int               concurrency;
+	private int               holdability;
+	private boolean           wasNull;
 
 	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
 	public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
@@ -67,10 +63,10 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
 	 *
 	 * @param statement
-	 * @param iterator The <code>StatementResult</code> of this set
-	 * @param params   At most three, type, concurrency and holdability.
- *                 The defaults are <code>TYPE_FORWARD_ONLY</code>,
- *                 <code>CONCUR_READ_ONLY</code>,
+	 * @param iterator  The <code>StatementResult</code> of this set
+	 * @param params    At most three, type, concurrency and holdability.
+	 *                  The defaults are <code>TYPE_FORWARD_ONLY</code>,
+	 *                  <code>CONCUR_READ_ONLY</code>,
 	 */
 	public BoltResultSet(Statement statement, StatementResult iterator, int... params) {
 		this.statement = statement;
@@ -78,21 +74,20 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 		this.keys = new ArrayList<>();
 
-		if (this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null
-				&& this.flatteningTypes(this.iterator)) {
+		if (this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
 			//Flatten the result
-			for (Pair<String, Value> pair : this.iterator.peek().fields()){
+			for (Pair<String, Value> pair : this.iterator.peek().fields()) {
 				keys.add(pair.key());
 				if (ACCEPTED_TYPES_FOR_FLATTENING.get(0).equals(pair.value().type().name())) {
 					keys.add(pair.key() + ".id");
 					keys.add(pair.key() + ".labels");
-					for(String key : pair.value().asNode().keys()){
+					for (String key : pair.value().asNode().keys()) {
 						keys.add(pair.key() + "." + key);
 					}
 				} else if (ACCEPTED_TYPES_FOR_FLATTENING.get(1).equals(pair.value().type().name())) {
 					keys.add(pair.key() + ".id");
 					keys.add(pair.key() + ".type");
-					for(String key : pair.value().asRelationship().keys()){
+					for (String key : pair.value().asRelationship().keys()) {
 						keys.add(pair.key() + "." + key);
 					}
 				}
@@ -110,11 +105,11 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.metaData = InstanceFactory.debug(BoltResultSetMetaData.class, new BoltResultSetMetaData(this.iterator, this.keys), this.isLoggable());
 	}
 
-	private boolean flatteningTypes(StatementResult statementResult){
+	private boolean flatteningTypes(StatementResult statementResult) {
 		boolean result = true;
 
-		for(Pair<String, Value> pair : statementResult.peek().fields()){
-			if(!ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())){
+		for (Pair<String, Value> pair : statementResult.peek().fields()) {
+			if (!ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())) {
 				result = false;
 				break;
 			}
@@ -147,13 +142,27 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return this.wasNull;
 	}
 
+	@Override public String getString(int columnIndex) throws SQLException {
+		checkClosed();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return this.getStringFromValue(value);
+	}
+
 	@Override public String getString(String columnLabel) throws SQLException {
 		checkClosed();
 		Value value = this.fetchValueFromLabel(columnLabel);
+		return this.getStringFromValue(value);
+	}
+
+	private String getStringFromValue(Value value) {
 		try {
-			return value.asString();
+			if (value.isNull()) {
+				return null;
+			} else {
+				return value.asString();
+			}
 		} catch (Uncoercible e) {
-			String result = "";
+			String result = null;
 			if (value instanceof NodeValue) {
 				result = this.convertNodeToString(value.asNode());
 			} else if (value instanceof RelationshipValue) {
@@ -337,7 +346,6 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	@Override public int findColumn(String columnLabel) throws SQLException {
 		checkClosed();
 		if (!this.iterator.keys().contains(columnLabel)) {
-			//if (!this.current.containsKey(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
 		return this.iterator.keys().indexOf(columnLabel) + 1;
@@ -356,24 +364,6 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	@Override public int getHoldability() throws SQLException {
 		checkClosed();
 		return this.holdability;
-	}
-
-	@Override public String getString(int columnIndex) throws SQLException {
-		checkClosed();
-		Value value = this.fetchValueFromIndex(columnIndex);
-		try {
-			return value.asString();
-		} catch (Uncoercible e) {
-			String result = "";
-			if (value instanceof NodeValue) {
-				result = this.convertNodeToString(value.asNode());
-			} else if (value instanceof RelationshipValue) {
-				result = this.convertRelationshipToString(value.asRelationship());
-			} else if (value instanceof PathValue) {
-				result = this.convertPathToString(value.asPath());
-			}
-			return result;
-		}
 	}
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
@@ -460,7 +450,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			Path path = (Path) obj;
 			List<Object> list = new ArrayList<>(path.length());
 			list.add(this.generateObject(path.start()));
-			for(Path.Segment segment : path){
+			for (Path.Segment segment : path) {
 				list.add(this.generateObject(segment.relationship()));
 				list.add(this.generateObject(segment.end()));
 			}
@@ -497,8 +487,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return this.keys;
 	}
 
-	@Override
-	public java.sql.Statement getStatement() throws SQLException {
+	@Override public java.sql.Statement getStatement() throws SQLException {
 		return statement;
 	}
 }

@@ -46,8 +46,8 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @param port       HTTP port of the Neo4j instance.
 	 * @param properties Properties of the url connection.
 	 */
-	public HttpConnection(String host, Integer port, Boolean secure, Properties properties) throws SQLException {
-		super(properties, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+	public HttpConnection(String host, Integer port, Boolean secure, Properties properties, String url) throws SQLException {
+		super(properties, url, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 		this.executor = new CypherExecutor(host, port, secure, properties);
 	}
 

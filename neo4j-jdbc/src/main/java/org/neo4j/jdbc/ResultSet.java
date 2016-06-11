@@ -255,19 +255,19 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	}
 
 	@Override public void beforeFirst() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public void afterLast() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean first() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean last() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public int getRow() throws SQLException {
@@ -275,15 +275,15 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	}
 
 	@Override public boolean absolute(int row) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean relative(int rows) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public boolean previous() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public void setFetchDirection(int direction) throws SQLException {
@@ -487,7 +487,7 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	}
 
 	@Override public void moveToInsertRow() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public void moveToCurrentRow() throws SQLException {
@@ -514,7 +514,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-
 	@Override public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
@@ -530,7 +529,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	@Override public Clob getClob(String columnLabel) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
-
 
 	@Override public Date getDate(int columnIndex, Calendar cal) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();

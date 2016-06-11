@@ -19,9 +19,9 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.*;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.jdbc.*;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -43,9 +43,10 @@ public class BoltConnection extends Connection implements Loggable {
 	 *
 	 * @param session    Bolt Session
 	 * @param properties Driver properties
+	 * @param url        Url used for this connection
 	 */
-	public BoltConnection(Session session, Properties properties) {
-		super(properties,  BoltResultSet.DEFAULT_HOLDABILITY);
+	public BoltConnection(Session session, Properties properties, String url) {
+		super(properties, url, BoltResultSet.DEFAULT_HOLDABILITY);
 		this.session = session;
 	}
 
@@ -55,7 +56,7 @@ public class BoltConnection extends Connection implements Loggable {
 	 * @param session Bolt Session
 	 */
 	public BoltConnection(Session session) {
-		this(session, new Properties());
+		this(session, new Properties(), "");
 	}
 
 	/**

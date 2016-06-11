@@ -70,8 +70,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 		return this.keys.size();
 	}
 
-	@Override
-	public String getColumnClassName(int column) throws SQLException {
+	@Override public String getColumnClassName(int column) throws SQLException {
 		Type type = this.getColumnDriverTypeOrDefault(column, columnType[column]);
 
 		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
@@ -162,14 +161,16 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	 * If there is no `next record`, this method return the specify default type.
 	 *
 	 * @param column index of the JDBC column (start from 1)
-	 * @param def The default type
+	 * @param def    The default type
 	 * @return Driver type of the column
 	 */
 	private Type getColumnDriverTypeOrDefault(int column, Type def) {
 		// Default type
 		Type type = def;
 		try {
-			type = this.iterator.peek().get(column - 1).type();
+			if (!this.iterator.peek().get(column - 1).isNull()) {
+				type = this.iterator.peek().get(column - 1).type();
+			}
 		} catch (NoSuchRecordException e) {
 			// Silent exception !
 			// here there is no next record (case for the last record)

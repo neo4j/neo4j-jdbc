@@ -45,8 +45,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	protected ResultSetMetaData(List<String> keys) {
 		if (keys != null) {
 			this.keys = keys;
-		}
-		else {
+		} else {
 			this.keys = new ArrayList<>();
 		}
 	}
@@ -59,7 +58,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		int result = 0;
 		// just a preventing test for mockito
 		// otherwise it's not needed
-		if(this.keys != null) {
+		if (this.keys != null) {
 			result = this.keys.size();
 		}
 		return result;
@@ -150,25 +149,25 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return "String";
 	}
 
-	/*---------------------------------*/
-	/*       Not implemented yet       */
-	/*---------------------------------*/
+	@Override public String getTableName(int column) throws SQLException {
+		return ""; //not applicable
+	}
 
 	@Override public String getSchemaName(int column) throws SQLException {
-		throw new UnsupportedOperationException();
+		return ""; //not applicable
 	}
 
 	@Override public boolean isCaseSensitive(int column) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public String getTableName(int column) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return true;
 	}
 
 	@Override public boolean isReadOnly(int column) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
+
+	/*---------------------------------*/
+	/*       Not implemented yet       */
+	/*---------------------------------*/
 
 	@Override public boolean isWritable(int column) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();

@@ -36,24 +36,33 @@ import java.util.concurrent.Executor;
 public abstract class Connection implements java.sql.Connection {
 
 	/**
+	 * JDBC Url used for this connection
+	 */
+	public String url;
+
+	/**
+	 * JDBC driver properties
+	 */
+	public Properties properties;
+
+	/**
 	 * Is the connection is in readonly mode ?
 	 */
 	private boolean readOnly = false;
 
 	/**
-	 * JDBC driver properties.
+	 * Holdability of the connection
 	 */
-	Properties properties;
-
-	private int         holdability;
+	private int holdability;
 
 	/**
 	 * Default constructor with properties.
 	 *
-	 * @param properties Driver properties
-	 * @param defaultHoldability
+	 * @param properties         Driver properties
+	 * @param defaultHoldability Connection holdability
 	 */
-	protected Connection(Properties properties, int defaultHoldability) {
+	protected Connection(Properties properties, String url, int defaultHoldability) {
+		this.url = url;
 		this.properties = properties;
 		this.holdability = defaultHoldability;
 	}
@@ -63,7 +72,7 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	/**
-	 * Get the user of thie connection.
+	 * Get the user of this connection.
 	 *
 	 * @return
 	 */
@@ -79,7 +88,6 @@ public abstract class Connection implements java.sql.Connection {
 	/**
 	 * Check if this connection is closed or not.
 	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
-	 *
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {
@@ -91,7 +99,6 @@ public abstract class Connection implements java.sql.Connection {
 	 * Method to check if we are into autocommit mode.
 	 * If we do, then it throw an exception.
 	 * This method is for using into commit and rollback method.
-	 *
 	 */
 	protected void checkAutoCommit() throws SQLException {
 		if (this.getAutoCommit()) {
@@ -125,9 +132,9 @@ public abstract class Connection implements java.sql.Connection {
 	/**
 	 * Check if the holdability parameter is conform to specification.
 	 * If it doesn't, we throw an exception.
+	 * {@link java.sql.Connection#setHoldability(int)}
 	 *
 	 * @param resultSetHoldability The holdability value to check
-	 * {@link java.sql.Connection#setHoldability(int)}
 	 */
 	protected void checkHoldabilityParams(int resultSetHoldability) throws SQLException {
 		// @formatter:off

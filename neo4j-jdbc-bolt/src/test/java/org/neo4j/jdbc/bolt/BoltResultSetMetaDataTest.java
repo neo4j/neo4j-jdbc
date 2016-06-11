@@ -19,13 +19,13 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.ResultSetMetaData;
-import org.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.jdbc.ResultSetMetaData;
+import org.neo4j.jdbc.bolt.data.ResultSetData;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -148,12 +148,10 @@ public class BoltResultSetMetaDataTest {
 	/*         getSchemaName        */
 	/*------------------------------*/
 
-	@Test public void getSchemaNameShouldThrowUnsupportedException() throws SQLException {
-		expectedEx.expect(UnsupportedOperationException.class);
-
+	@Test public void getSchemaNameShouldReturnDefaultValue() throws SQLException {
 		ResultSetMetaData resultSet = new BoltResultSetMetaData(null, null);
 
-		resultSet.getSchemaName(1);
+		assertEquals("", resultSet.getSchemaName(1));
 	}
 
 	/*------------------------------*/

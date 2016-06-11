@@ -46,14 +46,14 @@ public class HttpDriver extends BaseDriver {
 		Connection connection = null;
 		try {
 			if (acceptsURL(url)) {
-				URL neo4jUrl = new URL(url.replace("jdbc:neo4j:", "").replaceAll("^("+JDBC_HTTP_PREFIX+":)([^/])","$1//$2"));
-				Properties info = parseUrlProperties(url, params);
+				URL neo4jUrl = new URL(url.replace("jdbc:neo4j:", "").replaceAll("^(" + JDBC_HTTP_PREFIX + ":)([^/])", "$1//$2"));
+				Properties props = parseUrlProperties(url, params);
 				String host = neo4jUrl.getHost();
 				Boolean secure = Boolean.FALSE;
 				// default port for http
 				int port = 7474;
 				// default port for https
-				if(neo4jUrl.getProtocol().equals("https")) {
+				if (neo4jUrl.getProtocol().equals("https")) {
 					port = 7473;
 					secure = Boolean.TRUE;
 				}
@@ -61,9 +61,8 @@ public class HttpDriver extends BaseDriver {
 				if (neo4jUrl.getPort() > 0) {
 					port = neo4jUrl.getPort();
 				}
-				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, secure, info), HttpConnection.hasDebug(info));
-			}
-			else {
+				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, secure, props, url), HttpConnection.hasDebug(props));
+			} else {
 				throw new SQLException("JDBC url is not bad");
 			}
 		} catch (MalformedURLException e) {

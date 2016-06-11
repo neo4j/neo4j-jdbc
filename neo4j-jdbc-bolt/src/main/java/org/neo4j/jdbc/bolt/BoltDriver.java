@@ -37,12 +37,12 @@ public class BoltDriver extends BaseDriver {
 
 	public final static String JDBC_BOLT_PREFIX = "bolt";
 
-    /**
-     * Default constructor.
-     */
-    public BoltDriver() throws SQLException {
-        super(JDBC_BOLT_PREFIX);
-    }
+	/**
+	 * Default constructor.
+	 */
+	public BoltDriver() throws SQLException {
+		super(JDBC_BOLT_PREFIX);
+	}
 
 	@Override public Connection connect(String url, Properties props) throws SQLException {
 		if (url == null) {
@@ -50,16 +50,18 @@ public class BoltDriver extends BaseDriver {
 		}
 		Connection connection = null;
 		if (acceptsURL(url)) {
-			url = url.replace(BaseDriver.JDBC_PREFIX, "").replaceAll("^("+JDBC_BOLT_PREFIX+":)([^/])","$1//$2");
+			String boltUrl = url.replace(BaseDriver.JDBC_PREFIX, "").replaceAll("^(" + JDBC_BOLT_PREFIX + ":)([^/])", "$1//$2");
 			try {
-				Properties info = parseUrlProperties(url, props);
+				Properties info = parseUrlProperties(boltUrl, props);
 				Config.ConfigBuilder builder = build();
-				if (info.containsKey("nossl")) builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+				if (info.containsKey("nossl")) {
+					builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+				}
 				Config config = builder.toConfig();
 				AuthToken authToken = getAuthToken(info);
-				Driver driver = GraphDatabase.driver(url, authToken, config);
+				Driver driver = GraphDatabase.driver(boltUrl, authToken, config);
 				Session session = driver.session();
-				BoltConnection boltConnection = new BoltConnection(session, info);
+				BoltConnection boltConnection = new BoltConnection(session, info, url);
 				connection = InstanceFactory.debug(BoltConnection.class, boltConnection, BoltConnection.hasDebug(info));
 			} catch (Exception e) {
 				throw new SQLException(e);
