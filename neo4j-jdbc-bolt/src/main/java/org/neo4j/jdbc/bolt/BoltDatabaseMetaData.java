@@ -19,10 +19,12 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.DatabaseMetaData;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Transaction;
+import org.neo4j.jdbc.DatabaseMetaData;
+
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /**
  * Provides metadata
@@ -36,16 +38,22 @@ class BoltDatabaseMetaData extends DatabaseMetaData {
 		super(connection, debug);
 
 		// compute database version
-		if (connection != null && connection.getSession() != null) {
-			try(Transaction tx = connection.getSession().beginTransaction()) {
-				StatementResult rs = tx.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
+		if (connection != null) {
+			try {
+				BoltConnection conn = (BoltConnection) DriverManager.getConnection(connection.url, connection.properties);
+				StatementResult rs = conn.getSession()
+						.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
 				if (rs != null && rs.hasNext()) {
 					Record record = rs.next();
 					if (record.containsKey("version")) {
 						databaseVersion = record.get("version").asString();
 					}
 				}
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
+
 		}
 
 	}

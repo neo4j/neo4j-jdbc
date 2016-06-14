@@ -47,4 +47,12 @@ public class BoltDatabaseMetaDataIT {
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertEquals("user", connection.getMetaData().getUserName());
 	}
+
+	@Test public void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),"user","password");
+		connection.setAutoCommit(false);
+		connection.getMetaData();
+
+		connection.close();
+	}
 }
