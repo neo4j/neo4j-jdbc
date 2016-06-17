@@ -19,10 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
@@ -212,6 +209,48 @@ public class BoltResultSetMetaDataIT {
 				assertEquals("STRING", rsm.getColumnTypeName(8));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(8));
 			}
+		}
+	}
+
+	@Ignore @Test public void getColumnTypeNameShouldBeCorrectAfterFlattening() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+
+		try (Statement stmt = con.createStatement()) {
+			ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n;");
+			rs.next();
+
+			ResultSetMetaData rsm = rs.getMetaData();
+
+			assertEquals(5, rsm.getColumnCount());
+
+			assertEquals("NODE", rsm.getColumnTypeName(1));
+			assertEquals("INTEGER", rsm.getColumnTypeName(2));
+			assertEquals("LIST", rsm.getColumnTypeName(3));
+			assertEquals("STRING", rsm.getColumnTypeName(4));
+			assertEquals("STRING", rsm.getColumnTypeName(5));
+		}
+	}
+
+	@Ignore @Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+
+		try (Statement stmt = con.createStatement()) {
+			ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n;");
+			rs.next();
+
+			ResultSetMetaData rsm = rs.getMetaData();
+
+			assertEquals(5, rsm.getColumnCount());
+			assertEquals(Object.class.getName(), rsm.getColumnClassName(1));
+			assertEquals(Integer.class.getName(), rsm.getColumnClassName(2));
+			assertEquals(Array.class.getName(), rsm.getColumnClassName(3));
+			assertEquals(String.class.getName(), rsm.getColumnClassName(4));
+			assertEquals(String.class.getName(), rsm.getColumnClassName(5));
 		}
 	}
 }
