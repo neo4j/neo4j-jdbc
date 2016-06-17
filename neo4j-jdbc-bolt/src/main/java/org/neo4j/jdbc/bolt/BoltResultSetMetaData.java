@@ -26,6 +26,7 @@ import org.neo4j.driver.v1.types.Type;
 import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.ResultSetMetaData;
 
+import java.sql.Array;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
@@ -37,26 +38,24 @@ import java.util.Map;
  */
 public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable {
 
-	private StatementResult iterator = null;
 	private boolean         loggable = false;
 	private Type[] columnType;
 
 	/**
 	 * Default constructor with result iterator and list of column name.
 	 *
-	 * @param iterator The result iterator
+	 * @param types  List of types
 	 * @param keys     List of column name (ie. key)
 	 */
-	BoltResultSetMetaData(StatementResult iterator, List<String> keys) {
+	BoltResultSetMetaData(List<Type> types, List<String> keys) {
 		super(keys);
-		this.iterator = iterator;
-		this.columnType = new Type[this.keys.size() + 1];
+		this.columnType = types.toArray(new Type[this.keys.size() + 1]);
 
 		// we init columnType with the first record
 		// in case first == last record
-		for (int i = 1; i <= this.keys.size(); i++) {
+		/*for (int i = 1; i <= this.keys.size(); i++) {
 			columnType[i] = this.getColumnDriverTypeOrDefault(i, InternalTypeSystem.TYPE_SYSTEM.STRING());
-		}
+		}*/
 	}
 
 	/**
@@ -64,20 +63,17 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	 * If the result iterator is not initialized, we throw an exception.
 	 */
 	@Override public int getColumnCount() throws SQLException {
-		if (this.iterator == null) {
-			throw new SQLException("ResultCursor not initialized");
-		}
 		return this.keys.size();
 	}
 
 	@Override public String getColumnClassName(int column) throws SQLException {
-		Type type = this.getColumnDriverTypeOrDefault(column, columnType[column]);
+		Type type = this.columnType[column - 1];
 
 		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
 			return String.class.getName();
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
-			return Long.class.getName();
+			return Integer.class.getName();
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
 			return Boolean.class.getName();
@@ -104,14 +100,14 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 			return null;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.LIST().equals(type)) {
-			return List.class.getName();
+			return Array.class.getName();
 		}
 
 		return Object.class.getName();
 	}
 
 	@Override public int getColumnType(int column) throws SQLException {
-		Type type = this.getColumnDriverTypeOrDefault(column, columnType[column]);
+		Type type = this.columnType[column - 1];
 		int resultType = 0;
 
 		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
@@ -124,7 +120,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 			resultType = Types.BOOLEAN;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
-			resultType = Types.NUMERIC;
+			resultType = Types.FLOAT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
 			resultType = Types.JAVA_OBJECT;
@@ -152,31 +148,11 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 	}
 
 	@Override public String getColumnTypeName(int column) throws SQLException {
-		Type type = this.getColumnDriverTypeOrDefault(column, columnType[column]);
-		return type.name();
-	}
-
-	/**
-	 * Return the driver column type from the next record if it's possible.
-	 * If there is no `next record`, this method return the specify default type.
-	 *
-	 * @param column index of the JDBC column (start from 1)
-	 * @param def    The default type
-	 * @return Driver type of the column
-	 */
-	private Type getColumnDriverTypeOrDefault(int column, Type def) {
-		// Default type
-		Type type = def;
-		try {
-			if (!this.iterator.peek().get(column - 1).isNull()) {
-				type = this.iterator.peek().get(column - 1).type();
-			}
-		} catch (NoSuchRecordException e) {
-			// Silent exception !
-			// here there is no next record (case for the last record)
+		if(column > this.getColumnCount()){
+			throw new SQLException("Column index out of bound");
 		}
-
-		return type;
+		Type type = this.columnType[column - 1];
+		return type.name();
 	}
 
 	/*--------------------*/

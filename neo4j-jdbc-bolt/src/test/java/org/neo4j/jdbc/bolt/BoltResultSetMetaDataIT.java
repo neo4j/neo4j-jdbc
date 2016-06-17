@@ -20,6 +20,7 @@
 package org.neo4j.jdbc.bolt;
 
 import org.junit.*;
+import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
@@ -178,79 +179,94 @@ public class BoltResultSetMetaDataIT {
 				ResultSetMetaData rsm = rs.getMetaData();
 
 				assertEquals(Types.VARCHAR, rsm.getColumnType(1));
-				assertEquals("STRING", rsm.getColumnTypeName(1));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(1));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(1));
 
 				assertEquals(Types.INTEGER, rsm.getColumnType(2));
-				assertEquals("INTEGER", rsm.getColumnTypeName(2));
-				assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(2));
+				assertEquals(Integer.class.getName(), rsm.getColumnClassName(2));
 
-				assertEquals(Types.NUMERIC, rsm.getColumnType(3));
-				assertEquals("FLOAT", rsm.getColumnTypeName(3));
+				assertEquals(Types.FLOAT, rsm.getColumnType(3));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.FLOAT().name(), rsm.getColumnTypeName(3));
 				assertEquals(Double.class.getName(), rsm.getColumnClassName(3));
 
 				assertEquals(Types.ARRAY, rsm.getColumnType(4));
-				assertEquals("LIST OF ANY?", rsm.getColumnTypeName(4));
-				assertEquals(List.class.getName(), rsm.getColumnClassName(4));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(4));
+				assertEquals(Array.class.getName(), rsm.getColumnClassName(4));
 
 				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(5));
-				assertEquals("MAP", rsm.getColumnTypeName(5));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.MAP().name(), rsm.getColumnTypeName(5));
 				assertEquals(Map.class.getName(), rsm.getColumnClassName(5));
-				// If null, it's the default column class, ie string
-				assertEquals(Types.VARCHAR, rsm.getColumnType(6));
-				assertEquals("STRING", rsm.getColumnTypeName(6));
-				assertEquals(String.class.getName(), rsm.getColumnClassName(6));
+
+				assertEquals(Types.NULL, rsm.getColumnType(6));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.NULL().name(), rsm.getColumnTypeName(6));
+				assertEquals(null, rsm.getColumnClassName(6));
 
 				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(7));
-				assertEquals("NODE", rsm.getColumnTypeName(7));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(7));
 				assertEquals(Object.class.getName(), rsm.getColumnClassName(7));
 
 				assertEquals(Types.VARCHAR, rsm.getColumnType(8));
-				assertEquals("STRING", rsm.getColumnTypeName(8));
+				assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(8));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(8));
 			}
 		}
 	}
 
-	@Ignore @Test public void getColumnTypeNameShouldBeCorrectAfterFlattening() throws SQLException {
+	@Test public void getColumnTypeNameShouldBeCorrectAfterFlattening() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n;");
+			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			rs.next();
 
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			assertEquals(5, rsm.getColumnCount());
-
-			assertEquals("NODE", rsm.getColumnTypeName(1));
-			assertEquals("INTEGER", rsm.getColumnTypeName(2));
-			assertEquals("LIST", rsm.getColumnTypeName(3));
-			assertEquals("STRING", rsm.getColumnTypeName(4));
-			assertEquals("STRING", rsm.getColumnTypeName(5));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(1));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(2));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(3));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(4));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(5));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().name(), rsm.getColumnTypeName(6));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(7));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(8));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(9));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(10));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(11));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(12));
+			assertEquals(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().name(), rsm.getColumnTypeName(13));
 		}
 	}
 
-	@Ignore @Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
+	@Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n;");
+			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			rs.next();
 
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			assertEquals(5, rsm.getColumnCount());
 			assertEquals(Object.class.getName(), rsm.getColumnClassName(1));
 			assertEquals(Integer.class.getName(), rsm.getColumnClassName(2));
 			assertEquals(Array.class.getName(), rsm.getColumnClassName(3));
 			assertEquals(String.class.getName(), rsm.getColumnClassName(4));
 			assertEquals(String.class.getName(), rsm.getColumnClassName(5));
+			assertEquals(Object.class.getName(), rsm.getColumnClassName(6));
+			assertEquals(Integer.class.getName(), rsm.getColumnClassName(7));
+			assertEquals(String.class.getName(), rsm.getColumnClassName(8));
+			assertEquals(Integer.class.getName(), rsm.getColumnClassName(9));
+			assertEquals(Object.class.getName(), rsm.getColumnClassName(10));
+			assertEquals(Integer.class.getName(), rsm.getColumnClassName(11));
+			assertEquals(Array.class.getName(), rsm.getColumnClassName(12));
+			assertEquals(Boolean.class.getName(), rsm.getColumnClassName(13));
 		}
 	}
 }

@@ -98,4 +98,8 @@ public class ListArray extends Array {
 
 		return result;
 	}
+
+	@Override public boolean equals(Object o){
+		return o instanceof ListArray && this.list.equals(((ListArray)o).list);
+	}
 }

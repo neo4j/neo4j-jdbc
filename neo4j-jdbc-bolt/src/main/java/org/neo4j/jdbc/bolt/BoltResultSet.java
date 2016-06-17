@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
@@ -27,6 +28,7 @@ import org.neo4j.driver.v1.exceptions.value.Uncoercible;
 import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
 import org.neo4j.driver.v1.types.Relationship;
+import org.neo4j.driver.v1.types.Type;
 import org.neo4j.driver.v1.util.Pair;
 import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.impl.ListArray;
@@ -44,6 +46,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private ResultSetMetaData metaData;
 	private Record            current;
 	private List<String>      keys;
+	private List<Type>        classes;
 	private int               type;
 	private int               concurrency;
 	private int               holdability;
@@ -62,7 +65,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
 	 *
-	 * @param statement
+	 * @param statement The <code>Statement</code> this ResultSet comes from
 	 * @param iterator  The <code>StatementResult</code> of this set
 	 * @param params    At most three, type, concurrency and holdability.
 	 *                  The defaults are <code>TYPE_FORWARD_ONLY</code>,
@@ -73,22 +76,33 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.iterator = iterator;
 
 		this.keys = new ArrayList<>();
+		this.classes = new ArrayList<>();
 
 		if (this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
 			//Flatten the result
 			for (Pair<String, Value> pair : this.iterator.peek().fields()) {
 				keys.add(pair.key());
+				Value val = this.iterator.peek().get(pair.key());
+				classes.add(val.type());
 				if (ACCEPTED_TYPES_FOR_FLATTENING.get(0).equals(pair.value().type().name())) {
+					Node node = val.asNode();
 					keys.add(pair.key() + ".id");
+					classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
 					keys.add(pair.key() + ".labels");
+					classes.add(InternalTypeSystem.TYPE_SYSTEM.LIST());
 					for (String key : pair.value().asNode().keys()) {
 						keys.add(pair.key() + "." + key);
+						classes.add(node.get(key).type());
 					}
 				} else if (ACCEPTED_TYPES_FOR_FLATTENING.get(1).equals(pair.value().type().name())) {
+					Relationship rel = val.asRelationship();
 					keys.add(pair.key() + ".id");
+					classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
 					keys.add(pair.key() + ".type");
+					classes.add(InternalTypeSystem.TYPE_SYSTEM.STRING());
 					for (String key : pair.value().asRelationship().keys()) {
 						keys.add(pair.key() + "." + key);
+						classes.add(rel.get(key).type());
 					}
 				}
 			}
@@ -96,13 +110,18 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		} else if (this.iterator != null) {
 			//Keys are exactly the ones returned from the iterator
 			this.keys = this.iterator.keys();
+			if(this.iterator.hasNext()) {
+				for (Value value : this.iterator.peek().values()) {
+					this.classes.add(value.type());
+				}
+			}
 		}
 
 		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
 		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
 		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
 
-		this.metaData = InstanceFactory.debug(BoltResultSetMetaData.class, new BoltResultSetMetaData(this.iterator, this.keys), this.isLoggable());
+		this.metaData = InstanceFactory.debug(BoltResultSetMetaData.class, new BoltResultSetMetaData(this.classes, this.keys), this.isLoggable());
 	}
 
 	private boolean flatteningTypes(StatementResult statementResult) {
@@ -184,7 +203,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		} else if (value instanceof StringValue) {
 			result += "\"" + ((StringValue) value).asString() + "\"";
 		} else if (value instanceof IntegerValue) {
-			result += ((IntegerValue) value).asInt();
+			result += ((IntegerValue) value).asLong();
 		} else if (value instanceof FloatValue) {
 			result += ((FloatValue) value).asFloat();
 		} else if (value instanceof BooleanValue) {
@@ -320,7 +339,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 				value = this.fetchPropertyValue(keys[0], keys[1]);
 			} else {
 				//Requested value is the node/relationship itself
-				value = this.current.get(index - 1);
+				value = this.current.get(this.keys.get(index - 1));
 			}
 		} else if (index > 0 && index - 1 <= this.current.size()) {
 			//Requested value is not flattened

@@ -104,9 +104,10 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		return InstanceFactory.debug(BoltResultSetMetaData.class,
+		return this.currentResultSet == null ? null : (ResultSetMetaData) this.currentResultSet.getMetaData();
+		/*return InstanceFactory.debug(BoltResultSetMetaData.class,
 				new BoltResultSetMetaData(((BoltResultSet) this.currentResultSet).getIterator(), ((BoltResultSet) this.currentResultSet).getKeys()),
-				this.isLoggable());
+				this.isLoggable());*/
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {
