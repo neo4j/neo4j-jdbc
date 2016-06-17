@@ -17,6 +17,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 The driver can be used with:
 
 * every kind of Neo4J server exposing services through the BOLT protocol (3.0.X)
+* every king of Neo4J server exposing services through the HTTP protocol (2.X+)
 
 The driver will be implemented also for:
 
@@ -127,7 +128,7 @@ Milestone 03 [RELEASED]
 
 * Neo4j 3.0.1
 
-Release Candidate 1
+Release Candidate 1 [RELEASED]
 
 * Move to github.com/neo4j-contrib
 
@@ -135,6 +136,7 @@ Release Candidate 1
 
 * Released to Neo4j's maven repository
 
+* HTTP protocol module
 
 === License
 
