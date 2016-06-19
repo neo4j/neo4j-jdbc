@@ -75,9 +75,10 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 * Default constructor.
 	 *
 	 * @param statement Statement of this resultset.
-	 * @param result A Neo4j query result.
+	 * @param result    A Neo4j query result.
 	 */
 	public HttpResultSet(Statement statement, Neo4jResult result) {
+
 		this.statement = statement;
 		this.result = result;
 		this.row = -1;
@@ -91,6 +92,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 * @throws SQLDataException
 	 */
 	private Object get(int column) throws SQLDataException {
+
 		if (column < 1 || column > result.columns.size()) {
 			throw new SQLDataException("Column " + column + " is invalid");
 		}
@@ -113,6 +115,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 * @throws SQLException If the object cannot be cast to Number
 	 */
 	private Number getNumber(int columnIndex) throws SQLException {
+
 		Number num = null;
 		Object value = get(columnIndex);
 
@@ -127,7 +130,9 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		return num;
 	}
 
-	@Override public boolean next() throws SQLException {
+	@Override
+	public boolean next() throws SQLException {
+
 		checkClosed();
 		row++;
 		if (row < result.rows.size()) {
@@ -139,24 +144,31 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		}
 	}
 
-	@Override public void close() throws SQLException {
-		checkClosed();
+	@Override
+	public void close() throws SQLException {
+
 		result = null;
 		row = -1;
 		isClosed = true;
 		currentRow = null;
 	}
 
-	@Override public boolean wasNull() throws SQLException {
+	@Override
+	public boolean wasNull() throws SQLException {
+
 		checkClosed();
 		return this.wasNull;
 	}
 
-	@Override public ResultSetMetaData getMetaData() throws SQLException {
+	@Override
+	public ResultSetMetaData getMetaData() throws SQLException {
+
 		return new HttpResultSetMetaData(result);
 	}
 
-	@Override public String getString(int columnIndex) throws SQLException {
+	@Override
+	public String getString(int columnIndex) throws SQLException {
+
 		String object = null;
 
 		checkClosed();
@@ -182,56 +194,70 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		return object;
 	}
 
-	@Override public boolean getBoolean(int columnIndex) throws SQLException {
+	@Override
+	public boolean getBoolean(int columnIndex) throws SQLException {
+
 		checkClosed();
 		Boolean result = (Boolean) get(columnIndex);
-		if(result == null)
+		if (result == null)
 			return false;
 		else
 			return result;
 	}
 
-	@Override public short getShort(int columnIndex) throws SQLException {
+	@Override
+	public short getShort(int columnIndex) throws SQLException {
+
 		checkClosed();
-		if(getNumber(columnIndex) == null)
+		if (getNumber(columnIndex) == null)
 			return 0;
 		else
 			return getNumber(columnIndex).shortValue();
 	}
 
-	@Override public int getInt(int columnIndex) throws SQLException {
+	@Override
+	public int getInt(int columnIndex) throws SQLException {
+
 		checkClosed();
-		if(getNumber(columnIndex) == null)
+		if (getNumber(columnIndex) == null)
 			return 0;
 		else
 			return getNumber(columnIndex).intValue();
 	}
 
-	@Override public long getLong(int columnIndex) throws SQLException {
+	@Override
+	public long getLong(int columnIndex) throws SQLException {
+
 		checkClosed();
-		if(getNumber(columnIndex)== null)
+		if (getNumber(columnIndex) == null)
 			return 0;
 		else
 			return getNumber(columnIndex).longValue();
 	}
 
-	@Override public float getFloat(int columnIndex) throws SQLException {
+	@Override
+	public float getFloat(int columnIndex) throws SQLException {
+
 		checkClosed();
-		if(getNumber(columnIndex) == null)
+		if (getNumber(columnIndex) == null)
 			return 0;
 		else
 			return getNumber(columnIndex).floatValue();
 	}
 
-	@Override public double getDouble(int columnIndex) throws SQLException {
+	@Override
+	public double getDouble(int columnIndex) throws SQLException {
+
 		checkClosed();
-		if(getNumber(columnIndex) == null)
+		if (getNumber(columnIndex) == null)
 			return 0;
 		else
 			return getNumber(columnIndex).doubleValue();
 	}
 
-	@Override public Array getArray(int columnIndex) throws SQLException {
+	@Override
+	public Array getArray(int columnIndex) throws SQLException {
+
 		checkClosed();
 		// Default list for null array
 		List result = new ArrayList<String>();
@@ -246,48 +272,70 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		return new ListArray(result, Array.getObjectType(result.get(0)));
 	}
 
-	@Override public Object getObject(int columnIndex) throws SQLException {
+	@Override
+	public Object getObject(int columnIndex) throws SQLException {
+
 		checkClosed();
 		return get(columnIndex);
 	}
 
-	@Override public String getString(String columnLabel) throws SQLException {
+	@Override
+	public String getString(String columnLabel) throws SQLException {
+
 		return getString(findColumn(columnLabel));
 	}
 
-	@Override public boolean getBoolean(String columnLabel) throws SQLException {
+	@Override
+	public boolean getBoolean(String columnLabel) throws SQLException {
+
 		return getBoolean(findColumn(columnLabel));
 	}
 
-	@Override public short getShort(String columnLabel) throws SQLException {
+	@Override
+	public short getShort(String columnLabel) throws SQLException {
+
 		return getShort(findColumn(columnLabel));
 	}
 
-	@Override public int getInt(String columnLabel) throws SQLException {
+	@Override
+	public int getInt(String columnLabel) throws SQLException {
+
 		return getInt(findColumn(columnLabel));
 	}
 
-	@Override public long getLong(String columnLabel) throws SQLException {
+	@Override
+	public long getLong(String columnLabel) throws SQLException {
+
 		return getLong(findColumn(columnLabel));
 	}
 
-	@Override public float getFloat(String columnLabel) throws SQLException {
+	@Override
+	public float getFloat(String columnLabel) throws SQLException {
+
 		return getFloat(findColumn(columnLabel));
 	}
 
-	@Override public double getDouble(String columnLabel) throws SQLException {
+	@Override
+	public double getDouble(String columnLabel) throws SQLException {
+
 		return getDouble(findColumn(columnLabel));
 	}
 
-	@Override public Array getArray(String columnLabel) throws SQLException {
+	@Override
+	public Array getArray(String columnLabel) throws SQLException {
+
 		return getArray(findColumn(columnLabel));
 	}
 
-	@Override public Object getObject(String columnLabel) throws SQLException {
+	@Override
+	public Object getObject(String columnLabel) throws SQLException {
+
 		return getObject(findColumn(columnLabel));
 	}
 
-	@Override public int findColumn(String columnLabel) throws SQLException {
+	@Override
+	public int findColumn(String columnLabel) throws SQLException {
+
 		checkClosed();
 
 		// The indexOf return -1 if not found
@@ -305,35 +353,48 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		return index + 1;
 	}
 
-	@Override public int getType() throws SQLException {
+	@Override
+	public int getType() throws SQLException {
+
 		checkClosed();
 		return TYPE_FORWARD_ONLY;
 	}
 
-	@Override public int getConcurrency() throws SQLException {
+	@Override
+	public int getConcurrency() throws SQLException {
+
 		checkClosed();
 		return CONCUR_READ_ONLY;
 	}
 
-	@Override public int getHoldability() throws SQLException {
+	@Override
+	public int getHoldability() throws SQLException {
+
 		checkClosed();
 		return CLOSE_CURSORS_AT_COMMIT;
 	}
 
-	@Override public boolean isClosed() throws SQLException {
+	@Override
+	public boolean isClosed() throws SQLException {
+
 		return this.isClosed;
 	}
 
-	@Override public boolean isLoggable() {
+	@Override
+	public boolean isLoggable() {
+
 		return this.loggable;
 	}
 
-	@Override public void setLoggable(boolean loggable) {
+	@Override
+	public void setLoggable(boolean loggable) {
+
 		this.loggable = loggable;
 	}
 
 	@Override
 	public java.sql.Statement getStatement() throws SQLException {
+
 		return statement;
 	}
 }
