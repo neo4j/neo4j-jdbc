@@ -17,7 +17,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 The driver can be used with:
 
 * every kind of Neo4J server exposing services through the BOLT protocol (3.0.X)
-* every king of Neo4J server exposing services through the HTTP protocol (2.X+)
+* every kind of Neo4J server exposing services through the HTTP protocol (2.X+)
 
 The driver will be implemented also for:
 
