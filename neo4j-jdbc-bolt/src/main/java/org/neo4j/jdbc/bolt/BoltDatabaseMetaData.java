@@ -51,7 +51,7 @@ class BoltDatabaseMetaData extends DatabaseMetaData {
 				}
 				conn.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 
 		}

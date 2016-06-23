@@ -19,7 +19,9 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.neo4j.jdbc.Connection;
 import org.neo4j.jdbc.ResultSet;
+import org.neo4j.jdbc.Statement;
 import org.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -182,7 +184,11 @@ public class BoltResultSetGettersTest {
 	@Test public void getStringByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = new BoltResultSet(null, statementResult);
+		Connection c = Mockito.mock(Connection.class);
+		Mockito.when(c.getFlattening()).thenReturn(1);
+		Statement stmt = Mockito.mock(Statement.class);
+		Mockito.when(stmt.getConnection()).thenReturn(c);
+		ResultSet resultSet = new BoltResultSet(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString("node.property1"));
@@ -191,7 +197,11 @@ public class BoltResultSetGettersTest {
 	@Test public void getStringByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = new BoltResultSet(null, statementResult);
+		Connection c = Mockito.mock(Connection.class);
+		Mockito.when(c.getFlattening()).thenReturn(1);
+		Statement stmt = Mockito.mock(Statement.class);
+		Mockito.when(stmt.getConnection()).thenReturn(c);
+		ResultSet resultSet = new BoltResultSet(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString(5));
@@ -325,7 +335,11 @@ public class BoltResultSetGettersTest {
 	@Test public void getIntByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = new BoltResultSet(null, statementResult);
+		Connection c = Mockito.mock(Connection.class);
+		Mockito.when(c.getFlattening()).thenReturn(1);
+		Statement stmt = Mockito.mock(Statement.class);
+		Mockito.when(stmt.getConnection()).thenReturn(c);
+		ResultSet resultSet = new BoltResultSet(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt("node.id"));
@@ -335,7 +349,11 @@ public class BoltResultSetGettersTest {
 	@Test public void getIntByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = new BoltResultSet(null, statementResult);
+		Connection c = Mockito.mock(Connection.class);
+		Mockito.when(c.getFlattening()).thenReturn(1);
+		Statement stmt = Mockito.mock(Statement.class);
+		Mockito.when(stmt.getConnection()).thenReturn(c);
+		ResultSet resultSet = new BoltResultSet(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt(2));
@@ -1150,7 +1168,11 @@ public class BoltResultSetGettersTest {
 	@Test public void getArrayByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = new BoltResultSet(null, statementResult);
+		Connection c = Mockito.mock(Connection.class);
+		Mockito.when(c.getFlattening()).thenReturn(1);
+		Statement stmt = Mockito.mock(Statement.class);
+		Mockito.when(stmt.getConnection()).thenReturn(c);
+		ResultSet resultSet = new BoltResultSet(stmt, statementResult);
 
 		resultSet.next();
 		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray("node.labels").getArray());
@@ -1159,7 +1181,11 @@ public class BoltResultSetGettersTest {
 	@Test public void getArrayByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
 		StatementResult statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = new BoltResultSet(null, statementResult);
+		Connection c = Mockito.mock(Connection.class);
+		Mockito.when(c.getFlattening()).thenReturn(1);
+		Statement stmt = Mockito.mock(Statement.class);
+		Mockito.when(stmt.getConnection()).thenReturn(c);
+		ResultSet resultSet = new BoltResultSet(stmt, statementResult);
 
 		resultSet.next();
 		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray(3).getArray());

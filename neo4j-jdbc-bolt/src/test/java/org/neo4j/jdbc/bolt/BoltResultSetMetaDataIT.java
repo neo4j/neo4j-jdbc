@@ -19,12 +19,14 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -35,6 +37,9 @@ import static org.junit.Assert.assertTrue;
  * @since 3.0.0
  */
 public class BoltResultSetMetaDataIT {
+
+	private final static String FLATTEN_URI = "flatten=1";
+
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
 	@Before public void setUp() {
@@ -53,7 +58,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnNodeWithMultipleNodes() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_MORE);
@@ -80,7 +85,7 @@ public class BoltResultSetMetaDataIT {
 	}
 
 	@Test public void shouldAddVirtualColumnsOnNodeAndPreserveResultSet() throws SQLException {
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
@@ -102,7 +107,7 @@ public class BoltResultSetMetaDataIT {
 	}
 
 	@Test public void shouldNotAddVirtualColumnsOnNodeIfNotOnlyNodes() throws SQLException {
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_MISC);
@@ -118,7 +123,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnRelationsWithMultipleRelations() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_RELATIONS);
@@ -140,7 +145,7 @@ public class BoltResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnRelationsAndNodesWithMultiple() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -217,7 +222,7 @@ public class BoltResultSetMetaDataIT {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -239,6 +244,9 @@ public class BoltResultSetMetaDataIT {
 			assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(12));
 			assertEquals(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().name(), rsm.getColumnTypeName(13));
 		}
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
@@ -246,7 +254,7 @@ public class BoltResultSetMetaDataIT {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "," + FLATTEN_URI);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -268,5 +276,25 @@ public class BoltResultSetMetaDataIT {
 			assertEquals(Array.class.getName(), rsm.getColumnClassName(12));
 			assertEquals(Boolean.class.getName(), rsm.getColumnClassName(13));
 		}
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
+
+	@Test public void flatteningShouldBeDisabledByDefault() throws SQLException {
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+
+		try (Statement stmt = con.createStatement()) {
+			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
+			rs.next();
+
+			ResultSetMetaData rsm = rs.getMetaData();
+			assertEquals(1, rsm.getColumnCount());
+		}
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 }

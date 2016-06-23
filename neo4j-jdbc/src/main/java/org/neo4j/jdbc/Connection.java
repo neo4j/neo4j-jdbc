@@ -74,12 +74,21 @@ public abstract class Connection implements java.sql.Connection {
 	/**
 	 * Get the user of this connection.
 	 *
-	 * @return
+	 * @return String
 	 */
 	public String getUserName() {
 		return properties.getProperty("user");
 	}
 
+	/**
+	 * Get the flattening sample rows (-1 if no flattening).
+	 *
+	 * @return int
+	 */
+	public int getFlattening() {
+		String flatten = properties.getProperty("flatten");
+		return flatten == null ? -1 : Integer.parseInt(flatten);
+	}
 
 	/*---------------------------------------*/
 	/*       Some useful check method        */

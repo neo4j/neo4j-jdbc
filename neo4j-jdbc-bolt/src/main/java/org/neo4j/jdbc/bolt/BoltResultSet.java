@@ -62,6 +62,8 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
 	private Statement statement;
 
+	private int flatten = -1;
+
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
 	 *
@@ -78,7 +80,11 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.keys = new ArrayList<>();
 		this.classes = new ArrayList<>();
 
-		if (this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
+		try {
+			this.flatten = this.statement.getConnection().getFlattening();
+		} catch (Exception e) {}
+
+		if (this.flatten != -1 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
 			//Flatten the result
 			for (Pair<String, Value> pair : this.iterator.peek().fields()) {
 				keys.add(pair.key());

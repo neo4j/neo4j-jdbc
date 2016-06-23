@@ -15,37 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Created on 01/03/2016
+ * Created on 08/03/16
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
+import org.neo4j.graphdb.Result;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
-import java.sql.SQLException;
+import java.sql.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
- * DatabaseMetaData Tests class
- *
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltDatabaseMetaDataTest {
+public class BoltResultSetIT {
 
-	//@Rule public ExpectedException expectedEx = ExpectedException.none();
+	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
-	/*------------------------------*/
-	/*        getConnection         */
-	/*------------------------------*/
+	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	@Test public void getConnectionShouldGetConnection() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		BoltConnection connection = Mockito.mock(BoltConnection.class);
-		BoltDatabaseMetaData boltDatabaseMetaData = new BoltDatabaseMetaData(connection);
 
-		assertEquals(connection, boltDatabaseMetaData.getConnection());
-	}
 }
