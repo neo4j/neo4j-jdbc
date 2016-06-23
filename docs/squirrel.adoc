@@ -1,0 +1,9 @@
+=== Squirrel SQL
+
+Works in general for scalar values
+
+* Configured Driver via Add Driver -> Extra ClassPath
+* Created New Session,
+* Worked but gave a warning about 2.1 incompatibility
+
+image::https://cloud.githubusercontent.com/assets/67427/15894295/67e6126e-2d85-11e6-96e5-b71a214f811b.png[]
