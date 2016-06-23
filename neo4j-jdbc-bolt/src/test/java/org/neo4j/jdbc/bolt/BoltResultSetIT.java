@@ -23,10 +23,11 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.graphdb.Result;
-import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 import static org.junit.Assert.*;
 
@@ -40,5 +41,23 @@ public class BoltResultSetIT {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+	@Test public void flatteningNumberWorking() throws SQLException {
+		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
+		neo4j.getGraphDatabase().execute("CREATE (:user {surname:\"surname\"})");
 
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=1");
+		Statement stmt = conn.createStatement();
+
+		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
+		assertEquals(4, rs.getMetaData().getColumnCount());
+		assertTrue(rs.next());
+
+		try{
+			assertTrue(rs.findColumn("u.name") > 1);
+			assertEquals("name", rs.getString("u.name"));
+		} catch (Exception e) {
+			assertTrue(rs.findColumn("u.surname") > 1);
+			assertEquals("surname", rs.getString("u.surname"));
+		}
+	}
 }

@@ -87,7 +87,7 @@ public abstract class Connection implements java.sql.Connection {
 	 */
 	public int getFlattening() {
 		String flatten = properties.getProperty("flatten");
-		return flatten == null ? -1 : Integer.parseInt(flatten);
+		return flatten == null ? 0 : Integer.parseInt(flatten);
 	}
 
 	/*---------------------------------------*/

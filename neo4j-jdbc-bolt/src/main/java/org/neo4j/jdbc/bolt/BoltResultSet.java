@@ -62,7 +62,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
 	private Statement statement;
 
-	private int flatten = -1;
+	private int flatten = 0;
 
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
@@ -82,41 +82,17 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 		try {
 			this.flatten = this.statement.getConnection().getFlattening();
-		} catch (Exception e) {}
+		} catch (Exception e) {
+		}
 
-		if (this.flatten != -1 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
+		if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
 			//Flatten the result
-			for (Pair<String, Value> pair : this.iterator.peek().fields()) {
-				keys.add(pair.key());
-				Value val = this.iterator.peek().get(pair.key());
-				classes.add(val.type());
-				if (ACCEPTED_TYPES_FOR_FLATTENING.get(0).equals(pair.value().type().name())) {
-					Node node = val.asNode();
-					keys.add(pair.key() + ".id");
-					classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
-					keys.add(pair.key() + ".labels");
-					classes.add(InternalTypeSystem.TYPE_SYSTEM.LIST());
-					for (String key : pair.value().asNode().keys()) {
-						keys.add(pair.key() + "." + key);
-						classes.add(node.get(key).type());
-					}
-				} else if (ACCEPTED_TYPES_FOR_FLATTENING.get(1).equals(pair.value().type().name())) {
-					Relationship rel = val.asRelationship();
-					keys.add(pair.key() + ".id");
-					classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
-					keys.add(pair.key() + ".type");
-					classes.add(InternalTypeSystem.TYPE_SYSTEM.STRING());
-					for (String key : pair.value().asRelationship().keys()) {
-						keys.add(pair.key() + "." + key);
-						classes.add(rel.get(key).type());
-					}
-				}
-			}
+			this.flattenResultSet();
 			this.flattened = true;
 		} else if (this.iterator != null) {
 			//Keys are exactly the ones returned from the iterator
 			this.keys = this.iterator.keys();
-			if(this.iterator.hasNext()) {
+			if (this.iterator.hasNext()) {
 				for (Value value : this.iterator.peek().values()) {
 					this.classes.add(value.type());
 				}
@@ -128,6 +104,48 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
 
 		this.metaData = InstanceFactory.debug(BoltResultSetMetaData.class, new BoltResultSetMetaData(this.classes, this.keys), this.isLoggable());
+	}
+
+	private void flattenResultSet() {
+		this.flattenRecord(this.iterator.peek());
+	}
+
+	private void flattenRecord(Record r) {
+		for (Pair<String, Value> pair : r.fields()) {
+			keys.add(pair.key());
+			Value val = this.iterator.peek().get(pair.key());
+			classes.add(val.type());
+			if (ACCEPTED_TYPES_FOR_FLATTENING.get(0).equals(pair.value().type().name())) {
+				//Flatten node
+				this.flattenNode(val.asNode(), pair.key());
+			} else if (ACCEPTED_TYPES_FOR_FLATTENING.get(1).equals(pair.value().type().name())) {
+				//Flatten relationship
+				this.flattenRelationship(val.asRelationship(), pair.key());
+			}
+		}
+	}
+
+	private void flattenNode(Node node, String nodeKey) {
+		keys.add(nodeKey + ".id");
+		classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
+		keys.add(nodeKey + ".labels");
+		classes.add(InternalTypeSystem.TYPE_SYSTEM.LIST());
+		for (String key : node.keys()) {
+			keys.add(nodeKey + "." + key);
+			classes.add(node.get(key).type());
+		}
+	}
+
+	private void flattenRelationship(Relationship rel, String relationshipKey) {
+		keys.add(relationshipKey + ".id");
+		classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
+		keys.add(relationshipKey + ".type");
+		classes.add(InternalTypeSystem.TYPE_SYSTEM.STRING());
+		for (String key : rel.keys()) {
+			keys.add(relationshipKey + "." + key);
+			classes.add(rel.get(key).type());
+		}
+
 	}
 
 	private boolean flatteningTypes(StatementResult statementResult) {
@@ -370,10 +388,10 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public int findColumn(String columnLabel) throws SQLException {
 		checkClosed();
-		if (!this.iterator.keys().contains(columnLabel)) {
+		if (!this.keys.contains(columnLabel)) {
 			throw new SQLException("Column not present in ResultSet");
 		}
-		return this.iterator.keys().indexOf(columnLabel) + 1;
+		return this.keys.indexOf(columnLabel) + 1;
 	}
 
 	@Override public int getType() throws SQLException {
