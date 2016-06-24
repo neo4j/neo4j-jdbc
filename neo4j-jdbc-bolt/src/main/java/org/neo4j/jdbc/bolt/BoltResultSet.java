@@ -62,7 +62,9 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
 	private Statement statement;
 
-	private int flatten = 0;
+	private int flatten;
+
+	private LinkedList<Record> prefetchedRecords = null;
 
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
@@ -79,10 +81,12 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 		this.keys = new ArrayList<>();
 		this.classes = new ArrayList<>();
+		this.prefetchedRecords = new LinkedList<>();
 
 		try {
 			this.flatten = this.statement.getConnection().getFlattening();
 		} catch (Exception e) {
+			this.flatten = 0;
 		}
 
 		if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
@@ -107,14 +111,19 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	private void flattenResultSet() {
-		this.flattenRecord(this.iterator.peek());
+		for (int i = 0; (this.flatten == -1 || i < this.flatten) && this.iterator.hasNext(); i++) {
+			this.prefetchedRecords.add(this.iterator.next());
+			this.flattenRecord(this.prefetchedRecords.getLast());
+		}
 	}
 
 	private void flattenRecord(Record r) {
 		for (Pair<String, Value> pair : r.fields()) {
-			keys.add(pair.key());
-			Value val = this.iterator.peek().get(pair.key());
-			classes.add(val.type());
+			if (keys.indexOf(pair.key()) == -1) {
+				keys.add(pair.key());
+				classes.add(r.get(pair.key()).type());
+			}
+			Value val = r.get(pair.key());
 			if (ACCEPTED_TYPES_FOR_FLATTENING.get(0).equals(pair.value().type().name())) {
 				//Flatten node
 				this.flattenNode(val.asNode(), pair.key());
@@ -126,24 +135,32 @@ public class BoltResultSet extends ResultSet implements Loggable {
 	}
 
 	private void flattenNode(Node node, String nodeKey) {
-		keys.add(nodeKey + ".id");
-		classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
-		keys.add(nodeKey + ".labels");
-		classes.add(InternalTypeSystem.TYPE_SYSTEM.LIST());
+		if (keys.indexOf(nodeKey + ".id") == -1) {
+			keys.add(nodeKey + ".id");
+			classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
+			keys.add(nodeKey + ".labels");
+			classes.add(InternalTypeSystem.TYPE_SYSTEM.LIST());
+		}
 		for (String key : node.keys()) {
-			keys.add(nodeKey + "." + key);
-			classes.add(node.get(key).type());
+			if (keys.indexOf(nodeKey + "." + key) == -1) {
+				keys.add(nodeKey + "." + key);
+				classes.add(node.get(key).type());
+			}
 		}
 	}
 
 	private void flattenRelationship(Relationship rel, String relationshipKey) {
-		keys.add(relationshipKey + ".id");
-		classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
-		keys.add(relationshipKey + ".type");
-		classes.add(InternalTypeSystem.TYPE_SYSTEM.STRING());
+		if (keys.indexOf(relationshipKey + ".id") == -1) {
+			keys.add(relationshipKey + ".id");
+			classes.add(InternalTypeSystem.TYPE_SYSTEM.INTEGER());
+			keys.add(relationshipKey + ".type");
+			classes.add(InternalTypeSystem.TYPE_SYSTEM.STRING());
+		}
 		for (String key : rel.keys()) {
-			keys.add(relationshipKey + "." + key);
-			classes.add(rel.get(key).type());
+			if (keys.indexOf(relationshipKey + "." + key) == -1) {
+				keys.add(relationshipKey + "." + key);
+				classes.add(rel.get(key).type());
+			}
 		}
 
 	}
@@ -165,7 +182,9 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}
-		if (this.iterator.hasNext()) {
+		if (!this.prefetchedRecords.isEmpty()) {
+			this.current = this.prefetchedRecords.pop();
+		} else if (this.iterator.hasNext()) {
 			this.current = this.iterator.next();
 		} else {
 			this.current = null;
@@ -522,13 +541,13 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		this.loggable = loggable;
 	}
 
-	public StatementResult getIterator() {
+	/*public StatementResult getIterator() {
 		return this.iterator;
-	}
+	}*/
 
-	public List<String> getKeys() {
+	/*public List<String> getKeys() {
 		return this.keys;
-	}
+	}*/
 
 	@Override public java.sql.Statement getStatement() throws SQLException {
 		return statement;

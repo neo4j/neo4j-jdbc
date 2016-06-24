@@ -23,13 +23,12 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS
@@ -41,9 +40,13 @@ public class BoltResultSetIT {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+	/*------------------------------*/
+	/*          flattening          */
+	/*------------------------------*/
+
 	@Test public void flatteningNumberWorking() throws SQLException {
 		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
-		neo4j.getGraphDatabase().execute("CREATE (:user {surname:\"surname\"})");
+		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
 
 		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=1");
 		Statement stmt = conn.createStatement();
@@ -52,12 +55,57 @@ public class BoltResultSetIT {
 		assertEquals(4, rs.getMetaData().getColumnCount());
 		assertTrue(rs.next());
 
-		try{
-			assertTrue(rs.findColumn("u.name") > 1);
-			assertEquals("name", rs.getString("u.name"));
-		} catch (Exception e) {
-			assertTrue(rs.findColumn("u.surname") > 1);
-			assertEquals("surname", rs.getString("u.surname"));
-		}
+		assertEquals(4, rs.findColumn("u.name"));
+		assertEquals("name", rs.getString("u.name"));
+	}
+
+	@Test public void flatteningNumberWorkingMoreRows() throws SQLException {
+		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
+		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
+
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=2");
+		Statement stmt = conn.createStatement();
+
+		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
+		assertEquals(5, rs.getMetaData().getColumnCount());
+		assertTrue(rs.next());
+
+		assertEquals(4, rs.findColumn("u.name"));
+		assertEquals("name", rs.getString("u.name"));
+
+		assertTrue(rs.next());
+		assertEquals(5, rs.findColumn("u.surname"));
+		assertEquals("surname", rs.getString("u.surname"));
+	}
+
+	@Test public void flatteningNumberWorkingAllRows() throws SQLException {
+		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
+		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
+
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=-1");
+		Statement stmt = conn.createStatement();
+
+		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
+		assertEquals(5, rs.getMetaData().getColumnCount());
+		assertTrue(rs.next());
+
+		assertEquals(4, rs.findColumn("u.name"));
+		assertEquals("name", rs.getString("u.name"));
+
+		assertTrue(rs.next());
+		assertEquals(5, rs.findColumn("u.surname"));
+		assertEquals("surname", rs.getString("u.surname"));
+	}
+
+	@Test public void findColumnShouldWorkWithFlattening() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=1");
+		Statement stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
+
+		assertEquals(4, rs.findColumn("n.name"));
+
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 }
