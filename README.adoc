@@ -80,7 +80,7 @@ WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (
 
 * Connect with URLs in the form jdbc:neo4j:bolt://<host>:<port>/ e.g. jdbc:neo4j:bolt://localhost/
 
-* You can also set comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:neo4j:bolt://localhost/?user=neo4j,password=neo4j,debug=true,noSsl
+* You can also set comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:neo4j:bolt://localhost/?user=neo4j,password=neo4j,debug=true,noSsl,flatten=-1
 
 === Release 3.0 Schedule ===
 

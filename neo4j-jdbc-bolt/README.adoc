@@ -21,3 +21,28 @@ IMPORTANT: You can't get an `InternalNode` or `InternalRelationship` directly `I
 
 When the object is not recognized as one of the two specified it is treated as a standard object and returned _directly_.
 
+== Bolt module specific URL parameters ==
+
+When using the jdbc Bolt module you will be able to specify dedicated parameters, here is a list of them:
+
+==== Flatten ====
+When a ResultSet is flattened it explodes the returned columns (ONLY if they are ALL nodes and relationships) adding virtual columns with id, labels, type and entity specific fields.
+
+You can enable such behaviour just by adding ?flatten=x to your url connection where x possible values are:
+
+* -1: the entire resultSet is fetched (may slow down the performances with big resultSets) for retrieving nodes and relationships structure (useful if you're retrieving results with lots of different properties)
+
+* N > 0: the specified number of rows are fetched for retrieving specific properties
+
+Example:
+Given a :User node connected to :Attributes nodes like (:Attribute {age:20})< -[:AGED]-(:User {username:"username"})-[FULL_NAME]- >(:Attribute {full_name:"Name Surname"})
+
+with the query:
+
+MATCH (u:User)--(a:Attribute) RETURN u, a;
+
+you will have only the columns (u, a) with flattening disabled;
+
+with flatten=1 you will have u, u.id, u.labels, u.username, a, a.id, a.type, a.age
+
+with flatten=-1 you will have u, u.id, u.labels, u.username, a, a.id, a.type, a.age, a.full_name
