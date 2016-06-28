@@ -4,6 +4,8 @@
 
 == Integration Examples with Popular Database Tools
 
+// todo list of tool here: https://github.com/neo4j-contrib/neo4j-jdbc/issues?utf8=%E2%9C%93&q=is%3Aissue%20label%3ATools%20
+
 == Reporting Tools
 
 == Business Intelligence Tools
