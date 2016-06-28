@@ -74,7 +74,7 @@ mvn clean test -Pperformance-test
 
 WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (default)
 
-===== Server
+=== Server
 
 * Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled
 
@@ -82,61 +82,22 @@ WARNING: Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (
 
 * You can also set comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:neo4j:bolt://localhost/?user=neo4j,password=neo4j,debug=true,noSsl,flatten=-1
 
-=== Release 3.0 Schedule ===
-
-Milestone 01 [RELEASED]
-
-* Basic snippet working
-
-* Logging
-
-* Performance tests
-
-* M04 of Neo4j and Bolt driver
-
-* Transactions working (both manual and autocommit)
-
-* executeQuery + executeUpdate working
-
-* ResultSet getters managing nodes and relationships
-
-Milestone 02 [RELEASED]
-
-* ResultSet getters managing paths
-
-* Prepared statements
-
-* RC1 of Neo4j
-
-* RC2 Neo4j bolt driver
-
-* Authentication
-
-* Pentaho basic support
-
-* Flattening of results
-
-* JSON string for nodes, relationships and paths
-
-Milestone 03 [RELEASED]
-
-* Batch processing
-
-* Bug fix
-
-* Neo4j Java Driver 1.0.1
-
-* Neo4j 3.0.1
+=== Release 3.0 Schedule
 
 Release Candidate 1 [RELEASED]
 
 * Move to github.com/neo4j-contrib
-
 * Changed package to `org.neo4j`
-
 * Released to Neo4j's maven repository
-
 * HTTP protocol module
+
+Milestone 03 [RELEASED]
+
+* Batch processing
+* Bug fix
+* Neo4j Java Driver 1.0.1
+* Neo4j 3.0.1
+
 
 === License
 

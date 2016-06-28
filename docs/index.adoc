@@ -1,6 +1,6 @@
 = Neo4j JDBC Driver Documentation
 
-== Introduction
+include::https://raw.githubusercontent.com/neo4j-contrib/neo4j-jdbc/master/README.adoc[]
 
 == Integration Examples with Popular Database Tools
 
@@ -14,7 +14,7 @@
 
 == Database Tools
 
-include::squirrel.adoc[leveloffset=+1]
+include::squirrel.adoc[]
 
 === JDBC-ODBC Bridge
 
