@@ -34,7 +34,8 @@ public abstract class Statement implements java.sql.Statement {
 	protected Connection connection;
 	protected ResultSet  currentResultSet;
 	protected int        currentUpdateCount;
-	private int        maxRows;
+	private   int        maxRows;
+	private   int        queryTimeout;
 
 	/**
 	 * Default constructor with JDBC connection.
@@ -55,7 +56,6 @@ public abstract class Statement implements java.sql.Statement {
 	/**
 	 * Check if this statement is closed or not.
 	 * If it is, we throw an exception.
-	 *
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {
@@ -77,8 +77,8 @@ public abstract class Statement implements java.sql.Statement {
 	 * Bolt statement always return two results : ResulSet and updatecount.
 	 * Because each time we retrieve a data we set it to the default value
 	 * here we have two cases :
-	 *  - if there a resultset : we tell it by responding -1
-	 *  - otherwise we give the updatecount and reset its value to default
+	 * - if there a resultset : we tell it by responding -1
+	 * - otherwise we give the updatecount and reset its value to default
 	 */
 	@Override public int getUpdateCount() throws SQLException {
 		this.checkClosed();
@@ -86,8 +86,7 @@ public abstract class Statement implements java.sql.Statement {
 
 		if (this.currentResultSet != null) {
 			update = -1;
-		}
-		else {
+		} else {
 			this.currentUpdateCount = -1;
 		}
 		return update;
@@ -152,11 +151,7 @@ public abstract class Statement implements java.sql.Statement {
 	 */
 	@Override public boolean getMoreResults() throws SQLException {
 		this.checkClosed();
-		if (this.currentResultSet == null && this.currentUpdateCount == -1) {
-			return false;
-		} else {
-			return true;
-		}
+		return !( this.currentResultSet == null && this.currentUpdateCount == -1 );
 	}
 
 	/**
@@ -174,6 +169,24 @@ public abstract class Statement implements java.sql.Statement {
 	@Override public void clearWarnings() throws SQLException {
 		this.checkClosed();
 		// nothing yet
+	}
+
+	/**
+	 * Added just for value memorization
+	 * @return int
+	 * @throws SQLException
+	 */
+	@Override public int getQueryTimeout() throws SQLException {
+		return this.queryTimeout;
+	}
+
+	/**
+	 * Added just for value memorization
+	 * @param seconds int
+	 * @throws SQLException
+	 */
+	@Override public void setQueryTimeout(int seconds) throws SQLException {
+		this.queryTimeout = seconds;
 	}
 
 	/*-----------------------------*/
@@ -229,14 +242,6 @@ public abstract class Statement implements java.sql.Statement {
 	}
 
 	@Override public void setEscapeProcessing(boolean enable) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int getQueryTimeout() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setQueryTimeout(int seconds) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

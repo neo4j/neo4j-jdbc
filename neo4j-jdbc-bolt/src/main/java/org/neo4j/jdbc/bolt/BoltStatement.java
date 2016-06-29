@@ -40,7 +40,6 @@ import java.util.List;
  */
 public class BoltStatement extends Statement implements Loggable {
 
-	private Transaction  transaction;
 	private int[]        rsParams;
 	private List<String> batchStatements;
 
@@ -54,7 +53,6 @@ public class BoltStatement extends Statement implements Loggable {
 	 */
 	public BoltStatement(BoltConnection connection, int... rsParams) {
 		super(connection);
-		this.transaction = connection.getTransaction();
 		this.rsParams = rsParams;
 		this.batchStatements = new ArrayList<>();
 	}
