@@ -331,7 +331,11 @@ public class CypherExecutor {
 		// Make the request
 		try (CloseableHttpResponse response = http.execute(request)) {
 			result = new Neo4jResponse(response, mapper);
-			if (result.location != null) {
+			if (result.hasErrors()) {
+				// The transaction *was* rolled back server-side. Whether a transaction existed or not before, it should
+				// now be considered rolled back on this side as well.
+				this.currentTransactionUrl = this.transactionUrl;
+			} else if (result.location != null) {
 				// Here we reconstruct the location in case of a proxy, but in this case you should redirect write queries to the master.
 				Integer transactionId = this.getTransactionId(result.location);
 				this.currentTransactionUrl = this.transactionUrl + "/" + transactionId;

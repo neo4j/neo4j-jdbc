@@ -117,6 +117,25 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		Assert.assertNotEquals("Unknown", executor.getServerVersion());
 	}
 
+	@Test public void executeInvalidQueryShouldNotOpenTransaction() throws Exception {
+		executor.setAutoCommit(Boolean.FALSE);
+
+		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("invalid", null, Boolean.FALSE));
+
+		Assert.assertTrue(response.hasErrors());
+		Assert.assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
+	}
+
+	@Test public void executeValidThenInvalidQueryShouldRollbackTransaction() throws Exception {
+		executor.setAutoCommit(Boolean.FALSE);
+		executor.executeQuery(new Neo4jStatement("MATCH (n) RETURN count(n)", null, Boolean.FALSE));
+
+		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("invalid", null, Boolean.FALSE));
+
+		Assert.assertTrue(response.hasErrors());
+		Assert.assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
+	}
+
 	@After public void after() throws SQLException {
 		executor.close();
 	}
