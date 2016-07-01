@@ -21,7 +21,6 @@ package org.neo4j.jdbc.http.driver;
 
 import org.neo4j.jdbc.http.test.Neo4jHttpIT;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,13 +30,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import static org.junit.Assert.*;
+
 public class CypherExecutorIT extends Neo4jHttpIT {
 
 	private CypherExecutor executor;
 
 	@Before public void before() throws IOException, SQLException {
-		String host = this.neo4j.httpsURI().getHost();
-		Integer port = this.neo4j.httpsURI().getPort();
+		String host = neo4j.httpsURI().getHost();
+		Integer port = neo4j.httpsURI().getPort();
 		Properties properties = new Properties();
 		properties.put("userAgent", "Unit Test");
 		this.executor = new CypherExecutor(host, port, false, properties);
@@ -47,8 +48,8 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		List<Neo4jStatement> queries = getRandomNeo4jStatementFromCSV("data/queries.csv", -1).get("object");
 		Neo4jResponse response = executor.executeQueries(queries);
 
-		Assert.assertEquals(queries.size(), response.results.size());
-		Assert.assertFalse(response.hasErrors());
+		assertEquals(queries.size(), response.results.size());
+		assertFalse(response.hasErrors());
 	}
 
 	@Test public void executeQueryThenRollbackShouldSucceed() throws SQLException {
@@ -59,7 +60,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		executor.setAutoCommit(Boolean.TRUE);
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n:`" + randomLabel + "`) RETURN n", null, Boolean.FALSE));
-		Assert.assertEquals(0, response.results.get(0).rows.size());
+		assertEquals(0, response.results.get(0).rows.size());
 	}
 
 	@Test public void executeMultipleQueryThenCommitShouldSucceed() throws SQLException {
@@ -71,7 +72,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		executor.setAutoCommit(Boolean.TRUE);
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n:`" + randomLabel + "`) RETURN n", null, Boolean.FALSE));
-		Assert.assertEquals(2, response.results.get(0).rows.size());
+		assertEquals(2, response.results.get(0).rows.size());
 	}
 
 	@Test public void rollbackClosedTransactionShouldFail() throws SQLException {
@@ -110,11 +111,11 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		executor.setAutoCommit(Boolean.TRUE);
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n:`" + randomLabel + "`) RETURN n", null, Boolean.FALSE));
-		Assert.assertEquals(2, response.results.get(0).rows.size());
+		assertEquals(2, response.results.get(0).rows.size());
 	}
 
 	@Test public void getServerVersionShouldSucceed() throws SQLException {
-		Assert.assertNotEquals("Unknown", executor.getServerVersion());
+		assertNotEquals("Unknown", executor.getServerVersion());
 	}
 
 	@Test public void executeInvalidQueryShouldNotOpenTransaction() throws Exception {
@@ -122,18 +123,21 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("invalid", null, Boolean.FALSE));
 
-		Assert.assertTrue(response.hasErrors());
-		Assert.assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
+		assertTrue(response.hasErrors());
+		assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
 	}
 
 	@Test public void executeValidThenInvalidQueryShouldRollbackTransaction() throws Exception {
 		executor.setAutoCommit(Boolean.FALSE);
-		executor.executeQuery(new Neo4jStatement("MATCH (n) RETURN count(n)", null, Boolean.FALSE));
+		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n) RETURN count(n)", null, Boolean.FALSE));
 
-		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("invalid", null, Boolean.FALSE));
+		assertFalse(response.hasErrors());
+		assertTrue(executor.getOpenTransactionId() > 0);
 
-		Assert.assertTrue(response.hasErrors());
-		Assert.assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
+		response = executor.executeQuery(new Neo4jStatement("invalid", null, Boolean.FALSE));
+
+		assertTrue(response.hasErrors());
+		assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
 	}
 
 	@After public void after() throws SQLException {
