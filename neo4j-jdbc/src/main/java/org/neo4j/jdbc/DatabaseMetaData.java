@@ -307,6 +307,14 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		return false;
 	}
 
+	@Override public int getMaxStatements() throws SQLException {
+		return 0;
+	}
+
+	@Override public int getMaxConnections() throws SQLException {
+		return 0;
+	}
+
 	/*---------------------------------*/
 	/*       Not implemented yet       */
 	/*---------------------------------*/
@@ -567,10 +575,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public int getMaxConnections() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
 	@Override public int getMaxCursorNameLength() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
@@ -600,10 +604,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public int getMaxStatementLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int getMaxStatements() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
