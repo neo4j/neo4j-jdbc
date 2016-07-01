@@ -46,6 +46,8 @@ public class BoltDatabaseMetaDataIT {
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertEquals("user", connection.getMetaData().getUserName());
+
+		connection.close();
 	}
 
 	@Test public void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {

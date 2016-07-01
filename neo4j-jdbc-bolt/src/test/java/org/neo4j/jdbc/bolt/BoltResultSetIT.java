@@ -57,6 +57,8 @@ public class BoltResultSetIT {
 
 		assertEquals(4, rs.findColumn("u.name"));
 		assertEquals("name", rs.getString("u.name"));
+
+		conn.close();
 	}
 
 	@Test public void flatteningNumberWorkingMoreRows() throws SQLException {
@@ -76,6 +78,8 @@ public class BoltResultSetIT {
 		assertTrue(rs.next());
 		assertEquals(5, rs.findColumn("u.surname"));
 		assertEquals("surname", rs.getString("u.surname"));
+
+		conn.close();
 	}
 
 	@Test public void flatteningNumberWorkingAllRows() throws SQLException {
@@ -95,6 +99,8 @@ public class BoltResultSetIT {
 		assertTrue(rs.next());
 		assertEquals(5, rs.findColumn("u.surname"));
 		assertEquals("surname", rs.getString("u.surname"));
+
+		conn.close();
 	}
 
 	@Test public void findColumnShouldWorkWithFlattening() throws SQLException {
@@ -107,5 +113,7 @@ public class BoltResultSetIT {
 		assertEquals(4, rs.findColumn("n.name"));
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+
+		con.close();
 	}
 }

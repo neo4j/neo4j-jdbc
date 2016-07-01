@@ -210,5 +210,6 @@ public class BoltConnectionIT {
 	@Test public void getMetaDataShouldWork() throws SQLException {
 		Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		assertNotNull(connection.getMetaData());
+		connection.close();
 	}
 }

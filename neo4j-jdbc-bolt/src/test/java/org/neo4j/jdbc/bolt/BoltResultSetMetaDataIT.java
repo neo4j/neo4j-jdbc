@@ -216,6 +216,8 @@ public class BoltResultSetMetaDataIT {
 				assertEquals(String.class.getName(), rsm.getColumnClassName(8));
 			}
 		}
+
+		con.close();
 	}
 
 	@Test public void getColumnTypeNameShouldBeCorrectAfterFlattening() throws SQLException {
@@ -244,6 +246,8 @@ public class BoltResultSetMetaDataIT {
 			assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(12));
 			assertEquals(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().name(), rsm.getColumnTypeName(13));
 		}
+
+		con.close();
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
@@ -277,6 +281,8 @@ public class BoltResultSetMetaDataIT {
 			assertEquals(Boolean.class.getName(), rsm.getColumnClassName(13));
 		}
 
+		con.close();
+
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
@@ -294,6 +300,8 @@ public class BoltResultSetMetaDataIT {
 			ResultSetMetaData rsm = rs.getMetaData();
 			assertEquals(1, rsm.getColumnCount());
 		}
+
+		con.close();
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
