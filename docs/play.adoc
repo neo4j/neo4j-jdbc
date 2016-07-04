@@ -1,0 +1,38 @@
+=== Play Framework
+
+Taken from the https://www.playframework.com/documentation/2.5.x/JavaDatabase[Play Framework Documentation].
+enable the database plugin add javaJdbc in your build dependencies :
+
+----
+libraryDependencies += javaJdbc
+----
+
+Then you must configure a connection pool in the `conf/application.conf` file. 
+By convention the default JDBC data source must be called default, but you can use other names for named databases, in this case we use `neo4j`
+
+----
+# Neo4j database configuration
+db.neo4j.driver=org.neo4j.jdbc.Driver
+db.neo4j.url="jdbc:neo4j:bolt://localhost"
+----
+
+[source,java]
+----
+import javax.inject.Inject;
+
+import play.mvc.Controller;
+import play.db.NamedDatabase;
+import play.db.Database;
+
+// inject "neo4j" database instead of "default"
+class JavaNamedDatabase extends Controller {
+    private Database db;
+
+    @Inject
+    public JavaNamedDatabase(@NamedDatabase("neo4j") Database db) {
+        this.db = db;
+    }
+
+    // do whatever you need with the db
+}
+----

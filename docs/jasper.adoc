@@ -1,0 +1,63 @@
+=== Jasper Reports
+
+==== Step 1: Create new Data Adapters:
+
+- Right click on *Data Adapters* and click on *Create Data Adapter* and select "Database JDBC Connection*
+
+image::https://cloud.githubusercontent.com/assets/15228280/15931473/2f81674c-2e58-11e6-9dfc-f3fed514f9fe.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/15931644/ebf0e510-2e58-11e6-9b36-5feed0879a1c.png[]
+
+- Insert the values of *JDBC driver*: "org.neo4j.jdbc.Driver" and 
+- *JDBC Url*: "jdbc:neo4j:bolt://localhost" like the image below and
+- insert your *username* and *password*
+
+image::https://cloud.githubusercontent.com/assets/15228280/15931831/98ce1eb0-2e59-11e6-8a59-5c73cd09389f.png[]
+
+- Click on Driver Classpath tab then to add:
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932157/e3715aee-2e5a-11e6-95be-870d636e5e2f.png[]
+
+- Add the Neo4j JDBC jar file:
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932298/6a5103f2-2e5b-11e6-8574-3e4c98351789.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/15932309/78fc6fae-2e5b-11e6-950d-62ffcea3c11e.png[]
+
+- Click on Test and you should have a *successful* message:
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932369/b9e7d8be-2e5b-11e6-96ad-3d12faa6f588.png[]
+
+
+==== Step 2: Retrieve Columns from Database:
+
+- Create new Jasper Report and click on DataSet and Query editor Dialog:
+
+![image06b](https://cloud.githubusercontent.com/assets/15228280/15932739/19fadea8-2e5d-11e6-9f4f-fec9add565d5.png[]
+
+- Insert the cypher "MATCH (a)-[:ACTED_IN]->(m)<-[:DIRECTED]-(d) RETURN a.name, m.title, d.name;" then click on Read Field:
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932873/aca6f0de-2e5d-11e6-832a-a2388c3f1527.png[]
+
+- You can check data retrieve clicking on Data preview tab then Refresh Preview Data:
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932940/f432a70e-2e5d-11e6-82a0-51344894468d.png[]
+
+==== Step 3: Prepare Report and create document:
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932984/23a5c2d2-2e5e-11e6-93ec-7f22dd4cc7f5.png[]
+
+image::https://cloud.githubusercontent.com/assets/15228280/15932994/2d1b40e4-2e5e-11e6-8301-b0886b118787.png[]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

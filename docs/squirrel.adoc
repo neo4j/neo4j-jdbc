@@ -1,5 +1,8 @@
 === Squirrel SQL
 
+Squirrel SQL is a widely used SQL workbench that supports many databases out of the box.
+Adding the JDBC driver was straightforward, as was running Cypher queries and getting tabular results back.
+
 Works in general for scalar values
 
 * Configured Driver via Add Driver -> Extra ClassPath

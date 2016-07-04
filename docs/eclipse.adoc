@@ -1,0 +1,66 @@
+=== Eclipse Database Tools
+
+==== Step 1: Create a new connection profile
+
+* Open the *Database Developement* perspective:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891647/ee537ca2-2d75-11e6-9bcb-fbc1e89d987c.png[]
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891652/ee58c356-2d75-11e6-9f5e-6bc6df75bdaf.png[]
+
+* Click on the icon *New Connection Profile*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891651/ee556c1a-2d75-11e6-9aea-3fdcc7256ec5.png[]
+
+* Choose *Generic JDBC* (and optionally type "Neo4j 3.0 JDBC Bolt Driver" in "name" and "description" fields. Then click *Next*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891650/ee55612a-2d75-11e6-908d-910d39dc15b1.png[]
+
+==== Step 2: Create a new driver definition
+
+* Click on the icon *New Driver Definition*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891649/ee5531fa-2d75-11e6-95d8-06f7747178bc.png[]
+
+* Choose "Generic JDBC Driver" in folder *Name/Type* (and optionally re-type "Neo4j 3.0 JDBC Bolt Driver" in the "Driver Name" field):
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891648/ee549466-2d75-11e6-97ef-3c0c0b0a5d71.png[]
+
+* In Folder *JAR List*, click *Add JAR/Zip* and choose the new *Neo4j JDBC Bolt Driver*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891653/ee692e58-2d75-11e6-94db-64a462195ea8.png[]
+
+* In Folder *Properties* choose the *Driver Class*" by clicking the icon *[..]*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891654/ee6aded8-2d75-11e6-8344-2b0a96a418c9.png[]
+
+* Choose *org.neo4j.jdbc.bolt.BoltDriver* as the Driver class:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891658/ee7043f0-2d75-11e6-97ba-efb1f3835a4c.png[]
+
+* Set the *Connection URL* to "jdbc:neo4j:bolt://localhost" and the *User ID* to "neo4j", then click *OK*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891656/ee6bf35e-2d75-11e6-901a-29396d251fb7.png[]
+
+* Set the *Password* and click *Test Connection*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891655/ee6b4bfc-2d75-11e6-9903-419c28499517.png[]
+
+ * You should get *Ping Succeeded!* message (with your database online). Click *OK* and then *Finish*:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891657/ee6e9154-2d75-11e6-97a4-5b5185369407.png[]
+
+==== Step 3: Test the connection (match and create)
+
+* Open an *SQL Scrapbook* and execute your statement (i.e. *match (n) return neo4j):
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891659/ee7ec150-2d75-11e6-8643-8b040fb588bb.png[]
+
+* Create statements should work as well:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891660/ee81b3ba-2d75-11e6-8232-b6044e855252.png[]
+
+as you can see on the neo4j browser:
+
+image::https://cloud.githubusercontent.com/assets/6613815/15891661/ee830f3a-2d75-11e6-9d1f-9b50aac21cb6.png[]
+

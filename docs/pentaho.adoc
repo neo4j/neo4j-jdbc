@@ -1,0 +1,76 @@
+=== Pentaho
+
+==== Step 1: Create database connections:
+
+Right click on *Database connections* and click on *New*
+
+image::https://cloud.githubusercontent.com/assets/15228280/16164582/463fc1f8-34df-11e6-9dac-f62def4311e2.png[]
+
+Insert the connection parameters for source database the press *Test* button to check the connection:
+ 
+image::https://cloud.githubusercontent.com/assets/15228280/16164800/74c1b7d8-34e0-11e6-8478-7952686766c4.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16164811/846c3d84-34e0-11e6-947b-e5e617800c3b.png[]
+
+As before, select a new *Database connections* and  insert  neo4j connection parameters, set:
+
+- *Connection Type*: *Generic database*
+- *Custom Connection URL*: "jdbc:neo4j:bolt://localhost:7687"
+- *Custom Driver Class Name*: "org.neo4j.jdbc.Driver"
+- Login  and password:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16164984/8a6df4b0-34e1-11e6-84a7-3ea9cd024529.png[]
+
+image::https://cloud.githubusercontent.com/assets/15228280/16226524/2263fbc6-37ac-11e6-9a8d-bdf8c78d96bf.png[]
+
+Then press to Test button to check the connection:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16226531/2989eaa0-37ac-11e6-8ca7-cd5c50786a5d.png[]
+
+==== Step 2: Create Steps and Hops:
+
+- From Design select input and click on table input top insert the source table:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165147/95f20bfe-34e2-11e6-9ce0-c5999027c07d.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16165152/9934f0a6-34e2-11e6-97b4-c1c49c276ccf.png[]
+
+- From Scripting click on Execute SQL script:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165229/0fd68062-34e3-11e6-8272-562f06b4b93f.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16165242/1e7ad190-34e3-11e6-8fb7-beda60ee391b.png[]
+
+- Double click on table input. Select the source database Connection and write query to extract data the press *Preview* button to check query:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165314/73469a7e-34e3-11e6-8f77-7c8db5bbcec9.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16165326/7dee0dae-34e3-11e6-8e89-457a8c5aa36c.png[]
+
+- Double click on *Hops*, select as *From step* the table input and as *to step* the Execute SQL Script:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165553/d82771f6-34e4-11e6-85c8-07a65fe14e6f.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16165559/dd56b24a-34e4-11e6-88da-d0ab1fd8e008.png[]
+
+- Now your Hop is complete!
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165607/247b2e12-34e5-11e6-8a31-2e4329c04f1a.png[]
+
+- Double click on *Execute SQL script*. Click on *Get Fields* to retrive the column from source database. Write the cypher to create nodes and relationship:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16226545/32ef7a56-37ac-11e6-9e58-433ed6444b0a.png[]
+
+==== Step 3: Run the job
+
+- Click on run this transformation or job and wait until finished:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165728/eefac170-34e5-11e6-83d3-7f4faa4c7745.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16165730/f1156e06-34e5-11e6-99b1-5d2d37b9737e.png[]
+image::https://cloud.githubusercontent.com/assets/15228280/16165732/f39b13d8-34e5-11e6-8d16-869345f82dd5.png[]
+
+- If all ok, you should have like this:
+
+image::https://cloud.githubusercontent.com/assets/15228280/16165816/813e5e2a-34e6-11e6-81cf-5492c664c041.png[]
+
+
+
+
+
+
+

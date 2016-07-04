@@ -1,31 +1,9 @@
 = Neo4j JDBC Driver Documentation
+:toc: left
+:toclevels: 2
 
-include::https://raw.githubusercontent.com/neo4j-contrib/neo4j-jdbc/master/README.adoc[]
+include::../README.adoc[]
 
-== Integration Examples with Popular Database Tools
-
-// todo list of tool here: https://github.com/neo4j-contrib/neo4j-jdbc/issues?utf8=%E2%9C%93&q=is%3Aissue%20label%3ATools%20
-
-== Reporting Tools
-
-== Business Intelligence Tools
-
-== ETL Tools
-
-== Database Tools
-
-include::squirrel.adoc[]
-
-=== JDBC-ODBC Bridge
-
-
-== Libraries and Frameworks
-
-=== Spring JDBC Template
-
-=== Play Framework
-
-=== Mybatis
 
 
 == Technical Reference
@@ -33,9 +11,77 @@ include::squirrel.adoc[]
 === Usage Examples
 
 
-
 === The Bolt Driver
+
+The bolt driver connects to any Neo4j 3.x database that has the binary "bolt" transport enabled.
+
+It uses the [neo4j-java-driver] to provide the connectivity.
+
+Just provide your username and password and you can connect to Neo4j.
+
+The JDBC URL has this format: `jdbc:neo4j:bolt://host:port;username=neo4j,password=xxxx`
 
 === The HTTP Driver
 
+The http driver uses the existing (since Neo4j 2.x) transaction Cypher http API, and is implemented using apache commons httpclient and jackson for JSON (de)serialization.
+
+The JDBC URL has this format: `jdbc:neo4j:http://host:port;username=neo4j,password=xxxx`
+
 === JDBC Compatibility
+
+We cover these aspects of the JDBC-APIs, everything that's not explicitely mentioned should be assumed to be not implemented:
+
+* Driver handling automatic loading and JDBC URLs
+* Connection, incl. autocommit and manual commit
+* Transactions
+* Statements for reads and writes
+* PreparedStatement for reads and writes, including parameters, both question marks `?` and named numbered parameters `{1}`
+* ResultSet retrieving all columns as String, Object and their native type with optional conversions
+
+== Libraries and Frameworks
+
+=== Java JDBC Usage
+
+Plain JDBC usage was already shown before:
+
+include::../README.adoc[tags=mvs]
+
+include::spring.adoc[]
+
+include::play.adoc[]
+
+// TODO === Mybatis
+
+== Integration Examples with Popular Database Tools
+
+// todo list of tools here: https://github.com/neo4j-contrib/neo4j-jdbc/issues?utf8=%E2%9C%93&q=is%3Aissue%20label%3ATools%20
+
+== Reporting Tools
+
+include::jasper.adoc[]
+
+include::birt.adoc[]
+
+== Business Intelligence Tools
+
+include::qlik.adoc[]
+
+include::tableau.adoc[]
+
+== ETL Tools
+
+include::pentaho.adoc[]
+
+include::talend.adoc[]
+
+== Database Tools
+
+include::squirrel.adoc[]
+
+include::eclipse.adoc[]
+
+include::sqlshell.adoc[]
+
+include::apoc.adoc[]
+
+// TODO === JDBC-ODBC Bridge

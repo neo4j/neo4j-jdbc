@@ -1,0 +1,14 @@
+=== APOC LOAD JDBC
+
+* Copy Neo4j JDBC Driver jar into `NEO4J_HOME/plugins` folder
+* Restart the databae
+* Run some JDBC Queries:
+
+[source,cypher]
+----
+WITH ['The Matrix'] as movies
+CALL apoc.load.jdbcParams('jdbc:neo4j:bolt://localhost?user=neo4j,password=test','MATCH (m:Movie) WHERE m.title=? RETURN m', movies) YIELD row
+RETURN row
+----
+
+image::https://cloud.githubusercontent.com/assets/231657/15970058/01334dfc-2f33-11e6-8cc8-9ad9658049cd.png[]

@@ -1,0 +1,33 @@
+=== SQL-Shell
+
+It's working now on the master branch (6b166ec31bdb61f76279be717aa1f30ada5c553e)
+
+* Copy Neo4j JDBC driver into `SQLSHELL_HOME/lib` folder
+* Edit the configuration file `SQLSHELL_HOME/sample.cfg` for :
+* Adding neo4j driver :
+
+----
+[drivers]
+neo4j = org.neo4j.jdbc.Driver
+----
+
+* Adding your database
+
+----
+[db_neo4j]
+aliases: neo
+driver: neo4j
+url: jdbc:neo4j:bolt://localhost
+user: neo4j
+password: test
+----
+
+* Now execute `sqlshell` with the configuration file to open `neo` database :
+
+---- 
+$> SQLSHELL_HOME/bin/sqlshell -c SQLSHELL_HOME/sample.cfg neo
+----
+
+* Execute some queries ! 
+
+image::https://cloud.githubusercontent.com/assets/231657/15985061/c8c7f33c-2fe1-11e6-90e7-fc44be9d4866.png[]

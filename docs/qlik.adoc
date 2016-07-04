@@ -1,0 +1,9 @@
+=== QlikView / Qlik Sense via TIQ JDBC Connector
+
+(Thanks a lot to Ralf Becher, TIQ Solutions)
+
+image::img/qlik.config.png[]
+
+image::img/qlik.settings.png[]
+
+image::img/qlik.results.png[]
