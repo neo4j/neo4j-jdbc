@@ -1,7 +1,11 @@
 == Overview: Neo4j JDBC Driver
 :neo4j-jdbc-version: 3.0
 
+ifndef::env-docs[]
 image:https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"]
+
+You can find the full documentation at: http://neo4j-contrib.github.io/neo4j-jdbc/
+endif::env-docs[]
 
 This is the official JDBC driver for Neo4j.
 
