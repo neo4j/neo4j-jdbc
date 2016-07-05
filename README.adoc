@@ -11,10 +11,10 @@ This driver was mainly developed by http://larus-ba.it[Larus BA, Italy], a certi
 [NOTE]
 The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
 
-Being a graph database, Neo4J is not serving data in a relational way and the exact purpose of this project is to allow
-projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4J.
+Being a graph database, Neo4j is not serving data in a relational way and the exact purpose of this project is to allow
+projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4j.
 
-This driver that supports various types of database transports:
+This driver supports various types of database transports:
 
 * through the BOLT protocol (3.0.X) using `jdbc:neo4j:bolt://<host>:<port>/`
 * through the HTTP protocol (2.X+) using `jdbc:neo4j:http://<host>:<port>/`
@@ -30,7 +30,7 @@ Going forward there will also be support for:
 .Dependency declaration
 [source,subs=attributes]
 ----
-org.neo4j:neo4j-jbc:{neo4j-jdbc-version}
+org.neo4j:neo4j-jdbc:{neo4j-jdbc-version}
 ----
 
 .Run Query
@@ -44,8 +44,8 @@ String query = "MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = {1} RETURN f.na
 try (PreparedStatement stmt = con.prepareStatement(query)) {
     stmt.setString(1,"John");
     ResultSet rs = con.execute();
-	while (rs.next()) {
-		System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
+    while (rs.next()) {
+        System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
 	}
 }
 con.close();
@@ -55,12 +55,12 @@ con.close();
 === Usage with Neo4j Server
 
 * Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled
-* Connect with URLs in the form jdbc:neo4j:bolt://<host>:<port>/ e.g. jdbc:neo4j:bolt://localhost/
-* You can also use additional comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]
+* Connect with URLs in the form `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
+* You can also use additional comma separated parameters in the URL for authentication, debug mode, ssl encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]`
 
 * Add the JDBC driver dependency or jar file to your project
 * Get a connection from DriverManager
-* Execute queries and transactions using the Cyper graph query language
+* Execute queries and transactions using the Cypher graph query language
 
 === Flattening
 
