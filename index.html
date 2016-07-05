@@ -417,24 +417,81 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 .show-for-print{display:inherit!important}}
 </style>
 </head>
-<body class="article">
+<body class="article toc2 toc-left">
 <div id="header">
 <h1>Neo4j JDBC Driver Documentation</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_overview_neo4j_jdbc_driver">Overview: Neo4j JDBC Driver</a>
+<ul class="sectlevel2">
+<li><a href="#_minimum_viable_snippet">Minimum viable snippet</a></li>
+<li><a href="#_usage_with_neo4j_server">Usage with Neo4j Server</a></li>
+<li><a href="#_flattening">Flattening</a></li>
+<li><a href="#_building_the_driver_yourself">Building the driver yourself</a></li>
+<li><a href="#_release_3_0_schedule">Release 3.0 Schedule</a></li>
+<li><a href="#_license">License</a></li>
+<li><a href="#_thank_you">Thank you</a></li>
+</ul>
+</li>
+<li><a href="#_technical_reference">Technical Reference</a>
+<ul class="sectlevel2">
+<li><a href="#_usage_examples">Usage Examples</a></li>
+<li><a href="#_the_bolt_driver">The Bolt Driver</a></li>
+<li><a href="#_the_http_driver">The HTTP Driver</a></li>
+<li><a href="#_jdbc_compatibility">JDBC Compatibility</a></li>
+</ul>
+</li>
+<li><a href="#_libraries_and_frameworks">Libraries and Frameworks</a>
+<ul class="sectlevel2">
+<li><a href="#_java_jdbc_usage">Java JDBC Usage</a></li>
+<li><a href="#_spring_jdbc_template">Spring JDBC Template</a></li>
+<li><a href="#_play_framework">Play Framework</a></li>
+</ul>
+</li>
+<li><a href="#_integration_examples_with_popular_database_tools">Integration Examples with Popular Database Tools</a></li>
+<li><a href="#_reporting_tools">Reporting Tools</a>
+<ul class="sectlevel2">
+<li><a href="#_jasper_reports">Jasper Reports</a></li>
+<li><a href="#_eclipse_birt">Eclipse BIRT</a></li>
+</ul>
+</li>
+<li><a href="#_business_intelligence_tools">Business Intelligence Tools</a>
+<ul class="sectlevel2">
+<li><a href="#_qlikview_qlik_sense_via_tiq_jdbc_connector">QlikView / Qlik Sense via TIQ JDBC Connector</a></li>
+<li><a href="#_tableau_via_jdbc2tde">Tableau via jdbc2tde</a></li>
+</ul>
+</li>
+<li><a href="#_etl_tools">ETL Tools</a>
+<ul class="sectlevel2">
+<li><a href="#_pentaho">Pentaho</a></li>
+<li><a href="#_talend">Talend</a></li>
+</ul>
+</li>
+<li><a href="#_database_tools">Database Tools</a>
+<ul class="sectlevel2">
+<li><a href="#_squirrel_sql">Squirrel SQL</a></li>
+<li><a href="#_eclipse_database_tools">Eclipse Database Tools</a></li>
+<li><a href="#_sql_shell">SQL-Shell</a></li>
+<li><a href="#_apoc_load_jdbc">APOC LOAD JDBC</a></li>
+</ul>
+</li>
+</ul>
+</div>
 </div>
 <div id="content">
 <div class="sect1">
-<h2 id="_neo4j_jdbc_driver">Neo4j JDBC Driver</h2>
+<h2 id="_overview_neo4j_jdbc_driver">Overview: Neo4j JDBC Driver</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p><span class="image"><a class="image" href="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"><img src="https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master" alt="Build Status"></a></span></p>
 </div>
 <div class="paragraph">
-<p>This driver was mainly developed by <a href="http://larus-ba.it">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j.
-<strong>Thank you</strong> so much for all your work.</p>
+<p>This is the official JDBC driver for Neo4j.</p>
 </div>
 <div class="paragraph">
-<p>This is the Neo4j JDBC driver that supports various types of database connections.
-With this driver you will be able to interact with a Neo4J database using also the new BOLT protocol.</p>
+<p>This driver was mainly developed by <a href="http://larus-ba.it">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j.
+<strong>Thank you</strong> so much for all your work.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -449,24 +506,24 @@ The previous JDBC driver for Neo4j 2.x was moved to the <a href="https://github.
 </table>
 </div>
 <div class="paragraph">
-<p>Being a graph database, Neo4J is not serving data in a relational way and the exact purpose of this project is to allow
-projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4J.</p>
+<p>Being a graph database, Neo4j is not serving data in a relational way and the exact purpose of this project is to allow
+projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4j.</p>
 </div>
 <div class="paragraph">
-<p>The driver can be used with:</p>
+<p>This driver supports various types of database transports:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>every kind of Neo4J server exposing services through the BOLT protocol (3.0.X)</p>
+<p>through the BOLT protocol (3.0.X) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
 </li>
 <li>
-<p>every kind of Neo4J server exposing services through the HTTP protocol (2.X+)</p>
+<p>through the HTTP protocol (2.X+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>The driver will be implemented also for:</p>
+<p>Going forward there will also be support for:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -478,6 +535,73 @@ projects that are using the classic JDBC connector in the relational paradigm to
 </li>
 </ul>
 </div>
+<div class="sect2">
+<h3 id="_minimum_viable_snippet">Minimum viable snippet</h3>
+<div class="listingblock">
+<div class="title">Dependency declaration</div>
+<div class="content">
+<pre class="highlight"><code>org.neo4j:neo4j-jdbc:3.0</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Run Query</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">// Connect
+Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost");
+
+// Querying
+String query = "MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = {1} RETURN f.name, f.age";
+try (PreparedStatement stmt = con.prepareStatement(query)) {
+    stmt.setString(1,"John");
+    ResultSet rs = con.execute();
+    while (rs.next()) {
+        System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
+	}
+}
+con.close();</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_usage_with_neo4j_server">Usage with Neo4j Server</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled</p>
+</li>
+<li>
+<p>Connect with URLs in the form <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
+</li>
+<li>
+<p>You can also use additional comma separated parameters in the URL for authentication, debug mode, ssl encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]</code></p>
+</li>
+<li>
+<p>Add the JDBC driver dependency or jar file to your project</p>
+</li>
+<li>
+<p>Get a connection from DriverManager</p>
+</li>
+<li>
+<p>Execute queries and transactions using the Cypher graph query language</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_flattening">Flattening</h3>
+<div class="paragraph">
+<p>As most JDBC clients and tools don&#8217;t support complex objects, the driver can flatten returned nodes and relationships by providing all their properties as individual columns with names like <code>u.name</code>,<code>r.since</code> if you just return a node <code>u</code> or relationship <code>r</code>.</p>
+</div>
+<div class="paragraph">
+<p>This is enabled with the JDBC-URL parameter <code>flatten=rows</code>, where rows indicates how many rows are sampled to determine those columns.
+With <code>-1</code> all rows are sampled and with any other value you determine the number of rows being looked at.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_building_the_driver_yourself">Building the driver yourself</h3>
+<div class="paragraph">
+<p>First clone <a href="https://github.com/neo4j-contrib/neo4j-jdbc">the repository</a>.</p>
+</div>
 <div class="paragraph">
 <p>This project is composed by the following modules:</p>
 </div>
@@ -487,116 +611,74 @@ projects that are using the classic JDBC connector in the relational paradigm to
 <p><a href="https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc">Neo4j JDBC</a> - the core module</p>
 </li>
 <li>
-<p><a href="https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver">Neo4j JDBC - Driver packaging</a> - module to package all above modules</p>
-</li>
-<li>
 <p><a href="https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt">Neo4j JDBC - Bolt</a> - module supporting the bolt protocol</p>
 </li>
 <li>
 <p><a href="https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-http">Neo4j JDBC - Http</a> - module supporting the http protocol</p>
 </li>
-</ul>
-</div>
-<div class="sect2">
-<h3 id="_minimum_viable_snippet">Minimum viable snippet</h3>
-<div class="listingblock">
-<div class="content">
-<pre>// Connect
-Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost");
-
-// Querying
-try (Statement stmt = con.createStatement()) {
-    ResultSet rs = stmt.executeQuery("MATCH (n:User) RETURN n.name");
-	while (rs.next()) {
-		System.out.println(rs.getString("n.name"));
-	}
-}
-con.close();</pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_usage">Usage</h3>
-<div class="ulist">
-<ul>
 <li>
-<p>Add the JDBC driver jar file to your project</p>
-</li>
-<li>
-<p>Execute queries using the Cyper graph query language</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_tests_usage">Tests usage</h3>
-<div class="ulist">
-<ul>
-<li>
-<p>Run all unitary tests &amp; integration tests :</p>
+<p><a href="https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver">Neo4j JDBC - Driver packaging</a> - module to package all above modules</p>
 </li>
 </ul>
 </div>
 <div class="listingblock">
+<div class="title">Run all unitary tests &amp; integration tests</div>
 <div class="content">
 <pre>mvn clean test</pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Run only integration tests:</p>
-</li>
-</ul>
-</div>
 <div class="listingblock">
+<div class="title">Run only integration tests</div>
 <div class="content">
 <pre>mvn clean test -Pintegration-test</pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Run performance tests:</p>
-</li>
-</ul>
-</div>
 <div class="listingblock">
+<div class="title">Run performance tests</div>
 <div class="content">
 <pre>mvn clean test -Pperformance-test</pre>
 </div>
 </div>
-<div class="admonitionblock warning">
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<div class="title">Warning</div>
+<div class="title">Note</div>
 </td>
 <td class="content">
-Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (default)
+To run the performance test, you must have a Neo4j Server (3.0.X) running with the Bolt protocol enabled on port 7687 (default)
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_server">Server</h3>
+<h3 id="_release_3_0_schedule">Release 3.0 Schedule</h3>
+<div class="paragraph">
+<p>General Availability [RELEASED]</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p>Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled</p>
+<p>Extensive Tests with a variety of tools</p>
 </li>
 <li>
-<p>Connect with URLs in the form jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/ e.g. jdbc:neo4j:bolt://localhost/</p>
+<p>Bug Fixes</p>
 </li>
 <li>
-<p>You can also set comma separated parameters in the URL for authentication, debug mode and ssl encryption, e.g. jdbc:neo4j:bolt://localhost/?user=neo4j,password=neo4j,debug=true,noSsl,flatten=-1</p>
+<p>Documentation</p>
+</li>
+<li>
+<p>Better handling of credentials</p>
+</li>
+<li>
+<p>Support for additional API methods</p>
+</li>
+<li>
+<p>Explicit enabling of <code>flatten=&lt;rows&gt;</code> via jdbc URL</p>
 </li>
 </ul>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_release_3_0_schedule">Release 3.0 Schedule</h3>
 <div class="paragraph">
 <p>Release Candidate 1 [RELEASED]</p>
 </div>
@@ -639,7 +721,7 @@ Must have a neo4j (3.0.X) stand alone with Bolt protocol on port 7687 (default)
 <div class="sect2">
 <h3 id="_license">License</h3>
 <div class="paragraph">
-<p>Copyright (c) 2016 <a href="http://www.larus-ba.it">LARUS Business Automation</a>, <a href="http://neo4j.com">Neo4j</a></p>
+<p>Copyright (c) 2016 <a href="http://neo4j.com">Neo4j</a> and <a href="http://www.larus-ba.it">LARUS Business Automation</a></p>
 </div>
 <div class="paragraph">
 <p>The "Neo4j JDBC Driver" is licensed under the Apache License, Version 2.0 (the "License");
@@ -691,13 +773,16 @@ limitations under the License.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Michael Vitz</p>
+<p><a href="https://twitter.com/irregularbi">Ralf Becher</a>, TiQ solutions - Qlik Luminary</p>
 </li>
 <li>
-<p>Angelo Busato</p>
+<p><a href="https://twitter.com/michaelvitz">Michael Vitz</a>, InnoQ - Software Developer</p>
 </li>
 <li>
-<p>Enrico Marin</p>
+<p><a href="https://twitter.com/abusato95">Angelo Busato</a>, Larus-BA - Software Developer</p>
+</li>
+<li>
+<p><a href="https://github.com/enricomarin">Enrico Marin</a>, Larus-BA - Software Developer</p>
 </li>
 </ul>
 </div>
@@ -721,6 +806,158 @@ limitations under the License.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_technical_reference">Technical Reference</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_usage_examples">Usage Examples</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_the_bolt_driver">The Bolt Driver</h3>
+<div class="paragraph">
+<p>The bolt driver connects to any Neo4j 3.x database that has the binary "bolt" transport enabled.</p>
+</div>
+<div class="paragraph">
+<p>It uses the [neo4j-java-driver] to provide the connectivity.</p>
+</div>
+<div class="paragraph">
+<p>Just provide your username and password and you can connect to Neo4j.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC URL has this format: <code>jdbc:neo4j:bolt://host:port;username=neo4j,password=xxxx</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_http_driver">The HTTP Driver</h3>
+<div class="paragraph">
+<p>The http driver uses the existing (since Neo4j 2.x) transaction Cypher http API, and is implemented using apache commons httpclient and jackson for JSON (de)serialization.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC URL has this format: <code>jdbc:neo4j:http://host:port;username=neo4j,password=xxxx</code></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jdbc_compatibility">JDBC Compatibility</h3>
+<div class="paragraph">
+<p>We cover these aspects of the JDBC-APIs, everything that&#8217;s not explicitely mentioned should be assumed to be not implemented:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Driver handling automatic loading and JDBC URLs</p>
+</li>
+<li>
+<p>Connection, incl. autocommit and manual commit</p>
+</li>
+<li>
+<p>Transactions</p>
+</li>
+<li>
+<p>Statements for reads and writes</p>
+</li>
+<li>
+<p>PreparedStatement for reads and writes, including parameters, both question marks <code>?</code> and named numbered parameters <code>{1}</code></p>
+</li>
+<li>
+<p>ResultSet retrieving all columns as String, Object and their native type with optional conversions</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_libraries_and_frameworks">Libraries and Frameworks</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_java_jdbc_usage">Java JDBC Usage</h3>
+<div class="paragraph">
+<p>Plain JDBC usage was already shown before:</p>
+</div>
+<div class="listingblock">
+<div class="title">Dependency declaration</div>
+<div class="content">
+<pre class="highlight"><code>org.neo4j:neo4j-jdbc:3.0</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Run Query</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">// Connect
+Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost");
+
+// Querying
+String query = "MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = {1} RETURN f.name, f.age";
+try (PreparedStatement stmt = con.prepareStatement(query)) {
+    stmt.setString(1,"John");
+    ResultSet rs = con.execute();
+    while (rs.next()) {
+        System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
+	}
+}
+con.close();</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_jdbc_template">Spring JDBC Template</h3>
+<div class="paragraph">
+<p>Integrating with Spring JDBC is as easy as defining a datasource in your spring config and then using it via JDBC Template.</p>
+</div>
+<div class="paragraph">
+<p>You can find an example application here:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/neo4j-examples/movies-java-spring-boot-jdbc" class="bare">https://github.com/neo4j-examples/movies-java-spring-boot-jdbc</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_play_framework">Play Framework</h3>
+<div class="paragraph">
+<p>Taken from the <a href="https://www.playframework.com/documentation/2.5.x/JavaDatabase">Play Framework Documentation</a>.
+enable the database plugin add javaJdbc in your build dependencies :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>libraryDependencies += javaJdbc</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then you must configure a connection pool in the <code>conf/application.conf</code> file.
+By convention the default JDBC data source must be called default, but you can use other names for named databases, in this case we use <code>neo4j</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># Neo4j database configuration
+db.neo4j.driver=org.neo4j.jdbc.Driver
+db.neo4j.url="jdbc:neo4j:bolt://localhost"</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">import javax.inject.Inject;
+
+import play.mvc.Controller;
+import play.db.NamedDatabase;
+import play.db.Database;
+
+// inject "neo4j" database instead of "default"
+class JavaNamedDatabase extends Controller {
+    private Database db;
+
+    @Inject
+    public JavaNamedDatabase(@NamedDatabase("neo4j") Database db) {
+        this.db = db;
+    }
+
+    // do whatever you need with the db
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_integration_examples_with_popular_database_tools">Integration Examples with Popular Database Tools</h2>
 <div class="sectionbody">
 
@@ -729,19 +966,677 @@ limitations under the License.</p>
 <div class="sect1">
 <h2 id="_reporting_tools">Reporting Tools</h2>
 <div class="sectionbody">
-
+<div class="sect2">
+<h3 id="_jasper_reports">Jasper Reports</h3>
+<div class="sect3">
+<h4 id="_step_1_create_new_data_adapters">Step 1: Create new Data Adapters:</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Right click on <strong>Data Adapters</strong> and click on <strong>Create Data Adapter</strong> and select "Database JDBC Connection*</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15931473/2f81674c-2e58-11e6-9dfc-f3fed514f9fe.png" alt="2f81674c 2e58 11e6 9dfc f3fed514f9fe">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15931644/ebf0e510-2e58-11e6-9b36-5feed0879a1c.png" alt="ebf0e510 2e58 11e6 9b36 5feed0879a1c">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Insert the values of <strong>JDBC driver</strong>: "org.neo4j.jdbc.Driver" and</p>
+</li>
+<li>
+<p><strong>JDBC Url</strong>: "jdbc:neo4j:bolt://localhost" like the image below and</p>
+</li>
+<li>
+<p>insert your <strong>username</strong> and <strong>password</strong></p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15931831/98ce1eb0-2e59-11e6-8a59-5c73cd09389f.png" alt="98ce1eb0 2e59 11e6 8a59 5c73cd09389f">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on Driver Classpath tab then to add:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932157/e3715aee-2e5a-11e6-95be-870d636e5e2f.png" alt="e3715aee 2e5a 11e6 95be 870d636e5e2f">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Add the Neo4j JDBC jar file:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932298/6a5103f2-2e5b-11e6-8574-3e4c98351789.png" alt="6a5103f2 2e5b 11e6 8574 3e4c98351789">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932309/78fc6fae-2e5b-11e6-950d-62ffcea3c11e.png" alt="78fc6fae 2e5b 11e6 950d 62ffcea3c11e">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on Test and you should have a <strong>successful</strong> message:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932369/b9e7d8be-2e5b-11e6-96ad-3d12faa6f588.png" alt="b9e7d8be 2e5b 11e6 96ad 3d12faa6f588">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_step_2_retrieve_columns_from_database">Step 2: Retrieve Columns from Database:</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Create new Jasper Report and click on DataSet and Query editor Dialog:</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>![image06b](<a href="https://cloud.githubusercontent.com/assets/15228280/15932739/19fadea8-2e5d-11e6-9f4f-fec9add565d5.png" class="bare">https://cloud.githubusercontent.com/assets/15228280/15932739/19fadea8-2e5d-11e6-9f4f-fec9add565d5.png</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Insert the cypher "MATCH (a)-[:ACTED_IN]&#8594;(m)&#8592;[:DIRECTED]-(d) RETURN a.name, m.title, d.name;" then click on Read Field:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932873/aca6f0de-2e5d-11e6-832a-a2388c3f1527.png" alt="aca6f0de 2e5d 11e6 832a a2388c3f1527">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>You can check data retrieve clicking on Data preview tab then Refresh Preview Data:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932940/f432a70e-2e5d-11e6-82a0-51344894468d.png" alt="f432a70e 2e5d 11e6 82a0 51344894468d">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_step_3_prepare_report_and_create_document">Step 3: Prepare Report and create document:</h4>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932984/23a5c2d2-2e5e-11e6-93ec-7f22dd4cc7f5.png" alt="23a5c2d2 2e5e 11e6 93ec 7f22dd4cc7f5">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/15932994/2d1b40e4-2e5e-11e6-8301-b0886b118787.png" alt="2d1b40e4 2e5e 11e6 8301 b0886b118787">
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_eclipse_birt">Eclipse BIRT</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Start a new "Report project" under "Report design" perspective</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531592/82aa4d36-3fcd-11e6-8865-17d044d34743.png" alt="82aa4d36 3fcd 11e6 8865 17d044d34743">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Select the project&#8217;s name</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531611/9ffe01d4-3fcd-11e6-8e45-c9f3841a8436.png" alt="9ffe01d4 3fcd 11e6 8e45 c9f3841a8436">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new report (File&#8594;New&#8594;Report) and give it a name</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531682/e9dce37e-3fcd-11e6-84c4-83c3e7547b46.png" alt="e9dce37e 3fcd 11e6 84c4 83c3e7547b46">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Choose your template</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531712/04240596-3fce-11e6-9e97-b8e611e48a44.png" alt="04240596 3fce 11e6 9e97 b8e611e48a44">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new Datasource by right clicking "Data sources" &#8594; New Data Source and choose the second option</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531815/79956734-3fce-11e6-8141-5777f15399e9.png" alt="79956734 3fce 11e6 8141 5777f15399e9">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new Connection profile store (click new on both windows)</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531873/cf2ad59e-3fce-11e6-911c-999f8b6f2cd0.png" alt="cf2ad59e 3fce 11e6 911c 999f8b6f2cd0">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Choose "BIRTH JDBC Data Source" and give it a name</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531895/f0ec6904-3fce-11e6-88c8-5be6e62ed8bd.png" alt="f0ec6904 3fce 11e6 88c8 5be6e62ed8bd">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Load your jdbc jar by clicking "Manage Drivers" and select "Add"</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531929/2d32090a-3fcf-11e6-893d-ed4ccef968c4.png" alt="2d32090a 3fcf 11e6 893d ed4ccef968c4">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Choose your dirver location and press OK</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531945/3fce59f6-3fcf-11e6-9fe7-f7ecca4716db.png" alt="3fce59f6 3fcf 11e6 9fe7 f7ecca4716db">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Fill the driver connection parameters</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16531965/59d8e352-3fcf-11e6-8458-5faf8fea540f.png" alt="59d8e352 3fcf 11e6 8458 5faf8fea540f">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Click "Next" and "Finish" and choose the newly created connection profile store</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532005/85f3630e-3fcf-11e6-9521-902bc61e5d8b.png" alt="85f3630e 3fcf 11e6 9521 902bc61e5d8b">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Click "Next" and "Finish" and the Data Source should be created</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532102/06b6a280-3fd0-11e6-88e7-0d6f8bc79928.png" alt="06b6a280 3fd0 11e6 88e7 0d6f8bc79928">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new Dataset (right click Data Sets &#8594; New Data Set) and choose Next</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532142/4521c4d2-3fd0-11e6-8fae-bb3e0aee3e4f.png" alt="4521c4d2 3fd0 11e6 8fae bb3e0aee3e4f">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Type the query you want to create your Dataset with and click Finish</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532158/698c4a36-3fd0-11e6-8ef1-2126cad983a1.png" alt="698c4a36 3fd0 11e6 8ef1 2126cad983a1">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>A new Window will appear showing the columns available with your query</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532173/83925a2e-3fd0-11e6-9e92-cd8276a24c41.png" alt="83925a2e 3fd0 11e6 9e92 cd8276a24c41">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>You can also preview the results</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532199/9ffde6ec-3fd0-11e6-9d32-ecb0ab797e7e.png" alt="9ffde6ec 3fd0 11e6 9d32 ecb0ab797e7e">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Close this window and create a new Table element (Right click the document &#8594; Insert &#8594; Table)</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16532646/848ca81e-3fd3-11e6-9f85-aeed3f4e0092.png" alt="848ca81e 3fd3 11e6 9f85 aeed3f4e0092">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Choose 4 columns and click Finish</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16533601/44c07b28-3fda-11e6-8273-a4b4c0d55545.png" alt="44c07b28 3fda 11e6 8273 a4b4c0d55545">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Fill the table with the following data (drag and drop the datasource colums in the right position)</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16533694/edf3b98a-3fda-11e6-9d80-f4026e036770.png" alt="edf3b98a 3fda 11e6 9d80 f4026e036770">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>To export the report click Run &#8594; View report &#8594; As PDF</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/13695124/16533721/181e062a-3fdb-11e6-89eb-3a14c959e53b.png" alt="181e062a 3fdb 11e6 89eb 3a14c959e53b">
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_business_intelligence_tools">Business Intelligence Tools</h2>
 <div class="sectionbody">
-
+<div class="sect2">
+<h3 id="_qlikview_qlik_sense_via_tiq_jdbc_connector">QlikView / Qlik Sense via TIQ JDBC Connector</h3>
+<div class="paragraph">
+<p>(Thanks a lot to Ralf Becher, TIQ Solutions)</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/qlik.config.png" alt="qlik.config">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/qlik.settings.png" alt="qlik.settings">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/qlik.results.png" alt="qlik.results">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tableau_via_jdbc2tde">Tableau via jdbc2tde</h3>
+<div class="paragraph">
+<p>(Thanks a lot to Ralf Becher, TIQ Solutions)</p>
+</div>
+<div class="paragraph">
+<p>Integration with Tableau is not that trivial as it only generates SQL.</p>
+</div>
+<div class="paragraph">
+<p>So you can either use the Tableau REST integration (which we will publish soon).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/tableau-jdbc2tde.png" alt="tableau jdbc2tde">
+</div>
+</div>
+<div class="paragraph">
+<p>Or the jdbc2tde tool from TIQ that uses JDBC queries to generate TDE files.</p>
+</div>
+<div class="paragraph">
+<p>Those can then be loaded into Tableau and visualized and interacted with in the many ways you know and love.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/tableau-table.png" alt="tableau table">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/tableau-bar-chart.png" alt="tableau bar chart">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/tableau-circles.png" alt="tableau circles">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/tableau-line-chart.png" alt="tableau line chart">
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_etl_tools">ETL Tools</h2>
 <div class="sectionbody">
-
+<div class="sect2">
+<h3 id="_pentaho">Pentaho</h3>
+<div class="sect3">
+<h4 id="_step_1_create_database_connections">Step 1: Create database connections:</h4>
+<div class="paragraph">
+<p>Right click on <strong>Database connections</strong> and click on <strong>New</strong></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16164582/463fc1f8-34df-11e6-9dac-f62def4311e2.png" alt="463fc1f8 34df 11e6 9dac f62def4311e2">
+</div>
+</div>
+<div class="paragraph">
+<p>Insert the connection parameters for source database the press <strong>Test</strong> button to check the connection:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16164800/74c1b7d8-34e0-11e6-8478-7952686766c4.png" alt="74c1b7d8 34e0 11e6 8478 7952686766c4">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16164811/846c3d84-34e0-11e6-947b-e5e617800c3b.png" alt="846c3d84 34e0 11e6 947b e5e617800c3b">
+</div>
+</div>
+<div class="paragraph">
+<p>As before, select a new <strong>Database connections</strong> and  insert  neo4j connection parameters, set:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Connection Type</strong>: <strong>Generic database</strong></p>
+</li>
+<li>
+<p><strong>Custom Connection URL</strong>: "jdbc:neo4j:bolt://localhost:7687"</p>
+</li>
+<li>
+<p><strong>Custom Driver Class Name</strong>: "org.neo4j.jdbc.Driver"</p>
+</li>
+<li>
+<p>Login  and password:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16164984/8a6df4b0-34e1-11e6-84a7-3ea9cd024529.png" alt="8a6df4b0 34e1 11e6 84a7 3ea9cd024529">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16226524/2263fbc6-37ac-11e6-9a8d-bdf8c78d96bf.png" alt="2263fbc6 37ac 11e6 9a8d bdf8c78d96bf">
+</div>
+</div>
+<div class="paragraph">
+<p>Then press to Test button to check the connection:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16226531/2989eaa0-37ac-11e6-8ca7-cd5c50786a5d.png" alt="2989eaa0 37ac 11e6 8ca7 cd5c50786a5d">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_step_2_create_steps_and_hops">Step 2: Create Steps and Hops:</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>From Design select input and click on table input top insert the source table:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165147/95f20bfe-34e2-11e6-9ce0-c5999027c07d.png" alt="95f20bfe 34e2 11e6 9ce0 c5999027c07d">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165152/9934f0a6-34e2-11e6-97b4-c1c49c276ccf.png" alt="9934f0a6 34e2 11e6 97b4 c1c49c276ccf">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>From Scripting click on Execute SQL script:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165229/0fd68062-34e3-11e6-8272-562f06b4b93f.png" alt="0fd68062 34e3 11e6 8272 562f06b4b93f">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165242/1e7ad190-34e3-11e6-8fb7-beda60ee391b.png" alt="1e7ad190 34e3 11e6 8fb7 beda60ee391b">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Double click on table input. Select the source database Connection and write query to extract data the press <strong>Preview</strong> button to check query:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165314/73469a7e-34e3-11e6-8f77-7c8db5bbcec9.png" alt="73469a7e 34e3 11e6 8f77 7c8db5bbcec9">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165326/7dee0dae-34e3-11e6-8e89-457a8c5aa36c.png" alt="7dee0dae 34e3 11e6 8e89 457a8c5aa36c">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Double click on <strong>Hops</strong>, select as <strong>From step</strong> the table input and as <strong>to step</strong> the Execute SQL Script:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165553/d82771f6-34e4-11e6-85c8-07a65fe14e6f.png" alt="d82771f6 34e4 11e6 85c8 07a65fe14e6f">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165559/dd56b24a-34e4-11e6-88da-d0ab1fd8e008.png" alt="dd56b24a 34e4 11e6 88da d0ab1fd8e008">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Now your Hop is complete!</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165607/247b2e12-34e5-11e6-8a31-2e4329c04f1a.png" alt="247b2e12 34e5 11e6 8a31 2e4329c04f1a">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Double click on <strong>Execute SQL script</strong>. Click on <strong>Get Fields</strong> to retrive the column from source database. Write the cypher to create nodes and relationship:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16226545/32ef7a56-37ac-11e6-9e58-433ed6444b0a.png" alt="32ef7a56 37ac 11e6 9e58 433ed6444b0a">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_step_3_run_the_job">Step 3: Run the job</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on run this transformation or job and wait until finished:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165728/eefac170-34e5-11e6-83d3-7f4faa4c7745.png" alt="eefac170 34e5 11e6 83d3 7f4faa4c7745">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165730/f1156e06-34e5-11e6-99b1-5d2d37b9737e.png" alt="f1156e06 34e5 11e6 99b1 5d2d37b9737e">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165732/f39b13d8-34e5-11e6-8d16-869345f82dd5.png" alt="f39b13d8 34e5 11e6 8d16 869345f82dd5">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If all ok, you should have like this:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/15228280/16165816/813e5e2a-34e6-11e6-81cf-5492c664c041.png" alt="813e5e2a 34e6 11e6 81cf 5492c664c041">
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_talend">Talend</h3>
+<div class="paragraph">
+<p>(Thanks a lot to Benoit Simard)</p>
+</div>
+<div class="paragraph">
+<p>With Talend, you can query or import your data into Neo4j using Talend JDBC Components.
+On the Job, you just have to add a tJDBCConnection and add the usual fields: JDBC-URL, Driver-Jar, Driver, username and password.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/talend.config.png" alt="talend.config">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="img/talend.query.png" alt="talend.query">
+</div>
+</div>
+<div class="paragraph">
+<p>On the Advanced Settings tab, you can also configure the auto-commit, if you want it.</p>
+</div>
+<div class="paragraph">
+<p>Now, you can add some tJDBCInput to make some queries to your Neo4j databases like this :</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -749,6 +1644,10 @@ limitations under the License.</p>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_squirrel_sql">Squirrel SQL</h3>
+<div class="paragraph">
+<p>Squirrel SQL is a widely used SQL workbench that supports many databases out of the box.
+Adding the JDBC driver was straightforward, as was running Cypher queries and getting tabular results back.</p>
+</div>
 <div class="paragraph">
 <p>Works in general for scalar values</p>
 </div>
@@ -772,53 +1671,286 @@ limitations under the License.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_jdbc_odbc_bridge">JDBC-ODBC Bridge</h3>
-
+<h3 id="_eclipse_database_tools">Eclipse Database Tools</h3>
+<div class="sect3">
+<h4 id="_step_1_create_a_new_connection_profile">Step 1: Create a new connection profile</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Open the <strong>Database Developement</strong> perspective:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891647/ee537ca2-2d75-11e6-9bcb-fbc1e89d987c.png" alt="ee537ca2 2d75 11e6 9bcb fbc1e89d987c">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891652/ee58c356-2d75-11e6-9f5e-6bc6df75bdaf.png" alt="ee58c356 2d75 11e6 9f5e 6bc6df75bdaf">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on the icon <strong>New Connection Profile</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891651/ee556c1a-2d75-11e6-9aea-3fdcc7256ec5.png" alt="ee556c1a 2d75 11e6 9aea 3fdcc7256ec5">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Choose <strong>Generic JDBC</strong> (and optionally type "Neo4j 3.0 JDBC Bolt Driver" in "name" and "description" fields. Then click <strong>Next</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891650/ee55612a-2d75-11e6-908d-910d39dc15b1.png" alt="ee55612a 2d75 11e6 908d 910d39dc15b1">
 </div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_libraries_and_frameworks">Libraries and Frameworks</h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_step_2_create_a_new_driver_definition">Step 2: Create a new driver definition</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Click on the icon <strong>New Driver Definition</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891649/ee5531fa-2d75-11e6-95d8-06f7747178bc.png" alt="ee5531fa 2d75 11e6 95d8 06f7747178bc">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Choose "Generic JDBC Driver" in folder <strong>Name/Type</strong> (and optionally re-type "Neo4j 3.0 JDBC Bolt Driver" in the "Driver Name" field):</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891648/ee549466-2d75-11e6-97ef-3c0c0b0a5d71.png" alt="ee549466 2d75 11e6 97ef 3c0c0b0a5d71">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In Folder <strong>JAR List</strong>, click <strong>Add JAR/Zip</strong> and choose the new <strong>Neo4j JDBC Bolt Driver</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891653/ee692e58-2d75-11e6-94db-64a462195ea8.png" alt="ee692e58 2d75 11e6 94db 64a462195ea8">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In Folder <strong>Properties</strong> choose the <strong>Driver Class</strong>" by clicking the icon <strong>[..]</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891654/ee6aded8-2d75-11e6-8344-2b0a96a418c9.png" alt="ee6aded8 2d75 11e6 8344 2b0a96a418c9">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Choose <strong>org.neo4j.jdbc.bolt.BoltDriver</strong> as the Driver class:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891658/ee7043f0-2d75-11e6-97ba-efb1f3835a4c.png" alt="ee7043f0 2d75 11e6 97ba efb1f3835a4c">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Set the <strong>Connection URL</strong> to "jdbc:neo4j:bolt://localhost" and the <strong>User ID</strong> to "neo4j", then click <strong>OK</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891656/ee6bf35e-2d75-11e6-901a-29396d251fb7.png" alt="ee6bf35e 2d75 11e6 901a 29396d251fb7">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Set the <strong>Password</strong> and click <strong>Test Connection</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891655/ee6b4bfc-2d75-11e6-9903-419c28499517.png" alt="ee6b4bfc 2d75 11e6 9903 419c28499517">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>You should get <strong>Ping Succeeded!</strong> message (with your database online). Click <strong>OK</strong> and then <strong>Finish</strong>:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891657/ee6e9154-2d75-11e6-97a4-5b5185369407.png" alt="ee6e9154 2d75 11e6 97a4 5b5185369407">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_step_3_test_the_connection_match_and_create">Step 3: Test the connection (match and create)</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Open an <strong>SQL Scrapbook</strong> and execute your statement (i.e. *match (n) return neo4j):</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891659/ee7ec150-2d75-11e6-8643-8b040fb588bb.png" alt="ee7ec150 2d75 11e6 8643 8b040fb588bb">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create statements should work as well:</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891660/ee81b3ba-2d75-11e6-8232-b6044e855252.png" alt="ee81b3ba 2d75 11e6 8232 b6044e855252">
+</div>
+</div>
+<div class="paragraph">
+<p>as you can see on the neo4j browser:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/6613815/15891661/ee830f3a-2d75-11e6-9d1f-9b50aac21cb6.png" alt="ee830f3a 2d75 11e6 9d1f 9b50aac21cb6">
+</div>
+</div>
+</div>
+</div>
 <div class="sect2">
-<h3 id="_spring_jdbc_template">Spring JDBC Template</h3>
-
+<h3 id="_sql_shell">SQL-Shell</h3>
+<div class="paragraph">
+<p>It&#8217;s working now on the master branch (6b166ec31bdb61f76279be717aa1f30ada5c553e)</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Copy Neo4j JDBC driver into <code>SQLSHELL_HOME/lib</code> folder</p>
+</li>
+<li>
+<p>Edit the configuration file <code>SQLSHELL_HOME/sample.cfg</code> for :</p>
+</li>
+<li>
+<p>Adding neo4j driver :</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[drivers]
+neo4j = org.neo4j.jdbc.Driver</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Adding your database</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>[db_neo4j]
+aliases: neo
+driver: neo4j
+url: jdbc:neo4j:bolt://localhost
+user: neo4j
+password: test</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Now execute <code>sqlshell</code> with the configuration file to open <code>neo</code> database :</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$&gt; SQLSHELL_HOME/bin/sqlshell -c SQLSHELL_HOME/sample.cfg neo</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Execute some queries !</p>
+</li>
+</ul>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/231657/15985061/c8c7f33c-2fe1-11e6-90e7-fc44be9d4866.png" alt="c8c7f33c 2fe1 11e6 90e7 fc44be9d4866">
+</div>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_play_framework">Play Framework</h3>
-
+<h3 id="_apoc_load_jdbc">APOC LOAD JDBC</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Copy Neo4j JDBC Driver jar into <code>NEO4J_HOME/plugins</code> folder</p>
+</li>
+<li>
+<p>Restart the databae</p>
+</li>
+<li>
+<p>Run some JDBC Queries:</p>
+</li>
+</ul>
 </div>
-<div class="sect2">
-<h3 id="_mybatis">Mybatis</h3>
-
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cypher" data-lang="cypher">WITH ['The Matrix'] as movies
+CALL apoc.load.jdbcParams('jdbc:neo4j:bolt://localhost?user=neo4j,password=test','MATCH (m:Movie) WHERE m.title=? RETURN m', movies) YIELD row
+RETURN row</code></pre>
 </div>
 </div>
+<div class="imageblock">
+<div class="content">
+<img src="https://cloud.githubusercontent.com/assets/231657/15970058/01334dfc-2f33-11e6-8cc8-9ad9658049cd.png" alt="01334dfc 2f33 11e6 8cc8 9ad9658049cd">
 </div>
-<div class="sect1">
-<h2 id="_technical_reference">Technical Reference</h2>
-<div class="sectionbody">
-<div class="sect2">
-<h3 id="_usage_examples">Usage Examples</h3>
-
 </div>
-<div class="sect2">
-<h3 id="_the_bolt_driver">The Bolt Driver</h3>
-
-</div>
-<div class="sect2">
-<h3 id="_the_http_driver">The HTTP Driver</h3>
-
-</div>
-<div class="sect2">
-<h3 id="_jdbc_compatibility">JDBC Compatibility</h3>
-
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-06-28 12:37:13 CEST
+Last updated 2016-07-05 17:54:42 CEST
 </div>
 </div>
 </body>
