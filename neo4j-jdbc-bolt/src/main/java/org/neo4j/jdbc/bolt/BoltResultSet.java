@@ -178,7 +178,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return result;
 	}
 
-	@Override public boolean next() throws SQLException {
+	@Override protected boolean innerNext() throws SQLException {
 		if (this.iterator == null) {
 			throw new SQLException("ResultCursor not initialized");
 		}

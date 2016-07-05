@@ -116,4 +116,19 @@ public class BoltResultSetIT {
 
 		con.close();
 	}
+
+	@Test public void shouldGetRowReturnValidNumbers() throws SQLException {
+		neo4j.getGraphDatabase().execute("unwind range(1,5) as x create (:User{number:x})");
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Statement stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery("match (u:User) return u.number as number order by number asc");
+
+		while (rs.next()) {
+			assertEquals(rs.getRow(), rs.getInt("number"));
+
+		}
+		con.close();
+	}
+
 }
