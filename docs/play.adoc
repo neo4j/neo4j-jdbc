@@ -1,7 +1,7 @@
 === Play Framework
 
 Taken from the https://www.playframework.com/documentation/2.5.x/JavaDatabase[Play Framework Documentation].
-enable the database plugin add javaJdbc in your build dependencies :
+Enable the database plugin by adding `javaJdbc` in your build dependencies:
 
 ----
 libraryDependencies += javaJdbc

@@ -13,9 +13,9 @@ include::../README.adoc[]
 
 === The Bolt Driver
 
-The bolt driver connects to any Neo4j 3.x database that has the binary "bolt" transport enabled.
+The BOLT driver connects to any Neo4j 3.x database that has the binary "BOLT" transport enabled.
 
-It uses the [neo4j-java-driver] to provide the connectivity.
+It uses the https://github.com/neo4j/neo4j-java-driver[neo4j-java-driver] to provide the connectivity.
 
 Just provide your username and password and you can connect to Neo4j.
 
@@ -23,7 +23,7 @@ The JDBC URL has this format: `jdbc:neo4j:bolt://host:port;username=neo4j,passwo
 
 === The HTTP Driver
 
-The http driver uses the existing (since Neo4j 2.x) transaction Cypher http API, and is implemented using apache commons httpclient and jackson for JSON (de)serialization.
+The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using `apache commons httpclient` and `jackson` for JSON (de)serialization.
 
 The JDBC URL has this format: `jdbc:neo4j:http://host:port;username=neo4j,password=xxxx`
 
