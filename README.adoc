@@ -76,9 +76,9 @@ First clone https://github.com/neo4j-contrib/neo4j-jdbc[the repository].
 This project is composed by the following modules:
 
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the bolt protocol
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - Http] - module supporting the http protocol
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
 
 
 .Run all unitary tests & integration tests
@@ -96,6 +96,7 @@ mvn clean test -Pintegration-test
 mvn clean test -Pperformance-test
 --------------------------------------------------
 
+[NOTE]
 To run the performance test, you must have a Neo4j Server (3.0.X) running with the Bolt protocol enabled on port 7687 (default)
 
 === Release 3.0 Schedule
@@ -107,7 +108,7 @@ General Availability [RELEASED]
 * Documentation
 * Better handling of credentials
 * Support for additional API methods
-* Explicit enabling of flatten=<rows> via jdbc URL
+* Explicit enabling of `flatten=<rows>` via jdbc URL
 
 Release Candidate 1 [RELEASED]
 
@@ -156,9 +157,10 @@ The core development team:
 
 Contributors:
 
-* Michael Vitz
-* Angelo Busato
-* Enrico Marin
+* https://twitter.com/irregularbi[Ralf Becher], TiQ solutions - Qlik Luminary
+* https://twitter.com/michaelvitz[Michael Vitz], InnoQ - Software Developer
+* https://twitter.com/abusato95[Angelo Busato], Larus-BA - Software Developer
+* https://github.com/enricomarin[Enrico Marin], Larus-BA - Software Developer
 
 Supporters:
 
