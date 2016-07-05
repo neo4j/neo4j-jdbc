@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.neo4j</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
-        <version>3.0-RC1</version>
+        <version>3.0</version>
     </parent>
 
     <!-- =========== -->
@@ -18,7 +18,7 @@
     <!-- =========== -->
     <groupId>org.neo4j</groupId>
     <artifactId>neo4j-jdbc</artifactId>
-    <version>3.0-RC1</version>
+    <version>3.0</version>
     <packaging>jar</packaging>
     <name>Neo4j JDBC Driver</name>
     <description>Common module for every implementation of the Neo4j JDBC Driver</description>
