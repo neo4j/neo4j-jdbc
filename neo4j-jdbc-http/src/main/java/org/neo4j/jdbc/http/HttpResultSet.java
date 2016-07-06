@@ -131,7 +131,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override
-	public boolean next() throws SQLException {
+	protected boolean innerNext() throws SQLException {
 
 		checkClosed();
 		row++;
