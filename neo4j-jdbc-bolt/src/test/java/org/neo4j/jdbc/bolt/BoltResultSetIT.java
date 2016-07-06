@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltResultSetIT {
 
-	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
