@@ -175,8 +175,6 @@ public class CypherExecutor {
 				throw new SQLException(response.displayErrors());
 			}
 			this.currentTransactionUrl = this.transactionUrl;
-		} else {
-			throw new SQLException("There is no transaction to commit");
 		}
 	}
 
@@ -194,8 +192,6 @@ public class CypherExecutor {
 				throw new SQLException(response.displayErrors());
 			}
 			this.currentTransactionUrl = this.transactionUrl;
-		} else {
-			throw new SQLException("There is no transaction to rollback");
 		}
 	}
 

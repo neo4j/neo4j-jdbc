@@ -120,6 +120,15 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		writer.close();
 	}
 
+	@Test public void shouldCommitAnEmptyTransaction() throws SQLException {
+		// Connect (autoCommit = false)
+		try (Connection connection = DriverManager.getConnection(getJDBCUrl())) {
+			connection.setAutoCommit(false);
+
+			connection.commit();
+		}
+	}
+
 	@Test public void shouldRollbackAnEmptyTransaction() throws SQLException {
 		// Connect (autoCommit = false)
 		try (Connection connection = DriverManager.getConnection(getJDBCUrl())) {
