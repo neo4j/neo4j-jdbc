@@ -126,9 +126,7 @@ public class BoltConnection extends Connection implements Loggable {
 		this.transaction.failure();
 	}
 
-	/*--------------------------c boolean isClosed() throws SQLException {
-		return !this.session.isOpen();
-	}----*/
+	/*------------------------------*/
 	/*       Create Statement       */
 	/*------------------------------*/
 
