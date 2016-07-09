@@ -426,6 +426,24 @@
                 </plugins>
             </build>
         </profile>
+        
+        <!-- Just run Quality Assurance check -->
+        <profile>
+        	<id>sonar</id>
+        	<properties>
+        		<sonar.host.url>http://5.9.211.195:9000</sonar.host.url>
+        		<sonar.language>java</sonar.language>
+        	</properties>
+        	<build>
+        		<plugins>
+        			<plugin>
+        				<groupId>org.codehaus.mojo</groupId>
+        				<artifactId>sonar-maven-plugin</artifactId>
+        				<version>3.0.2</version>
+        			</plugin>
+        		</plugins>
+           	</build>
+        </profile>
     </profiles>
 
     <!-- =========================== -->
