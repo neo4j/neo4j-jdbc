@@ -42,7 +42,7 @@ public class ListResultSet extends org.neo4j.jdbc.ResultSet {
 		this.keys = keys;
 	}
 
-	@Override public boolean next() throws SQLException {
+	@Override protected boolean innerNext() throws SQLException {
 		return ++this.index < this.list.size();
 	}
 

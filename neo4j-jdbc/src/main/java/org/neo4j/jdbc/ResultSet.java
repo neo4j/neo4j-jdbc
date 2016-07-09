@@ -40,6 +40,8 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	 */
 	protected boolean isClosed = false;
 
+	protected int currentRowNumber = 0;
+
 
 	/*----------------------------------------*/
 	/*       Some useful, check method        */
@@ -100,7 +102,15 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	@Override public abstract int findColumn(String columnLabel) throws SQLException;
 
-	@Override public abstract boolean next() throws SQLException;
+	@Override public final boolean next() throws SQLException {
+		boolean result = innerNext();
+		if (result == true) {
+			currentRowNumber++;
+		}
+		return result;
+	}
+
+	protected abstract boolean innerNext() throws SQLException;
 
 	@Override public abstract void close() throws SQLException;
 
@@ -270,8 +280,8 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public int getRow() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+	@Override public final int getRow() throws SQLException {
+		return currentRowNumber;
 	}
 
 	@Override public boolean absolute(int row) throws SQLException {
