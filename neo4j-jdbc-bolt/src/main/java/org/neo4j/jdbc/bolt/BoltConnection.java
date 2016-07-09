@@ -89,13 +89,12 @@ public class BoltConnection extends Connection implements Loggable {
 		if (this.autoCommit != autoCommit) {
 			if (this.transaction != null && !this.autoCommit) {
 				this.commit();
+				this.transaction.close();
 			}
 
 			if (this.autoCommit) {
 				//Simply restart the transaction
 				this.transaction = this.session.beginTransaction();
-			} else {
-				this.transaction.close();
 			}
 
 			this.autoCommit = autoCommit;

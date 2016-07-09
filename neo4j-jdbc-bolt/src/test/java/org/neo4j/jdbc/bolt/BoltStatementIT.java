@@ -21,12 +21,16 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
 
 import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 import static org.junit.Assert.*;
 
@@ -49,6 +53,38 @@ public class BoltStatementIT {
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
 
+		assertTrue(rs.next());
+		assertEquals("test", rs.getString(1));
+		assertFalse(rs.next());
+		connection.close();
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
+
+	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatement() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement();
+		connection.setAutoCommit(false);
+
+		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
+
+		connection.commit();
+		assertTrue(rs.next());
+		assertEquals("test", rs.getString(1));
+		assertFalse(rs.next());
+		connection.close();
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
+
+	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatementAndCreatedWithParams() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Statement statement = connection.createStatement(org.neo4j.jdbc.ResultSet.TYPE_FORWARD_ONLY, org.neo4j.jdbc.ResultSet.CONCUR_READ_ONLY);
+		connection.setAutoCommit(false);
+
+		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
+
+		connection.commit();
 		assertTrue(rs.next());
 		assertEquals("test", rs.getString(1));
 		assertFalse(rs.next());
