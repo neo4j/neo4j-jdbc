@@ -241,6 +241,23 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	/**
+	 * Default implementation of setTransactionIsolation.
+	 */
+	@Override public void setTransactionIsolation(int level) throws SQLException {
+		this.checkClosed();
+		if (level != Connection.TRANSACTION_NONE &&
+				level != Connection.TRANSACTION_READ_COMMITTED &&
+				level != Connection.TRANSACTION_READ_UNCOMMITTED &&
+				level != Connection.TRANSACTION_REPEATABLE_READ &&
+				level != Connection.TRANSACTION_SERIALIZABLE) {
+			throw new SQLException("Unrecognized isolation level");
+		}
+		if (level != Connection.TRANSACTION_READ_COMMITTED) {
+			throw new SQLException("Unsupported isolation level");
+		}
+	}
+
+	/**
 	 * Default implementation of nativeSQL.
 	 * Here we should implement some hacks for JDBC tools if needed.
 	 * This method must be used before running a query.
@@ -305,20 +322,6 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public java.sql.CallableStatement prepareCall(String sql) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setTransactionIsolation(int level) throws SQLException {
-		this.checkClosed();
-		if (level != Connection.TRANSACTION_NONE &&
-				level != Connection.TRANSACTION_READ_COMMITTED &&
-				level != Connection.TRANSACTION_READ_UNCOMMITTED &&
-				level != Connection.TRANSACTION_REPEATABLE_READ &&
-				level != Connection.TRANSACTION_SERIALIZABLE) {
-			throw new SQLException("Unrecognized isolation level");
-		}
-		if (level != Connection.TRANSACTION_READ_COMMITTED) {
-			throw new SQLException("Unsupported isolation level");
-		}
 	}
 
 	@Override public java.sql.CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {

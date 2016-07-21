@@ -19,9 +19,6 @@
  */
 package org.neo4j.jdbc;
 
-import org.neo4j.jdbc.impl.ListResultSet;
-import org.neo4j.jdbc.utils.ExceptionBuilder;
-
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
@@ -31,6 +28,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.neo4j.jdbc.impl.ListResultSet;
+import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 /**
  * @author AgileLARUS
@@ -224,7 +224,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public int getDefaultTransactionIsolation() throws SQLException {
-		return java.sql.Connection.TRANSACTION_READ_COMMITTED;
+		return Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override public boolean supportsTransactions() throws SQLException {
