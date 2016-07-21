@@ -19,11 +19,14 @@
  */
 package org.neo4j.jdbc.bolt.utils;
 
-import org.neo4j.jdbc.bolt.BoltConnection;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.jdbc.bolt.BoltConnection;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
@@ -50,6 +53,23 @@ public class Mocker {
 
 	public static Session mockSessionClosed() {
 		return mock(Session.class);
+	}
+
+	public static Session mockSessionOpenSlow() {
+		Session session = mock(Session.class);
+		when(session.isOpen()).thenReturn(true);
+		Transaction transaction = mock(Transaction.class);
+		when(session.beginTransaction()).thenReturn(transaction);
+		when(session.run(anyString())).thenAnswer(new Answer<ResultSet>() {
+			@Override public ResultSet answer(InvocationOnMock invocation) {
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+				}
+				return null;
+			}
+		});
+		return session;
 	}
 
 	public static BoltConnection mockConnectionOpen() throws SQLException {

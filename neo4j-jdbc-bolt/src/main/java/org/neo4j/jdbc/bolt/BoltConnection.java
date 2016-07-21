@@ -38,6 +38,8 @@ public class BoltConnection extends Connection implements Loggable {
 	private boolean autoCommit = true;
 	private boolean loggable   = false;
 
+	private final static String FASTEST_STATEMENT = "MATCH (n) RETURN n LIMIT 1;";
+
 	/**
 	 * Constructor with Session and Properties.
 	 *
@@ -203,6 +205,44 @@ public class BoltConnection extends Connection implements Loggable {
 			throw new SQLException("A database access error has occurred");
 		}
 	}
+
+	/*-------------------*/
+	/*      isValid      */
+	/*-------------------*/
+	@Override public boolean isValid(int timeout) throws SQLException {
+		if (timeout < 0) {
+			throw new SQLException("Timeout can't be less than zero");
+		}
+		if (this.isClosed()) {
+			return false;
+		}
+
+		Thread t = new Thread() {
+			public void run() {
+				Session session = getSession();
+				Transaction transaction = getTransaction();
+				if (transaction != null && transaction.isOpen()) {
+					transaction.run(FASTEST_STATEMENT);
+				} else {
+					session.run(FASTEST_STATEMENT);
+				}
+			}
+		};
+
+		try {
+			t.start();
+			t.join(timeout);
+		} catch (InterruptedException e) {
+		}
+
+		if (t.isAlive()) {
+			t.interrupt();
+			return false;
+		}
+
+		return true;
+	}
+
 
 	/*--------------------*/
 	/*       Logger       */
