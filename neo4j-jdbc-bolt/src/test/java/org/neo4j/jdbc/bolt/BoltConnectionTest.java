@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -28,13 +27,13 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
 
-import static org.neo4j.jdbc.bolt.utils.Mocker.mockSessionClosed;
-import static org.neo4j.jdbc.bolt.utils.Mocker.mockSessionOpen;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static org.neo4j.jdbc.bolt.utils.Mocker.*;
 
 /**
  * @author AgileLARUS
@@ -46,10 +45,12 @@ public class BoltConnectionTest {
 
 	private BoltConnection openConnection;
 	private BoltConnection closedConnection;
+	private BoltConnection slowOpenConnection;
 
 	@Before public void tearUp() {
 		openConnection = new BoltConnection(mockSessionOpen());
 		closedConnection = new BoltConnection(mockSessionClosed());
+		slowOpenConnection = new BoltConnection(mockSessionOpenSlow());
 	}
 
 	/*------------------------------*/
@@ -576,6 +577,26 @@ public class BoltConnectionTest {
 	@Test public void getCatalogShouldThrowExceptionWhenConnectionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		closedConnection.getCatalog();
+	}
+
+	/*-------------------------------*/
+	/*            isValid            */
+	/*-------------------------------*/
+	@Test public void isValidShouldThrowExceptionWhenTimeoutSuppliedLessThanZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		openConnection.isValid(-2);
+	}
+
+	@Test public void isValidShouldReturnFalseIfCalledOnClosedConnection() throws SQLException {
+		assertFalse(closedConnection.isValid(0));
+	}
+
+	@Test(timeout=500) public void isValidShouldReturnFalseIfTimeout() throws SQLException {
+		assertFalse(slowOpenConnection.isValid(400));
+	}
+
+	@Test(timeout=500) public void isValidShouldReturnTrueIfNotTimeout() throws SQLException {
+		assertTrue(openConnection.isValid(400));
 	}
 
 }

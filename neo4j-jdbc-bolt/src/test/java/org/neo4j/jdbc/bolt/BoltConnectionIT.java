@@ -203,6 +203,15 @@ public class BoltConnectionIT {
 		reader.close();
 	}
 
+	@Test public void shouldRollbackAnEmptyTransaction() throws SQLException {
+		// Connect (autoCommit = false)
+		try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
+			connection.setAutoCommit(false);
+
+			connection.rollback();
+		}
+	}
+
 	/*------------------------------*/
 	/*         getMetaData          */
 	/*------------------------------*/

@@ -297,6 +297,8 @@ public abstract class Connection implements java.sql.Connection {
 
 	@Override public abstract boolean isClosed() throws SQLException;
 
+	@Override public abstract boolean isValid(int timeout) throws SQLException;
+
 	/*---------------------------------*/
 	/*       Not implemented yet       */
 	/*---------------------------------*/
@@ -376,10 +378,6 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	@Override public SQLXML createSQLXML() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean isValid(int timeout) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

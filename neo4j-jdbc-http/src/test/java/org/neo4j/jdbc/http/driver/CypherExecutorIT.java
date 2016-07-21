@@ -75,31 +75,15 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		assertEquals(2, response.results.get(0).rows.size());
 	}
 
-	@Test public void rollbackClosedTransactionShouldFail() throws SQLException {
-		expectedEx.expect(SQLException.class);
-
+	@Test public void shouldRollbackAnEmptyTransaction() throws SQLException {
 		executor.setAutoCommit(Boolean.FALSE);
-		String randomLabel = "Test" + UUID.randomUUID();
-		executor.executeQuery(new Neo4jStatement("CREATE (:`" + randomLabel + "` {value:1})", null, Boolean.FALSE));
-		executor.executeQuery(new Neo4jStatement("CREATE (:`" + randomLabel + "` {value:2})", null, Boolean.FALSE));
-		executor.commit();
 
 		executor.rollback();
 	}
 
-	@Test public void rollbackOnAutocommitShouldFail() throws SQLException {
-		expectedEx.expect(SQLException.class);
+	@Test public void shouldCommitAnEmptyTransaction() throws SQLException {
+		executor.setAutoCommit(Boolean.FALSE);
 
-		String randomLabel = "Test" + UUID.randomUUID();
-		executor.executeQuery(new Neo4jStatement("CREATE (:`" + randomLabel + "` {value:1})", null, Boolean.FALSE));
-		executor.rollback();
-	}
-
-	@Test public void commitOnAutocommitShouldFail() throws SQLException {
-		expectedEx.expect(SQLException.class);
-
-		String randomLabel = "Test" + UUID.randomUUID();
-		executor.executeQuery(new Neo4jStatement("CREATE (:`" + randomLabel + "` {value:1})", null, Boolean.FALSE));
 		executor.commit();
 	}
 

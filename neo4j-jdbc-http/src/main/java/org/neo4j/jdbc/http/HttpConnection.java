@@ -205,6 +205,14 @@ public class HttpConnection extends Connection implements Loggable {
 		isClosed = true;
 	}
 
+	/*-------------------*/
+	/*      isValid      */
+	/*-------------------*/
+
+	@Override public boolean isValid(int timeout) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
 	/*--------------------*/
 	/*       Logger       */
 	/*--------------------*/
