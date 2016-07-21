@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.Connection;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 import java.sql.*;
@@ -305,7 +306,17 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	@Override public void setTransactionIsolation(int level) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		this.checkClosed();
+		if (level != Connection.TRANSACTION_NONE &&
+				level != Connection.TRANSACTION_READ_COMMITTED &&
+				level != Connection.TRANSACTION_READ_UNCOMMITTED &&
+				level != Connection.TRANSACTION_REPEATABLE_READ &&
+				level != Connection.TRANSACTION_SERIALIZABLE) {
+			throw new SQLException("Unrecognized isolation level");
+		}
+		if (level != Connection.TRANSACTION_READ_COMMITTED) {
+			throw new SQLException("Unsupported isolation level");
+		}
 	}
 
 	@Override public java.sql.CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {

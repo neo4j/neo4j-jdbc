@@ -224,7 +224,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public int getDefaultTransactionIsolation() throws SQLException {
-		return 0;
+		return java.sql.Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override public boolean supportsTransactions() throws SQLException {
