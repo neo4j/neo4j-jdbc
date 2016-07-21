@@ -42,6 +42,8 @@ public abstract class ResultSet implements java.sql.ResultSet {
 
 	protected int currentRowNumber = 0;
 
+	protected static final int DEFAULT_FETCH_SIZE = 1;
+
 
 	/*----------------------------------------*/
 	/*       Some useful, check method        */
@@ -88,8 +90,28 @@ public abstract class ResultSet implements java.sql.ResultSet {
 		checkClosed();
 	}
 
+	@Override public final boolean next() throws SQLException {
+		boolean result = innerNext();
+		if (result == true) {
+			currentRowNumber++;
+		}
+		return result;
+	}
+
+	@Override public void setFetchSize(int rows) throws SQLException {
+		this.checkClosed();
+		if (rows < 0) {
+			throw new SQLException("Fetch size must be >= 0");
+		}
+	}
+
+	@Override public int getFetchSize() throws SQLException {
+		this.checkClosed();
+		return DEFAULT_FETCH_SIZE;
+	}
+
 	/*-----------------------------*/
-	/*       Abstract method       */
+	/*       Abstract methods      */
 	/*-----------------------------*/
 
 	@Override public abstract int getType() throws SQLException;
@@ -101,14 +123,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	@Override public abstract ResultSetMetaData getMetaData() throws SQLException;
 
 	@Override public abstract int findColumn(String columnLabel) throws SQLException;
-
-	@Override public final boolean next() throws SQLException {
-		boolean result = innerNext();
-		if (result == true) {
-			currentRowNumber++;
-		}
-		return result;
-	}
 
 	protected abstract boolean innerNext() throws SQLException;
 
@@ -301,14 +315,6 @@ public abstract class ResultSet implements java.sql.ResultSet {
 	}
 
 	@Override public int getFetchDirection() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setFetchSize(int rows) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int getFetchSize() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
