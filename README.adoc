@@ -24,6 +24,15 @@ Going forward there will also be support for:
 * direct file connection
 * embedded connection
 
+=== Maven dependency
+
+[source,xml]
+<dependency>
+    <groupId>org.neo4j</groupId>
+    <artifactId>neo4j-jdbc</artifactId>
+    <version>3.0</version>
+</dependency>
+
 === Minimum viable snippet
 
 // tag::mvs[]
