@@ -38,8 +38,6 @@ public class BoltConnection extends Connection implements Loggable {
 	private boolean autoCommit = true;
 	private boolean loggable   = false;
 
-	private final static String FASTEST_STATEMENT = "MATCH (n) RETURN n LIMIT 1;";
-
 	/**
 	 * Constructor with Session and Properties.
 	 *

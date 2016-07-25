@@ -56,6 +56,8 @@ public abstract class Connection implements java.sql.Connection {
 	 */
 	private int holdability;
 
+	protected static final String FASTEST_STATEMENT = "MATCH (n) RETURN n LIMIT 1;";
+	
 	/**
 	 * Default constructor with properties.
 	 *

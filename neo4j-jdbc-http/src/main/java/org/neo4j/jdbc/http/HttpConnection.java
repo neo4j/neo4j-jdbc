@@ -210,7 +210,37 @@ public class HttpConnection extends Connection implements Loggable {
 	/*-------------------*/
 
 	@Override public boolean isValid(int timeout) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		if (timeout < 0) {
+			throw new SQLException("Timeout can't be less than zero");
+		}
+		if (this.isClosed()) {
+			return false;
+		}
+
+		Thread t = new Thread() {
+			public void run() {
+				if (executor.getOpenTransactionId() != null && executor.getOpenTransactionId() > 0) {
+					try {
+						executor.executeQuery(new Neo4jStatement(FASTEST_STATEMENT, null, null));
+					} catch (Exception e) {
+						throw new RuntimeException();
+					}
+				}
+			}
+		};
+
+		try {
+			t.start();
+			t.join(timeout);
+		} catch (InterruptedException e) {
+		}
+
+		if (t.isAlive()) {
+			t.interrupt();
+			return false;
+		}
+
+		return true;
 	}
 
 	/*--------------------*/
