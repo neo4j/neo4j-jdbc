@@ -182,13 +182,13 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		writer.close();
 	}
 
-	@Test(timeout=500)
+	@Test
 	public void isValidShouldWork() throws SQLException {
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		assertTrue(writer.isValid(400));
 	}
 	
-	@Test(timeout=500)
+	@Test
 	public void isValidOnClosedTransactionShouldFail() throws SQLException {
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.close();

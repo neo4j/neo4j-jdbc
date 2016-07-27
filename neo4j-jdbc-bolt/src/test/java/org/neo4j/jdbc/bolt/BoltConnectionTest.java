@@ -591,11 +591,11 @@ public class BoltConnectionTest {
 		assertFalse(closedConnection.isValid(0));
 	}
 
-	@Test(timeout=500) public void isValidShouldReturnFalseIfTimeout() throws SQLException {
-		assertFalse(slowOpenConnection.isValid(400));
+	@Test(timeout=5000) public void isValidShouldReturnFalseIfTimeout() throws SQLException {
+		assertFalse(slowOpenConnection.isValid(1));
 	}
 
-	@Test(timeout=500) public void isValidShouldReturnTrueIfNotTimeout() throws SQLException {
+	@Test public void isValidShouldReturnTrueIfNotTimeout() throws SQLException {
 		assertTrue(openConnection.isValid(400));
 	}
 
