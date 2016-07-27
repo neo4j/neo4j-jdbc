@@ -229,7 +229,7 @@ public class BoltConnection extends Connection implements Loggable {
 
 		try {
 			t.start();
-			t.join(timeout);
+			t.join(timeout * 1000);
 		} catch (InterruptedException e) {
 		}
 
