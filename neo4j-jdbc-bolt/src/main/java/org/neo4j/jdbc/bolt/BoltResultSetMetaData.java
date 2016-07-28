@@ -20,8 +20,6 @@
 package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.exceptions.NoSuchRecordException;
 import org.neo4j.driver.v1.types.Type;
 import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.ResultSetMetaData;

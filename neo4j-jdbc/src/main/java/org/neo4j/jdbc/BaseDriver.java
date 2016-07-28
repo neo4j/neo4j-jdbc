@@ -22,7 +22,6 @@ package org.neo4j.jdbc;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.sql.*;
 import java.sql.Connection;

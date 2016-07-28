@@ -40,7 +40,7 @@ class BoltDatabaseMetaData extends DatabaseMetaData {
 		// compute database version
 		if (connection != null) {
 			try {
-				BoltConnection conn = (BoltConnection) DriverManager.getConnection(connection.url, connection.properties);
+				BoltConnection conn = (BoltConnection) DriverManager.getConnection(connection.getUrl(), connection.getProperties());
 				StatementResult rs = conn.getSession()
 						.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
 				if (rs != null && rs.hasNext()) {

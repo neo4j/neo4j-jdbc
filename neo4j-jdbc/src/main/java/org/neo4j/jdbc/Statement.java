@@ -48,8 +48,8 @@ public abstract class Statement implements java.sql.Statement {
 		this.currentUpdateCount = -1;
 
 		this.maxRows = 0;
-		if (connection != null && connection.properties != null) {
-			this.maxRows = Integer.parseInt(connection.properties.getProperty("maxrows", "0"));
+		if (connection != null && connection.getProperties() != null) {
+			this.maxRows = Integer.parseInt(connection.getProperties().getProperty("maxrows", "0"));
 		}
 	}
 

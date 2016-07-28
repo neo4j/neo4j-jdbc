@@ -264,7 +264,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getURL() throws SQLException {
-		return this.connection.url;
+		return this.connection.getUrl();
 	}
 
 	@Override public boolean supportsMixedCaseIdentifiers() throws SQLException {
