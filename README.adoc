@@ -16,7 +16,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 
 This driver supports various types of database transports:
 
-* through the BOLT protocol (3.0.X) using `jdbc:neo4j:bolt://<host>:<port>/`
+* through the Bolt protocol (3.0.X) using `jdbc:neo4j:bolt://<host>:<port>/`
 * through the HTTP protocol (2.X+) using `jdbc:neo4j:http://<host>:<port>/`
 
 Going forward there will also be support for:
@@ -26,11 +26,31 @@ Going forward there will also be support for:
 
 === Maven dependency
 
+For the all-in-one module supporting both Bolt and HTTP, you can simply use:
+
 [source,xml]
 <dependency>
     <groupId>org.neo4j</groupId>
-    <artifactId>neo4j-jdbc</artifactId>
-    <version>3.0</version>
+    <artifactId>neo4j-jdbc-driver</artifactId>
+    <version>{neo4j-jdbc-version}</version>
+</dependency>
+
+If you only want one of the protocols, you can depend on its module:
+
+[source,xml]
+<dependency>
+    <groupId>org.neo4j</groupId>
+    <artifactId>neo4j-jdbc-bolt</artifactId>
+    <version>{neo4j-jdbc-version}</version>
+</dependency>
+
+or
+
+[source,xml]
+<dependency>
+    <groupId>org.neo4j</groupId>
+    <artifactId>neo4j-jdbc-http</artifactId>
+    <version>{neo4j-jdbc-version}</version>
 </dependency>
 
 === Minimum viable snippet
@@ -39,13 +59,13 @@ Going forward there will also be support for:
 .Dependency declaration
 [source,subs=attributes]
 ----
-org.neo4j:neo4j-jdbc:{neo4j-jdbc-version}
+org.neo4j:neo4j-jdbc-driver:{neo4j-jdbc-version}
 ----
 
 .Run Query
 [source,java]
 ----
-// Connect
+// Connecting
 try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost")) {
 
     // Querying
@@ -65,19 +85,19 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost")
 
 === Usage with Neo4j Server
 
-* Install a Neo4j 3.0.X server and start it with the BOLT protocol enabled
+* Install a Neo4j 3.0.X server and start it with the Bolt protocol enabled
 * Connect with URLs in the form `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
-* You can also use additional comma separated parameters in the URL for authentication, debug mode, ssl encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]`
+* You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]`
 
 * Add the JDBC driver dependency or jar file to your project
-* Get a connection from DriverManager
+* Get a connection from `DriverManager`
 * Execute queries and transactions using the Cypher graph query language
 
 === Flattening
 
 As most JDBC clients and tools don't support complex objects, the driver can flatten returned nodes and relationships by providing all their properties as individual columns with names like `u.name`,`r.since` if you just return a node `u` or relationship `r`.
 
-This is enabled with the JDBC-URL parameter `flatten=rows`, where rows indicates how many rows are sampled to determine those columns.
+This is enabled with the JDBC-URL parameter `flatten=<rows>`, where `<rows>` indicates how many rows are sampled to determine those columns.
 With `-1` all rows are sampled and with any other value you determine the number of rows being looked at.
 
 === Building the driver yourself
@@ -87,12 +107,12 @@ First clone https://github.com/neo4j-contrib/neo4j-jdbc[the repository].
 This project is composed by the following modules:
 
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the bolt protocol
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - Http] - module supporting the http protocol
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the Bolt protocol
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - HTTP] - module supporting the HTTP protocol
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
 
 
-.Run all unitary tests & integration tests
+.Run all unit tests & integration tests
 -------------------------------------------------
 mvn clean test
 -------------------------------------------------
@@ -119,7 +139,7 @@ General Availability [RELEASED]
 * Documentation
 * Better handling of credentials
 * Support for additional API methods
-* Explicit enabling of `flatten=<rows>` via jdbc URL
+* Explicit enabling of `flatten=<rows>` via JDBC URL
 
 Release Candidate 1 [RELEASED]
 
@@ -145,7 +165,7 @@ you may not use this file except in compliance with the License.
 
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -162,9 +182,9 @@ We'd like to thank:
 The core development team:
 
 * https://twitter.com/ziotobiad[Alberto D'Este], Larus-BA - Software Developer
-* http://twitter.com/mfalcier[Marco Falcier], Larus-BA - Software Developer
-* http://twitter.com/glaggia[Gianmarco Laggia], Larus-BA - Software Developer
-* http://twitter.com/logisima[Benoît Simard], Neo4j - Technical Consultant at Neo Technology
+* https://twitter.com/mfalcier[Marco Falcier], Larus-BA - Software Developer
+* https://twitter.com/glaggia[Gianmarco Laggia], Larus-BA - Software Developer
+* https://twitter.com/logisima[Benoît Simard], Neo4j - Technical Consultant at Neo Technology
 
 Contributors:
 
@@ -175,6 +195,6 @@ Contributors:
 
 Supporters:
 
-* http://twitter.com/inserpio[Lorenzo Speranzoni], Larus-BA - Founder and CEO
-* http://twitter.com/darthvader42[Stefan Armbruster], Neo4j - Customer Success Engineer for EMEA
-* http://twitter.com/mesirii[Michael Hunger], Neo4j - Caretaker Neo4j Community
+* https://twitter.com/inserpio[Lorenzo Speranzoni], Larus-BA - Founder and CEO
+* https://twitter.com/darthvader42[Stefan Armbruster], Neo4j - Customer Success Engineer for EMEA
+* https://twitter.com/mesirii[Michael Hunger], Neo4j - Caretaker Neo4j Community

@@ -12,7 +12,7 @@ By convention the default JDBC data source must be called default, but you can u
 
 ----
 # Neo4j database configuration
-db.neo4j.driver=org.neo4j.jdbc.Driver
+db.neo4j.driver=org.neo4j.jdbc.bolt.BoltDriver
 db.neo4j.url="jdbc:neo4j:bolt://localhost"
 ----
 
