@@ -23,6 +23,7 @@ import org.neo4j.jdbc.bolt.data.StatementData;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.sql.*;
 
@@ -35,6 +36,7 @@ import static org.junit.Assert.*;
 public class BoltConnectionIT {
 
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
+	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	private String NEO4J_JDBC_BOLT_URL;
 
@@ -219,5 +221,39 @@ public class BoltConnectionIT {
 		Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		assertNotNull(connection.getMetaData());
 		connection.close();
+	}
+	
+	@Test public void killingThreadQueryExecutionShouldInvalidateWrappedBoltSession() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		
+		try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
+			assertFalse(connection.isClosed());
+			assertTrue(connection.isValid(0));
+			
+			Thread t = new Thread() {
+				public void run() {
+					try (Statement statement = connection.createStatement()) {
+						statement.executeQuery("WITH ['Michael','Stefan','Alberto','Marco','Gianmarco','Benoit','Frank'] AS names FOREACH (r IN range(0,10000000) | CREATE (:User {id:r, name:names[r % size(names)]+' '+r}));");
+					}
+					catch (SQLException sqle) {
+					}
+				}
+			};
+
+			t.start();
+			t.interrupt();
+			while (t.isAlive()) {
+			}
+			
+			assertFalse(connection.isClosed());
+			assertTrue(connection.isValid(0));
+			
+			try (Statement statement = connection.createStatement()) {
+				try (ResultSet resultSet = statement.executeQuery("RETURN 1")) {
+					assertTrue(resultSet.next());
+					assertEquals(1, resultSet.getLong(1));
+				}
+			}
+		}
 	}
 }
