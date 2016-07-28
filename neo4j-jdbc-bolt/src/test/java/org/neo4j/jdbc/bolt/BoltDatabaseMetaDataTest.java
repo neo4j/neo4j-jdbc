@@ -19,9 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
 import java.sql.SQLException;

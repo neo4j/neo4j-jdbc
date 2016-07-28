@@ -27,7 +27,6 @@ import org.junit.Test;
 import java.sql.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author AgileLARUS

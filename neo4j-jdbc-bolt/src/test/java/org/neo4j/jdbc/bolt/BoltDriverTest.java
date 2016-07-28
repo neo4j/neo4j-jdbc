@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.logging.DevNullLogger;
-import org.neo4j.driver.v1.AuthToken;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;

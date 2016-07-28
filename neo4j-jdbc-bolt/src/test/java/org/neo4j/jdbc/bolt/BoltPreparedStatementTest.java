@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Ignore;
 import org.neo4j.jdbc.PreparedStatement;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.Mocker;
