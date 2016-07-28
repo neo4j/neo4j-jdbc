@@ -1,81 +1,81 @@
 === Eclipse BIRT
 
-1. Start a new "Report project" under "Report design" perspective
-
+. Start a new "Report project" under "Report design" perspective
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531592/82aa4d36-3fcd-11e6-8865-17d044d34743.png[]
 
-2. Select the project's name
-
+. Select the project's name
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531611/9ffe01d4-3fcd-11e6-8e45-c9f3841a8436.png[]
 
-3. Create a new report (File->New->Report) and give it a name
-
+. Create a new report (File->New->Report) and give it a name
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531682/e9dce37e-3fcd-11e6-84c4-83c3e7547b46.png[]
 
-4. Choose your template
-
+. Choose your template
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531712/04240596-3fce-11e6-9e97-b8e611e48a44.png[]
 
-5. Create a new Datasource by right clicking "Data sources" -> New Data Source and choose the second option
-
+. Create a new Datasource by right clicking "Data sources" -> New Data Source and choose the second option
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531815/79956734-3fce-11e6-8141-5777f15399e9.png[]
 
-6. Create a new Connection profile store (click new on both windows)
-
+. Create a new Connection profile store (click new on both windows)
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531873/cf2ad59e-3fce-11e6-911c-999f8b6f2cd0.png[]
 
-7. Choose "BIRTH JDBC Data Source" and give it a name
-
+. Choose "BIRTH JDBC Data Source" and give it a name
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531895/f0ec6904-3fce-11e6-88c8-5be6e62ed8bd.png[]
 
-8. Load your jdbc jar by clicking "Manage Drivers" and select "Add"
-
+. Load your jdbc jar by clicking "Manage Drivers" and select "Add"
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531929/2d32090a-3fcf-11e6-893d-ed4ccef968c4.png[]
 
-9. Choose your dirver location and press OK
-
+. Choose your dirver location and press OK
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531945/3fce59f6-3fcf-11e6-9fe7-f7ecca4716db.png[]
 
-10. Fill the driver connection parameters
-
+. Fill the driver connection parameters
++
 image::https://cloud.githubusercontent.com/assets/13695124/16531965/59d8e352-3fcf-11e6-8458-5faf8fea540f.png[]
 
-11. Click "Next" and "Finish" and choose the newly created connection profile store
-
+. Click "Next" and "Finish" and choose the newly created connection profile store
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532005/85f3630e-3fcf-11e6-9521-902bc61e5d8b.png[]
 
-12. Click "Next" and "Finish" and the Data Source should be created
-
+. Click "Next" and "Finish" and the Data Source should be created
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532102/06b6a280-3fd0-11e6-88e7-0d6f8bc79928.png[]
 
-13. Create a new Dataset (right click Data Sets -> New Data Set) and choose Next
-
+. Create a new Dataset (right click Data Sets -> New Data Set) and choose Next
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532142/4521c4d2-3fd0-11e6-8fae-bb3e0aee3e4f.png[]
 
-14. Type the query you want to create your Dataset with and click Finish
-
+. Type the query you want to create your Dataset with and click Finish
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532158/698c4a36-3fd0-11e6-8ef1-2126cad983a1.png[]
 
-15. A new Window will appear showing the columns available with your query
-
+. A new Window will appear showing the columns available with your query
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532173/83925a2e-3fd0-11e6-9e92-cd8276a24c41.png[]
 
-16. You can also preview the results 
-
+. You can also preview the results
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532199/9ffde6ec-3fd0-11e6-9d32-ecb0ab797e7e.png[]
 
-17. Close this window and create a new Table element (Right click the document -> Insert -> Table)
-
+. Close this window and create a new Table element (Right click the document -> Insert -> Table)
++
 image::https://cloud.githubusercontent.com/assets/13695124/16532646/848ca81e-3fd3-11e6-9f85-aeed3f4e0092.png[]
 
-18. Choose 4 columns and click Finish
-
+. Choose 4 columns and click Finish
++
 image::https://cloud.githubusercontent.com/assets/13695124/16533601/44c07b28-3fda-11e6-8273-a4b4c0d55545.png[]
 
-19. Fill the table with the following data (drag and drop the datasource colums in the right position)
-
+. Fill the table with the following data (drag and drop the datasource colums in the right position)
++
 image::https://cloud.githubusercontent.com/assets/13695124/16533694/edf3b98a-3fda-11e6-9d80-f4026e036770.png[]
 
-20. To export the report click Run -> View report -> As PDF
-
+. To export the report click Run -> View report -> As PDF
++
 image::https://cloud.githubusercontent.com/assets/13695124/16533721/181e062a-3fdb-11e6-89eb-3a14c959e53b.png[]

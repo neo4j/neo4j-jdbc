@@ -1,7 +1,7 @@
 === APOC LOAD JDBC
 
 * Copy Neo4j JDBC Driver jar into `NEO4J_HOME/plugins` folder
-* Restart the databae
+* Restart the database
 * Run some JDBC Queries:
 
 [source,cypher]

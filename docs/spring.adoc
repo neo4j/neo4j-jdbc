@@ -1,6 +1,6 @@
 === Spring JDBC Template
 
-Integrating with Spring JDBC is as easy as defining a datasource in your spring config and then using it via JDBC Template.
+Integrating with Spring JDBC is as easy as defining a datasource in your Spring config and then using it via JDBC Template.
 
 You can find an example application here:
 

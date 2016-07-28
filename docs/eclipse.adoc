@@ -52,7 +52,7 @@ image::https://cloud.githubusercontent.com/assets/6613815/15891657/ee6e9154-2d75
 
 ==== Step 3: Test the connection (match and create)
 
-* Open an *SQL Scrapbook* and execute your statement (i.e. *match (n) return neo4j):
+* Open an *SQL Scrapbook* and execute your statement (i.e. `match (n) return n`):
 
 image::https://cloud.githubusercontent.com/assets/6613815/15891659/ee7ec150-2d75-11e6-8643-8b040fb588bb.png[]
 
