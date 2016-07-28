@@ -2,8 +2,14 @@
 
 (Thanks a lot to Ralf Becher, TIQ Solutions)
 
-image::img/qlik.config.png[]
+TIQ Solutions provides a commercial product to enable JDBC connectivity in QlikView and Qlik Sense. The configuration is simple.
 
-image::img/qlik.settings.png[]
+In QlikView, you can connect to Neo4j directly. In Qlik Sense you need to copy the CUSTOM CONNECT script code.
 
-image::img/qlik.results.png[]
+image::https://cloud.githubusercontent.com/assets/6613815/17213244/d04d482a-54d3-11e6-8813-29d3d701ea2b.png[]
+
+If your Neo4j connection is established, you now can execute Cypher queries in LOAD statements (but mention the SQL prefix). The results get loaded into memory tables as usual.
+
+image::https://cloud.githubusercontent.com/assets/6613815/17213245/d04dbd14-54d3-11e6-914e-0729e02e61e9.png[]
+
+image::https://cloud.githubusercontent.com/assets/6613815/17213472/add61f14-54d4-11e6-8ed6-3792786c45c3.png[]

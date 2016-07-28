@@ -6,13 +6,16 @@ Integration with Tableau is not that trivial as it only generates SQL.
 
 So you can either use the Tableau REST integration (which we will publish soon). 
 
-image::img/tableau-jdbc2tde.png[]
+image::https://cloud.githubusercontent.com/assets/6613815/17213908/ba8d8f42-54d6-11e6-9838-d0e7104d36ab.png[]
 
 Or the jdbc2tde tool from TIQ that uses JDBC queries to generate TDE files.
 
 Those can then be loaded into Tableau and visualized and interacted with in the many ways you know and love.
 
-image::img/tableau-table.png[]
-image::img/tableau-bar-chart.png[]
-image::img/tableau-circles.png[]
-image::img/tableau-line-chart.png[]
+image::https://cloud.githubusercontent.com/assets/6613815/17213907/ba8cf712-54d6-11e6-9eee-303abe164f75.png[]
+
+image::https://cloud.githubusercontent.com/assets/6613815/17213906/ba88be86-54d6-11e6-89ac-2bbf942d100c.png[]
+
+image::https://cloud.githubusercontent.com/assets/6613815/17213905/ba888ec0-54d6-11e6-8164-755ef3cb2624.png[]
+
+image::https://cloud.githubusercontent.com/assets/6613815/17213909/ba90b0f0-54d6-11e6-8d41-fd4bc5a31b18.png[]
