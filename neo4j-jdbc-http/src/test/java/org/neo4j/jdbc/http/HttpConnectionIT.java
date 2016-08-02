@@ -21,6 +21,7 @@
  */
 package org.neo4j.jdbc.http;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.jdbc.http.test.Neo4jHttpIT;
 
@@ -30,8 +31,7 @@ import static org.junit.Assert.*;
 
 public class HttpConnectionIT extends Neo4jHttpIT {
 
-	@Test
-	public void autocommitShouldWork() throws SQLException {
+	@Test public void autocommitShouldWork() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(true);
@@ -44,12 +44,11 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		assertEquals(rs.getString("n.value"), "AZERTYUIOP");
 		assertFalse(rs.next());
 
-		writer.close();;
+		writer.close();
 		reader.close();
 	}
 
-	@Test
-	public void commitShouldWork() throws SQLException {
+	@Test public void commitShouldWork() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(false);
@@ -71,8 +70,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		reader.close();
 	}
 
-	@Test
-	public void changeCommitModeOnOpenedTransactionShouldCommit() throws SQLException {
+	@Test public void changeCommitModeOnOpenedTransactionShouldCommit() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(false);
@@ -81,7 +79,8 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 
 		// Let's check that it's saved
 		Connection reader = DriverManager.getConnection(getJDBCUrl());
-		ResultSet rs = reader.createStatement().executeQuery("MATCH (n:TestChangeCommitModeOnOpendTransactionShouldFail_" + secureMode.toString() + ") RETURN n.value");
+		ResultSet rs = reader.createStatement()
+				.executeQuery("MATCH (n:TestChangeCommitModeOnOpendTransactionShouldFail_" + secureMode.toString() + ") RETURN n.value");
 		assertTrue(rs.next());
 		assertEquals(rs.getString("n.value"), "AZERTYUIOP");
 		assertFalse(rs.next());
@@ -90,8 +89,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		reader.close();
 	}
 
-	@Test
-	public void rollbackShouldWork() throws SQLException {
+	@Test public void rollbackShouldWork() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.setAutoCommit(false);
@@ -107,8 +105,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		reader.close();
 	}
 
-	@Test
-	public void rollbackOnAutocommitShouldFail() throws SQLException {
+	@Test public void rollbackOnAutocommitShouldFail() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		// Write something
@@ -138,8 +135,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		}
 	}
 
-	@Test
-	public void getMetaDataShouldWork() throws SQLException {
+	@Test public void getMetaDataShouldWork() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		DatabaseMetaData meta = writer.getMetaData();
@@ -148,16 +144,14 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		writer.close();
 	}
 
-	@Test
-	public void closeOnClosedTransactionShouldWork() throws SQLException {
+	@Test public void closeOnClosedTransactionShouldWork() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.close();
 		writer.close();
 	}
 
-	@Test
-	public void closeOnOpenTransactionShouldRollback() throws SQLException {
+	@Test public void closeOnOpenTransactionShouldRollback() throws SQLException {
 		// Write something
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.createStatement().execute("CREATE (n:TestCloseOnOpenTransactionSouldRollback_" + secureMode.toString() + " {value:\"AZERTYUIOP\"})");
@@ -171,8 +165,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		reader.close();
 	}
 
-	@Test
-	public void holdabilityShouldFail() throws SQLException {
+	@Test public void holdabilityShouldFail() throws SQLException {
 		expectedEx.expect(UnsupportedOperationException.class);
 		expectedEx.expectMessage("Method setHoldability in class org.neo4j.jdbc.http.HttpConnection is not yet implemented.");
 
@@ -182,16 +175,49 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		writer.close();
 	}
 
-	@Test
-	public void isValidShouldWork() throws SQLException {
+	@Test public void isValidShouldWork() throws SQLException {
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
-		assertTrue(writer.isValid(400));
+		assertTrue(writer.isValid(1));
 	}
-	
-	@Test
-	public void isValidOnClosedTransactionShouldFail() throws SQLException {
+
+	@Test public void isValidOnClosedTransactionShouldFail() throws SQLException {
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		writer.close();
-		assertFalse(writer.isValid(400));
+		assertFalse(writer.isValid(1));
+	}
+
+	@SuppressWarnings("deprecated")
+	@Test public void killingThreadQueryExecutionDoesNotInvalidateWrappedSession() throws SQLException {
+		try (Connection connection = DriverManager.getConnection(getJDBCUrl())) {
+			assertFalse(connection.isClosed());
+			assertTrue(connection.isValid(0));
+
+			Thread t = new Thread(new Runnable() {
+				public void run() {
+					try (Statement statement = connection.createStatement()) {//,'Alberto','Marco','Gianmarco','Benoit','Frank'
+						statement.executeQuery(
+								"WITH ['Michael','Stefan'] AS names FOREACH (r IN range(0,10000000) | CREATE (:User {id:r, name:names[r % size(names)]+' '+r}));");
+					} catch (SQLException sqle) {
+						sqle.printStackTrace();
+					}
+				}
+			});
+
+			t.start();
+			//FORCIBLY STOP THE THREAD. To be sure
+			t.stop();
+			while (t.isAlive()) {
+			}
+
+			assertFalse(connection.isClosed());
+			assertTrue(connection.isValid(1));
+
+			try (Statement statement = connection.createStatement()) {
+				try (ResultSet resultSet = statement.executeQuery("RETURN 1")) {
+					assertTrue(resultSet.next());
+					assertEquals(1, resultSet.getLong(1));
+				}
+			}
+		}
 	}
 }

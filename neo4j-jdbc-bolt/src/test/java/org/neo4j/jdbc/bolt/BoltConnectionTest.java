@@ -46,11 +46,13 @@ public class BoltConnectionTest {
 	private BoltConnection openConnection;
 	private BoltConnection closedConnection;
 	private BoltConnection slowOpenConnection;
+	private BoltConnection exceptionOpenConnection;
 
 	@Before public void tearUp() {
 		openConnection = new BoltConnection(mockSessionOpen());
 		closedConnection = new BoltConnection(mockSessionClosed());
 		slowOpenConnection = new BoltConnection(mockSessionOpenSlow());
+		exceptionOpenConnection = new BoltConnection(mockSessionException());
 	}
 
 	/*------------------------------*/
@@ -597,6 +599,11 @@ public class BoltConnectionTest {
 
 	@Test public void isValidShouldReturnTrueIfNotTimeout() throws SQLException {
 		assertTrue(openConnection.isValid(400));
+	}
+
+	@Test public void isValidShouldReturnFalseIfSessionException() throws SQLException {
+		assertFalse(exceptionOpenConnection.isValid(500));
+		assertFalse(exceptionOpenConnection.isValid(0));
 	}
 
 }

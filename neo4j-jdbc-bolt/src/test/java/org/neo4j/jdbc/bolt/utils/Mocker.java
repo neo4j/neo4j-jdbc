@@ -72,6 +72,15 @@ public class Mocker {
 		return session;
 	}
 
+	public static Session mockSessionException() {
+		Session session = mock(Session.class);
+		when(session.isOpen()).thenReturn(true);
+		Transaction transaction = mock(Transaction.class);
+		when(session.beginTransaction()).thenReturn(transaction);
+		when(session.run(anyString())).thenThrow(new RuntimeException("RuntimeException THROWN"));
+		return session;
+	}
+
 	public static BoltConnection mockConnectionOpen() throws SQLException {
 		BoltConnection mockConnection = mock(BoltConnection.class);
 		when(mockConnection.isClosed()).thenReturn(false);

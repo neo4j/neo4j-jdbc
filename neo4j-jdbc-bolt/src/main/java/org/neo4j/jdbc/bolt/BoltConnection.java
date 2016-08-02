@@ -22,9 +22,11 @@ package org.neo4j.jdbc.bolt;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.jdbc.*;
+import org.neo4j.jdbc.utils.UncaughtExceptionLogger;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Properties;
 
 /**
@@ -215,6 +217,8 @@ public class BoltConnection extends Connection implements Loggable {
 			return false;
 		}
 
+		UncaughtExceptionLogger h = new UncaughtExceptionLogger();
+
 		Thread t = new Thread() {
 			public void run() {
 				Session session = getSession();
@@ -227,6 +231,7 @@ public class BoltConnection extends Connection implements Loggable {
 			}
 		};
 
+		t.setUncaughtExceptionHandler(h);
 		try {
 			t.start();
 			t.join(timeout * 1000);
@@ -238,9 +243,13 @@ public class BoltConnection extends Connection implements Loggable {
 			return false;
 		}
 
-		return true;
-	}
+		if (!h.getExceptions().isEmpty()) {
+			return false;
+		}
 
+		return true;
+
+	}
 
 	/*--------------------*/
 	/*       Logger       */

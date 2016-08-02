@@ -246,7 +246,7 @@ public class BoltConnectionIT {
 			}
 			
 			assertFalse(connection.isClosed());
-			assertTrue(connection.isValid(0));
+			assertFalse(connection.isValid(1));
 			
 			try (Statement statement = connection.createStatement()) {
 				try (ResultSet resultSet = statement.executeQuery("RETURN 1")) {

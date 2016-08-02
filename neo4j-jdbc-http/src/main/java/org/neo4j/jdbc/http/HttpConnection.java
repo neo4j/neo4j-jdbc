@@ -25,6 +25,7 @@ import org.neo4j.jdbc.http.driver.Neo4jResponse;
 import org.neo4j.jdbc.http.driver.Neo4jResult;
 import org.neo4j.jdbc.http.driver.Neo4jStatement;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
+import org.neo4j.jdbc.utils.UncaughtExceptionLogger;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -217,6 +218,8 @@ public class HttpConnection extends Connection implements Loggable {
 			return false;
 		}
 
+		UncaughtExceptionLogger h = new UncaughtExceptionLogger();
+
 		Thread t = new Thread() {
 			public void run() {
 				if (executor.getOpenTransactionId() != null && executor.getOpenTransactionId() > 0) {
@@ -229,6 +232,8 @@ public class HttpConnection extends Connection implements Loggable {
 			}
 		};
 
+		t.setUncaughtExceptionHandler(h);
+
 		try {
 			t.start();
 			t.join(timeout * 1000);
@@ -237,6 +242,10 @@ public class HttpConnection extends Connection implements Loggable {
 
 		if (t.isAlive()) {
 			t.interrupt();
+			return false;
+		}
+
+		if(!h.getExceptions().isEmpty()){
 			return false;
 		}
 
