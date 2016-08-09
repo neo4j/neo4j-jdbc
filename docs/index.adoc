@@ -84,4 +84,6 @@ include::sqlshell.adoc[]
 
 include::apoc.adoc[]
 
+include::solr.adoc[]
+
 // TODO === JDBC-ODBC Bridge
