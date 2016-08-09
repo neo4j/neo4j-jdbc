@@ -7,8 +7,8 @@ On the Job, you just have to add a tJDBCConnection and add the usual fields: JDB
 
 image::img/talend.config.png[]
 
-image::img/talend.query.png[]
-
-On the Advanced Settings tab, you can also configure the auto-commit, if you want it.
+NB: On the Advanced Settings tab, you can also configure the auto-commit, if you want it.
 
 Now, you can add some tJDBCInput to make some queries to your Neo4j databases like this :
+
+image::img/talend.query.png[]
