@@ -360,6 +360,16 @@ public class BoltResultSetGettersTest {
 		assertEquals(1, resultSet.getInt(4));
 	}
 
+	@Test public void getIntShouldReturnZeroForNull() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
+		ResultSet resultSet = new BoltResultSet(null, statementResult);
+
+		resultSet.next();
+		assertEquals(0, resultSet.getInt("columnA"));
+		assertEquals(0, resultSet.getInt(2));
+	}
+	
 	/*------------------------------*/
 	/*           getFloat           */
 	/*------------------------------*/
@@ -445,6 +455,16 @@ public class BoltResultSetGettersTest {
 		resultSet.getFloat(3);
 	}
 
+	@Test public void getFloatShouldReturnZeroForNull() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
+		ResultSet resultSet = new BoltResultSet(null, statementResult);
+
+		resultSet.next();
+		assertEquals(0F, resultSet.getFloat("columnA"), 0);
+		assertEquals(0F, resultSet.getFloat(2), 0);
+	}
+	
 	/*------------------------------*/
 	/*            getShort          */
 	/*------------------------------*/
@@ -530,6 +550,16 @@ public class BoltResultSetGettersTest {
 		resultSet.getShort(3);
 	}
 
+	@Test public void getShortShouldReturnZeroForNull() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
+		ResultSet resultSet = new BoltResultSet(null, statementResult);
+
+		resultSet.next();
+		assertEquals(0, resultSet.getShort("columnA"));
+		assertEquals(0, resultSet.getShort(2));
+	}
+	
 	/*------------------------------*/
 	/*           getDouble          */
 	/*------------------------------*/
@@ -614,6 +644,16 @@ public class BoltResultSetGettersTest {
 		resultSet.getDouble(5);
 	}
 
+	@Test public void getDoubleShouldReturnZeroForNull() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
+		ResultSet resultSet = new BoltResultSet(null, statementResult);
+
+		resultSet.next();
+		assertEquals(0D, resultSet.getDouble("columnA"), 0);
+		assertEquals(0D, resultSet.getDouble(2), 0);
+	}
+	
 	/*------------------------------*/
 	/*           getObject          */
 	/*------------------------------*/
@@ -626,6 +666,7 @@ public class BoltResultSetGettersTest {
 		resultSet.next();
 		assertEquals("value1", resultSet.getObject("columnString").toString());
 		assertEquals(1L, resultSet.getObject("columnInt"));
+		assertNull(resultSet.getObject("columnNull"));
 
 		resultSet.next();
 		assertEquals(2L, resultSet.getObject("columnShort"));
@@ -919,6 +960,16 @@ public class BoltResultSetGettersTest {
 		resultSet.getBoolean(6);
 	}
 
+	@Test public void getBooleanShouldReturnFalseForNull() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
+		ResultSet resultSet = new BoltResultSet(null, statementResult);
+
+		resultSet.next();
+		assertEquals(false, resultSet.getBoolean("columnA"));
+		assertEquals(false, resultSet.getBoolean(2));
+	}
+	
 	/*------------------------------*/
 	/*            getLong          */
 	/*------------------------------*/
@@ -1002,6 +1053,16 @@ public class BoltResultSetGettersTest {
 		resultSet.getLong(7);
 	}
 
+	@Test public void getLongShouldReturnZeroForNull() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
+		ResultSet resultSet = new BoltResultSet(null, statementResult);
+
+		resultSet.next();
+		assertEquals(0, resultSet.getLong("columnA"));
+		assertEquals(0, resultSet.getLong(2));
+	}
+	
 	/*------------------------------*/
 	/*         getHoldability       */
 	/*------------------------------*/

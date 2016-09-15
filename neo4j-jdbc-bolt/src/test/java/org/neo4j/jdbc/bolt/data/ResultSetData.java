@@ -45,6 +45,7 @@ import static org.neo4j.driver.v1.Values.values;
 public class ResultSetData {
 	public static List<Object[]> RECORD_LIST_EMPTY = Collections.emptyList();
 	public static List<Object[]> RECORD_LIST_ONE_ELEMENT;
+	public static List<Object[]> RECORD_LIST_ONE_NULL_ELEMENT;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_DIFF;
 	public static List<Object[]> RECORD_LIST_MORE_ELEMENTS_MIXED;
@@ -55,10 +56,11 @@ public class ResultSetData {
 
 	public static String[] KEYS_RECORD_LIST_EMPTY                   = new String[] {};
 	public static String[] KEYS_RECORD_LIST_ONE_ELEMENT             = new String[] { "columnA", "columnB" };
+	public static String[] KEYS_RECORD_LIST_ONE_NULL_ELEMENT        = KEYS_RECORD_LIST_ONE_ELEMENT;
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS           = KEYS_RECORD_LIST_ONE_ELEMENT;
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF      = new String[] { "columnA", "columnB", "columnC" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED     = new String[] { "columnInt", "columnString", "columnFloat", "columnShort", "columnDouble",
-			"columnBoolean", "columnLong" };
+			"columnBoolean", "columnLong", "columnNull" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS     = new String[] { "path" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
@@ -74,6 +76,9 @@ public class ResultSetData {
 		RECORD_LIST_ONE_ELEMENT = new LinkedList<>();
 		RECORD_LIST_ONE_ELEMENT.add(new Object[] { "valueA1", "valueB1" });
 
+		RECORD_LIST_ONE_NULL_ELEMENT = new LinkedList<>();
+		RECORD_LIST_ONE_NULL_ELEMENT.add(new Object[] { null, null });
+		
 		RECORD_LIST_MORE_ELEMENTS = new LinkedList<>();
 		RECORD_LIST_MORE_ELEMENTS.add(new Object[] { "valueA1", "valueB1" });
 		RECORD_LIST_MORE_ELEMENTS.add(new Object[] { "valueA2", "valueB2" });
@@ -81,8 +86,8 @@ public class ResultSetData {
 
 		RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
 
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D, true, 2L });
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D, false, 6L });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D, true, 2L, null });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D, false, 6L, null });
 
 		RECORD_LIST_MORE_ELEMENTS_NODES = new LinkedList<>();
 

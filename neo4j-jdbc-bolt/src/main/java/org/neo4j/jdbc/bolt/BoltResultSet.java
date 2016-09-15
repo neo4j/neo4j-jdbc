@@ -19,8 +19,23 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.internal.value.*;
+import org.neo4j.driver.internal.value.BooleanValue;
+import org.neo4j.driver.internal.value.FloatValue;
+import org.neo4j.driver.internal.value.IntegerValue;
+import org.neo4j.driver.internal.value.ListValue;
+import org.neo4j.driver.internal.value.NodeValue;
+import org.neo4j.driver.internal.value.PathValue;
+import org.neo4j.driver.internal.value.RelationshipValue;
+import org.neo4j.driver.internal.value.StringValue;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
@@ -30,11 +45,13 @@ import org.neo4j.driver.v1.types.Path;
 import org.neo4j.driver.v1.types.Relationship;
 import org.neo4j.driver.v1.types.Type;
 import org.neo4j.driver.v1.util.Pair;
-import org.neo4j.jdbc.*;
+import org.neo4j.jdbc.Array;
+import org.neo4j.jdbc.InstanceFactory;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.ResultSet;
+import org.neo4j.jdbc.ResultSetMetaData;
+import org.neo4j.jdbc.Statement;
 import org.neo4j.jdbc.impl.ListArray;
-
-import java.sql.SQLException;
-import java.util.*;
 
 /**
  * @author AgileLARUS
@@ -236,6 +253,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	private String convertToJSONProperty(String key, Object value) {
 		String result = key == null ? "" : "\"" + key + "\":";
 
@@ -326,7 +344,8 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromLabel(columnLabel).asBoolean();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return value.isNull() ? false : value.asBoolean();
 	}
 
 	private Value fetchPropertyValue(String key, String property) throws SQLException {
@@ -397,12 +416,14 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public int getInt(String columnLabel) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromLabel(columnLabel).asInt();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return value.isNull() ? 0 : value.asInt();
 	}
 
 	@Override public long getLong(String columnLabel) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromLabel(columnLabel).asLong();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return value.isNull() ? 0 : value.asLong();
 	}
 
 	@Override public int findColumn(String columnLabel) throws SQLException {
@@ -430,42 +451,50 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromIndex(columnIndex).asBoolean();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return value.isNull() ? false : value.asBoolean();
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromIndex(columnIndex).asInt();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return value.isNull() ? 0 : value.asInt();
 	}
 
 	@Override public long getLong(int columnIndex) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromIndex(columnIndex).asLong();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return value.isNull() ? 0 : value.asLong();
 	}
 
 	@Override public float getFloat(String columnLabel) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromLabel(columnLabel).asFloat();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return value.isNull() ? 0 : value.asFloat();
 	}
 
 	@Override public float getFloat(int columnIndex) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromIndex(columnIndex).asFloat();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return value.isNull() ? 0 : value.asFloat();
 	}
 
 	@Override public short getShort(String columnLabel) throws SQLException {
 		checkClosed();
-		return (short) this.fetchValueFromLabel(columnLabel).asInt();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return value.isNull() ? 0 : (short) value.asInt();
 	}
 
 	@Override public short getShort(int columnIndex) throws SQLException {
 		checkClosed();
-		return (short) this.fetchValueFromIndex(columnIndex).asInt();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return value.isNull() ? 0 : (short) value.asInt();
 	}
 
 	@Override public double getDouble(int columnIndex) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromIndex(columnIndex).asDouble();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return value.isNull() ? 0 : value.asDouble();
 	}
 
 	@Override public Array getArray(int columnIndex) throws SQLException {
@@ -474,6 +503,7 @@ public class BoltResultSet extends ResultSet implements Loggable {
 		return new ListArray(list, Array.getObjectType(list.get(0)));
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Override public Array getArray(String columnLabel) throws SQLException {
 		checkClosed();
 		List list = this.fetchValueFromLabel(columnLabel).asList();
@@ -482,7 +512,8 @@ public class BoltResultSet extends ResultSet implements Loggable {
 
 	@Override public double getDouble(String columnLabel) throws SQLException {
 		checkClosed();
-		return this.fetchValueFromLabel(columnLabel).asDouble();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return value.isNull() ? 0 : value.asDouble();
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
