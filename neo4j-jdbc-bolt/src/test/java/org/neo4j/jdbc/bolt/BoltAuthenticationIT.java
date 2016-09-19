@@ -112,7 +112,7 @@ public class BoltAuthenticationIT {
 		boolean result = false;
 		try (Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
 		} catch (SQLException e) {
-			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
+			result = e.getMessage().contains("Missing username and password");
 		}
 		assertTrue(result);
 	}
@@ -121,7 +121,7 @@ public class BoltAuthenticationIT {
 		boolean result = false;
 		try (Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + ",user=neo4j")) {
 		} catch (SQLException e) {
-			result = e.getMessage().contains("Authentication token must contain: 'scheme : basic'");
+			result = e.getMessage().contains("Missing username and password");
 		}
 		assertTrue(result);
 	}
