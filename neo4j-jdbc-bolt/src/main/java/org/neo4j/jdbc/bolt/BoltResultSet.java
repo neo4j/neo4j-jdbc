@@ -242,7 +242,11 @@ public class BoltResultSet extends ResultSet implements Loggable {
 			}
 		} catch (Uncoercible e) {
 			String result = null;
-			if (value instanceof NodeValue) {
+			if (value instanceof IntegerValue) {
+				result = ((IntegerValue) value).asLiteralString();
+			}	else if (value instanceof FloatValue) {
+				result = ((FloatValue) value).asLiteralString();
+			}	else if (value instanceof NodeValue) {
 				result = this.convertNodeToString(value.asNode());
 			} else if (value instanceof RelationshipValue) {
 				result = this.convertRelationshipToString(value.asRelationship());
