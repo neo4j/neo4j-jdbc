@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.neo4j.jdbc.example.mybatis.mapper.ActorMapper">
+
+
+<select id="selectActorByBorn" parameterType="int" resultType="org.neo4j.jdbc.example.mybatis.bean.Actor">
+	MATCH (p:Person) WHERE p.born = #{born} RETURN id(p) AS NODE_ID, p.born AS BORN, p.name AS NAME
+</select>
+
+</mapper>
