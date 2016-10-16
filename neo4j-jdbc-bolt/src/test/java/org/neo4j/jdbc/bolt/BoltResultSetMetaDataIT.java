@@ -19,18 +19,25 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.jdbc.bolt.data.StatementData;
-
-import java.sql.*;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS
@@ -189,7 +196,7 @@ public class BoltResultSetMetaDataIT {
 
 				assertEquals(Types.INTEGER, rsm.getColumnType(2));
 				assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(2));
-				assertEquals(Integer.class.getName(), rsm.getColumnClassName(2));
+				assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
 
 				assertEquals(Types.FLOAT, rsm.getColumnType(3));
 				assertEquals(InternalTypeSystem.TYPE_SYSTEM.FLOAT().name(), rsm.getColumnTypeName(3));
@@ -267,16 +274,16 @@ public class BoltResultSetMetaDataIT {
 			ResultSetMetaData rsm = rs.getMetaData();
 
 			assertEquals(Object.class.getName(), rsm.getColumnClassName(1));
-			assertEquals(Integer.class.getName(), rsm.getColumnClassName(2));
+			assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
 			assertEquals(Array.class.getName(), rsm.getColumnClassName(3));
 			assertEquals(String.class.getName(), rsm.getColumnClassName(4));
 			assertEquals(String.class.getName(), rsm.getColumnClassName(5));
 			assertEquals(Object.class.getName(), rsm.getColumnClassName(6));
-			assertEquals(Integer.class.getName(), rsm.getColumnClassName(7));
+			assertEquals(Long.class.getName(), rsm.getColumnClassName(7));
 			assertEquals(String.class.getName(), rsm.getColumnClassName(8));
-			assertEquals(Integer.class.getName(), rsm.getColumnClassName(9));
+			assertEquals(Long.class.getName(), rsm.getColumnClassName(9));
 			assertEquals(Object.class.getName(), rsm.getColumnClassName(10));
-			assertEquals(Integer.class.getName(), rsm.getColumnClassName(11));
+			assertEquals(Long.class.getName(), rsm.getColumnClassName(11));
 			assertEquals(Array.class.getName(), rsm.getColumnClassName(12));
 			assertEquals(Boolean.class.getName(), rsm.getColumnClassName(13));
 		}

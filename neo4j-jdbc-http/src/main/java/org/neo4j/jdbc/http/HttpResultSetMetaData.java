@@ -19,6 +19,12 @@
  */
 package org.neo4j.jdbc.http;
 
+import java.sql.Array;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.List;
+import java.util.Map;
+
 import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.ResultSetMetaData;
 import org.neo4j.jdbc.http.driver.Neo4jResult;
@@ -27,22 +33,84 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 
 	private boolean      loggable = false;
 
+	private Neo4jResult result;
+	
 	/**
 	 * Default constructor.
 	 */
 	HttpResultSetMetaData(Neo4jResult result) {
 		super(result.columns);
+		this.result = result;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override public int getColumnType(int column) throws SQLException {
+		final Object object = ((List<Object>) this.result.rows.get(0).get("row")).get(column - 1);
+
+		if (object == null) {
+			return Types.NULL;
+		}
+		if (object instanceof String) {
+			return Types.VARCHAR;
+		}
+		if (object instanceof Integer || object instanceof Long) {
+			return Types.INTEGER;
+		}
+		if (object instanceof Boolean) {
+			return Types.BOOLEAN;
+		}
+		if (object instanceof Float || object instanceof Double) {
+			return Types.FLOAT;
+		}
+		if (object instanceof Map) {
+			return Types.JAVA_OBJECT;
+		}
+		if (object instanceof List) {
+			return Types.ARRAY;
+		}
+
+		return Types.JAVA_OBJECT;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override public String getColumnClassName(int column) throws SQLException {
+		final Object object = ((List<Object>) this.result.rows.get(0).get("row")).get(column - 1);
+		
+		if (object == null) {
+			return null;
+		}
+		if (object instanceof String) {
+			return String.class.getName();
+		}
+		if (object instanceof Integer || object instanceof Long) {
+			return Long.class.getName();
+		}
+		if (object instanceof Boolean) {
+			return Boolean.class.getName();
+		}
+		if (object instanceof Float || object instanceof Double) {
+			return Double.class.getName();
+		}
+		if (object instanceof Map) {
+			return Map.class.getName();
+		}
+		if (object instanceof List) {
+			return Array.class.getName();
+		}
+
+		return Object.class.getName();
+	}
+	
 	/*--------------------*/
 	/*       Logger       */
 	/*--------------------*/
-
+	
 	@Override public boolean isLoggable() {
 		return this.loggable;
 	}
-
+	
 	@Override public void setLoggable(boolean loggable) {
 		this.loggable = loggable;
 	}
 }
+

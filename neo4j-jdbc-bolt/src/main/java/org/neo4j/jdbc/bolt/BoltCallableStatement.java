@@ -23,7 +23,6 @@ import org.neo4j.jdbc.CallableStatement;
 
 /**
  * @author AgileLARUS
- *
  * @since 3.0.0
  */
 class BoltCallableStatement extends CallableStatement {

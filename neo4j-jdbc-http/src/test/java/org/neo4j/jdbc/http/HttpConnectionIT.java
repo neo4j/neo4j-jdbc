@@ -21,13 +21,20 @@
  */
 package org.neo4j.jdbc.http;
 
-import org.junit.Ignore;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import org.junit.Test;
 import org.neo4j.jdbc.http.test.Neo4jHttpIT;
-
-import java.sql.*;
-
-import static org.junit.Assert.*;
 
 public class HttpConnectionIT extends Neo4jHttpIT {
 
@@ -186,7 +193,7 @@ public class HttpConnectionIT extends Neo4jHttpIT {
 		assertFalse(writer.isValid(1));
 	}
 
-	@SuppressWarnings("deprecated")
+	@SuppressWarnings("deprecation")
 	@Test public void killingThreadQueryExecutionDoesNotInvalidateWrappedSession() throws SQLException {
 		try (Connection connection = DriverManager.getConnection(getJDBCUrl())) {
 			assertFalse(connection.isClosed());

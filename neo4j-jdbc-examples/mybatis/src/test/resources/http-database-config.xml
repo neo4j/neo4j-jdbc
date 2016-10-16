@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
-
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
 	<environments default="development">
 		<environment id="development">
 			<transactionManager type="JDBC" />
 			<dataSource type="POOLED">
-				<property name="driver" value="org.neo4j.jdbc.bolt.BoltDriver" />
-				<property name="url" value="jdbc:neo4j:bolt://localhost?noSsl" />
+				<property name="driver" value="org.neo4j.jdbc.Driver" />
+				<property name="url" value="jdbc:neo4j:http://localhost?noSsl" />
 				<property name="username" value="neo4j" />
-				<property name="password" value="neo4j" />
+				<property name="password" value="larus" />
 			</dataSource>
 		</environment>
 	</environments>

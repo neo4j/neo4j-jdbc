@@ -131,6 +131,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	protected boolean innerNext() throws SQLException {
 
 		checkClosed();
@@ -256,6 +257,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Array getArray(int columnIndex) throws SQLException {
 
 		checkClosed();

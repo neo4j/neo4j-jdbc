@@ -19,16 +19,16 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.v1.types.Type;
-import org.neo4j.jdbc.Loggable;
-import org.neo4j.jdbc.ResultSetMetaData;
-
 import java.sql.Array;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
+
+import org.neo4j.driver.internal.types.InternalTypeSystem;
+import org.neo4j.driver.v1.types.Type;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.ResultSetMetaData;
 
 /**
  * @author AgileLARUS
@@ -71,7 +71,7 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 			return String.class.getName();
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
-			return Integer.class.getName();
+			return Long.class.getName();
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
 			return Boolean.class.getName();
@@ -100,49 +100,54 @@ public class BoltResultSetMetaData extends ResultSetMetaData implements Loggable
 		if (InternalTypeSystem.TYPE_SYSTEM.LIST().equals(type)) {
 			return Array.class.getName();
 		}
+		if (InternalTypeSystem.TYPE_SYSTEM.NUMBER().equals(type)) {
+			// to be decided
+		}
 
 		return Object.class.getName();
 	}
 
 	@Override public int getColumnType(int column) throws SQLException {
 		Type type = this.columnType[column - 1];
-		int resultType = 0;
 
 		if (InternalTypeSystem.TYPE_SYSTEM.STRING().equals(type)) {
-			resultType = Types.VARCHAR;
+			return Types.VARCHAR;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.INTEGER().equals(type)) {
-			resultType = Types.INTEGER;
+			return Types.INTEGER;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().equals(type)) {
-			resultType = Types.BOOLEAN;
+			return Types.BOOLEAN;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.FLOAT().equals(type)) {
-			resultType = Types.FLOAT;
+			return Types.FLOAT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.NODE().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
+			return Types.JAVA_OBJECT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
+			return Types.JAVA_OBJECT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.PATH().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
+			return Types.JAVA_OBJECT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.MAP().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
+			return Types.JAVA_OBJECT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.ANY().equals(type)) {
-			resultType = Types.JAVA_OBJECT;
+			return Types.JAVA_OBJECT;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.NULL().equals(type)) {
-			resultType = Types.NULL;
+			return Types.NULL;
 		}
 		if (InternalTypeSystem.TYPE_SYSTEM.LIST().equals(type)) {
-			resultType = Types.ARRAY;
+			return Types.ARRAY;
+		}
+		if (InternalTypeSystem.TYPE_SYSTEM.NUMBER().equals(type)) {
+			// to be dediced
 		}
 
-		return resultType;
+		return Types.JAVA_OBJECT;
 	}
 
 	@Override public String getColumnTypeName(int column) throws SQLException {

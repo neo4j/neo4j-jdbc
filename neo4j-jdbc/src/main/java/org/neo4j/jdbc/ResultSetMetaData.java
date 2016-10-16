@@ -141,7 +141,7 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	@Override public int getColumnType(int column) throws SQLException {
 		return Types.VARCHAR;
 	}
-
+	
 	/**
 	 * By default, every field are string ...
 	 */
@@ -149,10 +149,23 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 		return "String";
 	}
 
+	/**
+	 * By default, every field are string ...
+	 */
+	@Override public String getColumnClassName(int column) throws SQLException {
+		return String.class.getName();
+	}
+	
+	/**
+	 * PLANNED FOR REL 3.1
+	 */
 	@Override public String getTableName(int column) throws SQLException {
 		return ""; //not applicable
 	}
 
+	/**
+	 * PLANNED FOR REL 3.1
+	 */
 	@Override public String getSchemaName(int column) throws SQLException {
 		return ""; //not applicable
 	}
@@ -174,10 +187,6 @@ public abstract class ResultSetMetaData implements java.sql.ResultSetMetaData {
 	}
 
 	@Override public boolean isDefinitelyWritable(int column) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public String getColumnClassName(int column) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

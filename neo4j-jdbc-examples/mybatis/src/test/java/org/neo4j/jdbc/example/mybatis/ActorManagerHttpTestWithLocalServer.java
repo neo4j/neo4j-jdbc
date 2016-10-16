@@ -19,26 +19,31 @@
  * Created on 24/4/2016
  *
  */
-package org.neo4j.jdbc.example.mybatis.util;
+package org.neo4j.jdbc.example.mybatis;
 
-import org.apache.ibatis.session.SqlSession;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.neo4j.jdbc.example.mybatis.bean.Actor;
-import org.neo4j.jdbc.example.mybatis.mapper.ActorMapper;
+import org.neo4j.jdbc.example.mybatis.util.ActorManager;
+import org.neo4j.jdbc.example.mybatis.util.ConnectionFactory;
 
 /**
  * @author AgileLARUS
  * @since 3.0.2
  */
-public class ActorManager {
-	public static Actor selectActorByBorn(int born) {
-		SqlSession sqlSession = ConnectionFactory.getSqlSessionFactory()
-				.openSession();
-		try {
-			ActorMapper categoryMapper = sqlSession
-					.getMapper(ActorMapper.class);
-			return categoryMapper.selectActorByBorn(born);
-		} finally {
-			sqlSession.close();
-		}
-	}
-}
+public class ActorManagerHttpTestWithLocalServer extends MybatisTest {
+
+	/*
+	 * Need to start a neo4j instance and load the "Movie" example graph  
+	 */
+	@Test
+	@Ignore
+	public void testSelectActorBornIn1973() {
+		ConnectionFactory.getSqlSessionFactory("http-database-config.xml");
+		
+		Actor actor = ActorManager.selectActorByBorn(1973);
+		Assert.assertNotNull(actor);
+		Assert.assertEquals(1973, actor.getBorn());
+		Assert.assertEquals("Dave Chappelle", actor.getName());
+	}}
