@@ -51,7 +51,7 @@ public class Neo4jStatement {
 	 * Escape method for cypher queries.
 	 *
 	 * @param query Cypher query
-	 * @return
+	 * @return ...
 	 */
 	public static String escapeQuery(String query) {
 		return query.replace('\"', '\'').replace('\n', ' ');
@@ -61,7 +61,9 @@ public class Neo4jStatement {
 	 * Convert the list of query to a JSON compatible with Neo4j endpoint.
 	 *
 	 * @param queries List of cypher queries.
+	 * @param mapper mapper
 	 * @return The JSON string that correspond to the body of the API call
+	 * @throws SQLException sqlexception
 	 */
 	public static String toJson(List<Neo4jStatement> queries, ObjectMapper mapper) throws SQLException {
 		StringBuilder sb = new StringBuilder();
@@ -82,6 +84,7 @@ public class Neo4jStatement {
 	 * @param statement    Cypher query
 	 * @param parameters   List of named params for the cypher query
 	 * @param includeStats Do we need to include stats
+	 * @throws SQLException sqlexception
 	 */
 	public Neo4jStatement(String statement, Map<String, Object> parameters, Boolean includeStats) throws SQLException {
 		if (statement != null && !statement.equals("")) {
@@ -92,7 +95,7 @@ public class Neo4jStatement {
 		if (parameters != null) {
 			this.parameters = parameters;
 		} else {
-			this.parameters = new HashMap();
+			this.parameters = new HashMap<String, Object>();
 		}
 		if (includeStats != null) {
 			this.includeStats = includeStats;
@@ -104,6 +107,8 @@ public class Neo4jStatement {
 	/**
 	 * Getter for Statements.
 	 * We escape the string for the API.
+	 * 
+	 * @return the statement
 	 */
 	public String getStatement() {
 		return escapeQuery(statement);

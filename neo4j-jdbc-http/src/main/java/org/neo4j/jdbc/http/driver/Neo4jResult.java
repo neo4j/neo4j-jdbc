@@ -25,22 +25,23 @@ import java.util.Map;
 /**
  * A POJO that store a Neo4j query result that match the cypher endpoint.
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class Neo4jResult {
 
 	/**
 	 * List of columns.
 	 */
-	public List<String> columns;
+	private List<String> columns;
 
 	/**
 	 * List of data row.
 	 */
-	public List<Map> rows;
+	private List<Map> rows;
 
 	/**
 	 * List fof stats
 	 */
-	public Map<String, Object> stats;
+	private Map<String, Object> stats;
 
 	/**
 	 * Constructor.
@@ -54,5 +55,45 @@ public class Neo4jResult {
 		if (map.containsKey("stats")) {
 			this.stats = (Map<String, Object>) map.get("stats");
 		}
+	}
+	
+	/**
+	 * @return the column names in the result
+	 */
+	public List<String> getColumns() {
+		return columns;
+	}
+	
+	/**
+	 * @return the rows in the result set
+	 */
+	public List<Map> getRows() {
+		return rows;
+	}
+
+	/**
+	 * @return the statistics for the statement
+	 */
+	public Map<String, Object> getStats() {
+		return stats;
+	}
+	
+	/**
+	 * Compute updated elements number.
+	 *
+	 * @return the number of updated elements
+	 */
+	public int getUpdateCount() {
+		int updated = 0;
+		if (this.stats != null && (boolean) this.stats.get("contains_updates")) {
+			updated += (int) stats.get("nodes_created");
+			updated += (int) stats.get("nodes_deleted");
+			updated += (int) stats.get("relationships_created");
+			updated += (int) stats.get("relationship_deleted");
+			//updated += (int) stats.get("properties_set");
+			//updated += (int) stats.get("labels_added");
+			//updated += (int) stats.get("labels_removed");
+		}
+		return updated;
 	}
 }

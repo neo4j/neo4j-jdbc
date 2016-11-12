@@ -33,7 +33,7 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 	/*          executeQuery        */
 	/*------------------------------*/
 
-	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
+	@Test public void executeQueryShouldRunAndReturnCorrectData() throws SQLException {
 		Connection connection = DriverManager.getConnection(getJDBCUrl());
 		PreparedStatement statement = connection.prepareStatement("MATCH (m:Movie) WHERE m.title= ? RETURN m.title");
 		statement.setString(1, "The Matrix");
@@ -46,10 +46,10 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 	}
 
 	/*------------------------------*/
-	/*          executeUpdate        */
+	/*          executeUpdate       */
 	/*------------------------------*/
 
-	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
+	@Test public void executeUpdateShouldRunAndReturnCorrectData() throws SQLException {
 		Connection connection = DriverManager.getConnection(getJDBCUrl());
 		PreparedStatement statement = connection.prepareStatement("CREATE (n:TestExecuteUpdateShouldExecuteAndReturnCorrectData {value:?})");
 		statement.setString(1, "AZERTYUIOP");
@@ -58,6 +58,28 @@ public class HttpPreparedStatementIT extends Neo4jHttpIT {
 		connection.close();
 	}
 
+	/*------------------------------*/
+	/*          execute             */
+	/*------------------------------*/
+	
+	@Test public void executeWithReadOnlyStatementShouldRunAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		PreparedStatement statement = connection.prepareStatement("MATCH (m:Movie) WHERE m.title= ? RETURN m.title");
+		statement.setString(1, "The Matrix");
+		
+		assertTrue(statement.execute());
+		connection.close();
+	}
+	
+	@Test public void executeWithUpdateStatementShouldRunAndReturnCorrectData() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		PreparedStatement statement = connection.prepareStatement("CREATE (n:TestExecuteUpdateShouldExecuteAndReturnCorrectData {value:?})");
+		statement.setString(1, "AZERTYUIOP");
+		
+		assertFalse(statement.execute());
+		connection.close();
+	}
+	
 	/*------------------------------*/
 	/*         executeBatch         */
 	/*------------------------------*/

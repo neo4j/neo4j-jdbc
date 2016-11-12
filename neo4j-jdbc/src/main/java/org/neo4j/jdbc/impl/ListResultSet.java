@@ -87,8 +87,8 @@ public class ListResultSet extends org.neo4j.jdbc.ResultSet {
 	}
 
 	@Override public String getString(int columnIndex) throws SQLException {
-
-		return this.get(columnIndex).toString();
+		Object value = this.get(columnIndex);
+		return value == null ? null : value.toString();
 	}
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
@@ -124,7 +124,8 @@ public class ListResultSet extends org.neo4j.jdbc.ResultSet {
 	}
 
 	@Override public String getString(String columnLabel) throws SQLException {
-		return this.get(columnLabel).toString();
+		Object value = this.get(columnLabel);
+		return value == null ? null : value.toString();
 	}
 
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {

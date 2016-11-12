@@ -45,8 +45,9 @@ public class BoltPreparedStatementIT {
 		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
-		ResultSet rs = statement.executeQuery();
-
+		statement.execute();
+		ResultSet rs = statement.getResultSet();
+		
 		assertTrue(rs.next());
 		assertEquals("testAgain", rs.getString(1));
 		assertFalse(rs.next());

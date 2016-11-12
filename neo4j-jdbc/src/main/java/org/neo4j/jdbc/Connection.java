@@ -341,6 +341,11 @@ public abstract class Connection implements java.sql.Connection {
 		checkClosed();
 	}
 
+	@Override public String getSchema() throws SQLException {
+		checkClosed();
+		return null;
+	}
+
 	/*-----------------------------*/
 	/*       Abstract method       */
 	/*-----------------------------*/
@@ -463,10 +468,6 @@ public abstract class Connection implements java.sql.Connection {
 	}
 
 	@Override public void setSchema(String schema) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public String getSchema() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

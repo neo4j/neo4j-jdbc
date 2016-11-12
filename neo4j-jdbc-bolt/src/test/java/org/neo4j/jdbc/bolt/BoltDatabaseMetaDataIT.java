@@ -21,16 +21,19 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Rule;
-import org.junit.Test;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * DatabaseMetaData IT Tests class
@@ -46,6 +49,26 @@ public class BoltDatabaseMetaDataIT {
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertEquals("user", connection.getMetaData().getUserName());
+
+		connection.close();
+	}
+
+	@Test public void getDatabaseLabelsShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),"user","password");
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:A {one:1, two:2})");
+			statement.execute("create (b:B {three:3, four:4})");
+		}
+		
+		ResultSet labels = connection.getMetaData().getTables(null, null, null, null);
+		
+		assertNotNull(labels);
+		assertTrue(labels.next());
+		assertEquals("A", labels.getString("TABLE_NAME"));
+		assertTrue(labels.next());
+		assertEquals("B", labels.getString("TABLE_NAME"));
+		assertTrue(!labels.next());
 
 		connection.close();
 	}

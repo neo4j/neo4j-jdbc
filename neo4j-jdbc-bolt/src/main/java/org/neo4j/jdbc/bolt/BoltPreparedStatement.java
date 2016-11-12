@@ -19,17 +19,25 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.*;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.summary.SummaryCounters;
+import static java.util.Arrays.copyOf;
 
 import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static java.util.Arrays.*;
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.exceptions.NoSuchRecordException;
+import org.neo4j.driver.v1.summary.SummaryCounters;
+import org.neo4j.jdbc.InstanceFactory;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.ParameterMetaData;
+import org.neo4j.jdbc.PreparedStatement;
+import org.neo4j.jdbc.ResultSetMetaData;
 
 /**
  * @author AgileLARUS
@@ -37,14 +45,12 @@ import static java.util.Arrays.*;
  */
 public class BoltPreparedStatement extends PreparedStatement implements Loggable {
 
-	private Transaction transaction;
 	private int[]       rsParams;
 	private boolean loggable = false;
 	private List<HashMap<String, Object>> batchParameters;
 
 	public BoltPreparedStatement(BoltConnection connection, String rawStatement, int... rsParams) {
 		super(connection, rawStatement);
-		this.transaction = connection.getTransaction();
 		this.rsParams = rsParams;
 		this.batchParameters = new ArrayList<>();
 	}
@@ -69,16 +75,20 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override public boolean execute() throws SQLException {
-		boolean result = false;
-		if (statement.contains("DELETE") || statement.contains("MERGE") || statement.contains("CREATE") || statement.contains("delete") || statement
-				.contains("merge") || statement.contains("create")) {
-			this.executeUpdate();
-		} else {
-			this.executeQuery();
-			result = true;
-		}
+		this.checkClosed();
+		StatementResult result = executeInternal();
 
-		return result;
+		boolean hasResultSet = hasResultSet(result);
+		if (hasResultSet) {
+			this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
+			this.currentUpdateCount = -1;
+		}
+		else {
+			this.currentResultSet = null;
+			SummaryCounters stats = result.consume().counters();
+			this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+		}
+		return hasResultSet;
 	}
 
 	private StatementResult executeInternal() throws SQLException {
@@ -93,8 +103,19 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		} else {
 			result = ((BoltConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
 		}
-
+		
 		return result;
+	}
+
+	private boolean hasResultSet(StatementResult statementResult) {
+		try {
+			statementResult.peek();
+			return true;
+		}
+		catch (NoSuchRecordException e)
+		{
+			return false;
+		}
 	}
 
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {

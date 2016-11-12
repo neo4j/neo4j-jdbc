@@ -37,6 +37,8 @@ public class HttpDriver extends BaseDriver {
 
 	/**
 	 * Default constructor.
+	 * 
+	 * @throws SQLException sqlexception
 	 */
 	public HttpDriver() throws SQLException {
 		super(JDBC_HTTP_PREFIX);

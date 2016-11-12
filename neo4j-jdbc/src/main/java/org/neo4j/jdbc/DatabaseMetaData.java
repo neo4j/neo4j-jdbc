@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
+/*able
+ * Copyritring ght (c) 2016 LARUS Business Automation [http://www.larus-ba.it]
  * <p>
  * This file is part of the "LARUS Integration Framework for Neo4j".
  * <p>
@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -30,6 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.neo4j.jdbc.impl.ListResultSet;
+import org.neo4j.jdbc.metadata.Column;
+import org.neo4j.jdbc.metadata.Table;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 /**
@@ -60,6 +64,16 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	protected String databaseVersion = "Unknown";
 
 	/**
+	 * Database labels.
+	 */
+	protected List<Table> databaseLabels;
+	
+	/**
+	 * Database keys.
+	 */
+	protected List<Column> databaseKeys;
+	
+	/**
 	 * The JDBC connection.
 	 */
 	private Connection connection;
@@ -88,6 +102,9 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 			this.driverVersion = "Unknown";
 			throw new RuntimeException(e);
 		}
+		
+		this.databaseLabels = new ArrayList<Table>();
+		this.databaseKeys = new ArrayList<Column>();
 	}
 
 	/**
@@ -232,23 +249,67 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public ResultSet getSchemas() throws SQLException {
+		//List<Object> schema = new ArrayList<Object>();
+		//schema.add("");
+		//schema.add("");
+		//List<List<Object>> schemas = new ArrayList<List<Object>>();
+		//schemas.add(schema);
+		//return new ListResultSet(schemas, Arrays.asList("TABLE_SCHEM", "TABLE_CATALOG"));
 		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getCatalogs() throws SQLException {
+		//List<Object> schema = new ArrayList<Object>();
+		//schema.add("");
+		//List<List<Object>> schemas = new ArrayList<List<Object>>();
+		//schemas.add(schema);
+		//return new ListResultSet(schemas, Arrays.asList("TABLE_CAT"));
 		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getTableTypes() throws SQLException {
-		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		List<Object> tableTypes = new ArrayList<Object>();
+		tableTypes.add("TABLE");
+		List<List<Object>> schemas = new ArrayList<List<Object>>();
+		schemas.add(tableTypes);
+		return new ListResultSet(schemas, Arrays.asList("TABLE_TYPE"));
+		//return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
-		return null;
+		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
-		return null;
+		if (this.databaseLabels == null || this.databaseLabels.size() == 0) {
+			return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		}
+		List<List<Object>> schemas = new ArrayList<List<Object>>();
+		for (Table databaseLabel : this.databaseLabels) {
+		  schemas.add(databaseLabel.toResultSetRow());
+		}
+		return new ListResultSet(schemas, Table.COLUMN_NAMES);
+	}
+
+	
+	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
+		//System.out.println(catalog);
+		//System.out.println(schemaPattern);
+		//System.out.println(tableNamePattern);
+		//System.out.println(columnNamePattern);
+		
+		if (this.databaseKeys == null || this.databaseKeys.size() == 0) {
+			return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		}
+		List<List<Object>> schemas = new ArrayList<List<Object>>();
+		for (Column databaseKey : this.databaseKeys) {
+			if (tableNamePattern == null || "".equals(tableNamePattern) || databaseKey.getTableName().equals(tableNamePattern)) { 
+		    if (columnNamePattern == null || "".equals(columnNamePattern) || databaseKey.getColumnName().equals(columnNamePattern)) {
+		    	schemas.add(databaseKey.toResultSetRow());
+		    }
+			}
+		}
+		return new ListResultSet(schemas, Column.COLUMN_NAMES);
 	}
 
 	@Override public String getSearchStringEscape() throws SQLException {
@@ -315,33 +376,33 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		return 0;
 	}
 
+	@Override public boolean allProceduresAreCallable() throws SQLException {
+		return true;
+	}
+	
+	@Override public boolean allTablesAreSelectable() throws SQLException {
+		return true;
+	}
+	
+	@Override public boolean nullsAreSortedHigh() throws SQLException {
+		return true;
+	}
+	
+	@Override public boolean nullsAreSortedLow() throws SQLException {
+		return false;
+	}
+	
+	@Override public boolean nullsAreSortedAtStart() throws SQLException {
+		return false;
+	}
+	
+	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
+		return false;
+	}
+	
 	/*---------------------------------*/
 	/*       Not implemented yet       */
 	/*---------------------------------*/
-
-	@Override public boolean allProceduresAreCallable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean allTablesAreSelectable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedHigh() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedLow() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedAtStart() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
 
 	@Override public boolean usesLocalFiles() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
@@ -468,27 +529,27 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean isCatalogAtStart() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSchemasInProcedureCalls() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsPositionedDelete() throws SQLException {
@@ -641,10 +702,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 
 	@Override public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
 			throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 

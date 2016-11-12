@@ -57,21 +57,19 @@ public class HttpStatement extends Statement implements Loggable {
 		// execute the query
 		Neo4jResponse response = ((HttpConnection) getConnection()).executeQuery(cypher, null, Boolean.TRUE);
 
-		if(response.hasErrors()) {
+		if (response.hasErrors()) {
 			throw new SQLException(response.displayErrors());
 		}
-
+		
 		// Parse stats
-		this.currentUpdateCount = 0;
-		this.currentUpdateCount = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(0));
+		this.currentUpdateCount = response.getFirstResult().getUpdateCount();
 
 		// Parse response data
-		this.currentResultSet = null;
-		if (response.results.get(0) != null) {
-			this.currentResultSet = new HttpResultSet(this,response.results.get(0));
-		}
+		boolean hasResultSets = response.hasResultSets();
 
-		return (this.currentResultSet != null);
+		this.currentResultSet = hasResultSets ? new HttpResultSet(this,response.getFirstResult()) : null;
+
+		return hasResultSets;
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {
@@ -106,22 +104,22 @@ public class HttpStatement extends Statement implements Loggable {
 		// execute batch queries
 		List<Map<String, Object>> parameters = new ArrayList<>();
 		for (int i = 0; i < batchStatements.size(); i++) {
-			parameters.add(new HashMap());
+			parameters.add(new HashMap<String, Object>());
 		}
 		Neo4jResponse response = ((HttpConnection) getConnection()).executeQueries(batchStatements, parameters, Boolean.TRUE);
 
 		// proceed the result
-		int[] result = new int[response.results.size()];
-		for (int i = 0; i < response.results.size(); i++) {
-			result[i] = ((HttpConnection) getConnection()).computeResultUpdateCount(response.results.get(i));
+		int[] result = new int[response.getResults().size()];
+		for (int i = 0; i < response.getResults().size(); i++) {
+			result[i] = response.getResults().get(i).getUpdateCount();
 		}
 
 		// we check if there is some error into the response => batch exception
-		if (response.errors != null && response.errors.size() > 0) {
-			throw new BatchUpdateException(result, response.errors.get(0).getCause());
+		if (response.getErrors() != null && response.getErrors().size() > 0) {
+			throw new BatchUpdateException(result, response.getErrors().get(0).getCause());
 		}
 		// if no exception and we don't have the same cardiniality between queries & result => batch exception
-		if (response.results.size() != batchStatements.size()) {
+		if (response.getResults().size() != batchStatements.size()) {
 			throw new BatchUpdateException("Result size doesn't match queries size", result);
 		}
 

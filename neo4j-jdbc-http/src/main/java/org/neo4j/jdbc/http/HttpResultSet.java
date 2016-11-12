@@ -93,7 +93,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 	 */
 	private Object get(int column) throws SQLDataException {
 
-		if (column < 1 || column > result.columns.size()) {
+		if (column < 1 || column > result.getColumns().size()) {
 			throw new SQLDataException("Column " + column + " is invalid");
 		}
 
@@ -136,8 +136,8 @@ public class HttpResultSet extends ResultSet implements Loggable {
 
 		checkClosed();
 		row++;
-		if (row < result.rows.size()) {
-			currentRow = (List<Object>) result.rows.get(row).get("row");
+		if (row < result.getRows().size()) {
+			currentRow = (List<Object>) result.getRows().get(row).get("row");
 			return true;
 		} else {
 			currentRow = null;
@@ -343,7 +343,7 @@ public class HttpResultSet extends ResultSet implements Loggable {
 		// The indexOf return -1 if not found
 		int index = -1;
 		if (columnLabel != null) {
-			index = result.columns.indexOf(columnLabel);
+			index = result.getColumns().indexOf(columnLabel);
 		}
 
 		// To respect the specification

@@ -19,20 +19,23 @@
  */
 package org.neo4j.jdbc.http;
 
-import org.neo4j.jdbc.*;
-import org.neo4j.jdbc.http.driver.CypherExecutor;
-import org.neo4j.jdbc.http.driver.Neo4jResponse;
-import org.neo4j.jdbc.http.driver.Neo4jResult;
-import org.neo4j.jdbc.http.driver.Neo4jStatement;
-import org.neo4j.jdbc.utils.ExceptionBuilder;
-import org.neo4j.jdbc.utils.UncaughtExceptionLogger;
-
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import org.neo4j.jdbc.Connection;
+import org.neo4j.jdbc.DatabaseMetaData;
+import org.neo4j.jdbc.InstanceFactory;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.ResultSet;
+import org.neo4j.jdbc.http.driver.CypherExecutor;
+import org.neo4j.jdbc.http.driver.Neo4jResponse;
+import org.neo4j.jdbc.http.driver.Neo4jStatement;
+import org.neo4j.jdbc.utils.ExceptionBuilder;
+import org.neo4j.jdbc.utils.UncaughtExceptionLogger;
 
 public class HttpConnection extends Connection implements Loggable {
 
@@ -45,7 +48,10 @@ public class HttpConnection extends Connection implements Loggable {
 	 *
 	 * @param host       Hostname of the Neo4j instance.
 	 * @param port       HTTP port of the Neo4j instance.
+	 * @param secure     Secure
 	 * @param properties Properties of the url connection.
+	 * @param url        Url
+	 * @throws SQLException sqlexption
 	 */
 	public HttpConnection(String host, Integer port, Boolean secure, Properties properties, String url) throws SQLException {
 		super(properties, url, ResultSet.CLOSE_CURSORS_AT_COMMIT);
@@ -58,7 +64,8 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @param queries    List of cypher queries
 	 * @param parameters Parameter of the cypher queries (match by index)
 	 * @param stats      Do we need to include stats ?
-	 * @return
+	 * @return ...
+	 * @throws SQLException sqlexception
 	 */
 	public Neo4jResponse executeQueries(final List<String> queries, List<Map<String, Object>> parameters, Boolean stats) throws SQLException {
 		checkClosed();
@@ -85,30 +92,13 @@ public class HttpConnection extends Connection implements Loggable {
 	 * @param query      Cypher query
 	 * @param parameters Parameter of the cypher query
 	 * @param stats      Do we need to include stats ?
-	 * @return
+	 * @return ...
+	 * @throws SQLException sqlexception
 	 */
 	public Neo4jResponse executeQuery(final String query, Map<String, Object> parameters, Boolean stats) throws SQLException {
 		checkClosed();
 		checkReadOnly(query);
 		return executor.executeQuery(new Neo4jStatement(query, parameters, stats));
-	}
-
-	/**
-	 * Calcul the number of updated elements.
-	 *
-	 * @param result A Neo4j result
-	 * @return
-	 */
-	public int computeResultUpdateCount(Neo4jResult result) {
-		int updated = 0;
-		if (result != null && result.stats != null) {
-			Map<String, Object> stats = result.stats;
-			updated += (int) stats.get("nodes_created");
-			updated += (int) stats.get("nodes_deleted");
-			updated += (int) stats.get("relationships_created");
-			updated += (int) stats.get("relationship_deleted");
-		}
-		return updated;
 	}
 
 	@Override public DatabaseMetaData getMetaData() throws SQLException {

@@ -87,6 +87,7 @@ public class CypherExecutor {
 	 * @param port       HTTP port of the Neo4j instance.
 	 * @param secure	 If the connection used SSL.
 	 * @param properties Properties of the url connection.
+	 * @throws SQLException
 	 */
 	public CypherExecutor(String host, Integer port, Boolean secure, Properties properties) throws SQLException {
 		this.secure = secure;
@@ -138,7 +139,7 @@ public class CypherExecutor {
 	 * Execute a list of cypher queries.
 	 *
 	 * @param queries List of cypher query object
-	 * @return A list of Neo4j response
+	 * @return the response for these queries
 	 */
 	public Neo4jResponse executeQueries(List<Neo4jStatement> queries) throws SQLException {
 		// Prepare the headers query
@@ -156,6 +157,7 @@ public class CypherExecutor {
 	 * Execute a cypher query.
 	 *
 	 * @param query Cypher query object.
+	 * @return the response for this query
 	 */
 	public Neo4jResponse executeQuery(Neo4jStatement query) throws SQLException {
 		List<Neo4jStatement> queries = new ArrayList<>();
@@ -165,7 +167,8 @@ public class CypherExecutor {
 
 	/**
 	 * Commit the current transaction.
-	 *
+	 * 
+	 * @throws SQLException sqlexception
 	 */
 	public void commit() throws SQLException {
 		if (this.getOpenTransactionId() > 0) {
@@ -188,7 +191,7 @@ public class CypherExecutor {
 			// Prepare the request
 			HttpDelete request = new HttpDelete(currentTransactionUrl);
 			Neo4jResponse response = this.executeHttpRequest(request);
-			if (response.code != 200 & response.hasErrors()) {
+			if (response.getCode() != 200 & response.hasErrors()) {
 				throw new SQLException(response.displayErrors());
 			}
 			this.currentTransactionUrl = this.transactionUrl;
@@ -197,6 +200,8 @@ public class CypherExecutor {
 
 	/**
 	 * Getter for AutoCommit.
+	 * 
+	 * @return true if statement are automatically committed
 	 */
 	public Boolean getAutoCommit() {
 		return autoCommit;
@@ -331,9 +336,9 @@ public class CypherExecutor {
 				// The transaction *was* rolled back server-side. Whether a transaction existed or not before, it should
 				// now be considered rolled back on this side as well.
 				this.currentTransactionUrl = this.transactionUrl;
-			} else if (result.location != null) {
+			} else if (result.getLocation() != null) {
 				// Here we reconstruct the location in case of a proxy, but in this case you should redirect write queries to the master.
-				Integer transactionId = this.getTransactionId(result.location);
+				Integer transactionId = this.getTransactionId(result.getLocation());
 				this.currentTransactionUrl = this.transactionUrl + "/" + transactionId;
 			}
 		} catch (Exception e) {

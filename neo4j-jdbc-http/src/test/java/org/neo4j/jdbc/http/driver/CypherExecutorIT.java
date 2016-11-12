@@ -48,7 +48,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		List<Neo4jStatement> queries = getRandomNeo4jStatementFromCSV("data/queries.csv", -1).get("object");
 		Neo4jResponse response = executor.executeQueries(queries);
 
-		assertEquals(queries.size(), response.results.size());
+		assertEquals(queries.size(), response.getResults().size());
 		assertFalse(response.hasErrors());
 	}
 
@@ -60,7 +60,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		executor.setAutoCommit(Boolean.TRUE);
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n:`" + randomLabel + "`) RETURN n", null, Boolean.FALSE));
-		assertEquals(0, response.results.get(0).rows.size());
+		assertEquals(0, response.getFirstResult().getRows().size());
 	}
 
 	@Test public void executeMultipleQueryThenCommitShouldSucceed() throws SQLException {
@@ -72,7 +72,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		executor.setAutoCommit(Boolean.TRUE);
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n:`" + randomLabel + "`) RETURN n", null, Boolean.FALSE));
-		assertEquals(2, response.results.get(0).rows.size());
+		assertEquals(2, response.getFirstResult().getRows().size());
 	}
 
 	@Test public void shouldRollbackAnEmptyTransaction() throws SQLException {
@@ -95,7 +95,7 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 
 		executor.setAutoCommit(Boolean.TRUE);
 		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("MATCH (n:`" + randomLabel + "`) RETURN n", null, Boolean.FALSE));
-		assertEquals(2, response.results.get(0).rows.size());
+		assertEquals(2, response.getFirstResult().getRows().size());
 	}
 
 	@Test public void getServerVersionShouldSucceed() throws SQLException {

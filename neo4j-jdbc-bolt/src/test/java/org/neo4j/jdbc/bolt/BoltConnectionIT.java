@@ -19,15 +19,23 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.bolt.data.StatementData;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import java.sql.*;
-
-import static org.junit.Assert.*;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
 /**
  * @author AgileLARUS
@@ -218,8 +226,18 @@ public class BoltConnectionIT {
 	/*------------------------------*/
 
 	@Test public void getMetaDataShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
-		assertNotNull(connection.getMetaData());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://localhost?noSsl", "neo4j", "larus");
+		DatabaseMetaData metaData = connection.getMetaData();
+		assertNotNull(metaData);
+		ResultSet resultSet = metaData.getColumns(null, null, null, null);
+		while (resultSet.next()) {
+			System.out.print(resultSet.getString(1) + " | ");
+			System.out.print(resultSet.getString(2) + " | ");
+			System.out.print(resultSet.getString(3) + " | ");
+			System.out.print(resultSet.getString(4) + " | ");
+			System.out.print(resultSet.getString(5) + " | ");
+			System.out.println();
+		}
 		connection.close();
 	}
 	

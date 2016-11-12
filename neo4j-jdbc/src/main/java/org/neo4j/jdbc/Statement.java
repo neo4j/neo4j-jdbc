@@ -19,11 +19,11 @@
  */
 package org.neo4j.jdbc;
 
-import org.neo4j.jdbc.utils.ExceptionBuilder;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+
+import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 /**
  * @author AgileLARUS

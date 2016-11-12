@@ -33,39 +33,41 @@ import java.util.Map;
 /**
  * A POJO that store a Neo4j response from the cypher endpoint.
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class Neo4jResponse {
 
 	/**
 	 * HTTP code
 	 */
-	public Integer code;
+	private Integer code;
 
 	/**
 	 * Transaction url receive in case of a ne one.
 	 */
-	public String location;
+	private String location;
 
 	/**
 	 * List of query result.
 	 */
-	public List<Neo4jResult> results;
+	private List<Neo4jResult> results;
 
 	/**
 	 * List of Neo4j error.
 	 */
-	public List<SQLException> errors;
+	private List<SQLException> errors;
 
 	/**
 	 * Construct the object directly from the HttpResponse.
 	 *
 	 * @param response Http response
 	 * @param mapper   Jackson object mapper
+	 * @throws SQLException sqlexception
 	 */
 	public Neo4jResponse(HttpResponse response, ObjectMapper mapper) throws SQLException {
 		// Parse response headers
 		if (response.getStatusLine() != null) {
 
-			// SAve the http code
+			// Save the http code
 			this.code = response.getStatusLine().getStatusCode();
 
 			// If status code is 201, then we retrieve the Location header to keep the transaction url.
@@ -110,9 +112,48 @@ public class Neo4jResponse {
 			throw new SQLException("Receive request without status code ...");
 		}
 	}
+	
+	/**
+	 * @return the code
+	 */
+	public Integer getCode() {
+		return this.code;
+	}
+	
+	/**
+	 * @return the location
+	 */
+	public String getLocation() {
+		return this.location;
+	}
+	
+	/**
+	 * @return the results
+	 */
+	public List<Neo4jResult> getResults() {
+		return this.results;
+	}
+	
+	/**
+	 * @return the first result
+	 */
+	public Neo4jResult getFirstResult() {
+		if (this.results != null && this.results.size() > 0)
+			return this.results.get(0);
+		else
+			return null;
+	}
+	
+	/**
+	 * @return the errors
+	 */
+	public List<SQLException> getErrors() {
+		return this.errors;
+	}
 
 	/**
 	 * Is this response has errors ?
+	 * @return true is there're errors
 	 */
 	public boolean hasErrors() {
 		Boolean errors = Boolean.FALSE;
@@ -123,8 +164,24 @@ public class Neo4jResponse {
 	}
 
 	/**
+	 * Has this response at least one result set ?
+	 * @return true is there're result sets
+	 */
+	public boolean hasResultSets() {
+		Boolean hasResultSets = Boolean.FALSE;
+		if (this.results != null && this.results.size() > 0) {
+			for (int i = 0; i < this.results.size() && !hasResultSets; i++) {
+				Neo4jResult result = this.results.get(i);
+				if ((result.getColumns() != null && result.getColumns().size() > 0) || (result.getRows() != null && result.getRows().size() > 0)) {
+				  hasResultSets = Boolean.TRUE;
+				}
+			}
+		}
+		return hasResultSets;
+	}
+
+	/**
 	 * Transform the error list to a string for display purpose.
-	 *
 	 * @return A String with all errors
 	 */
 	public String displayErrors() {

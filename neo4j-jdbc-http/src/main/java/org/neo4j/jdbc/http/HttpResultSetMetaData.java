@@ -39,13 +39,13 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 	 * Default constructor.
 	 */
 	HttpResultSetMetaData(Neo4jResult result) {
-		super(result.columns);
+		super(result.getColumns());
 		this.result = result;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override public int getColumnType(int column) throws SQLException {
-		final Object object = ((List<Object>) this.result.rows.get(0).get("row")).get(column - 1);
+		final Object object = ((List<Object>) this.result.getRows().get(0).get("row")).get(column - 1);
 
 		if (object == null) {
 			return Types.NULL;
@@ -74,7 +74,7 @@ public class HttpResultSetMetaData extends ResultSetMetaData implements Loggable
 
 	@SuppressWarnings("unchecked")
 	@Override public String getColumnClassName(int column) throws SQLException {
-		final Object object = ((List<Object>) this.result.rows.get(0).get("row")).get(column - 1);
+		final Object object = ((List<Object>) this.result.getRows().get(0).get("row")).get(column - 1);
 		
 		if (object == null) {
 			return null;
