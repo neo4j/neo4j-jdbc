@@ -19,20 +19,20 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.exceptions.ClientException;
-import org.neo4j.driver.v1.summary.SummaryCounters;
-import org.neo4j.jdbc.InstanceFactory;
-import org.neo4j.jdbc.Loggable;
-import org.neo4j.jdbc.Statement;
-
 import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.exceptions.NoSuchRecordException;
+import org.neo4j.driver.v1.summary.SummaryCounters;
+import org.neo4j.jdbc.InstanceFactory;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.Statement;
 
 /**
  * @author AgileLARUS
@@ -57,67 +57,77 @@ public class BoltStatement extends Statement implements Loggable {
 		this.batchStatements = new ArrayList<>();
 	}
 
-	private StatementResult executeInternal(String sql) throws SQLException {
-		this.checkClosed();
-
-		StatementResult result;
-		if (this.getConnection().getAutoCommit()) {
-			try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
-				result = t.run(sql);
-				t.success();
-			}
-		} else {
-			result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
-		}
-
-		return result;
-
-	}
-
-	//Mustn't return null
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
-		try {
 			StatementResult result = executeInternal(sql);
-			BoltResultSet resultSet = new BoltResultSet(this, result, this.rsParams);
-			this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, resultSet, this.isLoggable());
+
+			this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this, result, this.rsParams), this.isLoggable());
 			this.currentUpdateCount = -1;
 			return this.currentResultSet;
-		} catch (ClientException e) {
-			throw wrapException(e);
-		}
-	}
-
-	private SQLException wrapException(ClientException e) {
-		return new SQLException(e.neo4jErrorCode()+": "+e.getMessage(),e);
 	}
 
 	@Override public int executeUpdate(String sql) throws SQLException {
-		try {
 			StatementResult result = executeInternal(sql);
 
 			SummaryCounters stats = result.consume().counters();
 			this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
 			this.currentResultSet = null;
 			return this.currentUpdateCount;
-		} catch (ClientException e) {
-			throw wrapException(e);
-		}
 	}
 
 	@Override public boolean execute(String sql) throws SQLException {
-		try {
-			boolean result = false;
-			if (sql.contains("DELETE") || sql.contains("MERGE") || sql.contains("CREATE") || sql.contains("delete") || sql.contains("merge") || sql
-					.contains("create")) {
-				this.executeUpdate(sql);
-			} else {
-				this.executeQuery(sql);
-				result = true;
-			}
+		StatementResult result = executeInternal(sql);
 
-			return result;
-		} catch (ClientException e) {
-			throw wrapException(e);
+		boolean hasResultSet = false;
+		if (result != null) {
+			hasResultSet = hasResultSet(result);
+			if (hasResultSet) {
+				this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
+				this.currentUpdateCount = -1;
+			}
+			else {
+				this.currentResultSet = null;
+				SummaryCounters stats = result.consume().counters();
+				this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+			}
+		}
+		return hasResultSet;
+	}
+
+	private StatementResult executeInternal(String sql) throws SQLException {
+		this.checkClosed();
+
+		StatementResult result = null;
+		if (this.getConnection().getAutoCommit()) {
+			try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
+				result = t.run(sql);
+				t.success();
+			}
+			catch (Exception e) {
+				throw new SQLException(e);
+			}
+		} else {
+			try {
+				result = ((BoltConnection) this.getConnection()).getTransaction().run(sql);
+			} catch (Exception e) {
+				throw new SQLException(e);
+			}
+		}
+		return result;
+	}
+
+	private boolean hasResultSet(StatementResult statementResult) {
+		try {
+			if (statementResult != null) {
+					statementResult.peek();
+					return true;
+			}
+			else {
+				return false;
+			}
+		}
+		catch (NoSuchRecordException e)
+		{
+			return false;
 		}
 	}
 

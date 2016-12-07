@@ -305,6 +305,26 @@ public class BoltConnectionTest {
 			}
 		}
 	}
+	
+	@Ignore
+	@Test public void createStatementWithWrongSyntax() throws SQLException {
+		try (Connection connection = new BoltConnection(mockSessionOpen())) {
+			try {
+				boolean ret = connection.createStatement().execute("CREATE (n:Test {name:'TEST'}) SET n.p1 = 'A1', n.。p2 = 'A2';");
+				System.out.println("execute ret: " + ret);
+			} catch (Exception e) {
+				e.printStackTrace();
+				try {
+					if (connection != null) {
+						boolean ret = connection.createStatement().execute("CREATE (n:Test {name:'TEST'}) SET n.p1 = 'A1', n.p2 = 'A2';");
+						System.out.println("execute ret: " + ret);
+					}
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			}
+		}
+	}
 
 	/*------------------------------*/
 	/*        prepareStatement       */

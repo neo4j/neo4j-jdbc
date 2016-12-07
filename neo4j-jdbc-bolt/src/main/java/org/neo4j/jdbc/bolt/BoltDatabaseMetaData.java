@@ -52,7 +52,7 @@ class BoltDatabaseMetaData extends DatabaseMetaData {
 				Session session = conn.getSession();
 				getDatabaseVersion(session);
 				getDatabaseLabels(session);
-				getDatabasePropertiesByLabel(session);
+				getDatabaseProperties(session);
 				conn.close();
 			} catch (SQLException e) {
 				//e.printStackTrace();
@@ -80,10 +80,10 @@ class BoltDatabaseMetaData extends DatabaseMetaData {
 		}
 	}
 	
-	private void getDatabasePropertiesByLabel(Session session) {
+	private void getDatabaseProperties(Session session) {
 		if (this.databaseLabels != null) {
 			for (Table databaseLabel : this.databaseLabels) {
-				StatementResult rs = session.run("MATCH (n:" + databaseLabel.getTableName() + ") UNWIND keys(n) as key RETURN collect(distinct key) as keys");
+				StatementResult rs = session.run("MATCH (n:" + databaseLabel.getTableName() + ") WITH n LIMIT " + DatabaseMetaData.PROPERTY_SAMPLE_SIZE + " UNWIND keys(n) as key RETURN collect(distinct key) as keys");
 				if (rs != null) {
 					while (rs.hasNext()) {
 						Record record = rs.next();
@@ -91,7 +91,7 @@ class BoltDatabaseMetaData extends DatabaseMetaData {
 						if (keys != null) {
 							for (int i = 1; i <= keys.size(); i++) {
 								String key = (String) keys.get(i - 1);
-								this.databaseKeys.add(new Column(databaseLabel.getTableName(), key, i));
+								this.databaseProperties.add(new Column(databaseLabel.getTableName(), key, i));
 							}
 						}
 					}

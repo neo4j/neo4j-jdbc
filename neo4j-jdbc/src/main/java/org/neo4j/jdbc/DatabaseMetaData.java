@@ -48,6 +48,8 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	 */
 	private final static Pattern VERSION_REGEX = Pattern.compile("^(\\d+)\\.(\\d+)(\\.|-)?(.*)?$");
 
+	protected static int PROPERTY_SAMPLE_SIZE = 1000;
+	
 	/**
 	 * Name of the driver.
 	 */
@@ -71,7 +73,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/**
 	 * Database keys.
 	 */
-	protected List<Column> databaseKeys;
+	protected List<Column> databaseProperties;
 	
 	/**
 	 * The JDBC connection.
@@ -104,7 +106,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		}
 		
 		this.databaseLabels = new ArrayList<Table>();
-		this.databaseKeys = new ArrayList<Column>();
+		this.databaseProperties = new ArrayList<Column>();
 	}
 
 	/**
@@ -187,21 +189,22 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		return "\"";
 	}
 
-	// Here make a list of cypher keyword ?
 	@Override public String getSQLKeywords() throws SQLException {
-		return "";
+		return "UNION,ALL,OPTIONAL,MATCH,UNWIND,MERGE,ON,CREATE,SET,DELETE,DETACH,REMOVE,WITH,DISTINCT,RETURN,ORDER,BY,SKIP,LIMIT,"
+				+ "ASCENDING,ASC,DESCENDING,DESC,WHERE,AND,OR,XOR,NOT,FOREACH,CALL,USING,INDEX,DROP,CONSTRAINT,ASSERT,UNIQUE,LOAD,CSV,"
+				+ "FROM,HEADERS,AS,START,CASE,WHEN,THEN,ELSE,END,STARTS,ENDS,CONTAINS";
 	}
 
 	@Override public String getNumericFunctions() throws SQLException {
-		return "";
+		return "abs,rand,round,ceil,floor,sqrt,sign,sin,cos,tan,cot,asin,acos,atan,atan2,havesin,degrees,radians,pi,log10,log,exp,e";
 	}
 
 	@Override public String getStringFunctions() throws SQLException {
-		return "";
+		return "toString,replace,substring,left,right,trim,ltrim,rtrim,upper,lower,split,reverse,length";
 	}
 
 	@Override public String getTimeDateFunctions() throws SQLException {
-		return "";
+		return "timestamp";
 	}
 
 	@Override public String getExtraNameCharacters() throws SQLException {
@@ -209,7 +212,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public boolean supportsMultipleResultSets() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public String getCatalogTerm() throws SQLException {
@@ -217,7 +220,7 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public String getCatalogSeparator() throws SQLException {
-		return "";
+		return null;
 	}
 
 	@Override public boolean supportsSchemasInDataManipulation() throws SQLException {
@@ -249,21 +252,10 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	}
 
 	@Override public ResultSet getSchemas() throws SQLException {
-		//List<Object> schema = new ArrayList<Object>();
-		//schema.add("");
-		//schema.add("");
-		//List<List<Object>> schemas = new ArrayList<List<Object>>();
-		//schemas.add(schema);
-		//return new ListResultSet(schemas, Arrays.asList("TABLE_SCHEM", "TABLE_CATALOG"));
 		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getCatalogs() throws SQLException {
-		//List<Object> schema = new ArrayList<Object>();
-		//schema.add("");
-		//List<List<Object>> schemas = new ArrayList<List<Object>>();
-		//schemas.add(schema);
-		//return new ListResultSet(schemas, Arrays.asList("TABLE_CAT"));
 		return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
@@ -273,7 +265,6 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		List<List<Object>> schemas = new ArrayList<List<Object>>();
 		schemas.add(tableTypes);
 		return new ListResultSet(schemas, Arrays.asList("TABLE_TYPE"));
-		//return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
@@ -286,7 +277,11 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		}
 		List<List<Object>> schemas = new ArrayList<List<Object>>();
 		for (Table databaseLabel : this.databaseLabels) {
-		  schemas.add(databaseLabel.toResultSetRow());
+			if (tableNamePattern == null || "".equals(tableNamePattern) || databaseLabel.getTableName().equals(tableNamePattern)) {
+				if (types == null || (types.length > 0 && Arrays.asList(types).contains(databaseLabel.getTableType()))) {
+		      schemas.add(databaseLabel.toResultSetRow());
+				}
+			}
 		}
 		return new ListResultSet(schemas, Table.COLUMN_NAMES);
 	}
@@ -298,11 +293,11 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 		//System.out.println(tableNamePattern);
 		//System.out.println(columnNamePattern);
 		
-		if (this.databaseKeys == null || this.databaseKeys.size() == 0) {
+		if (this.databaseProperties == null || this.databaseProperties.size() == 0) {
 			return new ListResultSet(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 		}
 		List<List<Object>> schemas = new ArrayList<List<Object>>();
-		for (Column databaseKey : this.databaseKeys) {
+		for (Column databaseKey : this.databaseProperties) {
 			if (tableNamePattern == null || "".equals(tableNamePattern) || databaseKey.getTableName().equals(tableNamePattern)) { 
 		    if (columnNamePattern == null || "".equals(columnNamePattern) || databaseKey.getColumnName().equals(columnNamePattern)) {
 		    	schemas.add(databaseKey.toResultSetRow());

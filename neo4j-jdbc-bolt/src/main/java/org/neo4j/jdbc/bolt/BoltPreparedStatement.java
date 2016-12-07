@@ -56,7 +56,6 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
-		this.checkClosed();
 		StatementResult result = executeInternal();
 
 		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
@@ -65,7 +64,6 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override public int executeUpdate() throws SQLException {
-		this.checkClosed();
 		StatementResult result = executeInternal();
 
 		SummaryCounters stats = result.consume().counters();
@@ -75,7 +73,6 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	@Override public boolean execute() throws SQLException {
-		this.checkClosed();
 		StatementResult result = executeInternal();
 
 		boolean hasResultSet = hasResultSet(result);
