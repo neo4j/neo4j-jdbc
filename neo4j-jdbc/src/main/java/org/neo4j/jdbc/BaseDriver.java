@@ -49,6 +49,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 	 * Constructor for extended class.
 	 *
 	 * @param prefix Prefix of the driver for the connection url.
+	 * @throws SQLException sqlexception
 	 */
 	protected BaseDriver(String prefix) throws SQLException {
 		this.DRIVER_PREFIX = prefix;
@@ -102,6 +103,7 @@ public abstract class BaseDriver implements java.sql.Driver {
 	 *
 	 * @param url The url to parse
 	 * @param params The properties
+	 * @return the properties
 	 */
 	protected Properties parseUrlProperties(String url, Properties params) {
 		Properties properties = new Properties();

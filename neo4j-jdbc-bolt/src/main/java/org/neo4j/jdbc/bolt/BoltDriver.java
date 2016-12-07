@@ -39,6 +39,7 @@ public class BoltDriver extends BaseDriver {
 
 	/**
 	 * Default constructor.
+	 * @throws SQLException sqlexception
 	 */
 	public BoltDriver() throws SQLException {
 		super(JDBC_BOLT_PREFIX);

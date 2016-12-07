@@ -45,7 +45,7 @@ public abstract class CallableStatement implements java.sql.CallableStatement {
 	/**
 	 * Check if this connection is closed or not.
 	 * If it's closed, then we throw a SQLException, otherwise we do nothing.
-	 *
+	 * @throws SQLException sqlexception
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {

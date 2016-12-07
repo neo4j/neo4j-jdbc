@@ -31,7 +31,6 @@ import java.util.Map;
 
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.exceptions.NoSuchRecordException;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.neo4j.jdbc.InstanceFactory;
 import org.neo4j.jdbc.Loggable;
@@ -75,15 +74,20 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	@Override public boolean execute() throws SQLException {
 		StatementResult result = executeInternal();
 
-		boolean hasResultSet = hasResultSet(result);
+		boolean hasResultSet = hasResultSet();
 		if (hasResultSet) {
 			this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
 			this.currentUpdateCount = -1;
 		}
 		else {
 			this.currentResultSet = null;
-			SummaryCounters stats = result.consume().counters();
-			this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+			try {
+			  SummaryCounters stats = result.consume().counters();
+			  this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+			}
+			catch (Exception e) {
+				throw new SQLException(e);
+			}
 		}
 		return hasResultSet;
 	}
@@ -93,28 +97,30 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 
 		StatementResult result;
 		if (this.getConnection().getAutoCommit()) {
-			Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction();
-			result = t.run(this.statement, this.parameters);
-			t.success();
-			t.close();
+			try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
+			  result = t.run(this.statement, this.parameters);
+			  t.success();
+			  t.close();
+			}
+			catch (Exception e) {
+				throw new SQLException(e.getMessage());
+			}
 		} else {
-			result = ((BoltConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
+			try {
+			  result = ((BoltConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
+			}
+			catch (Exception e) {
+				throw new SQLException(e.getMessage());
+			}
 		}
 		
 		return result;
 	}
 
-	private boolean hasResultSet(StatementResult statementResult) {
-		try {
-			statementResult.peek();
-			return true;
-		}
-		catch (NoSuchRecordException e)
-		{
-			return false;
-		}
+	private boolean hasResultSet() {
+		return this.statement != null && this.statement.toLowerCase().contains("return");
 	}
-
+	
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
 		this.checkClosed();
 		ParameterMetaData pmd = new BoltParameterMetaData(this);

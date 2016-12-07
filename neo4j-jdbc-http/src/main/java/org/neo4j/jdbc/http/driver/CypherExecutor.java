@@ -87,7 +87,7 @@ public class CypherExecutor {
 	 * @param port       HTTP port of the Neo4j instance.
 	 * @param secure	 If the connection used SSL.
 	 * @param properties Properties of the url connection.
-	 * @throws SQLException
+	 * @throws SQLException sqlexception
 	 */
 	public CypherExecutor(String host, Integer port, Boolean secure, Properties properties) throws SQLException {
 		this.secure = secure;
@@ -140,6 +140,7 @@ public class CypherExecutor {
 	 *
 	 * @param queries List of cypher query object
 	 * @return the response for these queries
+	 * @throws SQLException sqlexception
 	 */
 	public Neo4jResponse executeQueries(List<Neo4jStatement> queries) throws SQLException {
 		// Prepare the headers query
@@ -158,6 +159,7 @@ public class CypherExecutor {
 	 *
 	 * @param query Cypher query object.
 	 * @return the response for this query
+	 * @throws SQLException sqlexception
 	 */
 	public Neo4jResponse executeQuery(Neo4jStatement query) throws SQLException {
 		List<Neo4jStatement> queries = new ArrayList<>();
@@ -210,7 +212,8 @@ public class CypherExecutor {
 	/**
 	 * Setter for autocommit.
 	 *
-	 * @param autoCommit
+	 * @param autoCommit enable/disable autocommit 
+	 * @throws SQLException sqlexception
 	 */
 	public void setAutoCommit(Boolean autoCommit) throws SQLException {
 		// we only do something if there is a change
@@ -264,6 +267,7 @@ public class CypherExecutor {
 
 	/**
 	 * Close all thing in this object.
+	 * @throws SQLException sqlexception
 	 */
 
 	public void close() throws SQLException {

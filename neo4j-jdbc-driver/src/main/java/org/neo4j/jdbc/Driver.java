@@ -44,6 +44,7 @@ public class Driver extends BaseDriver {
 
 	/**
 	 * Default constructor.
+	 * @throws SQLException sqlexception
 	 */
 	public Driver() throws SQLException {
 		super(null);

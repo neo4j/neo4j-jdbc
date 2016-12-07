@@ -28,7 +28,6 @@ import java.util.List;
 
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.exceptions.NoSuchRecordException;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.neo4j.jdbc.InstanceFactory;
 import org.neo4j.jdbc.Loggable;
@@ -79,15 +78,20 @@ public class BoltStatement extends Statement implements Loggable {
 
 		boolean hasResultSet = false;
 		if (result != null) {
-			hasResultSet = hasResultSet(result);
+			hasResultSet = hasResultSet(sql);
 			if (hasResultSet) {
 				this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
 				this.currentUpdateCount = -1;
 			}
 			else {
 				this.currentResultSet = null;
-				SummaryCounters stats = result.consume().counters();
-				this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+				try {
+					SummaryCounters stats = result.consume().counters();
+					this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+				}
+				catch (Exception e) {
+					throw new SQLException(e);
+				}
 			}
 		}
 		return hasResultSet;
@@ -101,6 +105,7 @@ public class BoltStatement extends Statement implements Loggable {
 			try (Transaction t = ((BoltConnection) this.getConnection()).getSession().beginTransaction()) {
 				result = t.run(sql);
 				t.success();
+				t.close();
 			}
 			catch (Exception e) {
 				throw new SQLException(e);
@@ -115,20 +120,8 @@ public class BoltStatement extends Statement implements Loggable {
 		return result;
 	}
 
-	private boolean hasResultSet(StatementResult statementResult) {
-		try {
-			if (statementResult != null) {
-					statementResult.peek();
-					return true;
-			}
-			else {
-				return false;
-			}
-		}
-		catch (NoSuchRecordException e)
-		{
-			return false;
-		}
+	private boolean hasResultSet(String sql) {
+		return sql != null && sql.toLowerCase().contains("return");
 	}
 
 	@Override public int getResultSetConcurrency() throws SQLException {

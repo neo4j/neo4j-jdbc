@@ -63,7 +63,7 @@ public class BoltConnection extends Connection implements Loggable {
 	/**
 	 * Getter for transaction.
 	 *
-	 * @return
+	 * @return the transaction
 	 */
 	public Transaction getTransaction() {
 		return this.transaction;
@@ -72,7 +72,7 @@ public class BoltConnection extends Connection implements Loggable {
 	/**
 	 * Getter for session.
 	 *
-	 * @return
+	 * @return the internal session
 	 */
 	public Session getSession() {
 		return this.session;
