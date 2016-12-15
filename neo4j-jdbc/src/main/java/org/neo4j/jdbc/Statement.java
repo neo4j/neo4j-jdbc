@@ -56,6 +56,7 @@ public abstract class Statement implements java.sql.Statement {
 	/**
 	 * Check if this statement is closed or not.
 	 * If it is, we throw an exception.
+	 * @throws SQLException sqlexception
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {
@@ -173,8 +174,8 @@ public abstract class Statement implements java.sql.Statement {
 
 	/**
 	 * Added just for value memorization
-	 * @return int
-	 * @throws SQLException
+	 * @return the current query timeout limit in seconds; zero means there is no limit
+	 * @throws SQLException if a database error occurs
 	 */
 	@Override public int getQueryTimeout() throws SQLException {
 		return this.queryTimeout;
@@ -182,8 +183,8 @@ public abstract class Statement implements java.sql.Statement {
 
 	/**
 	 * Added just for value memorization
-	 * @param seconds int
-	 * @throws SQLException
+   * @param seconds the new query timeout limit in seconds; zero means there is no limit
+   * @exception SQLException if a database error occurs
 	 */
 	@Override public void setQueryTimeout(int seconds) throws SQLException {
 		this.queryTimeout = seconds;

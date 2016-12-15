@@ -36,7 +36,7 @@ public class StatementData {
 	public static String STATEMENT_CREATE_TWO_PROPERTIES                = "CREATE (n:User {name:\"test\", surname:\"testAgain\"});";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES_REV            = "MATCH (n:USer {name:\"test\", surname:\"testAgain\"}) DETACH DELETE n;";
 	public static String STATEMENT_MATCH_ALL_STRING_PARAMETRIC          = "MATCH (n) WHERE n.name = ? RETURN n.surname;";
-	public static String STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED 	= "MATCH (n) WHERE n.name = {1} RETURN n.surname;";
+	public static String STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED    = "MATCH (n) WHERE n.name = {1} RETURN n.surname;";
 	public static String STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS      = "MATCH (n:User) CREATE (n)-[:CONNECTED_IN {date:1459248821051}]->(:Session {status:true});";
 	public static String STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV  = "MATCH (s:Session) DETACH DELETE s;";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC     = "CREATE (n:User {name:?, surname:?});";

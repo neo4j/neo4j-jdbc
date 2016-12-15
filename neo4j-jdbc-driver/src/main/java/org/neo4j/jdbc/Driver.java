@@ -37,6 +37,7 @@ public class Driver extends BaseDriver {
 	/**
 	 * Prefix/class hashMap of all available Driver.
 	 */
+	@SuppressWarnings({ "rawtypes", "serial" })
 	private final Map<String, Class> DRIVERS = new HashMap<String, Class>() {{
 		put(BoltDriver.JDBC_BOLT_PREFIX, BoltDriver.class);
 		put(HttpDriver.JDBC_HTTP_PREFIX, HttpDriver.class);
@@ -59,6 +60,7 @@ public class Driver extends BaseDriver {
 	 * @param url The JDBC url
 	 * @return The driver
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private BaseDriver getDriver(String url) throws SQLException {
 		BaseDriver driver = null;
 
@@ -86,8 +88,8 @@ public class Driver extends BaseDriver {
 			throw new SQLException(e);
 		}
 
-		if(driver == null) {
-			throw new SQLException("Cannot find a suitable driver from the url");
+		if (driver == null) {
+			throw new SQLException("Cannot find a suitable driver from the url " + url);
 		}
 
 		return driver;

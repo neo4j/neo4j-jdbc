@@ -88,6 +88,9 @@ public abstract class DatabaseMetaData implements java.sql.DatabaseMetaData {
 	/**
 	 * Default constructor.
 	 * Permit to load version and driver name from a property file.
+	 * 
+	 * @param connection the connection
+	 * @param debug true if debug mode is on
 	 */
 	public DatabaseMetaData(Connection connection, boolean debug) {
 		this.connection = connection;

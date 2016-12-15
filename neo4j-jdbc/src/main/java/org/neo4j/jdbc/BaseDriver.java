@@ -19,15 +19,18 @@
  */
 package org.neo4j.jdbc;
 
-import org.neo4j.jdbc.utils.ExceptionBuilder;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.sql.*;
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 /**
  * @author AgileLARUS

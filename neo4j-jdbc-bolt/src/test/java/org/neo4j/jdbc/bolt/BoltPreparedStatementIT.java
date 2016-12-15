@@ -19,14 +19,23 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.bolt.data.StatementData;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
-
-import java.sql.*;
-
-import static org.junit.Assert.*;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
 /**
  * @author AgileLARUS
@@ -45,8 +54,7 @@ public class BoltPreparedStatementIT {
 		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
-		statement.execute();
-		ResultSet rs = statement.getResultSet();
+		ResultSet rs = statement.executeQuery();
 		
 		assertTrue(rs.next());
 		assertEquals("testAgain", rs.getString(1));

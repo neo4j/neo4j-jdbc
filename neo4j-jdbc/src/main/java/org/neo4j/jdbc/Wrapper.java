@@ -27,7 +27,8 @@ import java.sql.SQLException;
  */
 class Wrapper {
 
-	@SuppressWarnings("unchecked") public static <T> T unwrap(Class<T> iface, Object obj) throws SQLException {
+	@SuppressWarnings("unchecked")
+	public static <T> T unwrap(Class<T> iface, Object obj) throws SQLException {
 		if (!isWrapperFor(iface, obj.getClass())) {
 			//Current class is not implementing the requested class
 			throw new SQLException();
@@ -36,6 +37,7 @@ class Wrapper {
 		return (T) obj;
 	}
 
+	@SuppressWarnings("rawtypes")
 	public static boolean isWrapperFor(Class<?> iface, Class cls) throws SQLException {
 		if (cls.getName().equals(iface.getName())) {
 			//iface is the cls class
