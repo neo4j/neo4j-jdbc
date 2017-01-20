@@ -124,6 +124,16 @@ public class CypherExecutorIT extends Neo4jHttpIT {
 		assertEquals(Integer.valueOf(-1), executor.getOpenTransactionId());
 	}
 
+	@Test public void executeBadQueryOnAutocommitShoudMotChangeTransactionEndpoint() throws Exception {
+		executor.setAutoCommit(Boolean.TRUE);
+		Neo4jResponse response = executor.executeQuery(new Neo4jStatement("QWERTYUIOP", null, Boolean.FALSE));
+		assertNull(response.getLocation());
+		assertTrue(response.hasErrors());
+
+		response = executor.executeQuery(new Neo4jStatement("MATCH (n) RETURN n", null, Boolean.FALSE));
+		assertNull(response.getLocation());
+	}
+
 	@After public void after() throws SQLException {
 		executor.close();
 	}

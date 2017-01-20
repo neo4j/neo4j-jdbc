@@ -169,7 +169,7 @@ public class CypherExecutor {
 
 	/**
 	 * Commit the current transaction.
-	 * 
+	 *
 	 * @throws SQLException sqlexception
 	 */
 	public void commit() throws SQLException {
@@ -202,7 +202,7 @@ public class CypherExecutor {
 
 	/**
 	 * Getter for AutoCommit.
-	 * 
+	 *
 	 * @return true if statement are automatically committed
 	 */
 	public Boolean getAutoCommit() {
@@ -212,7 +212,7 @@ public class CypherExecutor {
 	/**
 	 * Setter for autocommit.
 	 *
-	 * @param autoCommit enable/disable autocommit 
+	 * @param autoCommit enable/disable autocommit
 	 * @throws SQLException sqlexception
 	 */
 	public void setAutoCommit(Boolean autoCommit) throws SQLException {
@@ -336,14 +336,16 @@ public class CypherExecutor {
 		// Make the request
 		try (CloseableHttpResponse response = http.execute(request)) {
 			result = new Neo4jResponse(response, mapper);
-			if (result.hasErrors()) {
-				// The transaction *was* rolled back server-side. Whether a transaction existed or not before, it should
-				// now be considered rolled back on this side as well.
-				this.currentTransactionUrl = this.transactionUrl;
-			} else if (result.getLocation() != null) {
-				// Here we reconstruct the location in case of a proxy, but in this case you should redirect write queries to the master.
-				Integer transactionId = this.getTransactionId(result.getLocation());
-				this.currentTransactionUrl = this.transactionUrl + "/" + transactionId;
+			if(!getAutoCommit()) {
+				if (result.hasErrors()) {
+					// The transaction *was* rolled back server-side. Whether a transaction existed or not before, it should
+					// now be considered rolled back on this side as well.
+					this.currentTransactionUrl = this.transactionUrl;
+				} else if (result.getLocation() != null) {
+					// Here we reconstruct the location in case of a proxy, but in this case you should redirect write queries to the master.
+					Integer transactionId = this.getTransactionId(result.getLocation());
+					this.currentTransactionUrl = this.transactionUrl + "/" + transactionId;
+				}
 			}
 		} catch (Exception e) {
 			throw new SQLException(e);
