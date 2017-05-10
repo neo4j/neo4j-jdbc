@@ -54,9 +54,13 @@ public class BoltDriver extends BaseDriver {
 			String boltUrl = url.replace(BaseDriver.JDBC_PREFIX, "").replaceAll("^(" + JDBC_BOLT_PREFIX + ":)([^/])", "$1//$2");
 			try {
 				Properties info = parseUrlProperties(boltUrl, props);
+				// todo remove all parameters from URL except for routingContext
+				// non-bolt+routing remove everything
+				//
 				Config.ConfigBuilder builder = build();
+// TODO fix to remove all parameters from URL see above
 				if (info.containsKey("nossl")) {
-					builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+					builder = builder.withoutEncryption();
 				}
 				Config config = builder.toConfig();
 				AuthToken authToken = getAuthToken(info);

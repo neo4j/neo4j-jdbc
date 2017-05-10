@@ -4,6 +4,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.harness.internal.Ports;
@@ -41,13 +42,15 @@ public class Neo4jBoltRule implements TestRule {
 
 			@Override public void evaluate() throws Throwable {
 				Map<Setting<?>, String> settings = new HashMap<>();
-				settings.put(boltConnector("0").enabled, "true");
-				settings.put(boltConnector("0").encryption_level, DISABLED.name());
+				GraphDatabaseSettings.BoltConnector boltConnector = boltConnector("0");
+				settings.put(boltConnector.type, GraphDatabaseSettings.Connector.ConnectorType.BOLT.name());
+				settings.put(boltConnector.enabled, "true");
+				settings.put(boltConnector.encryption_level, DISABLED.name());
 				settings.put(GraphDatabaseSettings.auth_enabled, Boolean.toString(requireAuth));
 
 				InetSocketAddress inetAddr = Ports.findFreePort("localhost", new int[] { 7687, 64 * 1024 - 1 });
 				hostAndPort = String.format("%s:%d", inetAddr.getHostName(), inetAddr.getPort());
-				settings.put(boltConnector("0").address, hostAndPort);
+				settings.put(boltConnector.address, hostAndPort);
 				graphDatabase = new TestGraphDatabaseFactory().newImpermanentDatabase(settings);
 				try {
 					statement.evaluate();
@@ -59,7 +62,7 @@ public class Neo4jBoltRule implements TestRule {
 	}
 
 	public String getBoltUrl() {
-		return String.format("bolt://%s", hostAndPort); // ?noSsl
+		return String.format("bolt://%s?nossl", hostAndPort);
 	}
 
 	public GraphDatabaseService getGraphDatabase() {
