@@ -20,14 +20,17 @@
 package org.neo4j.jdbc.bolt.data;
 
 import org.junit.BeforeClass;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.neo4j.driver.internal.*;
 import org.neo4j.driver.internal.spi.Connection;
-import org.neo4j.driver.internal.spi.StreamCollector;
 import org.neo4j.driver.internal.value.FloatValue;
 import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.StringValue;
+import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.Values;
 import org.neo4j.driver.v1.types.Entity;
 import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
@@ -35,8 +38,9 @@ import org.neo4j.driver.v1.types.Path;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
-import static org.neo4j.driver.v1.Values.values;
+import static org.mockito.Mockito.when;
 
 /**
  * @author AgileLARUS
@@ -255,11 +259,35 @@ public class ResultSetData {
 	 * @param data
 	 * @return
 	 */
-	public static StatementResult buildResultCursor(String[] keys, List<Object[]> data) {
+	public static StatementResult buildResultCursor(String[] keys, final List<Object[]> data) {
 
 		try {
 			Connection connection = mock(Connection.class);
 
+			StatementResult cursor = mock(StatementResult.class);
+			final List<String> columns = asList(keys);
+			when(cursor.keys()).thenReturn(columns);
+
+			final Iterator<Object[]> it = data.iterator();
+			when(cursor.hasNext()).thenAnswer(new Answer<Boolean>() {
+				@Override
+				public Boolean answer(InvocationOnMock invocationOnMock) throws Throwable {
+					return it.hasNext();
+				}
+			});
+			when (cursor.next()).thenAnswer(new Answer<Record>() {
+				@Override
+				public Record answer(InvocationOnMock invocationOnMock) throws Throwable {
+					return new InternalRecord(columns, Values.values(it.next()));
+				}
+			});
+			when (cursor.peek()).thenAnswer(new Answer<Record>() {
+				@Override
+				public Record answer(InvocationOnMock invocationOnMock) throws Throwable {
+					return new InternalRecord(columns, Values.values(data.get(0)));
+				}
+			});
+/*
 			InternalStatementResult cursor = new InternalStatementResult(connection, null);
 			StreamCollector responseCollector = (StreamCollector) runResponseCollectorMethod.invoke(cursor);
 			responseCollector.keys(keys);
@@ -274,7 +302,7 @@ public class ResultSetData {
 			connection.run("<unknown>", ParameterSupport.NO_PARAMETERS, responseCollector);
 			connection.pullAll(pullAllResponseCollector);
 			//connection.sendAll();
-
+*/
 			return cursor;
 		} catch (Exception e) {
 			throw new RuntimeException(e);

@@ -24,8 +24,9 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.internal.InternalSession;
-import org.neo4j.driver.internal.logging.DevNullLogger;
+import org.neo4j.driver.internal.NetworkSession;
+import org.neo4j.driver.internal.logging.DevNullLogging;
+import org.neo4j.driver.v1.AccessMode;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
@@ -119,7 +120,7 @@ public class BoltConnectionTest {
 	@Test public void closeShouldThrowExceptionWhenDatabaseAccessErrorOccurred() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Session session = new InternalSession(null, new DevNullLogger());
+		Session session = new NetworkSession(null, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING);
 		Connection connection = new BoltConnection(session);
 		connection.close();
 	}
@@ -474,7 +475,7 @@ public class BoltConnectionTest {
 	@Ignore @Test public void setAutoCommitShouldThrowExceptionOnDatabaseAccessErrorOccurred() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Session session = new InternalSession(null, new DevNullLogger());
+		Session session = new NetworkSession(null, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING);
 		Connection connection = new BoltConnection(session);
 		connection.setAutoCommit(true);
 	}
