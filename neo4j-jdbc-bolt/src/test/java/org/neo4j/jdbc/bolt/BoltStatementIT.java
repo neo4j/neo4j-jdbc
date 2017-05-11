@@ -54,7 +54,7 @@ public class BoltStatementIT {
 	/*------------------------------*/
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
 
@@ -67,7 +67,7 @@ public class BoltStatementIT {
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatement() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 
@@ -83,7 +83,7 @@ public class BoltStatementIT {
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatementAndCreatedWithParams() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement(org.neo4j.jdbc.ResultSet.TYPE_FORWARD_ONLY, org.neo4j.jdbc.ResultSet.CONCUR_READ_ONLY);
 		connection.setAutoCommit(false);
 
@@ -101,7 +101,7 @@ public class BoltStatementIT {
 	/*         executeUpdate        */
 	/*------------------------------*/
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		int lines = statement.executeUpdate(StatementData.STATEMENT_CREATE);
 		assertEquals(1, lines);
@@ -119,7 +119,7 @@ public class BoltStatementIT {
 	/*            execute           */
 	/*------------------------------*/
 	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
 		assertFalse(result);
@@ -131,7 +131,7 @@ public class BoltStatementIT {
 	}
 
 	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		boolean result = statement.execute(StatementData.STATEMENT_MATCH_ALL);
 		assertTrue(result);
@@ -143,7 +143,7 @@ public class BoltStatementIT {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Invalid input");
 
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 
 		Statement statement = connection.createStatement();
 		try {
@@ -158,7 +158,7 @@ public class BoltStatementIT {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Invalid input");
 
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		connection.setAutoCommit(false);
 
 		Statement statement = connection.createStatement();
@@ -174,7 +174,7 @@ public class BoltStatementIT {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(true);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -191,7 +191,7 @@ public class BoltStatementIT {
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		connection.setAutoCommit(true);
 		Statement statement = connection.createStatement();
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -211,7 +211,7 @@ public class BoltStatementIT {
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -243,7 +243,7 @@ public class BoltStatementIT {
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldNotCloseTransaction() throws SQLException {
-		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl())) {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl")) {
 			connection.setAutoCommit(false);
 
 			Statement statement = connection.createStatement();

@@ -57,7 +57,8 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	@Override public ResultSet executeQuery() throws SQLException {
 		StatementResult result = executeInternal();
 
-		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
+		BoltResultSet resultSet = new BoltResultSet(this, result, this.rsParams);
+		this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, resultSet, this.isLoggable());
 		this.currentUpdateCount = -1;
 		return currentResultSet;
 	}

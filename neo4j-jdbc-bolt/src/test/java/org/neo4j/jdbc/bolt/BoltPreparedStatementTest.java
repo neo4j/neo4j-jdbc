@@ -80,7 +80,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
 		PreparedStatement prStatement = new BoltPreparedStatement(mockConnectionOpenWithTransactionThatReturns(null), "");
-		prStatement.executeQuery();
+		assertNotNull(prStatement.executeQuery());
 		prStatement.close();
 
 		verify(this.mockedRS, times(1)).close();

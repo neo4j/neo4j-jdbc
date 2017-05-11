@@ -43,7 +43,7 @@ public class BoltDatabaseMetaDataIT {
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
 	@Test public void getDatabaseVersionShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),"user","password");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl","user","password");
 
 		assertNotNull(connection.getMetaData().getDatabaseProductVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
@@ -54,7 +54,7 @@ public class BoltDatabaseMetaDataIT {
 	}
 
 	@Test public void getDatabaseLabelsShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),"user","password");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl","user","password");
 
 		try (Statement statement = connection.createStatement()) {
 			statement.execute("create (a:A {one:1, two:2})");
@@ -74,7 +74,7 @@ public class BoltDatabaseMetaDataIT {
 	}
 
 	@Test public void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),"user","password");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl","user","password");
 		connection.setAutoCommit(false);
 		connection.getMetaData();
 

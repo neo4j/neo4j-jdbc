@@ -43,8 +43,8 @@ public class Neo4jBoltRule implements TestRule {
 			@Override public void evaluate() throws Throwable {
 				Map<Setting<?>, String> settings = new HashMap<>();
 				GraphDatabaseSettings.BoltConnector boltConnector = boltConnector("0");
-				settings.put(boltConnector.type, GraphDatabaseSettings.Connector.ConnectorType.BOLT.name());
 				settings.put(boltConnector.enabled, "true");
+				settings.put(boltConnector.type, GraphDatabaseSettings.Connector.ConnectorType.BOLT.name());
 				settings.put(boltConnector.encryption_level, DISABLED.name());
 				settings.put(GraphDatabaseSettings.auth_enabled, Boolean.toString(requireAuth));
 
@@ -62,7 +62,7 @@ public class Neo4jBoltRule implements TestRule {
 	}
 
 	public String getBoltUrl() {
-		return String.format("bolt://%s?nossl", hostAndPort);
+		return String.format("bolt://%s", hostAndPort);
 	}
 
 	public GraphDatabaseService getGraphDatabase() {
