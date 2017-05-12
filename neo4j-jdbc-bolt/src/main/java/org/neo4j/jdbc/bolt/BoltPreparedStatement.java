@@ -119,7 +119,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	}
 
 	private boolean hasResultSet() {
-		return this.statement != null && this.statement.toLowerCase().contains("return");
+		return this.statement != null && this.statement.toLowerCase().contains(" return ");
 	}
 	
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
