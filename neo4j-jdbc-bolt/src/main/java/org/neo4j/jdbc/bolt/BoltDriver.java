@@ -36,6 +36,7 @@ import static org.neo4j.driver.v1.Config.build;
 public class BoltDriver extends BaseDriver {
 
 	public final static String JDBC_BOLT_PREFIX = "bolt";
+	public final static String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
 
 	/**
 	 * Default constructor.
@@ -54,15 +55,19 @@ public class BoltDriver extends BaseDriver {
 			String boltUrl = url.replace(BaseDriver.JDBC_PREFIX, "").replaceAll("^(" + JDBC_BOLT_PREFIX + ":)([^/])", "$1//$2");
 			try {
 				Properties info = parseUrlProperties(boltUrl, props);
+				boltUrl = removeUrlProperties(boltUrl, info);
 				Config.ConfigBuilder builder = build();
 				if (info.containsKey("nossl")) {
-					builder = builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+					builder = builder.withoutEncryption();
 				}
 				Config config = builder.toConfig();
 				AuthToken authToken = getAuthToken(info);
 				Driver driver = GraphDatabase.driver(boltUrl, authToken, config);
 				Session session = driver.session();
-				BoltConnection boltConnection = new BoltConnection(session, info, url);
+				try (Transaction tx = session.beginTransaction()) {
+
+                }
+                BoltConnection boltConnection = new BoltConnection(session, info, url);
 				connection = InstanceFactory.debug(BoltConnection.class, boltConnection, BoltConnection.hasDebug(info));
 			} catch (Exception e) {
 				throw new SQLException(e);
@@ -72,9 +77,21 @@ public class BoltDriver extends BaseDriver {
 	}
 
 	private AuthToken getAuthToken(Properties properties) {
-		if (properties.containsKey("user") && properties.containsKey("password")) {
+	    if(properties.isEmpty()) return AuthTokens.none();
+        //if (properties.containsKey("user") && properties.containsKey("password")) {
 			return AuthTokens.basic(properties.getProperty("user"), properties.getProperty("password"));
+		//}
+		//return null;
+	}
+
+	private String removeUrlProperties(String url, Properties properties) {
+		String boltUrl = url;
+		if (boltUrl.indexOf("?") != -1) {
+			boltUrl = url.substring(0, url.indexOf("?"));
 		}
-		return AuthTokens.none();
+		if (boltUrl.contains(JDBC_BOLT_ROUTING_PREFIX) && properties.contains("routingcontext")) {
+			boltUrl += "?routingContext=" + properties.get("routingcontext");
+		}
+		return boltUrl;
 	}
 }

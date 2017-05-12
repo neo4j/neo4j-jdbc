@@ -59,7 +59,7 @@ public class SampleIT {
 		neo4j.getGraphDatabase().execute("create (:User{name:\"testUser\"})");
 
 		// Connect
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 
 		// Querying
 		try (Statement stmt = con.createStatement()) {

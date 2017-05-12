@@ -47,7 +47,7 @@ public class BoltResultSetIT {
 		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
 		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
 
-		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=1");
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl,flatten=1");
 		Statement stmt = conn.createStatement();
 
 		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
@@ -64,7 +64,7 @@ public class BoltResultSetIT {
 		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
 		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
 
-		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=2");
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl,flatten=2");
 		Statement stmt = conn.createStatement();
 
 		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
@@ -85,7 +85,7 @@ public class BoltResultSetIT {
 		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
 		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
 
-		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=-1");
+		Connection conn = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl,flatten=-1");
 		Statement stmt = conn.createStatement();
 
 		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
@@ -105,7 +105,7 @@ public class BoltResultSetIT {
 	@Test public void findColumnShouldWorkWithFlattening() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + ",flatten=1");
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl,flatten=1");
 		Statement stmt = con.createStatement();
 		ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
 
@@ -119,7 +119,7 @@ public class BoltResultSetIT {
 	@Test public void shouldGetRowReturnValidNumbers() throws SQLException {
 		neo4j.getGraphDatabase().execute("unwind range(1,5) as x create (:User{number:x})");
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl());
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
 		Statement stmt = con.createStatement();
 		ResultSet rs = stmt.executeQuery("match (u:User) return u.number as number order by number asc");
 

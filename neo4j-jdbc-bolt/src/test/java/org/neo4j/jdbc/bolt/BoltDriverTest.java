@@ -25,8 +25,10 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.neo4j.driver.internal.InternalSession;
-import org.neo4j.driver.internal.logging.DevNullLogger;
+import org.neo4j.driver.internal.NetworkSession;
+import org.neo4j.driver.internal.logging.DevNullLogging;
+import org.neo4j.driver.internal.spi.ConnectionProvider;
+import org.neo4j.driver.v1.AccessMode;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
@@ -40,6 +42,8 @@ import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.RETURNS_MOCKS;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author AgileLARUS
@@ -52,8 +56,9 @@ import static org.junit.Assert.*;
 	private static org.neo4j.driver.v1.Driver mockedDriver;
 
 	@BeforeClass public static void initialize() {
-		mockedDriver = Mockito.mock(org.neo4j.driver.v1.Driver.class);
-		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(null, new DevNullLogger()));
+		mockedDriver = mock(org.neo4j.driver.v1.Driver.class);
+		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
+		Mockito.when(mockedDriver.session()).thenReturn(new NetworkSession(connectionProvider, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING));
 	}
 
 	/*------------------------------*/

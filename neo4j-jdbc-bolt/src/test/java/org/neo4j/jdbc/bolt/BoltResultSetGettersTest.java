@@ -88,8 +88,7 @@ public class BoltResultSetGettersTest {
 	@Test public void findColumnShouldThrowExceptionOnClosedResultSet() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -126,9 +125,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getStringByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -172,9 +169,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getStringByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -277,9 +272,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getIntByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -323,9 +316,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getIntByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -400,9 +391,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getFloatByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -446,9 +435,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getFloatByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -495,9 +482,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getShortByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -541,9 +526,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getShortByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -590,9 +573,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getDoubleByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -635,9 +616,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getDoubleByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
-		//doNothing().when(spyCursor).close();
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -907,8 +886,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getBooleanByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -952,8 +930,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getBooleanByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1000,8 +977,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getLongByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1045,8 +1021,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getLongByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1070,8 +1045,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getHoldabilityShouldThrowExceptionOnClosedRS() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1090,8 +1064,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getTypeShouldThrowExceptionOnClosedRS() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1110,8 +1083,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getConcurrencyShouldThrowExceptionOnClosedRS() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(
-				ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1164,7 +1136,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getArrayByLabelShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
@@ -1219,7 +1191,7 @@ public class BoltResultSetGettersTest {
 	@Test public void getArrayByIndexShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		StatementResult spyCursor = spy(ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY));
+		StatementResult spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
 		ResultSet resultSet = new BoltResultSet(null, spyCursor);
 
 		resultSet.close();
