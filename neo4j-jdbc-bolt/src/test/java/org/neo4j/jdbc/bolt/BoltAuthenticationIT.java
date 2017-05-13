@@ -114,7 +114,7 @@ public class BoltAuthenticationIT {
 		try (Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl")) {
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
-			result = e.getMessage().contains("Unsupported authentication token, missing key `credentials`");
+			result = e.getMessage().contains("The value associated with the key `credentials`");
 		}
 		assertTrue(result);
 	}
@@ -123,7 +123,7 @@ public class BoltAuthenticationIT {
 		boolean result = false;
 		try (Connection con = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl,user=neo4j")) {
 		} catch (SQLException e) {
-			result = e.getMessage().contains("Unsupported authentication token, missing key `credentials`");
+			result = e.getMessage().contains("The value associated with the key `credentials`");
 		}
 		assertTrue(result);
 	}
