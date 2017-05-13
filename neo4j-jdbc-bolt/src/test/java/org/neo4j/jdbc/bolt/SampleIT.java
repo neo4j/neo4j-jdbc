@@ -44,7 +44,7 @@ public class SampleIT {
 
 		//Creating config without SSL
 		Config.ConfigBuilder builder = build();
-		builder.withEncryptionLevel(Config.EncryptionLevel.NONE);
+		builder.withoutEncryption();
 		Config config = builder.toConfig();
 
 		// hitting the DB with a bolt request

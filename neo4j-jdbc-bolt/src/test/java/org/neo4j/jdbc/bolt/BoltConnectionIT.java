@@ -227,7 +227,7 @@ public class BoltConnectionIT {
 	/*------------------------------*/
 
 	@Test public void getMetaDataShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://localhost?noSsl", "neo4j", "larus");
+		Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		DatabaseMetaData metaData = connection.getMetaData();
 		assertNotNull(metaData);
 		ResultSet resultSet = metaData.getColumns(null, null, null, null);

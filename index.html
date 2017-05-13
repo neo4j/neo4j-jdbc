@@ -430,9 +430,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_usage_with_neo4j_server">Usage with Neo4j Server</a></li>
 <li><a href="#_flattening">Flattening</a></li>
 <li><a href="#_building_the_driver_yourself">Building the driver yourself</a></li>
-<li><a href="#_release_3_0_schedule">Release 3.0 Schedule</a></li>
 <li><a href="#_license">License</a></li>
-<li><a href="#_thank_you">Thank you</a></li>
+<li><a href="#_feedback">Feedback</a></li>
 </ul>
 </li>
 <li><a href="#_technical_reference">Technical Reference</a>
@@ -475,6 +474,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_eclipse_database_tools">Eclipse Database Tools</a></li>
 <li><a href="#_sql_shell">SQL-Shell</a></li>
 <li><a href="#_apoc_load_jdbc">APOC LOAD JDBC</a></li>
+<li><a href="#_apache_solr">Apache SolR</a></li>
 </ul>
 </li>
 </ul>
@@ -485,7 +485,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_overview_neo4j_jdbc_driver">Overview: Neo4j JDBC Driver</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><span class="image"><a class="image" href="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"><img src="https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master" alt="Build Status"></a></span></p>
+<p>:neo4j-jdbc-version:3.1.4</p>
 </div>
 <div class="paragraph">
 <p>This is the official JDBC driver for Neo4j.</p>
@@ -516,10 +516,10 @@ projects that are using the classic JDBC connector in the relational paradigm to
 <div class="ulist">
 <ul>
 <li>
-<p>through the Bolt protocol (3.0.X) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>through the Bolt protocol (3.1.x) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
 </li>
 <li>
-<p>through the HTTP protocol (2.X+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>through the HTTP protocol (2.x+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
 </li>
 </ul>
 </div>
@@ -578,16 +578,10 @@ projects that are using the classic JDBC connector in the relational paradigm to
 <div class="sect2">
 <h3 id="_minimum_viable_snippet">Minimum viable snippet</h3>
 <div class="listingblock">
-<div class="title">Dependency declaration</div>
-<div class="content">
-<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.0</code></pre>
-</div>
-</div>
-<div class="listingblock">
 <div class="title">Run Query</div>
 <div class="content">
 <pre class="highlight"><code class="language-java" data-lang="java">// Connecting
-try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost")) {
+try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost", 'neo4j', password)) {
 
     // Querying
     String query = "MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = {1} RETURN f.name, f.age";
@@ -603,13 +597,16 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost")
 }</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p><strong>Please note</strong> that the example above uses the try-with-resource blocks that automatically closes resources when the <code>try</code> block is exited.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_usage_with_neo4j_server">Usage with Neo4j Server</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>Install a Neo4j 3.0.X server and start it with the Bolt protocol enabled</p>
+<p>Install a Neo4j 3.1.x server and start it with the Bolt protocol enabled</p>
 </li>
 <li>
 <p>Connect with URLs in the form <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
@@ -688,82 +685,16 @@ With <code>-1</code> all rows are sampled and with any other value you determine
 <div class="title">Note</div>
 </td>
 <td class="content">
-To run the performance test, you must have a Neo4j Server (3.0.X) running with the Bolt protocol enabled on port 7687 (default)
+To run the performance test, you must have a Neo4j Server 3.1.x running with the Bolt protocol enabled on port 7687 (default)
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_release_3_0_schedule">Release 3.0 Schedule</h3>
-<div class="paragraph">
-<p>General Availability [RELEASED]</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Extensive Tests with a variety of tools</p>
-</li>
-<li>
-<p>Bug Fixes</p>
-</li>
-<li>
-<p>Documentation</p>
-</li>
-<li>
-<p>Better handling of credentials</p>
-</li>
-<li>
-<p>Support for additional API methods</p>
-</li>
-<li>
-<p>Explicit enabling of <code>flatten=&lt;rows&gt;</code> via JDBC URL</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Release Candidate 1 [RELEASED]</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Move to github.com/neo4j-contrib</p>
-</li>
-<li>
-<p>Changed package to <code>org.neo4j</code></p>
-</li>
-<li>
-<p>Released to Neo4j&#8217;s maven repository</p>
-</li>
-<li>
-<p>HTTP protocol module</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Milestone 03 [RELEASED]</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Batch processing</p>
-</li>
-<li>
-<p>Bug fix</p>
-</li>
-<li>
-<p>Neo4j Java Driver 1.0.1</p>
-</li>
-<li>
-<p>Neo4j 3.0.1</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
 <h3 id="_license">License</h3>
 <div class="paragraph">
-<p>Copyright (c) 2016 <a href="http://neo4j.com">Neo4j</a> and <a href="http://www.larus-ba.it">LARUS Business Automation</a></p>
+<p>Copyright (c) 2017 <a href="http://neo4j.com">Neo4j</a> and <a href="http://www.larus-ba.it">LARUS Business Automation</a></p>
 </div>
 <div class="paragraph">
 <p>The "Neo4j JDBC Driver" is licensed under the Apache License, Version 2.0 (the "License");
@@ -786,63 +717,10 @@ limitations under the License.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_thank_you">Thank you</h3>
+<h3 id="_feedback">Feedback</h3>
 <div class="paragraph">
-<p>We&#8217;d like to thank:</p>
-</div>
-<div class="paragraph">
-<p>The core development team:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="https://twitter.com/ziotobiad">Alberto D&#8217;Este</a>, Larus-BA - Software Developer</p>
-</li>
-<li>
-<p><a href="https://twitter.com/mfalcier">Marco Falcier</a>, Larus-BA - Software Developer</p>
-</li>
-<li>
-<p><a href="https://twitter.com/glaggia">Gianmarco Laggia</a>, Larus-BA - Software Developer</p>
-</li>
-<li>
-<p><a href="https://twitter.com/logisima">Benoît Simard</a>, Neo4j - Technical Consultant at Neo Technology</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Contributors:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="https://twitter.com/irregularbi">Ralf Becher</a>, TiQ solutions - Qlik Luminary</p>
-</li>
-<li>
-<p><a href="https://twitter.com/michaelvitz">Michael Vitz</a>, InnoQ - Software Developer</p>
-</li>
-<li>
-<p><a href="https://twitter.com/abusato95">Angelo Busato</a>, Larus-BA - Software Developer</p>
-</li>
-<li>
-<p><a href="https://github.com/enricomarin">Enrico Marin</a>, Larus-BA - Software Developer</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Supporters:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="https://twitter.com/inserpio">Lorenzo Speranzoni</a>, Larus-BA - Founder and CEO</p>
-</li>
-<li>
-<p><a href="https://twitter.com/darthvader42">Stefan Armbruster</a>, Neo4j - Customer Success Engineer for EMEA</p>
-</li>
-<li>
-<p><a href="https://twitter.com/mesirii">Michael Hunger</a>, Neo4j - Caretaker Neo4j Community</p>
-</li>
-</ul>
+<p>Please provide feedback and report bugs as <a href="./issues">GitHub issues</a> or join the <a href="http://neo4j.com/slack">neo4j-users Slack</a> and ask on the #neo4j-jdbc channel.
+You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+jdbc">StackOverflow</a>, please tag your question there with <code>neo4j</code> and <code>jdbc</code>.</p>
 </div>
 </div>
 </div>
@@ -915,32 +793,6 @@ limitations under the License.</p>
 <h3 id="_java_jdbc_usage">Java JDBC Usage</h3>
 <div class="paragraph">
 <p>Plain JDBC usage was already shown before:</p>
-</div>
-<div class="listingblock">
-<div class="title">Dependency declaration</div>
-<div class="content">
-<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.0</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="title">Run Query</div>
-<div class="content">
-<pre class="highlight"><code class="language-java" data-lang="java">// Connecting
-try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost")) {
-
-    // Querying
-    String query = "MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = {1} RETURN f.name, f.age";
-    try (PreparedStatement stmt = con.prepareStatement(query)) {
-        stmt.setString(1,"John");
-
-        try (ResultSet rs = stmt.execute()) {
-            while (rs.next()) {
-                System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
-            }
-        }
-    }
-}</code></pre>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -1604,16 +1456,16 @@ On the Job, you just have to add a tJDBCConnection and add the usual fields: JDB
 <img src="img/talend.config.png" alt="talend.config">
 </div>
 </div>
+<div class="paragraph">
+<p>NB: On the Advanced Settings tab, you can also configure the auto-commit, if you want it.</p>
+</div>
+<div class="paragraph">
+<p>Now, you can add some tJDBCInput to make some queries to your Neo4j databases like this :</p>
+</div>
 <div class="imageblock">
 <div class="content">
 <img src="img/talend.query.png" alt="talend.query">
 </div>
-</div>
-<div class="paragraph">
-<p>On the Advanced Settings tab, you can also configure the auto-commit, if you want it.</p>
-</div>
-<div class="paragraph">
-<p>Now, you can add some tJDBCInput to make some queries to your Neo4j databases like this :</p>
 </div>
 </div>
 </div>
@@ -1924,12 +1776,116 @@ RETURN row</code></pre>
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_apache_solr">Apache SolR</h3>
+<div class="sect3">
+<h4 id="_description">Description</h4>
+<div class="paragraph">
+<p>You can index your Neo4j database directly into SolR with the help of SolR <code>Data Import Handler</code> (DIH) feature and the neo4j jdbc driver.
+This article is just on how to make the glue the two component via the JDBC driver.</p>
+</div>
+<div class="paragraph">
+<p>If you want to learn how SolR works with its DIH feature, please refer to thoses documentations :
+ * <a href="https://wiki.apache.org/solr/DataImportHandler" class="bare">https://wiki.apache.org/solr/DataImportHandler</a>
+ * <a href="https://cwiki.apache.org/confluence/display/solr/Uploading+Structured+Data+Store+Data+with+the+Data+Import+Handler" class="bare">https://cwiki.apache.org/confluence/display/solr/Uploading+Structured+Data+Store+Data+with+the+Data+Import+Handler</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_how_to">How-to</h4>
+<div class="paragraph">
+<p>Download the lastest release of SolR (for example : <a href="http://apache.crihan.fr/dist/lucene/solr/6.1.0/solr-6.1.0.tgz" class="bare">http://apache.crihan.fr/dist/lucene/solr/6.1.0/solr-6.1.0.tgz</a>)</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$&gt;cd /tmp
+$&gt; wget http://apache.crihan.fr/dist/lucene/solr/6.1.0/solr-6.1.0.tgz</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Extract it to a folder (reference as SOLR_HOME)</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$&gt; tar xzvf solr-6.1.0.tgz -C SOLR_HOME</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Copy the folder <code>SOLR_HOME/example/example-DIH/solr/solr</code> to <code>SOLR_HOME/server/solr/neo4j</code>.
+This will create a new SolR core called <code>neo4j</code> with all DIH feautres enabled.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$&gt; cp -rf SOLR_HOME/example/example-DIH/solr/solr SOLR_HOME/server/solr/neo4j</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Copy The Neo4j JDBC Driver jar into folder <code>SOLR_HOME/server/solr/neo4j/lib</code> (create the folder of it doesn&#8217;t exist).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$&gt; mkdir SOLR_HOME/server/solr/neo4j/lib
+$&gt; cp neo4j-jdbc-driver-3.0.1-SNAPSHOT.jar SOLR_HOME/solr/server/solr/neo4j/lib/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Edit the file <code>SOLR_HOME/server/solr/neo4j/config/solrconfig.xml</code> to add <code>lib</code> folder by adding this line :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&lt;lib dir="./lib" /&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We will configure SolR DIH feature by editing the file <code>SOLR_HOME/server/solr/neo4j/config/solr-data-config.xml</code>.
+Just replace its content by this one (don&#8217;t forget to replace the jdbc url, login password by yours):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&lt;dataConfig&gt;
+
+	&lt;dataSource type="JdbcDataSource"
+				driver="org.neo4j.jdbc.Driver"
+				url="jdbc:neo4j:bolt://localhost?noSsl"
+				user="neo4j"
+				password="test" /&gt;
+
+	&lt;document name="movie"&gt;
+        &lt;entity name="movie" query="MATCH (m:Movie) RETURN id(m) AS id, m.title AS title, m.tagline AS tagline, m.released AS released"&gt;
+             &lt;field name="id" column="id" /&gt;
+	         &lt;field name="title" column="title" /&gt;
+             &lt;field name="tagline_s" column="tagline" /&gt;
+             &lt;field name="release_i" column="released" /&gt;
+        &lt;/entity&gt;
+	&lt;/document&gt;
+
+&lt;/dataConfig&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Start SolR server :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$&gt; SOLR_HOME/bin/solr start</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Open your browser at this url, <a href="http://localhost:8983/solr/#/neo4j/dataimport//dataimport" class="bare">http://localhost:8983/solr/#/neo4j/dataimport//dataimport</a> , and click on the <code>Execute</code> button.
+A click on the <code>refresh status</code> allow you to see the status of the indexation.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./img/solr-dih.png" alt="solr dih">
+</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2016-07-28 14:38:49 CEST
+Last updated 2016-09-13 22:38:08 CEST
 </div>
 </div>
 </body>
