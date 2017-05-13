@@ -110,7 +110,12 @@ public class BoltPreparedStatementIT {
 		statement.setString(1, "test");
 		boolean result = statement.execute();
 		assertTrue(result);
-
+		ResultSet resultSet = statement.getResultSet();
+		assertTrue(resultSet.next());
+		assertEquals("testAgain", resultSet.getString("n.surname"));
+		assertFalse(resultSet.next());
+		resultSet.close();
+		statement.close();
 		connection.close();
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
