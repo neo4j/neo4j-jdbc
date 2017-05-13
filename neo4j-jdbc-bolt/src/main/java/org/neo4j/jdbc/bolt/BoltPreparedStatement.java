@@ -75,7 +75,7 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 	@Override public boolean execute() throws SQLException {
 		StatementResult result = executeInternal();
 
-		boolean hasResultSet = hasResultSet();
+		boolean hasResultSet = hasResultSet(result);
 		if (hasResultSet) {
 			this.currentResultSet = InstanceFactory.debug(BoltResultSet.class, new BoltResultSet(this,result, this.rsParams), this.isLoggable());
 			this.currentUpdateCount = -1;
@@ -118,14 +118,17 @@ public class BoltPreparedStatement extends PreparedStatement implements Loggable
 		return result;
 	}
 
-	private boolean hasResultSet() {
-		return this.statement != null && this.statement.toLowerCase().contains("return");
+	private boolean hasResultSet(StatementResult result) {
+		try {
+			return result != null && result.hasNext();
+		} catch (Exception e) {
+			return false;
+		}
 	}
 	
 	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
 		this.checkClosed();
-		ParameterMetaData pmd = new BoltParameterMetaData(this);
-		return pmd;
+		return new BoltParameterMetaData(this);
 	}
 
 	@Override public ResultSetMetaData getMetaData() throws SQLException {
