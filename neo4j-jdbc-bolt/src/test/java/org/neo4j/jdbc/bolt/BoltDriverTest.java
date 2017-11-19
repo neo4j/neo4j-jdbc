@@ -80,7 +80,7 @@ import static org.mockito.Mockito.mock;
 		assertNull(driver.connect("jdbc:neo4j:http://localhost:7474", null));
 		assertNull(driver.connect("bolt://localhost:7474", null));
 		assertNull(driver.connect("jdbcbolt://localhost:7474", null));
-		assertNull(driver.connect("jdbc:mysql:http://localhost:7474", null));
+		assertNull(driver.connect("jdbc:mysql://localhost:3306/sakila", null));
 	}
 
 	@Test public void shouldConnectThrowExceptionOnNullURL() throws SQLException {
