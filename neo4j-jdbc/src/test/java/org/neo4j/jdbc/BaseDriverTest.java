@@ -33,6 +33,8 @@ public class BaseDriverTest {
         assertTrue(baseDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?noSSL"));
         assertTrue(baseDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?user=neo4j"));
         assertTrue(baseDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?user=neo4j,password=test"));
+        assertFalse(baseDriver.acceptsURL("jdbc:mysql://localhost:3306/sakila"));
+        assertFalse(baseDriver.acceptsURL("jdbc:postgresql://localhost/test"));
     }
 
     @Test

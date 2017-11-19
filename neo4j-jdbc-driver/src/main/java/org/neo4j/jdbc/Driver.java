@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 public class Driver extends BaseDriver {
@@ -52,7 +53,11 @@ public class Driver extends BaseDriver {
 	}
 
 	@Override public Connection connect(String url, Properties info) throws SQLException {
-		return getDriver(url).connect(url, info);
+		Connection connection = null;
+		if(!Objects.isNull(getDriver(url))) {
+			connection = getDriver(url).connect(url, info);
+		}
+		return connection;
 	}
 
 	/**
@@ -86,10 +91,6 @@ public class Driver extends BaseDriver {
 			}
 		} catch (Exception e) {
 			throw new SQLException(e);
-		}
-
-		if (driver == null) {
-			throw new SQLException("Cannot find a suitable driver from the url " + url);
 		}
 
 		return driver;

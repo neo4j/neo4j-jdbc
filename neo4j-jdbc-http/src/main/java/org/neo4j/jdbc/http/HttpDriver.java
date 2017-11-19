@@ -64,8 +64,6 @@ public class HttpDriver extends BaseDriver {
 					port = neo4jUrl.getPort();
 				}
 				connection = InstanceFactory.debug(HttpConnection.class, new HttpConnection(host, port, secure, props, url), HttpConnection.hasDebug(props));
-			} else {
-				throw new SQLException("JDBC URL is not correct.\nA valid URL format is: 'jdbc:neo4j:http://<host>:<port>'");
 			}
 		} catch (MalformedURLException e) {
 			throw new SQLException(e);

@@ -23,6 +23,7 @@
 package org.neo4j.jdbc;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -35,6 +36,9 @@ import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.jdbc.bolt.BoltConnection;
 import org.neo4j.jdbc.http.HttpConnection;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
+
 public class DriverTestIT {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -42,46 +46,59 @@ public class DriverTestIT {
 	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
-		java.sql.Driver driver = new Driver();
+		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:http://localhost:7474", new Properties());
 		Assert.assertTrue(connection instanceof HttpConnection);
 	}
 	@Test public void shouldReturnAHttpConnection2() throws SQLException {
-		java.sql.Driver driver = new Driver();
+		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:http:localhost:7474", new Properties());
 		Assert.assertTrue(connection instanceof HttpConnection);
 	}
 
 	@Test public void shouldReturnAHttpsConnection() throws SQLException {
-		java.sql.Driver driver = new Driver();
+		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:https://localhost", new Properties());
 		Assert.assertTrue(connection instanceof HttpConnection);
 	}
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
-		java.sql.Driver driver = new Driver();
+		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?noSsl", new Properties());
 		Assert.assertTrue(connection instanceof BoltConnection);
 	}
 
-	@Test public void shouldReturnAnExceptionWithBadUrl() throws SQLException {
-		expectedEx.expect(SQLException.class);
-
-		java.sql.Driver driver = new Driver();
-		driver.connect("jdbc:mysql:localhost", new Properties());
+	@Test public void shouldReturnNullWithBadUrl() throws SQLException {
+		Driver driver = new Driver();
+		Connection connection = driver.connect("jdbc:mysql:localhost", new Properties());
+		Assert.assertNull(connection);
 	}
 
-	@Test public void shouldReturnAnExceptionWithUrlThatContainsOnlyJDBC() throws SQLException {
-		expectedEx.expect(SQLException.class);
-
-		java.sql.Driver driver = new Driver();
-		driver.connect("jdbc:", new Properties());
+	@Test public void shouldReturnNullWithUrlThatContainsOnlyJDBC() throws SQLException {
+		// The driver can't understand that url so  should returns a null connection
+		Driver driver = new Driver();
+		Connection connection = driver.connect("jdbc:", new Properties());
+		Assert.assertNull(connection);
 	}
 
-	@Test public void shouldReturnAnExceptionWithEmptyUrl() throws SQLException {
-		expectedEx.expect(SQLException.class);
-
-		java.sql.Driver driver = new Driver();
-		driver.connect("", new Properties());
+	@Test public void shouldReturnNullWithEmptyUrl() throws SQLException {
+		// The driver can't understand that url so  should returns a null connection
+		Driver driver = new Driver();
+		Connection connection = driver.connect("", new Properties());
+		Assert.assertNull(connection);
 	}
+
+	@Test public void shouldCallTheNextDriverWhenNonNeo4jUrl() throws SQLException {
+		Driver driver = new Driver();
+		DriverManager.registerDriver(driver);
+		java.sql.Driver mysqlDriver = mock(java.sql.Driver.class);
+		Connection mockConnection = mock(Connection.class);
+		when(mysqlDriver.connect(anyString(), any(Properties.class))).thenReturn(mockConnection);
+		DriverManager.registerDriver(mysqlDriver);
+
+		DriverManager.getConnection("jdbc:mysql:localhost");
+
+		verify(mysqlDriver, times(1)).connect(anyString(), any(Properties.class));
+	}
+
 }
