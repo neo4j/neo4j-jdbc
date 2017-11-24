@@ -854,7 +854,7 @@ By convention the default JDBC data source must be called default, but you can u
 <div class="listingblock">
 <div class="content">
 <pre># Neo4j database configuration
-db.neo4j.driver=org.neo4j.jdbc.bolt.BoltDriver
+db.neo4j.driver=org.neo4j.jdbc.bolt.BoltNeo4jDriver
 db.neo4j.url="jdbc:neo4j:bolt://localhost"</pre>
 </div>
 </div>
@@ -915,7 +915,7 @@ class JavaNamedDatabase extends Controller {
 <div class="ulist">
 <ul>
 <li>
-<p>Insert the values of <strong>JDBC driver</strong>: "org.neo4j.jdbc.bolt.BoltDriver" and</p>
+<p>Insert the values of <strong>JDBC driver</strong>: "org.neo4j.jdbc.bolt.BoltNeo4jDriver" and</p>
 </li>
 <li>
 <p><strong>JDBC Url</strong>: <code>jdbc:neo4j:bolt://localhost</code> like the image below and</p>
@@ -1629,7 +1629,7 @@ Adding the JDBC driver was straightforward, as was running Cypher queries and ge
 <div class="ulist">
 <ul>
 <li>
-<p>Choose <strong>org.neo4j.jdbc.bolt.BoltDriver</strong> as the Driver class:</p>
+<p>Choose <strong>org.neo4j.jdbc.bolt.BoltNeo4jDriver</strong> as the Driver class:</p>
 </li>
 </ul>
 </div>
@@ -1732,7 +1732,7 @@ Adding the JDBC driver was straightforward, as was running Cypher queries and ge
 <div class="listingblock">
 <div class="content">
 <pre>[drivers]
-neo4j = org.neo4j.jdbc.bolt.BoltDriver</pre>
+neo4j = org.neo4j.jdbc.bolt.BoltNeo4jDriver</pre>
 </div>
 </div>
 <div class="ulist">

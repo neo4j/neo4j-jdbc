@@ -27,6 +27,8 @@ import java.sql.SQLException;
  */
 class Wrapper {
 
+	private Wrapper() {};
+
 	@SuppressWarnings("unchecked")
 	public static <T> T unwrap(Class<T> iface, Object obj) throws SQLException {
 		if (!isWrapperFor(iface, obj.getClass())) {

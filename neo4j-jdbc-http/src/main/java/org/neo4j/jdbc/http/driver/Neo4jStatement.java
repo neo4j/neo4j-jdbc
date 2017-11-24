@@ -48,6 +48,32 @@ public class Neo4jStatement {
 	public final Boolean includeStats;
 
 	/**
+	 * Default constructor.
+	 *
+	 * @param statement    Cypher query
+	 * @param parameters   List of named params for the cypher query
+	 * @param includeStats Do we need to include stats
+	 * @throws SQLException sqlexception
+	 */
+	public Neo4jStatement(String statement, Map<String, Object> parameters, Boolean includeStats) throws SQLException {
+		if (statement != null && !"".equals(statement)) {
+			this.statement = statement;
+		} else {
+			throw new SQLException("Creating a NULL query");
+		}
+		if (parameters != null) {
+			this.parameters = parameters;
+		} else {
+			this.parameters = new HashMap<>();
+		}
+		if (includeStats != null) {
+			this.includeStats = includeStats;
+		} else {
+			this.includeStats = Boolean.FALSE;
+		}
+	}
+
+	/**
 	 * Escape method for cypher queries.
 	 *
 	 * @param query Cypher query
@@ -73,35 +99,9 @@ public class Neo4jStatement {
 			sb.append("}");
 
 		} catch (JsonProcessingException e) {
-			throw new SQLException("Can't convert Cypher statement(s) into JSON");
+			throw new SQLException("Can't convert Cypher statement(s) into JSON", e);
 		}
 		return sb.toString();
-	}
-
-	/**
-	 * Default constructor.
-	 *
-	 * @param statement    Cypher query
-	 * @param parameters   List of named params for the cypher query
-	 * @param includeStats Do we need to include stats
-	 * @throws SQLException sqlexception
-	 */
-	public Neo4jStatement(String statement, Map<String, Object> parameters, Boolean includeStats) throws SQLException {
-		if (statement != null && !statement.equals("")) {
-			this.statement = statement;
-		} else {
-			throw new SQLException("Creating a NULL query");
-		}
-		if (parameters != null) {
-			this.parameters = parameters;
-		} else {
-			this.parameters = new HashMap<String, Object>();
-		}
-		if (includeStats != null) {
-			this.includeStats = includeStats;
-		} else {
-			this.includeStats = Boolean.FALSE;
-		}
 	}
 
 	/**

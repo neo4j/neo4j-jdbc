@@ -20,7 +20,7 @@
 package org.neo4j.jdbc.http.driver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.neo4j.jdbc.http.test.Neo4jHttpUnitTest;
+import org.neo4j.jdbc.http.test.Neo4jHttpUnitTestUtil;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.StringEntity;
@@ -32,7 +32,7 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 
-public class Neo4jResponseTest extends Neo4jHttpUnitTest {
+public class Neo4jResponseTest extends Neo4jHttpUnitTestUtil {
 
 	@Test public void hasErrorShoudlReturnFalse() throws SQLException {
 		Neo4jResponse response = generateNeo4jResponse(Boolean.FALSE);

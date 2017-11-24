@@ -33,8 +33,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.harness.junit.Neo4jRule;
-import org.neo4j.jdbc.bolt.BoltConnection;
-import org.neo4j.jdbc.http.HttpConnection;
+import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
+import org.neo4j.jdbc.http.HttpNeo4jConnection;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -48,24 +48,24 @@ public class DriverTestIT {
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
 		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:http://localhost:7474", new Properties());
-		Assert.assertTrue(connection instanceof HttpConnection);
+		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 	@Test public void shouldReturnAHttpConnection2() throws SQLException {
 		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:http:localhost:7474", new Properties());
-		Assert.assertTrue(connection instanceof HttpConnection);
+		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 
 	@Test public void shouldReturnAHttpsConnection() throws SQLException {
 		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:https://localhost", new Properties());
-		Assert.assertTrue(connection instanceof HttpConnection);
+		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
 		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?noSsl", new Properties());
-		Assert.assertTrue(connection instanceof BoltConnection);
+		Assert.assertTrue(connection instanceof BoltNeo4jConnection);
 	}
 
 	@Test public void shouldReturnNullWithBadUrl() throws SQLException {

@@ -19,7 +19,7 @@
  */
 package org.neo4j.jdbc.http.driver;
 
-import org.neo4j.jdbc.http.test.Neo4jHttpIT;
+import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-public class CypherExecutorIT extends Neo4jHttpIT {
+public class CypherExecutorIT extends Neo4jHttpITUtil {
 
 	private CypherExecutor executor;
 

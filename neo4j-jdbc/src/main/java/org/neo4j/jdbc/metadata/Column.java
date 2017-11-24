@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Column {
-	public static List<String> COLUMN_NAMES;
+	private static final List<String> COLUMN_NAMES;
 	
 	static {
-		COLUMN_NAMES = new ArrayList<String>();
+		COLUMN_NAMES = new ArrayList<>();
 
 		COLUMN_NAMES.add("TABLE_CAT");
 		COLUMN_NAMES.add("TABLE_SCHEM"); 
@@ -43,6 +43,10 @@ public class Column {
 		this.tableName = tableName;
 		this.columnName = columnName;
 		this.columnsPosition = columnsPosition;
+	}
+
+	public static List<String> getColumns() {
+		return COLUMN_NAMES;
 	}
 
 	public String getTableCat() {
@@ -142,7 +146,7 @@ public class Column {
 	}
 
 	public List<Object> toResultSetRow() {
-		List<Object> row = new ArrayList<Object>();
+		List<Object> row = new ArrayList<>();
 		row.add(this.getTableCat());
 		row.add(this.getTableSchem());
 		row.add(this.getTableName());

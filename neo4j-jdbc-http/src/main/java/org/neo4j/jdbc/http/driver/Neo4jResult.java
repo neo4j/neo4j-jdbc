@@ -90,9 +90,6 @@ public class Neo4jResult {
 			updated += (int) stats.get("nodes_deleted");
 			updated += (int) stats.get("relationships_created");
 			updated += (int) stats.get("relationship_deleted");
-			//updated += (int) stats.get("properties_set");
-			//updated += (int) stats.get("labels_added");
-			//updated += (int) stats.get("labels_removed");
 		}
 		return updated;
 	}

@@ -20,6 +20,7 @@
 package org.neo4j.jdbc.utils;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author AgileLARUS
@@ -27,10 +28,9 @@ import java.util.ArrayList;
  * This class is used to intercept any exception coming from the test query used in the <code>isValid</code> method.
  */
 public class UncaughtExceptionLogger implements Thread.UncaughtExceptionHandler {
-	private ArrayList<Throwable> exceptions = new ArrayList<>();
+	private List<Throwable> exceptions = new ArrayList<>();
 
 	@Override public void uncaughtException(Thread th, Throwable ex) {
-		ex.printStackTrace();
 		this.exceptions.add(ex);
 	}
 
@@ -39,7 +39,7 @@ public class UncaughtExceptionLogger implements Thread.UncaughtExceptionHandler 
 	 *
 	 * @return An <code>ArrayList&lt;Throwable&gt;</code> of exceptions
 	 */
-	public ArrayList<Throwable> getExceptions() {
+	public List<Throwable> getExceptions() {
 		return this.exceptions;
 	}
 }

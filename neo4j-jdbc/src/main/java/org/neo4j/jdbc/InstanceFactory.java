@@ -28,6 +28,9 @@ package org.neo4j.jdbc;
  * @since 3.0.0
  */
 public class InstanceFactory {
+
+	private InstanceFactory () {}
+
 	public static <T extends Loggable> T debug(Class<T> cls, T obj, boolean log) {
 /*		if (log) {
 			obj.setLoggable(true);

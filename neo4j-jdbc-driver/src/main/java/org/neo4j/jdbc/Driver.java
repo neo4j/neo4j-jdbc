@@ -22,8 +22,8 @@
 
 package org.neo4j.jdbc;
 
-import org.neo4j.jdbc.bolt.BoltDriver;
-import org.neo4j.jdbc.http.HttpDriver;
+import org.neo4j.jdbc.bolt.BoltNeo4jDriver;
+import org.neo4j.jdbc.http.HttpNeo4jDriver;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
@@ -33,16 +33,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-public class Driver extends BaseDriver {
+public class Driver extends Neo4jDriver {
 
 	/**
 	 * Prefix/class hashMap of all available Driver.
 	 */
 	@SuppressWarnings({ "rawtypes", "serial" })
-	private final Map<String, Class> DRIVERS = new HashMap<String, Class>() {{
-		put(BoltDriver.JDBC_BOLT_PREFIX, BoltDriver.class);
-		put(HttpDriver.JDBC_HTTP_PREFIX, HttpDriver.class);
-	}};
+	private static final Map<String, Class> DRIVERS = new HashMap<>();
+
+	static {
+		DRIVERS.put(BoltNeo4jDriver.JDBC_BOLT_PREFIX, BoltNeo4jDriver.class);
+		DRIVERS.put(HttpNeo4jDriver.JDBC_HTTP_PREFIX, HttpNeo4jDriver.class);
+	}
 
 	/**
 	 * Default constructor.
@@ -66,33 +68,38 @@ public class Driver extends BaseDriver {
 	 * @return The driver
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private BaseDriver getDriver(String url) throws SQLException {
-		BaseDriver driver = null;
+	private Neo4jDriver getDriver(String url) throws SQLException {
+		Neo4jDriver driver = null;
 
 		if (url == null) {
 			throw new SQLException("null is not a valid url");
 		}
 
-		try {
-			// We search the driver prefix from the url
-			if (url.startsWith(JDBC_PREFIX)) {
-				String[] pieces = url.split(":");
-				if (pieces.length > 3) {
-					String prefix = pieces[2];
+		// We search the driver prefix from the url
+		if (url.startsWith(JDBC_PREFIX)) {
+			String[] pieces = url.split(":");
+			if (pieces.length > 3) {
+				String prefix = pieces[2];
 
-					// We look into driver map is it known
-					for(String key : DRIVERS.keySet()) {
-						if (prefix.matches(key)) {
-							Constructor constructor = DRIVERS.get(key).getDeclaredConstructor();
-							driver = (BaseDriver) constructor.newInstance();
-						}
-					}
+				// We look into driver map is it known
+				driver = getDriverForPrefix(prefix);
+			}
+		}
+		return driver;
+	}
+
+	private Neo4jDriver getDriverForPrefix(String prefix) throws SQLException {
+		Neo4jDriver driver = null;
+		try {
+			for (Map.Entry<String, Class> entry : DRIVERS.entrySet()) {
+				if (prefix.matches(entry.getKey())) {
+					Constructor constructor = entry.getValue().getDeclaredConstructor();
+					driver = (Neo4jDriver) constructor.newInstance();
 				}
 			}
 		} catch (Exception e) {
 			throw new SQLException(e);
 		}
-
 		return driver;
 	}
 }

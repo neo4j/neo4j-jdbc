@@ -19,21 +19,22 @@
  */
 package org.neo4j.jdbc.impl;
 
-import org.neo4j.jdbc.Array;
+import org.neo4j.jdbc.Neo4jArray;
 
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class ListArray extends Array {
+public class ListArray extends Neo4jArray {
 
 	private List list;
 	private int  type;
-
+	private static final String TYPE_NOT_SUPPORTED = "Type %s not supported";
 
 
 	public ListArray(List list, int type) {
@@ -45,21 +46,27 @@ public class ListArray extends Array {
 		String name;
 
 		if (!TYPES_SUPPORTED.contains(this.type)) {
-			throw new SQLException("Type " + this.type + " not supported");
+			throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
 		}
 
-		if (this.type == Types.VARCHAR) {
-			name = "VARCHAR";
-		} else if (this.type == Types.INTEGER) {
-			name = "INTEGER";
-		} else if (this.type == Types.BOOLEAN) {
-			name = "BOOLEAN";
-		} else if (this.type == Types.DOUBLE) {
-			name = "DOUBLE";
-		} else if (this.type == Types.JAVA_OBJECT) {
-			name = "JAVA_OBJECT";
-		} else {
-			throw new SQLException("Type " + this.type + " not supported");
+		switch (this.type) {
+			case Types.VARCHAR:
+				name = "VARCHAR";
+				break;
+			case Types.INTEGER:
+				name = "INTEGER";
+				break;
+			case Types.BOOLEAN:
+				name = "BOOLEAN";
+				break;
+			case Types.DOUBLE:
+				name = "DOUBLE";
+				break;
+			case Types.JAVA_OBJECT:
+				name = "JAVA_OBJECT";
+				break;
+			default:
+				throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
 		}
 
 		return name;
@@ -67,30 +74,36 @@ public class ListArray extends Array {
 
 	@Override public int getBaseType() throws SQLException {
 		if (!TYPES_SUPPORTED.contains(this.type)) {
-			throw new SQLException("Type " + this.type + " not supported");
+			throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
 		}
 		return this.type;
 	}
 
 	@Override public Object getArray() throws SQLException {
 		if(!TYPES_SUPPORTED.contains(this.type)) {
-			throw new SQLException("Type " + this.type + " not supported");
+			throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
 		}
 		Object result;
 
 		try {
-			if (this.type == Types.VARCHAR) {
-				result = this.list.toArray(new String[this.list.size()]);
-			} else if (this.type == Types.INTEGER) {
-				result = this.list.toArray(new Long[this.list.size()]);
-			} else if (this.type == Types.BOOLEAN) {
-				result = this.list.toArray(new Boolean[this.list.size()]);
-			} else if (this.type == Types.DOUBLE) {
-				result = this.list.toArray(new Double[this.list.size()]);
-			} else if (this.type == Types.JAVA_OBJECT) {
-				result = this.list.toArray(new Object[this.list.size()]);
-			} else {
-				throw new SQLException("Type " + this.type + " not supported");
+			switch (this.type) {
+				case Types.VARCHAR:
+					result = this.list.toArray(new String[this.list.size()]);
+					break;
+				case Types.INTEGER:
+					result = this.list.toArray(new Long[this.list.size()]);
+					break;
+				case Types.BOOLEAN:
+					result = this.list.toArray(new Boolean[this.list.size()]);
+					break;
+				case Types.DOUBLE:
+					result = this.list.toArray(new Double[this.list.size()]);
+					break;
+				case Types.JAVA_OBJECT:
+					result = this.list.toArray(new Object[this.list.size()]);
+					break;
+				default:
+					throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
 			}
 		} catch (ArrayStoreException e){
 			throw new SQLException(e);
@@ -101,5 +114,9 @@ public class ListArray extends Array {
 
 	@Override public boolean equals(Object o){
 		return o instanceof ListArray && this.list.equals(((ListArray)o).list);
+	}
+
+	@Override public int hashCode() {
+		return Objects.hash(list, type);
 	}
 }

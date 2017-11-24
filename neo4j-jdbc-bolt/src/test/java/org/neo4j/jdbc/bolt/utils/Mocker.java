@@ -24,11 +24,12 @@ import org.mockito.stubbing.Answer;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
-import org.neo4j.jdbc.bolt.BoltConnection;
+import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -63,7 +64,7 @@ public class Mocker {
 		when(session.run(anyString())).thenAnswer(new Answer<ResultSet>() {
 			@Override public ResultSet answer(InvocationOnMock invocation) {
 				try {
-					Thread.sleep(5000);
+					TimeUnit.SECONDS.sleep(5);
 				} catch (InterruptedException e) {
 				}
 				return null;
@@ -81,24 +82,24 @@ public class Mocker {
 		return session;
 	}
 
-	public static BoltConnection mockConnectionOpen() throws SQLException {
-		BoltConnection mockConnection = mock(BoltConnection.class);
+	public static BoltNeo4jConnection mockConnectionOpen() throws SQLException {
+		BoltNeo4jConnection mockConnection = mock(BoltNeo4jConnection.class);
 		when(mockConnection.isClosed()).thenReturn(false);
 		return mockConnection;
 	}
 
-	public static BoltConnection mockConnectionClosed() throws SQLException {
-		BoltConnection mockConnection = mock(BoltConnection.class);
+	public static BoltNeo4jConnection mockConnectionClosed() throws SQLException {
+		BoltNeo4jConnection mockConnection = mock(BoltNeo4jConnection.class);
 		when(mockConnection.isClosed()).thenReturn(true);
 		return mockConnection;
 	}
 
-	public static BoltConnection mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
+	public static BoltNeo4jConnection mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
 		Transaction mockTransaction = mock(Transaction.class);
 		when(mockTransaction.run(anyString())).thenReturn(cur);
 		when(mockTransaction.run(anyString(), any(HashMap.class))).thenReturn(cur);
 
-		BoltConnection mockConnection = mockConnectionOpen();
+		BoltNeo4jConnection mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 		return mockConnection;
 	}

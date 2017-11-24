@@ -8,7 +8,7 @@ It's working now on the master branch (6b166ec31bdb61f76279be717aa1f30ada5c553e)
 
 ----
 [drivers]
-neo4j = org.neo4j.jdbc.bolt.BoltDriver
+neo4j = org.neo4j.jdbc.bolt.BoltNeo4jDriver
 ----
 
 * Adding your database
