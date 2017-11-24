@@ -19,7 +19,7 @@
  */
 package org.neo4j.jdbc.http.driver;
 
-import org.neo4j.jdbc.http.test.Neo4jHttpUnitTest;
+import org.neo4j.jdbc.http.test.Neo4jHttpUnitTestUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
-public class CypherExecutorTest extends Neo4jHttpUnitTest {
+public class CypherExecutorTest extends Neo4jHttpUnitTestUtil {
 
 	private CypherExecutor executor;
 

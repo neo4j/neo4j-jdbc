@@ -32,7 +32,7 @@ import org.neo4j.jdbc.example.mybatis.util.ConnectionFactory;
  * @author AgileLARUS
  * @since 3.0.2
  */
-public class ActorManagerHttpTestWithLocalServer extends MybatisTest {
+public class ActorManagerHttpTestWithLocalServer extends MybatisTestUtil {
 
 	/*
 	 * Need to start a neo4j instance and load the "Movie" example graph  

@@ -4,18 +4,18 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.config.Setting;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.harness.internal.Ports;
 import org.neo4j.test.TestGraphDatabaseFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
+import org.neo4j.kernel.configuration.BoltConnector;
 
 import static org.neo4j.graphdb.factory.GraphDatabaseSettings.BoltConnector.EncryptionLevel.DISABLED;
-import static org.neo4j.graphdb.factory.GraphDatabaseSettings.boltConnector;
 
 /**
  * provide an embedded in-memory Neo4j instance with bolt enabled
@@ -42,15 +42,15 @@ public class Neo4jBoltRule implements TestRule {
 
 			@Override public void evaluate() throws Throwable {
 				Map<Setting<?>, String> settings = new HashMap<>();
-				GraphDatabaseSettings.BoltConnector boltConnector = boltConnector("0");
+				BoltConnector boltConnector = new BoltConnector();
 				settings.put(boltConnector.enabled, "true");
 				settings.put(boltConnector.type, GraphDatabaseSettings.Connector.ConnectorType.BOLT.name());
 				settings.put(boltConnector.encryption_level, DISABLED.name());
 				settings.put(GraphDatabaseSettings.auth_enabled, Boolean.toString(requireAuth));
 
-				InetSocketAddress inetAddr = Ports.findFreePort("localhost", new int[] { 7687, 64 * 1024 - 1 });
+				InetSocketAddress inetAddr = new InetSocketAddress("localhost", getFreePort());
 				hostAndPort = String.format("%s:%d", inetAddr.getHostName(), inetAddr.getPort());
-				settings.put(boltConnector.address, hostAndPort);
+				settings.put(boltConnector.listen_address, hostAndPort);
 				graphDatabase = new TestGraphDatabaseFactory().newImpermanentDatabase(settings);
 				try {
 					statement.evaluate();
@@ -67,5 +67,12 @@ public class Neo4jBoltRule implements TestRule {
 
 	public GraphDatabaseService getGraphDatabase() {
 		return graphDatabase;
+	}
+
+	private int getFreePort() throws IOException {
+		try (ServerSocket socket = new ServerSocket(0)) {
+			socket.setReuseAddress(true);
+			return socket.getLocalPort();
+		}
 	}
 }

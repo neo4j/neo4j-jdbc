@@ -67,13 +67,7 @@ public class Neo4jResponse {
 		// Parse response headers
 		if (response.getStatusLine() != null) {
 
-			// Save the http code
-			this.code = response.getStatusLine().getStatusCode();
-
-			// If status code is 201, then we retrieve the Location header to keep the transaction url.
-			if (this.code == HttpStatus.SC_CREATED) {
-				this.location = response.getFirstHeader("Location").getValue();
-			}
+			saveCodeAndLocation(response);
 
 			// Parsing the body
 			HttpEntity json = response.getEntity();
@@ -82,26 +76,10 @@ public class Neo4jResponse {
 					Map body = mapper.readValue(is, Map.class);
 
 					// Error parsing
-					this.errors = new ArrayList<>();
-					for (Map<String, String> error : (List<Map<String, String>>) body.get("errors")) {
-						String message = "";
-						String code = "";
-						if(error.get("message") != null) {
-							message = error.get("message");
-						}
-						if(error.get("code") != null) {
-							code = error.get("code");
-						}
-						errors.add(new SQLException(message, code));
-					}
+					parseErrors(body);
 
 					// Data parsing
-					this.results = new ArrayList<>();
-					if (body.containsKey("results")) {
-						for (Map map : (List<Map>) body.get("results")) {
-							results.add(new Neo4jResult(map));
-						}
-					}
+					parseData(body);
 
 				} catch (Exception e) {
 					throw new SQLException(e);
@@ -138,7 +116,7 @@ public class Neo4jResponse {
 	 * @return the first result
 	 */
 	public Neo4jResult getFirstResult() {
-		if (this.results != null && this.results.size() > 0)
+		if (this.results != null && !this.results.isEmpty())
 			return this.results.get(0);
 		else
 			return null;
@@ -156,11 +134,11 @@ public class Neo4jResponse {
 	 * @return true is there're errors
 	 */
 	public boolean hasErrors() {
-		Boolean errors = Boolean.FALSE;
-		if (this.errors != null && this.errors.size() > 0) {
-			errors = Boolean.TRUE;
+		Boolean hasErrors = Boolean.FALSE;
+		if (this.errors != null && !this.errors.isEmpty()) {
+			hasErrors = Boolean.TRUE;
 		}
-		return errors;
+		return hasErrors;
 	}
 
 	/**
@@ -169,7 +147,7 @@ public class Neo4jResponse {
 	 */
 	public boolean hasResultSets() {
 		Boolean hasResultSets = Boolean.FALSE;
-		if (this.results != null && this.results.size() > 0) {
+		if (this.results != null && !this.results.isEmpty()) {
 			for (int i = 0; i < this.results.size() && !hasResultSets; i++) {
 				Neo4jResult result = this.results.get(i);
 				if ((result.getColumns() != null && result.getColumns().size() > 0) || (result.getRows() != null && result.getRows().size() > 0)) {
@@ -193,6 +171,41 @@ public class Neo4jResponse {
 			}
 		}
 		return sb.toString();
+	}
+
+	private void saveCodeAndLocation(HttpResponse response) {
+		// Save the http code
+		this.code = response.getStatusLine().getStatusCode();
+
+		// If status code is 201, then we retrieve the Location header to keep the transaction url.
+		if (this.code == HttpStatus.SC_CREATED) {
+			this.location = response.getFirstHeader("Location").getValue();
+		}
+	}
+
+	private void parseErrors(Map body) {
+		this.errors = new ArrayList<>();
+		for (Map<String, String> error : (List<Map<String, String>>) body.get("errors")) {
+			String message = "";
+			String errorCode = "";
+			if(error.get("message") != null) {
+				message = error.get("message");
+			}
+			if(error.get("code") != null) {
+				errorCode = error.get("code");
+			}
+			errors.add(new SQLException(message, errorCode));
+		}
+	}
+
+	private void parseData(Map body) {
+		// Data parsing
+		this.results = new ArrayList<>();
+		if (body.containsKey("results")) {
+			for (Map map : (List<Map>) body.get("results")) {
+				results.add(new Neo4jResult(map));
+			}
+		}
 	}
 
 }

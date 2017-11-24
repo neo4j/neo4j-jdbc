@@ -7,7 +7,7 @@
 image::https://cloud.githubusercontent.com/assets/15228280/15931473/2f81674c-2e58-11e6-9dfc-f3fed514f9fe.png[]
 image::https://cloud.githubusercontent.com/assets/15228280/15931644/ebf0e510-2e58-11e6-9b36-5feed0879a1c.png[]
 
-- Insert the values of *JDBC driver*: "org.neo4j.jdbc.bolt.BoltDriver" and
+- Insert the values of *JDBC driver*: "org.neo4j.jdbc.bolt.BoltNeo4jDriver" and
 - *JDBC Url*: `jdbc:neo4j:bolt://localhost` like the image below and
 - insert your *username* and *password*
 

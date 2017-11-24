@@ -30,6 +30,9 @@ import org.neo4j.jdbc.example.mybatis.mapper.ActorMapper;
  * @since 3.0.2
  */
 public class ActorManager {
+
+	private ActorManager() {}
+
 	public static Actor selectActorByBorn(int born) {
 		SqlSession sqlSession = ConnectionFactory.getSqlSessionFactory()
 				.openSession();

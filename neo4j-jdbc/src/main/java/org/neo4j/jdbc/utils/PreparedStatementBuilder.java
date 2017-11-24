@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
  */
 public class PreparedStatementBuilder {
 
+	private PreparedStatementBuilder() {}
+
 	/**
 	 * This method return a String that is the original raw string with all valid placeholders replaced with neo4j curly brackets notation for parameters.
 	 * <br>

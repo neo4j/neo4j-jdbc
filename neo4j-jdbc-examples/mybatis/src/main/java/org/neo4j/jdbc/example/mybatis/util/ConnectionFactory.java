@@ -34,9 +34,12 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
  * @since 3.0.2
  */
 public class ConnectionFactory {
-	private static SqlSessionFactory factory;
 
 	private static final String DATABASE_CONFIG_XML = "database-config.xml";
+
+	private static SqlSessionFactory factory;
+
+	private ConnectionFactory() {}
 
 	public static SqlSessionFactory getSqlSessionFactory() {
 		return getSqlSessionFactory(DATABASE_CONFIG_XML);
@@ -44,13 +47,11 @@ public class ConnectionFactory {
 
 	public static SqlSessionFactory getSqlSessionFactory(String config) {
 		if (factory == null) {
-			Reader reader = null;
-			try {
-				reader = Resources.getResourceAsReader(config);
+			try (Reader reader = Resources.getResourceAsReader(config)){
+				factory = new SqlSessionFactoryBuilder().build(reader);
 			} catch (IOException e) {
-				throw new RuntimeException(e.getMessage());
+				throw new RuntimeException(e);
 			}
-			factory = new SqlSessionFactoryBuilder().build(reader);
 		}
 		return factory;
 	}

@@ -78,7 +78,9 @@ public class CypherExecutor {
 	/**
 	 * Jackson mapper object.
 	 */
-	private final static ObjectMapper mapper = new ObjectMapper();
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	private static final String DB_DATA_TRANSACTION = "/db/data/transaction";
 
 	/**
 	 * Default constructor.
@@ -107,7 +109,7 @@ public class CypherExecutor {
 		this.http = builder.build();
 
 		// Create the url endpoint
-		this.transactionUrl = createTransactionUrl(host, port, secure);
+		this.transactionUrl = createTransactionUrl(host, port, this.secure);
 
 		// Setting autocommit
 		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autoCommit", "true")));
@@ -116,9 +118,9 @@ public class CypherExecutor {
 	private String createTransactionUrl(String host, Integer port, Boolean secure) throws SQLException {
 		try {
 			if(secure)
-				return new URL("https", host, port, "/db/data/transaction").toString();
+				return new URL("https", host, port, DB_DATA_TRANSACTION).toString();
 			else
-				return new URL("http", host, port, "/db/data/transaction").toString();
+				return new URL("http", host, port, DB_DATA_TRANSACTION).toString();
 		} catch (MalformedURLException e) {
 			throw new SQLException("Invalid server URL", e);
 		}
@@ -240,10 +242,10 @@ public class CypherExecutor {
 	 * @return A string that represent the neo4j server version
 	 */
 	public String getServerVersion() {
-		String result = "Unknown";
+		String result = null;
 
 		// Prepare the headers query
-		HttpGet request = new HttpGet(this.transactionUrl.replace("/db/data/transaction", "/db/manage/server/version"));
+		HttpGet request = new HttpGet(this.transactionUrl.replace(DB_DATA_TRANSACTION, "/db/manage/server/version"));
 
 		// Adding default headers to the request
 		for (Header header : this.getDefaultHeaders()) {
@@ -259,7 +261,7 @@ public class CypherExecutor {
 				}
 			}
 		} catch (Exception e) {
-			// do nothing there is the default value
+			result = "Unknown";
 		}
 
 		return result;
@@ -326,7 +328,7 @@ public class CypherExecutor {
 	 * @param request The request to make
 	 */
 	private Neo4jResponse executeHttpRequest(HttpRequestBase request) throws SQLException {
-		Neo4jResponse result = null;
+		Neo4jResponse result;
 
 		// Adding default headers to the request
 		for (Header header : this.getDefaultHeaders()) {

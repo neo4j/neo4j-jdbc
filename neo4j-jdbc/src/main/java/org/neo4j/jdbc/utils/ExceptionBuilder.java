@@ -24,6 +24,8 @@ package org.neo4j.jdbc.utils;
  */
 public class ExceptionBuilder {
 
+	private ExceptionBuilder() {}
+
 	/**
 	 * An <code>UnsupportedOperationException</code> exception builder that  retrueve it's caller to make
 	 * a not yet implemented exception with method and class name.
