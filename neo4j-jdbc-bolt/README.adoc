@@ -25,6 +25,16 @@ When the object is not recognized as one of the two specified it is treated as a
 
 When using the jdbc Bolt module you will be able to specify dedicated parameters, here is a list of them:
 
+==== Trust Strategy ====
+
+When creating using the driver with a DriverManager with:
+----
+DriverManager.getConnection(NEO4J_JDBC_BOLT_URL, PROPERTIES);
+----
+
+you can use the property `trust.strategy`, a string value of your choice among the `Config.TrustStrategy.Strategy` enum values.
+When a file is required you *must* add the `trusted.certificate.file` property that *must* be a valid `java.util.File` object.
+
 ==== Flatten ====
 When a ResultSet is flattened it explodes the returned columns (ONLY if they are ALL nodes and relationships) adding virtual columns with id, labels, type and entity specific fields.
 

@@ -23,6 +23,7 @@ import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.InstanceFactory;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -37,6 +38,8 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 
 	public static final String JDBC_BOLT_PREFIX = "bolt";
 	public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
+	public static final String TRUST_STRATEGY_KEY = "trust.strategy";
+	public static final String TRUSTED_CERTIFICATE_KEY = "trusted.certificate.file";
 
 	/**
 	 * Default constructor.
@@ -60,6 +63,7 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 				if (info.containsKey("nossl")) {
 					builder = builder.withoutEncryption();
 				}
+				builder = setTrustStrategy(info, builder);
 				Config config = builder.toConfig();
 				AuthToken authToken = getAuthToken(info);
 				Driver driver = GraphDatabase.driver(boltUrl, authToken, config);
@@ -74,7 +78,7 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 	}
 
 	private AuthToken getAuthToken(Properties properties) {
-		if (properties.isEmpty()) {
+		if (properties.isEmpty() || (!properties.containsKey("user") && !properties.containsKey("password"))) {
 			return AuthTokens.none();
 		}
 		return AuthTokens.basic(properties.getProperty("user"), properties.getProperty("password"));
@@ -89,5 +93,57 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 			boltUrl += "?routingContext=" + properties.get("routingcontext");
 		}
 		return boltUrl;
+	}
+
+	private Config.ConfigBuilder setTrustStrategy(Properties properties, Config.ConfigBuilder builder) throws SQLException {
+		Config.ConfigBuilder newBuilder = builder;
+		if (properties.containsKey(TRUST_STRATEGY_KEY)) {
+			Config.TrustStrategy.Strategy strategy;
+			try {
+				strategy = Config.TrustStrategy.Strategy.valueOf((String) properties.get(TRUST_STRATEGY_KEY));
+			} catch (IllegalArgumentException e) {
+				throw new SQLException("Invalid value for trust.strategy param.", e);
+			}
+			switch (strategy) {
+				case TRUST_SYSTEM_CA_SIGNED_CERTIFICATES:
+					newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSystemCertificates());
+					break;
+				case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
+				case TRUST_ON_FIRST_USE:
+				case TRUST_SIGNED_CERTIFICATES:
+					newBuilder = handleTrustStrategyWithFile(properties, strategy, builder);
+					break;
+				case TRUST_ALL_CERTIFICATES:
+				default:
+					newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustAllCertificates());
+					break;
+			}
+		}
+		return newBuilder;
+	}
+
+	private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder) throws SQLException {
+		if (properties.containsKey(TRUSTED_CERTIFICATE_KEY)) {
+			Object file = properties.get(TRUSTED_CERTIFICATE_KEY);
+			if (file instanceof File) {
+				Config.ConfigBuilder newBuilder = builder;
+				switch (strategy) {
+					case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
+						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy((File) file));
+						break;
+					case TRUST_ON_FIRST_USE:
+						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustOnFirstUse((File) file));
+						break;
+					case TRUST_SIGNED_CERTIFICATES:
+						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSignedBy((File) file));
+						break;
+				}
+				return newBuilder;
+			} else {
+				throw new SQLException("Invalid parameter 'trusted.certificate.file' : NOT A VALID FILE");
+			}
+		} else {
+			throw new SQLException("Missing parameter 'trusted.certificate.file' : A FILE IS REQUIRED");
+		}
 	}
 }
