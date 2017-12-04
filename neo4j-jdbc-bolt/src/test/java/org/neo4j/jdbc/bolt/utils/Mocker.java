@@ -19,11 +19,13 @@
  */
 package org.neo4j.jdbc.bolt.utils;
 
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.internal.NetworkSession;
+import org.neo4j.driver.internal.logging.DevNullLogging;
+import org.neo4j.driver.internal.spi.ConnectionProvider;
+import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
 
 import java.sql.ResultSet;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -102,5 +105,12 @@ public class Mocker {
 		BoltNeo4jConnection mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 		return mockConnection;
+	}
+
+	public static Driver mockDriver() {
+		Driver mockedDriver = mock(org.neo4j.driver.v1.Driver.class);
+		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
+		Mockito.when(mockedDriver.session()).thenReturn(new NetworkSession(connectionProvider, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING));
+		return mockedDriver;
 	}
 }

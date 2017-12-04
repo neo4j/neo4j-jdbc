@@ -52,18 +52,20 @@ public abstract class Neo4jResultSet implements java.sql.ResultSet {
 	/**
 	 * Check if the connection is closed or not.
 	 * If it is, we throw an exception.
+	 *
+	 * @throws SQLException if the {@link Neo4jResultSet} is closed
 	 */
 	protected void checkClosed() throws SQLException {
 		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
+			throw new SQLException("ResultSet already closed");
 		}
 	}
 
 	/**
 	 * Check if the ResultSet is closed.
 	 *
-	 * @return
-	 * @throws SQLException
+	 * @return <code>true</code> if <code>ResultSet</code> is closed.
+	 * @throws SQLException in case of problems when checking if closed.
 	 */
 	@Override public boolean isClosed() throws SQLException {
 		return this.isClosed;

@@ -64,7 +64,7 @@ public class DriverTestIT {
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?noSsl", new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?nossl", new Properties());
 		Assert.assertTrue(connection instanceof BoltNeo4jConnection);
 	}
 

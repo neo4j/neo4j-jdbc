@@ -37,8 +37,8 @@ public class PreparedStatementBuilder {
 	 * <br>
 	 * i.e. MATCH n RETURN n WHERE n.name = ? is transformed in MATCH n RETURN n WHERE n.name = {1}
 	 *
-	 * @param raw
-	 * @return
+	 * @param raw The string to be translated.
+	 * @return The string with the placeholders replaced.
 	 */
 	public static String replacePlaceholders(String raw) {
 		int index = 1;
@@ -58,8 +58,8 @@ public class PreparedStatementBuilder {
 	/**
 	 * Given a string (statement) it counts all valid placeholders
 	 *
-	 * @param raw
-	 * @return
+	 * @param raw The string of the statement
+	 * @return The number of all valid placeholders
 	 */
 	public static int namedParameterCount(String raw) {
 		int max = 0;

@@ -27,6 +27,8 @@ public class Neo4jBoltRule implements TestRule {
 
 	private       String               hostAndPort;
 	private       GraphDatabaseService graphDatabase;
+	private String host;
+	private int port;
 	private final boolean              requireAuth;
 
 	public Neo4jBoltRule() {
@@ -47,8 +49,9 @@ public class Neo4jBoltRule implements TestRule {
 				settings.put(boltConnector.type, GraphDatabaseSettings.Connector.ConnectorType.BOLT.name());
 				settings.put(boltConnector.encryption_level, DISABLED.name());
 				settings.put(GraphDatabaseSettings.auth_enabled, Boolean.toString(requireAuth));
-
 				InetSocketAddress inetAddr = new InetSocketAddress("localhost", getFreePort());
+				host = inetAddr.getHostName();
+				port = inetAddr.getPort();
 				hostAndPort = String.format("%s:%d", inetAddr.getHostName(), inetAddr.getPort());
 				settings.put(boltConnector.listen_address, hostAndPort);
 				graphDatabase = new TestGraphDatabaseFactory().newImpermanentDatabase(settings);
@@ -67,6 +70,14 @@ public class Neo4jBoltRule implements TestRule {
 
 	public GraphDatabaseService getGraphDatabase() {
 		return graphDatabase;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public String getHost() {
+		return host;
 	}
 
 	private int getFreePort() throws IOException {

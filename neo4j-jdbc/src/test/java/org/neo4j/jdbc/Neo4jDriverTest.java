@@ -30,7 +30,7 @@ public class Neo4jDriverTest {
     public void acceptsURL() throws Exception {
         assertTrue(neo4jDriver.acceptsURL("jdbc:neo4j:http://localhost"));
         assertTrue(neo4jDriver.acceptsURL("jdbc:neo4j:http://localhost:7373"));
-        assertTrue(neo4jDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?noSSL"));
+        assertTrue(neo4jDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?nossl"));
         assertTrue(neo4jDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?user=neo4j"));
         assertTrue(neo4jDriver.acceptsURL("jdbc:neo4j:http://localhost:7373?user=neo4j,password=test"));
         assertFalse(neo4jDriver.acceptsURL("jdbc:mysql://localhost:3306/sakila"));
