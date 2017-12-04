@@ -37,9 +37,9 @@ public class TimeLimitedCodeBlock {
 	 * @param runnable The runnable to run
 	 * @param timeout The maximum time a run should last
 	 * @param timeUnit The <code>TimeUnit</code> unit for the timeout
-	 * @throws Exception Any exception thrown by the runnable or a <code>TimeoutException</code>
+	 * @throws Neo4jJdbcRuntimeException Any exception thrown by the runnable wrapped.
 	 */
-	public static void runWithTimeout(final Runnable runnable, long timeout, TimeUnit timeUnit) throws Neo4jJdbcRuntimeException {
+	public static void runWithTimeout(final Runnable runnable, long timeout, TimeUnit timeUnit) {
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		Future future = executor.submit(runnable);
 		executor.shutdown();

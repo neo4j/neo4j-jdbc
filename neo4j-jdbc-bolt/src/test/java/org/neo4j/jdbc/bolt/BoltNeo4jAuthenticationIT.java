@@ -85,30 +85,30 @@ public class BoltNeo4jAuthenticationIT {
 	@Test public void shouldNotAuthenticateBecauseOfABadUserAndPassword() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("The client is unauthorized due to authentication failure.");
-		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl,user=teapot,password=teapot");
+		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl,user=teapot,password=teapot");
 	}
 
 	@Test public void shouldNotAuthenticateBecauseOfABadUser() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("The client is unauthorized due to authentication failure.");
-		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl,user=teapot,password=neo4j");
+		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl,user=teapot,password=neo4j");
 	}
 
 	@Test public void shouldNotAuthenticateBecauseOfABadPassword() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("The client is unauthorized due to authentication failure.");
-		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl,user=neo4j,password=teapot");
+		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl,user=neo4j,password=teapot");
 	}
 
 	@Test public void shouldNotAuthenticateBecauseNoUserAndPasswordAreProvided() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Unsupported authentication token, missing key `credentials`");
-		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl");
+		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl");
 	}
 
 	@Test public void shouldNotAuthenticateBecauseNoPasswordIsProvided() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Unsupported authentication token, missing key `credentials`");
-		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?noSsl,user=neo4j");
+		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl,user=neo4j");
 	}
 }

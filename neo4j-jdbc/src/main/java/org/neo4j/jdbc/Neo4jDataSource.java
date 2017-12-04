@@ -22,23 +22,38 @@ package org.neo4j.jdbc;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 import java.io.PrintWriter;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 /**
  * @author AgileLARUS
- * @since 3.0.0
+ * @since 3.2.0
  */
-abstract class Neo4jDataSource implements javax.sql.DataSource {
+public abstract class Neo4jDataSource implements javax.sql.DataSource {
 
-	@Override public Connection getConnection() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	public static final String NEO4J_JDBC_PREFIX = "jdbc:neo4j:";
+	protected           String serverName        = "localhost";
+	protected String user;
+	protected String password;
+	protected int     portNumber = 0;
+	protected boolean isSsl      = false;
 
-	@Override public Connection getConnection(String username, String password) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+	/*
+	 * Ensure the driver is loaded as JDBC Driver might be invisible to Java's ServiceLoader.
+	 * Usually, {@code Class.forName(...)} is not required as {@link DriverManager} detects JDBC drivers
+	 * via {@code META-INF/services/java.sql.Driver} entries. However there might be cases when the driver
+	 * is located at the application level classloader, thus it might be required to perform manual
+	 * registration of the driver.
+	 */
+	static {
+		try {
+			Class.forName("org.neo4j.jdbc.Neo4jDriver");
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException(
+					"Neo4jDataSource is unable to load org.neo4j.jdbc.Neo4jDriver. Please check if you have proper Neo4j JDBC Driver jar on the classpath", e);
+		}
 	}
 
 	@Override public PrintWriter getLogWriter() throws SQLException {
@@ -67,5 +82,58 @@ abstract class Neo4jDataSource implements javax.sql.DataSource {
 
 	@Override public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return Wrapper.isWrapperFor(iface, this.getClass());
+	}
+
+	public String getServerName() {
+		return serverName;
+	}
+
+	public void setServerName(String serverName) {
+		this.serverName = serverName;
+	}
+
+	public String getUser() {
+		return user;
+	}
+
+	public void setUser(String user) {
+		this.user = user;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public int getPortNumber() {
+		return portNumber;
+	}
+
+	public void setPortNumber(int portNumber) {
+		this.portNumber = portNumber;
+	}
+
+	public String getUrl(String protocol) {
+		String url = NEO4J_JDBC_PREFIX + protocol + "://" + getServerName() + ((getPortNumber() > 0) ? ":" + getPortNumber() : "") + "?" + ((!getIsSsl()) ?
+				"nossl," :
+				"");
+		if (Objects.nonNull(getUser())) {
+			url += "user=" + getUser();
+			if (Objects.nonNull(getPassword())) {
+				url += ",password=" + getPassword();
+			}
+		}
+		return url;
+	}
+
+	public boolean getIsSsl() {
+		return this.isSsl;
+	}
+
+	public void setIsSsl(boolean ssl) {
+		this.isSsl = ssl;
 	}
 }

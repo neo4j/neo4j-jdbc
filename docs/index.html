@@ -615,7 +615,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 <p>Connect with URLs in the form <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
 </li>
 <li>
-<p>You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]</code></p>
+<p>You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]</code></p>
 </li>
 <li>
 <p>Add the JDBC driver dependency or jar file to your project</p>
@@ -1874,7 +1874,7 @@ Just replace its content by this one (don&#8217;t forget to replace the jdbc url
 
 	&lt;dataSource type="JdbcDataSource"
 				driver="org.neo4j.jdbc.Driver"
-				url="jdbc:neo4j:bolt://localhost?noSsl"
+				url="jdbc:neo4j:bolt://localhost?nossl"
 				user="neo4j"
 				password="test" /&gt;
 

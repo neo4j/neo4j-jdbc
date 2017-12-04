@@ -52,7 +52,7 @@ Just replace its content by this one (don't forget to replace the jdbc url, logi
 
 	<dataSource type="JdbcDataSource"
 				driver="org.neo4j.jdbc.Driver"
-				url="jdbc:neo4j:bolt://localhost?noSsl"
+				url="jdbc:neo4j:bolt://localhost?nossl"
 				user="neo4j"
 				password="test" />
 

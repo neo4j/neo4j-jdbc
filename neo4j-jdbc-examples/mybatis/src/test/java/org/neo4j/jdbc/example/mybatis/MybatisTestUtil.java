@@ -55,7 +55,7 @@ public class MybatisTestUtil {
 	}
 
 	protected void buildMybatisConfiguration(String protocol, String host, int port) {
-		DataSource dataSource = new UnpooledDataSource("org.neo4j.jdbc.Driver", "jdbc:neo4j:" + protocol + "://" + host + ":" + port + "?noSsl", null);
+		DataSource dataSource = new UnpooledDataSource("org.neo4j.jdbc.Driver", "jdbc:neo4j:" + protocol + "://" + host + ":" + port + "?nossl", null);
 		TransactionFactory transactionFactory = new JdbcTransactionFactory();
 		Environment environment = new Environment("development", transactionFactory, dataSource);
 

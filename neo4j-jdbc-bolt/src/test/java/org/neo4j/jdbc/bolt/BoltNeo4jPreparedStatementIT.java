@@ -51,7 +51,7 @@ public class BoltNeo4jPreparedStatementIT {
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		ResultSet rs = statement.executeQuery();
@@ -65,7 +65,7 @@ public class BoltNeo4jPreparedStatementIT {
 
 	@Test public void executeQueryWithNamedParamShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
 		statement.setString(1, "test");
 		ResultSet rs = statement.executeQuery();
@@ -81,7 +81,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*         executeUpdate        */
 	/*------------------------------*/
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		statement.setString(1, "test1");
 		statement.setString(2, "test2");
@@ -105,7 +105,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*------------------------------*/
 	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		boolean result = statement.execute();
@@ -121,7 +121,7 @@ public class BoltNeo4jPreparedStatementIT {
 	}
 
 	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		statement.setString(1, "test1");
 		statement.setString(2, "test2");
@@ -143,7 +143,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		connection.setAutoCommit(true);
 		statement.setString(1, "test1");
@@ -166,7 +166,7 @@ public class BoltNeo4jPreparedStatementIT {
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		connection.setAutoCommit(true);
 		PreparedStatement statement = connection.prepareStatement("wrong cypher statement ?");
 		statement.setString(1, "test1");
@@ -189,7 +189,7 @@ public class BoltNeo4jPreparedStatementIT {
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?noSsl");
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		connection.setAutoCommit(false);
 		statement.setString(1, "test1");

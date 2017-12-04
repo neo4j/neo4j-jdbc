@@ -94,7 +94,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 
 * Install a Neo4j 3.2.x server and start it with the Bolt protocol enabled
 * Connect with URLs in the form `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
-* You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,noSsl,flatten=[-1,100,1000]`
+* You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]`
 
 * Add the JDBC driver dependency or jar file to your project
 * Get a connection from `DriverManager`

@@ -33,6 +33,7 @@ import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -64,9 +65,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	private static org.neo4j.driver.v1.Driver mockedDriver;
 
 	@BeforeClass public static void initialize() {
-		mockedDriver = mock(org.neo4j.driver.v1.Driver.class);
-		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
-		Mockito.when(mockedDriver.session()).thenReturn(new NetworkSession(connectionProvider, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING));
+		mockedDriver = Mocker.mockDriver();
 	}
 
 	/*------------------------------*/

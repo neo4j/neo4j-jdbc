@@ -7,7 +7,7 @@
 			<transactionManager type="JDBC" />
 			<dataSource type="POOLED">
 				<property name="driver" value="org.neo4j.jdbc.bolt.BoltNeo4jDriver" />
-				<property name="url" value="jdbc:neo4j:bolt://localhost?noSsl" />
+				<property name="url" value="jdbc:neo4j:bolt://localhost?nossl" />
 				<property name="username" value="neo4j" />
 				<property name="password" value="neo4j" />
 			</dataSource>
