@@ -25,6 +25,7 @@ import org.neo4j.jdbc.InstanceFactory;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -40,6 +41,15 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 	public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
 	public static final String TRUST_STRATEGY_KEY = "trust.strategy";
 	public static final String TRUSTED_CERTIFICATE_KEY = "trusted.certificate.file";
+
+	static {
+		try {
+			BoltNeo4jDriver driver = new BoltNeo4jDriver();
+			DriverManager.registerDriver(driver);
+		} catch (SQLException e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
 
 	/**
 	 * Default constructor.

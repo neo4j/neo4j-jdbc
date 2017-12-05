@@ -25,6 +25,7 @@ import org.neo4j.jdbc.InstanceFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -34,6 +35,15 @@ import java.util.Properties;
 public class HttpNeo4jDriver extends Neo4jDriver {
 
 	public static final String JDBC_HTTP_PREFIX = "http(s)*";
+
+	static {
+		try {
+			HttpNeo4jDriver driver = new HttpNeo4jDriver();
+			DriverManager.registerDriver(driver);
+		} catch (SQLException e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
 
 	/**
 	 * Default constructor.

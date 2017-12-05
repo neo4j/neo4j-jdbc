@@ -56,7 +56,6 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 	 */
 	protected Neo4jDriver(String prefix) throws SQLException {
 		this.driverPrefix = prefix;
-		DriverManager.registerDriver(this);
 	}
 
 	@Override public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
