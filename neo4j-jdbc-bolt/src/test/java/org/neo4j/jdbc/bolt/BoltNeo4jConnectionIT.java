@@ -19,11 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -34,12 +29,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.data.StatementData;
+
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
@@ -274,6 +268,24 @@ public class BoltNeo4jConnectionIT {
 					assertTrue(resultSet.next());
 					assertEquals(1, resultSet.getLong(1));
 				}
+			}
+		}
+	}
+
+	@Test
+	public void multipleRunShouldNotFail() {
+
+		for (int i = 0; i < 1000; i++) {
+			try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
+				try (Statement statement = connection.createStatement();
+						ResultSet resultSet = statement.executeQuery("match (n) return count(n) as countOfNodes")) {
+					if(resultSet.next()) {
+						resultSet.getObject("countOfNodes");
+					}
+				}
+			}
+			catch (Exception e) {
+				fail(e.getMessage());
 			}
 		}
 	}
