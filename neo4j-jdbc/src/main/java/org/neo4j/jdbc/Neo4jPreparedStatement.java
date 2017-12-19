@@ -82,16 +82,6 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	/*----------------------------------------*/
 
 	/**
-	 * Check if the connection is closed or not.
-	 * If it is, we throw an exception.
-	 */
-	protected void checkClosed() throws SQLException {
-		if (this.isClosed()) {
-			throw new SQLException("Statement already closed");
-		}
-	}
-
-	/**
 	 * Check if the given parameter index is not out of bound.
 	 * If its is we throw an exception.
 	 *

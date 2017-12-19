@@ -27,7 +27,6 @@ import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import java.lang.reflect.Proxy;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 /**

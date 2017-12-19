@@ -30,9 +30,12 @@ import org.neo4j.driver.v1.types.Path;
 import org.neo4j.driver.v1.types.Relationship;
 import org.neo4j.driver.v1.types.Type;
 import org.neo4j.driver.v1.util.Pair;
-import org.neo4j.jdbc.*;
+import org.neo4j.jdbc.Neo4jArray;
+import org.neo4j.jdbc.Neo4jConnection;
+import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+import org.neo4j.jdbc.utils.ObjectConverter;
 
 import java.lang.reflect.Proxy;
 import java.sql.ResultSet;
@@ -329,7 +332,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {
 		checkClosed();
 		Value value = this.fetchValueFromLabel(columnLabel);
-		return value.isNull() ? false : value.asBoolean();
+		return !value.isNull() && value.asBoolean();
 	}
 
 	private Value fetchPropertyValue(String key, String property) throws SQLException {
@@ -436,7 +439,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
 		checkClosed();
 		Value value = this.fetchValueFromIndex(columnIndex);
-		return value.isNull() ? false : value.asBoolean();
+		return !value.isNull() && value.asBoolean();
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
@@ -547,7 +550,66 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		return this.generateObject(obj);
 	}
 
-	@Override public Statement getStatement() throws SQLException {
+	@Override public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+		checkClosed();
+		if (type == null) {
+			throw new SQLException("Type to cast cannot be null");
+		}
+		Object obj = this.getObject(columnLabel);
+		T ret;
+		try {
+			ret = ObjectConverter.convert(obj, type);
+		} catch (Exception e) {
+			throw new SQLException(e);
+		}
+		return ret;
+	}
+
+	@Override public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+		checkClosed();
+		if (type == null) {
+			throw new SQLException("Type to cast cannot be null");
+		}
+		Object obj = this.getObject(columnIndex);
+		T ret;
+		try {
+			ret = ObjectConverter.convert(obj, type);
+		} catch (Exception e) {
+			throw new SQLException(e);
+		}
+		return ret;
+	}
+
+	@Override public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
+		checkClosed();
+		Object obj = this.getObject(columnLabel);
+		String fromClass = obj.getClass().getCanonicalName();
+		Class<?> toClass = map.get(fromClass);
+		if(toClass == null) {
+			throw new SQLException(String.format("Mapping for class: %s not found", fromClass));
+		}
+		Object ret;
+		try {
+			ret = ObjectConverter.convert(obj, toClass);
+		} catch (Exception e) {
+			throw new SQLException(e);
+		}
+		return ret;
+	}
+
+	@Override public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
+		checkClosed();
+		Object obj = this.getObject(columnIndex);
+		Object ret;
+		try {
+			ret = ObjectConverter.convert(obj, map.get(obj.getClass().toString()));
+		} catch (Exception e) {
+			throw new SQLException(e);
+		}
+		return ret;
+	}
+
+	@Override public Statement getStatement() {
 		return statement;
 	}
 }
