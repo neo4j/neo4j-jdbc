@@ -20,10 +20,32 @@
 package org.neo4j.jdbc.bolt;
 
 import org.neo4j.jdbc.Neo4jCallableStatement;
+import org.neo4j.jdbc.Neo4jConnection;
+
+import java.sql.ParameterMetaData;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
 class BoltNeo4jCallableStatement extends Neo4jCallableStatement {
+	/**
+	 * Default constructor with connection and statement.
+	 *
+	 * @param connection   The JDBC connection
+	 * @param rawStatement The prepared statement
+	 */
+	protected BoltNeo4jCallableStatement(Neo4jConnection connection, String rawStatement) {
+		super(connection, rawStatement);
+	}
+
+	@Override public ResultSetMetaData getMetaData() throws SQLException {
+		return null;
+	}
+
+	@Override public ParameterMetaData getParameterMetaData() throws SQLException {
+		return null;
+	}
 }

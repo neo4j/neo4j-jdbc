@@ -22,9 +22,16 @@ package org.neo4j.jdbc.bolt;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.SummaryCounters;
-import org.neo4j.jdbc.*;
+import org.neo4j.jdbc.Loggable;
+import org.neo4j.jdbc.Neo4jParameterMetaData;
+import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.Neo4jResultSetMetaData;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
+import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
+import java.lang.reflect.Proxy;
 import java.sql.BatchUpdateException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
@@ -37,19 +44,22 @@ import static java.util.Arrays.copyOf;
  */
 public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
 
-	private int[]       rsParams;
-	private boolean loggable = false;
-
-	public BoltNeo4jPreparedStatement(BoltNeo4jConnection connection, String rawStatement, int... rsParams) {
+	private BoltNeo4jPreparedStatement(BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
 		super(connection, rawStatement);
-		this.rsParams = rsParams;
+		this.resultSetParams = rsParams;
+	}
+
+	public static PreparedStatement newInstance(boolean debug, BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
+		PreparedStatement ps = new BoltNeo4jPreparedStatement(connection, rawStatement, rsParams);
+		((Neo4jPreparedStatement) ps).setDebug(debug);
+		return (PreparedStatement) Proxy.newProxyInstance(BoltNeo4jPreparedStatement.class.getClassLoader(), new Class[] { PreparedStatement.class },
+				new Neo4jInvocationHandler(ps, debug));
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
 		StatementResult result = executeInternal();
 
-		BoltNeo4jResultSet resultSet = new BoltNeo4jResultSet(this, result, this.rsParams);
-		this.currentResultSet = InstanceFactory.debug(BoltNeo4jResultSet.class, resultSet, this.isLoggable());
+		this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
 		this.currentUpdateCount = -1;
 		return currentResultSet;
 	}
@@ -68,16 +78,14 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 
 		boolean hasResultSet = hasResultSet(result);
 		if (hasResultSet) {
-			this.currentResultSet = InstanceFactory.debug(BoltNeo4jResultSet.class, new BoltNeo4jResultSet(this,result, this.rsParams), this.isLoggable());
+			this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
 			this.currentUpdateCount = -1;
-		}
-		else {
+		} else {
 			this.currentResultSet = null;
 			try {
-			  SummaryCounters stats = result.consume().counters();
-			  this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
-			}
-			catch (Exception e) {
+				SummaryCounters stats = result.consume().counters();
+				this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+			} catch (Exception e) {
 				throw new SQLException(e);
 			}
 		}
@@ -90,21 +98,19 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		StatementResult result;
 		if (this.getConnection().getAutoCommit()) {
 			try (Transaction t = ((BoltNeo4jConnection) this.getConnection()).getSession().beginTransaction()) {
-			  result = t.run(this.statement, this.parameters);
-			  t.success();
-			}
-			catch (Exception e) {
+				result = t.run(this.statement, this.parameters);
+				t.success();
+			} catch (Exception e) {
 				throw new SQLException(e.getMessage(), e);
 			}
 		} else {
 			try {
-			  result = ((BoltNeo4jConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
-			}
-			catch (Exception e) {
+				result = ((BoltNeo4jConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
+			} catch (Exception e) {
 				throw new SQLException(e.getMessage(), e);
 			}
 		}
-		
+
 		return result;
 	}
 
@@ -115,7 +121,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 			return false;
 		}
 	}
-	
+
 	@Override public Neo4jParameterMetaData getParameterMetaData() throws SQLException {
 		this.checkClosed();
 		return new BoltNeo4jParameterMetaData(this);
@@ -123,42 +129,6 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 
 	@Override public Neo4jResultSetMetaData getMetaData() throws SQLException {
 		return this.currentResultSet == null ? null : (Neo4jResultSetMetaData) this.currentResultSet.getMetaData();
-		/*return InstanceFactory.debug(BoltNeo4jResultSetMetaData.class,
-				new BoltNeo4jResultSetMetaData(((BoltNeo4jResultSet) this.currentResultSet).getIterator(), ((BoltNeo4jResultSet) this.currentResultSet).getKeys()),
-				this.isLoggable());*/
-	}
-
-	@Override public int getResultSetConcurrency() throws SQLException {
-		this.checkClosed();
-		if (currentResultSet != null) {
-			return currentResultSet.getConcurrency();
-		}
-		if (this.rsParams.length > 1) {
-			return this.rsParams[1];
-		}
-		return BoltNeo4jResultSet.DEFAULT_CONCURRENCY;
-	}
-
-	@Override public int getResultSetType() throws SQLException {
-		this.checkClosed();
-		if (currentResultSet != null) {
-			return currentResultSet.getType();
-		}
-		if (this.rsParams.length > 0) {
-			return this.rsParams[0];
-		}
-		return BoltNeo4jResultSet.DEFAULT_TYPE;
-	}
-
-	@Override public int getResultSetHoldability() throws SQLException {
-		this.checkClosed();
-		if (currentResultSet != null) {
-			return currentResultSet.getHoldability();
-		}
-		if (this.rsParams.length > 2) {
-			return this.rsParams[2];
-		}
-		return BoltNeo4jResultSet.DEFAULT_HOLDABILITY;
 	}
 
 	/*-------------------*/
@@ -172,7 +142,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		try {
 			for (Map<String, Object> parameter : this.batchParameters) {
 				StatementResult res;
-				if(this.connection.getAutoCommit()) {
+				if (this.connection.getAutoCommit()) {
 					res = ((BoltNeo4jConnection) this.connection).getSession().run(this.statement, parameter);
 				} else {
 					res = ((BoltNeo4jConnection) this.connection).getTransaction().run(this.statement, parameter);
@@ -186,17 +156,5 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		}
 
 		return result;
-	}
-
-	/*--------------------*/
-	/*       Logger       */
-	/*--------------------*/
-
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
 	}
 }

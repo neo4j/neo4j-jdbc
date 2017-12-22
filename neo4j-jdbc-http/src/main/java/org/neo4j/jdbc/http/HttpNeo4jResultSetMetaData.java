@@ -19,18 +19,17 @@
  */
 package org.neo4j.jdbc.http;
 
-import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
 import org.neo4j.jdbc.http.driver.Neo4jResult;
 
 import java.sql.Array;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class HttpNeo4jResultSetMetaData extends Neo4jResultSetMetaData implements Loggable {
-
-	private boolean loggable = false;
+public class HttpNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 
 	private Neo4jResult result;
 
@@ -92,18 +91,6 @@ public class HttpNeo4jResultSetMetaData extends Neo4jResultSetMetaData implement
 			}
 		}
 		return Object.class.getName();
-	}
-
-	/*--------------------*/
-	/*       Logger       */
-	/*--------------------*/
-
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
 	}
 }
 

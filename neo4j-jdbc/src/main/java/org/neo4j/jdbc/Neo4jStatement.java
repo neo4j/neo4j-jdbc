@@ -19,23 +19,27 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.utils.ExceptionBuilder;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.sql.Statement;
 import java.util.List;
-
-import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jStatement implements java.sql.Statement {
+public abstract class Neo4jStatement implements Statement, Loggable {
 
 	protected Neo4jConnection connection;
 	protected ResultSet       currentResultSet;
 	protected int             currentUpdateCount;
 	protected List<String>    batchStatements;
+	protected boolean         debug;
+	protected int             debugLevel;
+	protected int[]           resultSetParams;
 	private   int             maxRows;
 	private   int             queryTimeout;
 
@@ -58,6 +62,7 @@ public abstract class Neo4jStatement implements java.sql.Statement {
 	/**
 	 * Check if this statement is closed or not.
 	 * If it is, we throw an exception.
+	 *
 	 * @throws SQLException sqlexception
 	 */
 	protected void checkClosed() throws SQLException {
@@ -154,7 +159,7 @@ public abstract class Neo4jStatement implements java.sql.Statement {
 	 */
 	@Override public boolean getMoreResults() throws SQLException {
 		this.checkClosed();
-		return !( this.currentResultSet == null && this.currentUpdateCount == -1 );
+		return !(this.currentResultSet == null && this.currentUpdateCount == -1);
 	}
 
 	/**
@@ -176,6 +181,7 @@ public abstract class Neo4jStatement implements java.sql.Statement {
 
 	/**
 	 * Added just for value memorization
+	 *
 	 * @return the current query timeout limit in seconds; zero means there is no limit
 	 * @throws SQLException if a database error occurs
 	 */
@@ -185,8 +191,9 @@ public abstract class Neo4jStatement implements java.sql.Statement {
 
 	/**
 	 * Added just for value memorization
-   * @param seconds the new query timeout limit in seconds; zero means there is no limit
-   * @exception SQLException if a database error occurs
+	 *
+	 * @param seconds the new query timeout limit in seconds; zero means there is no limit
+	 * @throws SQLException if a database error occurs
 	 */
 	@Override public void setQueryTimeout(int seconds) throws SQLException {
 		this.queryTimeout = seconds;
@@ -200,6 +207,39 @@ public abstract class Neo4jStatement implements java.sql.Statement {
 	@Override public void clearBatch() throws SQLException {
 		this.checkClosed();
 		this.batchStatements.clear();
+	}
+
+	@Override public int getResultSetConcurrency() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getConcurrency();
+		}
+		if (this.resultSetParams.length > 1) {
+			return this.resultSetParams[1];
+		}
+		return Neo4jResultSet.DEFAULT_CONCURRENCY;
+	}
+
+	@Override public int getResultSetType() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getType();
+		}
+		if (this.resultSetParams.length > 0) {
+			return this.resultSetParams[0];
+		}
+		return Neo4jResultSet.DEFAULT_TYPE;
+	}
+
+	@Override public int getResultSetHoldability() throws SQLException {
+		this.checkClosed();
+		if (currentResultSet != null) {
+			return currentResultSet.getHoldability();
+		}
+		if (this.resultSetParams.length > 2) {
+			return this.resultSetParams[2];
+		}
+		return Neo4jResultSet.DEFAULT_HOLDABILITY;
 	}
 
 	/*---------------------------------*/
@@ -290,4 +330,19 @@ public abstract class Neo4jStatement implements java.sql.Statement {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
+	@Override public boolean hasDebug() {
+		return this.debug;
+	}
+
+	@Override public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
+	@Override public void setDebugLevel(int level) {
+		this.debugLevel = level;
+	}
+
+	@Override public int getDebugLevel() {
+		return this.debugLevel;
+	}
 }

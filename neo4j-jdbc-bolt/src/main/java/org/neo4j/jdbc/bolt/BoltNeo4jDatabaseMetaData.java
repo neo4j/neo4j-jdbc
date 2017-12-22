@@ -19,29 +19,40 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.List;
-
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.metadata.Column;
 import org.neo4j.jdbc.metadata.Table;
+import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+
+import java.lang.reflect.Proxy;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides metadata
  *
- * @author AgileLARUS	
+ * @author AgileLARUS
  * @since 3.0.0
  */
-class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
+public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 
-	public BoltNeo4jDatabaseMetaData(BoltNeo4jConnection connection) {
+	/**
+	 * Used for some extra logging (for example in the constructor)
+	 */
+	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jDatabaseMetaData.class.getCanonicalName());
+
+	public BoltNeo4jDatabaseMetaData(BoltNeo4jConnectionImpl connection) {
 		super(connection);
 
-		// compute database metadata: version, tables == labels, columns = properties (by label)   
+		// compute database metadata: version, tables == labels, columns = properties (by label)
 		if (connection != null) {
 			try {
 				BoltNeo4jConnection conn = (BoltNeo4jConnection) DriverManager.getConnection(connection.getUrl(), connection.getProperties());
@@ -51,8 +62,15 @@ class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 				getDatabaseProperties(session);
 				conn.close();
 			} catch (SQLException e) {
+				LOGGER.log(Level.SEVERE, e.getMessage(), e);
 			}
 		}
+	}
+
+	public static DatabaseMetaData newInstance(boolean debug, BoltNeo4jConnectionImpl connection) {
+		DatabaseMetaData dbmd = new BoltNeo4jDatabaseMetaData(connection);
+		return (DatabaseMetaData) Proxy.newProxyInstance(BoltNeo4jDatabaseMetaData.class.getClassLoader(), new Class[] { DatabaseMetaData.class },
+				new Neo4jInvocationHandler(dbmd, debug));
 	}
 
 	private void getDatabaseVersion(Session session) {
@@ -64,21 +82,22 @@ class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 			}
 		}
 	}
-	
+
 	private void getDatabaseLabels(Session session) {
 		StatementResult rs = session.run("CALL db.labels() yield label return label");
 		if (rs != null) {
 			while (rs.hasNext()) {
 				Record record = rs.next();
 				this.databaseLabels.add(new Table(record.get("label").asString()));
-		  }
+			}
 		}
 	}
-	
+
 	private void getDatabaseProperties(Session session) {
 		if (this.databaseLabels != null) {
 			for (Table databaseLabel : this.databaseLabels) {
-				StatementResult rs = session.run("MATCH (n:" + databaseLabel.getTableName() + ") WITH n LIMIT " + Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE + " UNWIND keys(n) as key RETURN collect(distinct key) as keys");
+				StatementResult rs = session.run("MATCH (n:" + databaseLabel.getTableName() + ") WITH n LIMIT " + Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE
+						+ " UNWIND keys(n) as key RETURN collect(distinct key) as keys");
 				if (rs != null) {
 					cycleResultSetToSetDatabaseProperties(rs, databaseLabel);
 				}
@@ -86,7 +105,7 @@ class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 		}
 	}
 
-	private void cycleResultSetToSetDatabaseProperties (StatementResult rs, Table databaseLabel) {
+	private void cycleResultSetToSetDatabaseProperties(StatementResult rs, Table databaseLabel) {
 		while (rs.hasNext()) {
 			Record record = rs.next();
 			List<Object> keys = record.get("keys").asList();

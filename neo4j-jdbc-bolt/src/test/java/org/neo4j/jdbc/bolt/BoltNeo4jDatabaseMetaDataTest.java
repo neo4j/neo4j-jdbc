@@ -21,6 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.SQLException;
 
@@ -41,7 +42,7 @@ public class BoltNeo4jDatabaseMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getConnectionShouldGetConnection() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		BoltNeo4jConnection connection = Mockito.mock(BoltNeo4jConnection.class);
+		BoltNeo4jConnectionImpl connection = Mockito.mock(BoltNeo4jConnectionImpl.class);
 		BoltNeo4jDatabaseMetaData boltDatabaseMetaData = new BoltNeo4jDatabaseMetaData(connection);
 
 		assertEquals(connection, boltDatabaseMetaData.getConnection());

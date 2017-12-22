@@ -30,8 +30,6 @@ import java.util.List;
 
 public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
 
-	private boolean loggable = false;
-
 	/**
 	 * Default constructor.
 	 *
@@ -76,7 +74,7 @@ public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	}
 
 	@Override public Neo4jResultSetMetaData getMetaData() throws SQLException {
-		return InstanceFactory.debug(HttpNeo4jResultSetMetaData.class, new HttpNeo4jResultSetMetaData(((HttpNeo4jResultSet) this.currentResultSet).result), this.isLoggable());
+		return new HttpNeo4jResultSetMetaData(((HttpNeo4jResultSet) this.currentResultSet).result);
 	}
 
 	@Override public Neo4jParameterMetaData getParameterMetaData() throws SQLException {
@@ -126,17 +124,5 @@ public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		}
 
 		return result;
-	}
-
-	/*--------------------*/
-	/*       Logger       */
-	/*--------------------*/
-
-	@Override public boolean isLoggable() {
-		return loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
 	}
 }

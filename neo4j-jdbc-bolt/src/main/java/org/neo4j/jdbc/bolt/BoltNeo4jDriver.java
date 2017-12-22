@@ -21,7 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.Neo4jDriver;
-import org.neo4j.jdbc.InstanceFactory;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.io.File;
 import java.sql.Connection;
@@ -37,10 +37,10 @@ import static org.neo4j.driver.v1.Config.build;
  */
 public class BoltNeo4jDriver extends Neo4jDriver {
 
-	public static final String JDBC_BOLT_PREFIX = "bolt";
+	public static final String JDBC_BOLT_PREFIX         = "bolt";
 	public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
-	public static final String TRUST_STRATEGY_KEY = "trust.strategy";
-	public static final String TRUSTED_CERTIFICATE_KEY = "trusted.certificate.file";
+	public static final String TRUST_STRATEGY_KEY       = "trust.strategy";
+	public static final String TRUSTED_CERTIFICATE_KEY  = "trusted.certificate.file";
 
 	static {
 		try {
@@ -53,6 +53,7 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 
 	/**
 	 * Default constructor.
+	 *
 	 * @throws SQLException sqlexception
 	 */
 	public BoltNeo4jDriver() throws SQLException {
@@ -78,8 +79,7 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 				AuthToken authToken = getAuthToken(info);
 				Driver driver = GraphDatabase.driver(boltUrl, authToken, config);
 				Session session = driver.session();
-                BoltNeo4jConnection boltConnection = new BoltNeo4jConnection(session, info, url);
-				connection = InstanceFactory.debug(BoltNeo4jConnection.class, boltConnection, BoltNeo4jConnection.hasDebug(info));
+				connection = BoltNeo4jConnectionImpl.newInstance(session, info, url);
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}
@@ -132,11 +132,12 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 		return newBuilder;
 	}
 
-	private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder) throws SQLException {
+	private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder)
+			throws SQLException {
 		if (properties.containsKey(TRUSTED_CERTIFICATE_KEY)) {
 			Object file = properties.get(TRUSTED_CERTIFICATE_KEY);
 			if (file instanceof File) {
-				Config.ConfigBuilder newBuilder = builder;
+				Config.ConfigBuilder newBuilder;
 				switch (strategy) {
 					case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
 						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy((File) file));
@@ -146,6 +147,9 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 						break;
 					case TRUST_SIGNED_CERTIFICATES:
 						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSignedBy((File) file));
+						break;
+					default:
+						newBuilder = builder;
 						break;
 				}
 				return newBuilder;

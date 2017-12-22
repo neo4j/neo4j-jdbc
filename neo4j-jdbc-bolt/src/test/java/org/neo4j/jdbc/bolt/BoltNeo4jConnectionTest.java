@@ -31,6 +31,7 @@ import org.neo4j.driver.internal.spi.*;
 import org.neo4j.driver.v1.AccessMode;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.jdbc.bolt.data.StatementData;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.*;
 import java.sql.Connection;
@@ -47,16 +48,16 @@ public class BoltNeo4jConnectionTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	private BoltNeo4jConnection openConnection;
-	private BoltNeo4jConnection closedConnection;
-	private BoltNeo4jConnection slowOpenConnection;
-	private BoltNeo4jConnection exceptionOpenConnection;
+	private BoltNeo4jConnectionImpl openConnection;
+	private BoltNeo4jConnectionImpl closedConnection;
+	private BoltNeo4jConnectionImpl slowOpenConnection;
+	private BoltNeo4jConnectionImpl exceptionOpenConnection;
 
 	@Before public void tearUp() {
-		openConnection = new BoltNeo4jConnection(mockSessionOpen());
-		closedConnection = new BoltNeo4jConnection(mockSessionClosed());
-		slowOpenConnection = new BoltNeo4jConnection(mockSessionOpenSlow());
-		exceptionOpenConnection = new BoltNeo4jConnection(mockSessionException());
+		openConnection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		closedConnection = new BoltNeo4jConnectionImpl(mockSessionClosed());
+		slowOpenConnection = new BoltNeo4jConnectionImpl(mockSessionOpenSlow());
+		exceptionOpenConnection = new BoltNeo4jConnectionImpl(mockSessionException());
 	}
 
 	/*------------------------------*/
@@ -106,7 +107,7 @@ public class BoltNeo4jConnectionTest {
 	@Test public void closeShouldCloseConnection() throws SQLException {
 		Session session = mock(Session.class);
 		when(session.isOpen()).thenReturn(true).thenReturn(false);
-		Connection connection = new BoltNeo4jConnection(session);
+		Connection connection = new BoltNeo4jConnectionImpl(session);
 		connection.close();
 		verify(session, times(1)).close();
 		assertTrue(connection.isClosed());
@@ -114,7 +115,7 @@ public class BoltNeo4jConnectionTest {
 
 	@Test public void closeShouldNotThrowExceptionWhenClosingAClosedConnection() throws SQLException {
 		Session session = mockSessionClosed();
-		Connection connection = new BoltNeo4jConnection(session);
+		Connection connection = new BoltNeo4jConnectionImpl(session);
 		connection.close();
 		verify(session, never()).close();
 		assertTrue(connection.isClosed());
@@ -130,7 +131,7 @@ public class BoltNeo4jConnectionTest {
 		when(connectionProvider.acquireConnection(AccessMode.READ)).thenReturn(boltConnection);
 		Session session = new NetworkSession(connectionProvider, AccessMode.READ, null, DevNullLogging.DEV_NULL_LOGGING);
 		session.run("return 1");
-		Connection connection = new BoltNeo4jConnection(session);
+		Connection connection = new BoltNeo4jConnectionImpl(session);
 		connection.close();
 	}
 
@@ -184,10 +185,10 @@ public class BoltNeo4jConnectionTest {
 	/*------------------------------*/
 
 	@Test public void createStatementNoParamsShouldReturnNewStatement() throws SQLException {
-		Connection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.createStatement();
 
-		assertTrue(statement instanceof BoltNeo4jStatement);
+		assertNotNull(statement);
 		assertEquals(connection.getHoldability(), statement.getResultSetHoldability());
 		assertEquals(ResultSet.CONCUR_READ_ONLY, statement.getResultSetConcurrency());
 		assertEquals(ResultSet.TYPE_FORWARD_ONLY, statement.getResultSetType());
@@ -199,7 +200,7 @@ public class BoltNeo4jConnectionTest {
 	}
 
 	@Test public void createStatementTwoParamsShouldReturnNewStatement() throws SQLException {
-		Connection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
 
@@ -250,7 +251,7 @@ public class BoltNeo4jConnectionTest {
 	}
 
 	@Test public void createStatementThreeParamsShouldReturnNewStatement() throws SQLException {
-		Connection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
 		int[] holdabilities = { ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT };
@@ -315,10 +316,10 @@ public class BoltNeo4jConnectionTest {
 			}
 		}
 	}
-	
+
 	@Ignore
 	@Test public void createStatementWithWrongSyntax() throws SQLException {
-		try (Connection connection = new BoltNeo4jConnection(mockSessionOpen())) {
+		try (Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen())) {
 			try {
 				boolean ret = connection.createStatement().execute("CREATE (n:Test {name:'TEST'}) SET n.p1 = 'A1', n.。p2 = 'A2';");
 				System.out.println("execute ret: " + ret);
@@ -341,10 +342,10 @@ public class BoltNeo4jConnectionTest {
 	/*------------------------------*/
 
 	@Test public void prepareStatementNoParamsShouldReturnNewStatement() throws SQLException {
-		Connection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 
-		assertTrue(statement instanceof BoltNeo4jPreparedStatement);
+		assertNotNull(statement);
 		assertEquals(connection.getHoldability(), statement.getResultSetHoldability());
 		assertEquals(ResultSet.CONCUR_READ_ONLY, statement.getResultSetConcurrency());
 		assertEquals(ResultSet.TYPE_FORWARD_ONLY, statement.getResultSetType());
@@ -356,7 +357,7 @@ public class BoltNeo4jConnectionTest {
 	}
 
 	@Test public void prepareStatementTwoParamsShouldReturnNewStatement() throws SQLException {
-		Connection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
 
@@ -407,7 +408,7 @@ public class BoltNeo4jConnectionTest {
 	}
 
 	@Test public void prepareStatementThreeParamsShouldReturnNewStatement() throws SQLException {
-		Connection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		int[] types = { ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE };
 		int[] concurrencies = { ResultSet.CONCUR_UPDATABLE, ResultSet.CONCUR_READ_ONLY };
 		int[] holdabilities = { ResultSet.HOLD_CURSORS_OVER_COMMIT, ResultSet.CLOSE_CURSORS_AT_COMMIT };
@@ -485,7 +486,7 @@ public class BoltNeo4jConnectionTest {
 		expectedEx.expect(SQLException.class);
 
 		Session session = new NetworkSession(null, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING);
-		Connection connection = new BoltNeo4jConnection(session);
+		Connection connection = new BoltNeo4jConnectionImpl(session);
 		connection.setAutoCommit(true);
 	}
 

@@ -39,7 +39,7 @@ import static java.sql.Types.*;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jPreparedStatement extends Neo4jStatement implements java.sql.PreparedStatement {
+public abstract class Neo4jPreparedStatement extends Neo4jStatement implements PreparedStatement {
 
 	protected String                    statement;
 	protected HashMap<String, Object>   parameters;
