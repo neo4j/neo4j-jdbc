@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.http.HttpNeo4jConnection;
 
 import static org.mockito.Matchers.anyString;

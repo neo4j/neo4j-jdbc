@@ -26,9 +26,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * @author AgileLARUS
+ * @author Gianmarco Laggia @ Larus B.A.
  *
- * @since 3.0.0
+ * @since 3.2.0
  */
 public class BoltNeo4jDataSource extends Neo4jDataSource {
 

@@ -33,8 +33,6 @@ import java.util.Map;
 
 public class HttpNeo4jStatement extends Neo4jStatement implements Loggable {
 
-	private boolean loggable = false;
-
 	public HttpNeo4jStatement(HttpNeo4jConnection httpConnection) {
 		super(httpConnection);
 		batchStatements = new ArrayList<>();
@@ -113,17 +111,5 @@ public class HttpNeo4jStatement extends Neo4jStatement implements Loggable {
 		}
 
 		return result;
-	}
-
-	/*--------------------*/
-	/*       Logger       */
-	/*--------------------*/
-
-	@Override public boolean isLoggable() {
-		return loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
 	}
 }

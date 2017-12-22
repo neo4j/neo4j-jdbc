@@ -25,7 +25,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-class Wrapper {
+public class Wrapper {
 
 	private Wrapper() {};
 

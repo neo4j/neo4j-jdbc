@@ -73,7 +73,7 @@ public class HttpNeo4jDriver extends Neo4jDriver {
 				if (neo4jUrl.getPort() > 0) {
 					port = neo4jUrl.getPort();
 				}
-				connection = InstanceFactory.debug(HttpNeo4jConnection.class, new HttpNeo4jConnection(host, port, secure, props, url), HttpNeo4jConnection.hasDebug(props));
+				connection = InstanceFactory.debug(new HttpNeo4jConnection(host, port, secure, props, url));
 			}
 		} catch (MalformedURLException e) {
 			throw new SQLException(e);

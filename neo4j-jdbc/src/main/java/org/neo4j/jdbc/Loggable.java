@@ -26,7 +26,11 @@ package org.neo4j.jdbc;
  * @since 3.0.0
  */
 public interface Loggable {
-	boolean isLoggable();
+	boolean hasDebug();
 
-	void setLoggable(boolean loggable);
+	void setDebug(boolean debug);
+
+	void setDebugLevel(int level);
+
+	int getDebugLevel();
 }
