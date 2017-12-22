@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
 
 import java.sql.SQLException;
 
@@ -42,7 +43,7 @@ public class Neo4jConnectionTest {
 	/*------------------------------*/
 
 	@Test public void isWrapperForShouldReturnTrue() throws SQLException {
-		Neo4jConnection connection = mock(Neo4jConnection.class, Mockito.CALLS_REAL_METHODS);
+		Neo4jConnection connection = mock(Neo4jConnectionImpl.class, Mockito.CALLS_REAL_METHODS);
 
 		assertTrue(connection.isWrapperFor(Neo4jConnection.class));
 		assertTrue(connection.isWrapperFor(java.sql.Connection.class));
@@ -51,7 +52,7 @@ public class Neo4jConnectionTest {
 	}
 
 	@Test public void isWrapperForShouldReturnFalse() throws SQLException {
-		Neo4jConnection connection = mock(Neo4jConnection.class, Mockito.CALLS_REAL_METHODS);
+		Neo4jConnection connection = mock(Neo4jConnectionImpl.class, Mockito.CALLS_REAL_METHODS);
 
 		assertFalse(connection.isWrapperFor(Neo4jStatement.class));
 		assertFalse(connection.isWrapperFor(java.sql.Driver.class));
@@ -64,7 +65,7 @@ public class Neo4jConnectionTest {
 	/*------------------------------*/
 
 	@Test public void unwrapShouldReturnCorrectClass() throws SQLException {
-		Neo4jConnection connection = mock(Neo4jConnection.class, Mockito.CALLS_REAL_METHODS);
+		Neo4jConnection connection = mock(Neo4jConnectionImpl.class, Mockito.CALLS_REAL_METHODS);
 
 		assertNotNull(connection.unwrap(Neo4jConnection.class));
 		assertNotNull(connection.unwrap(java.sql.Connection.class));
@@ -75,7 +76,7 @@ public class Neo4jConnectionTest {
 	@Test public void unwrapShouldThrowException() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = mock(Neo4jConnection.class, Mockito.CALLS_REAL_METHODS);
+		Neo4jConnection connection = mock(Neo4jConnectionImpl.class, Mockito.CALLS_REAL_METHODS);
 
 		connection.unwrap(Neo4jStatement.class);
 	}

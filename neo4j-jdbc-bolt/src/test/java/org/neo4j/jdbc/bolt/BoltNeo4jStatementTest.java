@@ -19,9 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.Neo4jConnection;
-import org.neo4j.jdbc.bolt.data.StatementData;
-import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -35,38 +32,47 @@ import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.ResultSummary;
 import org.neo4j.driver.v1.summary.SummaryCounters;
+import org.neo4j.jdbc.Neo4jStatement;
+import org.neo4j.jdbc.bolt.data.StatementData;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
+import org.neo4j.jdbc.bolt.utils.Mocker;
+import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.sql.BatchUpdateException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.lang.reflect.Proxy;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.neo4j.jdbc.bolt.utils.Mocker.*;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.neo4j.jdbc.bolt.utils.Mocker.*;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class) @PrepareForTest({ BoltNeo4jStatement.class, BoltNeo4jResultSet.class, Session.class }) public class BoltNeo4jStatementTest {
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ BoltNeo4jStatement.class, BoltNeo4jResultSet.class, Session.class })
+public class BoltNeo4jStatementTest {
 
-	@Rule public ExpectedException expectedEx = ExpectedException.none();
+	@Rule
+	public ExpectedException expectedEx = ExpectedException.none();
 
 	private BoltNeo4jResultSet mockedRS;
 
 	@Before public void interceptBoltResultSetConstructor() throws Exception {
 		mockedRS = mock(BoltNeo4jResultSet.class);
 		doNothing().when(mockedRS).close();
-		whenNew(BoltNeo4jResultSet.class).withArguments(anyObject(), anyObject()).thenReturn(mockedRS);
+		mockStatic(BoltNeo4jResultSet.class);
+		PowerMockito.when(BoltNeo4jResultSet.newInstance(anyBoolean(), any(Neo4jStatement.class), any(StatementResult.class))).thenReturn(mockedRS);
 	}
 
 	/*------------------------------*/
@@ -74,7 +80,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(null));
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(null));
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
@@ -84,7 +90,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(null));
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(null));
 		statement.close();
 
 		verify(mockedRS, never()).close();
@@ -92,7 +98,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(null));
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(null));
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 		statement.close();
@@ -105,10 +111,10 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 		Transaction mockTransaction = mock(Transaction.class);
 
-		BoltNeo4jConnection mockConnection = mockConnectionOpen();
+		BoltNeo4jConnectionImpl mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 
-		Statement statement = new BoltNeo4jStatement(mockConnection);
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnection);
 
 		statement.close();
 
@@ -122,7 +128,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 
 	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpen());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpen());
 		assertFalse(statement.isClosed());
 	}
 
@@ -133,31 +139,34 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeQueryShouldRun() throws SQLException {
 		StatementResult mockResult = mock(StatementResult.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = BoltNeo4jStatement
+				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
 	}
 
 	@Test public void executeQueryShouldThrowExceptionWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionClosed(), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed(), 0, 0, 0);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
 
 	@Test public void executeQueryShouldReturnCorrectResultSetStructureConnectionNotAutocommit() throws Exception {
-		BoltNeo4jConnection mockConnection = mockConnectionOpenWithTransactionThatReturns(null);
+		BoltNeo4jConnectionImpl mockConnection = mockConnectionOpenWithTransactionThatReturns(null);
 
-		Statement statement = new BoltNeo4jStatement(mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = BoltNeo4jStatement
+				.newInstance(false, mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 
-		verifyNew(BoltNeo4jResultSet.class).withArguments(statement, null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		verifyStatic(BoltNeo4jResultSet.class);
+		BoltNeo4jResultSet.newInstance(false, statement, null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpen());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpen());
 		statement.close();
 
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
@@ -166,7 +175,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeQueryShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareStatement("");
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -174,7 +183,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareCall("");
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -193,7 +202,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
 
-		Statement statement = new BoltNeo4jStatement(new BoltNeo4jConnection(session), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(session), 0, 0, 0);
 
 		statement.setQueryTimeout(1);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
@@ -215,15 +224,16 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = BoltNeo4jStatement
+				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
 
 	@Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.createStatement();
 		statement.close();
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
@@ -232,7 +242,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeUpdateShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareStatement("");
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
@@ -240,7 +250,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Ignore @Test public void executeUpdateShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareCall(null);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
@@ -259,7 +269,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
 
-		Statement statement = new BoltNeo4jStatement(new BoltNeo4jConnection(session), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(session), 0, 0, 0);
 
 		statement.setQueryTimeout(1);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
@@ -273,7 +283,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getResultSetConcurrencyShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionClosed());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed());
 		statement.close();
 		statement.getResultSetConcurrency();
 	}
@@ -284,7 +294,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getResultSetHoldabilityShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionClosed());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed());
 		statement.close();
 		statement.getResultSetHoldability();
 	}
@@ -295,7 +305,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getResultSetTypeShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionClosed());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed());
 		statement.close();
 		statement.getResultSetType();
 	}
@@ -306,8 +316,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldRunQuery() throws SQLException {
 		StatementResult mockResult = mock(StatementResult.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = BoltNeo4jStatement
+				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
 
@@ -321,29 +332,30 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		when(mockSummaryCounters.nodesCreated()).thenReturn(1);
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		Statement statement = BoltNeo4jStatement
+				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.execute(StatementData.STATEMENT_CREATE);
 	}
 
 	@Test public void executeShouldThrowExceptionOnQueryWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionClosed(), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed(), 0, 0, 0);
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
 
 	@Test public void executeShouldThrowExceptionOnUpdateWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionClosed(), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed(), 0, 0, 0);
 		statement.execute(StatementData.STATEMENT_CREATE);
 	}
 
 	@Test public void executeShouldThrowExceptionOnQueryOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpen());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpen());
 		statement.close();
 
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
@@ -352,7 +364,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnUpdateOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpen());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpen());
 		statement.close();
 
 		statement.execute(StatementData.STATEMENT_CREATE);
@@ -361,7 +373,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnQueryOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareStatement("");
 
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
@@ -370,7 +382,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeShouldThrowExceptionOnUpdateOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareStatement("");
 		when(statement.executeUpdate(anyString())).thenCallRealMethod();
 
@@ -380,7 +392,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Ignore @Test public void executeShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jConnection connection = new BoltNeo4jConnection(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
 		Statement statement = connection.prepareCall("");
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -399,7 +411,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 		given(session.beginTransaction()).willReturn(transaction);
 		given(session.isOpen()).willReturn(true);
 
-		Statement statement = new BoltNeo4jStatement(new BoltNeo4jConnection(session), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(session), 0, 0, 0);
 
 		statement.setQueryTimeout(1);
 		statement.execute(StatementData.STATEMENT_CREATE);
@@ -432,7 +444,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpen());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpen());
 		statement.close();
 
 		statement.getUpdateCount();
@@ -463,7 +475,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = new BoltNeo4jStatement(mockConnectionOpen());
+		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpen());
 		statement.close();
 
 		statement.getResultSet();
@@ -475,19 +487,24 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 
 	@Test public void addBatchShouldAddStringToStack() throws SQLException {
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
+		mockStatic(Proxy.class);
+		Statement s = mock(BoltNeo4jStatement.class);
+		doCallRealMethod().when(s).addBatch(anyString());
+		Whitebox.setInternalState(s, "batchStatements", new ArrayList<>());
+		PowerMockito.when(Proxy.newProxyInstance(any(ClassLoader.class), any(Class[].class), any(Neo4jInvocationHandler.class))).thenReturn(s);
+
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
-		stmt.addBatch(str1);
-		stmt.addBatch(str2);
+		s.addBatch(str1);
+		s.addBatch(str2);
 
-		assertEquals(Arrays.asList(str1, str2), Whitebox.getInternalState(stmt, "batchStatements"));
+		assertEquals(Arrays.asList(str1, str2), Whitebox.getInternalState(s, "batchStatements"));
 	}
 
 	@Test public void addBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
 		stmt.close();
 		stmt.addBatch("");
 	}
@@ -497,18 +514,24 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 
 	@Test public void clearBatchShouldWork() throws SQLException {
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
-		stmt.addBatch("MATCH n WHERE id(n) = 1 SET n.property=1");
-		stmt.addBatch("MATCH n WHERE id(n) = 2 SET n.property=2");
-		stmt.clearBatch();
+		mockStatic(Proxy.class);
+		Statement s = mock(BoltNeo4jStatement.class);
+		doCallRealMethod().when(s).addBatch(anyString());
+		doCallRealMethod().when(s).clearBatch();
+		Whitebox.setInternalState(s, "batchStatements", new ArrayList<>());
+		PowerMockito.when(Proxy.newProxyInstance(any(ClassLoader.class), any(Class[].class), any(Neo4jInvocationHandler.class))).thenReturn(s);
 
-		assertEquals(Collections.EMPTY_LIST, Whitebox.getInternalState(stmt, "batchStatements"));
+		s.addBatch("MATCH n WHERE id(n) = 1 SET n.property=1");
+		s.addBatch("MATCH n WHERE id(n) = 2 SET n.property=2");
+		s.clearBatch();
+
+		assertEquals(Collections.EMPTY_LIST, Whitebox.getInternalState(s, "batchStatements"));
 	}
 
 	@Test public void clearBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
 		stmt.close();
 		stmt.clearBatch();
 	}
@@ -518,7 +541,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
 		stmt.addBatch(str1);
@@ -543,7 +566,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	}
 
 	@Test public void executeBatchShouldThrowExceptionOnError() throws SQLException {
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
 		stmt.addBatch(str1);
@@ -567,7 +590,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void executeBatchShouldThrowExceptionOnClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionClosed());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionClosed());
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
 		stmt.addBatch(str1);
@@ -582,7 +605,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	/*------------------------------*/
 
 	@Test public void getConnectionShouldWork() throws SQLException {
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionOpen());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
 
 		assertNotNull(stmt.getConnection());
 		assertEquals(Mocker.mockConnectionOpen().getClass(), stmt.getConnection().getClass());
@@ -591,7 +614,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 	@Test public void getConnectionShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = new BoltNeo4jStatement(Mocker.mockConnectionClosed());
+		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionClosed());
 		stmt.close();
 
 		stmt.getConnection();

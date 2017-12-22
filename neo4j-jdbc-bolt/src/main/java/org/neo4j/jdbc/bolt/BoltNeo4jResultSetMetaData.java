@@ -19,25 +19,23 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import java.sql.Array;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.lang.reflect.Proxy;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.v1.types.Type;
-import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
+import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData implements Loggable {
+public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 
-	private boolean loggable = false;
 	private Type[] columnType;
 	private static final Map<Type, Class> INTERNAL_TYPE_TO_CLASS_MAP = new HashMap<>();
 	private static final Map<Type, Integer> INTERNAL_TYPE_TO_SQL_TYPES_MAP = new HashMap<>();
@@ -75,15 +73,15 @@ public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData implement
 	 * @param types  List of types
 	 * @param keys     List of column name (ie. key)
 	 */
-	BoltNeo4jResultSetMetaData(List<Type> types, List<String> keys) {
+	private BoltNeo4jResultSetMetaData(List<Type> types, List<String> keys) {
 		super(keys);
 		this.columnType = types.toArray(new Type[this.keys.size() + 1]);
+	}
 
-		// we init columnType with the first record
-		// in case first == last record
-		/*for (int i = 1; i <= this.keys.size(); i++) {
-			columnType[i] = this.getColumnDriverTypeOrDefault(i, InternalTypeSystem.TYPE_SYSTEM.STRING());
-		}*/
+	public static ResultSetMetaData newInstance(boolean debug, List<Type> types, List<String> keys) {
+		ResultSetMetaData rsmd = new BoltNeo4jResultSetMetaData(types, keys);
+		return (ResultSetMetaData) Proxy
+				.newProxyInstance(BoltNeo4jResultSetMetaData.class.getClassLoader(), new Class[] { ResultSetMetaData.class }, new Neo4jInvocationHandler(rsmd, debug));
 	}
 
 	/**
@@ -119,17 +117,5 @@ public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData implement
 		}
 		Type type = this.columnType[column - 1];
 		return type.name();
-	}
-
-	/*--------------------*/
-	/*       Logger       */
-	/*--------------------*/
-
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
 	}
 }

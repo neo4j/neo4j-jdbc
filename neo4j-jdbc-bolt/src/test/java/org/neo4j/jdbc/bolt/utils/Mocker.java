@@ -26,7 +26,7 @@ import org.neo4j.driver.internal.NetworkSession;
 import org.neo4j.driver.internal.logging.DevNullLogging;
 import org.neo4j.driver.internal.spi.ConnectionProvider;
 import org.neo4j.driver.v1.*;
-import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,24 +85,24 @@ public class Mocker {
 		return session;
 	}
 
-	public static BoltNeo4jConnection mockConnectionOpen() throws SQLException {
-		BoltNeo4jConnection mockConnection = mock(BoltNeo4jConnection.class);
+	public static BoltNeo4jConnectionImpl mockConnectionOpen() throws SQLException {
+		BoltNeo4jConnectionImpl mockConnection = mock(BoltNeo4jConnectionImpl.class);
 		when(mockConnection.isClosed()).thenReturn(false);
 		return mockConnection;
 	}
 
-	public static BoltNeo4jConnection mockConnectionClosed() throws SQLException {
-		BoltNeo4jConnection mockConnection = mock(BoltNeo4jConnection.class);
+	public static BoltNeo4jConnectionImpl mockConnectionClosed() throws SQLException {
+		BoltNeo4jConnectionImpl mockConnection = mock(BoltNeo4jConnectionImpl.class);
 		when(mockConnection.isClosed()).thenReturn(true);
 		return mockConnection;
 	}
 
-	public static BoltNeo4jConnection mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
+	public static BoltNeo4jConnectionImpl mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
 		Transaction mockTransaction = mock(Transaction.class);
 		when(mockTransaction.run(anyString())).thenReturn(cur);
 		when(mockTransaction.run(anyString(), any(HashMap.class))).thenReturn(cur);
 
-		BoltNeo4jConnection mockConnection = mockConnectionOpen();
+		BoltNeo4jConnectionImpl mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 		return mockConnection;
 	}

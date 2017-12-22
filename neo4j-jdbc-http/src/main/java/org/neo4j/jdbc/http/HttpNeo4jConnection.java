@@ -23,6 +23,7 @@ import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.http.driver.CypherExecutor;
 import org.neo4j.jdbc.http.driver.Neo4jResponse;
 import org.neo4j.jdbc.http.driver.Neo4jStatement;
+import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 import org.neo4j.jdbc.utils.Neo4jJdbcRuntimeException;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
@@ -35,11 +36,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-public class HttpNeo4jConnection extends Neo4jConnection implements Loggable {
+public class HttpNeo4jConnection extends Neo4jConnectionImpl implements Loggable {
 
 	CypherExecutor executor;
 	private boolean isClosed = false;
-	private boolean loggable = false;
+	private boolean debug = false;
+	private int debugLevel;
 
 	/**
 	 * Default constructor.
@@ -145,17 +147,17 @@ public class HttpNeo4jConnection extends Neo4jConnection implements Loggable {
 
 	@Override public java.sql.Statement createStatement() throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpNeo4jStatement.class, new HttpNeo4jStatement(this), this.isLoggable());
+		return InstanceFactory.debug(new HttpNeo4jStatement(this));
 	}
 
 	@Override public java.sql.Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpNeo4jStatement.class, new HttpNeo4jStatement(this), this.isLoggable());
+		return InstanceFactory.debug(new HttpNeo4jStatement(this));
 	}
 
 	@Override public java.sql.Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpNeo4jStatement.class, new HttpNeo4jStatement(this), this.isLoggable());
+		return InstanceFactory.debug(new HttpNeo4jStatement(this));
 	}
 
 	/*-------------------------------*/
@@ -164,18 +166,18 @@ public class HttpNeo4jConnection extends Neo4jConnection implements Loggable {
 
 	@Override public PreparedStatement prepareStatement(String cypher) throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpNeo4jPreparedStatement.class, new HttpNeo4jPreparedStatement(this, cypher), this.isLoggable());
+		return InstanceFactory.debug(new HttpNeo4jPreparedStatement(this, cypher));
 	}
 
 	@Override public PreparedStatement prepareStatement(String cypher, int resultSetType, int resultSetConcurrency) throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpNeo4jPreparedStatement.class, new HttpNeo4jPreparedStatement(this, cypher), this.isLoggable());
+		return InstanceFactory.debug(new HttpNeo4jPreparedStatement(this, cypher));
 	}
 
 	@Override public PreparedStatement prepareStatement(String cypher, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
 		this.checkClosed();
-		return InstanceFactory.debug(HttpNeo4jPreparedStatement.class, new HttpNeo4jPreparedStatement(this, cypher), this.isLoggable());
+		return InstanceFactory.debug(new HttpNeo4jPreparedStatement(this, cypher));
 	}
 
 	/*-------------------*/
@@ -226,16 +228,19 @@ public class HttpNeo4jConnection extends Neo4jConnection implements Loggable {
 		return true;
 	}
 
-	/*--------------------*/
-	/*       Logger       */
-	/*--------------------*/
-
-	@Override public boolean isLoggable() {
-		return loggable;
+	@Override public boolean hasDebug() {
+		return this.debug;
 	}
 
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
+	@Override public void setDebug(boolean debug) {
+		this.debug = debug;
 	}
 
+	@Override public void setDebugLevel(int level) {
+		this.debugLevel = level;
+	}
+
+	@Override public int getDebugLevel() {
+		return this.debugLevel;
+	}
 }
