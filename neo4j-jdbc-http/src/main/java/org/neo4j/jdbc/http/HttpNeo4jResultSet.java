@@ -37,7 +37,7 @@ import java.util.List;
  * ResultSet for the HTTP connector.
  * This is a wrapper of Neo4jResult.
  */
-public class HttpNeo4jResultSet extends Neo4jResultSet implements Loggable {
+public class HttpNeo4jResultSet extends Neo4jResultSet {
 
 	/**
 	 * Jackson mapper to make toString() method for complex object.
@@ -60,16 +60,9 @@ public class HttpNeo4jResultSet extends Neo4jResultSet implements Loggable {
 	private List<Object> currentRow;
 
 	/**
-	 * Is the last read column was null.
-	 */
-	private boolean wasNull = false;
-
-	/**
 	 * Statement that have produced this ResultSet.
 	 */
 	private Neo4jStatement statement;
-
-	private boolean loggable;
 
 	private static final String INVALID_COLUMN = "Column %s is invalid";
 	private static final String UNDEFINED_COLUMN = "Column %s is not defined";
@@ -390,18 +383,6 @@ public class HttpNeo4jResultSet extends Neo4jResultSet implements Loggable {
 	public boolean isClosed() throws SQLException {
 
 		return this.isClosed;
-	}
-
-	@Override
-	public boolean isLoggable() {
-
-		return this.loggable;
-	}
-
-	@Override
-	public void setLoggable(boolean loggable) {
-
-		this.loggable = loggable;
 	}
 
 	@Override

@@ -19,29 +19,18 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.Neo4jParameterMetaData;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltNeo4jParameterMetaData extends Neo4jParameterMetaData implements Loggable {
-
-	private boolean loggable = false;
+public class BoltNeo4jParameterMetaData extends Neo4jParameterMetaData {
 
 	private BoltNeo4jPreparedStatement preparedStatement;
 
 	public BoltNeo4jParameterMetaData(BoltNeo4jPreparedStatement preparedStatement) {
 		this.preparedStatement = preparedStatement;
-	}
-
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
 	}
 
 	public BoltNeo4jPreparedStatement getPreparedStatement() {

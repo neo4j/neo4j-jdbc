@@ -24,7 +24,6 @@ import org.neo4j.jdbc.utils.Neo4jJdbcRuntimeException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -52,9 +51,8 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 	 * Constructor for extended class.
 	 *
 	 * @param prefix Prefix of the driver for the connection url.
-	 * @throws SQLException sqlexception
 	 */
-	protected Neo4jDriver(String prefix) throws SQLException {
+	protected Neo4jDriver(String prefix) {
 		this.driverPrefix = prefix;
 	}
 

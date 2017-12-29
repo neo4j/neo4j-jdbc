@@ -19,23 +19,8 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.internal.value.BooleanValue;
-import org.neo4j.driver.internal.value.FloatValue;
-import org.neo4j.driver.internal.value.IntegerValue;
-import org.neo4j.driver.internal.value.ListValue;
-import org.neo4j.driver.internal.value.NodeValue;
-import org.neo4j.driver.internal.value.PathValue;
-import org.neo4j.driver.internal.value.RelationshipValue;
-import org.neo4j.driver.internal.value.StringValue;
+import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
@@ -46,40 +31,35 @@ import org.neo4j.driver.v1.types.Relationship;
 import org.neo4j.driver.v1.types.Type;
 import org.neo4j.driver.v1.util.Pair;
 import org.neo4j.jdbc.*;
-import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.impl.ListArray;
+import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+
+import java.lang.reflect.Proxy;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
+public class BoltNeo4jResultSet extends Neo4jResultSet {
 
-	private StatementResult        iterator;
-	private Neo4jResultSetMetaData metaData;
-	private Record                 current;
-	private List<String>           keys;
-	private List<Type>             classes;
-	private int                    type;
-	private int                    concurrency;
-	private int                    holdability;
-	private boolean                wasNull;
+	private StatementResult   iterator;
+	private ResultSetMetaData metaData;
+	private Record            current;
+	private List<String>      keys;
+	private List<Type>        classes;
 
-	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
-	public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
-	public static final int DEFAULT_HOLDABILITY = CLOSE_CURSORS_AT_COMMIT;
-
-	private boolean loggable  = false;
 	private boolean flattened = false;
 
 	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
-	private Neo4jStatement statement;
 
 	private int flatten;
 
 	private LinkedList<Record> prefetchedRecords = null;
-
-	private static final String COLUMN_NOT_PRESENT = "Column not present in ResultSet";
 
 	/**
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
@@ -90,8 +70,8 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 	 *                  The defaults are <code>TYPE_FORWARD_ONLY</code>,
 	 *                  <code>CONCUR_READ_ONLY</code>,
 	 */
-	public BoltNeo4jResultSet(Neo4jStatement statement, StatementResult iterator, int... params) {
-		this.statement = statement;
+	private BoltNeo4jResultSet(Statement statement, StatementResult iterator, int... params) {
+		super(statement, params);
 		this.iterator = iterator;
 
 		this.keys = new ArrayList<>();
@@ -99,7 +79,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 		this.prefetchedRecords = new LinkedList<>();
 
 		try {
-			this.flatten = this.statement.getConnection().getFlattening();
+			this.flatten = ((Neo4jConnection) this.statement.getConnection()).getFlattening();
 		} catch (Exception e) {
 			this.flatten = 0;
 		}
@@ -118,11 +98,14 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 			}
 		}
 
-		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
-		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
-		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
 
-		this.metaData = InstanceFactory.debug(BoltNeo4jResultSetMetaData.class, new BoltNeo4jResultSetMetaData(this.classes, this.keys), this.isLoggable());
+		this.metaData = BoltNeo4jResultSetMetaData.newInstance(false, this.classes, this.keys);
+	}
+
+	public static ResultSet newInstance(boolean debug, Statement statement, StatementResult iterator, int... params) {
+		ResultSet rs = new BoltNeo4jResultSet(statement, iterator, params);
+		return (ResultSet) Proxy
+				.newProxyInstance(BoltNeo4jResultSet.class.getClassLoader(), new Class[] { ResultSet.class }, new Neo4jInvocationHandler(rs, debug));
 	}
 
 	private void flattenResultSet() {
@@ -242,9 +225,9 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 			String result = null;
 			if (value instanceof IntegerValue) {
 				result = ((IntegerValue) value).asLiteralString();
-			}	else if (value instanceof FloatValue) {
+			} else if (value instanceof FloatValue) {
 				result = ((FloatValue) value).asLiteralString();
-			}	else if (value instanceof NodeValue) {
+			} else if (value instanceof NodeValue) {
 				result = this.convertNodeToString(value.asNode());
 			} else if (value instanceof RelationshipValue) {
 				result = this.convertRelationshipToString(value.asRelationship());
@@ -255,8 +238,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 		}
 	}
 
-	@SuppressWarnings("rawtypes")
-	private String convertToJSONProperty(String key, Object value) {
+	@SuppressWarnings("rawtypes") private String convertToJSONProperty(String key, Object value) {
 		String result = key == null ? "" : "\"" + key + "\":";
 
 		if (value instanceof String) {
@@ -505,8 +487,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 		return new ListArray(list, Neo4jArray.getObjectType(list.get(0)));
 	}
 
-	@SuppressWarnings("rawtypes")
-	@Override public Neo4jArray getArray(String columnLabel) throws SQLException {
+	@SuppressWarnings("rawtypes") @Override public Neo4jArray getArray(String columnLabel) throws SQLException {
 		checkClosed();
 		List list = this.fetchValueFromLabel(columnLabel).asList();
 		return new ListArray(list, Neo4jArray.getObjectType(list.get(0)));
@@ -518,7 +499,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 		return value.isNull() ? 0 : value.asDouble();
 	}
 
-	@Override public Neo4jResultSetMetaData getMetaData() throws SQLException {
+	@Override public ResultSetMetaData getMetaData() throws SQLException {
 		return metaData;
 	}
 
@@ -566,15 +547,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet implements Loggable {
 		return this.generateObject(obj);
 	}
 
-	@Override public boolean isLoggable() {
-		return this.loggable;
-	}
-
-	@Override public void setLoggable(boolean loggable) {
-		this.loggable = loggable;
-	}
-
-	@Override public java.sql.Statement getStatement() throws SQLException {
+	@Override public Statement getStatement() throws SQLException {
 		return statement;
 	}
 }

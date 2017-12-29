@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -27,6 +26,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.v1.StatementResult;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertFalse;
@@ -51,7 +51,7 @@ public class BoltNeo4jResultSetTest {
 	@Test public void isClosedReturnFalseWhenConnectionOpen() throws SQLException {
 		StatementResult StatementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		Neo4jResultSet resultSet = new BoltNeo4jResultSet(null, StatementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, StatementResult);
 
 		assertFalse(resultSet.isClosed());
 	}
@@ -60,7 +60,7 @@ public class BoltNeo4jResultSetTest {
 	@Test public void isClosedReturnTrueWhenConnectionClosed() throws SQLException {
 		StatementResult StatementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		Neo4jResultSet resultSet = new BoltNeo4jResultSet(null, StatementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, StatementResult);
 
 		resultSet.close();
 		assertTrue(resultSet.isClosed());
@@ -72,7 +72,7 @@ public class BoltNeo4jResultSetTest {
 
 	@Test public void closeShouldThrowExceptionIfIteratorIsNull() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		Neo4jResultSet resultSet = new BoltNeo4jResultSet(null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
 
 		resultSet.close();
 	}

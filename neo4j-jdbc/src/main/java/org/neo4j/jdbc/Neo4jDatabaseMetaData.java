@@ -30,6 +30,8 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +40,8 @@ import java.util.regex.Pattern;
  * @since 3.0.0
  */
 public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData {
+
+	public static final Logger LOGGER = Logger.getLogger(Neo4jDatabaseMetaData.class.getName());
 
 	/**
 	 * The regex to parse the version driver.
@@ -117,7 +121,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 				result = Integer.valueOf(matcher.group(position));
 			}
 		} catch (SQLException e) {
-			// silent exception, but there is the default value
+			LOGGER.log(Level.FINEST, "Silent exception", e);
 		}
 		return result;
 	}
@@ -272,8 +276,9 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		}
 		List<List<Object>> schemas = new ArrayList<>();
 		for (Table databaseLabel : this.databaseLabels) {
-			if ((tableNamePattern == null || "".equals(tableNamePattern) || databaseLabel.getTableName().equals(tableNamePattern)) && (types == null || (
-					types.length > 0 && Arrays.asList(types).contains(databaseLabel.getTableType())))) {
+			final boolean tableNameNotNullNorEmpty = tableNamePattern == null || "".equals(tableNamePattern);
+			final boolean typesNotNullAndContainsDBLabel = types == null || (types.length > 0 && Arrays.asList(types).contains(databaseLabel.getTableType()));
+			if ((tableNameNotNullNorEmpty || databaseLabel.getTableName().equals(tableNamePattern)) && typesNotNullAndContainsDBLabel) {
 				schemas.add(databaseLabel.toResultSetRow());
 			}
 		}
@@ -287,8 +292,9 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		}
 		List<List<Object>> schemas = new ArrayList<>();
 		for (Column databaseKey : this.databaseProperties) {
-			if ((tableNamePattern == null || "".equals(tableNamePattern) || databaseKey.getTableName().equals(tableNamePattern)) && (columnNamePattern == null
-					|| "".equals(columnNamePattern) || databaseKey.getColumnName().equals(columnNamePattern))) {
+			final boolean tableNameNotNullNorEmpty = tableNamePattern == null || "".equals(tableNamePattern);
+			final boolean columnNameNotNullAndColumnNameMatches = columnNamePattern == null || "".equals(columnNamePattern) || databaseKey.getColumnName().equals(columnNamePattern);
+			if ((tableNameNotNullNorEmpty || databaseKey.getTableName().equals(tableNamePattern)) && columnNameNotNullAndColumnNameMatches) {
 				schemas.add(databaseKey.toResultSetRow());
 			}
 		}

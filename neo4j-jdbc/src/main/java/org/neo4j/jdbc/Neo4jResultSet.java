@@ -33,17 +33,39 @@ import java.util.Map;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jResultSet implements java.sql.ResultSet {
+public abstract class Neo4jResultSet implements ResultSet, Loggable {
+
+	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
+	public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
+	public static final int DEFAULT_HOLDABILITY = CLOSE_CURSORS_AT_COMMIT;
+
+	protected static final int    DEFAULT_FETCH_SIZE = 1;
+	protected static final String COLUMN_NOT_PRESENT = "Column not present in ResultSet";
 
 	/**
 	 * Close state of this ResultSet.
 	 */
-	protected boolean isClosed = false;
+	protected boolean isClosed         = false;
+	protected int     currentRowNumber = 0;
+	protected boolean debug;
+	protected int     debugLevel;
+	protected int     type;
+	protected int     concurrency;
+	protected int     holdability;
 
-	protected int currentRowNumber = 0;
+	protected Statement statement;
 
-	protected static final int DEFAULT_FETCH_SIZE = 1;
+	/**
+	 * Is the last read column was null.
+	 */
+	protected boolean wasNull = false;
 
+	public Neo4jResultSet(Statement statement, int... params) {
+		this.statement = statement;
+		this.type = params.length > 0 ? params[0] : TYPE_FORWARD_ONLY;
+		this.concurrency = params.length > 1 ? params[1] : CONCUR_READ_ONLY;
+		this.holdability = params.length > 2 ? params[2] : CLOSE_CURSORS_AT_COMMIT;
+	}
 
 	/*----------------------------------------*/
 	/*       Some useful, check method        */
@@ -92,7 +114,7 @@ public abstract class Neo4jResultSet implements java.sql.ResultSet {
 		checkClosed();
 	}
 
-	@Override public final boolean next() throws SQLException {
+	@Override public boolean next() throws SQLException {
 		boolean result = innerNext();
 		if (result) {
 			currentRowNumber++;
@@ -750,4 +772,19 @@ public abstract class Neo4jResultSet implements java.sql.ResultSet {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
+	@Override public boolean hasDebug() {
+		return this.debug;
+	}
+
+	@Override public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
+	@Override public void setDebugLevel(int debugLevel) {
+		this.debugLevel = debugLevel;
+	}
+
+	@Override public int getDebugLevel() {
+		return this.debugLevel;
+	}
 }

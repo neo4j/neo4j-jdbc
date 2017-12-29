@@ -26,9 +26,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -36,7 +33,17 @@ import java.util.Map;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jCallableStatement implements java.sql.CallableStatement {
+public abstract class Neo4jCallableStatement extends Neo4jPreparedStatement implements java.sql.CallableStatement {
+
+	/**
+	 * Default constructor with connection and statement.
+	 *
+	 * @param connection   The JDBC connection
+	 * @param rawStatement The prepared statement
+	 */
+	protected Neo4jCallableStatement(Neo4jConnection connection, String rawStatement) {
+		super(connection, rawStatement);
+	}
 
 	/*---------------------------------------*/
 	/*       Some useful check method        */
@@ -566,42 +573,6 @@ public abstract class Neo4jCallableStatement implements java.sql.CallableStateme
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public void setString(int parameterIndex, String x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setDate(int parameterIndex, Date x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setTime(int parameterIndex, Time x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void clearParameters() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
 	@Override public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
@@ -611,134 +582,6 @@ public abstract class Neo4jCallableStatement implements java.sql.CallableStateme
 	}
 
 	@Override public boolean execute() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void addBatch() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setRef(int parameterIndex, Ref x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBlob(int parameterIndex, Blob x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setClob(int parameterIndex, Clob x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setArray(int parameterIndex, java.sql.Array x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public ResultSetMetaData getMetaData() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setURL(int parameterIndex, URL x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public java.sql.ParameterMetaData getParameterMetaData() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setRowId(int parameterIndex, RowId x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNString(int parameterIndex, String value) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNClob(int parameterIndex, NClob value) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setClob(int parameterIndex, Reader reader) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
@@ -842,43 +685,7 @@ public abstract class Neo4jCallableStatement implements java.sql.CallableStateme
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public Connection getConnection() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
 	@Override public boolean getMoreResults(int current) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public ResultSet getGeneratedKeys() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean execute(String sql, String[] columnNames) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int getResultSetHoldability() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
