@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.http;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.Neo4jArray;
@@ -67,6 +68,10 @@ public class HttpNeo4jResultSet extends Neo4jResultSet {
 	private static final String INVALID_COLUMN = "Column %s is invalid";
 	private static final String UNDEFINED_COLUMN = "Column %s is not defined";
 	private static final String COLUMN_NOT_ARRAY = "Column %s is not an array";
+
+	static {
+		OBJECT_MAPPER.configure(DeserializationFeature.USE_LONG_FOR_INTS, true);
+	}
 
 	/**
 	 * Default constructor.

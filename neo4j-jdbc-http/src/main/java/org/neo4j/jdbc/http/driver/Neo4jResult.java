@@ -86,10 +86,10 @@ public class Neo4jResult {
 	public int getUpdateCount() {
 		int updated = 0;
 		if (this.stats != null && (boolean) this.stats.get("contains_updates")) {
-			updated += (int) stats.get("nodes_created");
-			updated += (int) stats.get("nodes_deleted");
-			updated += (int) stats.get("relationships_created");
-			updated += (int) stats.get("relationship_deleted");
+			updated += ((Long) stats.get("nodes_created")).intValue();
+			updated += ((Long) stats.get("nodes_deleted")).intValue();
+			updated += ((Long) stats.get("relationships_created")).intValue();
+			updated += ((Long) stats.get("relationship_deleted")).intValue();
 		}
 		return updated;
 	}
