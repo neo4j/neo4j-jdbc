@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.http.driver;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.auth.AuthScope;
@@ -81,6 +82,10 @@ public class CypherExecutor {
 	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private static final String DB_DATA_TRANSACTION = "/db/data/transaction";
+
+	static {
+		mapper.configure(DeserializationFeature.USE_LONG_FOR_INTS, true);
+	}
 
 	/**
 	 * Default constructor.
