@@ -1,0 +1,112 @@
+= Combining Matlab with Neo4j
+
+== Setup
+
+=== Download and Install Neo4j
+
+image::http://i.imgur.com/JqEqrlS.png[width=400,float=right]
+
+Go to http://neo4j.com/download  and download, install and start neo4j 3.3.1.
+
+After providing the initial password, choose a new password, you'll need it later.
+
+Type into the command-line at the top: `:play movies`, click the big block of text which is then copied into the command-line and hit the triangular "Run" button (or press Ctrl-Enter).
+
+The data is inserted and should be visualized.
+
+=== Get JDBC Driver
+
+Download the Neo4j jdbc driver from neo4j-contrib/neo4j-jdbc GitHub releases
+Need the older version b/c MATLAB still runs on Java 7
+
+----
+curl -O "$HOME/Documents/MATLAB/neo4j-jdbc-driver-3.1.0.jar" https://github.com/neo4j-contrib/neo4j-jdbc/releases/download/3.1.0/neo4j-jdbc-driver-3.1.0.jar
+----
+
+=== Add the jar to the class pah via javaaddpath
+
+----
+javaaddpath([matlabroot,'/neo4j-jdbc-driver-3.1.0.jar'])
+----
+
+and check that the dynamic path contains the jar
+
+----
+javaclasspath
+----
+
+=== Test Connection
+
+image::https://user-images.githubusercontent.com/12963831/34491711-d06858e2-efe4-11e7-96de-941f4ac06844.png[width=400,float=right]
+
+.Open Connection
+----
+conn = database('','neo4j','test','org.neo4j.jdbc.BoltNeo4jDriver','jdbc:neo4j:bolt://localhost:7687')
+----
+
+.Fetch Total Node Count
+----
+curs = exec(conn,'MATCH (n) RETURN count(*)')
+curs = fetch(curs);
+curs.Data
+close(curs)
+----
+
+.Output
+----
+ans =
+
+    '102671'
+----
+
+.Fetch Movies
+----
+curs = exec(conn,'MATCH (n:Movie) RETURN n.title, n.released, n.tagline')
+curs = fetch(curs).Data
+curs.Data
+close(curs)
+----
+
+.Output
+----
+ans =
+
+    'The Matrix'                         '1999'    'Welcome to the Real World'
+    'The Matrix Reloaded'                '2003'    'Free your mind'
+    'The Matrix Revolutions'             '2003'    'Everything that has a beginni…'
+    'The Devil's Advocate'               '1997'    'Evil has its winning ways'
+    'A Few Good Men'                     '1992'    'In the heart of the nation's …'
+    'Top Gun'                            '1986'    'I feel the need, the need for…'
+    'Jerry Maguire'                      '2000'    'The rest of his life begins n…'
+....
+----
+
+.Close Connection
+----
+close(conn)
+----
+
+== Resources
+
+=== Matlab & JDBC
+
+* http://www.mathworks.com/help/matlab/matlab_external/bringing-java-classes-and-methods-into-matlab-workspace.html[Bring Java Classes into MATLAB Workspace (javaclasspath.txt)]
+
+* http://www.mathworks.com/help/database/ug/configure-your-driver-and-data-source.html[donfiguring a driver and a data source]
+* http://www.mathworks.com/help/database/run-sql-query.html[Running a SQL Query: API Overview]
+* http://www.mathworks.com/help/database/ug/database.html[`database()` function to connect to a jdbc/odbc database]
+* http://www.mathworks.com/help/database/ug/exec.html[`exec()` function to run sql statements]
+
+* http://www.mathworks.com/help/database/ug/runsqlscript.html[`runsqlscript()` database function to run scripts from files]
+
+* http://www.mathworks.com/help/database/ug/configure-data-sources-and-connect-to-databases.html[Configure Data Sources and Connect to Databases]
+* http://www.mathworks.com/help/database/ug/choosing-between-odbc-and-jdbc-drivers.html[Choosing Between ODBC and JDBC Drivers]
+* http://www.mathworks.com/help/database/ug/other-odbc-or-jdbc-compliant-databases.html[Other ODBC- or JDBC-Compliant Databases]
+* http://www.mathworks.com/help/database/open-and-close-database-connection.html[open and close database connections]
+* http://www.mathworks.com/help/database/ug/oracle-jdbc-windows.html[Oracle JDBC for Windows]
+
+* http://www.mathworks.com/help/database/ug/connect-to-a-database.html[Overview: Connecting to a Database]
+* http://www.mathworks.com/help/database/ug/database-explorer.html[Working with Database Explorer]
+
+* http://www.mathworks.com/matlabcentral/answers/32618-connecting-to-mysql-using-jdbc
+* http://www.mathworks.com/matlabcentral/answers/166006-connect-using-jdbc-driver-to-neo4j[Original Question from 2014]

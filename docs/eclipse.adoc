@@ -34,7 +34,7 @@ image::https://cloud.githubusercontent.com/assets/6613815/15891653/ee692e58-2d75
 
 image::https://cloud.githubusercontent.com/assets/6613815/15891654/ee6aded8-2d75-11e6-8344-2b0a96a418c9.png[]
 
-* Choose *org.neo4j.jdbc.bolt.BoltNeo4jDriver* as the Driver class:
+* Choose *org.neo4j.jdbc.bolt.BoltDriver* as the Driver class:
 
 image::https://cloud.githubusercontent.com/assets/6613815/15891658/ee7043f0-2d75-11e6-97ba-efb1f3835a4c.png[]
 

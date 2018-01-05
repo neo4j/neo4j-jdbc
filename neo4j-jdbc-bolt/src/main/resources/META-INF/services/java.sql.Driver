@@ -1,2 +1,2 @@
-org.neo4j.jdbc.bolt.BoltNeo4jDriver
+org.neo4j.jdbc.bolt.BoltDriver
 

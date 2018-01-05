@@ -35,7 +35,7 @@ import static org.neo4j.driver.v1.Config.build;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltNeo4jDriver extends Neo4jDriver {
+public class BoltDriver extends Neo4jDriver {
 
 	public static final String JDBC_BOLT_PREFIX         = "bolt";
 	public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
@@ -44,7 +44,7 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 
 	static {
 		try {
-			BoltNeo4jDriver driver = new BoltNeo4jDriver();
+			BoltDriver driver = new BoltDriver();
 			DriverManager.registerDriver(driver);
 		} catch (SQLException e) {
 			throw new ExceptionInInitializerError(e);
@@ -56,7 +56,7 @@ public class BoltNeo4jDriver extends Neo4jDriver {
 	 *
 	 * @throws SQLException sqlexception
 	 */
-	public BoltNeo4jDriver() throws SQLException {
+	public BoltDriver() throws SQLException {
 		super(JDBC_BOLT_PREFIX);
 	}
 
