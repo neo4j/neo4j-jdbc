@@ -22,8 +22,8 @@
 
 package org.neo4j.jdbc;
 
-import org.neo4j.jdbc.bolt.BoltNeo4jDriver;
-import org.neo4j.jdbc.http.HttpNeo4jDriver;
+import org.neo4j.jdbc.bolt.BoltDriver;
+import org.neo4j.jdbc.http.HttpDriver;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
@@ -42,8 +42,8 @@ public class Driver extends Neo4jDriver {
 	private static final Map<String, Class> DRIVERS = new HashMap<>();
 
 	static {
-		DRIVERS.put(BoltNeo4jDriver.JDBC_BOLT_PREFIX, BoltNeo4jDriver.class);
-		DRIVERS.put(HttpNeo4jDriver.JDBC_HTTP_PREFIX, HttpNeo4jDriver.class);
+		DRIVERS.put(BoltDriver.JDBC_BOLT_PREFIX, BoltDriver.class);
+		DRIVERS.put(HttpDriver.JDBC_HTTP_PREFIX, HttpDriver.class);
 	}
 
 	/**

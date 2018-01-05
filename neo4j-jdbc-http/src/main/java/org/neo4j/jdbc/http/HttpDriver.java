@@ -32,13 +32,13 @@ import java.util.Properties;
 /**
  * JDBC Driver class for the HTTP connector.
  */
-public class HttpNeo4jDriver extends Neo4jDriver {
+public class HttpDriver extends Neo4jDriver {
 
 	public static final String JDBC_HTTP_PREFIX = "http(s)*";
 
 	static {
 		try {
-			HttpNeo4jDriver driver = new HttpNeo4jDriver();
+			HttpDriver driver = new HttpDriver();
 			DriverManager.registerDriver(driver);
 		} catch (SQLException e) {
 			throw new ExceptionInInitializerError(e);
@@ -50,7 +50,7 @@ public class HttpNeo4jDriver extends Neo4jDriver {
 	 * 
 	 * @throws SQLException sqlexception
 	 */
-	public HttpNeo4jDriver() throws SQLException {
+	public HttpDriver() throws SQLException {
 		super(JDBC_HTTP_PREFIX);
 	}
 

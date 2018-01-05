@@ -25,10 +25,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.neo4j.driver.internal.NetworkSession;
-import org.neo4j.driver.internal.logging.DevNullLogging;
-import org.neo4j.driver.internal.spi.ConnectionProvider;
-import org.neo4j.driver.v1.AccessMode;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
@@ -47,7 +43,6 @@ import java.util.Properties;
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.internal.verification.VerificationModeFactory.atLeastOnce;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
@@ -77,7 +72,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		Connection connection = driver.connect(COMPLETE_VALID_URL, null);
 		assertNotNull(connection);
 	}
@@ -89,13 +84,13 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Properties properties = new Properties();
 		properties.put("test", "TEST_VALUE");
 
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		Connection connection = driver.connect(COMPLETE_VALID_URL, properties);
 		assertNotNull(connection);
 	}
 
 	@Test public void shouldConnectReturnNullIfUrlNotValid() throws SQLException {
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		assertNull(driver.connect("jdbc:neo4j:http://localhost:7474", null));
 		assertNull(driver.connect("bolt://localhost:7474", null));
 		assertNull(driver.connect("jdbcbolt://localhost:7474", null));
@@ -105,14 +100,14 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Test public void shouldConnectThrowExceptionOnNullURL() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		driver.connect(null, null);
 	}
 
 	@Test public void shouldConnectThrowExceptionOnConnectionFailed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		driver.connect("jdbc:neo4j:bolt://somehost:9999", null);
 	}
 
@@ -124,7 +119,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_SYSTEM_CA_SIGNED_CERTIFICATES");
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 
 		verifyStatic(Config.TrustStrategy.class, atLeastOnce());
@@ -141,7 +136,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		File file = mock(File.class);
 		properties.put("trusted.certificate.file", file);
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 
 		verifyStatic(Config.TrustStrategy.class, atLeastOnce());
@@ -155,7 +150,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_CUSTOM_CA_SIGNED_CERTIFICATES");
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
 
@@ -169,7 +164,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		File file = mock(File.class);
 		properties.put("trusted.certificate.file", file);
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 
 		verifyStatic(Config.TrustStrategy.class, atLeastOnce());
@@ -183,7 +178,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_ON_FIRST_USE");
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
 
@@ -197,7 +192,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		File file = mock(File.class);
 		properties.put("trusted.certificate.file", file);
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 
 		verifyStatic(Config.TrustStrategy.class, atLeastOnce());
@@ -211,7 +206,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_SIGNED_CERTIFICATES");
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
 
@@ -222,7 +217,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "INVALID_VALUE");
 
-		Driver driver = new BoltNeo4jDriver();
+		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
 
@@ -230,14 +225,14 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	/*          acceptsURL          */
 	/*------------------------------*/
 	@Test public void shouldAcceptURLOK() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:7474"));
 		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://192.168.0.1:7474"));
 		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:8080"));
 	}
 
 	@Test public void shouldAcceptURLKO() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		assertFalse(driver.acceptsURL("jdbc:neo4j:http://localhost:7474"));
 		assertFalse(driver.acceptsURL("jdbc:file://192.168.0.1:7474"));
 		assertFalse(driver.acceptsURL("bolt://localhost:7474"));
@@ -246,7 +241,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	@Test public void shouldThrowException() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Neo4jDriver driver = new BoltNeo4jDriver();
+		Neo4jDriver driver = new BoltDriver();
 		assertFalse(driver.acceptsURL(null));
 	}
 }
