@@ -32,8 +32,8 @@ import org.neo4j.driver.v1.AccessMode;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.driver.v1.Session;
 import org.neo4j.jdbc.BaseDriver;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -41,9 +41,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author AgileLARUS
@@ -58,7 +61,8 @@ import static org.mockito.Mockito.mock;
 	@BeforeClass public static void initialize() {
 		mockedDriver = mock(org.neo4j.driver.v1.Driver.class);
 		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
-		Mockito.when(mockedDriver.session()).thenReturn(new NetworkSession(connectionProvider, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING));
+		Session session = mock(Session.class, RETURNS_MOCKS);
+		when(mockedDriver.session()).thenReturn(session);
 	}
 
 	/*------------------------------*/
@@ -67,10 +71,10 @@ import static org.mockito.Mockito.mock;
 	//WARNING!! NOT COMPLETE TEST!! Needs tests for parameters
 
 	@Test public void shouldConnectCreateConnection() throws SQLException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq("bolt://test"), Mockito.eq(AuthTokens.none()),Mockito.any(Config.class))).thenReturn(mockedDriver);
+		Neo4jDriverSupplier supplier = mock(Neo4jDriverSupplier.class);
+		when(supplier.supply(Mockito.eq("bolt://test"), Mockito.eq(AuthTokens.none()), Mockito.any(Config.class))).thenReturn(mockedDriver);
 
-		BaseDriver driver = new BoltDriver();
+		BaseDriver driver = new BoltDriver(supplier);
 		Connection connection = driver.connect("jdbc:neo4j:bolt://test", null);
 		assertNotNull(connection);
 	}

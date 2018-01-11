@@ -24,20 +24,32 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
 import org.neo4j.driver.internal.NetworkSession;
 import org.neo4j.driver.internal.logging.DevNullLogging;
-import org.neo4j.driver.internal.spi.*;
 import org.neo4j.driver.v1.AccessMode;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
-import java.sql.*;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static org.neo4j.jdbc.bolt.utils.Mocker.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockSessionClosed;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockSessionException;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockSessionOpen;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockSessionOpenSlow;
 
 /**
  * @author AgileLARUS
@@ -118,20 +130,6 @@ public class BoltConnectionTest {
 		connection.close();
 		verify(session, never()).close();
 		assertTrue(connection.isClosed());
-	}
-
-	@Ignore
-	@Test public void closeShouldThrowExceptionWhenDatabaseAccessErrorOccurred() throws SQLException {
-		expectedEx.expect(SQLException.class);
-
-		PooledConnection boltConnection = Mockito.mock(PooledConnection.class);
-		doThrow(new IllegalStateException()).when(boltConnection).close();
-		ConnectionProvider connectionProvider = Mockito.mock(ConnectionProvider.class);
-		when(connectionProvider.acquireConnection(AccessMode.READ)).thenReturn(boltConnection);
-		Session session = new NetworkSession(connectionProvider, AccessMode.READ, null, DevNullLogging.DEV_NULL_LOGGING);
-		session.run("return 1");
-		Connection connection = new BoltConnection(session);
-		connection.close();
 	}
 
 	/*------------------------------*/
