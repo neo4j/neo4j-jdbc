@@ -19,8 +19,12 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.neo4j.driver.internal.types.InternalTypeSystem;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -30,14 +34,14 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.jdbc.bolt.data.StatementData;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS
@@ -73,18 +77,20 @@ public class BoltResultSetMetaDataIT {
 			assertEquals(stmt, rs.getStatement());
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			int i = 1;
-
-			assertEquals(9, rsm.getColumnCount());
-			assertEquals("n", rsm.getColumnLabel(i++));
-			assertEquals("n.id", rsm.getColumnLabel(i++));
-			assertEquals("n.labels", rsm.getColumnLabel(i++));
-			assertEquals("n.surname", rsm.getColumnLabel(i++));
-			assertEquals("n.name", rsm.getColumnLabel(i++));
-			assertEquals("s", rsm.getColumnLabel(i++));
-			assertEquals("s.id", rsm.getColumnLabel(i++));
-			assertEquals("s.labels", rsm.getColumnLabel(i++));
-			assertEquals("s.status", rsm.getColumnLabel(i++));
+			int columnCount = rsm.getColumnCount();
+			assertEquals(9, columnCount);
+			List<String> columnLabels = collectColumnLabels(rsm, columnCount);
+			assertThat(columnLabels, hasItems(
+					"n",
+					"n.id",
+					"n.labels",
+					"n.surname",
+					"n.name",
+					"s",
+					"s.id",
+					"s.labels",
+					"s.status"
+			));
 		}
 		con.close();
 
@@ -98,14 +104,16 @@ public class BoltResultSetMetaDataIT {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			int i = 1;
-
-			assertEquals(5, rsm.getColumnCount());
-			assertEquals("n", rsm.getColumnLabel(i++));
-			assertEquals("n.id", rsm.getColumnLabel(i++));
-			assertEquals("n.labels", rsm.getColumnLabel(i++));
-			assertEquals("n.surname", rsm.getColumnLabel(i++));
-			assertEquals("n.name", rsm.getColumnLabel(i++));
+			int columnCount = rsm.getColumnCount();
+			assertEquals(5, columnCount);
+			List<String> columnLabels = collectColumnLabels(rsm, columnCount);
+			assertThat(columnLabels, hasItems(
+					"n",
+					"n.id",
+					"n.labels",
+					"n.surname",
+					"n.name"
+			));
 
 			assertTrue(rs.next());
 			assertEquals("test", ((Map) rs.getObject(1)).get("name"));
@@ -158,22 +166,25 @@ public class BoltResultSetMetaDataIT {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			int i = 1;
 
-			assertEquals(13, rsm.getColumnCount());
-			assertEquals("n", rsm.getColumnLabel(i++));
-			assertEquals("n.id", rsm.getColumnLabel(i++));
-			assertEquals("n.labels", rsm.getColumnLabel(i++));
-			assertEquals("n.surname", rsm.getColumnLabel(i++));
-			assertEquals("n.name", rsm.getColumnLabel(i++));
-			assertEquals("r", rsm.getColumnLabel(i++));
-			assertEquals("r.id", rsm.getColumnLabel(i++));
-			assertEquals("r.type", rsm.getColumnLabel(i++));
-			assertEquals("r.date", rsm.getColumnLabel(i++));
-			assertEquals("s", rsm.getColumnLabel(i++));
-			assertEquals("s.id", rsm.getColumnLabel(i++));
-			assertEquals("s.labels", rsm.getColumnLabel(i++));
-			assertEquals("s.status", rsm.getColumnLabel(i++));
+			int columnCount = rsm.getColumnCount();
+			assertEquals(13, columnCount);
+			List<String> columnLabels = collectColumnLabels(rsm, columnCount);
+			assertThat(columnLabels, hasItems(
+					"n",
+					"n.id",
+					"n.labels",
+					"n.surname",
+					"n.name",
+					"r",
+					"r.id",
+					"r.type",
+					"r.date",
+					"s",
+					"s.id",
+					"s.labels",
+					"s.status"
+			));
 		}
 		con.close();
 
@@ -311,5 +322,13 @@ public class BoltResultSetMetaDataIT {
 		con.close();
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+	}
+
+	private List<String> collectColumnLabels(ResultSetMetaData rsm, int columnCount) throws SQLException {
+		List<String> columnLabels = new ArrayList<>(columnCount);
+		for (int i = 1; i <= columnCount; i++) {
+			columnLabels.add(rsm.getColumnLabel(i));
+		}
+		return columnLabels;
 	}
 }

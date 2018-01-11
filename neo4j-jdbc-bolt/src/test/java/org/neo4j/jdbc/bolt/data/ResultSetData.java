@@ -22,8 +22,11 @@ package org.neo4j.jdbc.bolt.data;
 import org.junit.BeforeClass;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.neo4j.driver.internal.*;
-import org.neo4j.driver.internal.spi.Connection;
+import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalPath;
+import org.neo4j.driver.internal.InternalRecord;
+import org.neo4j.driver.internal.InternalRelationship;
+import org.neo4j.driver.internal.InternalStatementResult;
 import org.neo4j.driver.internal.value.FloatValue;
 import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.StringValue;
@@ -36,7 +39,12 @@ import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
@@ -69,9 +77,6 @@ public class ResultSetData {
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS     = new String[] { "path" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
 	public static String[] KEYS_RECORD_LIST_WITH_ARRAY              = new String[] { "array" };
-
-	private static Method runResponseCollectorMethod;
-	private static Method pullAllResponseCollectorMethod;
 
 	private static Path path1;
 	private static Path path2;
@@ -147,8 +152,6 @@ public class ResultSetData {
 		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Integer[] { 5, 10, 99 } });
 		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Boolean[] { true, false, false } });
 		RECORD_LIST_WITH_ARRAY.add(new Object[] { new Double[] { 6.5, 4.3, 2.1 } });
-
-		fixPublicForInternalResultCursor();
 	}
 
 	private static void setUpPaths() {
@@ -239,20 +242,6 @@ public class ResultSetData {
 	}
 
 	/**
-	 * open up some package scope method for public usage
-	 */
-	private static void fixPublicForInternalResultCursor() {
-		try {
-			runResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("runResponseCollector");
-			runResponseCollectorMethod.setAccessible(true);
-			pullAllResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("pullAllResponseCollector");
-			pullAllResponseCollectorMethod.setAccessible(true);
-		} catch (NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
 	 * hackish way to get a {@link InternalStatementResult}
 	 *
 	 * @param keys
@@ -262,8 +251,6 @@ public class ResultSetData {
 	public static StatementResult buildResultCursor(String[] keys, final List<Object[]> data) {
 
 		try {
-			Connection connection = mock(Connection.class);
-
 			StatementResult cursor = mock(StatementResult.class);
 			final List<String> columns = asList(keys);
 			when(cursor.keys()).thenReturn(columns);
@@ -287,22 +274,6 @@ public class ResultSetData {
 					return new InternalRecord(columns, Values.values(data.get(0)));
 				}
 			});
-/*
-			InternalStatementResult cursor = new InternalStatementResult(connection, null);
-			StreamCollector responseCollector = (StreamCollector) runResponseCollectorMethod.invoke(cursor);
-			responseCollector.keys(keys);
-			responseCollector.done();
-
-			StreamCollector pullAllResponseCollector = (StreamCollector) pullAllResponseCollectorMethod.invoke(cursor);
-
-			for(Object[] values : data){
-				pullAllResponseCollector.record(values(values));
-			}
-			pullAllResponseCollector.done();
-			connection.run("<unknown>", ParameterSupport.NO_PARAMETERS, responseCollector);
-			connection.pullAll(pullAllResponseCollector);
-			//connection.sendAll();
-*/
 			return cursor;
 		} catch (Exception e) {
 			throw new RuntimeException(e);

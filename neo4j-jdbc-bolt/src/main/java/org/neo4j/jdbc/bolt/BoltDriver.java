@@ -37,13 +37,20 @@ public class BoltDriver extends BaseDriver {
 
 	public final static String JDBC_BOLT_PREFIX = "bolt";
 	public final static String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
+	private final Neo4jDriverSupplier neo4jDriverSupplier;
 
 	/**
 	 * Default constructor.
 	 * @throws SQLException sqlexception
 	 */
 	public BoltDriver() throws SQLException {
+		this(new Neo4jDriverSupplier());
+	}
+
+	// visible for testing
+	BoltDriver(Neo4jDriverSupplier neo4jDriverSupplier) throws SQLException {
 		super(JDBC_BOLT_PREFIX);
+		this.neo4jDriverSupplier = neo4jDriverSupplier;
 	}
 
 	@Override public Connection connect(String url, Properties props) throws SQLException {
@@ -62,9 +69,9 @@ public class BoltDriver extends BaseDriver {
 				}
 				Config config = builder.toConfig();
 				AuthToken authToken = getAuthToken(info);
-				Driver driver = GraphDatabase.driver(boltUrl, authToken, config);
+				Driver driver = neo4jDriverSupplier.supply(boltUrl, authToken, config);
 				Session session = driver.session();
-				try (Transaction tx = session.beginTransaction()) {
+				try (Transaction ignored = session.beginTransaction()) {
 
                 }
                 BoltConnection boltConnection = new BoltConnection(session, info, url);
@@ -93,5 +100,12 @@ public class BoltDriver extends BaseDriver {
 			boltUrl += "?routingContext=" + properties.get("routingcontext");
 		}
 		return boltUrl;
+	}
+}
+
+class Neo4jDriverSupplier {
+
+	public Driver supply(String boltUrl, AuthToken authToken, Config config) {
+		return GraphDatabase.driver(boltUrl, authToken, config);
 	}
 }
