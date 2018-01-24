@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.neo4j.driver.internal.InternalNode;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.Neo4jStatement;
@@ -33,10 +34,7 @@ import org.neo4j.driver.v1.StatementResult;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.spy;
@@ -855,6 +853,191 @@ public class BoltNeo4jResultSetGettersTest {
 				});
 			}
 		}, resultSet.getObject(1));
+	}
+
+	@Test public void getObjectByColumnLabelAndCastToClass() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.next();
+		resultSet.next();
+		assertNotNull(resultSet.getObject("columnInt", Double.class));
+		assertNotNull(resultSet.getObject("columnInt", String.class));
+		assertNotNull(resultSet.getObject("columnInt", Long.class));
+		assertNotNull(resultSet.getObject("columnInt", Float.class));
+		assertNotNull(resultSet.getObject("columnInt", Short.class));
+		assertNotNull(resultSet.getObject("columnInt", Object.class));
+
+		assertNotNull(resultSet.getObject("columnMap", Map.class));
+
+		assertNotNull(resultSet.getObject("columnBoolean", Short.class));
+		assertNotNull(resultSet.getObject("columnBoolean", Integer.class));
+		assertNotNull(resultSet.getObject("columnBoolean", Long.class));
+		assertNotNull(resultSet.getObject("columnBoolean", Double.class));
+		assertNotNull(resultSet.getObject("columnBoolean", Float.class));
+
+		assertNotNull(resultSet.getObject("columnShort", Integer.class));
+		assertNotNull(resultSet.getObject("columnShort", Double.class));
+		assertNotNull(resultSet.getObject("columnShort", Float.class));
+		assertNotNull(resultSet.getObject("columnShort", String.class));
+
+		assertNotNull(resultSet.getObject("columnString", Double.class));
+		assertNotNull(resultSet.getObject("columnString", Float.class));
+		resultSet.next();
+		assertNotNull(resultSet.getObject("columnString", Integer.class));
+		assertNotNull(resultSet.getObject("columnString", Long.class));
+		assertNotNull(resultSet.getObject("columnString", Short.class));
+	}
+
+	@Test public void getObjectByColumnLabelAndCastToClassShouldThrowExceptionWhenTypeNull() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.getObject("columnA", (Class<?>) null);
+	}
+
+	@Test public void getObjectByColumnLabelAndCastToClassShouldThrowExceptionNoLabel() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.getObject("not present", (Class<?>) null);
+	}
+
+	@Test public void getObjectByColumnLabelAndCastToClassShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.close();
+		resultSet.getObject("not present", (Class<?>) null);
+	}
+
+	@Test public void getObjectByColumnIndexAndCastToClass() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		assertNotNull(resultSet.getObject(1, Double.class));
+		assertNotNull(resultSet.getObject(1, String.class));
+	}
+
+	@Test public void getObjectByColumnIndexAndCastToClassShouldThrowExceptionWhenTypeNull() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.getObject(1, (Class<?>) null);
+	}
+
+	@Test public void getObjectByColumnIndexAndCastToClassShouldThrowExceptionNoIndexZero() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.getObject(0, (Class<?>) null);
+	}
+
+	@Test public void getObjectByColumnIndexAndCastToClassShouldThrowExceptionNoIndex() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.getObject(99, Double.class);
+	}
+
+	@Test public void getObjectByColumnIndexAndCastToClassShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.close();
+		resultSet.getObject(1, (Class<?>) null);
+	}
+
+	@Test public void getObjectByColumnLabelAndMapShouldThrowExceptionNoLabel() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.getObject("not present", (Map<String, Class<?>>) null);
+	}
+
+	@Test public void getObjectByColumnLabelAndMapShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.close();
+		resultSet.getObject("not present", (Map<String, Class<?>>) null);
+	}
+
+	@Test public void getObjectByColumnIndexAndMapShouldThrowExceptionNoIndex() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		Map<String, Class<?>> map = new HashMap<>();
+
+		resultSet.next();
+		resultSet.getObject(99, map);
+	}
+
+	@Test public void getObjectByColumnIndexAndMapShouldThrowExceptionClosed() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		Map<String, Class<?>> map = new HashMap<>();
+
+		resultSet.close();
+		resultSet.getObject(1, map);
+	}
+
+	@Test public void getObjectByColumnLabelAndMap() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+
+		resultSet.next();
+		resultSet.next();
+		resultSet.next();
+
+		Map<String, Class<?>> map = new HashMap<>();
+		map.put("java.lang.Long", String.class);
+		map.put("java.lang.Boolean", Integer.class);
+		assertNotNull(resultSet.getObject("columnInt", map));
+		assertNotNull(resultSet.getObject("columnBoolean", map));
 	}
 
 	/*------------------------------*/

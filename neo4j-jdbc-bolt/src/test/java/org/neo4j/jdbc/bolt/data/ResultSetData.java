@@ -64,7 +64,7 @@ public class ResultSetData {
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS           = KEYS_RECORD_LIST_ONE_ELEMENT;
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF      = new String[] { "columnA", "columnB", "columnC" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED     = new String[] { "columnInt", "columnString", "columnFloat", "columnShort", "columnDouble",
-			"columnBoolean", "columnLong", "columnNull" };
+			"columnBoolean", "columnLong", "columnNull", "columnMap" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_NODES     = new String[] { "node" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS     = new String[] { "path" };
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
@@ -90,8 +90,13 @@ public class ResultSetData {
 
 		RECORD_LIST_MORE_ELEMENTS_MIXED = new LinkedList<>();
 
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D, true, 2L, null });
-		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D, false, 6L, null });
+		Map<String, Object> map = new HashMap<>();
+		map.put("key", null);
+
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 1, "value1", 0.1f, (short) 1, 02.29D, true, 2L, null, map });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 2, "value2", 0.2f, (short) 2, 20.16D, false, 6L, null, map });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 3, "1.23", 0.3f, (short) 3, 12.34D, true, 4L, null, map });
+		RECORD_LIST_MORE_ELEMENTS_MIXED.add(new Object[] { 4, "22", 0.4f, (short) 4, 12.34D, false, 4L, null, map });
 
 		RECORD_LIST_MORE_ELEMENTS_NODES = new LinkedList<>();
 
