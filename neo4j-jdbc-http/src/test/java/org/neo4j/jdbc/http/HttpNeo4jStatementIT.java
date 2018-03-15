@@ -58,8 +58,9 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 
 	@Test public void executeBadCypherQueryShouldReturnAnSQLException() throws SQLException {
 		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("SyntaxError");
 
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		try {
 			statement.execute("AZERTYUIOP");
