@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.summary.ResultSummary;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.neo4j.jdbc.Neo4jStatement;
@@ -902,26 +903,26 @@ public class BoltNeo4jPreparedStatementTest {
 	/*------------------------------*/
 
 	@Test public void executeBatchShouldWork() throws SQLException {
-		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockConnectionOpen(), "MATCH n WHERE id(n) = ? SET n.property=1");
+		Transaction transaction = mock(Transaction.class);
+		BoltNeo4jConnectionImpl connection = mockConnectionOpen();
+		when(connection.getTransaction()).thenReturn(transaction);
+        when(connection.getAutoCommit()).thenReturn(true);
+
+        StatementResult stmtResult = mock(StatementResult.class);
+        ResultSummary resultSummary = mock(ResultSummary.class);
+        SummaryCounters summaryCounters = mock(SummaryCounters.class);
+
+        when(transaction.run(anyString(), anyMap())).thenReturn(stmtResult);
+        when(stmtResult.consume()).thenReturn(resultSummary);
+        when(resultSummary.counters()).thenReturn(summaryCounters);
+        when(summaryCounters.nodesCreated()).thenReturn(1);
+        when(summaryCounters.nodesDeleted()).thenReturn(0);
+
+		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, connection, "MATCH n WHERE id(n) = ? SET n.property=1");
 		stmt.setInt(1, 1);
 		stmt.addBatch();
 		stmt.setInt(1, 2);
 		stmt.addBatch();
-
-		Session session = Mockito.mock(Session.class);
-		StatementResult stmtResult = Mockito.mock(StatementResult.class);
-		ResultSummary resultSummary = Mockito.mock(ResultSummary.class);
-		SummaryCounters summaryCounters = Mockito.mock(SummaryCounters.class);
-
-		Mockito.when(session.run(anyString(), anyMap())).thenReturn(stmtResult);
-		Mockito.when(stmtResult.consume()).thenReturn(resultSummary);
-		Mockito.when(resultSummary.counters()).thenReturn(summaryCounters);
-		Mockito.when(summaryCounters.nodesCreated()).thenReturn(1);
-		Mockito.when(summaryCounters.nodesDeleted()).thenReturn(0);
-
-		BoltNeo4jConnection connection = (BoltNeo4jConnection) stmt.getConnection();
-		Mockito.when(connection.getAutoCommit()).thenReturn(true);
-		Mockito.when(connection.getSession()).thenReturn(session);
 
 		assertArrayEquals(new int[] { 1, 1 }, stmt.executeBatch());
 	}

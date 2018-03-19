@@ -94,24 +94,16 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 
 	private StatementResult executeInternal() throws SQLException {
 		this.checkClosed();
-
-		StatementResult result;
-		if (this.getConnection().getAutoCommit()) {
-			try (Transaction t = ((BoltNeo4jConnection) this.getConnection()).getSession().beginTransaction()) {
-				result = t.run(this.statement, this.parameters);
-				t.success();
-			} catch (Exception e) {
-				throw new SQLException(e.getMessage(), e);
+		try {
+			Transaction transaction = ((BoltNeo4jConnection) this.getConnection()).getTransaction();
+			StatementResult result = transaction.run(this.statement, this.parameters);
+			if (this.getConnection().getAutoCommit()) {
+				((BoltNeo4jConnection) this.getConnection()).doCommit();
 			}
-		} else {
-			try {
-				result = ((BoltNeo4jConnection) this.getConnection()).getTransaction().run(this.statement, this.parameters);
-			} catch (Exception e) {
-				throw new SQLException(e.getMessage(), e);
-			}
+			return result;
+		} catch (Exception e) {
+			throw new SQLException(e);
 		}
-
-		return result;
 	}
 
 	private boolean hasResultSet(StatementResult result) {
@@ -141,15 +133,13 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 
 		try {
 			for (Map<String, Object> parameter : this.batchParameters) {
-				StatementResult res;
-				if (this.connection.getAutoCommit()) {
-					res = ((BoltNeo4jConnection) this.connection).getSession().run(this.statement, parameter);
-				} else {
-					res = ((BoltNeo4jConnection) this.connection).getTransaction().run(this.statement, parameter);
-				}
+                StatementResult res = ((BoltNeo4jConnection) this.connection).getTransaction().run(this.statement, parameter);
 				SummaryCounters count = res.consume().counters();
 				result = copyOf(result, result.length + 1);
 				result[result.length - 1] = count.nodesCreated() + count.nodesDeleted();
+				if (this.connection.getAutoCommit()) {
+					((BoltNeo4jConnection) this.connection).doCommit();
+				}
 			}
 		} catch (Exception e) {
 			throw new BatchUpdateException(result, e);

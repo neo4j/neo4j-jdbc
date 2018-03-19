@@ -1,5 +1,5 @@
 == Overview: Neo4j JDBC Driver
-:neo4j-jdbc-version: 3.2.0
+:neo4j-jdbc-version: 3.3.1
 
 ifndef::env-docs[]
 image:https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"]
@@ -20,8 +20,9 @@ projects that are using the classic JDBC connector in the relational paradigm to
 
 This driver supports various types of database transports:
 
-* through the Bolt protocol (3.0.x to 3.2.x) using `jdbc:neo4j:bolt://<host>:<port>/`
-* through the HTTP protocol (2.x+) using `jdbc:neo4j:http://<host>:<port>/`
+* through the `Bolt` protocol (3.0.x to 3.3.0) using `jdbc:neo4j:bolt://<host>:<port>/`
+* through the `Bolt+Routing` protocol (3.3.1) using `jdbc:neo4j:bolt+routing://<host>:<port>/`
+* through the `HTTP` protocol (2.x+) using `jdbc:neo4j:http://<host>:<port>/`
 
 Going forward there will also be support for:
 
@@ -92,10 +93,12 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 
 === Usage with Neo4j Server
 
-* Install a Neo4j 3.2.x server and start it with the Bolt protocol enabled
-* Connect with URLs in the form `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
+* Install a Neo4j 3.3.x server and start it with the Bolt protocol enabled
+* Connect with URLs in the following 3 forms:
+** `jdbc:neo4j:http://<host>:<port>/` (e.g. `jdbc:neo4j:http://localhost/`)
+** `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
+** `jdbc:neo4j:bolt+routing://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost?region=europe&country=it`)
 * You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]`
-
 * Add the JDBC driver dependency or jar file to your project
 * Get a connection from `DriverManager`
 * Execute queries and transactions using the Cypher graph query language
@@ -135,7 +138,7 @@ mvn clean test -Pperformance-test
 --------------------------------------------------
 
 [NOTE]
-To run the performance test, you must have a Neo4j Server 3.2.x running with the Bolt protocol enabled on port 7687 (default)
+To run the performance test, you must have a Neo4j Server 3.3.x running with the Bolt protocol enabled on port 7687 (default).
 
 
 === License

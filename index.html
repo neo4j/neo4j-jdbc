@@ -436,9 +436,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_technical_reference">Technical Reference</a>
 <ul class="sectlevel2">
-<li><a href="#_usage_examples">Usage Examples</a></li>
-<li><a href="#_the_bolt_driver">The Bolt Driver</a></li>
 <li><a href="#_the_http_driver">The HTTP Driver</a></li>
+<li><a href="#_the_bolt_driver">The Bolt Driver</a></li>
+<li><a href="#_the_bolt_routing_driver">The Bolt+Routing Driver</a></li>
 <li><a href="#_jdbc_compatibility">JDBC Compatibility</a></li>
 </ul>
 </li>
@@ -513,10 +513,13 @@ projects that are using the classic JDBC connector in the relational paradigm to
 <div class="ulist">
 <ul>
 <li>
-<p>through the Bolt protocol (3.0.x to 3.2.x) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>through the <code>Bolt</code> protocol (3.0.x to 3.3.0) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
 </li>
 <li>
-<p>through the HTTP protocol (2.x+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>through the <code>Bolt+Routing</code> protocol (3.3.1) using <code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code></p>
+</li>
+<li>
+<p>through the <code>HTTP</code> protocol (2.x+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
 </li>
 </ul>
 </div>
@@ -577,7 +580,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 <div class="listingblock">
 <div class="title">Dependency declaration</div>
 <div class="content">
-<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.2.0</code></pre>
+<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.3.1</code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -609,10 +612,23 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 <div class="ulist">
 <ul>
 <li>
-<p>Install a Neo4j 3.2.x server and start it with the Bolt protocol enabled</p>
+<p>Install a Neo4j 3.3.x server and start it with the Bolt protocol enabled</p>
 </li>
 <li>
-<p>Connect with URLs in the form <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
+<p>Connect with URLs in the following 3 forms:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:http://localhost/</code>)</p>
+</li>
+<li>
+<p><code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
+</li>
+<li>
+<p><code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost?region=europe&amp;country=it</code>)</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
 <p>You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]</code></p>
@@ -688,7 +704,7 @@ With <code>-1</code> all rows are sampled and with any other value you determine
 <div class="title">Note</div>
 </td>
 <td class="content">
-To run the performance test, you must have a Neo4j Server 3.2.x running with the Bolt protocol enabled on port 7687 (default)
+To run the performance test, you must have a Neo4j Server 3.3.x running with the Bolt protocol enabled on port 7687 (default).
 </td>
 </tr>
 </table>
@@ -732,8 +748,13 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <h2 id="_technical_reference">Technical Reference</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_usage_examples">Usage Examples</h3>
-
+<h3 id="_the_http_driver">The HTTP Driver</h3>
+<div class="paragraph">
+<p>The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using <code>Apache Commons httpclient</code> and <code>Jackson</code> for JSON (de)serialization.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC URL has this format: <code>jdbc:neo4j:http://host:port/?username=neo4j,password=xxxx</code></p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_the_bolt_driver">The Bolt Driver</h3>
@@ -751,12 +772,105 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 </div>
 </div>
 <div class="sect2">
-<h3 id="_the_http_driver">The HTTP Driver</h3>
+<h3 id="_the_bolt_routing_driver">The Bolt+Routing Driver</h3>
 <div class="paragraph">
-<p>The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using <code>Apache Commons httpclient</code> and <code>Jackson</code> for JSON (de)serialization.</p>
+<p>Starting from version 3.3.1, the JDBC driver brings with it the bolt+routing protocol.</p>
 </div>
 <div class="paragraph">
-<p>The JDBC URL has this format: <code>jdbc:neo4j:http://host:port/?username=neo4j,password=xxxx</code></p>
+<p>Again, it uses the <a href="https://github.com/neo4j/neo4j-java-driver">neo4j-java-driver</a> to provide the connectivity.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re connecting to a Neo4j Causal Cluster the JDBC URL has this format:</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host:port/?username=neo4j,password=xxxx</code></p>
+</div>
+<div class="paragraph">
+<p>The address in the URL must be that of a Core server.</p>
+</div>
+<div class="sect3">
+<h4 id="_routing_context">Routing Context</h4>
+<div class="paragraph">
+<p>Routing driver with routing context is an available option with a Neo4j Causal Cluster of version 3.2 or above.</p>
+</div>
+<div class="paragraph">
+<p>In such a setup, you can include a preferred routing context via the parameter <code>routingcontext</code>.</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host:port?username=neo4j,password=xxxx,routingcontext=region=eu&amp;country=it</code></p>
+</div>
+<div class="paragraph">
+<p>The address in the URL must be that of a Core server.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_access_mode_read_write">Access Mode (READ, WRITE)</h4>
+<div class="paragraph">
+<p>In order to start a transaction in read or write mode just use the <code>Connection#setReadOnly</code> method.</p>
+</div>
+<div class="paragraph">
+<p>Be aware not to invoke it while the transaction is open otherwise the driver will raise an SQLException.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re accessing to a Neo4j Causal Cluster, by calling this method write operations will be forwarded to CORE instances,
+while read operations will be managed by READ REPLICA nodes.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bookmarks">Bookmarks</h4>
+<div class="paragraph">
+<p>When working with a causal cluster, causal chaining is carried out by passing bookmarks between transactions in a session (see <a href="https://neo4j.com/docs/developer-manual/3.2/drivers/sessions-transactions/#driver-transactions-causal-chaining">causal chaining</a>).</p>
+</div>
+<div class="paragraph">
+<p>The JDBC driver allows you to read bookmarks by calling the following method:</p>
+</div>
+<div class="paragraph">
+<p><code>connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);</code></p>
+</div>
+<div class="paragraph">
+<p>Also you can set the bookmark by calling the corresponding method:</p>
+</div>
+<div class="paragraph">
+<p><code>connection.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, "my bookmark");</code></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bolt_routing_with_bookmark_example">Bolt+Routing with Bookmark Example</h4>
+<div class="listingblock">
+<div class="title">Run Query</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:7687?noSsl";
+
+try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", password)) {
+    connection.setAutoCommit(false);
+
+    // Access to CORE nodes, as the connection is opened by default in write mode
+    try (Statement statement = connection.createStatement()) {
+        statement.execute("create (:BoltRoutingTest { protocol: 'BOLT+ROUTING' })");
+    }
+
+    // closing transaction before changing access mode
+    connection.commit();
+
+    // printing the transaction bookmark
+    String bookmark = connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+    System.out.println(bookmark);
+
+    // Switching to read-only mode to access READ REPLICA nodes
+    connection.setReadOnly(true);
+
+    try (Statement statement = connection.createStatement()) {
+        try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
+            if (resultSet.next()) {
+                Long tot = resultSet.getLong("tot");
+            }
+        }
+    }
+
+    connection.commit();
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -773,7 +887,7 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <p>Connection, incl. autocommit and manual commit</p>
 </li>
 <li>
-<p>Transactions</p>
+<p>Read-only and write transactions</p>
 </li>
 <li>
 <p>Statements for reads and writes</p>
@@ -800,7 +914,7 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <div class="listingblock">
 <div class="title">Dependency declaration</div>
 <div class="content">
-<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.2.0</code></pre>
+<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.3.1</code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -1914,7 +2028,7 @@ A click on the <code>refresh status</code> allow you to see the status of the in
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-14 01:53:56 CEST
+Last updated 2018-03-19 17:39:48 CET
 </div>
 </div>
 </body>

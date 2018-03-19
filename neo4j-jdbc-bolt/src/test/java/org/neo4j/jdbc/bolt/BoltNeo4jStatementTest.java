@@ -46,6 +46,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
@@ -175,7 +176,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeQueryShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareStatement("");
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -183,7 +184,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareCall("");
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -191,19 +192,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Transaction transaction = mock(Transaction.class);
-/*
-		given(transaction.run(anyString())).willAnswer(invocation -> {
-			Thread.sleep(1500);
-			return null;
-		});
-*/
-		Session session = mock(Session.class);
-		given(session.beginTransaction()).willReturn(transaction);
-		given(session.isOpen()).willReturn(true);
-
-		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(session), 0, 0, 0);
-
+		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
 		statement.setQueryTimeout(1);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
 
@@ -233,7 +222,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.createStatement();
 		statement.close();
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
@@ -242,7 +231,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeUpdateShouldThrowExceptionOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareStatement("");
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
@@ -250,7 +239,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeUpdateShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareCall(null);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
@@ -258,19 +247,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeUpdateShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Transaction transaction = mock(Transaction.class);
-/*
-		given(transaction.run(anyString())).willAnswer(invocation -> {
-			Thread.sleep(1500);
-			return null;
-		});
-*/
-		Session session = mock(Session.class);
-		given(session.beginTransaction()).willReturn(transaction);
-		given(session.isOpen()).willReturn(true);
-
-		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(session), 0, 0, 0);
-
+		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
 		statement.setQueryTimeout(1);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 
@@ -373,7 +350,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeShouldThrowExceptionOnQueryOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareStatement("");
 
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
@@ -382,7 +359,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeShouldThrowExceptionOnUpdateOnPreparedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareStatement("");
 		when(statement.executeUpdate(anyString())).thenCallRealMethod();
 
@@ -392,7 +369,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeShouldThrowExceptionOnCallableStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Connection connection = new BoltNeo4jConnectionImpl(mockSessionOpen());
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), "");
 		Statement statement = connection.prepareCall("");
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
@@ -400,19 +377,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Transaction transaction = mock(Transaction.class);
-/*
-		given(transaction.run(anyString())).willAnswer(invocation -> {
-			Thread.sleep(1500);
-			return null;
-		});
-*/
-		Session session = mock(Session.class);
-		given(session.beginTransaction()).willReturn(transaction);
-		given(session.isOpen()).willReturn(true);
-
-		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(session), 0, 0, 0);
-
+		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
 		statement.setQueryTimeout(1);
 		statement.execute(StatementData.STATEMENT_CREATE);
 
@@ -541,26 +506,25 @@ public class BoltNeo4jStatementTest {
 	/*------------------------------*/
 
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
+		Transaction transaction = mock(Transaction.class);
+		BoltNeo4jConnectionImpl connection = mockConnectionOpen();
+		when(connection.getTransaction()).thenReturn(transaction);
+		when(connection.getAutoCommit()).thenReturn(true);
+		StatementResult stmtResult = mock(StatementResult.class);
+		ResultSummary resultSummary = mock(ResultSummary.class);
+		SummaryCounters summaryCounters = mock(SummaryCounters.class);
+
+        when(transaction.run(anyString())).thenReturn(stmtResult);
+		when(stmtResult.consume()).thenReturn(resultSummary);
+		when(resultSummary.counters()).thenReturn(summaryCounters);
+		when(summaryCounters.nodesCreated()).thenReturn(1);
+		when(summaryCounters.nodesDeleted()).thenReturn(0);
+
+		Statement stmt = BoltNeo4jStatement.newInstance(false, connection);
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
 		stmt.addBatch(str1);
 		stmt.addBatch(str2);
-
-		Session session = Mockito.mock(Session.class);
-		StatementResult stmtResult = Mockito.mock(StatementResult.class);
-		ResultSummary resultSummary = Mockito.mock(ResultSummary.class);
-		SummaryCounters summaryCounters = Mockito.mock(SummaryCounters.class);
-
-		Mockito.when(session.run(anyString())).thenReturn(stmtResult);
-		Mockito.when(stmtResult.consume()).thenReturn(resultSummary);
-		Mockito.when(resultSummary.counters()).thenReturn(summaryCounters);
-		Mockito.when(summaryCounters.nodesCreated()).thenReturn(1);
-		Mockito.when(summaryCounters.nodesDeleted()).thenReturn(0);
-
-		BoltNeo4jConnection connection = (BoltNeo4jConnection) stmt.getConnection();
-		Mockito.when(connection.getSession()).thenReturn(session);
-		Mockito.when(connection.getAutoCommit()).thenReturn(true);
 
 		assertArrayEquals(new int[] { 1, 1 }, stmt.executeBatch());
 	}

@@ -40,7 +40,7 @@ public class HttpDriver extends Neo4jDriver {
 		try {
 			HttpDriver driver = new HttpDriver();
 			DriverManager.registerDriver(driver);
-		} catch (SQLException e) {
+        } catch (SQLException e) {
 			throw new ExceptionInInitializerError(e);
 		}
 	}
@@ -58,7 +58,7 @@ public class HttpDriver extends Neo4jDriver {
 		Connection connection = null;
 		try {
 			if (acceptsURL(url)) {
-				URL neo4jUrl = new URL(url.replace("jdbc:neo4j:", "").replaceAll("^(" + JDBC_HTTP_PREFIX + ":)([^/])", "$1//$2"));
+				URL neo4jUrl = new URL(url.replace(Neo4jDriver.JDBC_PREFIX, "").replaceAll("^(" + JDBC_HTTP_PREFIX + ":)([^/])", "$1//$2"));
 				Properties props = parseUrlProperties(url, params);
 				String host = neo4jUrl.getHost();
 				Boolean secure = Boolean.FALSE;
