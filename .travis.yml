@@ -6,7 +6,3 @@ jdk:
 script: 
   - mvn clean test
   #- mvn clean test -Pperformance-test
-
-branches:
- only:
-   - master
