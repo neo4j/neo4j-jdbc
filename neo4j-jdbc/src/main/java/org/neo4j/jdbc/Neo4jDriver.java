@@ -83,7 +83,7 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 		String[] pieces = url.split(":");
 		if (pieces.length > 3 && url.startsWith(JDBC_PREFIX)) {
 			if (driverPrefix != null) {
-				if(pieces[2].matches(driverPrefix)) {
+				if (pieces[2].matches(driverPrefix)) {
 					return true;
 				}
 			}
@@ -92,6 +92,10 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 			}
 		}
 		return false;
+	}
+
+	protected String getPrefix() {
+		return this.driverPrefix;
 	}
 
 	/**

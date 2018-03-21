@@ -23,6 +23,7 @@
 package org.neo4j.jdbc;
 
 import org.neo4j.jdbc.bolt.BoltDriver;
+import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 import org.neo4j.jdbc.http.HttpDriver;
 
 import java.lang.reflect.Constructor;
@@ -42,6 +43,7 @@ public class Driver extends Neo4jDriver {
 	private static final Map<String, Class> DRIVERS = new HashMap<>();
 
 	static {
+		DRIVERS.put(BoltRoutingNeo4jDriver.JDBC_BOLT_ROUTING_PREFIX, BoltRoutingNeo4jDriver.class);
 		DRIVERS.put(BoltDriver.JDBC_BOLT_PREFIX, BoltDriver.class);
 		DRIVERS.put(HttpDriver.JDBC_HTTP_PREFIX, HttpDriver.class);
 	}

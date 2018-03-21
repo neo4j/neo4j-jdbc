@@ -25,9 +25,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.junit.*;
 import org.junit.rules.ExpectedException;
@@ -244,14 +241,14 @@ public class BoltNeo4jConnectionIT {
 		try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
 			assertFalse(connection.isClosed());
 			assertTrue(connection.isValid(0));
-			
+
 			Thread t = new Thread() {
 				public void run() {
 					try (Statement statement = connection.createStatement()) {
 						statement.executeQuery("WITH ['Michael','Stefan','Alberto','Marco','Gianmarco','Benoit','Frank'] AS names FOREACH (r IN range(0,10000000) | CREATE (:User {id:r, name:names[r % size(names)]+' '+r}));");
 					}
 					catch (SQLException sqle) {
-					}
+                    }
 				}
 			};
 
@@ -262,7 +259,7 @@ public class BoltNeo4jConnectionIT {
 
 			assertFalse(connection.isClosed());
 			assertTrue(connection.isValid(0));
-			
+
 			try (Statement statement = connection.createStatement()) {
 				try (ResultSet resultSet = statement.executeQuery("RETURN 1")) {
 					assertTrue(resultSet.next());
@@ -272,20 +269,18 @@ public class BoltNeo4jConnectionIT {
 		}
 	}
 
-	@Test
-	public void multipleRunShouldNotFail() {
+    @Test
+	public void multipleRunShouldNotFail() throws Exception {
 
 		for (int i = 0; i < 1000; i++) {
 			try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
-				try (Statement statement = connection.createStatement();
-						ResultSet resultSet = statement.executeQuery("match (n) return count(n) as countOfNodes")) {
-					if(resultSet.next()) {
-						resultSet.getObject("countOfNodes");
+				try (Statement statement = connection.createStatement()) {
+					try (ResultSet resultSet = statement.executeQuery("match (n) return count(n) as countOfNodes")) {
+						if (resultSet.next()) {
+                            resultSet.getObject("countOfNodes");
+						}
 					}
 				}
-			}
-			catch (Exception e) {
-				fail(e.getMessage());
 			}
 		}
 	}

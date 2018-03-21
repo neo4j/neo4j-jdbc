@@ -4,12 +4,13 @@
 
 include::../README.adoc[]
 
-
-
 == Technical Reference
 
-=== Usage Examples
+=== The HTTP Driver
 
+The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using `Apache Commons httpclient` and `Jackson` for JSON (de)serialization.
+
+The JDBC URL has this format: `jdbc:neo4j:http://host:port/?username=neo4j,password=xxxx`
 
 === The Bolt Driver
 
@@ -21,11 +22,85 @@ Just provide your username and password and you can connect to Neo4j.
 
 The JDBC URL has this format: `jdbc:neo4j:bolt://host:port/?username=neo4j,password=xxxx`
 
-=== The HTTP Driver
+=== The Bolt+Routing Driver
 
-The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using `Apache Commons httpclient` and `Jackson` for JSON (de)serialization.
+Starting from version 3.3.1, the JDBC driver brings with it the bolt+routing protocol.
 
-The JDBC URL has this format: `jdbc:neo4j:http://host:port/?username=neo4j,password=xxxx`
+Again, it uses the https://github.com/neo4j/neo4j-java-driver[neo4j-java-driver] to provide the connectivity.
+
+If you're connecting to a Neo4j Causal Cluster the JDBC URL has this format:
+
+`jdbc:neo4j:bolt+routing://host:port/?username=neo4j,password=xxxx`
+
+The address in the URL must be that of a Core server.
+
+==== Routing Context
+
+Routing driver with routing context is an available option with a Neo4j Causal Cluster of version 3.2 or above.
+
+In such a setup, you can include a preferred routing context via the parameter `routingcontext`.
+
+`jdbc:neo4j:bolt+routing://host:port?username=neo4j,password=xxxx,routingcontext=region=eu&country=it`
+
+The address in the URL must be that of a Core server.
+
+==== Access Mode (READ, WRITE)
+
+In order to start a transaction in read or write mode just use the `Connection#setReadOnly` method.
+
+Be aware not to invoke it while the transaction is open otherwise the driver will raise an SQLException.
+
+If you're accessing to a Neo4j Causal Cluster, by calling this method write operations will be forwarded to CORE instances,
+while read operations will be managed by READ REPLICA nodes.
+
+==== Bookmarks
+
+When working with a causal cluster, causal chaining is carried out by passing bookmarks between transactions in a session (see https://neo4j.com/docs/developer-manual/3.2/drivers/sessions-transactions/#driver-transactions-causal-chaining[causal chaining]).
+
+The JDBC driver allows you to read bookmarks by calling the following method:
+
+`connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);`
+
+Also you can set the bookmark by calling the corresponding method:
+
+`connection.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, "my bookmark");`
+
+==== Bolt+Routing with Bookmark Example
+
+.Run Query
+[source,java]
+----
+String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:7687?noSsl";
+
+try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", password)) {
+    connection.setAutoCommit(false);
+
+    // Access to CORE nodes, as the connection is opened by default in write mode
+    try (Statement statement = connection.createStatement()) {
+        statement.execute("create (:BoltRoutingTest { protocol: 'BOLT+ROUTING' })");
+    }
+
+    // closing transaction before changing access mode
+    connection.commit();
+
+    // printing the transaction bookmark
+    String bookmark = connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+    System.out.println(bookmark);
+
+    // Switching to read-only mode to access READ REPLICA nodes
+    connection.setReadOnly(true);
+
+    try (Statement statement = connection.createStatement()) {
+        try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
+            if (resultSet.next()) {
+                Long tot = resultSet.getLong("tot");
+            }
+        }
+    }
+
+    connection.commit();
+}
+----
 
 === JDBC Compatibility
 
@@ -33,7 +108,7 @@ We cover these aspects of the JDBC-APIs, everything that's not explicitely menti
 
 * Driver handling automatic loading and JDBC URLs
 * Connection, incl. autocommit and manual commit
-* Transactions
+* Read-only and write transactions
 * Statements for reads and writes
 * PreparedStatement for reads and writes, including parameters, both question marks `?` and named numbered parameters `{1}`
 * ResultSet retrieving all columns as String, Object and their native type with optional conversions

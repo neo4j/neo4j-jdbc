@@ -50,6 +50,7 @@ public class SamplePT {
 		if (rs.next()) {
 			throw new Exception("Database localhost:7687 is not empty");
 		}
+		rs.close();
 		for (int i = 0; i < 100; i++) {
 			stmt.executeQuery("CREATE (:A {prop:" + (int) (Math.random() * 100) + "})" + (Math.random() * 10 > 5 ?
 					"-[:X]->(:B {prop:'" + (int) (Math.random() * 100) + "'})" :
@@ -85,7 +86,6 @@ public class SamplePT {
 	@State(Scope.Thread) public static class Data {
 		@Setup public static void initialize() throws ClassNotFoundException, SQLException, IOException {
 		}
-
 		public String query = "MATCH (n) RETURN n";
 	}
 
@@ -99,12 +99,10 @@ public class SamplePT {
 
 	@Benchmark public void testSimpleQueryBoltDriver(Data data, Blackhole bh) {
 		org.neo4j.driver.v1.Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "test"));
-
 		Session session = driver.session();
-
 		bh.consume(session.run(data.query));
-
 		session.close();
+		driver.close();
 	}
 
 	@Benchmark public void testSimpleQueryWithDebugJDBC(Data data, Blackhole bh) throws SQLException {

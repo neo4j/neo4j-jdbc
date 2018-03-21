@@ -70,8 +70,8 @@ public class ResultSetData {
 	public static String[] KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS = new String[] { "relation" };
 	public static String[] KEYS_RECORD_LIST_WITH_ARRAY              = new String[] { "array" };
 
-	private static Method runResponseCollectorMethod;
-	private static Method pullAllResponseCollectorMethod;
+	//private static Method runResponseCollectorMethod;
+	//private static Method pullAllResponseCollectorMethod;
 
 	private static Path path1;
 	private static Path path2;
@@ -247,6 +247,7 @@ public class ResultSetData {
 	 * open up some package scope method for public usage
 	 */
 	private static void fixPublicForInternalResultCursor() {
+/*
 		try {
 			runResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("runResponseCollector");
 			runResponseCollectorMethod.setAccessible(true);
@@ -255,6 +256,7 @@ public class ResultSetData {
 		} catch (NoSuchMethodException e) {
 			throw new RuntimeException(e);
 		}
+*/
 	}
 
 	/**

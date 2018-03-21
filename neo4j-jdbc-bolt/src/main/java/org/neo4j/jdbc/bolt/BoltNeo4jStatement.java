@@ -98,29 +98,22 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 		return hasResultSet;
 	}
 
-	private StatementResult executeInternal(String sql) throws SQLException {
+	private StatementResult executeInternal(String statement) throws SQLException {
 		this.checkClosed();
-
-		StatementResult result;
-		if (this.getConnection().getAutoCommit()) {
-			try (Transaction t = ((BoltNeo4jConnection) this.getConnection()).getSession().beginTransaction()) {
-				result = t.run(sql);
-				t.success();
-			} catch (Exception e) {
-				throw new SQLException(e);
+        try {
+        	Transaction transaction = ((BoltNeo4jConnection) this.getConnection()).getTransaction();
+			StatementResult result = transaction.run(statement);
+			if (this.getConnection().getAutoCommit()) {
+                ((BoltNeo4jConnection) this.getConnection()).doCommit();
 			}
-		} else {
-			try {
-				result = ((BoltNeo4jConnection) this.getConnection()).getTransaction().run(sql);
-			} catch (Exception e) {
-				throw new SQLException(e);
-			}
+			return result;
+		} catch (Exception e) {
+        	throw new SQLException(e);
 		}
-		return result;
-	}
+    }
 
 	private boolean hasResultSet(String sql) {
-		return sql != null && sql.toLowerCase().contains("return");
+		return sql != null && sql.toLowerCase().contains("return ");
 	}
 
 	/*-------------------*/
@@ -134,15 +127,13 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 
 		try {
 			for (String query : this.batchStatements) {
-				StatementResult res;
-				if (this.connection.getAutoCommit()) {
-					res = ((BoltNeo4jConnection) connection).getSession().run(query);
-				} else {
-					res = ((BoltNeo4jConnection) connection).getTransaction().run(query);
-				}
-				SummaryCounters count = res.consume().counters();
+				StatementResult res = ((BoltNeo4jConnection) this.connection).getTransaction().run(query);
+                SummaryCounters count = res.consume().counters();
 				result = Arrays.copyOf(result, result.length + 1);
 				result[result.length - 1] = count.nodesCreated() + count.nodesDeleted();
+				if (this.connection.getAutoCommit()) {
+					((BoltNeo4jConnection) this.connection).doCommit();
+				}
 			}
 		} catch (Exception e) {
 			throw new BatchUpdateException(result, e);

@@ -47,6 +47,34 @@ import static org.mockito.Mockito.when;
  */
 public class Mocker {
 
+	public static Driver mockDriverOpen() {
+        Session session = mockSessionOpen();
+		Driver driver = mock(Driver.class);
+		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		return driver;
+	}
+
+	public static Driver mockDriverClosed() {
+        Session session = mockSessionClosed();
+        Driver driver = mock(Driver.class);
+        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		return driver;
+	}
+
+	public static Driver mockDriverOpenSlow() {
+        Session session = mockSessionOpenSlow();
+		Driver driver = mock(Driver.class);
+        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		return driver;
+	}
+
+	public static Driver mockDriverException() {
+        Session session = mockSessionException();
+        Driver driver = mock(Driver.class);
+        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		return driver;
+	}
+
 	public static Session mockSessionOpen() {
 		Session session = mock(Session.class);
 		when(session.isOpen()).thenReturn(true);
@@ -56,7 +84,7 @@ public class Mocker {
 	}
 
 	public static Session mockSessionClosed() {
-		return mock(Session.class);
+        return mock(Session.class);
 	}
 
 	public static Session mockSessionOpenSlow() {
