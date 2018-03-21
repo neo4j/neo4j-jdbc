@@ -58,11 +58,26 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 
 	@Test public void executeBadCypherQueryShouldReturnAnSQLException() throws SQLException {
 		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("SyntaxError");
 
-		Connection connection = DriverManager.getConnection("jdbc:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
 		Statement statement = connection.createStatement();
 		try {
 			statement.execute("AZERTYUIOP");
+		}
+		finally {
+			connection.close();
+		}
+	}
+
+	@Test public void successfullyParsesUnregisteredProcedureCall() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("ProcedureNotFound");
+
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Statement statement = connection.createStatement();
+		try {
+			statement.execute("CALL apoc.trigger.add('HAS_VALUE_ON_REMOVE_FROM_INDEX', \"UNWIND {deletedRelationships} AS r MATCH (d:Decision)-[r:HAS_VALUE_ON]->(Characteristic) CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", {phase:'after'})");
 		}
 		finally {
 			connection.close();

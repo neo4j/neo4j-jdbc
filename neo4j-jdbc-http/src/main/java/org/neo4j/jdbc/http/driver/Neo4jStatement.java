@@ -74,16 +74,6 @@ public class Neo4jStatement {
 	}
 
 	/**
-	 * Escape method for cypher queries.
-	 *
-	 * @param query Cypher query
-	 * @return ...
-	 */
-	public static String escapeQuery(String query) {
-		return query.replace('\"', '\'').replace('\n', ' ');
-	}
-
-	/**
 	 * Convert the list of query to a JSON compatible with Neo4j endpoint.
 	 *
 	 * @param queries List of cypher queries.
@@ -111,7 +101,7 @@ public class Neo4jStatement {
 	 * @return the statement
 	 */
 	public String getStatement() {
-		return escapeQuery(statement);
+		return statement;
 	}
 
 }
