@@ -76,7 +76,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	@Override public boolean execute() throws SQLException {
 		StatementResult result = executeInternal();
 
-		boolean hasResultSet = hasResultSet(result);
+		boolean hasResultSet = hasResultSet();
 		if (hasResultSet) {
 			this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
 			this.currentUpdateCount = -1;
@@ -106,12 +106,8 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		}
 	}
 
-	private boolean hasResultSet(StatementResult result) {
-		try {
-			return result != null && result.hasNext();
-		} catch (Exception e) {
-			return false;
-		}
+	private boolean hasResultSet() {
+		return this.statement != null && this.statement.toLowerCase().contains("return");
 	}
 
 	@Override public Neo4jParameterMetaData getParameterMetaData() throws SQLException {
