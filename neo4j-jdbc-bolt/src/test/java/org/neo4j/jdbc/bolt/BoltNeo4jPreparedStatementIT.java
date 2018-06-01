@@ -25,6 +25,7 @@ import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
+import java.util.Enumeration;
 
 import static org.junit.Assert.*;
 
@@ -47,7 +48,23 @@ public class BoltNeo4jPreparedStatementIT {
 	}
 
 	// 'a_' only to force execution at first position
-	@Test public void a_shouldHasTheDriver() throws SQLException {
+	@Test public void a_warmup() throws SQLException {
+
+
+		// WARM UP
+
+		long t0 = System.currentTimeMillis();
+		boolean driverLoaded = false;
+		while (!driverLoaded && System.currentTimeMillis() - t0 < 10_000){
+			Enumeration<Driver> drivers = DriverManager.getDrivers();
+			while (drivers.hasMoreElements()){
+				if(BoltDriver.class.equals(drivers.nextElement().getClass())){
+					driverLoaded = true;
+				}
+			}
+		}
+
+
 		Driver driver = DriverManager.getDriver("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
 		Assert.assertEquals(BoltDriver.class,driver.getClass());
 	}
