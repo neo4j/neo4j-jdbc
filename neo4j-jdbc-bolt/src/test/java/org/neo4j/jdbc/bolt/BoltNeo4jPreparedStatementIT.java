@@ -19,8 +19,8 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.runners.MethodSorters;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
@@ -32,6 +32,7 @@ import static org.junit.Assert.*;
  * @author AgileLARUS
  * @since 3.0.0
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BoltNeo4jPreparedStatementIT {
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
@@ -39,6 +40,17 @@ public class BoltNeo4jPreparedStatementIT {
 	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
+
+	@Before
+	public void cleanDB(){
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+	}
+
+	// 'a_' only to force execution at first position
+	@Test public void a_shouldHasTheDriver() throws SQLException {
+		Driver driver = DriverManager.getDriver("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Assert.assertEquals(BoltDriver.class,driver.getClass());
+	}
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
