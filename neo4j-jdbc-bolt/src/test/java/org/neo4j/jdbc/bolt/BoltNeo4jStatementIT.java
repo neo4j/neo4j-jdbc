@@ -19,19 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,6 +26,10 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.bolt.data.StatementData;
+
+import java.sql.*;
+
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
@@ -252,6 +243,78 @@ public class BoltNeo4jStatementIT {
 			statement.close();
 
 			assertTrue(((BoltNeo4jConnection) connection).getTransaction().isOpen());
+		}
+	}
+
+	/*
+	Array
+	 */
+
+	@Test public void testGetEmptyArrayByIndex() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray(1);
+			Object[] arrayResult = (Object[]) array.getArray();
+			assertEquals(0, arrayResult.length);
+
+			statement.close();
+		}
+	}
+
+	@Test public void testGetEmptyArrayByName() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray("result");
+			Object[] arrayResult = (Object[]) array.getArray();
+			assertEquals(0, arrayResult.length);
+
+			statement.close();
+		}
+	}
+
+	@Test public void testGetOneArrayByIndex() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [10] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray(1);
+			Long[] arrayResult = (Long[]) array.getArray();
+			assertEquals(new Long(10), arrayResult[0]);
+
+			statement.close();
+		}
+	}
+
+	@Test public void testGetOneArrayByName() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [10] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray("result");
+			Long[] arrayResult = (Long[]) array.getArray();
+			assertEquals(new Long(10), arrayResult[0]);
+
+			statement.close();
 		}
 	}
 
