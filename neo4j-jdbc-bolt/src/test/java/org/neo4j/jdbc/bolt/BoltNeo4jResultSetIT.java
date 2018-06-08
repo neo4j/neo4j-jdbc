@@ -27,6 +27,7 @@ import org.neo4j.jdbc.bolt.data.StatementData;
 import java.sql.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -130,4 +131,17 @@ public class BoltNeo4jResultSetIT {
 		con.close();
 	}
 
+	@Test public void shouldHasntNext() throws SQLException {
+		neo4j.getGraphDatabase().execute("unwind range(1,5) as x create (:User{number:x})");
+
+		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Statement stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery("MATCH (x:XXX) RETURN x LIMIT 1");
+
+		assertFalse(rs.next());
+
+		rs.close();
+
+		con.close();
+	}
 }
