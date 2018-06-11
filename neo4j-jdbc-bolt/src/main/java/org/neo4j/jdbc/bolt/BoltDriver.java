@@ -22,9 +22,13 @@ package org.neo4j.jdbc.bolt;
 import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * @author AgileLARUS
@@ -47,7 +51,22 @@ public class BoltDriver extends BoltNeo4jDriverImpl {
 		super(JDBC_BOLT_PREFIX);
 	}
 
-    protected Driver getDriver(String boltUrl, Config config, AuthToken authToken) throws URISyntaxException {
-        return GraphDatabase.driver(boltUrl, authToken, config);
+    protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException {
+        return GraphDatabase.driver(routingUris.get(0), authToken, config);
+    }
+
+	@Override
+	protected Properties getRoutingContext(String url, Properties properties) {
+		return new Properties();
+	}
+
+	@Override
+	protected String addRoutingPolicy(String url, Properties properties) {
+		return url;
+	}
+
+    @Override
+    protected List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException {
+        return Arrays.asList(new URI(boltUrl));
     }
 }

@@ -246,4 +246,18 @@ public class BoltNeo4jResultSetMetaDataTest {
 		assertEquals(Types.FLOAT, rsm.getColumnType(11));
 		assertEquals(Types.NULL, rsm.getColumnType(12));
 	}
+
+	@Test public void getColumnTypeNameTest() throws SQLException {
+		StatementResult resultCursor = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(false, Arrays.asList(new Type[] { InternalTypeSystem.TYPE_SYSTEM.NODE() }),
+				Arrays.asList(new String[] { "node" }));
+
+		assertEquals(1, rsm.getColumnCount());
+		assertEquals("node", rsm.getColumnLabel(1));
+		System.err.println(rsm.getColumnClassName(1));
+		System.err.println(rsm.getColumnName(1));
+		System.err.println(rsm.getColumnType(1));
+		System.err.println(rsm.getColumnTypeName(1));
+	}
 }

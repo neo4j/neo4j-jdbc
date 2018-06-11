@@ -28,21 +28,28 @@ Starting from version 3.3.1, the JDBC driver brings with it the bolt+routing pro
 
 Again, it uses the https://github.com/neo4j/neo4j-java-driver[neo4j-java-driver] to provide the connectivity.
 
-If you're connecting to a Neo4j Causal Cluster the JDBC URL has this format:
+If you're connecting to a https://neo4j.com/docs/operations-manual/current/clustering/causal-clustering/[Neo4j Causal Cluster] the JDBC URL has this format:
 
-`jdbc:neo4j:bolt+routing://host:port/?username=neo4j,password=xxxx`
+`jdbc:neo4j:bolt+routing://host1:port1,host2:port2,...,hostN:portN/?username=neo4j,password=xxxx`
 
-The address in the URL must be that of a Core server.
+The list of `"hostX:portX"` pairs in the URL correspond to the list of servers that are partecipating in the Neo4j cluster (both as Core and Read-Replica nodes),
+but if you or your preferred tool don't like this format you can then fall back to the dedicated parameter `"routing:servers"`, as in the following example:
+
+`jdbc:neo4j:bolt+routing://host1:port1?username=neo4j,password=xxxx,routing:region=EU&country=Italy&routing:servers=host2:port2;...;hostN:portN`
+
+In that case, the address in the URL must be that of a Core server and the alternative servers must be `;` separated (instead of `,`).
 
 ==== Routing Context
 
 Routing driver with routing context is an available option with a Neo4j Causal Cluster of version 3.2 or above.
 
-In such a setup, you can include a preferred routing context via the parameter `routingcontext`.
+In such a setup you can include a preferred routing context via the `"routing:policy"` parameter.
 
-`jdbc:neo4j:bolt+routing://host:port?username=neo4j,password=xxxx,routingcontext=region=eu&country=it`
+`jdbc:neo4j:bolt+routing://host1:port1,host2:port2,...,hostN:portN?username=neo4j,password=xxxx,routing:policy=EU`
 
-The address in the URL must be that of a Core server.
+And for custom routing strategies via the generic `"routing:"` parameter:
+
+`jdbc:neo4j:bolt+routing://host1:port1,host2:port2,...,hostN:portN?username=neo4j,password=xxxx,routing:region=EU&country=Italy`
 
 ==== Access Mode (READ, WRITE)
 
@@ -70,7 +77,7 @@ Also you can set the bookmark by calling the corresponding method:
 .Run Query
 [source,java]
 ----
-String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:7687?noSsl";
+String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&routing:policy=EU";
 
 try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", password)) {
     connection.setAutoCommit(false);

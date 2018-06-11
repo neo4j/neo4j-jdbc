@@ -21,6 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.summary.ResultSummary;
 import org.neo4j.driver.v1.summary.SummaryCounters;
 import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
@@ -69,7 +70,6 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 
 	@Override public int executeUpdate(String sql) throws SQLException {
 		StatementResult result = executeInternal(sql);
-
 		SummaryCounters stats = result.consume().counters();
 		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
 		this.currentResultSet = null;

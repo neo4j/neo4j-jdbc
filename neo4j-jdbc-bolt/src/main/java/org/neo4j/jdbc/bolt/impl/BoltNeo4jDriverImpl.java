@@ -19,13 +19,13 @@ package org.neo4j.jdbc.bolt.impl;
 
 import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.Neo4jDriver;
-import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 
 import java.io.File;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Properties;
+import java.util.*;
 
 import static org.neo4j.driver.v1.Config.build;
 
@@ -52,7 +52,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
             String boltUrl = url.replace(Neo4jDriver.JDBC_PREFIX, "").replaceAll("^(" + getPrefix() + ":)([^/])", "$1//$2");
             try {
                 Properties info = parseUrlProperties(boltUrl, props);
-                boltUrl = removeUrlProperties(boltUrl, info);
+                boltUrl = removeUrlProperties(boltUrl);
                 Config.ConfigBuilder builder = build();
                 if (info.containsKey("nossl")) {
                     builder = builder.withoutEncryption();
@@ -60,17 +60,19 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 builder = setTrustStrategy(info, builder);
                 Config config = builder.toConfig();
                 AuthToken authToken = getAuthToken(info);
-                Driver driver = getDriver(boltUrl, config, authToken);
+                Properties routingContext = getRoutingContext(boltUrl, info);
+                boltUrl = addRoutingPolicy(boltUrl, routingContext);
+                List<URI> routingUris = buildRoutingUris(boltUrl, routingContext);
+                Driver driver = getDriver(routingUris, config, authToken);
                 connection = BoltNeo4jConnectionImpl.newInstance(driver, info, url);
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new SQLException(e);
             }
         }
         return connection;
     }
 
-    protected abstract Driver getDriver(String boltRoutingUrl, Config config, AuthToken authToken) throws URISyntaxException;
+    protected abstract Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException;
 
     private AuthToken getAuthToken(Properties properties) {
         if (properties.isEmpty() || (!properties.containsKey("user") && !properties.containsKey("password"))) {
@@ -79,16 +81,19 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
         return AuthTokens.basic(properties.getProperty("user"), properties.getProperty("password"));
     }
 
-    private String removeUrlProperties(String url, Properties properties) {
+    private String removeUrlProperties(String url) {
         String boltUrl = url;
         if (boltUrl.indexOf('?') != -1) {
             boltUrl = url.substring(0, url.indexOf('?'));
         }
-        if (boltUrl.matches("^" + BoltRoutingNeo4jDriver.JDBC_BOLT_ROUTING_PREFIX + ".*") && properties.containsKey(BoltRoutingNeo4jDriver.ROUTING_CONTEXT)) {
-            boltUrl += "?" + properties.get(BoltRoutingNeo4jDriver.ROUTING_CONTEXT);
-        }
         return boltUrl;
     }
+
+    protected abstract Properties getRoutingContext(String url, Properties properties);
+
+    protected abstract String addRoutingPolicy(String url, Properties properties);
+
+    protected abstract List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException;
 
     private Config.ConfigBuilder setTrustStrategy(Properties properties, Config.ConfigBuilder builder) throws SQLException {
         Config.ConfigBuilder newBuilder = builder;

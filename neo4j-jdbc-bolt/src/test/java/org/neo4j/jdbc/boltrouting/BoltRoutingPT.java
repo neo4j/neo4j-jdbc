@@ -29,7 +29,8 @@ import java.sql.*;
  */
 public class BoltRoutingPT {
 
-    private String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl";
+    private String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl&debug=true&routing:policy=EU&routing:servers=localhost:17682;localhost:17683;localhost:17684;localhost:17685;localhost:17686;localhost:17687";
+    private String connectionUrl2 = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&debug=true&routing:policy=EU";
 
     @Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -43,12 +44,39 @@ public class BoltRoutingPT {
         }
     }
 
-    @Ignore
+    //@Ignore
+    @Test public void shouldAccessReadReplicaNodes() throws SQLException {
+
+        try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
+            connection.setReadOnly(true);
+            try (Statement statement = connection.createStatement()) {
+                try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
+                    while (resultSet.next()) {
+                        System.err.println(resultSet.getLong("tot"));
+                    }
+                }
+            }
+        }
+    }
+
+    @Test public void shouldAccessReadReplicaNodes2() throws SQLException {
+
+        try  (Connection connection = DriverManager.getConnection(connectionUrl2, "neo4j", "larus")) {
+            connection.setReadOnly(true);
+            try (Statement statement = connection.createStatement()) {
+                try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
+                    while (resultSet.next()) {
+                        System.err.println(resultSet.getLong("tot"));
+                    }
+                }
+            }
+        }
+    }
+
+    //@Ignore
     @Test public void shouldFailWritingOnReadReplicaNodes() throws SQLException {
 
         expectedEx.expect(SQLException.class);
-
-        String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl";
 
         try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
             connection.setReadOnly(true);
@@ -61,10 +89,8 @@ public class BoltRoutingPT {
         }
     }
 
-    @Ignore
+    //@Ignore
     @Test public void shouldUseBookmarkToReadYourOwnWrites() throws SQLException {
-
-        String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl";
 
         try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
 
@@ -89,23 +115,6 @@ public class BoltRoutingPT {
                 }
             }
             connection.commit();
-        }
-    }
-
-    @Ignore
-    @Test public void shouldUseBoltRoutingContext() throws SQLException {
-
-        String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl,routingcontext=READ_EU";
-
-        try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
-            connection.setReadOnly(true);
-            try (Statement statement = connection.createStatement()) {
-                try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
-                    if (resultSet.next()) {
-                        System.err.println(resultSet.getLong("tot"));
-                    }
-                }
-            }
         }
     }
 }

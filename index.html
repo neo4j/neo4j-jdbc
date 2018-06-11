@@ -485,41 +485,29 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_overview_neo4j_jdbc_driver">Overview: Neo4j JDBC Driver</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This is the official JDBC driver for Neo4j.</p>
+<p><strong>This is the official JDBC driver for Neo4j</strong>.</p>
 </div>
 <div class="paragraph">
 <p>This driver was mainly developed by <a href="http://larus-ba.it">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j.
 <strong>Thank you</strong> so much for all your work.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-The previous JDBC driver for Neo4j 2.x was moved to the <a href="https://github.com/neo4j-contrib/neo4j-jdbc-2x" class="bare">https://github.com/neo4j-contrib/neo4j-jdbc-2x</a> repository.
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
-<p>Being a graph database, Neo4j is not serving data in a relational way and the exact purpose of this project is to allow
+<p>Being a graph database, Neo4j is not serving data in a relational way, nevertheless thanks to this driver it&#8217;s possible for
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4j.</p>
 </div>
 <div class="paragraph">
-<p>This driver supports various types of database transports:</p>
+<p>This driver supports various types of database transports, through:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>through the <code>Bolt</code> protocol (3.0.x to 3.3.0) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>The <code>Bolt</code> protocol using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> from Neo4j 3.0+</p>
 </li>
 <li>
-<p>through the <code>Bolt+Routing</code> protocol (3.3.1) using <code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>The <code>Bolt+Routing</code> protocol using <code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code> from Neo4j 3.1+</p>
 </li>
 <li>
-<p>through the <code>HTTP</code> protocol (2.x+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>The <code>HTTP</code> protocol using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code> from Neo4j 2.0+</p>
 </li>
 </ul>
 </div>
@@ -536,6 +524,18 @@ projects that are using the classic JDBC connector in the relational paradigm to
 </li>
 </ul>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The previous JDBC driver for Neo4j 2.x was moved to the <a href="https://github.com/neo4j-contrib/neo4j-jdbc-2x" class="bare">https://github.com/neo4j-contrib/neo4j-jdbc-2x</a> repository.
+</td>
+</tr>
+</table>
+</div>
 <div class="sect2">
 <h3 id="_maven_dependency">Maven dependency</h3>
 <div class="paragraph">
@@ -551,7 +551,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 </div>
 </div>
 <div class="paragraph">
-<p>If you only want one of the protocols, you can depend on its module:</p>
+<p>If you want only one of the protocols, you can depend on its module:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -625,14 +625,30 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 <p><code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
 </li>
 <li>
-<p><code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost?region=europe&amp;country=it</code>)</p>
+<p><code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt+routing://localhost?routing:policy=eu</code>)</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]</code></p>
+<p>You can also use additional parameters in the URL separated by an <code>&amp;</code> character for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j&amp;password=xxxx&amp;debug=true&amp;nossl&amp;flatten=[-1,100,1000]</code></p>
 </li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<strong>We&#8217;ve deprecated the usage of <code>,</code> as the parameter separator in favour of <code>&amp;</code> to be compliant with the URL parameter syntax.</strong>
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
 <li>
 <p>Add the JDBC driver dependency or jar file to your project</p>
 </li>
@@ -780,13 +796,20 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <p>Again, it uses the <a href="https://github.com/neo4j/neo4j-java-driver">neo4j-java-driver</a> to provide the connectivity.</p>
 </div>
 <div class="paragraph">
-<p>If you&#8217;re connecting to a Neo4j Causal Cluster the JDBC URL has this format:</p>
+<p>If you&#8217;re connecting to a <a href="https://neo4j.com/docs/operations-manual/current/clustering/causal-clustering/">Neo4j Causal Cluster</a> the JDBC URL has this format:</p>
 </div>
 <div class="paragraph">
-<p><code>jdbc:neo4j:bolt+routing://host:port/?username=neo4j,password=xxxx</code></p>
+<p><code>jdbc:neo4j:bolt+routing://host1:port1,host2:port2,&#8230;&#8203;,hostN:portN/?username=neo4j,password=xxxx</code></p>
 </div>
 <div class="paragraph">
-<p>The address in the URL must be that of a Core server.</p>
+<p>The list of <code>"hostX:portX"</code> pairs in the URL correspond to the list of servers that are partecipating in the Neo4j cluster (both as Core and Read-Replica nodes),
+but if you or your preferred tool don&#8217;t like this format you can then fall back to the dedicated parameter <code>"routing:servers"</code>, as in the following example:</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host1:port1?username=neo4j,password=xxxx,routing:region=EU&amp;country=Italy&amp;routing:servers=host2:port2;&#8230;&#8203;;hostN:portN</code></p>
+</div>
+<div class="paragraph">
+<p>In that case, the address in the URL must be that of a Core server and the alternative servers must be <code>;</code> separated (instead of <code>,</code>).</p>
 </div>
 <div class="sect3">
 <h4 id="_routing_context">Routing Context</h4>
@@ -794,13 +817,16 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <p>Routing driver with routing context is an available option with a Neo4j Causal Cluster of version 3.2 or above.</p>
 </div>
 <div class="paragraph">
-<p>In such a setup, you can include a preferred routing context via the parameter <code>routingcontext</code>.</p>
+<p>In such a setup you can include a preferred routing context via the <code>"routing:policy"</code> parameter.</p>
 </div>
 <div class="paragraph">
-<p><code>jdbc:neo4j:bolt+routing://host:port?username=neo4j,password=xxxx,routingcontext=region=eu&amp;country=it</code></p>
+<p><code>jdbc:neo4j:bolt+routing://host1:port1,host2:port2,&#8230;&#8203;,hostN:portN?username=neo4j,password=xxxx,routing:policy=EU</code></p>
 </div>
 <div class="paragraph">
-<p>The address in the URL must be that of a Core server.</p>
+<p>And for custom routing strategies via the generic <code>"routing:"</code> parameter:</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host1:port1,host2:port2,&#8230;&#8203;,hostN:portN?username=neo4j,password=xxxx,routing:region=EU&amp;country=Italy</code></p>
 </div>
 </div>
 <div class="sect3">
@@ -839,7 +865,7 @@ while read operations will be managed by READ REPLICA nodes.</p>
 <div class="listingblock">
 <div class="title">Run Query</div>
 <div class="content">
-<pre class="highlight"><code class="language-java" data-lang="java">String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:7687?noSsl";
+<pre class="highlight"><code class="language-java" data-lang="java">String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&amp;routing:policy=EU";
 
 try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", password)) {
     connection.setAutoCommit(false);
@@ -2028,7 +2054,7 @@ A click on the <code>refresh status</code> allow you to see the status of the in
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-03-19 17:39:48 CET
+Last updated 2018-06-11 17:17:55 CEST
 </div>
 </div>
 </body>

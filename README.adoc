@@ -7,27 +7,27 @@ image:https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master["Build St
 You can find the full documentation at: http://neo4j-contrib.github.io/neo4j-jdbc/
 endif::env-docs[]
 
-This is the official JDBC driver for Neo4j.
+*This is the official JDBC driver for Neo4j*.
 
 This driver was mainly developed by http://larus-ba.it[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j.
 *Thank you* so much for all your work.
 
-[NOTE]
-The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
-
-Being a graph database, Neo4j is not serving data in a relational way and the exact purpose of this project is to allow
+Being a graph database, Neo4j is not serving data in a relational way, nevertheless thanks to this driver it's possible for
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4j.
 
-This driver supports various types of database transports:
+This driver supports various types of database transports, through:
 
-* through the `Bolt` protocol (3.0.x to 3.3.0) using `jdbc:neo4j:bolt://<host>:<port>/`
-* through the `Bolt+Routing` protocol (3.3.1) using `jdbc:neo4j:bolt+routing://<host>:<port>/`
-* through the `HTTP` protocol (2.x+) using `jdbc:neo4j:http://<host>:<port>/`
+* The `Bolt` protocol using `jdbc:neo4j:bolt://<host>:<port>/` from Neo4j 3.0+
+* The `Bolt+Routing` protocol using `jdbc:neo4j:bolt+routing://<host>:<port>/` from Neo4j 3.1+
+* The `HTTP` protocol using `jdbc:neo4j:http://<host>:<port>/` from Neo4j 2.0+
 
 Going forward there will also be support for:
 
 * direct file connection
 * embedded connection
+
+[NOTE]
+The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
 
 === Maven dependency
 
@@ -40,7 +40,7 @@ For the all-in-one module supporting both Bolt and HTTP, you can simply use:
     <version>{neo4j-jdbc-version}</version>
 </dependency>
 
-If you only want one of the protocols, you can depend on its module:
+If you want only one of the protocols, you can depend on its module:
 
 [source,xml]
 <dependency>
@@ -97,8 +97,12 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 * Connect with URLs in the following 3 forms:
 ** `jdbc:neo4j:http://<host>:<port>/` (e.g. `jdbc:neo4j:http://localhost/`)
 ** `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
-** `jdbc:neo4j:bolt+routing://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost?region=europe&country=it`)
-* You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]`
+** `jdbc:neo4j:bolt+routing://<host>:<port>/` (e.g. `jdbc:neo4j:bolt+routing://localhost?routing:policy=eu`)
+* You can also use additional parameters in the URL separated by an `&` character for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j&password=xxxx&debug=true&nossl&flatten=[-1,100,1000]`
+
+[NOTE]
+*We've deprecated the usage of `,` as the parameter separator in favour of `&` to be compliant with the URL parameter syntax.*
+
 * Add the JDBC driver dependency or jar file to your project
 * Get a connection from `DriverManager`
 * Execute queries and transactions using the Cypher graph query language
