@@ -329,9 +329,5 @@ public class BoltNeo4jPreparedStatementIT {
 		statement.close();
 		connection.close();
 	}
-
-	private Connection getConnection() throws SQLException {
-		return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
-	}
 }
 

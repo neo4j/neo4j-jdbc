@@ -60,7 +60,7 @@ public class Driver extends Neo4jDriver {
 		if(null != getDriver(url)) {
 			connection = getDriver(url).connect(url, info);
 		}
-		return cwonnection;
+		return connection;
 	}
 
 	/**
