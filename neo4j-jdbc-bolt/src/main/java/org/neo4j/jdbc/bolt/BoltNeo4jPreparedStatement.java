@@ -68,7 +68,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		StatementResult result = executeInternal();
 
 		SummaryCounters stats = result.consume().counters();
-		this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+		this.currentUpdateCount = BoltNeo4jUtils.calculateUpdateCount(stats);
 		this.currentResultSet = null;
 		return this.currentUpdateCount;
 	}
@@ -84,7 +84,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 			this.currentResultSet = null;
 			try {
 				SummaryCounters stats = result.consume().counters();
-				this.currentUpdateCount = stats.nodesCreated() + stats.nodesDeleted() + stats.relationshipsCreated() + stats.relationshipsDeleted();
+				this.currentUpdateCount = BoltNeo4jUtils.calculateUpdateCount(stats);
 			} catch (Exception e) {
 				throw new SQLException(e);
 			}
