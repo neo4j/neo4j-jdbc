@@ -31,7 +31,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
 public class Driver extends Neo4jDriver {
@@ -58,7 +57,7 @@ public class Driver extends Neo4jDriver {
 
 	@Override public Connection connect(String url, Properties info) throws SQLException {
 		Connection connection = null;
-		if(!Objects.isNull(getDriver(url))) {
+		if(null != getDriver(url)) {
 			connection = getDriver(url).connect(url, info);
 		}
 		return cwonnection;

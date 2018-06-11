@@ -487,13 +487,17 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	@Override public Neo4jArray getArray(int columnIndex) throws SQLException {
 		checkClosed();
 		List<Object> list = this.fetchValueFromIndex(columnIndex).asList();
-		return new ListArray(list, Neo4jArray.getObjectType(list.get(0)));
+		Object obj = (list.isEmpty())?new Object():list.get(0);
+
+		return new ListArray(list, Neo4jArray.getObjectType(obj));
 	}
 
 	@SuppressWarnings("rawtypes") @Override public Neo4jArray getArray(String columnLabel) throws SQLException {
 		checkClosed();
 		List list = this.fetchValueFromLabel(columnLabel).asList();
-		return new ListArray(list, Neo4jArray.getObjectType(list.get(0)));
+		Object obj = (list.isEmpty())?new Object():list.get(0);
+
+		return new ListArray(list, Neo4jArray.getObjectType(obj));
 	}
 
 	@Override public double getDouble(String columnLabel) throws SQLException {

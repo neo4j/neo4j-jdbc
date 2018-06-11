@@ -65,7 +65,7 @@ public class HttpNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 	}
 
 	@SuppressWarnings("unchecked") @Override public int getColumnType(int column) throws SQLException {
-		final Object object = ((List<Object>) this.result.getRows().get(0).get("row")).get(column - 1);
+		final Object object = extractObject(column);
 
 		if (object == null) {
 			return Types.NULL;
@@ -80,7 +80,7 @@ public class HttpNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 	}
 
 	@SuppressWarnings("unchecked") @Override public String getColumnClassName(int column) throws SQLException {
-		final Object object = ((List<Object>) this.result.getRows().get(0).get("row")).get(column - 1);
+		final Object object = extractObject(column);
 
 		if (object == null) {
 			return null;
@@ -92,5 +92,41 @@ public class HttpNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 		}
 		return Object.class.getName();
 	}
+
+	/**
+	 * Safe method to get the object at column index. Null if cannot extract it.
+	 * @param column
+	 * @return
+	 */
+	private Object extractObject(int column) {
+		if(this.result == null){
+			return null;
+		}
+
+		if(this.result.getRows() == null || this.result.getRows().isEmpty()){
+			return null;
+		}
+
+		Map map = this.result.getRows().get(0);
+
+		if (!map.containsKey("row")){
+			return null;
+		}
+
+		Object row = map.get("row");
+
+		if (! (row instanceof List)){
+			return null;
+		}
+
+		List<Object> rowList = (List<Object>) row;
+
+		if (rowList.size() < column){
+			return null;
+		}
+
+		return rowList.get(column - 1);
+	}
+
 }
 

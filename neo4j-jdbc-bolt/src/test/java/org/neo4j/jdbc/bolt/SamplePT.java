@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.jdbc.bolt.data.PerformanceTestData;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
@@ -33,7 +34,10 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,22 +48,7 @@ public class SamplePT {
 
 	@Test public void launchBenchmark() throws Exception {
 
-		Connection conn = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test");
-		Statement stmt = conn.createStatement();
-		ResultSet rs = stmt.executeQuery("MATCH (n) RETURN n");
-		if (rs.next()) {
-			throw new Exception("Database localhost:7687 is not empty");
-		}
-		rs.close();
-		for (int i = 0; i < 100; i++) {
-			stmt.executeQuery("CREATE (:A {prop:" + (int) (Math.random() * 100) + "})" + (Math.random() * 10 > 5 ?
-					"-[:X]->(:B {prop:'" + (int) (Math.random() * 100) + "'})" :
-					""));
-		}
-		stmt.executeQuery("CREATE (:C)");
-		stmt.executeQuery("MATCH (b:B), (c:C) MERGE (c)<-[:Y]-(b)");
-		stmt.close();
-		conn.close();
+		PerformanceTestData.loadABCXYData();
 
 		// @formatter:off
 		Options opt = new OptionsBuilder()
@@ -68,7 +57,7 @@ public class SamplePT {
 				.timeUnit(TimeUnit.MICROSECONDS)
 				//Warmup
 				.warmupTime(TimeValue.seconds(1))
-				.warmupIterations(10)
+				.warmupIterations(1)
 				//Measurement
 				.measurementTime(TimeValue.seconds(1))
 				.measurementIterations(10)
@@ -83,34 +72,45 @@ public class SamplePT {
 		new Runner(opt).run();
 	}
 
-	@State(Scope.Thread) public static class Data {
-		@Setup public static void initialize() throws ClassNotFoundException, SQLException, IOException {
+	@State(Scope.Benchmark) public static class Data {
+		@Setup public void initialize() throws ClassNotFoundException, SQLException, IOException {
+			jdbcConnection = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test");
+			jdbcConnectionDebug = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test,debug");
+			driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "test"));
 		}
+
+		@TearDown public void close() throws ClassNotFoundException, SQLException, IOException {
+			jdbcConnection.close();
+			jdbcConnectionDebug.close();
+			driver.close();
+		}
+
 		public String query = "MATCH (n) RETURN n";
+		public Connection jdbcConnection;
+		public Connection jdbcConnectionDebug;
+		public org.neo4j.driver.v1.Driver driver;
+
 	}
 
 	@Benchmark public void testSimpleQueryJDBC(Data data, Blackhole bh) throws ClassNotFoundException, SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test");
+		Connection conn = data.jdbcConnection;
 		Statement stmt = conn.createStatement();
 		bh.consume(stmt.executeQuery(data.query));
 		stmt.close();
-		conn.close();
 	}
 
 	@Benchmark public void testSimpleQueryBoltDriver(Data data, Blackhole bh) {
-		org.neo4j.driver.v1.Driver driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "test"));
+		org.neo4j.driver.v1.Driver driver = data.driver;
 		Session session = driver.session();
 		bh.consume(session.run(data.query));
 		session.close();
-		driver.close();
 	}
 
 	@Benchmark public void testSimpleQueryWithDebugJDBC(Data data, Blackhole bh) throws SQLException {
 		System.setOut(Mockito.mock(PrintStream.class));
-		Connection conn = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test,debug");
+		Connection conn = data.jdbcConnectionDebug;
 		Statement stmt = conn.createStatement();
 		bh.consume(stmt.executeQuery(data.query));
 		stmt.close();
-		conn.close();
 	}
 }
