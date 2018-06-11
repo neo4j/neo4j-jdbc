@@ -137,7 +137,6 @@ public class BoltNeo4jPreparedStatementIT {
 		resultSet.close();
 		statement.close();
 		connection.close();
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
@@ -182,7 +181,6 @@ public class BoltNeo4jPreparedStatementIT {
 
 		connection.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
@@ -205,7 +203,6 @@ public class BoltNeo4jPreparedStatementIT {
 
 		connection.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
@@ -238,7 +235,98 @@ public class BoltNeo4jPreparedStatementIT {
 			assertEquals(3L, res.next().get("total"));
 		}
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+		connection.close();
+	}
+
+	private Connection getConnection() throws SQLException {
+		return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+	}
+
+	/*------------------------------*/
+	/*            MoreResult        */
+	/*------------------------------*/
+	@Test public void testMoreResultWithOneResultSet() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
+		statement.setString(1, "test");
+		boolean result = statement.execute();
+
+		assertTrue(statement.getMoreResults());
+
+		ResultSet resultSet = statement.getResultSet();
+		assertNotNull(resultSet);
+
+		assertFalse(statement.getMoreResults());
+
+		ResultSet resultSet2 = statement.getResultSet();
+		assertNull(resultSet2);
+
+		resultSet.close();
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testMoreResultWithNoResultSet() throws SQLException {
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		statement.setString(1, "testName");
+		statement.setString(2, "testSurname");
+		boolean result = statement.execute();
+
+		assertFalse(statement.getMoreResults());
+
+		ResultSet resultSet = statement.getResultSet();
+		assertNull(resultSet);
+
+		assertFalse(statement.getMoreResults());
+
+		statement.close();
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*            UpdateCount       */
+	/*------------------------------*/
+	@Test public void testUpdateCountWithCreate() throws SQLException {
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+
+		boolean result = statement.execute();
+		assertFalse(result);
+		assertEquals(1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testUpdateCountWithUpdate() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_UPDATE_NODES_PARAM);
+		statement.setString(1, "test");
+
+		boolean result = statement.execute();
+		assertFalse(result);
+		assertEquals(1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testUpdateCountWithReturn() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
+		statement.setString(1, "test");
+
+		boolean result = statement.execute();
+		assertTrue(result);
+		assertEquals(-1, statement.getUpdateCount());
+
+		statement.close();
 		connection.close();
 	}
 

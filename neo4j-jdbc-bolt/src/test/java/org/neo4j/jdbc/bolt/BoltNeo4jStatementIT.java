@@ -19,26 +19,15 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.bolt.data.StatementData;
+
+import java.sql.*;
+
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
@@ -50,12 +39,17 @@ public class BoltNeo4jStatementIT {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
+	@Before
+	public void cleanDB(){
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+	}
+
 	/*------------------------------*/
 	/*          executeQuery        */
 	/*------------------------------*/
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
 
@@ -68,7 +62,7 @@ public class BoltNeo4jStatementIT {
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatement() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 
@@ -84,7 +78,7 @@ public class BoltNeo4jStatementIT {
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatementAndCreatedWithParams() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement(Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY);
 		connection.setAutoCommit(false);
 
@@ -102,7 +96,7 @@ public class BoltNeo4jStatementIT {
 	/*         executeUpdate        */
 	/*------------------------------*/
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		int lines = statement.executeUpdate(StatementData.STATEMENT_CREATE);
 		assertEquals(1, lines);
@@ -120,7 +114,7 @@ public class BoltNeo4jStatementIT {
 	/*            execute           */
 	/*------------------------------*/
 	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
 		assertFalse(result);
@@ -132,7 +126,7 @@ public class BoltNeo4jStatementIT {
 	}
 
 	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		boolean result = statement.execute(StatementData.STATEMENT_MATCH_ALL);
 		assertTrue(result);
@@ -144,7 +138,7 @@ public class BoltNeo4jStatementIT {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Invalid input");
 
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 
 		Statement statement = connection.createStatement();
 		try {
@@ -159,7 +153,7 @@ public class BoltNeo4jStatementIT {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("Invalid input");
 
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		connection.setAutoCommit(false);
 
 		Statement statement = connection.createStatement();
@@ -175,7 +169,7 @@ public class BoltNeo4jStatementIT {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(true);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -192,7 +186,7 @@ public class BoltNeo4jStatementIT {
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		connection.setAutoCommit(true);
 		Statement statement = connection.createStatement();
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -212,7 +206,7 @@ public class BoltNeo4jStatementIT {
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
@@ -244,7 +238,7 @@ public class BoltNeo4jStatementIT {
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldNotCloseTransaction() throws SQLException {
-		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+		try (Connection connection = getConnection()) {
 			connection.setAutoCommit(false);
 
 			Statement statement = connection.createStatement();
@@ -253,6 +247,130 @@ public class BoltNeo4jStatementIT {
 
 			assertTrue(((BoltNeo4jConnection) connection).getTransaction().isOpen());
 		}
+	}
+
+	private Connection getConnection() throws SQLException {
+		return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+	}
+
+	/*------------------------------*/
+	/*            MoreResult        */
+	/*------------------------------*/
+	@Test public void testMoreResultWithOneResultSet() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+
+		connection.setAutoCommit(true);
+		Statement statement = connection.createStatement();
+
+		boolean result = statement.execute(StatementData.STATEMENT_MATCH_NODES);
+
+		assertTrue(statement.getMoreResults());
+
+		ResultSet resultSet = statement.getResultSet();
+		assertNotNull(resultSet);
+
+		assertFalse(statement.getMoreResults());
+
+		ResultSet resultSet2 = statement.getResultSet();
+		assertNull(resultSet2);
+
+		resultSet.close();
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testMoreResultWithNoResultSet() throws SQLException {
+		Connection connection = getConnection();
+
+		connection.setAutoCommit(true);
+		Statement statement = connection.createStatement();
+
+		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
+
+		assertFalse(statement.getMoreResults());
+
+		ResultSet resultSet = statement.getResultSet();
+		assertNull(resultSet);
+
+		assertFalse(statement.getMoreResults());
+
+		statement.close();
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*            UpdateCount       */
+	/*------------------------------*/
+	@Test public void testUpdateCountWithCreate() throws SQLException {
+		Connection connection = getConnection();
+
+		connection.setAutoCommit(true);
+		Statement statement = connection.createStatement();
+
+		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
+
+		assertFalse(result);
+		assertEquals(1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testUpdateCountWithUpdate() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+
+		connection.setAutoCommit(true);
+		Statement statement = connection.createStatement();
+
+		boolean result = statement.execute(StatementData.STATEMENT_UPDATE_NODES);
+
+		assertFalse(result);
+		assertEquals(1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testUpdateCountWithReturn() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		connection.setAutoCommit(true);
+		Statement statement = connection.createStatement();
+
+		boolean result = statement.execute(StatementData.STATEMENT_MATCH_NODES);
+		assertTrue(result);
+		assertEquals(-1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test
+	public void issue137() throws SQLException {
+		Connection connection = getConnection();
+		connection.setAutoCommit(true);
+		Statement stmt = connection.createStatement();
+
+		stmt.execute("CREATE (x:NotExistingLabel);");
+
+		ResultSet rs = stmt.getResultSet();
+		while (rs == null) {
+			// move forward to get the first resultset in case the driver
+			// doesn't return the resultset as the first result (HSQLDB 2.1)
+			if (stmt.getMoreResults()) {
+				rs = stmt.getResultSet();
+			} else {
+				if (stmt.getUpdateCount() == -1) {
+					// no more results. Must be no resultset
+					break;
+				}
+			}
+		}
+
+		stmt.close();
+		connection.close();
 	}
 
 }

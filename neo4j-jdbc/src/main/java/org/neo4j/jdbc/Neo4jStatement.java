@@ -155,11 +155,11 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	/**
-	 * Some tools call this method, so for now just respond false.
+	 * If there's a result set to consume, it's true
 	 */
 	@Override public boolean getMoreResults() throws SQLException {
 		this.checkClosed();
-		return !(this.currentResultSet == null && this.currentUpdateCount == -1);
+		return this.currentResultSet != null;
 	}
 
 	/**
