@@ -22,26 +22,30 @@
 
 package org.neo4j.jdbc.http;
 
-import static org.junit.Assert.assertEquals;
-
-import java.sql.Array;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.Map;
-
+import org.junit.After;
 import org.junit.Test;
 import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
+
+import java.sql.*;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author AgileLARUS
  * @since 3.0.2
  */
 public class HttpNeo4jResultSetMetaDataIT extends Neo4jHttpITUtil {
+
+	@After
+	public void tearDown() throws SQLException {
+		Connection con = DriverManager.getConnection(getJDBCUrl());
+		try (Statement stmt = con.createStatement()) {
+			stmt.execute("MATCH (n) DETACH DELETE n");
+		}
+		con.close();
+	}
 
 	@Test
 	public void getColumnClassNameShouldSucceed() throws SQLException {
@@ -52,7 +56,7 @@ public class HttpNeo4jResultSetMetaDataIT extends Neo4jHttpITUtil {
 		}
 		
 		try (Statement stmt = con.createStatement()) {
-			ResultSet rs = stmt.executeQuery("MATCH (n:User) return 'a',1,1.0,[1,2,3],{a:1},null,n,n.name");
+			ResultSet rs = stmt.executeQuery("MATCH (n:User) return 'a',1,1.0,[1,2,3],{a:1},null,n,n.name,[]");
 			
 			while (rs.next()) {
 				ResultSetMetaData rsm = rs.getMetaData();
@@ -80,14 +84,30 @@ public class HttpNeo4jResultSetMetaDataIT extends Neo4jHttpITUtil {
 
 				assertEquals(Types.VARCHAR, rsm.getColumnType(8));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(8));
+
+				assertEquals(Types.ARRAY, rsm.getColumnType(9));
+				assertEquals(Array.class.getName(), rsm.getColumnClassName(9));
 			}
 		}
-		finally {
-			try (Statement stmt = con.createStatement()) {
-			  stmt.execute("MATCH (n:User), (s:Session) DETACH DELETE n, s");
-			}
-			
-		  con.close();
-		}	
 	}
+
+
+	@Test
+	public void getColumnClassNameWithNoRows() throws SQLException {
+		Connection con = DriverManager.getConnection(getJDBCUrl());
+
+
+		Statement stmt = con.createStatement();
+		ResultSet rs = stmt.executeQuery("MATCH (x:Test {id: 'nothing'}) RETURN x;");
+
+		//rs.next();
+		ResultSetMetaData rsm = rs.getMetaData();
+
+		assertEquals(Types.NULL, rsm.getColumnType(1));
+		assertNull(rsm.getColumnClassName(1));
+
+		assertEquals(Types.NULL, rsm.getColumnType(2));
+		assertNull(rsm.getColumnClassName(2));
+	}
+
 }

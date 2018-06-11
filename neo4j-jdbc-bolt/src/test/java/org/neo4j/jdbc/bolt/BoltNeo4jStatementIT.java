@@ -19,7 +19,9 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.*;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.Neo4jResultSet;
@@ -249,128 +251,75 @@ public class BoltNeo4jStatementIT {
 		}
 	}
 
-	private Connection getConnection() throws SQLException {
-		return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
-	}
+	/*
+	Array
+	 */
 
-	/*------------------------------*/
-	/*            MoreResult        */
-	/*------------------------------*/
-	@Test public void testMoreResultWithOneResultSet() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = getConnection();
+	@Test public void testGetEmptyArrayByIndex() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
 
-		connection.setAutoCommit(true);
-		Statement statement = connection.createStatement();
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [] AS result");
 
-		boolean result = statement.execute(StatementData.STATEMENT_MATCH_NODES);
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray(1);
+			Object[] arrayResult = (Object[]) array.getArray();
+			assertEquals(0, arrayResult.length);
 
-		assertTrue(statement.getMoreResults());
-
-		ResultSet resultSet = statement.getResultSet();
-		assertNotNull(resultSet);
-
-		assertFalse(statement.getMoreResults());
-
-		ResultSet resultSet2 = statement.getResultSet();
-		assertNull(resultSet2);
-
-		resultSet.close();
-		statement.close();
-		connection.close();
-	}
-
-	@Test public void testMoreResultWithNoResultSet() throws SQLException {
-		Connection connection = getConnection();
-
-		connection.setAutoCommit(true);
-		Statement statement = connection.createStatement();
-
-		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
-
-		assertFalse(statement.getMoreResults());
-
-		ResultSet resultSet = statement.getResultSet();
-		assertNull(resultSet);
-
-		assertFalse(statement.getMoreResults());
-
-		statement.close();
-		connection.close();
-	}
-
-	/*------------------------------*/
-	/*            UpdateCount       */
-	/*------------------------------*/
-	@Test public void testUpdateCountWithCreate() throws SQLException {
-		Connection connection = getConnection();
-
-		connection.setAutoCommit(true);
-		Statement statement = connection.createStatement();
-
-		boolean result = statement.execute(StatementData.STATEMENT_CREATE);
-
-		assertFalse(result);
-		assertEquals(1, statement.getUpdateCount());
-
-		statement.close();
-		connection.close();
-	}
-
-	@Test public void testUpdateCountWithUpdate() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = getConnection();
-
-		connection.setAutoCommit(true);
-		Statement statement = connection.createStatement();
-
-		boolean result = statement.execute(StatementData.STATEMENT_UPDATE_NODES);
-
-		assertFalse(result);
-		assertEquals(1, statement.getUpdateCount());
-
-		statement.close();
-		connection.close();
-	}
-
-	@Test public void testUpdateCountWithReturn() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = getConnection();
-		connection.setAutoCommit(true);
-		Statement statement = connection.createStatement();
-
-		boolean result = statement.execute(StatementData.STATEMENT_MATCH_NODES);
-		assertTrue(result);
-		assertEquals(-1, statement.getUpdateCount());
-
-		statement.close();
-		connection.close();
-	}
-
-	@Test
-	public void issue137() throws SQLException {
-		Connection connection = getConnection();
-		connection.setAutoCommit(true);
-		Statement stmt = connection.createStatement();
-
-		stmt.execute("CREATE (x:NotExistingLabel);");
-
-		ResultSet rs = stmt.getResultSet();
-		while (rs == null) {
-			// move forward to get the first resultset in case the driver
-			// doesn't return the resultset as the first result (HSQLDB 2.1)
-			if (stmt.getMoreResults()) {
-				rs = stmt.getResultSet();
-			} else {
-				if (stmt.getUpdateCount() == -1) {
-					// no more results. Must be no resultset
-					break;
-				}
-			}
+			statement.close();
 		}
-
-		stmt.close();
-		connection.close();
 	}
 
+	@Test public void testGetEmptyArrayByName() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray("result");
+			Object[] arrayResult = (Object[]) array.getArray();
+			assertEquals(0, arrayResult.length);
+
+			statement.close();
+		}
+	}
+
+	@Test public void testGetOneArrayByIndex() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [10] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray(1);
+			Long[] arrayResult = (Long[]) array.getArray();
+			assertEquals(new Long(10), arrayResult[0]);
+
+			statement.close();
+		}
+	}
+
+	@Test public void testGetOneArrayByName() throws SQLException {
+		try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl")) {
+			connection.setAutoCommit(true);
+
+			Statement statement = connection.createStatement();
+			statement.execute("RETURN [10] AS result");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array array = resultSet.getArray("result");
+			Long[] arrayResult = (Long[]) array.getArray();
+			assertEquals(new Long(10), arrayResult[0]);
+
+			statement.close();
+		}
+	}
 }

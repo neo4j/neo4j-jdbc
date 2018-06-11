@@ -92,4 +92,75 @@ public class HttpNeo4jResultSetIT extends Neo4jHttpITUtil {
 		assertFalse(rs.next());
 		connection.close();
 	}
+
+	/*
+	Array
+	 */
+
+	@Test public void testGetEmptyArrayByIndex() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		connection.setAutoCommit(true);
+
+		Statement statement = connection.createStatement();
+		statement.execute("RETURN [] AS result");
+
+		ResultSet resultSet = statement.getResultSet();
+		resultSet.next();
+		Array array = resultSet.getArray(1);
+		Object[] arrayResult = (Object[]) array.getArray();
+		assertEquals(0, arrayResult.length);
+
+		statement.close();
+
+	}
+
+	@Test public void testGetEmptyArrayByName() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		connection.setAutoCommit(true);
+
+		Statement statement = connection.createStatement();
+		statement.execute("RETURN [] AS result");
+
+		ResultSet resultSet = statement.getResultSet();
+		resultSet.next();
+		Array array = resultSet.getArray("result");
+		Object[] arrayResult = (Object[]) array.getArray();
+		assertEquals(0, arrayResult.length);
+
+		statement.close();
+	}
+
+	@Test public void testGetOneArrayByIndex() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		connection.setAutoCommit(true);
+
+		Statement statement = connection.createStatement();
+		statement.execute("RETURN [10] AS result");
+
+		ResultSet resultSet = statement.getResultSet();
+		resultSet.next();
+		Array array = resultSet.getArray(1);
+		Long[] arrayResult = (Long[]) array.getArray();
+		assertEquals(new Long(10), arrayResult[0]);
+
+		statement.close();
+
+	}
+
+	@Test public void testGetOneArrayByName() throws SQLException {
+		Connection connection = DriverManager.getConnection(getJDBCUrl());
+		connection.setAutoCommit(true);
+
+		Statement statement = connection.createStatement();
+		statement.execute("RETURN [10] AS result");
+
+		ResultSet resultSet = statement.getResultSet();
+		resultSet.next();
+		Array array = resultSet.getArray("result");
+		Long[] arrayResult = (Long[]) array.getArray();
+		assertEquals(new Long(10), arrayResult[0]);
+
+		statement.close();
+	}
+
 }
