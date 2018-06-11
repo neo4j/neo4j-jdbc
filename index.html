@@ -594,7 +594,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
     try (PreparedStatement stmt = con.prepareStatement(query)) {
         stmt.setString(1,"John");
 
-        try (ResultSet rs = stmt.execute()) {
+        try (ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
             }
@@ -954,7 +954,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
     try (PreparedStatement stmt = con.prepareStatement(query)) {
         stmt.setString(1,"John");
 
-        try (ResultSet rs = stmt.execute()) {
+        try (ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
             }
