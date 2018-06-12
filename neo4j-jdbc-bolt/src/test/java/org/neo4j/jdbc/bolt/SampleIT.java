@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.neo4j.driver.v1.*;
 import org.neo4j.driver.v1.Driver;
+import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
 import java.sql.*;
 import java.sql.Statement;
@@ -59,7 +60,7 @@ public class SampleIT {
 		neo4j.getGraphDatabase().execute("create (:User{name:\"testUser\"})");
 
 		// Connect
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 
 		// Querying
 		try (Statement stmt = con.createStatement()) {

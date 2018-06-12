@@ -227,9 +227,9 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		} catch (Uncoercible e) {
 			String result = null;
 			if (value instanceof IntegerValue) {
-				result = ((IntegerValue) value).asLiteralString();
+				result = ((IntegerValue) value).toString();
 			} else if (value instanceof FloatValue) {
-				result = ((FloatValue) value).asLiteralString();
+				result = ((FloatValue) value).toString();
 			} else if (value instanceof NodeValue) {
 				result = this.convertNodeToString(value.asNode());
 			} else if (value instanceof RelationshipValue) {

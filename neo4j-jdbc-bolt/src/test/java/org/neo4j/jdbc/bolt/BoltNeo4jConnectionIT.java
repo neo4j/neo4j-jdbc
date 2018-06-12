@@ -19,16 +19,15 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.data.StatementData;
+import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+
+import java.sql.*;
 
 import static org.junit.Assert.*;
 
@@ -41,18 +40,18 @@ public class BoltNeo4jConnectionIT {
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	private String NEO4J_JDBC_BOLT_URL;
+	Connection writer;
+	Connection reader;
+	boolean defaultAutoCommit;
 
-	@Before public void setup() {
-		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl";
+	@Before
+	public void setUp() throws SQLException {
+		writer = JdbcConnectionTestUtils.verifyConnection(writer,neo4j);
+		reader = JdbcConnectionTestUtils.verifyConnection(reader,neo4j);
 	}
 
 	@Test public void commitShouldWorkFine() throws SQLException {
-		// Connect (autoCommit = false)
-		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		writer.setAutoCommit(false);
-
-		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		// Creating a node with a transaction
 		try (Statement stmt = writer.createStatement()) {
@@ -69,15 +68,10 @@ public class BoltNeo4jConnectionIT {
 			assertFalse(rs.next());
 		}
 
-		writer.close();
-		reader.close();
 	}
 
 	@Test public void setAutoCommitShouldCommitFromFalseToTrue() throws SQLException {
-		// Connect (autoCommit = false)
-		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		writer.setAutoCommit(false);
-		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		// Creating a node with a transaction
 		try (Statement stmt = writer.createStatement()) {
@@ -94,13 +88,9 @@ public class BoltNeo4jConnectionIT {
 			assertFalse(rs.next());
 		}
 
-		writer.close();
-		reader.close();
 	}
 
 	@Test public void setAutoCommitShouldWorkAfterMultipleChanges() throws SQLException {
-		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
-		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		Statement writerStmt = writer.createStatement();
 		writerStmt.executeQuery(StatementData.STATEMENT_CREATE);
@@ -131,17 +121,11 @@ public class BoltNeo4jConnectionIT {
 		assertTrue(rs.next());
 		assertEquals(3, rs.getInt(1));
 
-		writer.close();
-		reader.close();
-
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void rollbackShouldWorkFine() throws SQLException {
-		// Connect (autoCommit = false)
-		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		writer.setAutoCommit(false);
-		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		// Creating a node with a transaction
 		Statement stmt = writer.createStatement();
 		stmt.executeQuery("CREATE (:RollbackShouldWorkFine{result:\"ok\"})");
@@ -155,14 +139,9 @@ public class BoltNeo4jConnectionIT {
 		assertFalse(rs.next());
 		assertTrue(true);
 
-		writer.close();
-		reader.close();
 	}
 
 	@Test public void autoCommitShouldWorkFine() throws SQLException {
-		// Connect (autoCommit = true, by default)
-		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
-		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		// Creating a node
 		Statement writeStatement = writer.createStatement();
@@ -172,15 +151,10 @@ public class BoltNeo4jConnectionIT {
 		assertTrue(rs.next());
 		assertNotNull(rs.getObject(1));
 		assertFalse(rs.next());
-
-		writer.close();
-		reader.close();
 	}
 
 	@Test public void moreStatementsFromOneConnection() throws SQLException {
-		Connection writer = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 		writer.setAutoCommit(false);
-		Connection reader = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
 
 		Statement statOne = writer.createStatement();
 		Statement statTwo = writer.createStatement();
@@ -203,13 +177,11 @@ public class BoltNeo4jConnectionIT {
 		assertEquals("companyname", rs.getString(1));
 		assertFalse(rs.next());
 
-		writer.close();
-		reader.close();
 	}
 
 	@Test public void shouldRollbackAnEmptyTransaction() throws SQLException {
 		// Connect (autoCommit = false)
-		try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
+		try (Connection connection = JdbcConnectionTestUtils.getConnection(neo4j)) {
 			connection.setAutoCommit(false);
 
 			connection.rollback();
@@ -221,7 +193,7 @@ public class BoltNeo4jConnectionIT {
 	/*------------------------------*/
 
 	@Test public void getMetaDataShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL);
+		Connection connection = JdbcConnectionTestUtils.getConnection(neo4j);
 		DatabaseMetaData metaData = connection.getMetaData();
 		assertNotNull(metaData);
 		ResultSet resultSet = metaData.getColumns(null, null, null, null);
@@ -238,7 +210,7 @@ public class BoltNeo4jConnectionIT {
 
 	@Test public void killingQueryThreadExecutionShouldNotInvalidateTheConnection() throws SQLException {
 
-		try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
+		try (Connection connection = JdbcConnectionTestUtils.getConnection(neo4j)) {
 			assertFalse(connection.isClosed());
 			assertTrue(connection.isValid(0));
 
@@ -269,11 +241,12 @@ public class BoltNeo4jConnectionIT {
 		}
 	}
 
+	@Ignore
     @Test
 	public void multipleRunShouldNotFail() throws Exception {
 
 		for (int i = 0; i < 1000; i++) {
-			try (Connection connection = DriverManager.getConnection(NEO4J_JDBC_BOLT_URL)) {
+			try (Connection connection = JdbcConnectionTestUtils.getConnection(neo4j)) {
 				try (Statement statement = connection.createStatement()) {
 					try (ResultSet resultSet = statement.executeQuery("match (n) return count(n) as countOfNodes")) {
 						if (resultSet.next()) {

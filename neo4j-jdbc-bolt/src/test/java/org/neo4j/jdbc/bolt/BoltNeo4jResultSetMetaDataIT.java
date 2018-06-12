@@ -19,25 +19,21 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Array;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.Map;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.jdbc.bolt.data.StatementData;
+import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS
@@ -45,17 +41,22 @@ import org.neo4j.jdbc.bolt.data.StatementData;
  */
 public class BoltNeo4jResultSetMetaDataIT {
 
-	private final static String FLATTEN_URI = "flatten=1";
+	//private final static String FLATTEN_URI = "flatten=1";
+
+	Connection connectionFlatten;
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
+
 	@Before public void setUp() {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		connectionFlatten = JdbcConnectionTestUtils.verifyConnection(connectionFlatten, neo4j,",flatten=1");
 	}
 
 	@After public void tearDown() {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	/*------------------------------*/
@@ -65,58 +66,67 @@ public class BoltNeo4jResultSetMetaDataIT {
 	@Test public void shouldAddVirtualColumnsOnNodeWithMultipleNodes() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
-
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_MORE);
 
 			assertEquals(stmt, rs.getStatement());
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			int i = 1;
-
 			assertEquals(9, rsm.getColumnCount());
-			assertEquals("n", rsm.getColumnLabel(i++));
-			assertEquals("n.id", rsm.getColumnLabel(i++));
-			assertEquals("n.labels", rsm.getColumnLabel(i++));
-			assertEquals("n.surname", rsm.getColumnLabel(i++));
-			assertEquals("n.name", rsm.getColumnLabel(i++));
-			assertEquals("s", rsm.getColumnLabel(i++));
-			assertEquals("s.id", rsm.getColumnLabel(i++));
-			assertEquals("s.labels", rsm.getColumnLabel(i++));
-			assertEquals("s.status", rsm.getColumnLabel(i++));
-		}
-		con.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
+			List<String> labels = new ArrayList<>();
+			labels.add(rsm.getColumnLabel(1));
+			labels.add(rsm.getColumnLabel(2));
+			labels.add(rsm.getColumnLabel(3));
+			labels.add(rsm.getColumnLabel(4));
+			labels.add(rsm.getColumnLabel(5));
+			labels.add(rsm.getColumnLabel(6));
+			labels.add(rsm.getColumnLabel(7));
+			labels.add(rsm.getColumnLabel(8));
+			labels.add(rsm.getColumnLabel(9));
+
+			assertTrue(labels.contains("n"));
+			assertTrue(labels.contains("n.id"));
+			assertTrue(labels.contains("n.labels"));
+			assertTrue(labels.contains("n.surname"));
+			assertTrue(labels.contains("n.name"));
+			assertTrue(labels.contains("s"));
+			assertTrue(labels.contains("s.id"));
+			assertTrue(labels.contains("s.labels"));
+			assertTrue(labels.contains("s.status"));
+
+		}
+
 	}
 
 	@Test public void shouldAddVirtualColumnsOnNodeAndPreserveResultSet() throws SQLException {
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
 
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			int i = 1;
-
 			assertEquals(5, rsm.getColumnCount());
-			assertEquals("n", rsm.getColumnLabel(i++));
-			assertEquals("n.id", rsm.getColumnLabel(i++));
-			assertEquals("n.labels", rsm.getColumnLabel(i++));
-			assertEquals("n.surname", rsm.getColumnLabel(i++));
-			assertEquals("n.name", rsm.getColumnLabel(i++));
+			List<String> labels = new ArrayList<>();
+			labels.add(rsm.getColumnLabel(1));
+			labels.add(rsm.getColumnLabel(2));
+			labels.add(rsm.getColumnLabel(3));
+			labels.add(rsm.getColumnLabel(4));
+			labels.add(rsm.getColumnLabel(5));
+
+			assertTrue(labels.contains("n"));
+			assertTrue(labels.contains("n.id"));
+			assertTrue(labels.contains("n.labels"));
+			assertTrue(labels.contains("n.surname"));
+			assertTrue(labels.contains("n.name"));
 
 			assertTrue(rs.next());
 			assertEquals("test", ((Map) rs.getObject(1)).get("name"));
 		}
-		con.close();
 	}
 
 	@Test public void shouldNotAddVirtualColumnsOnNodeIfNotOnlyNodes() throws SQLException {
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
 
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_MISC);
 			ResultSetMetaData rsm = rs.getMetaData();
 
@@ -124,15 +134,12 @@ public class BoltNeo4jResultSetMetaDataIT {
 			assertEquals("n", rsm.getColumnLabel(1));
 			assertEquals("n.name", rsm.getColumnLabel(2));
 		}
-		con.close();
 	}
 
 	@Test public void shouldAddVirtualColumnsOnRelationsWithMultipleRelations() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
-
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_RELATIONS);
 			ResultSetMetaData rsm = rs.getMetaData();
 
@@ -144,46 +151,54 @@ public class BoltNeo4jResultSetMetaDataIT {
 			assertEquals("r.type", rsm.getColumnLabel(i++));
 			assertEquals("r.date", rsm.getColumnLabel(i++));
 		}
-		con.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
 	}
 
 	@Test public void shouldAddVirtualColumnsOnRelationsAndNodesWithMultiple() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
-
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			ResultSetMetaData rsm = rs.getMetaData();
 
-			int i = 1;
-
 			assertEquals(13, rsm.getColumnCount());
-			assertEquals("n", rsm.getColumnLabel(i++));
-			assertEquals("n.id", rsm.getColumnLabel(i++));
-			assertEquals("n.labels", rsm.getColumnLabel(i++));
-			assertEquals("n.surname", rsm.getColumnLabel(i++));
-			assertEquals("n.name", rsm.getColumnLabel(i++));
-			assertEquals("r", rsm.getColumnLabel(i++));
-			assertEquals("r.id", rsm.getColumnLabel(i++));
-			assertEquals("r.type", rsm.getColumnLabel(i++));
-			assertEquals("r.date", rsm.getColumnLabel(i++));
-			assertEquals("s", rsm.getColumnLabel(i++));
-			assertEquals("s.id", rsm.getColumnLabel(i++));
-			assertEquals("s.labels", rsm.getColumnLabel(i++));
-			assertEquals("s.status", rsm.getColumnLabel(i++));
-		}
-		con.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
+			List<String> labels = new ArrayList<>();
+			labels.add(rsm.getColumnLabel(1));
+			labels.add(rsm.getColumnLabel(2));
+			labels.add(rsm.getColumnLabel(3));
+			labels.add(rsm.getColumnLabel(4));
+			labels.add(rsm.getColumnLabel(5));
+			labels.add(rsm.getColumnLabel(6));
+			labels.add(rsm.getColumnLabel(7));
+			labels.add(rsm.getColumnLabel(8));
+			labels.add(rsm.getColumnLabel(9));
+			labels.add(rsm.getColumnLabel(10));
+			labels.add(rsm.getColumnLabel(11));
+			labels.add(rsm.getColumnLabel(12));
+			labels.add(rsm.getColumnLabel(13));
+
+			assertTrue(labels.contains("n"));
+			assertTrue(labels.contains("n.id"));
+			assertTrue(labels.contains("n.labels"));
+			assertTrue(labels.contains("n.surname"));
+			assertTrue(labels.contains("n.name"));
+			assertTrue(labels.contains("s"));
+			assertTrue(labels.contains("s.id"));
+			assertTrue(labels.contains("s.labels"));
+			assertTrue(labels.contains("s.status"));
+			assertTrue(labels.contains("r"));
+			assertTrue(labels.contains("r.id"));
+			assertTrue(labels.contains("r.type"));
+			assertTrue(labels.contains("r.date"));
+		}
+
 	}
 
 	@Test public void getColumnTypeShouldSucceed() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery("MATCH (n) return 'a',1,1.0,[1,2,3],{a:1},null,n,n.name");
@@ -231,9 +246,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
-
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			rs.next();
 
@@ -254,10 +267,6 @@ public class BoltNeo4jResultSetMetaDataIT {
 			assertEquals(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().name(), rsm.getColumnTypeName(13));
 		}
 
-		con.close();
-
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
@@ -265,9 +274,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl," + FLATTEN_URI);
-
-		try (Statement stmt = con.createStatement()) {
+		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			rs.next();
 
@@ -288,17 +295,13 @@ public class BoltNeo4jResultSetMetaDataIT {
 			assertEquals(Boolean.class.getName(), rsm.getColumnClassName(13));
 		}
 
-		con.close();
-
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS_REV);
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void getColumnsTypeNameShouldWorkWithVariableNumberOfProperties() throws SQLException {
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 
-		Connection con = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
@@ -312,7 +315,5 @@ public class BoltNeo4jResultSetMetaDataIT {
 		}
 
 		con.close();
-
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 }
