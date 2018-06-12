@@ -150,6 +150,8 @@ include::qlik.adoc[]
 
 include::tableau.adoc[]
 
+include::matlab.adoc[]
+
 == ETL Tools
 
 include::pentaho.adoc[]

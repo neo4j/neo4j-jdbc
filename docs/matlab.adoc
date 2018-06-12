@@ -1,8 +1,6 @@
-= Combining Matlab with Neo4j
+=== Matlab
 
-== Setup
-
-=== Download and Install Neo4j
+==== Setup
 
 image::http://i.imgur.com/JqEqrlS.png[width=400,float=right]
 
@@ -14,7 +12,7 @@ Type into the command-line at the top: `:play movies`, click the big block of te
 
 The data is inserted and should be visualized.
 
-=== Get JDBC Driver
+==== Get JDBC Driver
 
 Download the Neo4j jdbc driver from neo4j-contrib/neo4j-jdbc GitHub releases
 Need the older version b/c MATLAB still runs on Java 7
@@ -23,7 +21,7 @@ Need the older version b/c MATLAB still runs on Java 7
 curl -O "$HOME/Documents/MATLAB/neo4j-jdbc-driver-3.1.0.jar" https://github.com/neo4j-contrib/neo4j-jdbc/releases/download/3.1.0/neo4j-jdbc-driver-3.1.0.jar
 ----
 
-=== Add the jar to the class pah via javaaddpath
+==== Add the jar to the class pah via javaaddpath
 
 ----
 javaaddpath([matlabroot,'/neo4j-jdbc-driver-3.1.0.jar'])
@@ -35,9 +33,9 @@ and check that the dynamic path contains the jar
 javaclasspath
 ----
 
-=== Test Connection
+==== Test Connection
 
-image::https://user-images.githubusercontent.com/12963831/34491711-d06858e2-efe4-11e7-96de-941f4ac06844.png[width=400,float=right]
+image::https://user-images.githubusercontent.com/12963831/34491711-d06858e2-efe4-11e7-96de-941f4ac06844.png[width=100%]
 
 .Open Connection
 ----
@@ -86,9 +84,9 @@ ans =
 close(conn)
 ----
 
-== Resources
 
-=== Matlab & JDBC
+==== Resources
+
 
 * http://www.mathworks.com/help/matlab/matlab_external/bringing-java-classes-and-methods-into-matlab-workspace.html[Bring Java Classes into MATLAB Workspace (javaclasspath.txt)]
 

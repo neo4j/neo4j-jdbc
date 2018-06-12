@@ -460,6 +460,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel2">
 <li><a href="#_qlikview_qlik_sense_via_tiq_jdbc_connector">QlikView / Qlik Sense via TIQ JDBC Connector</a></li>
 <li><a href="#_tableau_via_jdbc2tde">Tableau via jdbc2tde</a></li>
+<li><a href="#_matlab">Matlab</a></li>
 </ul>
 </li>
 <li><a href="#_etl_tools">ETL Tools</a>
@@ -594,7 +595,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
     try (PreparedStatement stmt = con.prepareStatement(query)) {
         stmt.setString(1,"John");
 
-        try (ResultSet rs = stmt.execute()) {
+        try (ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
             }
@@ -954,7 +955,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
     try (PreparedStatement stmt = con.prepareStatement(query)) {
         stmt.setString(1,"John");
 
-        try (ResultSet rs = stmt.execute()) {
+        try (ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
             }
@@ -1407,6 +1408,170 @@ class JavaNamedDatabase extends Controller {
 <div class="imageblock">
 <div class="content">
 <img src="https://cloud.githubusercontent.com/assets/6613815/17213909/ba90b0f0-54d6-11e6-8d41-fd4bc5a31b18.png" alt="ba90b0f0 54d6 11e6 8d41 fd4bc5a31b18">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_matlab">Matlab</h3>
+<div class="sect3">
+<h4 id="_setup">Setup</h4>
+<div class="imageblock" style="float: right">
+<div class="content">
+<img src="http://i.imgur.com/JqEqrlS.png" alt="JqEqrlS" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>Go to <a href="http://neo4j.com/download" class="bare">http://neo4j.com/download</a>  and download, install and start neo4j 3.3.1.</p>
+</div>
+<div class="paragraph">
+<p>After providing the initial password, choose a new password, you&#8217;ll need it later.</p>
+</div>
+<div class="paragraph">
+<p>Type into the command-line at the top: <code>:play movies</code>, click the big block of text which is then copied into the command-line and hit the triangular "Run" button (or press Ctrl-Enter).</p>
+</div>
+<div class="paragraph">
+<p>The data is inserted and should be visualized.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_get_jdbc_driver">Get JDBC Driver</h4>
+<div class="paragraph">
+<p>Download the Neo4j jdbc driver from neo4j-contrib/neo4j-jdbc GitHub releases
+Need the older version b/c MATLAB still runs on Java 7</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>curl -O "$HOME/Documents/MATLAB/neo4j-jdbc-driver-3.1.0.jar" https://github.com/neo4j-contrib/neo4j-jdbc/releases/download/3.1.0/neo4j-jdbc-driver-3.1.0.jar</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_add_the_jar_to_the_class_pah_via_javaaddpath">Add the jar to the class pah via javaaddpath</h4>
+<div class="listingblock">
+<div class="content">
+<pre>javaaddpath([matlabroot,'/neo4j-jdbc-driver-3.1.0.jar'])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and check that the dynamic path contains the jar</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>javaclasspath</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_test_connection">Test Connection</h4>
+<div class="imageblock">
+<div class="content">
+<img src="https://user-images.githubusercontent.com/12963831/34491711-d06858e2-efe4-11e7-96de-941f4ac06844.png" alt="34491711 d06858e2 efe4 11e7 96de 941f4ac06844" width="100%">
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Open Connection</div>
+<div class="content">
+<pre>conn = database('','neo4j','test','org.neo4j.jdbc.BoltNeo4jDriver','jdbc:neo4j:bolt://localhost:7687')</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Fetch Total Node Count</div>
+<div class="content">
+<pre>curs = exec(conn,'MATCH (n) RETURN count(*)')
+curs = fetch(curs);
+curs.Data
+close(curs)</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Output</div>
+<div class="content">
+<pre>ans =
+
+    '102671'</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Fetch Movies</div>
+<div class="content">
+<pre>curs = exec(conn,'MATCH (n:Movie) RETURN n.title, n.released, n.tagline')
+curs = fetch(curs).Data
+curs.Data
+close(curs)</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Output</div>
+<div class="content">
+<pre>ans =
+
+    'The Matrix'                         '1999'    'Welcome to the Real World'
+    'The Matrix Reloaded'                '2003'    'Free your mind'
+    'The Matrix Revolutions'             '2003'    'Everything that has a beginni…'
+    'The Devil's Advocate'               '1997'    'Evil has its winning ways'
+    'A Few Good Men'                     '1992'    'In the heart of the nation's …'
+    'Top Gun'                            '1986'    'I feel the need, the need for…'
+    'Jerry Maguire'                      '2000'    'The rest of his life begins n…'
+....</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Close Connection</div>
+<div class="content">
+<pre>close(conn)</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_resources">Resources</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mathworks.com/help/matlab/matlab_external/bringing-java-classes-and-methods-into-matlab-workspace.html">Bring Java Classes into MATLAB Workspace (javaclasspath.txt)</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/configure-your-driver-and-data-source.html">donfiguring a driver and a data source</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/run-sql-query.html">Running a SQL Query: API Overview</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/database.html"><code>database()</code> function to connect to a jdbc/odbc database</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/exec.html"><code>exec()</code> function to run sql statements</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/runsqlscript.html"><code>runsqlscript()</code> database function to run scripts from files</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/configure-data-sources-and-connect-to-databases.html">Configure Data Sources and Connect to Databases</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/choosing-between-odbc-and-jdbc-drivers.html">Choosing Between ODBC and JDBC Drivers</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/other-odbc-or-jdbc-compliant-databases.html">Other ODBC- or JDBC-Compliant Databases</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/open-and-close-database-connection.html">open and close database connections</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/oracle-jdbc-windows.html">Oracle JDBC for Windows</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/connect-to-a-database.html">Overview: Connecting to a Database</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/database-explorer.html">Working with Database Explorer</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/matlabcentral/answers/32618-connecting-to-mysql-using-jdbc" class="bare">http://www.mathworks.com/matlabcentral/answers/32618-connecting-to-mysql-using-jdbc</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/matlabcentral/answers/166006-connect-using-jdbc-driver-to-neo4j">Original Question from 2014</a></p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -2054,7 +2219,7 @@ A click on the <code>refresh status</code> allow you to see the status of the in
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-06-11 17:17:55 CEST
+Last updated 2018-06-12 14:45:37 CEST
 </div>
 </div>
 </body>
