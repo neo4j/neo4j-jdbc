@@ -27,6 +27,7 @@ import java.net.URLDecoder;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -83,7 +84,7 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 		String[] pieces = url.split(":");
 		if (pieces.length > 3 && url.startsWith(JDBC_PREFIX)) {
 			if (driverPrefix != null) {
-				if(pieces[2].matches(driverPrefix)) {
+				if (pieces[2].matches(driverPrefix)) {
 					return true;
 				}
 			}
@@ -92,6 +93,10 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 			}
 		}
 		return false;
+	}
+
+	protected String getPrefix() {
+		return this.driverPrefix;
 	}
 
 	/**
@@ -113,11 +118,17 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 			urlProps = decodeUrlComponent(urlProps);
 			String[] props = urlProps.split("[,&]");
 			for (String prop : props) {
-				int idx = prop.indexOf('=');
-				if (idx != -1) {
+				int idx1 = prop.indexOf('=');
+				int idx2 = prop.indexOf(':');
+				int idx = (idx1 != -1 && idx2 != -1) ? Math.min(idx1, idx2) : Math.max(idx1, idx2);
+                if (idx != -1) {
 					String key = prop.substring(0, idx);
-					String value = prop.substring(idx + 1);
-					properties.put(key.toLowerCase(), value);
+                    String value = prop.substring(idx + 1);
+					if (properties.containsKey(key.toLowerCase())) {
+					    properties.put(key.toLowerCase(), Arrays.asList(properties.getProperty(key.toLowerCase()), value));
+                    } else {
+                        properties.put(key.toLowerCase(), value);
+                    }
 				} else {
 					properties.put(prop.toLowerCase(), "true");
 				}

@@ -21,7 +21,6 @@ package org.neo4j.jdbc.http;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
@@ -29,7 +28,8 @@ import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.http.driver.Neo4jResult;
 import org.neo4j.jdbc.impl.ListArray;
 
-import java.sql.*;
+import java.sql.SQLDataException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -270,16 +270,21 @@ public class HttpNeo4jResultSet extends Neo4jResultSet {
 
 		checkClosed();
 		// Default list for null array
-		List hasResults = new ArrayList<String>();
+		List results = new ArrayList<String>();
 		Object obj = get(columnIndex);
 		if (obj != null) {
-			if (!obj.getClass().isArray()) {
+			if (obj.getClass().isArray()){
+				results = Arrays.asList((Neo4jArray) obj);
+			}else if (obj instanceof List){
+				results = (List)obj;
+			}else{
 				throw new SQLException(String.format(COLUMN_NOT_ARRAY, columnIndex));
 			}
-
-			hasResults = Arrays.asList((Neo4jArray) obj);
 		}
-		return new ListArray(hasResults, Neo4jArray.getObjectType(hasResults.get(0)));
+
+		Object objType = (results.isEmpty())?new Object():results.get(0);
+
+		return new ListArray(results, Neo4jArray.getObjectType(objType));
 	}
 
 	@Override

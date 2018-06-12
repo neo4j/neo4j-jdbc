@@ -45,7 +45,12 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	 */
 	private Properties properties;
 
-	/**
+    /**
+     * Client info properties
+     */
+    private Properties clientInfo;
+
+    /**
 	 * Is the connection is in readonly mode ?
 	 */
 	private boolean readOnly = false;
@@ -159,7 +164,7 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	 * @return
 	 */
 	private boolean isMutating(String query) {
-		return query.matches("(?is).*\\b(create|relate|delete|set)\\b.*");
+		return query.matches("(?is).*\\b(create|merge|delete|set)\\b.*");
 	}
 
 	/**
@@ -261,13 +266,21 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 
 	@Override public void setReadOnly(boolean readOnly) throws SQLException {
 		this.checkClosed();
-		this.readOnly = readOnly;
+		this.doSetReadOnly(readOnly);
 	}
 
 	@Override public boolean isReadOnly() throws SQLException {
 		this.checkClosed();
 		return this.readOnly;
 	}
+
+    protected void doSetReadOnly(boolean readOnly) throws SQLException {
+        this.readOnly = readOnly;
+    }
+
+    protected boolean getReadOnly() throws SQLException {
+        return this.readOnly;
+    }
 
 	@Override public void setHoldability(int holdability) throws SQLException {
 		this.checkClosed();
@@ -422,19 +435,24 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override public void setClientInfo(String name, String value) throws SQLClientInfoException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+        if (name != null && value != null) {
+            if (this.clientInfo == null) {
+                this.clientInfo = new Properties();
+            }
+            this.clientInfo.setProperty(name, value);
+        }
 	}
 
 	@Override public void setClientInfo(Properties properties) throws SQLClientInfoException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		this.clientInfo = properties;
 	}
 
 	@Override public String getClientInfo(String name) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return (this.clientInfo != null) ? this.clientInfo.getProperty(name) : null;
 	}
 
 	@Override public Properties getClientInfo() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return this.clientInfo;
 	}
 
 	@Override public Neo4jArray createArrayOf(String typeName, Object[] elements) throws SQLException {

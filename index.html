@@ -436,9 +436,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_technical_reference">Technical Reference</a>
 <ul class="sectlevel2">
-<li><a href="#_usage_examples">Usage Examples</a></li>
-<li><a href="#_the_bolt_driver">The Bolt Driver</a></li>
 <li><a href="#_the_http_driver">The HTTP Driver</a></li>
+<li><a href="#_the_bolt_driver">The Bolt Driver</a></li>
+<li><a href="#_the_bolt_routing_driver">The Bolt+Routing Driver</a></li>
 <li><a href="#_jdbc_compatibility">JDBC Compatibility</a></li>
 </ul>
 </li>
@@ -460,6 +460,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel2">
 <li><a href="#_qlikview_qlik_sense_via_tiq_jdbc_connector">QlikView / Qlik Sense via TIQ JDBC Connector</a></li>
 <li><a href="#_tableau_via_jdbc2tde">Tableau via jdbc2tde</a></li>
+<li><a href="#_matlab">Matlab</a></li>
 </ul>
 </li>
 <li><a href="#_etl_tools">ETL Tools</a>
@@ -485,38 +486,29 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_overview_neo4j_jdbc_driver">Overview: Neo4j JDBC Driver</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This is the official JDBC driver for Neo4j.</p>
+<p><strong>This is the official JDBC driver for Neo4j</strong>.</p>
 </div>
 <div class="paragraph">
 <p>This driver was mainly developed by <a href="http://larus-ba.it">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j.
 <strong>Thank you</strong> so much for all your work.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-The previous JDBC driver for Neo4j 2.x was moved to the <a href="https://github.com/neo4j-contrib/neo4j-jdbc-2x" class="bare">https://github.com/neo4j-contrib/neo4j-jdbc-2x</a> repository.
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
-<p>Being a graph database, Neo4j is not serving data in a relational way and the exact purpose of this project is to allow
+<p>Being a graph database, Neo4j is not serving data in a relational way, nevertheless thanks to this driver it&#8217;s possible for
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4j.</p>
 </div>
 <div class="paragraph">
-<p>This driver supports various types of database transports:</p>
+<p>This driver supports various types of database transports, through:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>through the Bolt protocol (3.0.x to 3.2.x) using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>The <code>Bolt</code> protocol using <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> from Neo4j 3.0+</p>
 </li>
 <li>
-<p>through the HTTP protocol (2.x+) using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code></p>
+<p>The <code>Bolt+Routing</code> protocol using <code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code> from Neo4j 3.1+</p>
+</li>
+<li>
+<p>The <code>HTTP</code> protocol using <code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code> from Neo4j 2.0+</p>
 </li>
 </ul>
 </div>
@@ -533,6 +525,18 @@ projects that are using the classic JDBC connector in the relational paradigm to
 </li>
 </ul>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The previous JDBC driver for Neo4j 2.x was moved to the <a href="https://github.com/neo4j-contrib/neo4j-jdbc-2x" class="bare">https://github.com/neo4j-contrib/neo4j-jdbc-2x</a> repository.
+</td>
+</tr>
+</table>
+</div>
 <div class="sect2">
 <h3 id="_maven_dependency">Maven dependency</h3>
 <div class="paragraph">
@@ -548,7 +552,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 </div>
 </div>
 <div class="paragraph">
-<p>If you only want one of the protocols, you can depend on its module:</p>
+<p>If you want only one of the protocols, you can depend on its module:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -577,7 +581,7 @@ projects that are using the classic JDBC connector in the relational paradigm to
 <div class="listingblock">
 <div class="title">Dependency declaration</div>
 <div class="content">
-<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.2.0</code></pre>
+<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.3.1</code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -591,7 +595,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
     try (PreparedStatement stmt = con.prepareStatement(query)) {
         stmt.setString(1,"John");
 
-        try (ResultSet rs = stmt.execute()) {
+        try (ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
             }
@@ -609,14 +613,43 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 <div class="ulist">
 <ul>
 <li>
-<p>Install a Neo4j 3.2.x server and start it with the Bolt protocol enabled</p>
+<p>Install a Neo4j 3.3.x server and start it with the Bolt protocol enabled</p>
 </li>
 <li>
-<p>Connect with URLs in the form <code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
+<p>Connect with URLs in the following 3 forms:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>jdbc:neo4j:http://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:http://localhost/</code>)</p>
 </li>
 <li>
-<p>You can also use additional comma separated parameters in the URL for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j,password=xxxx,debug=true,nossl,flatten=[-1,100,1000]</code></p>
+<p><code>jdbc:neo4j:bolt://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt://localhost/</code>)</p>
 </li>
+<li>
+<p><code>jdbc:neo4j:bolt+routing://&lt;host&gt;:&lt;port&gt;/</code> (e.g. <code>jdbc:neo4j:bolt+routing://localhost?routing:policy=eu</code>)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>You can also use additional parameters in the URL separated by an <code>&amp;</code> character for authentication, debug mode, SSL encryption and flattening e.g. <code>jdbc:neo4j:bolt://localhost/?user=neo4j&amp;password=xxxx&amp;debug=true&amp;nossl&amp;flatten=[-1,100,1000]</code></p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<strong>We&#8217;ve deprecated the usage of <code>,</code> as the parameter separator in favour of <code>&amp;</code> to be compliant with the URL parameter syntax.</strong>
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
 <li>
 <p>Add the JDBC driver dependency or jar file to your project</p>
 </li>
@@ -688,7 +721,7 @@ With <code>-1</code> all rows are sampled and with any other value you determine
 <div class="title">Note</div>
 </td>
 <td class="content">
-To run the performance test, you must have a Neo4j Server 3.2.x running with the Bolt protocol enabled on port 7687 (default)
+To run the performance test, you must have a Neo4j Server 3.3.x running with the Bolt protocol enabled on port 7687 (default).
 </td>
 </tr>
 </table>
@@ -732,8 +765,13 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <h2 id="_technical_reference">Technical Reference</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_usage_examples">Usage Examples</h3>
-
+<h3 id="_the_http_driver">The HTTP Driver</h3>
+<div class="paragraph">
+<p>The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using <code>Apache Commons httpclient</code> and <code>Jackson</code> for JSON (de)serialization.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC URL has this format: <code>jdbc:neo4j:http://host:port/?username=neo4j,password=xxxx</code></p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_the_bolt_driver">The Bolt Driver</h3>
@@ -751,12 +789,115 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 </div>
 </div>
 <div class="sect2">
-<h3 id="_the_http_driver">The HTTP Driver</h3>
+<h3 id="_the_bolt_routing_driver">The Bolt+Routing Driver</h3>
 <div class="paragraph">
-<p>The HTTP driver uses the existing (since Neo4j 2.x) transaction Cypher HTTP API, and is implemented using <code>Apache Commons httpclient</code> and <code>Jackson</code> for JSON (de)serialization.</p>
+<p>Starting from version 3.3.1, the JDBC driver brings with it the bolt+routing protocol.</p>
 </div>
 <div class="paragraph">
-<p>The JDBC URL has this format: <code>jdbc:neo4j:http://host:port/?username=neo4j,password=xxxx</code></p>
+<p>Again, it uses the <a href="https://github.com/neo4j/neo4j-java-driver">neo4j-java-driver</a> to provide the connectivity.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re connecting to a <a href="https://neo4j.com/docs/operations-manual/current/clustering/causal-clustering/">Neo4j Causal Cluster</a> the JDBC URL has this format:</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host1:port1,host2:port2,&#8230;&#8203;,hostN:portN/?username=neo4j,password=xxxx</code></p>
+</div>
+<div class="paragraph">
+<p>The list of <code>"hostX:portX"</code> pairs in the URL correspond to the list of servers that are partecipating in the Neo4j cluster (both as Core and Read-Replica nodes),
+but if you or your preferred tool don&#8217;t like this format you can then fall back to the dedicated parameter <code>"routing:servers"</code>, as in the following example:</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host1:port1?username=neo4j,password=xxxx,routing:region=EU&amp;country=Italy&amp;routing:servers=host2:port2;&#8230;&#8203;;hostN:portN</code></p>
+</div>
+<div class="paragraph">
+<p>In that case, the address in the URL must be that of a Core server and the alternative servers must be <code>;</code> separated (instead of <code>,</code>).</p>
+</div>
+<div class="sect3">
+<h4 id="_routing_context">Routing Context</h4>
+<div class="paragraph">
+<p>Routing driver with routing context is an available option with a Neo4j Causal Cluster of version 3.2 or above.</p>
+</div>
+<div class="paragraph">
+<p>In such a setup you can include a preferred routing context via the <code>"routing:policy"</code> parameter.</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host1:port1,host2:port2,&#8230;&#8203;,hostN:portN?username=neo4j,password=xxxx,routing:policy=EU</code></p>
+</div>
+<div class="paragraph">
+<p>And for custom routing strategies via the generic <code>"routing:"</code> parameter:</p>
+</div>
+<div class="paragraph">
+<p><code>jdbc:neo4j:bolt+routing://host1:port1,host2:port2,&#8230;&#8203;,hostN:portN?username=neo4j,password=xxxx,routing:region=EU&amp;country=Italy</code></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_access_mode_read_write">Access Mode (READ, WRITE)</h4>
+<div class="paragraph">
+<p>In order to start a transaction in read or write mode just use the <code>Connection#setReadOnly</code> method.</p>
+</div>
+<div class="paragraph">
+<p>Be aware not to invoke it while the transaction is open otherwise the driver will raise an SQLException.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re accessing to a Neo4j Causal Cluster, by calling this method write operations will be forwarded to CORE instances,
+while read operations will be managed by READ REPLICA nodes.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bookmarks">Bookmarks</h4>
+<div class="paragraph">
+<p>When working with a causal cluster, causal chaining is carried out by passing bookmarks between transactions in a session (see <a href="https://neo4j.com/docs/developer-manual/3.2/drivers/sessions-transactions/#driver-transactions-causal-chaining">causal chaining</a>).</p>
+</div>
+<div class="paragraph">
+<p>The JDBC driver allows you to read bookmarks by calling the following method:</p>
+</div>
+<div class="paragraph">
+<p><code>connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);</code></p>
+</div>
+<div class="paragraph">
+<p>Also you can set the bookmark by calling the corresponding method:</p>
+</div>
+<div class="paragraph">
+<p><code>connection.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, "my bookmark");</code></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bolt_routing_with_bookmark_example">Bolt+Routing with Bookmark Example</h4>
+<div class="listingblock">
+<div class="title">Run Query</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&amp;routing:policy=EU";
+
+try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", password)) {
+    connection.setAutoCommit(false);
+
+    // Access to CORE nodes, as the connection is opened by default in write mode
+    try (Statement statement = connection.createStatement()) {
+        statement.execute("create (:BoltRoutingTest { protocol: 'BOLT+ROUTING' })");
+    }
+
+    // closing transaction before changing access mode
+    connection.commit();
+
+    // printing the transaction bookmark
+    String bookmark = connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+    System.out.println(bookmark);
+
+    // Switching to read-only mode to access READ REPLICA nodes
+    connection.setReadOnly(true);
+
+    try (Statement statement = connection.createStatement()) {
+        try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
+            if (resultSet.next()) {
+                Long tot = resultSet.getLong("tot");
+            }
+        }
+    }
+
+    connection.commit();
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -773,7 +914,7 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <p>Connection, incl. autocommit and manual commit</p>
 </li>
 <li>
-<p>Transactions</p>
+<p>Read-only and write transactions</p>
 </li>
 <li>
 <p>Statements for reads and writes</p>
@@ -800,7 +941,7 @@ You might also ask on <a href="http://stackoverflow.com/questions/tagged/neo4j+j
 <div class="listingblock">
 <div class="title">Dependency declaration</div>
 <div class="content">
-<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.2.0</code></pre>
+<pre class="highlight"><code>org.neo4j:neo4j-jdbc-driver:3.3.1</code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -814,7 +955,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
     try (PreparedStatement stmt = con.prepareStatement(query)) {
         stmt.setString(1,"John");
 
-        try (ResultSet rs = stmt.execute()) {
+        try (ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
             }
@@ -1267,6 +1408,170 @@ class JavaNamedDatabase extends Controller {
 <div class="imageblock">
 <div class="content">
 <img src="https://cloud.githubusercontent.com/assets/6613815/17213909/ba90b0f0-54d6-11e6-8d41-fd4bc5a31b18.png" alt="ba90b0f0 54d6 11e6 8d41 fd4bc5a31b18">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_matlab">Matlab</h3>
+<div class="sect3">
+<h4 id="_setup">Setup</h4>
+<div class="imageblock" style="float: right">
+<div class="content">
+<img src="http://i.imgur.com/JqEqrlS.png" alt="JqEqrlS" width="400">
+</div>
+</div>
+<div class="paragraph">
+<p>Go to <a href="http://neo4j.com/download" class="bare">http://neo4j.com/download</a>  and download, install and start neo4j 3.3.1.</p>
+</div>
+<div class="paragraph">
+<p>After providing the initial password, choose a new password, you&#8217;ll need it later.</p>
+</div>
+<div class="paragraph">
+<p>Type into the command-line at the top: <code>:play movies</code>, click the big block of text which is then copied into the command-line and hit the triangular "Run" button (or press Ctrl-Enter).</p>
+</div>
+<div class="paragraph">
+<p>The data is inserted and should be visualized.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_get_jdbc_driver">Get JDBC Driver</h4>
+<div class="paragraph">
+<p>Download the Neo4j jdbc driver from neo4j-contrib/neo4j-jdbc GitHub releases
+Need the older version b/c MATLAB still runs on Java 7</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>curl -O "$HOME/Documents/MATLAB/neo4j-jdbc-driver-3.1.0.jar" https://github.com/neo4j-contrib/neo4j-jdbc/releases/download/3.1.0/neo4j-jdbc-driver-3.1.0.jar</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_add_the_jar_to_the_class_pah_via_javaaddpath">Add the jar to the class pah via javaaddpath</h4>
+<div class="listingblock">
+<div class="content">
+<pre>javaaddpath([matlabroot,'/neo4j-jdbc-driver-3.1.0.jar'])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and check that the dynamic path contains the jar</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>javaclasspath</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_test_connection">Test Connection</h4>
+<div class="imageblock">
+<div class="content">
+<img src="https://user-images.githubusercontent.com/12963831/34491711-d06858e2-efe4-11e7-96de-941f4ac06844.png" alt="34491711 d06858e2 efe4 11e7 96de 941f4ac06844" width="100%">
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Open Connection</div>
+<div class="content">
+<pre>conn = database('','neo4j','test','org.neo4j.jdbc.BoltNeo4jDriver','jdbc:neo4j:bolt://localhost:7687')</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Fetch Total Node Count</div>
+<div class="content">
+<pre>curs = exec(conn,'MATCH (n) RETURN count(*)')
+curs = fetch(curs);
+curs.Data
+close(curs)</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Output</div>
+<div class="content">
+<pre>ans =
+
+    '102671'</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Fetch Movies</div>
+<div class="content">
+<pre>curs = exec(conn,'MATCH (n:Movie) RETURN n.title, n.released, n.tagline')
+curs = fetch(curs).Data
+curs.Data
+close(curs)</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Output</div>
+<div class="content">
+<pre>ans =
+
+    'The Matrix'                         '1999'    'Welcome to the Real World'
+    'The Matrix Reloaded'                '2003'    'Free your mind'
+    'The Matrix Revolutions'             '2003'    'Everything that has a beginni…'
+    'The Devil's Advocate'               '1997'    'Evil has its winning ways'
+    'A Few Good Men'                     '1992'    'In the heart of the nation's …'
+    'Top Gun'                            '1986'    'I feel the need, the need for…'
+    'Jerry Maguire'                      '2000'    'The rest of his life begins n…'
+....</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Close Connection</div>
+<div class="content">
+<pre>close(conn)</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_resources">Resources</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://www.mathworks.com/help/matlab/matlab_external/bringing-java-classes-and-methods-into-matlab-workspace.html">Bring Java Classes into MATLAB Workspace (javaclasspath.txt)</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/configure-your-driver-and-data-source.html">donfiguring a driver and a data source</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/run-sql-query.html">Running a SQL Query: API Overview</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/database.html"><code>database()</code> function to connect to a jdbc/odbc database</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/exec.html"><code>exec()</code> function to run sql statements</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/runsqlscript.html"><code>runsqlscript()</code> database function to run scripts from files</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/configure-data-sources-and-connect-to-databases.html">Configure Data Sources and Connect to Databases</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/choosing-between-odbc-and-jdbc-drivers.html">Choosing Between ODBC and JDBC Drivers</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/other-odbc-or-jdbc-compliant-databases.html">Other ODBC- or JDBC-Compliant Databases</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/open-and-close-database-connection.html">open and close database connections</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/oracle-jdbc-windows.html">Oracle JDBC for Windows</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/connect-to-a-database.html">Overview: Connecting to a Database</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/help/database/ug/database-explorer.html">Working with Database Explorer</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/matlabcentral/answers/32618-connecting-to-mysql-using-jdbc" class="bare">http://www.mathworks.com/matlabcentral/answers/32618-connecting-to-mysql-using-jdbc</a></p>
+</li>
+<li>
+<p><a href="http://www.mathworks.com/matlabcentral/answers/166006-connect-using-jdbc-driver-to-neo4j">Original Question from 2014</a></p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -1914,7 +2219,7 @@ A click on the <code>refresh status</code> allow you to see the status of the in
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-05-14 01:53:56 CEST
+Last updated 2018-06-12 14:45:37 CEST
 </div>
 </div>
 </body>

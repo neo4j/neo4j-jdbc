@@ -24,7 +24,6 @@ import org.neo4j.jdbc.utils.ExceptionBuilder;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 /**
@@ -120,9 +119,9 @@ public abstract class Neo4jDataSource implements javax.sql.DataSource {
 		String url = NEO4J_JDBC_PREFIX + protocol + "://" + getServerName() + ((getPortNumber() > 0) ? ":" + getPortNumber() : "") + "?" + ((!getIsSsl()) ?
 				"nossl," :
 				"");
-		if (Objects.nonNull(getUser())) {
+		if (null != getUser()) {
 			url += "user=" + getUser();
-			if (Objects.nonNull(getPassword())) {
+			if (null != getPassword()) {
 				url += ",password=" + getPassword();
 			}
 		}

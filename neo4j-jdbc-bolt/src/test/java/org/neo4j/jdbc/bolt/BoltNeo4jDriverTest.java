@@ -35,6 +35,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
@@ -68,18 +70,18 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 	/*------------------------------*/
 	//WARNING!! NOT COMPLETE TEST!! Needs tests for parameters
 
-	@Test public void shouldConnectCreateConnection() throws SQLException {
+	@Test public void shouldConnectCreateConnection() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Neo4jDriver driver = new BoltDriver();
 		Connection connection = driver.connect(COMPLETE_VALID_URL, null);
 		assertNotNull(connection);
 	}
 
-	@Test public void shouldConnectCreateConnectionWithNoAuthTokenWithPropertiesObjectWithoutUserAndPassword() throws SQLException {
+	@Test public void shouldConnectCreateConnectionWithNoAuthTokenWithPropertiesObjectWithoutUserAndPassword() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Properties properties = new Properties();
 		properties.put("test", "TEST_VALUE");
@@ -111,10 +113,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		driver.connect("jdbc:neo4j:bolt://somehost:9999", null);
 	}
 
-	@Test public void shouldAcceptTrustStrategyParamsSystemCertificates() throws SQLException {
+	@Test public void shouldAcceptTrustStrategyParamsSystemCertificates() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
 		PowerMockito.mockStatic(Config.TrustStrategy.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_SYSTEM_CA_SIGNED_CERTIFICATES");
@@ -126,10 +128,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Config.TrustStrategy.trustSystemCertificates();
 	}
 
-	@Test public void shouldAcceptTrustStrategyParamsCustomCertificateWithFileOk() throws SQLException {
+	@Test public void shouldAcceptTrustStrategyParamsCustomCertificateWithFileOk() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
 		PowerMockito.mockStatic(Config.TrustStrategy.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_CUSTOM_CA_SIGNED_CERTIFICATES");
@@ -154,10 +156,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
 
-	@Test public void shouldAcceptTrustStrategyParamsTrustFirstUseFileOk() throws SQLException {
+	@Test public void shouldAcceptTrustStrategyParamsTrustFirstUseFileOk() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
 		PowerMockito.mockStatic(Config.TrustStrategy.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_ON_FIRST_USE");
@@ -182,10 +184,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
 
-	@Test public void shouldAcceptTrustStrategyParamsTrustSignedFileOk() throws SQLException {
+	@Test public void shouldAcceptTrustStrategyParamsTrustSignedFileOk() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
 		PowerMockito.mockStatic(Config.TrustStrategy.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(BOLT_URL), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_SIGNED_CERTIFICATES");
@@ -228,7 +230,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		Neo4jDriver driver = new BoltDriver();
 		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:7474"));
 		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://192.168.0.1:7474"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:8080"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt://localhost:8080,localhost:8081"));
 	}
 
 	@Test public void shouldAcceptURLKO() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {

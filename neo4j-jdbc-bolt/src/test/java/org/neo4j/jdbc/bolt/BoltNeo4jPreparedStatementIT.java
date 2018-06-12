@@ -19,28 +19,21 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.runners.MethodSorters;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.bolt.data.StatementData;
+
+import java.sql.*;
+import java.util.Enumeration;
+
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BoltNeo4jPreparedStatementIT {
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
@@ -49,9 +42,36 @@ public class BoltNeo4jPreparedStatementIT {
 	/*          executeQuery        */
 	/*------------------------------*/
 
+	@Before
+	public void cleanDB(){
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+	}
+
+	// 'a_' only to force execution at first position
+	@Test public void a_warmup() throws SQLException {
+
+
+		// WARM UP
+
+		long t0 = System.currentTimeMillis();
+		boolean driverLoaded = false;
+		while (!driverLoaded && System.currentTimeMillis() - t0 < 10_000){
+			Enumeration<Driver> drivers = DriverManager.getDrivers();
+			while (drivers.hasMoreElements()){
+				if(BoltDriver.class.equals(drivers.nextElement().getClass())){
+					driverLoaded = true;
+				}
+			}
+		}
+
+
+		Driver driver = DriverManager.getDriver("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Assert.assertEquals(BoltDriver.class,driver.getClass());
+	}
+
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		ResultSet rs = statement.executeQuery();
@@ -65,7 +85,7 @@ public class BoltNeo4jPreparedStatementIT {
 
 	@Test public void executeQueryWithNamedParamShouldExecuteAndReturnCorrectData() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
 		statement.setString(1, "test");
 		ResultSet rs = statement.executeQuery();
@@ -81,7 +101,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*         executeUpdate        */
 	/*------------------------------*/
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		statement.setString(1, "test1");
 		statement.setString(2, "test2");
@@ -105,7 +125,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*------------------------------*/
 	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		boolean result = statement.execute();
@@ -117,11 +137,10 @@ public class BoltNeo4jPreparedStatementIT {
 		resultSet.close();
 		statement.close();
 		connection.close();
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeShouldExecuteAndReturnFalse() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		statement.setString(1, "test1");
 		statement.setString(2, "test2");
@@ -143,7 +162,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		connection.setAutoCommit(true);
 		statement.setString(1, "test1");
@@ -162,11 +181,10 @@ public class BoltNeo4jPreparedStatementIT {
 
 		connection.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		connection.setAutoCommit(true);
 		PreparedStatement statement = connection.prepareStatement("wrong cypher statement ?");
 		statement.setString(1, "test1");
@@ -185,11 +203,10 @@ public class BoltNeo4jPreparedStatementIT {
 
 		connection.close();
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+		Connection connection = getConnection();
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
 		connection.setAutoCommit(false);
 		statement.setString(1, "test1");
@@ -218,7 +235,98 @@ public class BoltNeo4jPreparedStatementIT {
 			assertEquals(3L, res.next().get("total"));
 		}
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+		connection.close();
+	}
+
+	private Connection getConnection() throws SQLException {
+		return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl");
+	}
+
+	/*------------------------------*/
+	/*            MoreResult        */
+	/*------------------------------*/
+	@Test public void testMoreResultWithOneResultSet() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
+		statement.setString(1, "test");
+		boolean result = statement.execute();
+
+		assertTrue(statement.getMoreResults());
+
+		ResultSet resultSet = statement.getResultSet();
+		assertNotNull(resultSet);
+
+		assertFalse(statement.getMoreResults());
+
+		ResultSet resultSet2 = statement.getResultSet();
+		assertNull(resultSet2);
+
+		resultSet.close();
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testMoreResultWithNoResultSet() throws SQLException {
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		statement.setString(1, "testName");
+		statement.setString(2, "testSurname");
+		boolean result = statement.execute();
+
+		assertFalse(statement.getMoreResults());
+
+		ResultSet resultSet = statement.getResultSet();
+		assertNull(resultSet);
+
+		assertFalse(statement.getMoreResults());
+
+		statement.close();
+		connection.close();
+	}
+
+	/*------------------------------*/
+	/*            UpdateCount       */
+	/*------------------------------*/
+	@Test public void testUpdateCountWithCreate() throws SQLException {
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC);
+		statement.setString(1, "test1");
+		statement.setString(2, "test2");
+
+		boolean result = statement.execute();
+		assertFalse(result);
+		assertEquals(1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testUpdateCountWithUpdate() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_UPDATE_NODES_PARAM);
+		statement.setString(1, "test");
+
+		boolean result = statement.execute();
+		assertFalse(result);
+		assertEquals(1, statement.getUpdateCount());
+
+		statement.close();
+		connection.close();
+	}
+
+	@Test public void testUpdateCountWithReturn() throws SQLException {
+		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		Connection connection = getConnection();
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
+		statement.setString(1, "test");
+
+		boolean result = statement.execute();
+		assertTrue(result);
+		assertEquals(-1, statement.getUpdateCount());
+
+		statement.close();
 		connection.close();
 	}
 }

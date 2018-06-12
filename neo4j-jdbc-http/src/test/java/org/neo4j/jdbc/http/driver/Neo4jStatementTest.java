@@ -23,8 +23,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.neo4j.jdbc.http.test.Neo4jHttpUnitTestUtil;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 public class Neo4jStatementTest extends Neo4jHttpUnitTestUtil {
 
@@ -39,4 +42,24 @@ public class Neo4jStatementTest extends Neo4jHttpUnitTestUtil {
 		queries = getRandomNeo4jStatementFromCSV("data/queries.csv", 1);
 		assertCSVQueryEqual(queries.get("source"), Neo4jStatement.toJson(queries.get("object"), mapper));
 	}
+
+    @Test
+    public void getStatementShouldPreserveQuotes() throws Exception {
+        Neo4jStatement neo4jStatement = new Neo4jStatement(
+                "CALL apoc.trigger.add(" +
+                "'HAS_VALUE_ON_REMOVE_FROM_INDEX', " +
+                "\"UNWIND {something} AS r CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", " +
+                "{phase:'after'})",
+                new HashMap<String, Object>(0),
+                false);
+
+        String result = neo4jStatement.getStatement();
+
+        String expected =
+                "CALL apoc.trigger.add(" +
+                "'HAS_VALUE_ON_REMOVE_FROM_INDEX', " +
+                "\"UNWIND {something} AS r CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", " +
+                "{phase:'after'})";
+        assertEquals(expected, result);
+    }
 }

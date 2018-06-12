@@ -43,4 +43,7 @@ public class StatementData {
 	public static String STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC_REV = "MATCH (n:User {name:?, surname:?}) DETACH DELETE n;";
 	public static String STATEMENT_CLEAR_DB                             = "MATCH (n) DETACH DELETE n;";
 	public static String STATEMENT_COUNT_NODES                          = "MATCH (n) RETURN count(n) AS total;";
+	public static String STATEMENT_UPDATE_NODES_PARAM                   = "MATCH (n:User {name: ?}) SET n.visited = true;";
+	public static String STATEMENT_UPDATE_NODES                         = "MATCH (n:User {name: 'test'}) SET n.visited = true;";
+
 }

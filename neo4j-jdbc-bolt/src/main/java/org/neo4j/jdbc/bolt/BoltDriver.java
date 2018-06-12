@@ -20,27 +20,23 @@
 package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.v1.*;
-import org.neo4j.jdbc.Neo4jDriver;
-import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 
-import java.io.File;
-import java.sql.Connection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
-
-import static org.neo4j.driver.v1.Config.build;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-public class BoltDriver extends Neo4jDriver {
+public class BoltDriver extends BoltNeo4jDriverImpl {
 
-	public static final String JDBC_BOLT_PREFIX         = "bolt";
-	public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt+routing";
-	public static final String TRUST_STRATEGY_KEY       = "trust.strategy";
-	public static final String TRUSTED_CERTIFICATE_KEY  = "trusted.certificate.file";
+	public static final String JDBC_BOLT_PREFIX = "bolt";
 
 	static {
 		try {
@@ -51,113 +47,26 @@ public class BoltDriver extends Neo4jDriver {
 		}
 	}
 
-	/**
-	 * Default constructor.
-	 *
-	 * @throws SQLException sqlexception
-	 */
 	public BoltDriver() throws SQLException {
 		super(JDBC_BOLT_PREFIX);
 	}
 
-	@Override public Connection connect(String url, Properties props) throws SQLException {
-		if (url == null) {
-			throw new SQLException("null is not a valid url");
-		}
-		Connection connection = null;
-		if (acceptsURL(url)) {
-			String boltUrl = url.replace(Neo4jDriver.JDBC_PREFIX, "").replaceAll("^(" + JDBC_BOLT_PREFIX + ":)([^/])", "$1//$2");
-			try {
-				Properties info = parseUrlProperties(boltUrl, props);
-				boltUrl = removeUrlProperties(boltUrl, info);
-				Config.ConfigBuilder builder = build();
-				if (info.containsKey("nossl")) {
-					builder = builder.withoutEncryption();
-				}
-				builder = setTrustStrategy(info, builder);
-				Config config = builder.toConfig();
-				AuthToken authToken = getAuthToken(info);
-				Driver driver = GraphDatabase.driver(boltUrl, authToken, config);
-				Session session = driver.session();
-				connection = BoltNeo4jConnectionImpl.newInstance(session, info, url);
-			} catch (Exception e) {
-				throw new SQLException(e);
-			}
-		}
-		return connection;
+    protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException {
+        return GraphDatabase.driver(routingUris.get(0), authToken, config);
+    }
+
+	@Override
+	protected Properties getRoutingContext(String url, Properties properties) {
+		return new Properties();
 	}
 
-	private AuthToken getAuthToken(Properties properties) {
-		if (properties.isEmpty() || (!properties.containsKey("user") && !properties.containsKey("password"))) {
-			return AuthTokens.none();
-		}
-		return AuthTokens.basic(properties.getProperty("user"), properties.getProperty("password"));
+	@Override
+	protected String addRoutingPolicy(String url, Properties properties) {
+		return url;
 	}
 
-	private String removeUrlProperties(String url, Properties properties) {
-		String boltUrl = url;
-		if (boltUrl.indexOf('?') != -1) {
-			boltUrl = url.substring(0, url.indexOf('?'));
-		}
-		if (boltUrl.contains(JDBC_BOLT_ROUTING_PREFIX) && properties.contains("routingcontext")) {
-			boltUrl += "?routingContext=" + properties.get("routingcontext");
-		}
-		return boltUrl;
-	}
-
-	private Config.ConfigBuilder setTrustStrategy(Properties properties, Config.ConfigBuilder builder) throws SQLException {
-		Config.ConfigBuilder newBuilder = builder;
-		if (properties.containsKey(TRUST_STRATEGY_KEY)) {
-			Config.TrustStrategy.Strategy strategy;
-			try {
-				strategy = Config.TrustStrategy.Strategy.valueOf((String) properties.get(TRUST_STRATEGY_KEY));
-			} catch (IllegalArgumentException e) {
-				throw new SQLException("Invalid value for trust.strategy param.", e);
-			}
-			switch (strategy) {
-				case TRUST_SYSTEM_CA_SIGNED_CERTIFICATES:
-					newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSystemCertificates());
-					break;
-				case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
-				case TRUST_ON_FIRST_USE:
-				case TRUST_SIGNED_CERTIFICATES:
-					newBuilder = handleTrustStrategyWithFile(properties, strategy, builder);
-					break;
-				case TRUST_ALL_CERTIFICATES:
-				default:
-					newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustAllCertificates());
-					break;
-			}
-		}
-		return newBuilder;
-	}
-
-	private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder)
-			throws SQLException {
-		if (properties.containsKey(TRUSTED_CERTIFICATE_KEY)) {
-			Object file = properties.get(TRUSTED_CERTIFICATE_KEY);
-			if (file instanceof File) {
-				Config.ConfigBuilder newBuilder;
-				switch (strategy) {
-					case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
-						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy((File) file));
-						break;
-					case TRUST_ON_FIRST_USE:
-						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustOnFirstUse((File) file));
-						break;
-					case TRUST_SIGNED_CERTIFICATES:
-						newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSignedBy((File) file));
-						break;
-					default:
-						newBuilder = builder;
-						break;
-				}
-				return newBuilder;
-			} else {
-				throw new SQLException("Invalid parameter 'trusted.certificate.file' : NOT A VALID FILE");
-			}
-		} else {
-			throw new SQLException("Missing parameter 'trusted.certificate.file' : A FILE IS REQUIRED");
-		}
-	}
+    @Override
+    protected List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException {
+        return Arrays.asList(new URI(boltUrl));
+    }
 }

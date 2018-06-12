@@ -25,11 +25,11 @@ import static org.neo4j.graphdb.factory.GraphDatabaseSettings.BoltConnector.Encr
  */
 public class Neo4jBoltRule implements TestRule {
 
-	private       String               hostAndPort;
-	private       GraphDatabaseService graphDatabase;
-	private String host;
-	private int port;
-	private final boolean              requireAuth;
+	private String               hostAndPort;
+	private GraphDatabaseService graphDatabase;
+	private String               host;
+	private int                  port;
+	private final boolean        requireAuth;
 
 	public Neo4jBoltRule() {
 		this(false);

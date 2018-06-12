@@ -294,7 +294,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 
-	@Test public void flatteningShouldBeDisabledByDefault() throws SQLException {
+	@Test public void getColumnsTypeNameShouldWorkWithVariableNumberOfProperties() throws SQLException {
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
 
@@ -302,10 +302,13 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 		try (Statement stmt = con.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
-			rs.next();
 
-			ResultSetMetaData rsm = rs.getMetaData();
-			assertEquals(1, rsm.getColumnCount());
+			while(rs.next()) {
+				ResultSetMetaData rsm = rs.getMetaData();
+				assertEquals(1, rsm.getColumnCount());
+				assertEquals(2000, rsm.getColumnType(1));
+				assertEquals("NODE", rsm.getColumnTypeName(1));
+			}
 		}
 
 		con.close();

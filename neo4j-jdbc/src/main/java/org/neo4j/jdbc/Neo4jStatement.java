@@ -121,7 +121,7 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	@Override public boolean isClosed() throws SQLException {
-		return !(connection != null && !connection.isClosed());
+		return !(connection != null && !connection.isClosed()); //TODO maybe we can check the transaction state instead
 	}
 
 	@Override public void close() throws SQLException {
@@ -155,11 +155,11 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	/**
-	 * Some tools call this method, so for now just respond false.
+	 * If there's a result set to consume, it's true
 	 */
 	@Override public boolean getMoreResults() throws SQLException {
 		this.checkClosed();
-		return !(this.currentResultSet == null && this.currentUpdateCount == -1);
+		return this.currentResultSet != null;
 	}
 
 	/**

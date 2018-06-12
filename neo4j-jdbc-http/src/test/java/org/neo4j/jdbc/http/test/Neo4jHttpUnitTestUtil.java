@@ -111,12 +111,21 @@ public class Neo4jHttpUnitTestUtil {
 			String[] line = expected.get(i);
 			String jsonQuery = pattern.replaceAll("@@includeStats@@", line[CSV_INCLUDESTATS]);
 			jsonQuery = jsonQuery.replaceAll("@@parameters@@", line[CSV_PARAMETERS]);
-			jsonQuery = jsonQuery.replaceAll("@@statement@@", Neo4jStatement.escapeQuery(line[CSV_STATEMENT]));
+			jsonQuery = jsonQuery.replaceAll("@@statement@@", escapeQuery(line[CSV_STATEMENT]));
 
 			jsonExpected += jsonQuery;
 		}
 		jsonExpected += "]}";
 
 		Assert.assertEquals(jsonExpected.replaceAll("\\s+", ""), result.replaceAll("\\s+", ""));
+	}
+
+	/**
+	 * Escape method for cypher queries.
+	 *
+	 * @param query Cypher query
+	 */
+	private static String escapeQuery(String query) {
+		return query.replace('\n', ' ').replace('\"', '\'');
 	}
 }
