@@ -30,9 +30,7 @@ import org.neo4j.jdbc.impl.ListArray;
 
 import java.sql.SQLDataException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * ResultSet for the HTTP connector.
@@ -291,7 +289,64 @@ public class HttpNeo4jResultSet extends Neo4jResultSet {
 	public Object getObject(int columnIndex) throws SQLException {
 
 		checkClosed();
-		return get(columnIndex);
+		Object obj = get(columnIndex);
+		return convertValue(obj);
+	}
+
+	private Map<String, Object> convertPoint(Map<String, Object> objMap){
+
+		Map<String, Object> converted = new HashMap<>();
+
+		Map<String, Object> crs = (Map<String, Object>) objMap.get("crs");
+
+		Long srid = (Long) crs.get("srid");
+
+		List<Double> coordinates = (List<Double>) objMap.get("coordinates");
+
+		converted.put("srid",srid.intValue());
+		converted.put("crs",crs.get("name"));
+
+		converted.put("x",coordinates.get(0));
+		converted.put("y",coordinates.get(1));
+		if(coordinates.size() > 2){
+			converted.put("z",coordinates.get(2));
+		}
+
+		if (srid == 4326 || srid == 4979){
+			converted.put("longitude",coordinates.get(0));
+			converted.put("latitude",coordinates.get(1));
+			if(coordinates.size() > 2){
+				converted.put("height",coordinates.get(2));
+			}
+		}
+
+		return converted;
+	}
+
+	private Object convertValue(Object obj) {
+		if (obj instanceof Map) {
+			Map<String, Object> objMap = (Map<String, Object>) obj;
+
+			if (objMap.containsKey("type") && "Point".equals(objMap.get("type"))) {
+				return convertPoint(objMap);
+			} else {
+				Map<String, Object> converted = new HashMap<>(objMap.size());
+				for (Map.Entry<String, Object> entry : objMap.entrySet()) {
+					converted.put(entry.getKey(), convertValue(entry.getValue()));
+				}
+				return converted;
+			}
+		}
+		if (obj instanceof List) {
+			List<Object> objList = (List) obj;
+			List<Object> converted = new ArrayList<>(objList.size());
+			for (Object o : objList) {
+				converted.add(convertValue(o));
+			}
+			return converted;
+		}
+
+		return obj;
 	}
 
 	@Override
