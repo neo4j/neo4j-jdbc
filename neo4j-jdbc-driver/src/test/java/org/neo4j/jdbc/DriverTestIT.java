@@ -22,11 +22,6 @@
 
 package org.neo4j.jdbc;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Properties;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -35,6 +30,11 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
 import org.neo4j.jdbc.http.HttpNeo4jConnection;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -64,7 +64,10 @@ public class DriverTestIT {
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?nossl", new Properties());
+		Properties prop = new Properties();
+		prop.setProperty("user","user");
+		prop.setProperty("password","password");
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?nossl", prop);
 		Assert.assertTrue(connection instanceof BoltNeo4jConnection);
 	}
 

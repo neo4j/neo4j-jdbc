@@ -21,19 +21,14 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+
+import java.sql.*;
+
+import static org.junit.Assert.*;
 
 /**
  * Neo4jDatabaseMetaData IT Tests class
@@ -42,19 +37,22 @@ public class BoltNeo4jDatabaseMetaDataIT {
 
 	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
+	Connection connection;
+
+	@Before public void setUp(){
+		connection = JdbcConnectionTestUtils.verifyConnection(connection,neo4j);
+	}
+
 	@Test public void getDatabaseVersionShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl","user","password");
 
 		assertNotNull(connection.getMetaData().getDatabaseProductVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertNotEquals(-1, connection.getMetaData().getDatabaseMajorVersion());
 		assertEquals("user", connection.getMetaData().getUserName());
 
-		connection.close();
 	}
 
 	@Test public void getDatabaseLabelsShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl","user","password");
 
 		try (Statement statement = connection.createStatement()) {
 			statement.execute("create (a:A {one:1, two:2})");
@@ -70,14 +68,10 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertEquals("B", labels.getString("TABLE_NAME"));
 		assertTrue(!labels.next());
 
-		connection.close();
 	}
 
 	@Test public void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl","user","password");
 		connection.setAutoCommit(false);
 		connection.getMetaData();
-
-		connection.close();
 	}
 }

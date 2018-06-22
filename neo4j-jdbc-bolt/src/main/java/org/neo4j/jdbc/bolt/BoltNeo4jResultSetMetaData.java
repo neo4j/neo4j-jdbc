@@ -19,16 +19,19 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import java.lang.reflect.Proxy;
-import java.sql.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.v1.types.Type;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+
+import java.lang.reflect.Proxy;
+import java.sql.Array;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author AgileLARUS
@@ -52,6 +55,11 @@ public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.ANY(), Object.class);
 		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.LIST(), Array.class);
 		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.NUMBER(), Double.class); // to be decided
+		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.DATE(), java.sql.Date.class);
+		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.DATE_TIME(), java.sql.Timestamp.class);
+		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.LOCAL_DATE_TIME(), java.sql.Timestamp.class);
+		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.TIME(), java.sql.Time.class);
+		INTERNAL_TYPE_TO_CLASS_MAP.put(InternalTypeSystem.TYPE_SYSTEM.LOCAL_TIME(), java.sql.Time.class);
 
 		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.STRING(), Types.VARCHAR);
 		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.INTEGER(), Types.INTEGER);
@@ -65,6 +73,11 @@ public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.NULL(), Types.NULL);
 		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.LIST(), Types.ARRAY);
 		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.NUMBER(), Types.FLOAT); // to be decided
+		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.DATE(), Types.DATE);
+		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.DATE_TIME(), Types.TIMESTAMP_WITH_TIMEZONE);
+		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.LOCAL_DATE_TIME(), Types.TIMESTAMP);
+		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.TIME(), Types.TIME);
+		INTERNAL_TYPE_TO_SQL_TYPES_MAP.put(InternalTypeSystem.TYPE_SYSTEM.LOCAL_TIME(), Types.TIME);
 	}
 
 	/**

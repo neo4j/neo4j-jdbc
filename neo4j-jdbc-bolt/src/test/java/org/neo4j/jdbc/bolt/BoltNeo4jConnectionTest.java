@@ -135,8 +135,8 @@ public class BoltNeo4jConnectionTest {
 		when(connectionProvider.acquireConnection(AccessMode.READ)).thenReturn(boltConnection);
 		Session session = new NetworkSession(connectionProvider, AccessMode.READ, null, DevNullLogging.DEV_NULL_LOGGING);
 		session.run("return 1");
-		Connection connection = new BoltNeo4jConnectionImpl(session);
-		connection.close();
+		Connection connectionFlatten = new BoltNeo4jConnectionImpl(session);
+		connectionFlatten.close();
 	}
     */
 

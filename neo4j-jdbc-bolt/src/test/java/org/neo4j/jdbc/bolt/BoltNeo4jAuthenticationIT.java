@@ -19,12 +19,10 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.v1.exceptions.AuthenticationException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -102,13 +100,13 @@ public class BoltNeo4jAuthenticationIT {
 
 	@Test public void shouldNotAuthenticateBecauseNoUserAndPasswordAreProvided() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Unsupported authentication token, missing key `credentials`");
+		expectedEx.expectMessage("Password can't be null");
 		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl");
 	}
 
 	@Test public void shouldNotAuthenticateBecauseNoPasswordIsProvided() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Unsupported authentication token, missing key `credentials`");
+		expectedEx.expectMessage("Password can't be null");
 		DriverManager.getConnection(NEO4J_JDBC_BOLT_URL + "?nossl,user=neo4j");
 	}
 }
