@@ -3,10 +3,14 @@ package org.neo4j.jdbc.bolt;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.neo4j.driver.v1.types.Point;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -488,5 +492,82 @@ public class BoltNeo4jSpatialIT {
         rs.close();
         statement.close();
         conn.close();
+    }
+
+    /**
+     * ================
+     * GET OBJECT
+     * ================
+     */
+
+    @Test
+    public void executeGetObjectShouldReturnCartesian2D() throws SQLException {
+        Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("RETURN point({ x:3, y:-0.1 }) AS point");
+
+        rs.next();
+
+        Point object = rs.getObject(1, Point.class);
+        assertEquals("Point{srid=7203, x=3.0, y=-0.1}", object.toString());
+
+        Point label = rs.getObject("point", Point.class);
+        assertEquals("Point{srid=7203, x=3.0, y=-0.1}", label.toString());
+
+
+        rs.close();
+        statement.close();
+    }
+
+    @Test
+    public void executeGetObjectShouldReturnCartesian3D() throws SQLException {
+        Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("RETURN point({ x:3, y:-0.1, z:2 }) AS point");
+
+        rs.next();
+
+        Point object = rs.getObject(1, Point.class);
+        assertEquals("Point{srid=9157, x=3.0, y=-0.1, z=2.0}", object.toString());
+
+        Point label = rs.getObject("point", Point.class);
+        assertEquals("Point{srid=9157, x=3.0, y=-0.1, z=2.0}", label.toString());
+
+
+        rs.close();
+        statement.close();
+    }
+
+    @Test
+    public void executeGetObjectShouldReturnCartesianGeo2D() throws SQLException {
+        Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("RETURN point({ latitude: 12, longitude: 56 }) AS point");
+
+        rs.next();
+
+        Point object = rs.getObject(1, Point.class);
+        assertEquals("Point{srid=4326, x=56.0, y=12.0}", object.toString());
+
+        Point label = rs.getObject("point", Point.class);
+        assertEquals("Point{srid=4326, x=56.0, y=12.0}", label.toString());
+
+
+        rs.close();
+        statement.close();
+    }
+
+    @Test
+    public void executeGetObjectShouldReturnCartesianGeo3D() throws SQLException {
+        Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("RETURN point({ latitude: 12, longitude: 56, height: 4321 }) AS point");
+
+        rs.next();
+
+        Point object = rs.getObject(1, Point.class);
+        assertEquals("Point{srid=4979, x=56.0, y=12.0, z=4321.0}", object.toString());
+
+        Point label = rs.getObject("point", Point.class);
+        assertEquals("Point{srid=4979, x=56.0, y=12.0, z=4321.0}", label.toString());
+
+        rs.close();
+        statement.close();
     }
 }
