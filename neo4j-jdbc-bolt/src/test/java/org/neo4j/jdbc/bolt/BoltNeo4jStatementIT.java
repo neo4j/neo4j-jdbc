@@ -19,10 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.Neo4jResultSet;
@@ -43,13 +40,17 @@ public class BoltNeo4jStatementIT {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	Connection connection;
+	static Connection connection;
 
 	@Before
 	public void setUp(){
 		connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
 	}
 
+	@AfterClass
+	public static void tearDown(){
+		JdbcConnectionTestUtils.closeConnection(connection);
+	}
 
 	/*------------------------------*/
 	/*          executeQuery        */

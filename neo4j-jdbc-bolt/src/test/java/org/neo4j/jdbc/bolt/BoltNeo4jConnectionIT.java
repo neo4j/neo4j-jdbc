@@ -19,10 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
@@ -49,6 +46,13 @@ public class BoltNeo4jConnectionIT {
 		writer = JdbcConnectionTestUtils.verifyConnection(writer,neo4j);
 		reader = JdbcConnectionTestUtils.verifyConnection(reader,neo4j);
 	}
+
+	@After
+	public void tearDown() throws SQLException {
+		JdbcConnectionTestUtils.closeConnection(writer);
+		JdbcConnectionTestUtils.closeConnection(reader);
+	}
+
 
 	@Test public void commitShouldWorkFine() throws SQLException {
 		writer.setAutoCommit(false);

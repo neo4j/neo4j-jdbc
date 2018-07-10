@@ -69,4 +69,14 @@ public class JdbcConnectionTestUtils {
     public static Connection verifyConnection(Connection connection, Neo4jBoltRule neo4j){
         return verifyConnection(connection,neo4j,"");
     }
+
+    public static void closeConnection(Connection connection){
+        try {
+            if(connection != null &&  !connection.isClosed()){
+                connection.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

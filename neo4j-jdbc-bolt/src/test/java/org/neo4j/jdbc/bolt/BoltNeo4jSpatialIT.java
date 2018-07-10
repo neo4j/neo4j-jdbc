@@ -1,5 +1,6 @@
 package org.neo4j.jdbc.bolt;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -24,12 +25,17 @@ public class BoltNeo4jSpatialIT {
     @ClassRule
     public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
-    Connection connection;
+    static Connection connection;
 
     @Before
     public void cleanDB() throws SQLException {
         neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
+    }
+
+    @AfterClass
+    public static void tearDown(){
+        JdbcConnectionTestUtils.closeConnection(connection);
     }
 
     /**
