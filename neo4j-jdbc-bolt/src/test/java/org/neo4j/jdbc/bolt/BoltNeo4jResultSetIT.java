@@ -19,17 +19,20 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
@@ -37,9 +40,15 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jResultSetIT {
 
-	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	@ClassRule
+	public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
+	@Before
+	public void setUp() throws SQLException {
+		JdbcConnectionTestUtils.clearDatabase(neo4j);
+	}
 
 	/*------------------------------*/
 	/*          flattening          */
@@ -59,7 +68,7 @@ public class BoltNeo4jResultSetIT {
 		assertEquals(4, rs.findColumn("u.name"));
 		assertEquals("name", rs.getString("u.name"));
 
-		conn.close();
+		JdbcConnectionTestUtils.closeConnection(conn, stmt, rs);
 	}
 
 	@Test public void flatteningNumberWorkingMoreRows() throws SQLException {
@@ -80,7 +89,7 @@ public class BoltNeo4jResultSetIT {
 		assertEquals(5, rs.findColumn("u.surname"));
 		assertEquals("surname", rs.getString("u.surname"));
 
-		conn.close();
+		JdbcConnectionTestUtils.closeConnection(conn, stmt, rs);
 	}
 
 	@Test public void flatteningNumberWorkingAllRows() throws SQLException {
@@ -101,7 +110,7 @@ public class BoltNeo4jResultSetIT {
 		assertEquals(5, rs.findColumn("u.surname"));
 		assertEquals("surname", rs.getString("u.surname"));
 
-		conn.close();
+		JdbcConnectionTestUtils.closeConnection(conn, stmt, rs);
 	}
 
 	@Test public void findColumnShouldWorkWithFlattening() throws SQLException {
@@ -115,7 +124,7 @@ public class BoltNeo4jResultSetIT {
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 
-		con.close();
+		JdbcConnectionTestUtils.closeConnection(con, stmt, rs);
 	}
 
 	@Test public void shouldGetRowReturnValidNumbers() throws SQLException {
@@ -129,7 +138,7 @@ public class BoltNeo4jResultSetIT {
 			assertEquals(rs.getRow(), rs.getInt("number"));
 
 		}
-		con.close();
+		JdbcConnectionTestUtils.closeConnection(con, stmt, rs);
 	}
 
 	@Test public void shouldHasntNext() throws SQLException {
@@ -141,8 +150,6 @@ public class BoltNeo4jResultSetIT {
 
 		assertFalse(rs.next());
 
-		rs.close();
-
-		con.close();
+		JdbcConnectionTestUtils.closeConnection(con, stmt, rs);
 	}
 }

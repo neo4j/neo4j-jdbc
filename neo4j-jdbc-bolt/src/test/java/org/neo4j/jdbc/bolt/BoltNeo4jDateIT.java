@@ -86,17 +86,20 @@ public class BoltNeo4jDateIT {
         //int columnType = rs.getMetaData().getColumnType(1);
         assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, rs.getMetaData().getColumnType(1));
 
-        Calendar berlin = Calendar.getInstance(TimeZone.getTimeZone("Europe/Berlin"));
+        Calendar gmt = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
-        java.sql.Timestamp timestampByIntCal = rs.getTimestamp(1, berlin);
-        assertEquals("2015-06-24 18:50:35.556", timestampByIntCal.toString());
+        java.sql.Timestamp timestampByIntCal = rs.getTimestamp(1, gmt);
+        //assertEquals("2015-06-24 16:50:35.556", timestampByIntCal.toString()); // toString formats the time using system timezone
+        assertEquals(1435164635556L, timestampByIntCal.getTime());
 
-        java.sql.Timestamp timestampByStringCal = rs.getTimestamp("event", berlin);
-        assertEquals("2015-06-24 18:50:35.556", timestampByStringCal.toString());
+        java.sql.Timestamp timestampByStringCal = rs.getTimestamp("event", gmt);
+        //assertEquals("2015-06-24 16:50:35.556", timestampByStringCal.toString());
+        assertEquals(1435164635556L, timestampByStringCal.getTime());
 
         Object when = rs.getObject(1);
         assertTrue(when instanceof java.sql.Timestamp);
-        assertEquals("2015-06-24 18:50:35.556", when.toString());
+        //assertEquals("2015-06-24 16:50:35.556", when.toString());
+        assertEquals(1435164635556L, ((java.sql.Timestamp)when).getTime());
 
         rs.close();
         statement.close();

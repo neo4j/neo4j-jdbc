@@ -907,7 +907,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 * @return
 	 */
 	private Timestamp zonedDateTimeToTimestamp(ZonedDateTime zdt){
-		return new Timestamp(zdt.toEpochSecond()*1000L + zdt.getNano() / 1000_000L);
+		return new Timestamp(zdt.toInstant().toEpochMilli());
 	}
 
 	@Override public Timestamp getTimestamp(int columnIndex) throws SQLException {

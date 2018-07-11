@@ -34,15 +34,15 @@ import static org.junit.Assert.*;
  */
 public class BoltNeo4jConnectionIT {
 
-	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
+	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	Connection writer;
 	Connection reader;
-	boolean defaultAutoCommit;
 
 	@Before
 	public void setUp() throws SQLException {
+		JdbcConnectionTestUtils.clearDatabase(neo4j);
 		writer = JdbcConnectionTestUtils.verifyConnection(writer,neo4j);
 		reader = JdbcConnectionTestUtils.verifyConnection(reader,neo4j);
 	}
@@ -103,6 +103,7 @@ public class BoltNeo4jConnectionIT {
 		//Expect to read data
 		assertTrue(rs.next());
 		assertEquals(1, rs.getInt(1));
+		JdbcConnectionTestUtils.closeResultSet(rs);
 
 		//Set autocommit to false
 		writer.setAutoCommit(false);
@@ -111,11 +112,14 @@ public class BoltNeo4jConnectionIT {
 		//Expect not to find new node
 		assertTrue(rs.next());
 		assertEquals(1, rs.getInt(1));
+		JdbcConnectionTestUtils.closeResultSet(rs);
+
 		writer.commit();
 		rs = readerStmt.executeQuery(StatementData.STATEMENT_COUNT_NODES);
 		//Expect to find 2 nodes
 		assertTrue(rs.next());
 		assertEquals(2, rs.getInt(1));
+		JdbcConnectionTestUtils.closeResultSet(rs);
 
 		//Set autocommit to true again
 		writer.setAutoCommit(true);
@@ -125,6 +129,10 @@ public class BoltNeo4jConnectionIT {
 		assertTrue(rs.next());
 		assertEquals(3, rs.getInt(1));
 
+		JdbcConnectionTestUtils.closeResultSet(rs);
+		JdbcConnectionTestUtils.closeStatement(readerStmt);
+		JdbcConnectionTestUtils.closeStatement(writerStmt);
+
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
 	}
 
@@ -132,29 +140,41 @@ public class BoltNeo4jConnectionIT {
 		writer.setAutoCommit(false);
 		// Creating a node with a transaction
 		Statement stmt = writer.createStatement();
-		stmt.executeQuery("CREATE (:RollbackShouldWorkFine{result:\"ok\"})");
+		ResultSet rs = stmt.executeQuery("CREATE (:RollbackShouldWorkFine{result:\"ok\"})");
+		JdbcConnectionTestUtils.closeResultSet(rs);
 
 		Statement stmtRead = reader.createStatement();
-		ResultSet rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
+		rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
 		assertFalse(rs.next());
+		JdbcConnectionTestUtils.closeResultSet(rs);
 
 		writer.rollback();
 		rs = stmtRead.executeQuery("MATCH (n:RollbackShouldWorkFine) RETURN n.result");
 		assertFalse(rs.next());
 		assertTrue(true);
 
+		JdbcConnectionTestUtils.closeResultSet(rs);
+		JdbcConnectionTestUtils.closeStatement(stmt);
+		JdbcConnectionTestUtils.closeStatement(stmtRead);
 	}
 
 	@Test public void autoCommitShouldWorkFine() throws SQLException {
 
 		// Creating a node
 		Statement writeStatement = writer.createStatement();
-		writeStatement.executeQuery("CREATE (:Person)");
+		ResultSet rs = writeStatement.executeQuery("CREATE (:Person)");
+		JdbcConnectionTestUtils.closeResultSet(rs);
+
 		Statement readStatement = reader.createStatement();
-		ResultSet rs = readStatement.executeQuery("MATCH (n) RETURN n");
+		rs = readStatement.executeQuery("MATCH (n) RETURN n");
+
 		assertTrue(rs.next());
 		assertNotNull(rs.getObject(1));
 		assertFalse(rs.next());
+
+		JdbcConnectionTestUtils.closeResultSet(rs);
+		JdbcConnectionTestUtils.closeStatement(readStatement);
+		JdbcConnectionTestUtils.closeStatement(writeStatement);
 	}
 
 	@Test public void moreStatementsFromOneConnection() throws SQLException {
@@ -164,15 +184,21 @@ public class BoltNeo4jConnectionIT {
 		Statement statTwo = writer.createStatement();
 
 		//TODO use executeUpdate
-		statOne.executeQuery("CREATE (:User {name:\"username\"})");
-		statTwo.executeQuery("CREATE (:Company {name:\"companyname\"})");
+		ResultSet rs = statOne.executeQuery("CREATE (:User {name:\"username\"})");
+		JdbcConnectionTestUtils.closeResultSet(rs);
+
+		rs =statTwo.executeQuery("CREATE (:Company {name:\"companyname\"})");
+		JdbcConnectionTestUtils.closeResultSet(rs);
 
 		Statement statReader = reader.createStatement();
-		ResultSet rs = statReader.executeQuery("MATCH (n) RETURN n.name");
+		rs = statReader.executeQuery("MATCH (n) RETURN n.name");
 
 		assertFalse(rs.next());
 
 		writer.commit();
+
+		JdbcConnectionTestUtils.closeResultSet(rs);
+
 		rs = statReader.executeQuery("MATCH (n) RETURN n.name");
 
 		assertTrue(rs.next());
@@ -181,6 +207,9 @@ public class BoltNeo4jConnectionIT {
 		assertEquals("companyname", rs.getString(1));
 		assertFalse(rs.next());
 
+		JdbcConnectionTestUtils.closeResultSet(rs);
+		JdbcConnectionTestUtils.closeStatement(statOne);
+		JdbcConnectionTestUtils.closeStatement(statTwo);
 	}
 
 	@Test public void shouldRollbackAnEmptyTransaction() throws SQLException {
@@ -209,7 +238,7 @@ public class BoltNeo4jConnectionIT {
 			System.out.print(resultSet.getString(5) + " | ");
 			System.out.println();
 		}
-		connection.close();
+		JdbcConnectionTestUtils.closeConnection(connection, null, resultSet);
 	}
 
 	@Test public void killingQueryThreadExecutionShouldNotInvalidateTheConnection() throws SQLException {

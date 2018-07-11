@@ -20,6 +20,7 @@
 package org.neo4j.jdbc.bolt;
 
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -38,7 +39,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jAuthenticationIT {
 
-	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule(true);  // here we're firing up neo4j with bolt enabled
+	//@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule(true);  // here we're firing up neo4j with bolt enabled
+	@ClassRule
+	public static Neo4jBoltRule neo4j = new Neo4jBoltRule(true);
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
