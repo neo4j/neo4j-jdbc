@@ -33,6 +33,7 @@ import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.time.*;
 import java.time.temporal.Temporal;
+import java.util.Calendar;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -148,27 +149,42 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	/*   setParameter    */
 	/*-------------------*/
 
-	protected void setLocalTemporal(int parameterIndex, long epoch, Function<ZonedDateTime, Temporal> extractTemporal) throws SQLException {
+	protected void setTemporal(int parameterIndex, long epoch, ZoneId zone, Function<ZonedDateTime, Temporal> extractTemporal) throws SQLException {
 		checkClosed();
 		checkParamsNumber(parameterIndex);
 
-		ZonedDateTime zdt = Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault());
+		ZonedDateTime zdt = Instant.ofEpochMilli(epoch).atZone(zone);
 
 		insertParameter(parameterIndex, extractTemporal.apply(zdt));
 	}
 
 	@Override
 	public void setDate(int parameterIndex, Date x) throws SQLException {
-		setLocalTemporal(parameterIndex, x.getTime(), (zdt)-> zdt.toLocalDate());
+		setTemporal(parameterIndex, x.getTime(),ZoneId.systemDefault(), (zdt)-> zdt.toLocalDate());
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time x) throws SQLException {
-		setLocalTemporal(parameterIndex, x.getTime(), (zdt)-> zdt.toLocalTime());
+		setTemporal(parameterIndex, x.getTime(),ZoneId.systemDefault(), (zdt)-> zdt.toLocalTime());
 	}
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
-		setLocalTemporal(parameterIndex, x.getTime(), (zdt)-> zdt.toLocalDateTime());
+		setTemporal(parameterIndex, x.getTime(),ZoneId.systemDefault(), (zdt)-> zdt.toLocalDateTime());
+	}
+
+	@Override
+	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+		setTemporal(parameterIndex, x.getTime(),cal.getTimeZone().toZoneId(), (zdt)-> zdt);
+	}
+
+	@Override
+	public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
+		setTemporal(parameterIndex, x.getTime(),cal.getTimeZone().toZoneId(), (zdt)-> zdt);
+	}
+
+	@Override
+	public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
+		setTemporal(parameterIndex, x.getTime(),cal.getTimeZone().toZoneId(), (zdt)-> zdt.toOffsetDateTime().toOffsetTime());
 	}
 }

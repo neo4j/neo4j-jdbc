@@ -9,11 +9,10 @@ import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
+import java.util.Calendar;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -75,6 +74,37 @@ public class BoltNeo4jSetParameterDateIT {
         JdbcConnectionTestUtils.closeStatement(preparedStatement);
     }
 
+    @Test
+    public void shouldSetFieldTimestampAndCalendar() throws SQLException {
+
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("America/New_York")));
+        ZonedDateTime zdt = Instant.ofEpochMilli(cal.getTimeInMillis()).atZone(ZoneId.of("America/New_York"));
+
+        Timestamp now = new Timestamp(cal.getTimeInMillis());
+
+        PreparedStatement preparedStatement = connection.prepareStatement("CREATE (e:Event {when: ?, test: 'shouldSetFieldTimestampAndCalendar' }) RETURN e AS event");
+        preparedStatement.setTimestamp(1,now, cal);
+        preparedStatement.execute();
+
+        Result result = neo4j.getGraphDatabase().execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimestampAndCalendar' RETURN e.when as when");
+
+        assertTrue("Node not found",result.hasNext());
+
+        Map<String, Object> next = result.next();
+
+        assertTrue("Result not found",next.containsKey("when"));
+
+        Object whenObj = next.get("when");
+
+        assertTrue("Wrong type", whenObj instanceof ZonedDateTime);
+
+        ZonedDateTime when = (ZonedDateTime) whenObj;
+
+        assertEquals("Wrong data",zdt, when);
+
+        JdbcConnectionTestUtils.closeStatement(preparedStatement);
+    }
+
     /*
     =============================
             DATE
@@ -103,8 +133,6 @@ public class BoltNeo4jSetParameterDateIT {
 
         Object whenObj = next.get("when");
 
-        System.out.println("whenObj.getClass() = " + whenObj.getClass());
-        
         assertTrue("Wrong type",whenObj instanceof LocalDate);
 
         LocalDate when = (LocalDate) whenObj;
@@ -113,6 +141,39 @@ public class BoltNeo4jSetParameterDateIT {
 
         JdbcConnectionTestUtils.closeStatement(preparedStatement);
     }
+
+    @Test
+    public void shouldSetFieldDateAndCalendar() throws SQLException {
+
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("America/New_York")));
+        ZonedDateTime zdt = Instant.ofEpochMilli(cal.getTimeInMillis()).atZone(ZoneId.of("America/New_York"));
+        long epochMilli = zdt.toInstant().toEpochMilli();
+
+        Date date = new Date(epochMilli);
+
+        PreparedStatement preparedStatement = connection.prepareStatement("CREATE (e:Event {when: ?, test: 'shouldSetFieldDateAndCalendar' }) RETURN e AS event");
+        preparedStatement.setDate(1,date, cal);
+        preparedStatement.execute();
+
+        Result result = neo4j.getGraphDatabase().execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldDateAndCalendar' RETURN e.when as when");
+
+        assertTrue("Node not found",result.hasNext());
+
+        Map<String, Object> next = result.next();
+
+        assertTrue("Result not found",next.containsKey("when"));
+
+        Object whenObj = next.get("when");
+
+        assertTrue("Wrong type",whenObj instanceof ZonedDateTime);
+
+        ZonedDateTime when = (ZonedDateTime) whenObj;
+
+        assertEquals("Wrong data",zdt, when);
+
+        JdbcConnectionTestUtils.closeStatement(preparedStatement);
+    }
+
 
     /*
     =============================
@@ -152,4 +213,36 @@ public class BoltNeo4jSetParameterDateIT {
         JdbcConnectionTestUtils.closeStatement(preparedStatement);
     }
 
+    @Test
+    public void shouldSetFieldTimeAndCalendar() throws SQLException {
+
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("America/New_York")));
+        ZonedDateTime zdt = Instant.ofEpochMilli(cal.getTimeInMillis()).atZone(ZoneId.of("America/New_York"));
+        OffsetTime offsetTime = zdt.toOffsetDateTime().toOffsetTime();
+        long epochMilli = zdt.toInstant().toEpochMilli();
+
+        Time time = new Time(epochMilli);
+
+        PreparedStatement preparedStatement = connection.prepareStatement("CREATE (e:Event {when: ?, test: 'shouldSetFieldTimeAndCalendar' }) RETURN e AS event");
+        preparedStatement.setTime(1,time,cal);
+        preparedStatement.execute();
+
+        Result result = neo4j.getGraphDatabase().execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimeAndCalendar' RETURN e.when as when");
+
+        assertTrue("Node not found",result.hasNext());
+
+        Map<String, Object> next = result.next();
+
+        assertTrue("Result not found",next.containsKey("when"));
+
+        Object whenObj = next.get("when");
+
+        assertTrue("Wrong type", whenObj instanceof OffsetTime);
+
+        OffsetTime when = (OffsetTime) whenObj;
+
+        assertEquals("Wrong data",offsetTime, when);
+
+        JdbcConnectionTestUtils.closeStatement(preparedStatement);
+    }
 }
