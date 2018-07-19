@@ -29,6 +29,49 @@ Going forward there will also be support for:
 [NOTE]
 The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
 
+
+
+.Versions compatibility
+|===
+|Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | Protocols | Temporal and Spatial
+
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.0.3[3.0.3]
+|\<= 3.0.x
+|1.3.0
+|1.7
+|http, bolt
+|no
+
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.1.0[3.1.0]
+|\<= 3.1.x
+|1.3.0
+|1.7
+|http, bolt
+|no
+
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.3.0[3.3.0]
+|\<= 3.3.0
+|1.4.6
+|1.7
+|http, bolt
+|no
+
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.3.1[3.3.1]
+|\<= 3.3.x
+|1.4.6
+|1.7
+|http, bolt, bolt+routing
+|no
+
+|3.4.0
+|\<= 3.4.x
+|1.6.1
+|1.8
+|http, bolt, bolt+routing
+|yes
+|===
+
+
 === Maven dependency
 
 For the all-in-one module supporting both Bolt and HTTP, you can simply use:
