@@ -56,3 +56,88 @@ you will have only the columns (u, a) with flattening disabled;
 with flatten=1 you will have u, u.id, u.labels, u.username, a, a.id, a.type, a.age
 
 with flatten=-1 you will have u, u.id, u.labels, u.username, a, a.id, a.type, a.age, a.full_name
+
+== Temporal functions ==
+Since the 3.4 version you can get the temporal information stored in the database both as `java.sql.\*` typs and `java.time.*`.
+
+These methods are implemented to get temporal data:
+
+* `resultSet.getObject(int)` returns the `java.sql.` objects
+* `resultSet.getObject(String)` returns the `java.sql.` objects
+* `resultSet.getObject(int, Class)` returns the `java.time.` types, if you pass it.
+* `resultSet.getObject(String, Class)` returns the `java.time.` types, if you pass it.
+* `resultSet.getTimestamp` for `datetime()` and `localdatetime()`
+* `resultSet.getDate` for `date()`
+* `resultSet.getTime` for `time()` and `localtime()`
+
+.Java types for neo4j temporal functions
+|===
+|java.time | neo4j | java.sql
+
+|LocalDate | date() | Date
+
+|LocalTime | localtime() | Time
+
+|OffsetTime | time() | Time
+
+|LocalDateTime | localdatetime() | Timestamp
+
+|ZonedDateTime | datetime() | Timestamp
+
+|===
+
+=== Duration ===
+The Duration concept is not in the JDBC specifications, so you can retrieve it using:
+
+* `resultSet.getObject(int | String)` returns a `Map<String, Object>` with Long values for the keys: `'months', 'days','seconds', 'nanoseconds'`
+
+* `resultSet.getObject(int | String, org.neo4j.driver.v1.types.IsoDuration.class)` returns the internal object.
+
+
+=== Inside nodes, relationships or arrays ===
+When you retrieve a Node, Relationship or an array, the internal object created by a temporal function contains
+always a `java.sql` type value.
+
+E.g:
+```
+ResultSet rs = statement.executeQuery("CREATE (e:Event {when: [localdatetime('2015-12-31T19:32:24')] }) RETURN e AS event");
+
+rs.next();
+Map<String, Object> map = (Map)rs.getObject(1);
+Object whenField = map.get("when");
+List whenList = (List) whenField;
+
+java.sql.Timestamp when = (java.sql.Timestamp)whenList.get(0);
+```
+
+== Spatial functions ==
+Since the 3.4 version you can get the spatial information stored in the database both as `Map`.
+
+You can retrieve the spatial data using:
+
+* `resultSet.getObject(int | String)` returns a `Map<String, Object>`
+* `resultSet.getObject(int | String, org.neo4j.driver.v1.types.Point)` returns a `Point`
+
+.Keys for Spatial functions
+|===
+|neo4j | keys(value)
+
+| point({x, y}) | srid(7203), crs('cartesian'), x, y
+| point({x, y, z}) | srid(9157), crs('cartesian-3d'), x, y, z
+| point({latitude, longitude}) |  srid(4326), crs('wgs-84'), x, y, latitude, longitude
+| point({latitude, longitude, height}) |  srid(4979), crs('wgs-84-3d'), x, y, z, latitude, longitude, height
+|===
+
+=== Inside nodes, relationships or arrays ===
+When you retrieve a Node, Relationship or an array, the internal object created by a spatial function contains
+always a `Map<String, Object>`
+
+E.g:
+```
+ResultSet rs = statement.executeQuery("RETURN [point({ latitude: 12, longitude: 56, height: 4321 })] AS geo_3d");
+
+rs.next();
+Object points = rs.getObject(1);
+List pointList = (List) points;
+Map pointMap = (Map) point;
+```

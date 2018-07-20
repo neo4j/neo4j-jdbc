@@ -62,5 +62,8 @@ public class BoltNeo4jDataSourceIT {
 
 		Statement statement = connection.createStatement();
 		assertTrue(statement.execute("RETURN 1"));
+
+		statement.close();
+		JdbcConnectionTestUtils.closeConnection(connection);
 	}
 }

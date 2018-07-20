@@ -19,10 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
@@ -43,7 +40,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 	//private final static String FLATTEN_URI = "flatten=1";
 
-	Connection connectionFlatten;
+	static Connection connectionFlatten;
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
@@ -57,6 +54,11 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 	@After public void tearDown() {
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+	}
+
+	@AfterClass
+	public static void tearDownConnection(){
+		JdbcConnectionTestUtils.closeConnection(connectionFlatten);
 	}
 
 	/*------------------------------*/

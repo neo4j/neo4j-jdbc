@@ -2,11 +2,9 @@ package org.neo4j.jdbc.bolt.utils;
 
 import org.neo4j.jdbc.bolt.BoltDriver;
 import org.neo4j.jdbc.bolt.Neo4jBoltRule;
+import org.neo4j.jdbc.bolt.data.StatementData;
 
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Enumeration;
 
 /**
@@ -68,5 +66,45 @@ public class JdbcConnectionTestUtils {
 
     public static Connection verifyConnection(Connection connection, Neo4jBoltRule neo4j){
         return verifyConnection(connection,neo4j,"");
+    }
+
+    public static void closeConnection(Connection connection){
+        closeConnection(connection, null, null);
+    }
+
+    public static void closeConnection(Connection connection, Statement stmt){
+        closeConnection(connection, stmt, null);
+    }
+
+    public static void closeStatement(Statement stmt, ResultSet rs){
+        closeConnection(null, stmt, rs);
+    }
+
+    public static void closeStatement(Statement stmt){
+        closeConnection(null, stmt, null);
+    }
+
+    public static void closeResultSet(ResultSet rs){
+        closeConnection(null, null, rs);
+    }
+
+    public static void closeConnection(Connection connection, Statement stmt, ResultSet rs){
+        try {
+            if(rs != null &&  !rs.isClosed()){
+                rs.close();
+            }
+            if(stmt != null &&  !stmt.isClosed()){
+                stmt.close();
+            }
+            if(connection != null &&  !connection.isClosed()){
+                connection.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void clearDatabase(Neo4jBoltRule neo4j){
+        neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
     }
 }

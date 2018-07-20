@@ -40,6 +40,7 @@ import java.sql.Date;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * @author AgileLARUS
@@ -674,33 +675,78 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	@Override public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+		try {
+			return getObject(type, ()-> this.fetchValueFromLabel(columnLabel), () -> this.getObject(columnLabel));
+		} catch (Exception e) {
+			throw new SQLException(e);
+		}
+	}
+
+	/**
+	 * Check if the argument is a internal data used by neo4j
+	 * @param type
+	 * @return
+	 */
+	private boolean isNeo4jDatatype(Class type){
+		return ObjectValueAdapter.class.isAssignableFrom(type);
+	}
+
+	private <T> T getObject (Class<T> type, Callable fetch, Callable getObject) throws Exception {
 		checkClosed();
 		if (type == null) {
 			throw new SQLException("Type to cast cannot be null");
 		}
-		Object obj = this.getObject(columnLabel);
-		T ret;
-		try {
-			ret = ObjectConverter.convert(obj, type);
-		} catch (Exception e) {
-			throw new SQLException(e);
+
+		if (isNeo4jDatatype(type)){
+			return (T) fetch.call();
 		}
-		return ret;
+
+		if (type == ZonedDateTime.class){
+			DateTimeValue value = (DateTimeValue) fetch.call();
+			return (T) value.asZonedDateTime();
+		}
+		else if (type == LocalDateTime.class){
+			LocalDateTimeValue value = (LocalDateTimeValue) fetch.call();
+			return (T) value.asLocalDateTime();
+		}
+		else if (type == IsoDuration.class){
+			DurationValue value = (DurationValue) fetch.call();
+			return (T) value.asIsoDuration();
+		}
+		else if (type == LocalDate.class){
+			DateValue value = (DateValue) fetch.call();
+			return (T) value.asLocalDate();
+		}
+		else if (type == LocalTime.class){
+			LocalTimeValue value = (LocalTimeValue) fetch.call();
+			return (T) value.asLocalTime();
+		}
+		else if (type == OffsetTime.class){
+			TimeValue value = (TimeValue) fetch.call();
+			return (T) value.asOffsetTime();
+		}
+		else if (type == Point.class){
+			PointValue value = (PointValue) fetch.call();
+			return (T) value.asPoint();
+		}
+		else {
+			Object obj = getObject.call();
+			T ret;
+			try {
+				ret = ObjectConverter.convert(obj, type);
+			} catch (Exception e) {
+				throw new SQLException(e);
+			}
+			return ret;
+		}
 	}
 
 	@Override public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-		checkClosed();
-		if (type == null) {
-			throw new SQLException("Type to cast cannot be null");
-		}
-		Object obj = this.getObject(columnIndex);
-		T ret;
 		try {
-			ret = ObjectConverter.convert(obj, type);
+			return getObject(type, ()-> this.fetchValueFromIndex(columnIndex), () -> this.getObject(columnIndex));
 		} catch (Exception e) {
 			throw new SQLException(e);
 		}
-		return ret;
 	}
 
 	@Override public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
@@ -742,12 +788,24 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 * @return
 	 */
 	private Time valueToTime(Value value){
+		return valueToTime(value, Calendar.getInstance());
+	}
+
+	/**
+	 * Convert Value to sql.Time with timezone
+	 * @param value
+	 * @return
+	 */
+	private Time valueToTime(Value value, Calendar cal){
 		if (value.isNull()){
 			return null;
 		}
 
 		if (value instanceof TimeValue){
-			return offsetTimeToTime(((TimeValue)value).asOffsetTime());
+			ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(cal.get(Calendar.ZONE_OFFSET) / 1000);
+			TimeValue timeValue = (TimeValue) value;
+			OffsetTime offsetTime = timeValue.asOffsetTime().withOffsetSameInstant(zoneOffset);
+			return offsetTimeToTime(offsetTime);
 		}
 
 		if (value instanceof LocalTimeValue){
@@ -805,17 +863,26 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	/**
-	 * Convert Value to Timestamp
+	 * Convert Value to Timestamp with system timezone
 	 * @param value
 	 * @return
 	 */
 	private Timestamp valueToTimestamp(Value value){
+		return valueToTimestamp(value, ZoneId.systemDefault() );
+	}
+
+	/**
+	 * Convert Value to Timestamp with timezone
+	 * @param value
+	 * @return
+	 */
+	private Timestamp valueToTimestamp(Value value, ZoneId zone) {
 		if (value.isNull()){
 			return null;
 		}
 
 		if (value instanceof DateTimeValue){
-			return zonedDateTimeToTimestamp(value.asZonedDateTime());
+			return zonedDateTimeToTimestamp(value.asZonedDateTime().withZoneSameInstant(zone));
 		}
 
 		if (value instanceof LocalDateTimeValue){
@@ -840,7 +907,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 * @return
 	 */
 	private Timestamp zonedDateTimeToTimestamp(ZonedDateTime zdt){
-		return new Timestamp(zdt.toEpochSecond()*1000L + zdt.getNano() / 1000_000L);
+		return new Timestamp(zdt.toInstant().toEpochMilli());
 	}
 
 	@Override public Timestamp getTimestamp(int columnIndex) throws SQLException {
@@ -877,5 +944,33 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		checkClosed();
 		Value value = this.fetchValueFromLabel(columnLabel);
 		return valueToTime(value);
+	}
+
+	@Override
+	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+		checkClosed();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return valueToTimestamp(value, cal.getTimeZone().toZoneId());
+	}
+
+	@Override
+	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+		checkClosed();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return valueToTimestamp(value, cal.getTimeZone().toZoneId());
+	}
+
+	@Override
+	public Time getTime(int columnIndex, Calendar cal) throws SQLException {
+		checkClosed();
+		Value value = this.fetchValueFromIndex(columnIndex);
+		return valueToTime(value,cal);
+	}
+
+	@Override
+	public Time getTime(String columnLabel, Calendar cal) throws SQLException {
+		checkClosed();
+		Value value = this.fetchValueFromLabel(columnLabel);
+		return valueToTime(value,cal);
 	}
 }

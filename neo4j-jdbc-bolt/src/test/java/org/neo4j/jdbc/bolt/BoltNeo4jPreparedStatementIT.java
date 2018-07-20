@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -38,10 +39,15 @@ public class BoltNeo4jPreparedStatementIT {
 
 	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
 
-	Connection connection;
+	static Connection connection;
 
 	@Before public void setUp(){
 		connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
+	}
+
+	@AfterClass
+	public static void tearDown(){
+		JdbcConnectionTestUtils.closeConnection(connection);
 	}
 
 	/*------------------------------*/
