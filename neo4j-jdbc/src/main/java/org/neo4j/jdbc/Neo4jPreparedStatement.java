@@ -87,7 +87,7 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	 *
 	 * @param parameterIndex The index parameter to check
 	 */
-	private void checkParamsNumber(int parameterIndex) throws SQLException {
+	protected void checkParamsNumber(int parameterIndex) throws SQLException {
 		if (parameterIndex > this.parametersNumber) {
 			throw new SQLException("ParameterIndex does not correspond to a parameter marker in the SQL statement");
 		}
@@ -132,7 +132,7 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	 * @param index The index/key of the parameter
 	 * @param obj   The value of the parameter
 	 */
-	private void insertParameter(int index, Object obj) {
+	protected void insertParameter(int index, Object obj) {
 		this.parameters.put(Integer.toString(index), obj);
 	}
 
