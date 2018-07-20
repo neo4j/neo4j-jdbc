@@ -6,6 +6,7 @@ import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
 import java.util.Enumeration;
+import java.util.Properties;
 
 /**
  * Help to build the connection for the IT test
@@ -42,6 +43,21 @@ public class JdbcConnectionTestUtils {
             warmup();
         }
         return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters,USERNAME,PASSWORD);
+    }
+
+    public static Properties defaultInfo(){
+        Properties info = new Properties();
+        info.setProperty("user",USERNAME);
+        info.setProperty("password",PASSWORD);
+        info.setProperty("nossl","true");
+        return info;
+    }
+
+    public static Connection getConnection(Neo4jBoltRule neo4j, Properties info) throws SQLException {
+        if(!warmedup){
+            warmup();
+        }
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),info);
     }
 
     public static Connection getConnection(Neo4jBoltRule neo4j) throws SQLException {

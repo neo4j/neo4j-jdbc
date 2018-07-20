@@ -17,7 +17,10 @@
  */
 package org.neo4j.jdbc.bolt.impl;
 
-import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.AuthToken;
+import org.neo4j.driver.v1.AuthTokens;
+import org.neo4j.driver.v1.Config;
+import org.neo4j.driver.v1.Driver;
 import org.neo4j.jdbc.Neo4jDriver;
 
 import java.io.File;
@@ -25,7 +28,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.neo4j.driver.v1.Config.build;
 
@@ -37,6 +43,15 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
 
     public static final String TRUST_STRATEGY_KEY       = "trust.strategy";
     public static final String TRUSTED_CERTIFICATE_KEY  = "trusted.certificate.file";
+    public static final String CONNECTION_ACQUISITION_TIMEOUT = "connection.acquisition.timeout";
+    public static final String CONNECTION_LIVENESS_CHECK_TIMEOUT = "connection.liveness.check.timeout";
+    public static final String CONNECTION_TIMEOUT = "connection.timeout";
+    public static final String ENCRYPTION = "encryption";
+    public static final String LEAKED_SESSIONS_LOGGING = "leaked.sessions.logging";
+    public static final String LOAD_BALANCING_STRATEGY = "load.balancing.strategy";
+    public static final String MAX_CONNECTION_LIFETIME = "max.connection.lifetime";
+    public static final String MAX_CONNECTION_POOLSIZE = "max.connection.poolsize";
+    public static final String MAX_TRANSACTION_RETRY_TIME = "max.transaction.retry.time";
 
     protected BoltNeo4jDriverImpl(String prefix) {
         super(prefix);
@@ -57,7 +72,18 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 if (info.containsKey("nossl")) {
                     builder = builder.withoutEncryption();
                 }
+
                 builder = setTrustStrategy(info, builder);
+                builder = setConnectionAcquisitionTimeout(info, builder);
+                builder = setIdleTimeBeforeConnectionTest(info, builder);
+                builder = setConnectionTimeout(info, builder);
+                builder = setEncryption(info, builder);
+                builder = setLakedSessionLogging(info, builder);
+                builder = setLoadBalancingStrategy(info, builder);
+                builder = setMaxConnectionLifetime(info, builder);
+                builder = setMaxConnectionPoolSize(info, builder);
+                builder = setMaxTransactionRetryTime(info, builder);
+
                 Config config = builder.toConfig();
                 AuthToken authToken = getAuthToken(info);
                 Properties routingContext = getRoutingContext(boltUrl, info);
@@ -125,29 +151,168 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
     private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder)
             throws SQLException {
         if (properties.containsKey(TRUSTED_CERTIFICATE_KEY)) {
-            Object file = properties.get(TRUSTED_CERTIFICATE_KEY);
-            if (file instanceof File) {
-                Config.ConfigBuilder newBuilder;
-                switch (strategy) {
-                    case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
-                        newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy((File) file));
-                        break;
-                    case TRUST_ON_FIRST_USE:
-                        newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustOnFirstUse((File) file));
-                        break;
-                    case TRUST_SIGNED_CERTIFICATES:
-                        newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSignedBy((File) file));
-                        break;
-                    default:
-                        newBuilder = builder;
-                        break;
-                }
-                return newBuilder;
-            } else {
-                throw new SQLException("Invalid parameter 'trusted.certificate.file' : NOT A VALID FILE");
+            String value = properties.getProperty(TRUSTED_CERTIFICATE_KEY);
+            File file = new File(value);
+            Config.ConfigBuilder newBuilder;
+            switch (strategy) {
+                case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
+                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy((File) file));
+                    break;
+                case TRUST_ON_FIRST_USE:
+                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustOnFirstUse((File) file));
+                    break;
+                case TRUST_SIGNED_CERTIFICATES:
+                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSignedBy((File) file));
+                    break;
+                default:
+                    newBuilder = builder;
+                    break;
             }
+            return newBuilder;
         } else {
             throw new SQLException("Missing parameter 'trusted.certificate.file' : A FILE IS REQUIRED");
         }
+    }
+
+    /**
+     * Get a value from the properties and try to apply it to the builder
+     * @param info
+     * @param builder
+     * @param key
+     * @param op
+     * @param errorMessage
+     * @return
+     */
+    private Config.ConfigBuilder setValueConfig(Properties info, Config.ConfigBuilder builder, String key, Function<String,Config.ConfigBuilder> op, String errorMessage) {
+        if(info.containsKey(key)){
+            String value = info.getProperty(key);
+            try{
+                return op.apply(value);
+            }catch(Exception e){
+                throw new IllegalArgumentException(key+": "+value+" "+errorMessage);
+            }
+
+        }
+        return builder;
+    }
+
+    /**
+     * Get a long value from the properties and apply it to the builder
+     * @param info
+     * @param builder
+     * @param key
+     * @param op
+     * @return
+     */
+    private Config.ConfigBuilder setLongConfig(Properties info, Config.ConfigBuilder builder, String key, Function<Long,Config.ConfigBuilder> op) {
+        return setValueConfig(info, builder, key, (val)->op.apply(Long.parseLong(val)), "is not a number");
+    }
+
+    /**
+     * Get a boolean value from the properties and apply it to the builder
+     * @param info
+     * @param builder
+     * @param key
+     * @param op
+     * @return
+     */
+    private Config.ConfigBuilder setBooleanConfig(Properties info, Config.ConfigBuilder builder, String key, Function<Boolean,Config.ConfigBuilder> op) {
+        return setValueConfig(info, builder, key, (val)->{
+            if ("true".equalsIgnoreCase(val) || "false".equalsIgnoreCase(val)) {
+                return op.apply(Boolean.parseBoolean(val));
+            }else{
+                throw new IllegalArgumentException();
+            }
+        }, "is not a boolean");
+    }
+
+    /**
+     * Configure CONNECTION_ACQUISITION_TIMEOUT
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setConnectionAcquisitionTimeout(Properties info, Config.ConfigBuilder builder) {
+        return setLongConfig(info, builder, CONNECTION_ACQUISITION_TIMEOUT, (ms)->builder.withConnectionAcquisitionTimeout(ms, TimeUnit.MILLISECONDS));
+    }
+
+    /**
+     * Configure CONNECTION_LIVENESS_CHECK_TIMEOUT
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setIdleTimeBeforeConnectionTest(Properties info, Config.ConfigBuilder builder) {
+        return setLongConfig(info, builder, CONNECTION_LIVENESS_CHECK_TIMEOUT, (ms)->builder.withConnectionLivenessCheckTimeout(ms, TimeUnit.MINUTES));
+    }
+
+    /**
+     * Configure CONNECTION_TIMEOUT
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setConnectionTimeout(Properties info, Config.ConfigBuilder builder) {
+        return setLongConfig(info, builder, CONNECTION_TIMEOUT, (ms)->builder.withConnectionTimeout(ms, TimeUnit.MILLISECONDS));
+    }
+
+    /**
+     * Configure ENCRYPTION
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setEncryption(Properties info, Config.ConfigBuilder builder) {
+        return setBooleanConfig(info, builder, ENCRYPTION, (condition)-> (condition)?builder.withEncryption():builder.withoutEncryption());
+    }
+
+    /**
+     * Configure LEAKED_SESSIONS_LOGGING
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setLakedSessionLogging(Properties info, Config.ConfigBuilder builder) {
+        return setBooleanConfig(info, builder, LEAKED_SESSIONS_LOGGING, (condition)-> (condition)?builder.withLeakedSessionsLogging():builder);
+    }
+
+    /**
+     * Configure LOAD_BALANCING_STRATEGY
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setLoadBalancingStrategy(Properties info, Config.ConfigBuilder builder) {
+        return setValueConfig(info, builder, LOAD_BALANCING_STRATEGY, (val)->builder.withLoadBalancingStrategy(Config.LoadBalancingStrategy.valueOf(val)),"is not a load balancing strategy");
+    }
+
+    /**
+     * Configure MAX_CONNECTION_LIFETIME
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setMaxConnectionLifetime(Properties info, Config.ConfigBuilder builder) {
+        return setLongConfig(info, builder, MAX_CONNECTION_LIFETIME, (ms)->builder.withMaxConnectionLifetime(ms, TimeUnit.MILLISECONDS));
+    }
+
+    /**
+     * Configure MAX_CONNECTION_POOLSIZE
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setMaxConnectionPoolSize(Properties info, Config.ConfigBuilder builder) {
+        return setValueConfig(info, builder, MAX_CONNECTION_POOLSIZE, (val)->builder.withMaxConnectionPoolSize(Integer.parseInt(val)),"is not a number");
+    }
+
+    /**
+     * Configure MAX_TRANSACTION_RETRY_TIME
+     * @param info
+     * @param builder
+     * @return always a builder
+     */
+    private Config.ConfigBuilder setMaxTransactionRetryTime(Properties info, Config.ConfigBuilder builder) {
+        return setLongConfig(info, builder, MAX_TRANSACTION_RETRY_TIME, (ms)->builder.withMaxTransactionRetryTime(ms, TimeUnit.MILLISECONDS));
     }
 }
