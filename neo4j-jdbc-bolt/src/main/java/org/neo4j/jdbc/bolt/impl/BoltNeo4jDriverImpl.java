@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -66,7 +67,8 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
         if (acceptsURL(url)) {
             String boltUrl = url.replace(Neo4jDriver.JDBC_PREFIX, "").replaceAll("^(" + getPrefix() + ":)([^/])", "$1//$2");
             try {
-                Properties info = parseUrlProperties(boltUrl, props);
+                Properties info = mergeUrlAndInfo(boltUrl, props);
+
                 boltUrl = removeUrlProperties(boltUrl);
                 Config.ConfigBuilder builder = build();
                 if (info.containsKey("nossl")) {
@@ -101,9 +103,15 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
     protected abstract Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException;
 
     private AuthToken getAuthToken(Properties properties) {
-        if (properties.isEmpty() || (!properties.containsKey("user") && !properties.containsKey("password"))) {
+        if (!properties.containsKey("user") ) {
+            if(properties.containsKey("password")){
+                //if only password is provided, try to authenticate with the default user: 'neo4j'
+                return AuthTokens.basic("neo4j", properties.getProperty("password"));
+            }
+            //neither user nor password
             return AuthTokens.none();
         }
+        //user provided, it need a password
         return AuthTokens.basic(properties.getProperty("user"), properties.getProperty("password"));
     }
 
@@ -146,6 +154,44 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
             }
         }
         return newBuilder;
+    }
+
+    /**
+     * Mix the properties from input and url, using the URL value when conflicts
+     * @param url The url of the connection
+     * @param params The properties passed in the connect method
+     * @return the merge of the properties from url and input
+     */
+    protected Properties mergeUrlAndInfo(String url, Properties params) {
+        Properties fromInput = (params==null)?new Properties():params;
+        Properties fromUrl = super.parseUrlProperties(url, null);
+
+        Properties merge = (Properties) fromInput.clone();
+
+        Set<String> keys = fromUrl.stringPropertyNames();
+        for (String key : keys) {
+            merge.put(key, fromUrl.get(key));
+        }
+
+        setUserInfo(merge);
+
+        return merge;
+    }
+
+    /**
+     * If there're properties values for the Username, it sets the "user" property with that value
+     * @param properties
+     */
+    protected void setUserInfo(Properties properties) {
+        // 'username' key has highest priority over 'user' key
+        String user = properties.getProperty("username");
+        if(user == null){
+            user = properties.getProperty("user");
+        }
+
+        if (user!=null && !user.trim().isEmpty()) {
+            properties.setProperty("user",user);
+        }
     }
 
     private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder)
