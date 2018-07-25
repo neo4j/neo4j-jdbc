@@ -133,7 +133,6 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 					properties.put(prop.toLowerCase(), "true");
 				}
 			}
-			properties.put("user", getUser(properties));
 		}
 
 		return properties;
@@ -147,15 +146,4 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 		}
 	}
 
-	protected String getUser(Properties properties) {
-		String user = properties.getProperty("user");
-		if (user!=null && !user.trim().isEmpty()) {
-			return user;
-		}
-		user = properties.getProperty("username");
-		if (user!=null && !user.trim().isEmpty()) {
-			return user;
-		}
-		return "neo4j";
-	}
 }

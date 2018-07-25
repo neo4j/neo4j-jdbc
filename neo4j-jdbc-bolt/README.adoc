@@ -21,14 +21,21 @@ IMPORTANT: You can't get an `InternalNode` or `InternalRelationship` directly `I
 
 When the object is not recognized as one of the two specified it is treated as a standard object and returned _directly_.
 
-== Bolt module specific URL parameters ==
+== Bolt module specific configuration ==
 
 When using the jdbc Bolt module you will be able to specify dedicated parameters.
-You can set them using a `Properties` object during the connection phase
+You can set them using both a `Properties` object during the connection phase and the URL parameters.
 
 ----
-DriverManager.getConnection(NEO4J_JDBC_BOLT_URL, PROPERTIES);
+Properties info = new Properties();
+info.setProperty("connection.acquisition.timeout","20");
+info.setProperty("connection.liveness.check.timeout","20");
+info.setProperty("connection.timeout","321000");
+
+DriverManager.getConnection(jdbc:neo4j:bolt://test?&connection.timeout=1000&encryption=true, info);
 ----
+
+The values inside the Properties are used as default ones and overridden by the values passed into the URL.
 
 Here's a list of the keys you can use.
 
