@@ -736,7 +736,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsResultSetType(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return type == ResultSet.TYPE_FORWARD_ONLY;
 	}
 
 	@Override public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
@@ -788,7 +788,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsSavepoints() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsNamedParameters() throws SQLException {

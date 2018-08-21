@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.junit.Assert.*;
@@ -157,5 +158,20 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test public void supportsMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 		assertFalse(databaseMetaData.supportsMixedCaseQuotedIdentifiers());
+	}
+
+	@Test public void supportsResultSetType_TYPE_FORWARD_ONLY_true() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsResultSetType(ResultSet.TYPE_FORWARD_ONLY));
+	}
+
+	@Test public void supportsResultSetType_FETCH_REVERSE_false() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsResultSetType(ResultSet.FETCH_REVERSE));
+	}
+
+	@Test public void supportsSavepointsReturnFalse() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsSavepoints());
 	}
 }
