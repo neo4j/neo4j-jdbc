@@ -174,4 +174,27 @@ public class Neo4jDatabaseMetaDataTest {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 		assertFalse(databaseMetaData.supportsSavepoints());
 	}
+
+	@Test public void shouldReturnEmptySchemas() throws SQLException {
+		//https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getSchemas()
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		ResultSet schemas = databaseMetaData.getSchemas();
+		assertNotNull(schemas);
+		assertFalse(schemas.next());
+		assertNotNull(schemas.getMetaData());
+		assertEquals(2,schemas.getMetaData().getColumnCount());
+		assertEquals("TABLE_SCHEM",schemas.getMetaData().getColumnName(1));
+		assertEquals("TABLE_CATALOG",schemas.getMetaData().getColumnName(2));
+	}
+
+	@Test public void shouldReturnEmptyCatalog() throws SQLException {
+		//https://docs.oracle.com/javase/7/docs/api/java/sql/DatabaseMetaData.html#getCatalogs()
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		ResultSet schemas = databaseMetaData.getCatalogs();
+		assertNotNull(schemas);
+		assertFalse(schemas.next());
+		assertNotNull(schemas.getMetaData());
+		assertEquals(1,schemas.getMetaData().getColumnCount());
+		assertEquals("TABLE_CAT",schemas.getMetaData().getColumnName(1));
+	}
 }
