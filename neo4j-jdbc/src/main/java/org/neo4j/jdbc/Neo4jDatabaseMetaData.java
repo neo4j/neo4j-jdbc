@@ -164,6 +164,10 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		return "Neo4j";
 	}
 
+	@Override public String getProcedureTerm() throws SQLException {
+		return "Procedure";
+	}
+	
 	@Override public String getDatabaseProductVersion() throws SQLException {
 		return this.databaseVersion;
 	}
