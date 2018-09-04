@@ -251,11 +251,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public ResultSet getSchemas() throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Arrays.asList("TABLE_SCHEM","TABLE_CATALOG"));
 	}
 
 	@Override public ResultSet getCatalogs() throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Arrays.asList("TABLE_CAT"));
 	}
 
 	@Override public ResultSet getTableTypes() throws SQLException {
@@ -270,35 +270,73 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
+	/**
+	 *
+	 * @param catalog works only with null, because #getCatalogs() return no rows
+	 * @param schemaPattern works only with null, because #getSchemas() return no rows
+	 * @param tableNamePattern works with % too
+	 * @param types
+	 * @return
+	 * @throws SQLException
+	 */
 	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
 		if (this.databaseLabels == null || this.databaseLabels.isEmpty()) {
 			return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 		}
-		List<List<Object>> schemas = new ArrayList<>();
+
+		//TODO how to manage types? nowadays there's only 'TABLE'
+
+		String pattern = toPattern(tableNamePattern);
+
+		List<List<Object>> tables = new ArrayList<>();
 		for (Table databaseLabel : this.databaseLabels) {
-			final boolean tableNameNotNullNorEmpty = tableNamePattern == null || "".equals(tableNamePattern);
-			final boolean typesNotNullAndContainsDBLabel = types == null || (types.length > 0 && Arrays.asList(types).contains(databaseLabel.getTableType()));
-			if ((tableNameNotNullNorEmpty || databaseLabel.getTableName().equals(tableNamePattern)) && typesNotNullAndContainsDBLabel) {
-				schemas.add(databaseLabel.toResultSetRow());
+			if(databaseLabel.getTableName().matches(pattern)){
+				tables.add(databaseLabel.toResultSetRow());
 			}
 		}
-		return ListNeo4jResultSet.newInstance(false, schemas, Table.getColumns());
+		return ListNeo4jResultSet.newInstance(false, tables, Table.getColumns());
 	}
 
-	
+	/**
+	 * Convert an input pattern (sql) to a java regex pattern
+	 * @param sqlPattern
+	 * @return
+	 */
+	private String toPattern(String sqlPattern) {
+		String pattern = null;
+		if(sqlPattern == null){
+			pattern = ".*";//any
+		}else {
+			pattern = sqlPattern.replaceAll("%",".*");// % SQL stands for ANY
+		}
+		return pattern;
+	}
+
+	/**
+	 *
+	 * @param catalog works only with null, because #getCatalogs() return no rows
+	 * @param schemaPattern works only with null, because #getSchemas() return no rows
+	 * @param tableNamePattern works with % too
+	 * @param columnNamePattern works with % too
+	 * @return
+	 * @throws SQLException
+	 */
 	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
 		if (this.databaseProperties == null || this.databaseProperties.isEmpty()) {
 			return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 		}
-		List<List<Object>> schemas = new ArrayList<>();
+
+		String tablePattern = toPattern(tableNamePattern);
+		String columnPattern = toPattern(columnNamePattern);
+
+		List<List<Object>> columns = new ArrayList<>();
 		for (Column databaseKey : this.databaseProperties) {
-			final boolean tableNameNotNullNorEmpty = tableNamePattern == null || "".equals(tableNamePattern);
-			final boolean columnNameNotNullAndColumnNameMatches = columnNamePattern == null || "".equals(columnNamePattern) || databaseKey.getColumnName().equals(columnNamePattern);
-			if ((tableNameNotNullNorEmpty || databaseKey.getTableName().equals(tableNamePattern)) && columnNameNotNullAndColumnNameMatches) {
-				schemas.add(databaseKey.toResultSetRow());
+			if (databaseKey.getTableName().matches(tablePattern) &&
+					databaseKey.getColumnName().matches(columnPattern)) {
+				columns.add(databaseKey.toResultSetRow());
 			}
 		}
-		return ListNeo4jResultSet.newInstance(false, schemas, Column.getColumns());
+		return ListNeo4jResultSet.newInstance(false, columns, Column.getColumns());
 	}
 
 	@Override public String getSearchStringEscape() throws SQLException {
@@ -510,7 +548,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public String getSchemaTerm() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return "";
 	}
 
 	@Override public String getProcedureTerm() throws SQLException {
@@ -736,7 +774,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsResultSetType(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return type == ResultSet.TYPE_FORWARD_ONLY;
 	}
 
 	@Override public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
@@ -788,7 +826,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsSavepoints() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsNamedParameters() throws SQLException {

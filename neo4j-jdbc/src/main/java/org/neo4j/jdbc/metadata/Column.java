@@ -70,7 +70,7 @@ public class Column {
 	}
 
 	public String getTypeName() {
-		return null;
+		return "unknown";
 	}
 
 	public String getColumnSize() {
