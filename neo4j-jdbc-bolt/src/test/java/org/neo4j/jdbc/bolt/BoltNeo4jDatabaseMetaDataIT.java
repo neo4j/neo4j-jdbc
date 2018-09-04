@@ -31,6 +31,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -61,7 +63,7 @@ public class BoltNeo4jDatabaseMetaDataIT {
 
 	}
 
-	@Test public void getDatabaseLabelsShouldBeOK() throws SQLException, NoSuchFieldException, IllegalAccessException {
+	@Test public void getTablesWithNull() throws SQLException, NoSuchFieldException, IllegalAccessException {
 
 		try (Statement statement = connection.createStatement()) {
 			statement.execute("create (a:A {one:1, two:2})");
@@ -77,6 +79,133 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertEquals("B", labels.getString("TABLE_NAME"));
 		assertTrue(!labels.next());
 
+	}
+
+	@Test public void getTablesWithStrictPattern() throws SQLException, NoSuchFieldException, IllegalAccessException {
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Testa {three:3, four:4})");
+		}
+
+		ResultSet labels = connection.getMetaData().getTables(null, null, "Test", null);
+
+		assertNotNull(labels);
+		List<String> tableNames = new ArrayList<>();
+
+		while(labels.next()){
+			tableNames.add(labels.getString("TABLE_NAME"));
+		}
+
+		assertEquals(1, tableNames.size());
+		assertTrue(tableNames.contains("Test"));
+
+	}
+
+	@Test public void getTablesWithPattern() throws SQLException, NoSuchFieldException, IllegalAccessException {
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Testa {three:3, four:4})");
+		}
+
+		ResultSet labels = connection.getMetaData().getTables(null, null, "Test%", null);
+
+		assertNotNull(labels);
+		List<String> tableNames = new ArrayList<>();
+
+		while(labels.next()){
+			tableNames.add(labels.getString("TABLE_NAME"));
+		}
+
+		assertEquals(2, tableNames.size());
+		assertTrue(tableNames.contains("Test"));
+		assertTrue(tableNames.contains("Testa"));
+	}
+
+	@Test public void getTablesWithWildcard() throws SQLException, NoSuchFieldException, IllegalAccessException {
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:Foo {one:1, two:2})");
+			statement.execute("create (b:Bar {three:3, four:4})");
+		}
+
+		ResultSet labels = connection.getMetaData().getTables(null, null, "%", null);
+
+		assertNotNull(labels);
+		List<String> tableNames = new ArrayList<>();
+
+		while(labels.next()){
+			tableNames.add(labels.getString("TABLE_NAME"));
+		}
+
+		assertEquals(2, tableNames.size());
+		assertTrue(tableNames.contains("Foo"));
+		assertTrue(tableNames.contains("Bar"));
+	}
+
+	@Test public void getColumnWithNull() throws SQLException, NoSuchFieldException, IllegalAccessException {
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:A {one:1, two:2})");
+			statement.execute("create (b:B {three:3, four:4})");
+		}
+
+		ResultSet columns = connection.getMetaData().getColumns(null, null, null, null);
+
+		assertNotNull(columns);
+		List<String> columnNames = new ArrayList<>();
+
+		while(columns.next()){
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertEquals(4, columnNames.size());
+		assertTrue(columnNames.contains("one"));
+		assertTrue(columnNames.contains("two"));
+		assertTrue(columnNames.contains("three"));
+		assertTrue(columnNames.contains("four"));
+	}
+
+	@Test public void getColumnWithTablePattern() throws SQLException, NoSuchFieldException, IllegalAccessException {
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Test2 {three:3, four:4})");
+		}
+
+		ResultSet columns = connection.getMetaData().getColumns(null, null, "Test", null);
+
+		assertNotNull(columns);
+		List<String> columnNames = new ArrayList<>();
+
+		while(columns.next()){
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertEquals(2, columnNames.size());
+		assertTrue(columnNames.contains("one"));
+		assertTrue(columnNames.contains("two"));
+	}
+
+	@Test public void getColumnWithColumnPattern() throws SQLException, NoSuchFieldException, IllegalAccessException {
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Test2 {three:3, four:4})");
+		}
+
+		ResultSet columns = connection.getMetaData().getColumns(null, null, "Test", "t%");
+
+		assertNotNull(columns);
+		List<String> columnNames = new ArrayList<>();
+
+		while(columns.next()){
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertEquals(1, columnNames.size());
+		assertTrue(columnNames.contains("two"));
 	}
 
 	@Test public void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {
