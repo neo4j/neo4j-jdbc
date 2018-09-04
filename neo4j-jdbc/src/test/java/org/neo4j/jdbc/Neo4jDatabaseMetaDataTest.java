@@ -197,4 +197,5 @@ public class Neo4jDatabaseMetaDataTest {
 		assertEquals(1,schemas.getMetaData().getColumnCount());
 		assertEquals("TABLE_CAT",schemas.getMetaData().getColumnName(1));
 	}
+
 }
