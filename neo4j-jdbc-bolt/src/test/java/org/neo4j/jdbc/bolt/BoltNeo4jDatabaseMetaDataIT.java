@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -211,5 +212,21 @@ public class BoltNeo4jDatabaseMetaDataIT {
 	@Test public void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {
 		connection.setAutoCommit(false);
 		connection.getMetaData();
+	}
+
+
+	@Test public void getSystemFunctions() throws SQLException, NoSuchFieldException, IllegalAccessException {
+		String systemFunctions = connection.getMetaData().getSystemFunctions();
+
+		assertNotNull(systemFunctions);
+		String[] split = systemFunctions.split(",");
+		List<String> functionsList = Arrays.asList(split);
+
+		assertTrue(functionsList.contains("date"));
+		assertTrue(functionsList.contains("date.truncate"));
+		assertTrue(functionsList.contains("time"));
+		assertTrue(functionsList.contains("time.truncate"));
+		assertTrue(functionsList.contains("duration"));
+		assertTrue(functionsList.contains("duration.between"));
 	}
 }

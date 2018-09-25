@@ -32,6 +32,8 @@ import java.lang.reflect.Proxy;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +51,8 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	 */
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jDatabaseMetaData.class.getCanonicalName());
 
+	private List<String> functions;
+
 	public BoltNeo4jDatabaseMetaData(BoltNeo4jConnectionImpl connection) {
 		super(connection);
 
@@ -60,6 +64,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 				getDatabaseVersion(session);
 				getDatabaseLabels(session);
 				getDatabaseProperties(session);
+				functions = callDbmsFunctions(session);
 				conn.close();
 			} catch (SQLException e) {
 				LOGGER.log(Level.SEVERE, e.getMessage(), e);
@@ -116,6 +121,35 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Retrieve the functions of the database through CALL
+	 * If not supported: empty string
+	 * @param session
+	 * @return
+	 */
+	private List<String> callDbmsFunctions(Session session){
+		List<String> functions = new ArrayList<>();
+		try{
+			StatementResult rs = session.run("CALL dbms.functions() " +
+					"YIELD name, signature\n" +
+					"RETURN name \n" +
+					"ORDER BY name ASC");
+			while (rs != null && rs.hasNext()) {
+				Record record = rs.next();
+				functions.add(record.get("name").asString());
+			}
+
+			return functions;
+		}catch(Exception e){
+			return Collections.EMPTY_LIST;
+		}
+	}
+
+	@Override
+	public String getSystemFunctions() throws SQLException {
+		return String.join(",",functions);
 	}
 }
 
