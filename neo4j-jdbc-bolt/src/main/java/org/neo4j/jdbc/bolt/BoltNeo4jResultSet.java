@@ -251,7 +251,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		} else if (value instanceof IntegerValue) {
 			result += Long.toString(((IntegerValue) value).asLong());
 		} else if (value instanceof FloatValue) {
-			result += Float.toString(((FloatValue) value).asFloat());
+			result += Double.toString(((FloatValue) value).asDouble());
 		} else if (value instanceof BooleanValue) {
 			result += Boolean.toString(((BooleanValue) value).asBoolean());
 		} else if (value instanceof ListValue) {

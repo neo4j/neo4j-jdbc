@@ -35,7 +35,6 @@ import org.neo4j.driver.v1.types.Entity;
 import org.neo4j.driver.v1.types.Node;
 import org.neo4j.driver.v1.types.Path;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static java.util.Arrays.asList;
@@ -118,7 +117,7 @@ public class ResultSetData {
 			}
 		}, new HashMap<String, Value>() {
 			{
-				this.put("property", new FloatValue(1.6f));
+				this.put("property", new FloatValue(1.6));
 			}
 		}) });
 
@@ -133,7 +132,7 @@ public class ResultSetData {
 
 		RECORD_LIST_MORE_ELEMENTS_RELATIONS.add(new Object[] { new InternalRelationship(2, 3, 4, "type2", new HashMap<String, Value>() {
 			{
-				this.put("property", new FloatValue(2.6f));
+				this.put("property", new FloatValue(2.6));
 			}
 		}) });
 
