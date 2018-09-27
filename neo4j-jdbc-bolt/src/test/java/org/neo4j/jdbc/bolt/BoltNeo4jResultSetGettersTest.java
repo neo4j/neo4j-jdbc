@@ -19,11 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.internal.InternalNode;
-import org.neo4j.jdbc.Neo4jConnection;
-import org.neo4j.jdbc.Neo4jResultSet;
-import org.neo4j.jdbc.Neo4jStatement;
-import org.neo4j.jdbc.bolt.data.ResultSetData;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,13 +26,16 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.jdbc.Neo4jConnection;
+import org.neo4j.jdbc.Neo4jResultSet;
+import org.neo4j.jdbc.Neo4jStatement;
+import org.neo4j.jdbc.bolt.data.ResultSetData;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.spy;
 
 /**
  * @author AgileLARUS
@@ -741,7 +739,7 @@ public class BoltNeo4jResultSetGettersTest {
 			{
 				this.put("_id", 2L);
 				this.put("_labels", Collections.singletonList("label"));
-				this.put("property", (double) 1.6F);
+				this.put("property", 1.6);
 			}
 		}, resultSet.getObject(1));
 	}
@@ -768,7 +766,7 @@ public class BoltNeo4jResultSetGettersTest {
 			{
 				this.put("_id", 2L);
 				this.put("_type", "type2");
-				this.put("property", (double) 2.6F);
+				this.put("property", 2.6);
 				this.put("_startId", 3L);
 				this.put("_endId", 4L);
 			}
