@@ -157,6 +157,28 @@ As most JDBC clients and tools don't support complex objects, the driver can fla
 This is enabled with the JDBC-URL parameter `flatten=<rows>`, where `<rows>` indicates how many rows are sampled to determine those columns.
 With `-1` all rows are sampled and with any other value you determine the number of rows being looked at.
 
+=== Tomcat
+When the JDBC driver is configured as a JNDI resource into Tomcat, you must include these two arguments on `Resource` configuration:
+
+* `removeAbandonedOnBorrow="true"`
+* `closeMethod="close"`
+
+Here's an example:
+
+```
+    <Resource name="jdbc/neo4j"
+              auth="Container"
+              type="javax.sql.DataSource"
+              username="neo4j"
+              password="password"
+              driverClassName="org.neo4j.jdbc.bolt.BoltDriver"
+              url="jdbc:neo4j:bolt://localhost"
+              removeAbandonedOnBorrow="true"
+              closeMethod="close"
+              />
+```
+
+
 === Building the driver yourself
 
 First clone https://github.com/neo4j-contrib/neo4j-jdbc[the repository].
