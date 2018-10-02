@@ -91,7 +91,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 Properties routingContext = getRoutingContext(boltUrl, info);
                 boltUrl = addRoutingPolicy(boltUrl, routingContext);
                 List<URI> routingUris = buildRoutingUris(boltUrl, routingContext);
-                Driver driver = getDriver(routingUris, config, authToken);
+                Driver driver = getDriver(routingUris, config, authToken, info);
                 connection = BoltNeo4jConnectionImpl.newInstance(driver, info, url);
             } catch (Exception e) {
                 throw new SQLException(e);
@@ -100,7 +100,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
         return connection;
     }
 
-    protected abstract Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException;
+    protected abstract Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException;
 
     private AuthToken getAuthToken(Properties properties) {
         if (!properties.containsKey("user") ) {

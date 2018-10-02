@@ -94,6 +94,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 
 	/**
 	 * Build an internal neo4j session, without saving reference (stateless)
+	 * Close using {@link #closeSession(Session)} for driver management
 	 * @return
 	 */
 	public Session newNeo4jSession(){
@@ -237,6 +238,17 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
             }
 		} catch (Exception e) {
 			throw new SQLException("A database access error has occurred: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * If has used {@link #newNeo4jSession()}
+	 * @param session
+	 */
+	public void closeSession(Session session){
+		if (session != null) {
+			session.close();
+			this.driver.close();
 		}
 	}
 
