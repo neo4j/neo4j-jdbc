@@ -49,6 +49,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	private Session session;
 	private Transaction transaction;
 	private boolean autoCommit = true;
+	private BoltNeo4jDatabaseMetaData metadata;
 
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jConnectionImpl.class.getName());
 
@@ -91,8 +92,25 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		return this.session;
 	}
 
+	/**
+	 * Build an internal neo4j session, without saving reference (stateless)
+	 * @return
+	 */
+	public Session newNeo4jSession(){
+		try {
+			String bookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+			return this.driver.session(getReadOnly() ? AccessMode.READ : AccessMode.WRITE, bookmark);
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Override public Neo4jDatabaseMetaData getMetaData() throws SQLException {
-		return new BoltNeo4jDatabaseMetaData(this);
+		if(metadata == null){
+			metadata = new BoltNeo4jDatabaseMetaData(this);
+		}
+		return metadata;
 	}
 
     @Override public void setReadOnly(boolean readOnly) throws SQLException {
@@ -206,10 +224,10 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	@Override public void close() throws SQLException {
 		try {
 			if (!this.isClosed()) {
-                if (this.transaction != null) {
-                    this.transaction.close();
-                    this.transaction = null;
-                }
+				if (this.transaction != null) {
+					this.transaction.close();
+					this.transaction = null;
+				}
                 if (this.session != null) {
                     this.session.close();
                     this.session = null;
@@ -266,13 +284,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 * This way we point to the right cluster instance (core vs read replica).
 	 */
 	private void initSession() {
-        try {
-            String bookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
-            this.session = this.driver.session(getReadOnly() ? AccessMode.READ : AccessMode.WRITE, bookmark);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+		this.session = newNeo4jSession();
     }
 
     private void initTransaction()  {

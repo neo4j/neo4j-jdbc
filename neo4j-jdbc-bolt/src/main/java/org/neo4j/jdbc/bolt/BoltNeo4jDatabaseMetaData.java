@@ -30,7 +30,6 @@ import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
 import java.lang.reflect.Proxy;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,15 +57,12 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 
 		// compute database metadata: version, tables == labels, columns = properties (by label)
 		if (connection != null) {
-			try {
-				BoltNeo4jConnection conn = (BoltNeo4jConnection) DriverManager.getConnection(connection.getUrl(), connection.getProperties());
-				Session session = conn.getSession();
+			try (Session session = connection.newNeo4jSession()){
 				getDatabaseVersion(session);
 				getDatabaseLabels(session);
 				getDatabaseProperties(session);
 				functions = callDbmsFunctions(session);
-				conn.close();
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, e.getMessage(), e);
 			}
 		}
