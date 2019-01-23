@@ -44,6 +44,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
+import static org.neo4j.jdbc.utils.SanitizeUtils.quote;
+import static org.neo4j.jdbc.utils.SanitizeUtils.sanitizePropertyName;
+
 /**
  * @author AgileLARUS
  * @since 3.0.0
@@ -59,6 +62,8 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	private boolean flattened = false;
 
 	private static final List<String> ACCEPTED_TYPES_FOR_FLATTENING = Arrays.asList("NODE", "RELATIONSHIP");
+
+	private static final String FLATTEN_KEY_TEMPLATE = "%s.%s";
 
 	private int flatten;
 
@@ -143,11 +148,17 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 			classes.add(InternalTypeSystem.TYPE_SYSTEM.LIST());
 		}
 		for (String key : node.keys()) {
-			if (keys.indexOf(nodeKey + "." + key) == -1) {
-				keys.add(nodeKey + "." + key);
+			String newKey = parsePropertyKey(nodeKey, key);
+			if (keys.indexOf(newKey) == -1) {
+				keys.add(newKey);
 				classes.add(node.get(key).type());
 			}
 		}
+	}
+
+	private String parsePropertyKey(String nodeKey, String key) {
+		String quoted = quote(key);
+		return String.format(FLATTEN_KEY_TEMPLATE, nodeKey, quoted);
 	}
 
 	private void flattenRelationship(Relationship rel, String relationshipKey) {
@@ -158,8 +169,9 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 			classes.add(InternalTypeSystem.TYPE_SYSTEM.STRING());
 		}
 		for (String key : rel.keys()) {
-			if (keys.indexOf(relationshipKey + "." + key) == -1) {
-				keys.add(relationshipKey + "." + key);
+			String newKey = parsePropertyKey(relationshipKey, key);
+			if (keys.indexOf(newKey) == -1) {
+				keys.add(newKey);
 				classes.add(rel.get(key).type());
 			}
 		}
@@ -354,7 +366,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 				value = new StringValue(this.current.get(key).asRelationship().type());
 			} else {
 				//Property requested
-				value = this.current.get(key).get(property);
+				value = this.current.get(key).get(sanitizePropertyName(property));
 			}
 		} catch (Exception e) {
 			throw new SQLException(COLUMN_NOT_PRESENT, e);

@@ -83,4 +83,14 @@ public class Neo4jPreparedStatementBuilderTest {
 		String raw = "MATCH n RETURN n WHERE param = {2} AND paramString = \"string{3}\"\n" + "AND param2 = {1}";
 		assertEquals(2, PreparedStatementBuilder.namedParameterCount(raw));
 	}
+
+	@Test public void replacePlaceholderWithBacktickShouldReplaceQuestionMarksMultiline() {
+		String raw = "MATCH (n:`My Label`) RETURN same WHERE `there Is APlaceholder` = ? \nAND `new Line Par` = ?";
+		assertEquals("MATCH (n:`My Label`) RETURN same WHERE `there Is APlaceholder` = {1} \nAND `new Line Par` = {2}", replacePlaceholders(raw));
+	}
+
+	@Test public void placeholdersCountShouldCountCorrectlyWithBacktickIfOneLine() {
+		String raw = "MATCH (n:`My Label`) RETURN n WHERE `param name` = {1}";
+		assertEquals(1, PreparedStatementBuilder.namedParameterCount(raw));
+	}
 }
