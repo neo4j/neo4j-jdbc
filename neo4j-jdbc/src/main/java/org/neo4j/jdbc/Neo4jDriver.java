@@ -66,7 +66,7 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 	}
 
 	@Override public int getMinorVersion() {
-		return 2;
+		return 4;
 	}
 
 	@Override public boolean jdbcCompliant() {
