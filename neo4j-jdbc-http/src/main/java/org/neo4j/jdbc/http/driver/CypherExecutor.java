@@ -21,18 +21,25 @@ package org.neo4j.jdbc.http.driver;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.Header;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.*;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -87,6 +94,24 @@ public class CypherExecutor {
 		mapper.configure(DeserializationFeature.USE_LONG_FOR_INTS, true);
 	}
 
+	private class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
+		public void process(final HttpRequest request, final HttpContext context) throws HttpException {
+			AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
+
+			// If no auth scheme available yet, try to initialize it
+			// preemptively
+			if (authState.getAuthScheme() == null) {
+				CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(HttpClientContext.CREDS_PROVIDER);
+				HttpHost targetHost = (HttpHost) context.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
+				Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+				if (creds == null) {
+					throw new HttpException("No credentials for preemptive authentication");
+				}
+				authState.update(new BasicScheme(), creds);
+			}
+		}
+	}
+
 	/**
 	 * Default constructor.
 	 *
@@ -104,8 +129,10 @@ public class CypherExecutor {
 
 		// Adding authentication to the http client if needed
 		CredentialsProvider credentialsProvider = getCredentialsProvider(host, port, properties);
-		if (credentialsProvider != null)
+		if (credentialsProvider != null) {
 			builder.setDefaultCredentialsProvider(credentialsProvider);
+			builder.addInterceptorFirst(new PreemptiveAuthInterceptor());
+		}
 
 		// Setting user-agent
 		String userAgent = properties.getProperty("useragent");
