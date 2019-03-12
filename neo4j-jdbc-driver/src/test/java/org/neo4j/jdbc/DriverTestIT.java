@@ -47,18 +47,18 @@ public class DriverTestIT {
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:http://localhost:7474", new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:http://localhost:" + neo4j.httpURI().getPort(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 	@Test public void shouldReturnAHttpConnection2() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:http:localhost:7474", new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:http:localhost:" + neo4j.httpURI().getPort(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 
 	@Test public void shouldReturnAHttpsConnection() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:https://localhost", new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.httpsURI(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 

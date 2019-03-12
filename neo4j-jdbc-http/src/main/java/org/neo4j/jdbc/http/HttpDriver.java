@@ -34,7 +34,7 @@ import java.util.Properties;
  */
 public class HttpDriver extends Neo4jDriver {
 
-	public static final String JDBC_HTTP_PREFIX = "http(s)*";
+	public static final String JDBC_HTTP_PREFIX = "http[s]?";
 
 	static {
 		try {
