@@ -184,7 +184,7 @@ public class BoltNeo4jResultSetIT {
 		String json = rs.getString("x");
 		assertTrue(json.startsWith("{"));
 		assertTrue(json.endsWith("}"));
-		assertTrue(json.contains("\"labels\":[\"Test\"]"));
+		assertTrue(json.contains("\"_labels\":[\"Test\"]"));
 		assertTrue(json.contains("\"floatn\":1.123"));
 		assertTrue(json.contains("\"intn\":1"));
 
@@ -219,7 +219,7 @@ public class BoltNeo4jResultSetIT {
 		String json = rs.getString("r");
 		assertTrue(json.startsWith("{"));
 		assertTrue(json.endsWith("}"));
-		assertTrue(json.contains("\"type\":\"Rel\""));
+		assertTrue(json.contains("\"_type\":\"Rel\""));
 		assertTrue(json.contains("\"floatn\":1.123"));
 		assertTrue(json.contains("\"intn\":1"));
 

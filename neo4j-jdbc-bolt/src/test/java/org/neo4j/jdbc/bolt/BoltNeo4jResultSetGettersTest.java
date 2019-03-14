@@ -205,10 +205,22 @@ public class BoltNeo4jResultSetGettersTest {
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
 
 		resultSet.next();
-		assertEquals("{\"id\":1, \"labels\":[\"label1\", \"label2\"], \"property2\":1, \"property1\":\"value1\"}", resultSet.getString("node"));
+		assertEquals("{\"_id\":1, \"_labels\":[\"label1\", \"label2\"], \"property2\":1, \"property1\":\"value1\"}", resultSet.getString("node"));
 
 		resultSet.next();
-		assertEquals("{\"id\":2, \"labels\":[\"label\"], \"property\":1.6}", resultSet.getString(1));
+		assertEquals("{\"_id\":2, \"_labels\":[\"label\"], \"property\":1.6}", resultSet.getString(1));
+	}
+
+	@Test public void getObjectShouldReturnStringOnNode() throws SQLException {
+		StatementResult statementResult = ResultSetData
+				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+
+		resultSet.next();
+		assertEquals("{\"_id\":1, \"_labels\":[\"label1\", \"label2\"], \"property2\":1, \"property1\":\"value1\"}", resultSet.getString("node"));
+
+		resultSet.next();
+		assertEquals("{\"_id\":2, \"_labels\":[\"label\"], \"property\":1.6}", resultSet.getString(1));
 	}
 
 	@Test public void getStringShouldReturnStringOnRelationship() throws SQLException {
@@ -217,10 +229,10 @@ public class BoltNeo4jResultSetGettersTest {
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
 
 		resultSet.next();
-		assertEquals("{\"id\":1, \"type\":\"type1\", \"startId\":1, \"endId\":2, \"property2\":100, \"property1\":\"value\"}", resultSet.getString("relation"));
+		assertEquals("{\"_id\":1, \"_type\":\"type1\", \"_startId\":1, \"_endId\":2, \"property2\":100, \"property1\":\"value\"}", resultSet.getString("relation"));
 
 		resultSet.next();
-		assertEquals("{\"id\":2, \"type\":\"type2\", \"startId\":3, \"endId\":4, \"property\":2.6}", resultSet.getString(1));
+		assertEquals("{\"_id\":2, \"_type\":\"type2\", \"_startId\":3, \"_endId\":4, \"property\":2.6}", resultSet.getString(1));
 	}
 
 	@Test public void getStringShouldReturnStringOnPath() throws SQLException {
@@ -230,12 +242,12 @@ public class BoltNeo4jResultSetGettersTest {
 
 		resultSet.next();
 		assertEquals(
-				"[{\"id\":1, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":3, \"type\":\"type\", \"startId\":1, \"endId\":2, \"relProperty\":\"value3\"}, {\"id\":2, \"labels\":[\"label1\"], \"property\":\"value2\"}]",
+				"[{\"_id\":1, \"_labels\":[\"label1\"], \"property\":\"value\"}, {\"_id\":3, \"_type\":\"type\", \"_startId\":1, \"_endId\":2, \"relProperty\":\"value3\"}, {\"_id\":2, \"_labels\":[\"label1\"], \"property\":\"value2\"}]",
 				resultSet.getString("path"));
 
 		resultSet.next();
 		assertEquals(
-				"[{\"id\":4, \"labels\":[\"label1\"], \"property\":\"value\"}, {\"id\":7, \"type\":\"type\", \"startId\":4, \"endId\":5, \"relProperty\":\"value4\"}, {\"id\":5, \"labels\":[\"label1\"], \"property\":\"value2\"}, {\"id\":8, \"type\":\"type\", \"startId\":6, \"endId\":5, \"relProperty\":\"value5\"}, {\"id\":6, \"labels\":[\"label1\"], \"property\":\"value3\"}]",
+				"[{\"_id\":4, \"_labels\":[\"label1\"], \"property\":\"value\"}, {\"_id\":7, \"_type\":\"type\", \"_startId\":4, \"_endId\":5, \"relProperty\":\"value4\"}, {\"_id\":5, \"_labels\":[\"label1\"], \"property\":\"value2\"}, {\"_id\":8, \"_type\":\"type\", \"_startId\":6, \"_endId\":5, \"relProperty\":\"value5\"}, {\"_id\":6, \"_labels\":[\"label1\"], \"property\":\"value3\"}]",
 				resultSet.getString(1));
 	}
 
@@ -1049,9 +1061,13 @@ public class BoltNeo4jResultSetGettersTest {
 
 		resultSet.next();
 		assertTrue(resultSet.getBoolean("columnBoolean"));
+		assertEquals("true", resultSet.getString("columnBoolean"));
+		assertTrue((Boolean) resultSet.getObject("columnBoolean"));
 
 		resultSet.next();
 		assertFalse(resultSet.getBoolean("columnBoolean"));
+		assertEquals("false", resultSet.getString("columnBoolean"));
+		assertFalse((Boolean) resultSet.getObject("columnBoolean"));
 	}
 
 	@Test public void getBooleanByLabelShouldThrowExceptionNoLabel() throws SQLException {

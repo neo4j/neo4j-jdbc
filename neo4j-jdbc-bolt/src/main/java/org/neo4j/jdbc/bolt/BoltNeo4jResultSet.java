@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.internal.InternalIsoDuration;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
@@ -32,6 +31,7 @@ import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.impl.ListArray;
+import org.neo4j.jdbc.utils.JSONUtils;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.ObjectConverter;
 
@@ -42,6 +42,7 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.neo4j.jdbc.utils.DataConverterUtils.*;
 /**
  * @author AgileLARUS
  * @since 3.0.0
@@ -223,108 +224,8 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 				return value.asString();
 			}
 		} catch (Uncoercible e) {
-			String result = null;
-			if (value instanceof IntegerValue) {
-				result = ((IntegerValue) value).toString();
-			} else if (value instanceof FloatValue) {
-				result = ((FloatValue) value).toString();
-			} else if (value instanceof NodeValue) {
-				result = this.convertNodeToString(value.asNode());
-			} else if (value instanceof RelationshipValue) {
-				result = this.convertRelationshipToString(value.asRelationship());
-			} else if (value instanceof PathValue) {
-				result = this.convertPathToString(value.asPath());
-			}
-			return result;
+			return JSONUtils.writeValueAsString(value.asObject());
 		}
-	}
-
-	@SuppressWarnings("rawtypes") private String convertToJSONProperty(String key, Object value) {
-		String result = key == null ? "" : "\"" + key + "\":";
-
-		if (value instanceof String) {
-			result += "\"" + value + "\"";
-		} else if (value instanceof Number) {
-			result += value;
-		} else if (value instanceof StringValue) {
-			result += "\"" + ((StringValue) value).asString() + "\"";
-		} else if (value instanceof IntegerValue) {
-			result += Long.toString(((IntegerValue) value).asLong());
-		} else if (value instanceof FloatValue) {
-			result += Double.toString(((FloatValue) value).asDouble());
-		} else if (value instanceof BooleanValue) {
-			result += Boolean.toString(((BooleanValue) value).asBoolean());
-		} else if (value instanceof ListValue) {
-			result += "[";
-			result += this.convertToJSONProperty(null, ((ListValue) value).asList());
-			result += "]";
-		} else if (value instanceof List) {
-			String prefix = "";
-			result += "[";
-			for (Object obj : (List) value) {
-				result += prefix + this.convertToJSONProperty(null, obj);
-				prefix = ", ";
-			}
-			result += "]";
-		} else if (value instanceof Iterable) {
-			String prefix = "";
-			result += "[";
-			for (Object obj : (Iterable) value) {
-				result += prefix + this.convertToJSONProperty(null, obj);
-				prefix = ", ";
-			}
-			result += "]";
-		}
-
-		return result;
-	}
-
-	private String convertNodeToString(Node node) {
-		String result = "{";
-
-		result += this.convertToJSONProperty("id", node.id()) + ", ";
-
-		result += this.convertToJSONProperty("labels", node.labels()) + (node.size() > 0 ? ", " : "");
-
-		String prefix = "";
-		for (String key : node.keys()) {
-			result += prefix + this.convertToJSONProperty(key, node.get(key));
-			prefix = ", ";
-		}
-
-		return result + "}";
-	}
-
-	private String convertRelationshipToString(Relationship rel) {
-		String result = "{";
-
-		result += this.convertToJSONProperty("id", rel.id()) + ", ";
-
-		result += this.convertToJSONProperty("type", rel.type()) + ", ";
-
-		result += this.convertToJSONProperty("startId", rel.startNodeId()) + ", ";
-		result += this.convertToJSONProperty("endId", rel.endNodeId()) + (rel.size() > 0 ? ", " : "");
-
-		String prefix = "";
-		for (String key : rel.keys()) {
-			result += prefix + this.convertToJSONProperty(key, rel.get(key));
-			prefix = ", ";
-		}
-
-		return result + "}";
-	}
-
-	private String convertPathToString(Path path) {
-		String result = "[";
-
-		result += this.convertNodeToString(path.start());
-
-		for (Path.Segment s : path) {
-			result += ", " + this.convertRelationshipToString(s.relationship());
-			result += ", " + this.convertNodeToString(s.end());
-		}
-
-		return result + "]";
 	}
 
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {
@@ -508,170 +409,19 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		return metaData;
 	}
 
-	/**
-	 * It hides the neo4j type with standard Java type (or sql java type)
-	 * @param value
-	 * @return
-	 */
-	private Object convertObject(Object value) {
-		Object converted = value;
-		if (value instanceof Point) {
-			converted = pointToMap((Point) value);
-		}
-		if (value instanceof List) {
-			converted = convertList((List) value);
-		}
-		if (value instanceof ZonedDateTime) {
-			return zonedDateTimeToTimestamp((ZonedDateTime) value);
-		}
-		if (value instanceof LocalDateTime) {
-			return localDateTimeToTimestamp((LocalDateTime) value);
-		}
-		if (value instanceof LocalDate) {
-			return localDateToDate((LocalDate) value);
-		}
-		if (value instanceof OffsetTime){
-			return offsetTimeToTime((OffsetTime) value);
-		}
-		if (value instanceof LocalTime){
-			return localTimeToTime((LocalTime) value);
-		}
-		if (value instanceof InternalIsoDuration){
-			return durationToMap((InternalIsoDuration)value);
-		}
 
-		return converted;
-	}
-
-	/**
-	 * It builds a new List with the items converted into java type
-	 * @param list
-	 * @return
-	 */
-	private List convertList(List list) {
-		List converted = new ArrayList(list.size());
-
-		for (Object o : list) {
-			converted.add(convertObject(o));
-		}
-
-		return converted;
-	}
-
-	/**
-	 * It transforms a Neo4j Point (Spatial) into a java Map
-	 * @param point
-	 * @return
-	 */
-	private Map<String, Object> pointToMap(Point point) {
-		Map<String, Object> map = new HashMap<>();
-		map.put("srid",point.srid());
-		map.put("x", point.x());
-		map.put("y", point.y());
-
-		switch(point.srid()){
-			case 7203:
-				map.put("crs","cartesian");
-				break;
-			case 9157:
-				map.put("crs","cartesian-3d");
-				map.put("z", point.z());
-				break;
-			case 4326:
-				map.put("crs","wgs-84");
-				map.put("longitude", point.x());
-				map.put("latitude", point.y());
-				break;
-			case 4979:
-				map.put("crs","wgs-84-3d");
-				map.put("longitude", point.x());
-				map.put("latitude", point.y());
-				map.put("height",point.z());
-				map.put("z", point.z());
-				break;
-		}
-
-		return map;
-	}
-
-	/**
-	 * It build a new Map with the same keys but with pure java type, instead of Neo4j types
-	 * @param fields
-	 * @return
-	 */
-	private Map<String, Object> convertFields(Map<String, Object> fields){
-		Map<String, Object> converted = new HashMap();
-
-		Set<Map.Entry<String, Object>> entrySet = fields.entrySet();
-
-		for (Map.Entry<String, Object> entry : entrySet) {
-			converted.put(entry.getKey(), convertObject(entry.getValue()));
-		}
-
-		return converted;
-	}
-
-	private Object generateObject(Object obj) {
-		if (obj instanceof Node) {
-			Node node = (Node) obj;
-			Map<String, Object> map = new HashMap<>();
-			map.put("_id", node.id());
-			map.put("_labels", node.labels());
-			map.putAll(convertFields(node.asMap()));
-			return map;
-		}
-		if (obj instanceof Relationship) {
-			Relationship rel = (Relationship) obj;
-			Map<String, Object> map = new HashMap<>(16);
-			map.put("_id", rel.id());
-			map.put("_type", rel.type());
-			map.put("_startId", rel.startNodeId());
-			map.put("_endId", rel.endNodeId());
-			map.putAll(convertFields(rel.asMap()));
-			return map;
-		}
-		if (obj instanceof Path) {
-			Path path = (Path) obj;
-			List<Object> list = new ArrayList<>(path.length());
-			list.add(this.generateObject(path.start()));
-			for (Path.Segment segment : path) {
-				list.add(this.generateObject(segment.relationship()));
-				list.add(this.generateObject(segment.end()));
-			}
-			return list;
-		}
-
-		return convertObject(obj);
-	}
-
-	/**
-	 * Convert a InternalIsoDuration to a Map with the same fields you can get with cypher
-	 * @param obj
-	 * @return
-	 */
-	private Map<String, Object> durationToMap(InternalIsoDuration obj) {
-		Map<String, Object> converted = new HashMap<>(16);
-
-		converted.put("duration", obj.toString());
-		converted.put("months", obj.months());
-		converted.put("days", obj.days());
-		converted.put("seconds", obj.seconds());
-		converted.put("nanoseconds", obj.nanoseconds());
-
-		return converted;
-	}
 
 
 	@Override public Object getObject(int columnIndex) throws SQLException {
 		checkClosed();
 		Object obj = this.fetchValueFromIndex(columnIndex).asObject();
-		return this.generateObject(obj);
+		return convertObject(obj);
 	}
 
 	@Override public Object getObject(String columnLabel) throws SQLException {
 		checkClosed();
 		Object obj = this.fetchValueFromLabel(columnLabel).asObject();
-		return this.generateObject(obj);
+		return convertObject(obj);
 	}
 
 	@Override public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
@@ -691,7 +441,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		return ObjectValueAdapter.class.isAssignableFrom(type);
 	}
 
-	private <T> T getObject (Class<T> type, Callable fetch, Callable getObject) throws Exception {
+	private <T> T getObject(Class<T> type, Callable fetch, Callable getObject) throws Exception {
 		checkClosed();
 		if (type == null) {
 			throw new SQLException("Type to cast cannot be null");
@@ -780,134 +530,6 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 
 	@Override public Statement getStatement() {
 		return statement;
-	}
-
-	/**
-	 * Convert Value to sql.Time
-	 * @param value
-	 * @return
-	 */
-	private Time valueToTime(Value value){
-		return valueToTime(value, Calendar.getInstance());
-	}
-
-	/**
-	 * Convert Value to sql.Time with timezone
-	 * @param value
-	 * @return
-	 */
-	private Time valueToTime(Value value, Calendar cal){
-		if (value.isNull()){
-			return null;
-		}
-
-		if (value instanceof TimeValue){
-			ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(cal.get(Calendar.ZONE_OFFSET) / 1000);
-			TimeValue timeValue = (TimeValue) value;
-			OffsetTime offsetTime = timeValue.asOffsetTime().withOffsetSameInstant(zoneOffset);
-			return offsetTimeToTime(offsetTime);
-		}
-
-		if (value instanceof LocalTimeValue){
-			return localTimeToTime(((LocalTimeValue)value).asLocalTime());
-		}
-
-		return null;
-	}
-
-	/**
-	 * Convert LocalTime to sql.Time
-	 * @param localTime
-	 * @return
-	 */
-	private Time localTimeToTime(LocalTime localTime) {
-		Time time = Time.valueOf(localTime);
-		time.setTime(time.getTime()+localTime.getNano() / 1000_000L);
-		return time;
-	}
-
-	/**
-	 * Convert OffsetTime to sql.Time
-	 * @param offsetTime
-	 * @return
-	 */
-	private Time offsetTimeToTime(OffsetTime offsetTime) {
-		return localTimeToTime(offsetTime.toLocalTime());
-	}
-
-
-	/**
-	 * Convert Value to sql.Date
-	 * @param value
-	 * @return
-	 */
-	private Date valueToDate(Value value){
-		if (value.isNull()){
-			return null;
-		}
-
-		if (value instanceof DateValue){
-			return localDateToDate(((DateValue)value).asLocalDate());
-		}
-
-		return null;
-	}
-
-	/**
-	 * Convert a LocalDate to sql.Date
-	 * @param localDate
-	 * @return
-	 */
-	private Date localDateToDate(LocalDate localDate) {
-		return Date.valueOf(localDate);
-	}
-
-	/**
-	 * Convert Value to Timestamp with system timezone
-	 * @param value
-	 * @return
-	 */
-	private Timestamp valueToTimestamp(Value value){
-		return valueToTimestamp(value, ZoneId.systemDefault() );
-	}
-
-	/**
-	 * Convert Value to Timestamp with timezone
-	 * @param value
-	 * @return
-	 */
-	private Timestamp valueToTimestamp(Value value, ZoneId zone) {
-		if (value.isNull()){
-			return null;
-		}
-
-		if (value instanceof DateTimeValue){
-			return zonedDateTimeToTimestamp(value.asZonedDateTime().withZoneSameInstant(zone));
-		}
-
-		if (value instanceof LocalDateTimeValue){
-			return localDateTimeToTimestamp(value.asLocalDateTime());
-		}
-
-		return null;
-	}
-
-	/**
-	 * Convert a LocalDataTime to sql.Timestamp
-	 * @param ldt
-	 * @return
-	 */
-	private Timestamp localDateTimeToTimestamp(LocalDateTime ldt) {
-		return Timestamp.valueOf(ldt);
-	}
-
-	/**
-	 * Convert a ZonedDateTime to sql.Timestamp
-	 * @param zdt
-	 * @return
-	 */
-	private Timestamp zonedDateTimeToTimestamp(ZonedDateTime zdt){
-		return new Timestamp(zdt.toInstant().toEpochMilli());
 	}
 
 	@Override public Timestamp getTimestamp(int columnIndex) throws SQLException {
