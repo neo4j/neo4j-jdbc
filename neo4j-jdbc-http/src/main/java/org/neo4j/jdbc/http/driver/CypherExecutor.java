@@ -21,28 +21,32 @@ package org.neo4j.jdbc.http.driver;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.Header;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.*;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
+import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Execute cypher queries.
@@ -87,6 +91,23 @@ public class CypherExecutor {
 		mapper.configure(DeserializationFeature.USE_LONG_FOR_INTS, true);
 	}
 
+	private class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
+		public void process(final HttpRequest request, final HttpContext context) throws HttpException {
+			AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
+
+			// If no auth scheme available yet, try to initialize it preemptively
+			if (authState.getAuthScheme() == null) {
+				CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(HttpClientContext.CREDS_PROVIDER);
+				HttpHost targetHost = (HttpHost) context.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
+				Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+				if (creds == null) {
+					throw new HttpException("No credentials for preemptive authentication");
+				}
+				authState.update(new BasicScheme(), creds);
+			}
+		}
+	}
+
 	/**
 	 * Default constructor.
 	 *
@@ -102,14 +123,25 @@ public class CypherExecutor {
 		// Create the http client builder
 		HttpClientBuilder builder = HttpClients.custom();
 
-		// Adding authentication to the http client if needed
-		CredentialsProvider credentialsProvider = getCredentialsProvider(host, port, properties);
-		if (credentialsProvider != null)
-			builder.setDefaultCredentialsProvider(credentialsProvider);
-
 		// Setting user-agent
 		String userAgent = properties.getProperty("useragent");
-		builder.setUserAgent("Neo4j JDBC Driver" + (userAgent != null ? " via "+userAgent : ""));
+		builder.setUserAgent(getUserAgent(userAgent));
+
+		// Adding authentication to the http client if needed
+		try {
+			if (isAuthenticationRequired(host, port, secure, properties)) {
+				CredentialsProvider credentialsProvider = getCredentialsProvider(host, port, properties);
+				if (credentialsProvider == null) {
+					throw new SQLException("Authentication required");
+				}
+				builder.setDefaultCredentialsProvider(credentialsProvider);
+				builder.addInterceptorFirst(new PreemptiveAuthInterceptor());
+			}
+		} catch (SQLException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new SQLException(e.getMessage());
+		}
 		// Create the http client
 		this.http = builder.build();
 
@@ -118,6 +150,24 @@ public class CypherExecutor {
 
 		// Setting autocommit
 		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autoCommit", "true")));
+	}
+
+	public String getUserAgent(String userAgent) {
+		return "Neo4j JDBC Driver" + (userAgent != null ? " via "+userAgent : "");
+	}
+
+	public boolean isAuthenticationRequired(String host, Integer port, Boolean secure, Properties properties) throws Exception {
+		HttpUriRequest request = RequestBuilder.head()
+				.setUri(new URL(secure ? "https" : "http", host, port, "/db/data/").toURI())
+				.build();
+		try (CloseableHttpClient minimalHttp = HttpClients
+				.custom()
+				.disableAutomaticRetries()
+				.setUserAgent(getUserAgent(properties.getProperty("useragent")))
+				.build()) {
+			HttpResponse response = minimalHttp.execute(request);
+			return response.getStatusLine().getStatusCode() == 401;
+		}
 	}
 
 	private String createTransactionUrl(String host, Integer port, Boolean secure) throws SQLException {

@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.http.driver;
 
+import org.junit.Assert;
 import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -26,9 +27,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -132,6 +131,29 @@ public class CypherExecutorIT extends Neo4jHttpITUtil {
 
 		response = executor.executeQuery(new Neo4jStatement("MATCH (n) RETURN n", null, Boolean.FALSE));
 		assertNull(response.getLocation());
+	}
+
+
+	@Test public void getTransactionIdShouldReturnCorrectId() {
+		Random idGenerator = new Random();
+		for (Integer i = 1; i < 100; i++) {
+			Integer id = idGenerator.nextInt();
+			Integer returnId = executor.getTransactionId(executor.transactionUrl + "/" + id);
+			Assert.assertEquals(id, returnId);
+		}
+	}
+
+	@Test public void getTransactionIdShouldReturnNegativeId() {
+		List<String> urls = Arrays.asList("", "http://localhost1234:1234/db/data", executor.transactionUrl, executor.transactionUrl + "/commit");
+		for (String url : urls) {
+			Integer returnId = executor.getTransactionId(url);
+			Assert.assertTrue(returnId < 0);
+		}
+	}
+
+	@Test public void executeEmptyQueryShouldFail() throws Exception {
+		expectedEx.expect(SQLException.class);
+		executor.executeQuery(new Neo4jStatement("", null, null));
 	}
 
 	@After public void after() throws SQLException {
