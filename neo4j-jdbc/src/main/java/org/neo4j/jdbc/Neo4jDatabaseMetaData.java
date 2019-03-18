@@ -422,7 +422,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	@Override public boolean nullsAreSortedAtStart() throws SQLException {
 		return false;
 	}
-	
+
 	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
 		return false;
 	}
@@ -432,119 +432,119 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	/*---------------------------------*/
 
 	@Override public boolean usesLocalFiles() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean usesLocalFilePerTable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public String getSystemFunctions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return "";
 	}
 
 	@Override public boolean supportsAlterTableWithAddColumn() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsAlterTableWithDropColumn() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsColumnAliasing() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean nullPlusNonNullIsNull() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsConvert() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsConvert(int fromType, int toType) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsTableCorrelationNames() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsExpressionsInOrderBy() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsOrderByUnrelated() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsGroupBy() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsGroupByUnrelated() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsGroupByBeyondSelect() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsLikeEscapeClause() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsMultipleTransactions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsNonNullableColumns() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsMinimumSQLGrammar() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsCoreSQLGrammar() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsExtendedSQLGrammar() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsANSI92IntermediateSQL() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsANSI92FullSQL() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsOuterJoins() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsFullOuterJoins() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsLimitedOuterJoins() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public String getSchemaTerm() throws SQLException {
@@ -552,7 +552,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public String getProcedureTerm() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return "";
 	}
 
 	@Override public boolean isCatalogAtStart() throws SQLException {
@@ -580,55 +580,55 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsPositionedDelete() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsPositionedUpdate() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSubqueriesInComparisons() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSubqueriesInExists() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSubqueriesInIns() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsCorrelatedSubqueries() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsUnion() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsUnionAll() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public int getMaxBinaryLiteralLength() throws SQLException {
@@ -688,7 +688,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public int getMaxStatementLength() throws SQLException {
@@ -708,61 +708,61 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
 			throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema,
 			String foreignTable) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getTypeInfo() throws SQLException {
@@ -770,7 +770,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public boolean supportsResultSetType(int type) throws SQLException {
@@ -778,51 +778,51 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean ownUpdatesAreVisible(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean ownDeletesAreVisible(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean ownInsertsAreVisible(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean othersUpdatesAreVisible(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean othersDeletesAreVisible(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean othersInsertsAreVisible(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean updatesAreDetected(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean deletesAreDetected(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean insertsAreDetected(int type) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsBatchUpdates() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public boolean supportsSavepoints() throws SQLException {
@@ -830,31 +830,31 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsNamedParameters() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsMultipleOpenResults() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsGetGeneratedKeys() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public int getResultSetHoldability() throws SQLException {
@@ -866,11 +866,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean locatorsUpdateCopy() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean supportsStatementPooling() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public RowIdLifetime getRowIdLifetime() throws SQLException {
@@ -878,36 +878,36 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public ResultSet getClientInfoProperties() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)
 			throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public boolean generatedKeyAlwaysReturned() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 }
