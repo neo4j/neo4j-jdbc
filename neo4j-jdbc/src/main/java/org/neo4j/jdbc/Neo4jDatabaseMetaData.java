@@ -26,9 +26,7 @@ import org.neo4j.jdbc.utils.ExceptionBuilder;
 import org.neo4j.jdbc.utils.Neo4jJdbcRuntimeException;
 
 import java.io.InputStream;
-import java.sql.ResultSet;
-import java.sql.RowIdLifetime;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
