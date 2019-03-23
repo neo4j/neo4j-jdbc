@@ -372,7 +372,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
@@ -384,7 +384,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean supportsSelectForUpdate() throws SQLException {
@@ -412,11 +412,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 	
 	@Override public boolean nullsAreSortedHigh() throws SQLException {
-		return true;
+		return false;
 	}
 	
 	@Override public boolean nullsAreSortedLow() throws SQLException {
-		return false;
+		return true;
 	}
 	
 	@Override public boolean nullsAreSortedAtStart() throws SQLException {
@@ -424,7 +424,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
-		return false;
+		return true;
 	}
 	
 	/*---------------------------------*/
@@ -452,11 +452,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsColumnAliasing() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean nullPlusNonNullIsNull() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean supportsConvert() throws SQLException {
@@ -476,7 +476,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsExpressionsInOrderBy() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean supportsOrderByUnrelated() throws SQLException {
@@ -552,7 +552,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public String getProcedureTerm() throws SQLException {
-		return "";
+		return "procedure";
 	}
 
 	@Override public boolean isCatalogAtStart() throws SQLException {
@@ -608,11 +608,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsUnion() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean supportsUnionAll() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
@@ -632,15 +632,15 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public int getMaxBinaryLiteralLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxCharLiteralLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxColumnNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxColumnsInGroupBy() throws SQLException {
@@ -648,43 +648,43 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public int getMaxColumnsInIndex() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxColumnsInOrderBy() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxColumnsInSelect() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxColumnsInTable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxCursorNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxIndexLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxSchemaNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxProcedureNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxCatalogNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxRowSize() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
@@ -692,23 +692,23 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public int getMaxStatementLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxTableNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxTablesInSelect() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxUserNameLength() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-		return false;
+		return level == Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
@@ -716,7 +716,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
@@ -727,50 +727,53 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		return false;
 	}
 
+	private ResultSet emptyResultSet() {
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+	}
 	@Override public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
 			throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema,
 			String foreignTable) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getTypeInfo() throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public boolean supportsResultSetType(int type) throws SQLException {
@@ -782,15 +785,15 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean ownUpdatesAreVisible(int type) throws SQLException {
-		return false;
+		return type == ResultSet.TYPE_FORWARD_ONLY;
 	}
 
 	@Override public boolean ownDeletesAreVisible(int type) throws SQLException {
-		return false;
+		return type == ResultSet.TYPE_FORWARD_ONLY;
 	}
 
 	@Override public boolean ownInsertsAreVisible(int type) throws SQLException {
-		return false;
+		return type == ResultSet.TYPE_FORWARD_ONLY;
 	}
 
 	@Override public boolean othersUpdatesAreVisible(int type) throws SQLException {
@@ -818,11 +821,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public boolean supportsBatchUpdates() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public boolean supportsSavepoints() throws SQLException {
@@ -842,15 +845,15 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public boolean supportsResultSetHoldability(int holdability) throws SQLException {
@@ -858,11 +861,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public int getResultSetHoldability() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override public int getSQLStateType() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return -1;
 	}
 
 	@Override public boolean locatorsUpdateCopy() throws SQLException {
@@ -874,15 +877,15 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public RowIdLifetime getRowIdLifetime() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return DatabaseMetaData.ROWID_UNSUPPORTED;
 	}
 
 	@Override public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
@@ -890,20 +893,20 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public ResultSet getClientInfoProperties() throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)
 			throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return emptyResultSet();
 	}
 
 	@Override public boolean generatedKeyAlwaysReturned() throws SQLException {
