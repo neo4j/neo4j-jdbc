@@ -875,7 +875,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public RowIdLifetime getRowIdLifetime() throws SQLException {
-		return DatabaseMetaData.ROWID_UNSUPPORTED;
+		return RowIdLifetime.ROWID_UNSUPPORTED;
 	}
 
 	@Override public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
