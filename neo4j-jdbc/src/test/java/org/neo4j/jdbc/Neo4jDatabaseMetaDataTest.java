@@ -146,7 +146,7 @@ public class Neo4jDatabaseMetaDataTest {
 
 	@Test public void storesMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.storesMixedCaseQuotedIdentifiers());
+		assertTrue(databaseMetaData.storesMixedCaseQuotedIdentifiers());
 	}
 
 	@Test public void supportsMixedCaseIdentifiersShouldBeReturnTrue() throws SQLException {
@@ -156,7 +156,7 @@ public class Neo4jDatabaseMetaDataTest {
 
 	@Test public void supportsMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsMixedCaseQuotedIdentifiers());
+		assertTrue(databaseMetaData.supportsMixedCaseQuotedIdentifiers());
 	}
 
 	@Test public void supportsResultSetType_TYPE_FORWARD_ONLY_true() throws SQLException {
@@ -230,13 +230,13 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void supportsColumnAliasing() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsColumnAliasing());
+		assertTrue(databaseMetaData.supportsColumnAliasing());
 	}
 
 	@Test
 	public void nullPlusNonNullIsNull() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.nullPlusNonNullIsNull());
+		assertTrue(databaseMetaData.nullPlusNonNullIsNull());
 	}
 
 	@Test
@@ -254,7 +254,7 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void supportsExpressionsInOrderBy() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsExpressionsInOrderBy());
+		assertTrue(databaseMetaData.supportsExpressionsInOrderBy());
 	}
 
 	@Test
@@ -362,7 +362,7 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void getProcedureTerm() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertEquals("", databaseMetaData.getProcedureTerm());
+		assertEquals("procedure", databaseMetaData.getProcedureTerm());
 	}
 
 	@Test
@@ -416,13 +416,13 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void supportsUnion() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsUnion());
+		assertTrue(databaseMetaData.supportsUnion());
 	}
 
 	@Test
 	public void supportsUnionAll() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsUnionAll());
+		assertTrue(databaseMetaData.supportsUnionAll());
 	}
 
 	@Test
@@ -470,7 +470,7 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void supportsDataManipulationTransactionsOnly() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsDataManipulationTransactionsOnly());
+		assertTrue(databaseMetaData.supportsDataManipulationTransactionsOnly());
 	}
 
 	@Test
@@ -548,7 +548,7 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void supportsBatchUpdates() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsBatchUpdates());
+		assertTrue(databaseMetaData.supportsBatchUpdates());
 	}
 
 	@Test
@@ -596,7 +596,7 @@ public class Neo4jDatabaseMetaDataTest {
 	@Test
 	public void supportsStoredFunctionsUsingCallSyntax() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsStoredFunctionsUsingCallSyntax());
+		assertTrue(databaseMetaData.supportsStoredFunctionsUsingCallSyntax());
 	}
 
 	@Test
