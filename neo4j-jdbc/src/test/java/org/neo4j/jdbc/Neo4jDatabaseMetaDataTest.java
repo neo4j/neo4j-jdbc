@@ -28,9 +28,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 /**
  * @author AgileLARUS
@@ -39,6 +37,7 @@ import static org.mockito.Mockito.withSettings;
 public class Neo4jDatabaseMetaDataTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
+
 
 	/*------------------------------*/
 	/*         isWrapperFor         */
@@ -147,7 +146,7 @@ public class Neo4jDatabaseMetaDataTest {
 
 	@Test public void storesMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.storesMixedCaseQuotedIdentifiers());
+		assertTrue(databaseMetaData.storesMixedCaseQuotedIdentifiers());
 	}
 
 	@Test public void supportsMixedCaseIdentifiersShouldBeReturnTrue() throws SQLException {
@@ -157,7 +156,7 @@ public class Neo4jDatabaseMetaDataTest {
 
 	@Test public void supportsMixedCaseQuotedIdentifiersShouldBeReturnFalse() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.supportsMixedCaseQuotedIdentifiers());
+		assertTrue(databaseMetaData.supportsMixedCaseQuotedIdentifiers());
 	}
 
 	@Test public void supportsResultSetType_TYPE_FORWARD_ONLY_true() throws SQLException {
@@ -198,4 +197,519 @@ public class Neo4jDatabaseMetaDataTest {
 		assertEquals("TABLE_CAT",schemas.getMetaData().getColumnName(1));
 	}
 
+	@Test
+	public void usesLocalFiles() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.usesLocalFiles());
+	}
+
+	@Test
+	public void usesLocalFilePerTable() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.usesLocalFilePerTable());
+	}
+
+	@Test
+	public void getSystemFunctions() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertEquals("", databaseMetaData.getSystemFunctions());
+	}
+
+	@Test
+	public void supportsAlterTableWithAddColumn() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsAlterTableWithAddColumn());
+	}
+
+	@Test
+	public void supportsAlterTableWithDropColumn() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsAlterTableWithDropColumn());
+	}
+
+	@Test
+	public void supportsColumnAliasing() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsColumnAliasing());
+	}
+
+	@Test
+	public void nullPlusNonNullIsNull() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.nullPlusNonNullIsNull());
+	}
+
+	@Test
+	public void supportsTableCorrelationNames() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsTableCorrelationNames());
+	}
+
+	@Test
+	public void supportsDifferentTableCorrelationNames() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsDifferentTableCorrelationNames());
+	}
+
+	@Test
+	public void supportsExpressionsInOrderBy() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsExpressionsInOrderBy());
+	}
+
+	@Test
+	public void supportsOrderByUnrelated() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsOrderByUnrelated());
+	}
+
+	@Test
+	public void supportsGroupBy() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsGroupBy());
+	}
+
+	@Test
+	public void supportsGroupByUnrelated() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsGroupByUnrelated());
+	}
+
+	@Test
+	public void supportsGroupByBeyondSelect() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsGroupByBeyondSelect());
+	}
+
+	@Test
+	public void supportsLikeEscapeClause() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsLikeEscapeClause());
+	}
+
+	@Test
+	public void supportsMultipleTransactions() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsMultipleTransactions());
+	}
+
+	@Test
+	public void supportsNonNullableColumns() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsNonNullableColumns());
+	}
+
+	@Test
+	public void supportsMinimumSQLGrammar() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsMinimumSQLGrammar());
+	}
+
+	@Test
+	public void supportsCoreSQLGrammar() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsCoreSQLGrammar());
+	}
+
+	@Test
+	public void supportsExtendedSQLGrammar() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsExtendedSQLGrammar());
+	}
+
+	@Test
+	public void supportsANSI92EntryLevelSQL() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsANSI92EntryLevelSQL());
+	}
+
+	@Test
+	public void supportsANSI92IntermediateSQL() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsANSI92IntermediateSQL());
+	}
+
+	@Test
+	public void supportsANSI92FullSQL() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsANSI92FullSQL());
+	}
+
+	@Test
+	public void supportsIntegrityEnhancementFacility() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsIntegrityEnhancementFacility());
+	}
+
+	@Test
+	public void supportsOuterJoins() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsOuterJoins());
+	}
+
+	@Test
+	public void supportsFullOuterJoins() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsFullOuterJoins());
+	}
+
+	@Test
+	public void supportsLimitedOuterJoins() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsLimitedOuterJoins());
+	}
+
+	@Test
+	public void getProcedureTerm() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertEquals("procedure", databaseMetaData.getProcedureTerm());
+	}
+
+	@Test
+	public void supportsPositionedDelete() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsPositionedDelete());
+	}
+
+	@Test
+	public void supportsStoredProcedures() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsStoredProcedures());
+	}
+
+	@Test
+	public void supportsPositionedUpdate() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsPositionedUpdate());
+	}
+
+	@Test
+	public void supportsSubqueriesInComparisons() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsSubqueriesInComparisons());
+	}
+
+	@Test
+	public void supportsSubqueriesInExists() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsSubqueriesInExists());
+	}
+
+	@Test
+	public void supportsSubqueriesInIns() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsSubqueriesInIns());
+	}
+
+	@Test
+	public void supportsSubqueriesInQuantifieds() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsSubqueriesInQuantifieds());
+	}
+
+	@Test
+	public void supportsCorrelatedSubqueries() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsCorrelatedSubqueries());
+	}
+
+	@Test
+	public void supportsUnion() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsUnion());
+	}
+
+	@Test
+	public void supportsUnionAll() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsUnionAll());
+	}
+
+	@Test
+	public void supportsOpenCursorsAcrossCommit() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsOpenCursorsAcrossCommit());
+	}
+
+	@Test
+	public void supportsOpenCursorsAcrossRollback() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsOpenCursorsAcrossRollback());
+	}
+
+	@Test
+	public void supportsOpenStatementsAcrossCommit() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsOpenStatementsAcrossCommit());
+	}
+
+	@Test
+	public void supportsOpenStatementsAcrossRollback() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsOpenStatementsAcrossRollback());
+	}
+
+	@Test
+	public void doesMaxRowSizeIncludeBlobs() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.doesMaxRowSizeIncludeBlobs());
+	}
+
+	@Test
+	public void supportsTransactionIsolationLevel() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsTransactionIsolationLevel(0));
+	}
+
+	@Test
+	public void supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsDataDefinitionAndDataManipulationTransactions());
+	}
+
+	@Test
+	public void supportsDataManipulationTransactionsOnly() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsDataManipulationTransactionsOnly());
+	}
+
+	@Test
+	public void dataDefinitionCausesTransactionCommit() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.dataDefinitionCausesTransactionCommit());
+	}
+
+	@Test
+	public void dataDefinitionIgnoredInTransactions() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.dataDefinitionIgnoredInTransactions());
+	}
+
+	@Test
+	public void supportsResultSetConcurrency() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsResultSetConcurrency(0, 0));
+	}
+
+	@Test
+	public void ownUpdatesAreVisible() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.ownUpdatesAreVisible(0));
+	}
+
+	@Test
+	public void ownDeletesAreVisible() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.ownDeletesAreVisible(0));
+	}
+
+	@Test
+	public void ownInsertsAreVisible() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.ownInsertsAreVisible(0));
+	}
+
+	@Test
+	public void othersUpdatesAreVisible() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.othersUpdatesAreVisible(0));
+	}
+
+	@Test
+	public void othersDeletesAreVisible() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.othersDeletesAreVisible(0));
+	}
+
+	@Test
+	public void othersInsertsAreVisible() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.othersInsertsAreVisible(0));
+	}
+
+	@Test
+	public void updatesAreDetected() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.updatesAreDetected(0));
+	}
+
+	@Test
+	public void deletesAreDetected() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.deletesAreDetected(0));
+	}
+
+	@Test
+	public void insertsAreDetected() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.insertsAreDetected(0));
+	}
+
+	@Test
+	public void supportsBatchUpdates() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsBatchUpdates());
+	}
+
+	@Test
+	public void supportsSavepoints() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsSavepoints());
+	}
+
+	@Test
+	public void supportsNamedParameters() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsNamedParameters());
+	}
+
+	@Test
+	public void supportsMultipleOpenResults() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsMultipleOpenResults());
+	}
+
+	@Test
+	public void supportsGetGeneratedKeys() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsGetGeneratedKeys());
+	}
+
+	@Test
+	public void supportsResultSetHoldability() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsResultSetHoldability(0));
+	}
+
+	@Test
+	public void locatorsUpdateCopy() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.locatorsUpdateCopy());
+	}
+
+	@Test
+	public void supportsStatementPooling() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.supportsStatementPooling());
+	}
+
+	@Test
+	public void supportsStoredFunctionsUsingCallSyntax() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertTrue(databaseMetaData.supportsStoredFunctionsUsingCallSyntax());
+	}
+
+	@Test
+	public void autoCommitFailureClosesAllResultSets() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.autoCommitFailureClosesAllResultSets());
+	}
+
+	@Test
+	public void generatedKeyAlwaysReturned() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.generatedKeyAlwaysReturned());
+	}
+
+	@Test
+	public void getProcedureColumns() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getProcedureColumns("", "", "", "").next());
+	}
+
+	@Test
+	public void getColumnPrivileges() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getColumnPrivileges("", "", "", "").next());
+	}
+
+	@Test
+	public void getTablePrivileges() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getTablePrivileges("", "", "").next());
+	}
+
+	@Test
+	public void getBestRowIdentifier() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getBestRowIdentifier("", "", "", 0, false).next());
+	}
+
+	@Test
+	public void getVersionColumns() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getVersionColumns("", "", "").next());
+	}
+
+	@Test
+	public void getPrimaryKeys() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getPrimaryKeys("", "", "").next());
+	}
+
+	@Test
+	public void getImportedKeys() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getImportedKeys("", "", "").next());
+	}
+
+	@Test
+	public void getExportedKeys() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getExportedKeys("", "", "").next());
+	}
+
+	@Test
+	public void getCrossReference() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getCrossReference("", "", "", "", "", "").next());
+	}
+
+	@Test
+	public void getIndexInfo() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getIndexInfo("", "", "", false,false).next());
+	}
+
+	@Test
+	public void getUDTs() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getUDTs("", "", "", new int[0]).next());
+	}
+
+	@Test
+	public void getSuperTypes() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getSuperTypes("", "", "").next());
+	}
+
+	@Test
+	public void getSuperTables() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getSuperTables("", "", "").next());
+	}
+
+	@Test
+	public void getAttributes() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getAttributes("", "", "", "").next());
+	}
+
+	@Test
+	public void getSchemas() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getSchemas().next());
+	}
+
+	@Test
+	public void getFunctionColumns() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getFunctionColumns("", "", "", "").next());
+	}
+
+	@Test
+	public void getPseudoColumns() throws SQLException {
+		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		assertFalse(databaseMetaData.getPseudoColumns("", "", "", "").next());
+	}
 }
