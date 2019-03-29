@@ -666,12 +666,6 @@ public class Neo4jDatabaseMetaDataTest {
 	}
 
 	@Test
-	public void getIndexInfo() throws SQLException {
-		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
-		assertFalse(databaseMetaData.getIndexInfo("", "", "", false,false).next());
-	}
-
-	@Test
 	public void getUDTs() throws SQLException {
 		Neo4jDatabaseMetaData databaseMetaData = mock(Neo4jDatabaseMetaData.class, withSettings().defaultAnswer(Mockito.CALLS_REAL_METHODS));
 		assertFalse(databaseMetaData.getUDTs("", "", "", new int[0]).next());
