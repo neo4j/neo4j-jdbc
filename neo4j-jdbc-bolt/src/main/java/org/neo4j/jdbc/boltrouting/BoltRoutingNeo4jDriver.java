@@ -18,7 +18,11 @@
  */
 package org.neo4j.jdbc.boltrouting;
 
-import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.AuthToken;
+import org.neo4j.driver.v1.Config;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.jdbc.bolt.cache.BoltDriverCache;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 
 import java.net.URI;
@@ -44,6 +48,12 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     public static final String LIST_SEPARATOR = ";";
     public static final String CUSTOM_ROUTING_POLICY_SEPARATOR = "&";
 
+    private static final BoltDriverCache cache = new BoltDriverCache(params ->
+    {
+        return GraphDatabase.routingDriver(params.getRoutingUris(), params.getAuthToken(), params.getConfig());
+    }
+    );
+
     static {
         try {
             BoltRoutingNeo4jDriver driver = new BoltRoutingNeo4jDriver();
@@ -58,8 +68,8 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     }
 
     @Override
-    protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException {
-        return GraphDatabase.routingDriver(routingUris, authToken, config);
+    protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
+        return cache.getDriver(routingUris, config, authToken, info);
     }
 
     @Override

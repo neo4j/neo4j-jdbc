@@ -19,7 +19,11 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.AuthToken;
+import org.neo4j.driver.v1.Config;
+import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.GraphDatabase;
+import org.neo4j.jdbc.bolt.cache.BoltDriverCache;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 
 import java.net.URI;
@@ -37,6 +41,11 @@ import java.util.Properties;
 public class BoltDriver extends BoltNeo4jDriverImpl {
 
 	public static final String JDBC_BOLT_PREFIX = "bolt";
+	private static final BoltDriverCache cache = new BoltDriverCache(params ->
+	{
+		return GraphDatabase.driver(params.getRoutingUris().get(0), params.getAuthToken(), params.getConfig());
+	}
+	);
 
 	static {
 		try {
@@ -51,9 +60,10 @@ public class BoltDriver extends BoltNeo4jDriverImpl {
 		super(JDBC_BOLT_PREFIX);
 	}
 
-    protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken) throws URISyntaxException {
-        return GraphDatabase.driver(routingUris.get(0), authToken, config);
-    }
+	@Override
+	protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
+		return cache.getDriver(routingUris, config, authToken, info);
+	}
 
 	@Override
 	protected Properties getRoutingContext(String url, Properties properties) {

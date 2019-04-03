@@ -57,13 +57,17 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 
 		// compute database metadata: version, tables == labels, columns = properties (by label)
 		if (connection != null) {
-			try (Session session = connection.newNeo4jSession()){
+			Session session = null;
+			try {
+				session = connection.newNeo4jSession();
 				getDatabaseVersion(session);
 				getDatabaseLabels(session);
 				getDatabaseProperties(session);
 				functions = callDbmsFunctions(session);
 			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, e.getMessage(), e);
+			}finally{
+				connection.closeSession(session);
 			}
 		}
 	}
