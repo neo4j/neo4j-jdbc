@@ -28,6 +28,7 @@ import org.neo4j.jdbc.utils.ExceptionBuilder;
 import org.neo4j.jdbc.utils.Neo4jJdbcRuntimeException;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
 
+import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -127,18 +128,6 @@ public class HttpNeo4jConnection extends Neo4jConnectionImpl implements Loggable
 		checkClosed();
 		checkAutoCommit();
 		executor.rollback();
-	}
-
-	/*-------------------------*/
-	/*       Holdability       */
-	/*-------------------------*/
-
-	@Override public void setHoldability(int holdability) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int getHoldability() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	/*------------------------------*/
