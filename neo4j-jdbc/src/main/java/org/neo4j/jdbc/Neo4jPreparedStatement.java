@@ -310,10 +310,6 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public void setArray(int parameterIndex, java.sql.Array x) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
 	@Override public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
@@ -327,7 +323,7 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	}
 
 	@Override public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		setNull(parameterIndex, sqlType); // simply store a null
 	}
 
 	@Override public void setURL(int parameterIndex, URL x) throws SQLException {
@@ -408,10 +404,6 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 
 	@Override public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public void addBatch(String sql) throws SQLException {
-		throw new SQLException("Method addBatch(String sql) cannot be called on PreparedStatement");
 	}
 
 }

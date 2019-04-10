@@ -22,11 +22,15 @@ package org.neo4j.jdbc.http;
 import org.neo4j.jdbc.*;
 import org.neo4j.jdbc.http.driver.Neo4jResponse;
 
-import java.sql.BatchUpdateException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.function.Function;
 
 public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
 
@@ -124,5 +128,29 @@ public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		}
 
 		return result;
+	}
+
+	/*-------------------*/
+	/*   setParameter    */
+	/*-------------------*/
+
+	protected void setTemporal(int parameterIndex, long epoch, ZoneId zone, Function<ZonedDateTime, Temporal> extractTemporal) throws SQLException {
+		checkClosed();
+		checkParamsNumber(parameterIndex);
+
+		ZonedDateTime zdt = Instant.ofEpochMilli(epoch).atZone(zone);
+
+		insertParameter(parameterIndex, extractTemporal.apply(zdt));
+	}
+
+	@Override
+	public void setDate(int parameterIndex, Date x) throws SQLException {
+		setTemporal(parameterIndex, x.getTime(), ZoneId.systemDefault(), (zdt)-> zdt.toLocalDate());
+	}
+
+	@Override
+	public void setArray(int parameterIndex, Array x) throws SQLException {
+		checkClosed();
+		insertParameter(parameterIndex, x.getArray());
 	}
 }

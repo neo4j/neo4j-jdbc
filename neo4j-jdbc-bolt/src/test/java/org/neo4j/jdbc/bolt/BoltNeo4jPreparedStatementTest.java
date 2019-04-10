@@ -34,6 +34,7 @@ import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.bolt.utils.Mocker;
+import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -980,5 +981,16 @@ public class BoltNeo4jPreparedStatementTest {
 		stmt.close();
 
 		stmt.getConnection();
+	}
+
+	/*------------------------------*/
+	/*           setArray           */
+	/*------------------------------*/
+
+	@Test public void setArrayShouldInsertTheCorrectArray() throws SQLException {
+		ListArray array = new ListArray(Arrays.asList(1L,2L,4L), INTEGER);
+		this.preparedStatementOneParam.setArray(1, array);
+		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
+		assertArrayEquals(new Long[]{1L,2L,4L}, (Long[]) value.get("1"));
 	}
 }

@@ -187,4 +187,10 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
 		setTemporal(parameterIndex, x.getTime(),cal.getTimeZone().toZoneId(), (zdt)-> zdt.toOffsetDateTime().toOffsetTime());
 	}
+
+	@Override
+	public void setArray(int parameterIndex, Array x) throws SQLException {
+		checkClosed();
+		insertParameter(parameterIndex, x.getArray());
+	}
 }

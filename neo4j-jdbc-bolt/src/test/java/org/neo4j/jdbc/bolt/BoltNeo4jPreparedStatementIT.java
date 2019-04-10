@@ -26,9 +26,13 @@ import org.junit.Test;
 import org.neo4j.graphdb.Result;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.neo4j.jdbc.impl.ListArray;
 
 import java.sql.*;
+import java.util.Arrays;
+import java.util.Map;
 
+import static java.sql.Types.INTEGER;
 import static org.junit.Assert.*;
 
 /**
@@ -289,6 +293,22 @@ public class BoltNeo4jPreparedStatementIT {
 		assertEquals(-1, statement.getUpdateCount());
 
 		statement.close();
+	}
+
+	@Test public void shouldInsertArrayType() throws SQLException {
+		PreparedStatement statement = connection.prepareStatement("CREATE (:TestArrayType {name:?, props:?})");
+		statement.setString(1, "Andrea Santurbano");
+		statement.setArray(2, new ListArray(Arrays.asList(1L,2L,4L), INTEGER));
+		assertEquals(1, statement.executeUpdate());
+		statement.close();
+
+		Statement search = connection.createStatement();
+		ResultSet rs = search.executeQuery("MATCH (n:TestArrayType) return n");
+		assertTrue(rs.next());
+		Map<String, Object> map = (Map<String, Object>) rs.getObject("n");
+		assertEquals("Andrea Santurbano", map.get("name"));
+		assertEquals(Arrays.asList(1L,2L,4L), map.get("props"));
+		search.close();
 	}
 }
 

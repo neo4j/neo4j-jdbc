@@ -30,7 +30,7 @@ import java.sql.SQLException;
  * @author AgileLARUS
  * @since 3.0.0
  */
-class BoltNeo4jCallableStatement extends Neo4jCallableStatement {
+abstract class BoltNeo4jCallableStatement extends Neo4jCallableStatement { // TODO not used
 	/**
 	 * Default constructor with connection and statement.
 	 *
