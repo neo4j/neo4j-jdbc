@@ -274,7 +274,7 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	@Override public int getMaxFieldSize() throws SQLException {
-		return -1;
+		return 0;
 	}
 
 	@Override public void setMaxFieldSize(int max) throws SQLException {} // do nothing
@@ -290,7 +290,7 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	@Override public int getFetchSize() throws SQLException {
-		return -1;
+		return 0;
 	}
 
 	@Override public boolean getMoreResults(int current) throws SQLException {
@@ -310,9 +310,13 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 		return false;
 	}
 
-	@Override public void closeOnCompletion() throws SQLException {}
+	@Override public void closeOnCompletion() throws SQLException {
+		this.checkClosed();
+		// do nothing
+	}
 
 	@Override public boolean isCloseOnCompletion() throws SQLException {
+		this.checkClosed();
 		return false;
 	}
 

@@ -375,29 +375,12 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	/*       Not implemented yet       */
 	/*---------------------------------*/
 
-	@Override
-	public CallableStatement prepareCall(String sql) throws SQLException {
-		return null;
+	@Override public java.sql.CallableStatement prepareCall(String sql) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override
-	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-		return null;
-	}
-
-	@Override
-	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-		return null;
-	}
-
-	@Override
-	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-		return null;
-	}
-
-	@Override
-	public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-		return null;
+	@Override public java.sql.CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public Map<String, Class<?>> getTypeMap() throws SQLException {
@@ -407,31 +390,47 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	@Override public void setTypeMap(Map<String, Class<?>> map) throws SQLException {} // do nothing
 
 	@Override public Savepoint setSavepoint() throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public Savepoint setSavepoint(String name) throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public void rollback(Savepoint savepoint) throws SQLException {} // do nothing
+	@Override public void rollback(Savepoint savepoint) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
 
-	@Override public void releaseSavepoint(Savepoint savepoint) throws SQLException {} // do nothing
+	@Override public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
+
+	@Override public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
 
 	@Override public Clob createClob() throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public Blob createBlob() throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public NClob createNClob() throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public SQLXML createSQLXML() throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public void setClientInfo(String name, String value) throws SQLClientInfoException {
@@ -460,17 +459,21 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-		return null;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 	@Override public void setSchema(String schema) throws SQLException {} // do nothing
 
-	@Override public void abort(Executor executor) throws SQLException {} // do nothing
+	@Override public void abort(Executor executor) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
 
-	@Override public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {} // do nothing
+	@Override public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+		throw ExceptionBuilder.buildUnsupportedOperationException();
+	}
 
 	@Override public int getNetworkTimeout() throws SQLException {
-		return -1;
+		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
 }

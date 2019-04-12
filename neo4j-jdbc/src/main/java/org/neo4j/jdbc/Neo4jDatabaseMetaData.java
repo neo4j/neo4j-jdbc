@@ -642,7 +642,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public int getMaxColumnsInGroupBy() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public int getMaxColumnsInIndex() throws SQLException {

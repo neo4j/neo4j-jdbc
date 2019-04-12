@@ -67,10 +67,7 @@ public class ListArray extends Neo4jArray {
 			default:
 				throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
 		}
-		this.list = new ArrayList();
-		for (Object obj : elements) {
-			this.list.add(obj);
-		}
+		this.list = Arrays.asList(elements);
 		this.type = type;
 	}
 

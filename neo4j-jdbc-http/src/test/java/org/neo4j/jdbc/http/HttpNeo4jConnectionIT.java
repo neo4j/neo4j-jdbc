@@ -172,16 +172,6 @@ public class HttpNeo4jConnectionIT extends Neo4jHttpITUtil {
 		reader.close();
 	}
 
-	@Test public void holdabilityShouldFail() throws SQLException {
-		expectedEx.expect(UnsupportedOperationException.class);
-		expectedEx.expectMessage("Method setHoldability in class org.neo4j.jdbc.http.HttpNeo4jConnection is not yet implemented.");
-
-		// Write something
-		Connection writer = DriverManager.getConnection(getJDBCUrl());
-		writer.setHoldability(1);
-		writer.close();
-	}
-
 	@Test public void isValidShouldWork() throws SQLException {
 		Connection writer = DriverManager.getConnection(getJDBCUrl());
 		assertTrue(writer.isValid(1));

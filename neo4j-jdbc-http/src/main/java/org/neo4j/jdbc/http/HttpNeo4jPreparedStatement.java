@@ -130,24 +130,6 @@ public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		return result;
 	}
 
-	/*-------------------*/
-	/*   setParameter    */
-	/*-------------------*/
-
-	protected void setTemporal(int parameterIndex, long epoch, ZoneId zone, Function<ZonedDateTime, Temporal> extractTemporal) throws SQLException {
-		checkClosed();
-		checkParamsNumber(parameterIndex);
-
-		ZonedDateTime zdt = Instant.ofEpochMilli(epoch).atZone(zone);
-
-		insertParameter(parameterIndex, extractTemporal.apply(zdt));
-	}
-
-	@Override
-	public void setDate(int parameterIndex, Date x) throws SQLException {
-		setTemporal(parameterIndex, x.getTime(), ZoneId.systemDefault(), (zdt)-> zdt.toLocalDate());
-	}
-
 	@Override
 	public void setArray(int parameterIndex, Array x) throws SQLException {
 		checkClosed();
