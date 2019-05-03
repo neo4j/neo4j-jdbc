@@ -115,9 +115,9 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 		}
 		if (url.contains("?")) {
 			String urlProps = url.substring(url.indexOf('?') + 1);
-			urlProps = decodeUrlComponent(urlProps);
 			String[] props = urlProps.split("[,&]");
 			for (String prop : props) {
+				prop = decodeUrlComponent(prop);
 				int idx1 = prop.indexOf('=');
 				int idx2 = prop.indexOf(':');
 				int idx = (idx1 != -1 && idx2 != -1) ? Math.min(idx1, idx2) : Math.max(idx1, idx2);
