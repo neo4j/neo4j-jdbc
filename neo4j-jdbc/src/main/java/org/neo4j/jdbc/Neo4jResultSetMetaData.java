@@ -181,11 +181,11 @@ public abstract class Neo4jResultSetMetaData implements java.sql.ResultSetMetaDa
 	/*---------------------------------*/
 
 	@Override public boolean isWritable(int column) throws SQLException {
-		return true; // TODO add a check for the <id> field
+		return false;
 	}
 
 	@Override public boolean isDefinitelyWritable(int column) throws SQLException {
-		return true; // TODO add a check for the <id> field
+		return false;
 	}
 
 }
