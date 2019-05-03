@@ -19,12 +19,15 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.impl.ListNeo4jResultSet;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
+import javax.xml.transform.Result;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -271,63 +274,50 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	@Override public int getMaxFieldSize() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
-	@Override public void setMaxFieldSize(int max) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setMaxFieldSize(int max) throws SQLException {} // do nothing
 
-	@Override public void setEscapeProcessing(boolean enable) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setEscapeProcessing(boolean enable) throws SQLException {} // do nothing
 
-	@Override public void setCursorName(String name) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setCursorName(String name) throws SQLException {} // do nothing
 
-	@Override public void setFetchDirection(int direction) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setFetchDirection(int direction) throws SQLException {}
 
 	@Override public int getFetchDirection() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return ResultSet.FETCH_FORWARD;
 	}
 
 	@Override public int getFetchSize() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return 0;
 	}
 
 	@Override public boolean getMoreResults(int current) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return getMoreResults();
 	}
 
 	@Override public ResultSet getGeneratedKeys() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		// TODO should at least return the <id>?
+		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
-	@Override public void cancel() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void cancel() throws SQLException {} // do nothing
 
-	@Override public void setPoolable(boolean poolable) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setPoolable(boolean poolable) throws SQLException {} // do nothing
 
 	@Override public boolean isPoolable() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public int[] executeBatch() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public void closeOnCompletion() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		this.checkClosed();
+		// do nothing
 	}
 
 	@Override public boolean isCloseOnCompletion() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		this.checkClosed();
+		return false;
 	}
 
 	@Override public boolean hasDebug() {

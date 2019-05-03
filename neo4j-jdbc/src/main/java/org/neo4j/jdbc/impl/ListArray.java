@@ -23,8 +23,12 @@ import org.neo4j.jdbc.Neo4jArray;
 
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author AgileLARUS
@@ -39,6 +43,31 @@ public class ListArray extends Neo4jArray {
 
 	public ListArray(List list, int type) {
 		this.list = list;
+		this.type = type;
+	}
+
+	public ListArray(String typeName, Object[] elements) throws SQLException {
+		int type;
+		switch (typeName) {
+			case "VARCHAR":
+				type = Types.VARCHAR;
+				break;
+			case "INTEGER":
+				type = Types.INTEGER;
+				break;
+			case "BOOLEAN":
+				type = Types.BOOLEAN;
+				break;
+			case "DOUBLE":
+				type = Types.DOUBLE;
+				break;
+			case "JAVA_OBJECT":
+				type = Types.JAVA_OBJECT;
+				break;
+			default:
+				throw new SQLException(String.format(TYPE_NOT_SUPPORTED, this.type));
+		}
+		this.list = Arrays.asList(elements);
 		this.type = type;
 	}
 

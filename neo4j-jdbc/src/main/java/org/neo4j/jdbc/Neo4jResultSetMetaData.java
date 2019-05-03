@@ -19,8 +19,6 @@
  */
 package org.neo4j.jdbc;
 
-import org.neo4j.jdbc.utils.ExceptionBuilder;
-
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -183,11 +181,11 @@ public abstract class Neo4jResultSetMetaData implements java.sql.ResultSetMetaDa
 	/*---------------------------------*/
 
 	@Override public boolean isWritable(int column) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 	@Override public boolean isDefinitelyWritable(int column) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return false;
 	}
 
 }

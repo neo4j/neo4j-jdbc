@@ -25,7 +25,10 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
 
+import java.sql.Array;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -79,5 +82,34 @@ public class Neo4jConnectionTest {
 		Neo4jConnection connection = mock(Neo4jConnectionImpl.class, Mockito.CALLS_REAL_METHODS);
 
 		connection.unwrap(Neo4jStatement.class);
+	}
+
+	@Test public void createArrayOfShouldThrowException() throws SQLException {
+		Neo4jConnection connection = mock(Neo4jConnectionImpl.class, Mockito.CALLS_REAL_METHODS);
+
+		Object[] booleans = {true, false, false, true};
+		Array booleansArr = connection.createArrayOf("BOOLEAN", booleans);
+		assertArrayEquals(booleans, (Object[]) booleansArr.getArray());
+
+		Object[] strings = {"foo", "false", "bar", "1"};
+		Array stringsArr = connection.createArrayOf("VARCHAR", strings);
+		assertArrayEquals(strings, (Object[]) stringsArr.getArray());
+		assertArrayEquals(booleans, (Object[]) booleansArr.getArray());
+
+		Object[] integers = {1L, 100L, Long.MAX_VALUE, Long.MIN_VALUE};
+		Array integersArr = connection.createArrayOf("INTEGER", integers);
+		assertArrayEquals(integers, (Object[]) integersArr.getArray());
+
+		Object[] doubles = {1D, 100D, Double.MAX_VALUE, Double.MIN_VALUE};
+		Array doublesArr = connection.createArrayOf("DOUBLE", doubles);
+		assertArrayEquals(doubles, (Object[]) doublesArr.getArray());
+
+		Map<String, Object> first = new HashMap<>();
+		first.put("first", 1L);
+		Map<String, Object> second = new HashMap<>();
+		second.put("second", 2L);
+		Object[] maps = {first, second};
+		Array mapsArr = connection.createArrayOf("JAVA_OBJECT", maps);
+		assertArrayEquals(maps, (Object[]) mapsArr.getArray());
 	}
 }

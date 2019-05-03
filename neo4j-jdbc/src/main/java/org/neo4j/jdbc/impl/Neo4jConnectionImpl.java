@@ -26,6 +26,7 @@ import org.neo4j.jdbc.utils.ExceptionBuilder;
 
 import java.sql.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -383,12 +384,10 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override public Map<String, Class<?>> getTypeMap() throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return Collections.emptyMap();
 	}
 
-	@Override public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setTypeMap(Map<String, Class<?>> map) throws SQLException {} // do nothing
 
 	@Override public Savepoint setSavepoint() throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
@@ -456,16 +455,14 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override public Neo4jArray createArrayOf(String typeName, Object[] elements) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
+		return new ListArray(typeName, elements);
 	}
 
 	@Override public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
 	}
 
-	@Override public void setSchema(String schema) throws SQLException {
-		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
+	@Override public void setSchema(String schema) throws SQLException {} // do nothing
 
 	@Override public void abort(Executor executor) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
