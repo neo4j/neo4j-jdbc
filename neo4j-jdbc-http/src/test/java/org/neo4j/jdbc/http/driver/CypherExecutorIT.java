@@ -36,8 +36,8 @@ public class CypherExecutorIT extends Neo4jHttpITUtil {
 	private CypherExecutor executor;
 
 	@Before public void before() throws IOException, SQLException {
-		String host = neo4j.httpsURI().getHost();
-		Integer port = neo4j.httpsURI().getPort();
+		String host = neo4j.httpURI().getHost();
+		Integer port = neo4j.httpURI().getPort();
 		Properties properties = new Properties();
 		properties.put("userAgent", "Unit Test");
 		this.executor = new CypherExecutor(host, port, false, properties);
