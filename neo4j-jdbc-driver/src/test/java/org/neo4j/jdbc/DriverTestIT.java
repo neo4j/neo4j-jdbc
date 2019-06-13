@@ -22,10 +22,7 @@
 
 package org.neo4j.jdbc;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
@@ -56,6 +53,7 @@ public class DriverTestIT {
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 
+	@Ignore
 	@Test public void shouldReturnAHttpsConnection() throws SQLException {
 		Driver driver = new Driver();
 		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.httpsURI(), new Properties());

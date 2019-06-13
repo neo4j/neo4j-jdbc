@@ -774,18 +774,20 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		List<String> filters = new ArrayList<>();
 		boolean hasTable = table != null && !table.trim().isEmpty();
 		if (hasTable) {
-			filters.add("label = ?");
+			filters.add("ANY(tokenName IN tokenNames WHERE tokenName = ?)");
 		}
 		if (unique) {
 			filters.add("type = 'node_unique_property'");
 		}
 		StringBuilder queryBuilder = new StringBuilder();
-		queryBuilder.append("CALL db.indexes() YIELD description, label, properties, state, type\n");
+		queryBuilder.append("CALL db.indexes() YIELD description, tokenNames, properties, state, type\n");
 		if (!filters.isEmpty()) {
 			queryBuilder.append("WHERE " + String.join(" AND ", filters) + "\n");
 		}
-		queryBuilder.append("WITH description, label, properties, state, type\n");
-		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS index\n");
+
+		queryBuilder.append("WITH description, tokenNames, properties, state, type\n");
+		queryBuilder.append("UNWIND tokenNames AS label\n");
+		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS indexProperties\n");
 		queryBuilder.append("RETURN null AS TABLE_CAT,\n");
 		queryBuilder.append("null AS TABLE_SCHEM,\n");
 		queryBuilder.append("label AS TABLE_NAME,\n");
@@ -793,8 +795,8 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		queryBuilder.append("description AS INDEX_QUALIFIER,\n");
 		queryBuilder.append("description AS INDEX_NAME,\n");
 		queryBuilder.append(DatabaseMetaData.tableIndexOther + " AS TYPE,\n");
-		queryBuilder.append("index + 1 AS ORDINAL_POSITION,\n");
-		queryBuilder.append("properties[index] AS COLUMN_NAME,\n");
+		queryBuilder.append("indexProperties + 1 AS ORDINAL_POSITION,\n");
+		queryBuilder.append("properties[indexProperties] AS COLUMN_NAME,\n");
 		queryBuilder.append("null AS ASC_OR_DESC,\n");
 		queryBuilder.append("null AS CARDINALITY,\n");
 		queryBuilder.append("null AS PAGES,\n");
