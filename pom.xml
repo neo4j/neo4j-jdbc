@@ -89,7 +89,6 @@
 		<!-- Plugin version -->
 		<maven.plugin.compiler>3.6.1</maven.plugin.compiler>
 		<maven.plugin.resources>2.7</maven.plugin.resources>
-		<maven.plugin.nexus-staging>1.6.8</maven.plugin.nexus-staging>
 		<maven.plugin.shade>3.0.0</maven.plugin.shade>
 		<maven.plugin.javadoc>2.9.1</maven.plugin.javadoc>
 		<maven.plugin.source>3.0.1</maven.plugin.source>
@@ -232,17 +231,7 @@
 			</resource>
 		</resources>
 		<plugins>
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>${maven.plugin.nexus-staging}</version>
-				<extensions>true</extensions>
-				<configuration>
-					<serverId>ossrh</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
-				</configuration>
-			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -322,31 +311,7 @@
 							</execution>
 						</executions>
 					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>${maven.plugin.gpg}</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>${maven.plugin.nexus-staging}</version>
-						<extensions>true</extensions>
-						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
-						</configuration>
-					</plugin>
+
 				</plugins>
 			</build>
 		</profile>
@@ -449,16 +414,6 @@
 			</build>
 		</profile>
 	</profiles>
-
-	<!-- =========================== -->
-	<!-- = Distribution management = -->
-	<!-- =========================== -->
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
 
 	<!-- ================ -->
 	<!-- = Repositories = -->
