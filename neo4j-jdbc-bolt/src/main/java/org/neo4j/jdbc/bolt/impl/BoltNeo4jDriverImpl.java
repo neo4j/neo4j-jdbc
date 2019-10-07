@@ -17,10 +17,10 @@
  */
 package org.neo4j.jdbc.bolt.impl;
 
-import org.neo4j.driver.v1.AuthToken;
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Config;
-import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.AuthToken;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
 import org.neo4j.jdbc.Neo4jDriver;
 
 import java.io.File;
@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.neo4j.driver.v1.Config.build;
 
 /**
  * @author AgileLARUS
@@ -49,7 +48,6 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
     public static final String CONNECTION_TIMEOUT = "connection.timeout";
     public static final String ENCRYPTION = "encryption";
     public static final String LEAKED_SESSIONS_LOGGING = "leaked.sessions.logging";
-    public static final String LOAD_BALANCING_STRATEGY = "load.balancing.strategy";
     public static final String MAX_CONNECTION_LIFETIME = "max.connection.lifetime";
     public static final String MAX_CONNECTION_POOLSIZE = "max.connection.poolsize";
     public static final String MAX_TRANSACTION_RETRY_TIME = "max.transaction.retry.time";
@@ -70,7 +68,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 Properties info = mergeUrlAndInfo(boltUrl, props);
 
                 boltUrl = removeUrlProperties(boltUrl);
-                Config.ConfigBuilder builder = build();
+                Config.ConfigBuilder builder = Config.builder();
                 if (info.containsKey("nossl")) {
                     builder = builder.withoutEncryption();
                 }
@@ -81,17 +79,17 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 builder = setConnectionTimeout(info, builder);
                 builder = setEncryption(info, builder);
                 builder = setLakedSessionLogging(info, builder);
-                builder = setLoadBalancingStrategy(info, builder);
                 builder = setMaxConnectionLifetime(info, builder);
                 builder = setMaxConnectionPoolSize(info, builder);
                 builder = setMaxTransactionRetryTime(info, builder);
 
-                Config config = builder.toConfig();
+                Config config = builder.build();
                 AuthToken authToken = getAuthToken(info);
                 Properties routingContext = getRoutingContext(boltUrl, info);
                 boltUrl = addRoutingPolicy(boltUrl, routingContext);
                 List<URI> routingUris = buildRoutingUris(boltUrl, routingContext);
                 Driver driver = getDriver(routingUris, config, authToken, info);
+                driver.verifyConnectivity();
                 connection = BoltNeo4jConnectionImpl.newInstance(driver, info, url);
             } catch (Exception e) {
                 throw new SQLException(e);
@@ -143,8 +141,6 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                     newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSystemCertificates());
                     break;
                 case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
-                case TRUST_ON_FIRST_USE:
-                case TRUST_SIGNED_CERTIFICATES:
                     newBuilder = handleTrustStrategyWithFile(properties, strategy, builder);
                     break;
                 case TRUST_ALL_CERTIFICATES:
@@ -197,18 +193,11 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
     private Config.ConfigBuilder handleTrustStrategyWithFile(Properties properties, Config.TrustStrategy.Strategy strategy, Config.ConfigBuilder builder)
             throws SQLException {
         if (properties.containsKey(TRUSTED_CERTIFICATE_KEY)) {
-            String value = properties.getProperty(TRUSTED_CERTIFICATE_KEY);
-            File file = new File(value);
             Config.ConfigBuilder newBuilder;
             switch (strategy) {
                 case TRUST_CUSTOM_CA_SIGNED_CERTIFICATES:
-                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy((File) file));
-                    break;
-                case TRUST_ON_FIRST_USE:
-                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustOnFirstUse((File) file));
-                    break;
-                case TRUST_SIGNED_CERTIFICATES:
-                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustSignedBy((File) file));
+                    String value = properties.getProperty(TRUSTED_CERTIFICATE_KEY);
+                    newBuilder = builder.withTrustStrategy(Config.TrustStrategy.trustCustomCertificateSignedBy(new File(value)));
                     break;
                 default:
                     newBuilder = builder;
@@ -320,16 +309,6 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
      */
     private Config.ConfigBuilder setLakedSessionLogging(Properties info, Config.ConfigBuilder builder) {
         return setBooleanConfig(info, builder, LEAKED_SESSIONS_LOGGING, (condition)-> (condition)?builder.withLeakedSessionsLogging():builder);
-    }
-
-    /**
-     * Configure LOAD_BALANCING_STRATEGY
-     * @param info
-     * @param builder
-     * @return always a builder
-     */
-    private Config.ConfigBuilder setLoadBalancingStrategy(Properties info, Config.ConfigBuilder builder) {
-        return setValueConfig(info, builder, LOAD_BALANCING_STRATEGY, (val)->builder.withLoadBalancingStrategy(Config.LoadBalancingStrategy.valueOf(val)),"is not a load balancing strategy");
     }
 
     /**

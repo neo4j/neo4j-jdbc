@@ -22,10 +22,12 @@ package org.neo4j.jdbc.bolt.utils;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.neo4j.driver.internal.NetworkSession;
+import org.neo4j.driver.*;
+import org.neo4j.driver.internal.DefaultBookmarkHolder;
+import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.internal.async.NetworkSession;
 import org.neo4j.driver.internal.logging.DevNullLogging;
 import org.neo4j.driver.internal.spi.ConnectionProvider;
-import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.ResultSet;
@@ -35,9 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.RETURNS_MOCKS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * This class is a factory to create all the mocks that are used in multiple tests
@@ -50,28 +50,28 @@ public class Mocker {
 	public static Driver mockDriverOpen() {
         Session session = mockSessionOpen();
 		Driver driver = mock(Driver.class);
-		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		return driver;
 	}
 
 	public static Driver mockDriverClosed() {
         Session session = mockSessionClosed();
         Driver driver = mock(Driver.class);
-        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		return driver;
 	}
 
 	public static Driver mockDriverOpenSlow() {
         Session session = mockSessionOpenSlow();
 		Driver driver = mock(Driver.class);
-        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		return driver;
 	}
 
 	public static Driver mockDriverException() {
         Session session = mockSessionException();
         Driver driver = mock(Driver.class);
-        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		return driver;
 	}
 
@@ -136,9 +136,11 @@ public class Mocker {
 	}
 
 	public static Driver mockDriver() {
-		Driver mockedDriver = mock(org.neo4j.driver.v1.Driver.class);
+		Driver mockedDriver = mock(org.neo4j.driver.Driver.class);
 		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
-		Mockito.when(mockedDriver.session()).thenReturn(new NetworkSession(connectionProvider, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING));
+		NetworkSession networkSession = new NetworkSession(connectionProvider, null,
+				"", AccessMode.READ, new DefaultBookmarkHolder(), DevNullLogging.DEV_NULL_LOGGING);
+		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(networkSession));
 		return mockedDriver;
 	}
 }

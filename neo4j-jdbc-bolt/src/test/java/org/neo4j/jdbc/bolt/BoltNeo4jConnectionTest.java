@@ -24,15 +24,17 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.internal.NetworkSession;
+import org.neo4j.driver.AccessMode;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
+import org.neo4j.driver.internal.DefaultBookmarkHolder;
+import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.internal.async.NetworkSession;
 import org.neo4j.driver.internal.logging.DevNullLogging;
-import org.neo4j.driver.v1.*;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.Statement;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
@@ -106,8 +108,8 @@ public class BoltNeo4jConnectionTest {
 	@Test public void closeShouldCloseConnection() throws SQLException {
 		Session session = mock(Session.class);
 		when(session.isOpen()).thenReturn(true).thenReturn(false);
-		org.neo4j.driver.v1.Driver driver = mock(org.neo4j.driver.v1.Driver.class);
-		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);
+		when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
 		connection.close();
 		verify(session, times(1)).close();
@@ -116,8 +118,8 @@ public class BoltNeo4jConnectionTest {
 
 	@Test public void closeShouldNotThrowExceptionWhenClosingAClosedConnection() throws SQLException {
 		Session session = mockSessionClosed();
-        org.neo4j.driver.v1.Driver driver = mock(org.neo4j.driver.v1.Driver.class);
-		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);
+		when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
 		connection.close();
 		verify(session, never()).close();
@@ -490,8 +492,11 @@ public class BoltNeo4jConnectionTest {
 	@Ignore @Test public void setAutoCommitShouldThrowExceptionOnDatabaseAccessErrorOccurred() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Session session = new NetworkSession(null, AccessMode.READ,null, DevNullLogging.DEV_NULL_LOGGING);
-		org.neo4j.driver.v1.Driver driver = mock(org.neo4j.driver.v1.Driver.class);
+		NetworkSession networkSession = new NetworkSession(null, null,
+				"", AccessMode.READ, new DefaultBookmarkHolder(), DevNullLogging.DEV_NULL_LOGGING);
+
+		Session session = new InternalSession(networkSession);
+		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);
 		when(driver.session()).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
 		connection.setAutoCommit(true);

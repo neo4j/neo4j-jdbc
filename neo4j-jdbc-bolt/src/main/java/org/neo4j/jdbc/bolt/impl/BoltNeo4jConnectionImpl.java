@@ -17,10 +17,11 @@
  */
 package org.neo4j.jdbc.bolt.impl;
 
-import org.neo4j.driver.v1.AccessMode;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Transaction;
+import org.apache.commons.lang3.StringUtils;
+import org.neo4j.driver.*;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.internal.Bookmark;
+import org.neo4j.driver.internal.InternalBookmark;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.bolt.*;
@@ -30,10 +31,9 @@ import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
 
 import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -44,6 +44,7 @@ import java.util.logging.Logger;
  * @since 3.0.0
  */
 public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements BoltNeo4jConnection {
+	public static final String BOOKMARK_SEPARATOR = "BS";
 
 	private Driver driver;
 	private Session session;
@@ -99,8 +100,18 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 */
 	public Session newNeo4jSession(){
 		try {
-			String bookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
-			return this.driver.session(getReadOnly() ? AccessMode.READ : AccessMode.WRITE, bookmark);
+			String stringBookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+			final Bookmark bookmark;
+			if (StringUtils.isNotBlank(stringBookmark)) {
+				bookmark = InternalBookmark.parse(Arrays.asList(stringBookmark.split(BOOKMARK_SEPARATOR)));
+			} else {
+				bookmark = null;
+			}
+			SessionConfig config = SessionConfig.builder()
+					.withBookmarks(bookmark)
+					.withDefaultAccessMode(getReadOnly() ? AccessMode.READ : AccessMode.WRITE)
+					.build();
+			return this.driver.session(config);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
@@ -154,11 +165,19 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
             this.transaction.success();
             this.transaction.close();
             this.transaction = null;
-            this.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, this.session.lastBookmark());
-        }
+			setBookmark();
+		}
     }
 
-    @Override public void rollback() throws SQLException {
+	private void setBookmark() throws SQLClientInfoException {
+		InternalBookmark internalBookmark = (InternalBookmark) this.session.lastBookmark();
+		if (internalBookmark != null && internalBookmark.values().iterator().hasNext()) {
+			String bookmark = String.join(BOOKMARK_SEPARATOR, internalBookmark.values());
+			this.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, bookmark);
+		}
+	}
+
+	@Override public void rollback() throws SQLException {
 		this.checkClosed();
 		this.checkAutoCommit();
         doRollback();
@@ -308,7 +327,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
                 if (this.transaction.isOpen()) {
                     this.transaction.success();
                     this.transaction.close();
-                    this.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, this.session.lastBookmark());
+                    setBookmark();
                 }
                 this.transaction = this.session.beginTransaction();
             }
