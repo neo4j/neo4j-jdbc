@@ -21,12 +21,12 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.internal.value.*;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Value;
-import org.neo4j.driver.v1.exceptions.value.Uncoercible;
-import org.neo4j.driver.v1.types.*;
-import org.neo4j.driver.v1.util.Pair;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.exceptions.value.Uncoercible;
+import org.neo4j.driver.types.*;
+import org.neo4j.driver.util.Pair;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;

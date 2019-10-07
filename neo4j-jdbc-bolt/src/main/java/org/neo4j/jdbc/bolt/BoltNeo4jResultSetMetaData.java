@@ -20,7 +20,7 @@
 package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.v1.types.Type;
+import org.neo4j.driver.types.Type;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 

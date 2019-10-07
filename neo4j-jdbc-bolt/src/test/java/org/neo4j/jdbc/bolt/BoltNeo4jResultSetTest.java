@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.StatementResult;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

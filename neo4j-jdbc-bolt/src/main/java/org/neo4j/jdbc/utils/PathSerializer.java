@@ -3,7 +3,7 @@ package org.neo4j.jdbc.utils;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import org.neo4j.driver.v1.types.Path;
+import org.neo4j.driver.types.Path;
 
 import java.io.IOException;
 import java.util.ArrayList;

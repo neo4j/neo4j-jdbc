@@ -1,6 +1,6 @@
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.v1.summary.SummaryCounters;
+import org.neo4j.driver.summary.SummaryCounters;
 
 /**
  * A set of common functions for bolt connector

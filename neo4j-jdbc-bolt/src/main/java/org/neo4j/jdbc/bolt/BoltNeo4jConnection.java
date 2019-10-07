@@ -19,8 +19,8 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Transaction;
 
 import java.sql.Connection;
 import java.sql.SQLException;

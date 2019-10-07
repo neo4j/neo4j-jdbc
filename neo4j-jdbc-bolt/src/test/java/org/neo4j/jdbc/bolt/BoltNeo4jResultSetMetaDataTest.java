@@ -24,8 +24,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.types.Type;
+import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.types.Type;
 import org.neo4j.jdbc.bolt.data.ResultSetData;
 
 import java.sql.ResultSetMetaData;

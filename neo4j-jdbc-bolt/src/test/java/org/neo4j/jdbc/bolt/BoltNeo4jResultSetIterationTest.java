@@ -21,7 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.*;
 import org.junit.rules.ExpectedException;
-import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.StatementResult;
 import org.neo4j.jdbc.bolt.data.ResultSetData;
 
 import java.sql.ResultSet;

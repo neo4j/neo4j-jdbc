@@ -19,9 +19,9 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.StatementResult;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.metadata.Column;

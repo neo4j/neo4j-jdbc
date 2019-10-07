@@ -21,15 +21,16 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.neo4j.driver.v1.*;
-import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.*;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.Assert.*;
-import static org.neo4j.driver.v1.Config.build;
+import static org.neo4j.driver.Config.builder;
 
 /**
  * @author Stefan Armbruster
@@ -44,9 +45,9 @@ public class SampleIT {
 		neo4j.getGraphDatabase().execute("create ( )");
 
 		//Creating config without SSL
-		Config.ConfigBuilder builder = build();
+		Config.ConfigBuilder builder = builder();
 		builder.withoutEncryption();
-		Config config = builder.toConfig();
+		Config config = builder.build();
 
 		// hitting the DB with a bolt request
 		Driver driver = GraphDatabase.driver(neo4j.getBoltUrl(), config);   // defaults to localhost:7687

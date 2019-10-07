@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
-import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.StatementResult;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.Neo4jStatement;

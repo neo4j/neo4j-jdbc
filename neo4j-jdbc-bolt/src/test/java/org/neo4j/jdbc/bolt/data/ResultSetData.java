@@ -27,13 +27,14 @@ import org.neo4j.driver.internal.spi.Connection;
 import org.neo4j.driver.internal.value.FloatValue;
 import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.StringValue;
-import org.neo4j.driver.v1.Record;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Value;
-import org.neo4j.driver.v1.Values;
-import org.neo4j.driver.v1.types.Entity;
-import org.neo4j.driver.v1.types.Node;
-import org.neo4j.driver.v1.types.Path;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
+import org.neo4j.driver.types.Entity;
+import org.neo4j.driver.types.Node;
+import org.neo4j.driver.types.Path;
+import org.neo4j.driver.types.Relationship;
 
 import java.util.*;
 
@@ -177,7 +178,7 @@ public class ResultSetData {
 			}
 		});
 
-		org.neo4j.driver.v1.types.Relationship rel1 = new InternalRelationship(3, 1, 2, "type", new HashMap<String, Value>() {
+		org.neo4j.driver.types.Relationship rel1 = new InternalRelationship(3, 1, 2, "type", new HashMap<String, Value>() {
 			{
 				this.put("relProperty", new StringValue("value3"));
 			}
@@ -220,13 +221,13 @@ public class ResultSetData {
 			}
 		});
 
-		org.neo4j.driver.v1.types.Relationship rel2 = new InternalRelationship(7, 4, 5, "type", new HashMap<String, Value>() {
+		Relationship rel2 = new InternalRelationship(7, 4, 5, "type", new HashMap<String, Value>() {
 			{
 				this.put("relProperty", new StringValue("value4"));
 			}
 		});
 
-		org.neo4j.driver.v1.types.Relationship rel3 = new InternalRelationship(8, 6, 5, "type", new HashMap<String, Value>() {
+		Relationship rel3 = new InternalRelationship(8, 6, 5, "type", new HashMap<String, Value>() {
 			{
 				this.put("relProperty", new StringValue("value5"));
 			}
