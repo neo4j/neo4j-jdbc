@@ -1,6 +1,14 @@
 package org.neo4j.jdbc.bolt;
 
+import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * A set of common functions for bolt connector
@@ -40,6 +48,36 @@ public class BoltNeo4jUtils {
         int updateCount = (objectCount == 0)?schemaCount:objectCount;
 
         return (updateCount == 0)?stats.propertiesSet():updateCount;
+    }
+
+    public static <R> R executeInTx(BoltNeo4jConnection connection,
+                                    String sql,
+                                    Map<String, Object> params,
+                                    Function<StatementResult, R> body) throws SQLException {
+        try {
+            StatementResult statementResult = executeInternal(connection, sql, params);
+            R result = body.apply(statementResult);
+            if (connection.getAutoCommit()) {
+                connection.doCommit();
+            }
+            return result;
+        }  catch (Exception e) {
+            connection.doRollback();
+            throw new SQLException(e);
+        }
+    }
+
+    public static <R> R executeInTx(BoltNeo4jConnection connection,
+                                    String sql,
+                                    Function<StatementResult, R> body) throws SQLException {
+        return executeInTx(connection, sql, Collections.emptyMap(), body);
+    }
+
+    private static StatementResult executeInternal(BoltNeo4jConnection connection,
+                                                   String statement,
+                                                   Map<String, Object> params) {
+        Transaction transaction = connection.getTransaction();
+        return transaction.run(statement, params);
     }
 
 }

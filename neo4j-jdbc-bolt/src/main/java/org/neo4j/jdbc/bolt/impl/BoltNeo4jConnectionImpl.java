@@ -18,9 +18,8 @@
 package org.neo4j.jdbc.bolt.impl;
 
 import org.apache.commons.lang3.StringUtils;
-import org.neo4j.driver.*;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.internal.Bookmark;
+import org.neo4j.driver.*;
 import org.neo4j.driver.internal.InternalBookmark;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.Neo4jResultSet;
@@ -31,8 +30,8 @@ import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
 
 import java.lang.reflect.Proxy;
-import java.sql.*;
 import java.sql.Statement;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -162,11 +161,11 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 
     @Override public void doCommit() throws SQLException {
         if (this.transaction != null && this.transaction.isOpen()) {
-            this.transaction.success();
+            this.transaction.commit();
             this.transaction.close();
             this.transaction = null;
-			setBookmark();
-		}
+            setBookmark();
+        }
     }
 
 	private void setBookmark() throws SQLClientInfoException {
@@ -185,7 +184,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 
     @Override public void doRollback() {
         if (this.transaction != null && this.transaction.isOpen()) {
-            this.transaction.failure();
+            this.transaction.rollback();
             this.transaction.close();
             this.transaction = null;
         }
@@ -324,11 +323,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
                 this.transaction = this.session.beginTransaction();
 			}
             else if (this.getAutoCommit()) {
-                if (this.transaction.isOpen()) {
-                    this.transaction.success();
-                    this.transaction.close();
-                    setBookmark();
-                }
+				doCommit();
                 this.transaction = this.session.beginTransaction();
             }
         }

@@ -49,7 +49,6 @@ import java.util.Collections;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.neo4j.jdbc.bolt.utils.Mocker.*;
@@ -119,8 +118,8 @@ public class BoltNeo4jStatementTest {
 
 		statement.close();
 
-		verify(mockTransaction, never()).failure();
-		verify(mockTransaction, never()).success();
+		verify(mockTransaction, never()).rollback();
+		verify(mockTransaction, never()).commit();
 		verify(mockTransaction, never()).close();
 	}
 
@@ -514,7 +513,7 @@ public class BoltNeo4jStatementTest {
 		ResultSummary resultSummary = mock(ResultSummary.class);
 		SummaryCounters summaryCounters = mock(SummaryCounters.class);
 
-        when(transaction.run(anyString())).thenReturn(stmtResult);
+        when(transaction.run(anyString(), anyMap())).thenReturn(stmtResult);
 		when(stmtResult.consume()).thenReturn(resultSummary);
 		when(resultSummary.counters()).thenReturn(summaryCounters);
 		when(summaryCounters.nodesCreated()).thenReturn(1);

@@ -107,7 +107,7 @@ public class BoltNeo4jStatementIT {
 
 		lines = statement.executeUpdate(StatementData.STATEMENT_CREATE_REV);
 		assertEquals(2, lines);
-
+		statement.close();
 	}
 
 	/*------------------------------*/
@@ -120,6 +120,7 @@ public class BoltNeo4jStatementIT {
 
 		result = statement.execute(StatementData.STATEMENT_CREATE_REV);
 		assertFalse(result);
+		statement.close();
 
 	}
 
@@ -127,6 +128,7 @@ public class BoltNeo4jStatementIT {
 		Statement statement = connection.createStatement();
 		boolean result = statement.execute(StatementData.STATEMENT_MATCH_ALL);
 		assertTrue(result);
+		statement.close();
 
 	}
 
@@ -136,6 +138,7 @@ public class BoltNeo4jStatementIT {
 
 		Statement statement = connection.createStatement();
 		statement.execute("AZERTYUIOP");
+		statement.close();
 
 	}
 
@@ -146,7 +149,12 @@ public class BoltNeo4jStatementIT {
 		connection.setAutoCommit(false);
 
 		Statement statement = connection.createStatement();
-		statement.execute("AZERTYUIOP");
+		try {
+			statement.execute("AZERTYUIOP");
+		} catch (Exception e) {
+			statement.close();
+			throw e;
+		}
 	}
 
 	/*------------------------------*/
@@ -164,6 +172,7 @@ public class BoltNeo4jStatementIT {
 		assertArrayEquals(new int[]{1, 1, 1}, result);
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		statement.close();
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
@@ -182,6 +191,7 @@ public class BoltNeo4jStatementIT {
 		}
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		statement.close();
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
@@ -208,6 +218,7 @@ public class BoltNeo4jStatementIT {
 		}
 
 		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		statement.close();
 
 	}
 

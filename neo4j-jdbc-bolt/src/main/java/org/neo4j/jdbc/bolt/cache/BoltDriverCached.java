@@ -88,6 +88,11 @@ public class BoltDriverCached implements Driver {
     }
 
     @Override
+    public boolean isMetricsEnabled() {
+        return internal.isMetricsEnabled();
+    }
+
+    @Override
     public TypeSystem defaultTypeSystem() {
         return internal.defaultTypeSystem();
     }
