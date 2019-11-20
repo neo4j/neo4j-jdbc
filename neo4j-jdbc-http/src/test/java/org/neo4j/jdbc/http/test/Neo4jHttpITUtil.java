@@ -24,7 +24,7 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.neo4j.harness.junit.Neo4jRule;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 
 import java.io.File;
 import java.util.Arrays;
@@ -42,8 +42,10 @@ public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
 	public Boolean secureMode;
 
 	@ClassRule public static Neo4jRule neo4j = new Neo4jRule()
-			.withConfig("dbms.connector.http.enabled", "true")
-			.withConfig("dbms.connector.http.listen_address", ":0")
+//			.withConfig(SettingImpl.newBuilder("dbms.connector.http.enabled",
+//					SettingValueParsers.BOOL, true).build(), true)
+//			.withConfig(SettingImpl.newBuilder("dbms.connector.http.listen_address",
+//					SettingValueParsers.STRING, ":0").build(), ":0")
 			.withFixture(new File(Neo4jHttpUnitTestUtil.class.getClassLoader().getResource("data/movie.cyp").getFile()));
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();

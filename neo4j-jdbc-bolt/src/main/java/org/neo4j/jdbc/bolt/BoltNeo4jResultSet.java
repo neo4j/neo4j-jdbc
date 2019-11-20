@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.apache.lucene.search.PointInSetQuery;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.Record;
@@ -27,6 +28,7 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.exceptions.value.Uncoercible;
 import org.neo4j.driver.types.*;
 import org.neo4j.driver.util.Pair;
+import org.neo4j.internal.helpers.collection.Iterators;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
@@ -41,6 +43,9 @@ import java.sql.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.neo4j.jdbc.utils.DataConverterUtils.*;
 /**
@@ -49,11 +54,11 @@ import static org.neo4j.jdbc.utils.DataConverterUtils.*;
  */
 public class BoltNeo4jResultSet extends Neo4jResultSet {
 
-	private StatementResult   iterator;
-	private ResultSetMetaData metaData;
-	private Record            current;
-	private List<String>      keys;
-	private List<Type>        classes;
+	private final Iterator<Record> iterator;
+	private final ResultSetMetaData metaData;
+	private Record current;
+	private final List<String> keys;
+	private final List<Type> classes;
 
 	private boolean flattened = false;
 
@@ -74,7 +79,9 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 */
 	private BoltNeo4jResultSet(Statement statement, StatementResult iterator, int... params) {
 		super(statement, params);
-		this.iterator = iterator;
+		List<Record> recordList = iterator != null ? iterator.list() : Collections.emptyList();
+		Optional<Record> first = recordList.stream().findFirst();
+		this.iterator = iterator != null ? recordList.iterator() : null;
 
 		this.keys = new ArrayList<>();
 		this.classes = new ArrayList<>();
@@ -86,21 +93,19 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 			this.flatten = 0;
 		}
 
-		if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
+		if (this.flatten != 0 && this.flatteningTypes(first)) {
 			//Flatten the result
 			this.flattenResultSet();
 			this.flattened = true;
-		} else if (this.iterator != null) {
+		} else if (iterator != null) {
 			//Keys are exactly the ones returned from the iterator
-			this.keys = this.iterator.keys();
-			if (this.iterator.hasNext()) {
-				for (Value value : this.iterator.peek().values()) {
+			this.keys.addAll(iterator.keys());
+			first.ifPresent((record) -> {
+				for (Value value : record.values()) {
 					this.classes.add(value.type());
 				}
-			}
+			});
 		}
-
-
 		this.metaData = BoltNeo4jResultSetMetaData.newInstance(false, this.classes, this.keys);
 	}
 
@@ -165,17 +170,11 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 
 	}
 
-	private boolean flatteningTypes(StatementResult statementResult) {
-		boolean result = true;
-
-		for (Pair<String, Value> pair : statementResult.peek().fields()) {
-			if (!ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())) {
-				result = false;
-				break;
-			}
-		}
-
-		return result;
+	public boolean flatteningTypes(Optional<Record> peek) {
+		return peek
+				.map(record -> record.fields().stream())
+				.map(pairStream -> pairStream.allMatch(pair -> ACCEPTED_TYPES_FOR_FLATTENING.contains(pair.value().type().name())))
+				.orElse(Boolean.FALSE);
 	}
 
 	@Override protected boolean innerNext() throws SQLException {

@@ -37,6 +37,7 @@ import org.neo4j.driver.types.Path;
 import org.neo4j.driver.types.Relationship;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
@@ -294,6 +295,8 @@ public class ResultSetData {
 					return new InternalRecord(columns, Values.values(data.get(0)));
 				}
 			});
+
+			when (cursor.list()).thenReturn(data.stream().map(elem -> new InternalRecord(columns, Values.values(elem))).collect(Collectors.toList()));
 /*
 			InternalStatementResult cursor = new InternalStatementResult(connection, null);
 			StreamCollector responseCollector = (StreamCollector) runResponseCollectorMethod.invoke(cursor);

@@ -27,9 +27,11 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
+import org.neo4j.driver.internal.DatabaseNameUtil;
 import org.neo4j.driver.internal.DefaultBookmarkHolder;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.async.NetworkSession;
+import org.neo4j.driver.internal.handlers.pulln.FetchSizeUtil;
 import org.neo4j.driver.internal.logging.DevNullLogging;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
@@ -493,7 +495,7 @@ public class BoltNeo4jConnectionTest {
 		expectedEx.expect(SQLException.class);
 
 		NetworkSession networkSession = new NetworkSession(null, null,
-				"", AccessMode.READ, new DefaultBookmarkHolder(), DevNullLogging.DEV_NULL_LOGGING);
+				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
 
 		Session session = new InternalSession(networkSession);
 		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);

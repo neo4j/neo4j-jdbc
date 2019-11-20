@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -39,6 +40,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class})
+// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
 public class BoltRoutingNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();

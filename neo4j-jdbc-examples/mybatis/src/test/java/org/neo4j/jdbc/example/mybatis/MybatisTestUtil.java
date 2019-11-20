@@ -48,10 +48,10 @@ public class MybatisTestUtil {
 	
 	protected static void populateGraphDB(GraphDatabaseService graphDatabaseService) {
 		try (Transaction tx = graphDatabaseService.beginTx()) { 
-			Node node = graphDatabaseService.createNode(TestLabels.Person);
+			Node node = tx.createNode(TestLabels.Person);
 			node.setProperty("name", "Dave Chappelle");
 			node.setProperty("born", 1973);
-			tx.success();
+			tx.commit();
 		}
 	}
 

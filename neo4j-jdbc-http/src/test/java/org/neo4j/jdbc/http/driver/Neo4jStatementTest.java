@@ -48,7 +48,7 @@ public class Neo4jStatementTest extends Neo4jHttpUnitTestUtil {
         Neo4jStatement neo4jStatement = new Neo4jStatement(
                 "CALL apoc.trigger.add(" +
                 "'HAS_VALUE_ON_REMOVE_FROM_INDEX', " +
-                "\"UNWIND {something} AS r CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", " +
+                "\"UNWIND $something AS r CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", " +
                 "{phase:'after'})",
                 new HashMap<String, Object>(0),
                 false);
@@ -58,7 +58,7 @@ public class Neo4jStatementTest extends Neo4jHttpUnitTestUtil {
         String expected =
                 "CALL apoc.trigger.add(" +
                 "'HAS_VALUE_ON_REMOVE_FROM_INDEX', " +
-                "\"UNWIND {something} AS r CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", " +
+                "\"UNWIND $something AS r CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", " +
                 "{phase:'after'})";
         assertEquals(expected, result);
     }

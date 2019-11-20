@@ -48,7 +48,7 @@ public class PreparedStatementBuilder {
 		Matcher matcher = Pattern.compile(regex).matcher(digested);
 
 		while (matcher.find()) {
-			digested = digested.replaceFirst(regex, "{" + index + "}");
+			digested = digested.replaceFirst(regex, "\\$" + index);
 			index++;
 		}
 
@@ -63,7 +63,7 @@ public class PreparedStatementBuilder {
 	 */
 	public static int namedParameterCount(String raw) {
 		int max = 0;
-		String regex = "\\{\\s*`?\\s*(\\d+)\\s*`?\\s*\\}(?=[^\"]*(\"[^\"]*\"[^\"]*)*$)";
+		String regex = "\\$\\s*`?\\s*(\\d+)\\s*`?\\s*(?=[^\"]*(\"[^\"]*\"[^\"]*)*$)";
 		Matcher matcher = Pattern.compile(regex).matcher(raw);
 		while (matcher.find()) {
 			max = Math.max(Integer.parseInt(matcher.group(1)),max);

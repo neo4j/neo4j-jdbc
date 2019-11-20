@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.http;
 
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
@@ -144,16 +145,20 @@ public class HttpNeo4jPreparedStatementIT extends Neo4jHttpITUtil {
 
 		int[] result = statement.executeBatch();
 
-		Result res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
-		while(res.hasNext()){
-			assertEquals(0L, res.next().get("total"));
+		try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
+			Result res = tx.execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
+			while(res.hasNext()){
+				assertEquals(0L, res.next().get("total"));
+			}
 		}
 		assertArrayEquals(new int[]{1, 1, 1}, result);
 
 		connection.commit();
-		res = neo4j.getGraphDatabaseService().execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
-		while(res.hasNext()){
-			assertEquals(3L, res.next().get("total"));
+		try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
+			Result res = tx.execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
+			while(res.hasNext()){
+				assertEquals(3L, res.next().get("total"));
+			}
 		}
 
 		connection.close();

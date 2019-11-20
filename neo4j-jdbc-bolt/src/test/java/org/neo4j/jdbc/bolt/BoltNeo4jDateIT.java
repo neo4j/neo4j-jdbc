@@ -6,6 +6,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.types.IsoDuration;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
@@ -27,13 +28,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jDateIT {
     @ClassRule
-    public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+    public static Neo4jRule neo4j = new Neo4jRule();
 
     static Connection connection;
 
     @Before
     public void cleanDB() throws SQLException {
-        neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+        neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
 

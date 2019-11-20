@@ -37,6 +37,7 @@ import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -62,6 +63,7 @@ import static org.powermock.api.mockito.PowerMockito.*;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BoltNeo4jPreparedStatement.class, BoltNeo4jResultSet.class })
+// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
 public class BoltNeo4jPreparedStatementTest {
 
 	@Rule
@@ -106,11 +108,12 @@ public class BoltNeo4jPreparedStatementTest {
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
-		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(null), "");
-		assertNotNull(prStatement.executeQuery());
+		StatementResult mockedSR = mock(StatementResult.class);
+		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR), "");
+		final ResultSet resultSet = prStatement.executeQuery();
 		prStatement.close();
 
-		verify(this.mockedRS, times(1)).close();
+		verify(resultSet, times(1)).close();
 	}
 
 	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
@@ -121,13 +124,14 @@ public class BoltNeo4jPreparedStatementTest {
 	}
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
-		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(null), "");
-		prStatement.executeQuery();
+		StatementResult mockedSR = mock(StatementResult.class);
+		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR), "");
+		final ResultSet resultSet = prStatement.executeQuery();
 		prStatement.close();
 		prStatement.close();
 		prStatement.close();
 
-		verify(this.mockedRS, times(1)).close();
+		verify(resultSet, times(1)).close();
 	}
 
 	/*------------------------------*/
@@ -758,7 +762,8 @@ public class BoltNeo4jPreparedStatementTest {
 		BoltNeo4jPreparedStatement statement = mock(BoltNeo4jPreparedStatement.class);
 		when(statement.isClosed()).thenReturn(false);
 		when(statement.getUpdateCount()).thenCallRealMethod();
-		org.mockito.internal.util.reflection.Whitebox.setInternalState(statement, "currentResultSet", null);
+		final Object o = null;
+		Whitebox.setInternalState(statement, "currentResultSet", o);
 		Whitebox.setInternalState(statement, "currentUpdateCount", 1);
 
 		assertEquals(1, statement.getUpdateCount());
@@ -768,7 +773,7 @@ public class BoltNeo4jPreparedStatementTest {
 		BoltNeo4jPreparedStatement statement = mock(BoltNeo4jPreparedStatement.class);
 		when(statement.isClosed()).thenReturn(false);
 		when(statement.getUpdateCount()).thenCallRealMethod();
-		org.mockito.internal.util.reflection.Whitebox.setInternalState(statement, "currentResultSet", mock(BoltNeo4jResultSet.class));
+		Whitebox.setInternalState(statement, "currentResultSet", mock(BoltNeo4jResultSet.class));
 
 		assertEquals(-1, statement.getUpdateCount());
 	}
@@ -937,7 +942,7 @@ public class BoltNeo4jPreparedStatementTest {
 
 		Session session = Mockito.mock(Session.class);
 
-		Mockito.when(session.run(anyString(), anyMap())).thenThrow(Exception.class);
+		Mockito.when(session.run(anyString(), anyMap())).thenThrow(RuntimeException.class);
 
 		BoltNeo4jConnection connection = (BoltNeo4jConnection) stmt.getConnection();
 		Mockito.when(connection.getSession()).thenReturn(session);

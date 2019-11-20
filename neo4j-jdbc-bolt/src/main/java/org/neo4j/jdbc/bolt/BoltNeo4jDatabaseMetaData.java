@@ -45,6 +45,8 @@ import java.util.logging.Logger;
  */
 public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 
+	private static final String DB_PROPERTIES_QUERY = "MATCH (n:`%s`) WITH n LIMIT %d UNWIND keys(n) as key RETURN collect(distinct key) as keys";
+
 	/**
 	 * Used for some extra logging (for example in the constructor)
 	 */
@@ -101,8 +103,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	private void getDatabaseProperties(Session session) {
 		if (this.databaseLabels != null) {
 			for (Table databaseLabel : this.databaseLabels) {
-				StatementResult rs = session.run("MATCH (n:" + databaseLabel.getTableName() + ") WITH n LIMIT " + Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE
-						+ " UNWIND keys(n) as key RETURN collect(distinct key) as keys");
+				StatementResult rs = session.run(String.format(DB_PROPERTIES_QUERY, databaseLabel.getTableName(), Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE));
 				if (rs != null) {
 					cycleResultSetToSetDatabaseProperties(rs, databaseLabel);
 				}

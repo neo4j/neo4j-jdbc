@@ -4,7 +4,6 @@ import org.neo4j.driver.StatementResult;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
@@ -55,7 +54,7 @@ public class BoltNeo4jUtils {
                                     Map<String, Object> params,
                                     Function<StatementResult, R> body) throws SQLException {
         try {
-            StatementResult statementResult = executeInternal(connection, sql, params);
+            StatementResult statementResult = execute(connection, sql, params);
             R result = body.apply(statementResult);
             if (connection.getAutoCommit()) {
                 connection.doCommit();
@@ -73,9 +72,9 @@ public class BoltNeo4jUtils {
         return executeInTx(connection, sql, Collections.emptyMap(), body);
     }
 
-    private static StatementResult executeInternal(BoltNeo4jConnection connection,
-                                                   String statement,
-                                                   Map<String, Object> params) {
+    public static StatementResult execute(BoltNeo4jConnection connection,
+                                          String statement,
+                                          Map<String, Object> params) {
         Transaction transaction = connection.getTransaction();
         return transaction.run(statement, params);
     }

@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.copyOf;
 import static org.neo4j.jdbc.bolt.BoltNeo4jUtils.executeInTx;

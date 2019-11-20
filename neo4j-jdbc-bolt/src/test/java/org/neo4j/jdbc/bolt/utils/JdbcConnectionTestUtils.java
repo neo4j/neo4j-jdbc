@@ -1,7 +1,7 @@
 package org.neo4j.jdbc.bolt.utils;
 
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.BoltDriver;
-import org.neo4j.jdbc.bolt.Neo4jBoltRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
 import java.sql.*;
@@ -37,12 +37,12 @@ public class JdbcConnectionTestUtils {
         return warmedup;
     }
 
-    public static Connection getConnection(Neo4jBoltRule neo4j, String parameters) throws SQLException {
-        //return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl,user=neo4j,password=neo4j");
+    public static Connection getConnection(Neo4jRule neo4j, String parameters) throws SQLException {
+        //return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI() + "?nossl,user=neo4j,password=neo4j");
         if(!warmedup){
             warmup();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters,USERNAME,PASSWORD);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI() + "?nossl"+parameters,USERNAME,PASSWORD);
     }
 
     public static Properties defaultInfo(){
@@ -53,18 +53,18 @@ public class JdbcConnectionTestUtils {
         return info;
     }
 
-    public static Connection getConnection(Neo4jBoltRule neo4j, Properties info) throws SQLException {
+    public static Connection getConnection(Neo4jRule neo4j, Properties info) throws SQLException {
         if(!warmedup){
             warmup();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),info);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI(),info);
     }
 
-    public static Connection getConnection(Neo4jBoltRule neo4j) throws SQLException {
+    public static Connection getConnection(Neo4jRule neo4j) throws SQLException {
         return getConnection(neo4j,"");
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jBoltRule neo4j, String parameters){
+    public static Connection verifyConnection(Connection connection, Neo4jRule neo4j, String parameters){
         Connection res = connection;
 
         try {
@@ -80,7 +80,7 @@ public class JdbcConnectionTestUtils {
         return res;
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jBoltRule neo4j){
+    public static Connection verifyConnection(Connection connection, Neo4jRule neo4j){
         return verifyConnection(connection,neo4j,"");
     }
 
@@ -120,7 +120,7 @@ public class JdbcConnectionTestUtils {
         }
     }
 
-    public static void clearDatabase(Neo4jBoltRule neo4j){
-        neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+    public static void clearDatabase(Neo4jRule neo4j){
+        neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
     }
 }

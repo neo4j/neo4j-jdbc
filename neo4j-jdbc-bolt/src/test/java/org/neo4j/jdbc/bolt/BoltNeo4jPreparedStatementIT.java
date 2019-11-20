@@ -24,6 +24,8 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 import org.neo4j.jdbc.impl.ListArray;
@@ -41,7 +43,7 @@ import static org.junit.Assert.*;
  */
 public class BoltNeo4jPreparedStatementIT {
 
-	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
 
 	static Connection connection;
 
@@ -60,12 +62,12 @@ public class BoltNeo4jPreparedStatementIT {
 
 	@Before
 	public void cleanDB(){
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		ResultSet rs = statement.executeQuery();
@@ -73,11 +75,11 @@ public class BoltNeo4jPreparedStatementIT {
 		assertTrue(rs.next());
 		assertEquals("testAgain", rs.getString(1));
 		assertFalse(rs.next());
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
 	}
 
 	@Test public void executeQueryWithNamedParamShouldExecuteAndReturnCorrectData() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
 		statement.setString(1, "test");
 		ResultSet rs = statement.executeQuery();
@@ -85,7 +87,7 @@ public class BoltNeo4jPreparedStatementIT {
 		assertTrue(rs.next());
 		assertEquals("testAgain", rs.getString(1));
 		assertFalse(rs.next());
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
 	}
 
 	/*------------------------------*/
@@ -113,7 +115,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*            execute           */
 	/*------------------------------*/
 	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		boolean result = statement.execute();
@@ -199,9 +201,11 @@ public class BoltNeo4jPreparedStatementIT {
 		statement.setString(2, "test6");
 		statement.addBatch();
 
-		Result res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
-		while(res.hasNext()){
-			assertEquals(0L, res.next().get("total"));
+		try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
+			Result res = tx.execute(StatementData.STATEMENT_COUNT_NODES);
+			while(res.hasNext()){
+				assertEquals(0L, res.next().get("total"));
+			}
 		}
 
 		int[] result = statement.executeBatch();
@@ -210,9 +214,11 @@ public class BoltNeo4jPreparedStatementIT {
 
 		connection.commit();
 
-		res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
-		while(res.hasNext()){
-			assertEquals(3L, res.next().get("total"));
+		try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
+			Result res = tx.execute(StatementData.STATEMENT_COUNT_NODES);
+			while(res.hasNext()){
+				assertEquals(3L, res.next().get("total"));
+			}
 		}
 
 	}
@@ -221,7 +227,7 @@ public class BoltNeo4jPreparedStatementIT {
 	/*            MoreResult        */
 	/*------------------------------*/
 	@Test public void testMoreResultWithOneResultSet() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
 		statement.setString(1, "test");
 		boolean result = statement.execute();
@@ -272,7 +278,7 @@ public class BoltNeo4jPreparedStatementIT {
 	}
 
 	@Test public void testUpdateCountWithUpdate() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_UPDATE_NODES_PARAM);
 		statement.setString(1, "test");
 
@@ -284,7 +290,7 @@ public class BoltNeo4jPreparedStatementIT {
 	}
 
 	@Test public void testUpdateCountWithReturn() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC_NAMED);
 		statement.setString(1, "test");
 

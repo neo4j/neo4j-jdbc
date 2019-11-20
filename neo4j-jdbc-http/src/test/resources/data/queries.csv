@@ -1,11 +1,11 @@
 query;params;stat
-MATCH (tom {name: {name} }) RETURN tom; { "name" : "Tom Hanks" } ;true
-MATCH (cloudAtlas {title: { movie } }) RETURN cloudAtlas; { "movie" : "Cloud Atlas" } ;true
-MATCH (people:Person)  WHERE people.name=~ { regex } RETURN people.name LIMIT 10; { "regex" : "Tom.*" } ;false
-MATCH (nineties:Movie) WHERE nineties.released > { from } AND nineties.released < { to } RETURN nineties.title; { "from" : 1990, "to" : 2000 };false
-MATCH (tom:Person {name: { name } } )-[:ACTED_IN]->(tomHanksMovies) RETURN tom,tomHanksMovies; { "name" : "Tom Hanks" } ;false
-MATCH (cloudAtlas {title: { movie } })<-[:DIRECTED]-(directors) RETURN directors.name; { "movie" : "Cloud Atlas" } ;true
-MATCH (tom:Person {name: { name } })-[:ACTED_IN]->(m)<-[:ACTED_IN]-(coActors) RETURN coActors.name; { "name" : "Tom Hanks" } ;false
-MATCH (people:Person)-[relatedTo]-(:Movie {title: { movie } }) RETURN people.name, Type(relatedTo), relatedTo; { "movie" : "Cloud Atlas" } ;true
-MATCH (bacon:Person {name:{kevin}})-[*1..4]-(hollywood) RETURN DISTINCT hollywood; { "kevin" : "Kevin Bacon" } ;true
-MATCH p=shortestPath((bacon:Person {name: { start } })-[*]-(meg:Person {name: { end } })) RETURN p; { "start" : "Kevin Bacon", "end" : "Meg Ryan" } ;true
+MATCH (tom {name: $name }) RETURN tom; { "name" : "Tom Hanks" } ;true
+MATCH (cloudAtlas {title: $movie }) RETURN cloudAtlas; { "movie" : "Cloud Atlas" } ;true
+MATCH (people:Person)  WHERE people.name=~ $regex RETURN people.name LIMIT 10; { "regex" : "Tom.*" } ;false
+MATCH (nineties:Movie) WHERE nineties.released > $from AND nineties.released < $to RETURN nineties.title; { "from" : 1990, "to" : 2000 };false
+MATCH (tom:Person {name: $name } )-[:ACTED_IN]->(tomHanksMovies) RETURN tom,tomHanksMovies; { "name" : "Tom Hanks" } ;false
+MATCH (cloudAtlas {title: $movie })<-[:DIRECTED]-(directors) RETURN directors.name; { "movie" : "Cloud Atlas" } ;true
+MATCH (tom:Person {name: $name })-[:ACTED_IN]->(m)<-[:ACTED_IN]-(coActors) RETURN coActors.name; { "name" : "Tom Hanks" } ;false
+MATCH (people:Person)-[relatedTo]-(:Movie {title: $movie }) RETURN people.name, Type(relatedTo), relatedTo; { "movie" : "Cloud Atlas" } ;true
+MATCH (bacon:Person {name: $kevin})-[*1..4]-(hollywood) RETURN DISTINCT hollywood; { "kevin" : "Kevin Bacon" } ;true
+MATCH p=shortestPath((bacon:Person {name: $start })-[*]-(meg:Person {name: $end })) RETURN p; { "start" : "Kevin Bacon", "end" : "Meg Ryan" } ;true

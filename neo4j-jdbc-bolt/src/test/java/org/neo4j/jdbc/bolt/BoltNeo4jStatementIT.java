@@ -22,6 +22,8 @@ package org.neo4j.jdbc.bolt;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
@@ -36,7 +38,7 @@ import static org.junit.Assert.*;
  */
 public class BoltNeo4jStatementIT {
 
-	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -56,18 +58,18 @@ public class BoltNeo4jStatementIT {
 	/*          executeQuery        */
 	/*------------------------------*/
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
 
 		assertTrue(rs.next());
 		assertEquals("test", rs.getString(1));
 		assertFalse(rs.next());
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatement() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 
@@ -77,11 +79,11 @@ public class BoltNeo4jStatementIT {
 		assertTrue(rs.next());
 		assertEquals("test", rs.getString(1));
 		assertFalse(rs.next());
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatementAndCreatedWithParams() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 		Statement statement = connection.createStatement(Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY);
 		connection.setAutoCommit(false);
 
@@ -91,7 +93,7 @@ public class BoltNeo4jStatementIT {
 		assertTrue(rs.next());
 		assertEquals("test", rs.getString(1));
 		assertFalse(rs.next());
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	/*------------------------------*/
@@ -171,7 +173,7 @@ public class BoltNeo4jStatementIT {
 
 		assertArrayEquals(new int[]{1, 1, 1}, result);
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 		statement.close();
 	}
 
@@ -190,7 +192,7 @@ public class BoltNeo4jStatementIT {
 			assertArrayEquals(new int[]{1, 1}, e.getUpdateCounts());
 		}
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 		statement.close();
 	}
 
@@ -201,9 +203,11 @@ public class BoltNeo4jStatementIT {
 		statement.addBatch(StatementData.STATEMENT_CREATE);
 		statement.addBatch(StatementData.STATEMENT_CREATE);
 
-		Result res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
-		while(res.hasNext()){
-			assertEquals(0L, res.next().get("total"));
+		try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
+			Result res = tx.execute(StatementData.STATEMENT_COUNT_NODES);
+			while(res.hasNext()){
+				assertEquals(0L, res.next().get("total"));
+			}
 		}
 
 		int[] result = statement.executeBatch();
@@ -212,12 +216,14 @@ public class BoltNeo4jStatementIT {
 
 		connection.commit();
 
-		res = neo4j.getGraphDatabase().execute(StatementData.STATEMENT_COUNT_NODES);
-		while(res.hasNext()){
-			assertEquals(3L, res.next().get("total"));
+		try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
+			Result res = tx.execute(StatementData.STATEMENT_COUNT_NODES);
+			while(res.hasNext()){
+				assertEquals(3L, res.next().get("total"));
+			}
 		}
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 		statement.close();
 
 	}

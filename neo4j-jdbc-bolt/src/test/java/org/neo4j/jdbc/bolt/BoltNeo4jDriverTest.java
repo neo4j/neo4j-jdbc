@@ -34,6 +34,7 @@ import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -59,7 +60,10 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class) @PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class}) public class BoltNeo4jDriverTest {
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class})
+// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
+public class BoltNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -209,7 +213,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(PoolSettings.DEFAULT_CONNECTION_ACQUISITION_TIMEOUT, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(PoolSettings.DEFAULT_IDLE_TIME_BEFORE_CONNECTION_TEST, config.idleTimeBeforeConnectionTest());
@@ -233,7 +237,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
@@ -272,7 +276,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
@@ -309,7 +313,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
@@ -428,7 +432,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
 
@@ -448,7 +452,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -462,7 +466,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
 
@@ -482,7 +486,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -496,7 +500,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(123_000, config.connectionTimeoutMillis());
 
@@ -516,7 +520,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -530,7 +534,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(true, config.encrypted());
 
@@ -550,7 +554,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -564,7 +568,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(true, config.logLeakedSessions());;
 
@@ -584,7 +588,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -598,7 +602,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			// assertEquals(Config.LoadBalancingStrategy.LEAST_CONNECTED, config.loadBalancingStrategy());
 
@@ -615,7 +619,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			// assertEquals(Config.LoadBalancingStrategy.ROUND_ROBIN, config.loadBalancingStrategy());
 
 			return mockedDriver;
@@ -634,7 +638,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 //		PowerMockito.mockStatic(GraphDatabase.class);
 //
 //		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-//			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+//			Config config = invocationOnMock.getArgument(2, Config.class);
 //			return mockedDriver;
 //		});
 //
@@ -648,7 +652,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(123_000, config.maxConnectionLifetimeMillis());
 
@@ -668,7 +672,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -682,7 +686,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(3, config.maxConnectionPoolSize());
 
@@ -702,7 +706,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -716,7 +720,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
 
@@ -733,7 +737,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			assertEquals(Config.TrustStrategy.trustCustomCertificateSignedBy(new File("empty.txt")).strategy(), config.trustStrategy().strategy());
 
@@ -751,7 +755,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 //		PowerMockito.mockStatic(GraphDatabase.class);
 //
 //		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-//			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+//			Config config = invocationOnMock.getArgument(2, Config.class);
 //
 //			// assertEquals(Config.TrustStrategy.trustOnFirstUse(new File("empty.txt")).strategy(), config.trustStrategy().strategy());
 //
@@ -772,7 +776,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -789,7 +793,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 			return mockedDriver;
 		});
 
@@ -804,7 +808,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 		PowerMockito.mockStatic(GraphDatabase.class);
 
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgumentAt(2, Config.class);
+			Config config = invocationOnMock.getArgument(2, Config.class);
 
 			// retrySettings is not visible...
 

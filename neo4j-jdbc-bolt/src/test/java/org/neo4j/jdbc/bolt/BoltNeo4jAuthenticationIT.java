@@ -24,6 +24,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -39,16 +41,17 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jAuthenticationIT {
 
-	//@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule(true);  // here we're firing up neo4j with bolt enabled
+	//@Rule public Neo4jRule neo4j = new Neo4jRule();  // here we're firing up neo4j with bolt enabled
 	@ClassRule
-	public static Neo4jBoltRule neo4j = new Neo4jBoltRule(true);
+	public static Neo4jRule neo4j = new Neo4jRule()
+			.withConfig(GraphDatabaseSettings.auth_enabled, true);
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	private String NEO4J_JDBC_BOLT_URL;
 
 	@Before public void setup() {
-		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + neo4j.getBoltUrl();
+		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + neo4j.boltURI();
 	}
 
 	@Test public void shouldAuthenticate() throws SQLException {

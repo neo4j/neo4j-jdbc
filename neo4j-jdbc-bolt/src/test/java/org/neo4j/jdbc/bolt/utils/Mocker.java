@@ -23,9 +23,11 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.neo4j.driver.*;
+import org.neo4j.driver.internal.DatabaseNameUtil;
 import org.neo4j.driver.internal.DefaultBookmarkHolder;
 import org.neo4j.driver.internal.InternalSession;
 import org.neo4j.driver.internal.async.NetworkSession;
+import org.neo4j.driver.internal.handlers.pulln.FetchSizeUtil;
 import org.neo4j.driver.internal.logging.DevNullLogging;
 import org.neo4j.driver.internal.spi.ConnectionProvider;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
@@ -33,6 +35,7 @@ import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
@@ -128,7 +131,7 @@ public class Mocker {
 	public static BoltNeo4jConnectionImpl mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
 		Transaction mockTransaction = mock(Transaction.class);
 		when(mockTransaction.run(anyString())).thenReturn(cur);
-		when(mockTransaction.run(anyString(), any(HashMap.class))).thenReturn(cur);
+		when(mockTransaction.run(anyString(), any(Map.class))).thenReturn(cur);
 
 		BoltNeo4jConnectionImpl mockConnection = mockConnectionOpen();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
@@ -139,7 +142,7 @@ public class Mocker {
 		Driver mockedDriver = mock(org.neo4j.driver.Driver.class);
 		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
 		NetworkSession networkSession = new NetworkSession(connectionProvider, null,
-				"", AccessMode.READ, new DefaultBookmarkHolder(), DevNullLogging.DEV_NULL_LOGGING);
+				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
 		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(networkSession));
 		return mockedDriver;
 	}
