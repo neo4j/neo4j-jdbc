@@ -19,16 +19,28 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.apache.lucene.search.PointInSetQuery;
-import org.neo4j.driver.internal.types.InternalTypeSystem;
-import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.Record;
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.exceptions.value.Uncoercible;
-import org.neo4j.driver.types.*;
+import org.neo4j.driver.internal.types.InternalTypeSystem;
+import org.neo4j.driver.internal.value.DateTimeValue;
+import org.neo4j.driver.internal.value.DateValue;
+import org.neo4j.driver.internal.value.DurationValue;
+import org.neo4j.driver.internal.value.IntegerValue;
+import org.neo4j.driver.internal.value.ListValue;
+import org.neo4j.driver.internal.value.LocalDateTimeValue;
+import org.neo4j.driver.internal.value.LocalTimeValue;
+import org.neo4j.driver.internal.value.ObjectValueAdapter;
+import org.neo4j.driver.internal.value.PointValue;
+import org.neo4j.driver.internal.value.StringValue;
+import org.neo4j.driver.internal.value.TimeValue;
+import org.neo4j.driver.types.IsoDuration;
+import org.neo4j.driver.types.Node;
+import org.neo4j.driver.types.Point;
+import org.neo4j.driver.types.Relationship;
+import org.neo4j.driver.types.Type;
 import org.neo4j.driver.util.Pair;
-import org.neo4j.internal.helpers.collection.Iterators;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
@@ -39,15 +51,32 @@ import org.neo4j.jdbc.utils.ObjectConverter;
 
 import java.lang.reflect.Proxy;
 import java.sql.Date;
-import java.sql.*;
-import java.time.*;
-import java.util.*;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import static org.neo4j.jdbc.utils.DataConverterUtils.*;
+import static org.neo4j.jdbc.utils.DataConverterUtils.convertObject;
+import static org.neo4j.jdbc.utils.DataConverterUtils.valueToDate;
+import static org.neo4j.jdbc.utils.DataConverterUtils.valueToTime;
+import static org.neo4j.jdbc.utils.DataConverterUtils.valueToTimestamp;
 /**
  * @author AgileLARUS
  * @since 3.0.0
@@ -72,12 +101,12 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 * Default constructor for this class, if no params are given or if some params are missing it uses the defaults.
 	 *
 	 * @param statement The <code>Statement</code> this ResultSet comes from
-	 * @param iterator  The <code>StatementResult</code> of this set
+	 * @param iterator  The <code>Result</code> of this set
 	 * @param params    At most three, type, concurrency and holdability.
 	 *                  The defaults are <code>TYPE_FORWARD_ONLY</code>,
 	 *                  <code>CONCUR_READ_ONLY</code>,
 	 */
-	private BoltNeo4jResultSet(Statement statement, StatementResult iterator, int... params) {
+	private BoltNeo4jResultSet(Statement statement, Result iterator, int... params) {
 		super(statement, params);
 		List<Record> recordList = iterator != null ? iterator.list() : Collections.emptyList();
 		Optional<Record> first = recordList.stream().findFirst();
@@ -109,7 +138,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		this.metaData = BoltNeo4jResultSetMetaData.newInstance(false, this.classes, this.keys);
 	}
 
-	public static ResultSet newInstance(boolean debug, Statement statement, StatementResult iterator, int... params) {
+	public static ResultSet newInstance(boolean debug, Statement statement, Result iterator, int... params) {
 		ResultSet rs = new BoltNeo4jResultSet(statement, iterator, params);
 		return (ResultSet) Proxy
 				.newProxyInstance(BoltNeo4jResultSet.class.getClassLoader(), new Class[] { ResultSet.class }, new Neo4jInvocationHandler(rs, debug));

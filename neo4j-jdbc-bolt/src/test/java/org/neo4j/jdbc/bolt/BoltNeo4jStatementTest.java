@@ -27,7 +27,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
@@ -62,7 +62,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BoltNeo4jStatement.class, BoltNeo4jResultSet.class, Session.class })
-// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
+
 public class BoltNeo4jStatementTest {
 
 	@Rule
@@ -72,14 +72,14 @@ public class BoltNeo4jStatementTest {
 		BoltNeo4jResultSet mockedRS = mock(BoltNeo4jResultSet.class);
 		doNothing().when(mockedRS).close();
 		mockStatic(BoltNeo4jResultSet.class);
-		PowerMockito.when(BoltNeo4jResultSet.newInstance(anyBoolean(), any(Neo4jStatement.class), any(StatementResult.class))).thenReturn(mockedRS);
+		PowerMockito.when(BoltNeo4jResultSet.newInstance(anyBoolean(), any(Neo4jStatement.class), any(Result.class))).thenReturn(mockedRS);
 	}
 
 	/*------------------------------*/
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
-		StatementResult mockedSR = mock(StatementResult.class);
+		Result mockedSR = mock(Result.class);
 		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR));
 		final ResultSet resultSet = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
@@ -89,7 +89,7 @@ public class BoltNeo4jStatementTest {
 	}
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
-		StatementResult mockedSR = mock(StatementResult.class);
+		Result mockedSR = mock(Result.class);
 
 		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR));
 		final ResultSet resultSet = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
@@ -130,7 +130,7 @@ public class BoltNeo4jStatementTest {
 	/*------------------------------*/
 
 	@Test public void executeQueryShouldRun() throws SQLException {
-		StatementResult mockResult = mock(StatementResult.class);
+		Result mockResult = mock(Result.class);
 
 		Statement statement = BoltNeo4jStatement
 				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
@@ -196,7 +196,7 @@ public class BoltNeo4jStatementTest {
 	/*------------------------------*/
 
 	@Test public void executeUpdateShouldRun() throws SQLException {
-		StatementResult mockResult = mock(StatementResult.class);
+		Result mockResult = mock(Result.class);
 		ResultSummary mockSummary = mock(ResultSummary.class);
 		SummaryCounters mockSummaryCounters = mock(SummaryCounters.class);
 
@@ -283,7 +283,7 @@ public class BoltNeo4jStatementTest {
 	/*            execute           */
 	/*------------------------------*/
 	@Test public void executeShouldRunQuery() throws SQLException {
-		StatementResult mockResult = mock(StatementResult.class);
+		Result mockResult = mock(Result.class);
 
 		Statement statement = BoltNeo4jStatement
 				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
@@ -292,7 +292,7 @@ public class BoltNeo4jStatementTest {
 	}
 
 	@Test public void executeShouldRunUpdate() throws SQLException {
-		StatementResult mockResult = mock(StatementResult.class);
+		Result mockResult = mock(Result.class);
 		ResultSummary mockSummary = mock(ResultSummary.class);
 		SummaryCounters mockSummaryCounters = mock(SummaryCounters.class);
 
@@ -501,7 +501,7 @@ public class BoltNeo4jStatementTest {
 		BoltNeo4jConnectionImpl connection = mockConnectionOpen();
 		when(connection.getTransaction()).thenReturn(transaction);
 		when(connection.getAutoCommit()).thenReturn(true);
-		StatementResult stmtResult = mock(StatementResult.class);
+		Result stmtResult = mock(Result.class);
 		ResultSummary resultSummary = mock(ResultSummary.class);
 		SummaryCounters summaryCounters = mock(SummaryCounters.class);
 

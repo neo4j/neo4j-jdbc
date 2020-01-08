@@ -19,9 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.StatementResult;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.summary.ResultSummary;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
@@ -33,10 +31,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.copyOf;
 import static org.neo4j.jdbc.bolt.BoltNeo4jUtils.executeInTx;
@@ -102,7 +97,7 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 	}
 
 	private <T> T executeInternal(String statement,
-								  Function<StatementResult, T> body) throws SQLException {
+								  Function<Result, T> body) throws SQLException {
 		this.checkClosed();
 		return executeInTx((BoltNeo4jConnection) this.connection, statement, body);
 	}

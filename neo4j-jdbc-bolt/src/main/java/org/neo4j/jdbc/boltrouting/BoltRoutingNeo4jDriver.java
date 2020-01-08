@@ -40,11 +40,12 @@ import java.util.Properties;
  */
 public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
 
-    public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt\\+routing";
+//    public static final String JDBC_BOLT_ROUTING_PREFIX = "bolt\\+routing";
+    public static final String JDBC_BOLT_ROUTING_PREFIX = "neo4j";
 
-    public static final String ROUTING_CONTEXT  = "routing";
+    public static final String ROUTING_CONTEXT = "routing";
     public static final String ALTERNATIVE_SERVERS = "servers";
-    public static final String BOOKMARK  = "bookmark";
+    public static final String BOOKMARK = "bookmark";
     public static final String LIST_SEPARATOR = ";";
     public static final String CUSTOM_ROUTING_POLICY_SEPARATOR = "&";
 
@@ -67,6 +68,10 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
         super(JDBC_BOLT_ROUTING_PREFIX);
     }
 
+    public BoltRoutingNeo4jDriver(String prefix) throws SQLException {
+        super(prefix);
+    }
+
     @Override
     protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
         return cache.getDriver(routingUris, config, authToken, info);
@@ -75,7 +80,7 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     @Override
     protected Properties getRoutingContext(String url, Properties properties) {
         Properties props = new Properties();
-        if (url.matches("^" + JDBC_BOLT_ROUTING_PREFIX + ".*") && properties.containsKey(ROUTING_CONTEXT)) {
+        if (url.matches("^" + this.getPrefix() + ".*") && properties.containsKey(ROUTING_CONTEXT)) {
             List<String> routingParams = null;
             if (properties.get(ROUTING_CONTEXT) instanceof String) {
                 routingParams = Arrays.asList(properties.getProperty(ROUTING_CONTEXT));
@@ -95,7 +100,7 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     @Override
     protected String addRoutingPolicy(String url, Properties properties) {
         String boltUrl = url;
-        if (boltUrl.matches("^" + JDBC_BOLT_ROUTING_PREFIX + ".*") && properties.containsKey(ROUTING_CONTEXT)) {
+        if (boltUrl.matches("^" + this.getPrefix() + ".*") && properties.containsKey(ROUTING_CONTEXT)) {
             boltUrl += "?" + properties.getProperty(ROUTING_CONTEXT).replaceAll(LIST_SEPARATOR, CUSTOM_ROUTING_POLICY_SEPARATOR);
         }
         return boltUrl;

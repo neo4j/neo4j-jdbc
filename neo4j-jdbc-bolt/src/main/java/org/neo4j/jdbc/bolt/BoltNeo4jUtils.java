@@ -1,6 +1,6 @@
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
 
@@ -52,9 +52,9 @@ public class BoltNeo4jUtils {
     public static <R> R executeInTx(BoltNeo4jConnection connection,
                                     String sql,
                                     Map<String, Object> params,
-                                    Function<StatementResult, R> body) throws SQLException {
+                                    Function<Result, R> body) throws SQLException {
         try {
-            StatementResult statementResult = execute(connection, sql, params);
+            Result statementResult = execute(connection, sql, params);
             R result = body.apply(statementResult);
             if (connection.getAutoCommit()) {
                 connection.doCommit();
@@ -68,11 +68,11 @@ public class BoltNeo4jUtils {
 
     public static <R> R executeInTx(BoltNeo4jConnection connection,
                                     String sql,
-                                    Function<StatementResult, R> body) throws SQLException {
+                                    Function<Result, R> body) throws SQLException {
         return executeInTx(connection, sql, Collections.emptyMap(), body);
     }
 
-    public static StatementResult execute(BoltNeo4jConnection connection,
+    public static Result execute(BoltNeo4jConnection connection,
                                           String statement,
                                           Map<String, Object> params) {
         Transaction transaction = connection.getTransaction();

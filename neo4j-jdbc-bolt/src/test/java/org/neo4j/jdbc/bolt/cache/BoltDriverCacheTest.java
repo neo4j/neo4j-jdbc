@@ -58,6 +58,23 @@ public class BoltDriverCacheTest {
     }
 
     @Test
+    public void shouldCreateNewInstanceByNeo4jURI() throws URISyntaxException {
+        List<URI> url = Arrays.asList(URI.create("neo4j://localhost"));
+        Config.ConfigBuilder configBuilder = Config.builder();
+        AuthToken authToken = AuthTokens.basic("neo4j", "password");
+        BoltDriverCache cache = new BoltDriverCache(builder);
+
+        Driver driver1 = cache.getDriver(url, configBuilder.build(), authToken, new Properties());
+
+        url = Arrays.asList(URI.create("neo4j://another"));
+
+        Driver driver2 = cache.getDriver(url, configBuilder.build(), authToken, new Properties());
+
+        assertEquals(2, cache.getCache().size());
+        assertTrue(driver1 != driver2);
+    }
+
+    @Test
     public void shouldCreateNewInstanceByAuth() throws URISyntaxException {
         List<URI> url = Arrays.asList(URI.create("bolt://localhost"));
         Config.ConfigBuilder configBuilder = Config.builder();

@@ -28,7 +28,7 @@ import org.neo4j.driver.internal.value.FloatValue;
 import org.neo4j.driver.internal.value.IntegerValue;
 import org.neo4j.driver.internal.value.StringValue;
 import org.neo4j.driver.Record;
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.Entity;
@@ -250,9 +250,9 @@ public class ResultSetData {
 	private static void fixPublicForInternalResultCursor() {
 /*
 		try {
-			runResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("runResponseCollector");
+			runResponseCollectorMethod = InternalResult.class.getDeclaredMethod("runResponseCollector");
 			runResponseCollectorMethod.setAccessible(true);
-			pullAllResponseCollectorMethod = InternalStatementResult.class.getDeclaredMethod("pullAllResponseCollector");
+			pullAllResponseCollectorMethod = InternalResult.class.getDeclaredMethod("pullAllResponseCollector");
 			pullAllResponseCollectorMethod.setAccessible(true);
 		} catch (NoSuchMethodException e) {
 			throw new RuntimeException(e);
@@ -261,18 +261,18 @@ public class ResultSetData {
 	}
 
 	/**
-	 * hackish way to get a {@link InternalStatementResult}
+	 * hackish way to get a {@link InternalResult}
 	 *
 	 * @param keys
 	 * @param data
 	 * @return
 	 */
-	public static StatementResult buildResultCursor(String[] keys, final List<Object[]> data) {
+	public static Result buildResultCursor(String[] keys, final List<Object[]> data) {
 
 		try {
 			Connection connection = mock(Connection.class);
 
-			StatementResult cursor = mock(StatementResult.class);
+			Result cursor = mock(Result.class);
 			final List<String> columns = asList(keys);
 			when(cursor.keys()).thenReturn(columns);
 
@@ -298,7 +298,7 @@ public class ResultSetData {
 
 			when (cursor.list()).thenReturn(data.stream().map(elem -> new InternalRecord(columns, Values.values(elem))).collect(Collectors.toList()));
 /*
-			InternalStatementResult cursor = new InternalStatementResult(connection, null);
+			InternalResult cursor = new InternalResult(connection, null);
 			StreamCollector responseCollector = (StreamCollector) runResponseCollectorMethod.invoke(cursor);
 			responseCollector.keys(keys);
 			responseCollector.done();

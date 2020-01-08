@@ -81,8 +81,8 @@
 		<powermock.version>2.0.4</powermock.version>
 		<junit.version>4.12</junit.version>
 		<jmh.version>1.19</jmh.version>
-		<neo4j.java.driver.version>4.0.0-beta03</neo4j.java.driver.version>
-		<neo4j.version>4.0.0-beta03mr03</neo4j.version>
+		<neo4j.java.driver.version>4.0.0</neo4j.java.driver.version>
+		<neo4j.version>4.0.0</neo4j.version>
 		<httpclient.version>4.5.3</httpclient.version>
 		<jackson.version>2.9.2</jackson.version>
 

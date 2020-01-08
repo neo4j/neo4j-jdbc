@@ -19,7 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.Neo4jParameterMetaData;
@@ -91,7 +91,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		});
 	}
 
-	private <T> T executeInternal(Function<StatementResult, T> body) throws SQLException {
+	private <T> T executeInternal(Function<Result, T> body) throws SQLException {
 		this.checkClosed();
 		return executeInTx((BoltNeo4jConnection) this.connection, this.statement, this.parameters, body);
 	}

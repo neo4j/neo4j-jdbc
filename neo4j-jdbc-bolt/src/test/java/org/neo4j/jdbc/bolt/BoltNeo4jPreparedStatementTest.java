@@ -26,7 +26,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
@@ -63,7 +63,7 @@ import static org.powermock.api.mockito.PowerMockito.*;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BoltNeo4jPreparedStatement.class, BoltNeo4jResultSet.class })
-// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
+
 public class BoltNeo4jPreparedStatementTest {
 
 	@Rule
@@ -101,14 +101,14 @@ public class BoltNeo4jPreparedStatementTest {
 		this.mockedRS = mock(BoltNeo4jResultSet.class);
 		doNothing().when(this.mockedRS).close();
 		mockStatic(BoltNeo4jResultSet.class);
-		PowerMockito.when(BoltNeo4jResultSet.newInstance(anyBoolean(), any(Neo4jStatement.class), any(StatementResult.class))).thenReturn(mockedRS);
+		PowerMockito.when(BoltNeo4jResultSet.newInstance(anyBoolean(), any(Neo4jStatement.class), any(Result.class))).thenReturn(mockedRS);
 	}
 
 	/*------------------------------*/
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
-		StatementResult mockedSR = mock(StatementResult.class);
+		Result mockedSR = mock(Result.class);
 		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR), "");
 		final ResultSet resultSet = prStatement.executeQuery();
 		prStatement.close();
@@ -124,7 +124,7 @@ public class BoltNeo4jPreparedStatementTest {
 	}
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
-		StatementResult mockedSR = mock(StatementResult.class);
+		Result mockedSR = mock(Result.class);
 		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR), "");
 		final ResultSet resultSet = prStatement.executeQuery();
 		prStatement.close();
@@ -657,7 +657,7 @@ public class BoltNeo4jPreparedStatementTest {
 	/*         executeUpdate        */
 	/*------------------------------*/
 	@Test public void executeUpdateShouldRun() throws SQLException {
-		StatementResult mockResult = mock(StatementResult.class);
+		Result mockResult = mock(Result.class);
 		ResultSummary mockSummary = mock(ResultSummary.class);
 		SummaryCounters mockSummaryCounters = mock(SummaryCounters.class);
 
@@ -702,7 +702,7 @@ public class BoltNeo4jPreparedStatementTest {
 	}
 
 	@Test public void executeShouldRunUpdate() throws SQLException {
-		StatementResult mockResult = mock(StatementResult.class);
+		Result mockResult = mock(Result.class);
 		ResultSummary mockSummary = mock(ResultSummary.class);
 		SummaryCounters mockSummaryCounters = mock(SummaryCounters.class);
 
@@ -914,7 +914,7 @@ public class BoltNeo4jPreparedStatementTest {
 		when(connection.getTransaction()).thenReturn(transaction);
         when(connection.getAutoCommit()).thenReturn(true);
 
-        StatementResult stmtResult = mock(StatementResult.class);
+        Result stmtResult = mock(Result.class);
         ResultSummary resultSummary = mock(ResultSummary.class);
         SummaryCounters summaryCounters = mock(SummaryCounters.class);
 

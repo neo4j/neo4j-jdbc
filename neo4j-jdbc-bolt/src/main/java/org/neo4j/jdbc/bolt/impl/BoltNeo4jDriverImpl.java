@@ -51,6 +51,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
     public static final String MAX_CONNECTION_LIFETIME = "max.connection.lifetime";
     public static final String MAX_CONNECTION_POOLSIZE = "max.connection.poolsize";
     public static final String MAX_TRANSACTION_RETRY_TIME = "max.transaction.retry.time";
+    public static final String DATABASE = "database";
 
     protected BoltNeo4jDriverImpl(String prefix) {
         super(prefix);

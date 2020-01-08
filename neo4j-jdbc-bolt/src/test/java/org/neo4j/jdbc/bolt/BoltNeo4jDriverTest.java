@@ -62,7 +62,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class})
-// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
+
 public class BoltNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();

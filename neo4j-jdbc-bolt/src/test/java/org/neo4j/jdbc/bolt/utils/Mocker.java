@@ -128,7 +128,7 @@ public class Mocker {
 		return mockConnection;
 	}
 
-	public static BoltNeo4jConnectionImpl mockConnectionOpenWithTransactionThatReturns(StatementResult cur) throws SQLException {
+	public static BoltNeo4jConnectionImpl mockConnectionOpenWithTransactionThatReturns(Result cur) throws SQLException {
 		Transaction mockTransaction = mock(Transaction.class);
 		when(mockTransaction.run(anyString())).thenReturn(cur);
 		when(mockTransaction.run(anyString(), any(Map.class))).thenReturn(cur);

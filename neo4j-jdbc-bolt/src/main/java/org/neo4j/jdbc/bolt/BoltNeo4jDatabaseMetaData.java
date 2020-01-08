@@ -21,7 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
-import org.neo4j.driver.StatementResult;
+import org.neo4j.driver.Result;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.metadata.Column;
@@ -81,7 +81,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	}
 
 	private void getDatabaseVersion(Session session) {
-		StatementResult rs = session.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
+		Result rs = session.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
 		if (rs != null && rs.hasNext()) {
 			Record record = rs.next();
 			if (record.containsKey("version")) {
@@ -91,7 +91,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	}
 
 	private void getDatabaseLabels(Session session) {
-		StatementResult rs = session.run("CALL db.labels() yield label return label");
+		Result rs = session.run("CALL db.labels() yield label return label");
 		if (rs != null) {
 			while (rs.hasNext()) {
 				Record record = rs.next();
@@ -103,7 +103,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	private void getDatabaseProperties(Session session) {
 		if (this.databaseLabels != null) {
 			for (Table databaseLabel : this.databaseLabels) {
-				StatementResult rs = session.run(String.format(DB_PROPERTIES_QUERY, databaseLabel.getTableName(), Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE));
+				Result rs = session.run(String.format(DB_PROPERTIES_QUERY, databaseLabel.getTableName(), Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE));
 				if (rs != null) {
 					cycleResultSetToSetDatabaseProperties(rs, databaseLabel);
 				}
@@ -111,7 +111,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 		}
 	}
 
-	private void cycleResultSetToSetDatabaseProperties(StatementResult rs, Table databaseLabel) {
+	private void cycleResultSetToSetDatabaseProperties(Result rs, Table databaseLabel) {
 		while (rs.hasNext()) {
 			Record record = rs.next();
 			List<Object> keys = record.get("keys").asList();
@@ -133,7 +133,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	private List<String> callDbmsFunctions(Session session){
 		List<String> functions = new ArrayList<>();
 		try{
-			StatementResult rs = session.run("CALL dbms.functions() " +
+			Result rs = session.run("CALL dbms.functions() " +
 					"YIELD name, signature\n" +
 					"RETURN name \n" +
 					"ORDER BY name ASC");

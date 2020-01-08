@@ -19,15 +19,27 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS

@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class})
-// @PowerMockIgnore("jdk.internal.reflect.*") // see https://stackoverflow.com/questions/50456726/mockclassloader-cannot-access-jdk-internal-reflect-superclass-jdk-internal-refle
+
 public class BoltRoutingNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -50,17 +50,17 @@ public class BoltRoutingNeo4jDriverTest {
 	/*------------------------------*/
 	@Test public void shouldAcceptURL() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
 		Neo4jDriver driver = new BoltRoutingNeo4jDriver();
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687/"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://192.168.0.1:7687"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://192.168.0.1:7687/"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687?routing:policy=it"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687?routing:region=europe&country=it"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687/?routing:region=europe&country=it"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687?noSsl&routing:region=europe&country=it"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687/?noSsl&routing:region=europe&country=it"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687,localhost:7688,localhost:7689/?noSsl&routing:region=europe&country=it"));
-		assertTrue(driver.acceptsURL("jdbc:neo4j:bolt+routing://localhost:7687/?noSsl&routing:region=europe&country=it&routing:servers=localhost:7688,localhost:7689"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687/"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://192.168.0.1:7687"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://192.168.0.1:7687/"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687?routing:policy=it"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687?routing:region=europe&country=it"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687/?routing:region=europe&country=it"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687?noSsl&routing:region=europe&country=it"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687/?noSsl&routing:region=europe&country=it"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687,localhost:7688,localhost:7689/?noSsl&routing:region=europe&country=it"));
+		assertTrue(driver.acceptsURL("jdbc:neo4j:neo4j://localhost:7687/?noSsl&routing:region=europe&country=it&routing:servers=localhost:7688,localhost:7689"));
 	}
 
 	@Test public void shoulNotAcceptURL() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
