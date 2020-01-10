@@ -107,7 +107,7 @@ public class BoltNeo4jConnectionTest {
 		Session session = mock(Session.class);
 		when(session.isOpen()).thenReturn(true).thenReturn(false);
 		org.neo4j.driver.v1.Driver driver = mock(org.neo4j.driver.v1.Driver.class);
-		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
 		connection.close();
 		verify(session, times(1)).close();
@@ -117,12 +117,23 @@ public class BoltNeo4jConnectionTest {
 	@Test public void closeShouldNotThrowExceptionWhenClosingAClosedConnection() throws SQLException {
 		Session session = mockSessionClosed();
         org.neo4j.driver.v1.Driver driver = mock(org.neo4j.driver.v1.Driver.class);
-		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
 		connection.close();
 		verify(session, never()).close();
 		assertTrue(connection.isClosed());
 	}
+
+    @Test public void shouldPassTheBookmarks() throws SQLException {
+        Session session = mock(Session.class);
+        when(session.isOpen()).thenReturn(true).thenReturn(false);
+        org.neo4j.driver.v1.Driver driver = mock(org.neo4j.driver.v1.Driver.class);
+        when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
+        Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
+        connection.close();
+        verify(session, times(1)).close();
+        assertTrue(connection.isClosed());
+    }
 
 	/*
 	@Ignore

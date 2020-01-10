@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
@@ -50,28 +51,28 @@ public class Mocker {
 	public static Driver mockDriverOpen() {
         Session session = mockSessionOpen();
 		Driver driver = mock(Driver.class);
-		when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+		when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
 		return driver;
 	}
 
 	public static Driver mockDriverClosed() {
         Session session = mockSessionClosed();
         Driver driver = mock(Driver.class);
-        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
 		return driver;
 	}
 
 	public static Driver mockDriverOpenSlow() {
         Session session = mockSessionOpenSlow();
 		Driver driver = mock(Driver.class);
-        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
 		return driver;
 	}
 
 	public static Driver mockDriverException() {
         Session session = mockSessionException();
         Driver driver = mock(Driver.class);
-        when(driver.session(any(AccessMode.class), anyString())).thenReturn(session);
+        when(driver.session(any(AccessMode.class), anySet())).thenReturn(session);
 		return driver;
 	}
 

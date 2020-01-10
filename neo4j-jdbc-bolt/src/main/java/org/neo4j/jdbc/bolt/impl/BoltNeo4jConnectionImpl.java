@@ -35,15 +35,19 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
 public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements BoltNeo4jConnection {
+	private static final String BOOKMARK_SEPARATOR = ",";
 
 	private Driver driver;
 	private Session session;
@@ -99,12 +103,23 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 */
 	public Session newNeo4jSession(){
 		try {
-			String bookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
-			return this.driver.session(getReadOnly() ? AccessMode.READ : AccessMode.WRITE, bookmark);
+			return this.driver.session(getReadOnly() ? AccessMode.READ : AccessMode.WRITE, getBookmarks());
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private Set<String> getBookmarks() throws SQLException {
+		String bookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+		final Set<String> bookmarks;
+		if (bookmark != null && !bookmark.trim().isEmpty()) {
+			bookmarks = Stream.of(bookmark.trim().split(BOOKMARK_SEPARATOR))
+					.collect(Collectors.toSet());
+		} else {
+			bookmarks = null;
+		}
+		return bookmarks;
 	}
 
 	@Override public Neo4jDatabaseMetaData getMetaData() throws SQLException {
