@@ -85,6 +85,7 @@
 		<neo4j.version>4.0.0</neo4j.version>
 		<httpclient.version>4.5.3</httpclient.version>
 		<jackson.version>2.9.2</jackson.version>
+		<testcontainers.version>1.12.3</testcontainers.version>
 
 		<!-- Plugin version -->
 		<maven.plugin.compiler>3.6.1</maven.plugin.compiler>
@@ -183,6 +184,18 @@
 				<groupId>org.openjdk.jmh</groupId>
 				<artifactId>jmh-generator-annprocess</artifactId>
 				<version>${jmh.version}</version>
+			</dependency>
+
+			<!-- Deps for Testcontainers -->
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers</artifactId>
+				<version>${testcontainers.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>neo4j</artifactId>
+				<version>${testcontainers.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
