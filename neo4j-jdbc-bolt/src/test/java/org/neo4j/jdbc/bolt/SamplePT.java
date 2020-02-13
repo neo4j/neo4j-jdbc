@@ -21,9 +21,9 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
 import org.neo4j.jdbc.bolt.data.PerformanceTestData;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -88,7 +88,7 @@ public class SamplePT {
 		public String query = "MATCH (n) RETURN n";
 		public Connection jdbcConnection;
 		public Connection jdbcConnectionDebug;
-		public org.neo4j.driver.v1.Driver driver;
+		public org.neo4j.driver.Driver driver;
 
 	}
 
@@ -100,7 +100,7 @@ public class SamplePT {
 	}
 
 	@Benchmark public void testSimpleQueryBoltDriver(Data data, Blackhole bh) {
-		org.neo4j.driver.v1.Driver driver = data.driver;
+		org.neo4j.driver.Driver driver = data.driver;
 		Session session = driver.session();
 		bh.consume(session.run(data.query));
 		session.close();

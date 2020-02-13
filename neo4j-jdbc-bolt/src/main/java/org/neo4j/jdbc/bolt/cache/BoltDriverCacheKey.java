@@ -19,8 +19,8 @@
  */
 package org.neo4j.jdbc.bolt.cache;
 
-import org.neo4j.driver.v1.AuthToken;
-import org.neo4j.driver.v1.Config;
+import org.neo4j.driver.AuthToken;
+import org.neo4j.driver.Config;
 
 import java.net.URI;
 import java.util.List;

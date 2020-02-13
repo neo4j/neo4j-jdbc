@@ -20,6 +20,7 @@
 package org.neo4j.jdbc.http.driver;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -97,7 +98,9 @@ public class CypherExecutorIT extends Neo4jHttpITUtil {
 		assertEquals(2, response.getFirstResult().getRows().size());
 	}
 
-	@Test public void getServerVersionShouldSucceed() throws SQLException {
+	@Test
+	@Ignore
+	public void getServerVersionShouldSucceed() throws SQLException {
 		assertNotEquals("Unknown", executor.getServerVersion());
 	}
 

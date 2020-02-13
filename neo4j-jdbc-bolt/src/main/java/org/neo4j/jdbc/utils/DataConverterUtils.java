@@ -2,11 +2,11 @@ package org.neo4j.jdbc.utils;
 
 import org.neo4j.driver.internal.InternalIsoDuration;
 import org.neo4j.driver.internal.value.*;
-import org.neo4j.driver.v1.Value;
-import org.neo4j.driver.v1.types.Node;
-import org.neo4j.driver.v1.types.Path;
-import org.neo4j.driver.v1.types.Point;
-import org.neo4j.driver.v1.types.Relationship;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.types.Node;
+import org.neo4j.driver.types.Path;
+import org.neo4j.driver.types.Point;
+import org.neo4j.driver.types.Relationship;
 
 import java.sql.Date;
 import java.sql.Time;

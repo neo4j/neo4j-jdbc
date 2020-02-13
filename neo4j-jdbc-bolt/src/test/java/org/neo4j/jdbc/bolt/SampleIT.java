@@ -21,43 +21,45 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.neo4j.driver.v1.*;
-import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.*;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.Assert.*;
-import static org.neo4j.driver.v1.Config.build;
+import static org.neo4j.driver.Config.builder;
 
 /**
  * @author Stefan Armbruster
  */
 public class SampleIT {
 
-	@Rule public Neo4jBoltRule neo4j = new Neo4jBoltRule();  // here we're firing up neo4j with bolt enabled
+	@Rule public Neo4jRule neo4j = new Neo4jRule();  // here we're firing up neo4j with bolt enabled
 
 	@Test public void shouldSimpleServerTestSucceed() throws Exception {
 
 		// if we want to have raw access to neo4j instance, e.g. for populating the DB upfront:
-		neo4j.getGraphDatabase().execute("create ( )");
+		neo4j.defaultDatabaseService().executeTransactionally("create ( )");
 
 		//Creating config without SSL
-		Config.ConfigBuilder builder = build();
+		Config.ConfigBuilder builder = builder();
 		builder.withoutEncryption();
-		Config config = builder.toConfig();
+		Config config = builder.build();
 
 		// hitting the DB with a bolt request
-		Driver driver = GraphDatabase.driver(neo4j.getBoltUrl(), config);   // defaults to localhost:7687
+		Driver driver = GraphDatabase.driver(neo4j.boltURI(), config);   // defaults to localhost:7687
 		Session session = driver.session();
-		StatementResult rs = session.run("match (n) RETURN count(n)");
+		Result rs = session.run("match (n) RETURN count(n)");
 		session.close();
 		driver.close();
 	}
 
 	@Test public void exampleTestInMemory() throws ClassNotFoundException, SQLException {
-		neo4j.getGraphDatabase().execute("create (:User{name:\"testUser\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("create (:User{name:\"testUser\"})");
 
 		// Connect
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);

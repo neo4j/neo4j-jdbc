@@ -24,6 +24,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
@@ -42,7 +43,7 @@ import static org.junit.Assert.*;
 public class BoltNeo4jResultSetIT {
 
 	@ClassRule
-	public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	public static Neo4jRule neo4j = new Neo4jRule();
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
@@ -56,8 +57,8 @@ public class BoltNeo4jResultSetIT {
 	/*------------------------------*/
 
 	@Test public void flatteningNumberWorking() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
-		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:User {name:\"name\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:User {surname:\"surname\"})");
 
 		Connection conn = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=1");
 		Statement stmt = conn.createStatement();
@@ -73,8 +74,8 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void flatteningNumberWorkingMoreRows() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
-		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:User {name:\"name\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:User {surname:\"surname\"})");
 
 		Connection conn = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=2");
 		Statement stmt = conn.createStatement();
@@ -94,8 +95,8 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void flatteningNumberWorkingAllRows() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (:User {name:\"name\"})");
-		neo4j.getGraphDatabase().execute("CREATE (:User {surname:\"surname\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:User {name:\"name\"})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:User {surname:\"surname\"})");
 
 		Connection conn = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=-1");
 		Statement stmt = conn.createStatement();
@@ -115,7 +116,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void findColumnShouldWorkWithFlattening() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=1");
 		Statement stmt = con.createStatement();
@@ -123,13 +124,13 @@ public class BoltNeo4jResultSetIT {
 
 		assertEquals(4, rs.findColumn("n.name"));
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 
 		JdbcConnectionTestUtils.closeConnection(con, stmt, rs);
 	}
 
 	@Test public void shouldGetRowReturnValidNumbers() throws SQLException {
-		neo4j.getGraphDatabase().execute("unwind range(1,5) as x create (:User{number:x})");
+		neo4j.defaultDatabaseService().executeTransactionally("unwind range(1,5) as x create (:User{number:x})");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();
@@ -143,7 +144,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void shouldHasntNext() throws SQLException {
-		neo4j.getGraphDatabase().execute("unwind range(1,5) as x create (:User{number:x})");
+		neo4j.defaultDatabaseService().executeTransactionally("unwind range(1,5) as x create (:User{number:x})");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();
@@ -155,7 +156,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void shouldGetRowReturnStringFromNumber() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (:Test {intn: 1, floatn: 1.123})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:Test {intn: 1, floatn: 1.123})");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();
@@ -173,7 +174,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void shouldGetRowReturnStringFromNode() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (:Test {intn: 1, floatn: 1.123})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:Test {intn: 1, floatn: 1.123})");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();
@@ -192,7 +193,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void shouldGetRowReturnNodeValues() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (:Test {intn: 1, floatn: 1.123})");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (:Test {intn: 1, floatn: 1.123})");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();
@@ -208,7 +209,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void shouldGetRowReturnStringFromRelationship() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (a:Test)-[r:Rel {intn: 1, floatn: 1.123}]->(b:Test)");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (a:Test)-[r:Rel {intn: 1, floatn: 1.123}]->(b:Test)");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();
@@ -227,7 +228,7 @@ public class BoltNeo4jResultSetIT {
 	}
 
 	@Test public void shouldGetRowReturnRelatianValues() throws SQLException {
-		neo4j.getGraphDatabase().execute("CREATE (a:Test)-[r:Rel {intn: 1, floatn: 1.123}]->(b:Test)");
+		neo4j.defaultDatabaseService().executeTransactionally("CREATE (a:Test)-[r:Rel {intn: 1, floatn: 1.123}]->(b:Test)");
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 		Statement stmt = con.createStatement();

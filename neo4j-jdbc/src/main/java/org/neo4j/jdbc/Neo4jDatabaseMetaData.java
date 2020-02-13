@@ -774,26 +774,28 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		List<String> filters = new ArrayList<>();
 		boolean hasTable = table != null && !table.trim().isEmpty();
 		if (hasTable) {
-			filters.add("ANY(tokenName IN tokenNames WHERE tokenName = ?)");
+			filters.add("ANY(tokenName IN labelsOrTypes WHERE tokenName = ?)");
 		}
 		if (unique) {
-			filters.add("type = 'node_unique_property'");
+			filters.add("(uniqueness = 'UNIQUE' OR uniqueness = 'NODE KEY')");
 		}
+		filters.add("entityType = 'NODE'");
 		StringBuilder queryBuilder = new StringBuilder();
-		queryBuilder.append("CALL db.indexes() YIELD description, tokenNames, properties, state, type\n");
+		final String fields = "id, name, uniqueness, entityType, labelsOrTypes, properties";
+		queryBuilder.append("CALL db.indexes() YIELD " + fields + "\n");
 		if (!filters.isEmpty()) {
 			queryBuilder.append("WHERE " + String.join(" AND ", filters) + "\n");
 		}
 
-		queryBuilder.append("WITH description, tokenNames, properties, state, type\n");
-		queryBuilder.append("UNWIND tokenNames AS label\n");
+		queryBuilder.append("WITH " + fields + "\n");
+		queryBuilder.append("UNWIND labelsOrTypes AS label\n");
 		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS indexProperties\n");
 		queryBuilder.append("RETURN null AS TABLE_CAT,\n");
 		queryBuilder.append("null AS TABLE_SCHEM,\n");
 		queryBuilder.append("label AS TABLE_NAME,\n");
-		queryBuilder.append("type <> 'node_unique_property' AS NON_UNIQUE,\n");
-		queryBuilder.append("description AS INDEX_QUALIFIER,\n");
-		queryBuilder.append("description AS INDEX_NAME,\n");
+		queryBuilder.append("(uniqueness <> 'UNIQUE' AND uniqueness <> 'NODE KEY') AS NON_UNIQUE,\n");
+		queryBuilder.append("name AS INDEX_QUALIFIER,\n");
+		queryBuilder.append("name AS INDEX_NAME,\n");
 		queryBuilder.append(DatabaseMetaData.tableIndexOther + " AS TYPE,\n");
 		queryBuilder.append("indexProperties + 1 AS ORDINAL_POSITION,\n");
 		queryBuilder.append("properties[indexProperties] AS COLUMN_NAME,\n");

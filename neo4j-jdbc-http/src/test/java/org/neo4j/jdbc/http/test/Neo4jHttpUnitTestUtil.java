@@ -19,18 +19,24 @@
  */
 package org.neo4j.jdbc.http.test;
 
-import au.com.bytecode.opencsv.CSVReader;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.neo4j.jdbc.http.driver.Neo4jStatement;
+import com.opencsv.CSVReader;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import org.neo4j.jdbc.http.driver.Neo4jStatement;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class Neo4jHttpUnitTestUtil {
 
@@ -101,23 +107,28 @@ public class Neo4jHttpUnitTestUtil {
 	 * @param result
 	 */
 	protected void assertCSVQueryEqual(List<String[]> expected, String result) {
-		String pattern = "{\"statement\":\"@@statement@@\",\"parameters\":@@parameters@@,\"includeStats\":@@includeStats@@}";
-
-		String jsonExpected = "{\"statements\":[";
-		for (int i = 0; i < expected.size(); i++) {
-			if (i > 0 && i < expected.size()) {
-				jsonExpected += ",";
-			}
-			String[] line = expected.get(i);
-			String jsonQuery = pattern.replaceAll("@@includeStats@@", line[CSV_INCLUDESTATS]);
-			jsonQuery = jsonQuery.replaceAll("@@parameters@@", line[CSV_PARAMETERS]);
-			jsonQuery = jsonQuery.replaceAll("@@statement@@", escapeQuery(line[CSV_STATEMENT]));
-
-			jsonExpected += jsonQuery;
+		try {
+			final ObjectMapper objectMapper = new ObjectMapper();
+			List<Map<String, Object>> expectedList = expected.stream()
+					.map(arr -> {
+						Map<String, Object> map = new HashMap<>();
+						map.put("statement", arr[0]);
+						try {
+							map.put("parameters", objectMapper.readValue(arr[1], HashMap.class));
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+						map.put("includeStats", Boolean.parseBoolean(arr[2]));
+						return map;
+					})
+					.collect(Collectors.toList());
+			Map<String, Object> expectedResponse = new HashMap<>();
+			expectedResponse.put("statements", expectedList);
+			Map<String, Object> actual = objectMapper.readValue(result, HashMap.class);
+			Assert.assertEquals(expectedResponse, actual);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
-		jsonExpected += "]}";
-
-		Assert.assertEquals(jsonExpected.replaceAll("\\s+", ""), result.replaceAll("\\s+", ""));
 	}
 
 	/**

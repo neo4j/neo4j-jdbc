@@ -19,14 +19,27 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author AgileLARUS
@@ -34,7 +47,7 @@ import static org.junit.Assert.*;
  */
 public class BoltNeo4jConnectionIT {
 
-	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	Connection writer;
@@ -133,7 +146,7 @@ public class BoltNeo4jConnectionIT {
 		JdbcConnectionTestUtils.closeStatement(readerStmt);
 		JdbcConnectionTestUtils.closeStatement(writerStmt);
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void rollbackShouldWorkFine() throws SQLException {
@@ -191,7 +204,7 @@ public class BoltNeo4jConnectionIT {
 		JdbcConnectionTestUtils.closeResultSet(rs);
 
 		Statement statReader = reader.createStatement();
-		rs = statReader.executeQuery("MATCH (n) RETURN n.name");
+		rs = statReader.executeQuery("MATCH (n) RETURN n.name AS name ORDER BY name desc");
 
 		assertFalse(rs.next());
 
@@ -199,7 +212,7 @@ public class BoltNeo4jConnectionIT {
 
 		JdbcConnectionTestUtils.closeResultSet(rs);
 
-		rs = statReader.executeQuery("MATCH (n) RETURN n.name");
+		rs = statReader.executeQuery("MATCH (n) RETURN n.name AS name ORDER BY name desc");
 
 		assertTrue(rs.next());
 		assertEquals("username", rs.getString(1));

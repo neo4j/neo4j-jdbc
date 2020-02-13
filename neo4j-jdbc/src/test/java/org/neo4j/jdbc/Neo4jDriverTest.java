@@ -46,6 +46,18 @@ public class Neo4jDriverTest {
         props.setProperty("password","a test/paßword");
         assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user=neo4j&password=a%20test%2Fpa%C3%9Fword",null));
         assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user=neo4j,password=a%20test%2Fpa%C3%9Fword",null));
+        props.setProperty("password","a test pa&word");
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user=neo4j&password=a%20test%20pa%26word",null));
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user=neo4j,password=a%20test%20pa%26word",null));
+        props.setProperty("password","a test pa,word");
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user=neo4j&password=a%20test%20pa%2cword",null));
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user=neo4j,password=a%20test%20pa%2cword",null));
+        props.setProperty("password","a test pa=word");
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user:neo4j&password%3da%20test%20pa%3dword",null));
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user:neo4j,password%3da%20test%20pa%3dword",null));
+        props.setProperty("password","a test pa=word");
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user:neo4j&password:a%20test%20pa%3dword",null));
+        assertEquals(props, neo4jDriver.parseUrlProperties("jdbc:neo4j:http://localhost?user:neo4j,password:a%20test%20pa%3dword",null));
     }
 
 }

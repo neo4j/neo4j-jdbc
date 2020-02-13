@@ -29,8 +29,8 @@ import java.sql.*;
  */
 public class BoltRoutingPT {
 
-    private String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl&debug=true&routing:policy=EU&routing:servers=localhost:17682;localhost:17683;localhost:17684;localhost:17685;localhost:17686;localhost:17687";
-    private String connectionUrl2 = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&debug=true&routing:policy=EU";
+    private String connectionUrl = "jdbc:neo4j:neo4j://localhost:17681?noSsl&debug=true&routing:policy=EU&routing:servers=localhost:17682;localhost:17683;localhost:17684;localhost:17685;localhost:17686;localhost:17687";
+    private String connectionUrl2 = "jdbc:neo4j:neo4j://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&debug=true&routing:policy=EU";
 
     @Rule public ExpectedException expectedEx = ExpectedException.none();
 

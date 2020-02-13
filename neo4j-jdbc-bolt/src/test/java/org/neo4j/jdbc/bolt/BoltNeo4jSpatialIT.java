@@ -4,7 +4,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.driver.v1.types.Point;
+import org.neo4j.driver.types.Point;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
@@ -23,13 +24,13 @@ import static org.junit.Assert.*;
  */
 public class BoltNeo4jSpatialIT {
     @ClassRule
-    public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+    public static Neo4jRule neo4j = new Neo4jRule();
 
     static Connection connection;
 
     @Before
     public void cleanDB() throws SQLException {
-        neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+        neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
 

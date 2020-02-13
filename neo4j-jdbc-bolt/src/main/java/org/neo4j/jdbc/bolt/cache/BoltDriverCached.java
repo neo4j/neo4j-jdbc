@@ -1,8 +1,12 @@
 package org.neo4j.jdbc.bolt.cache;
 
-import org.neo4j.driver.v1.AccessMode;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Metrics;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
+import org.neo4j.driver.async.AsyncSession;
+import org.neo4j.driver.reactive.RxSession;
+import org.neo4j.driver.types.TypeSystem;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BoltDriverCached implements Driver {
 
+    private static final UnsupportedOperationException UNSUPPORTED_OPERATION_EXCEPTION = new UnsupportedOperationException("Async operation are not supported over JDBC");
     private Driver internal;
     private BoltDriverCache cache;
     private BoltDriverCacheKey key;
@@ -42,33 +47,29 @@ public class BoltDriverCached implements Driver {
     }
 
     @Override
-    public Session session(AccessMode mode) {
+    public Session session(SessionConfig sessionConfig) {
         sessionCounter.incrementAndGet();
-        return internal.session(mode);
+        return internal.session(sessionConfig);
     }
 
     @Override
-    public Session session(String bookmark) {
-        sessionCounter.incrementAndGet();
-        return internal.session(bookmark);
+    public RxSession rxSession() {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
     @Override
-    public Session session(AccessMode mode, String bookmark) {
-        sessionCounter.incrementAndGet();
-        return internal.session(mode, bookmark);
+    public RxSession rxSession(SessionConfig sessionConfig) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
     @Override
-    public Session session(Iterable<String> bookmarks) {
-        sessionCounter.incrementAndGet();
-        return internal.session(bookmarks);
+    public AsyncSession asyncSession() {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
     @Override
-    public Session session(AccessMode mode, Iterable<String> bookmarks) {
-        sessionCounter.incrementAndGet();
-        return internal.session(mode, bookmarks);
+    public AsyncSession asyncSession(SessionConfig sessionConfig) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
     @Override
@@ -81,6 +82,41 @@ public class BoltDriverCached implements Driver {
 
     @Override
     public CompletionStage<Void> closeAsync() {
-        return internal.closeAsync();
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public Metrics metrics() {
+        return internal.metrics();
+    }
+
+    @Override
+    public boolean isMetricsEnabled() {
+        return internal.isMetricsEnabled();
+    }
+
+    @Override
+    public TypeSystem defaultTypeSystem() {
+        return internal.defaultTypeSystem();
+    }
+
+    @Override
+    public void verifyConnectivity() {
+        internal.verifyConnectivity();
+    }
+
+    @Override
+    public CompletionStage<Void> verifyConnectivityAsync() {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public boolean supportsMultiDb() {
+        return internal.supportsMultiDb();
+    }
+
+    @Override
+    public CompletionStage<Boolean> supportsMultiDbAsync() {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 }

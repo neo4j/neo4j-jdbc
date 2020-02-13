@@ -37,31 +37,31 @@ public class Neo4jPreparedStatementBuilderTest {
 
 	@Test public void replacePlaceholderShouldReplaceQuestionMarksByDefaultWithOrderedCurlyBraces() {
 		String raw = "MATCH statement RETURN same WHERE thereIsAPlaceholder = ?";
-		assertEquals("MATCH statement RETURN same WHERE thereIsAPlaceholder = {1}", replacePlaceholders(raw));
+		assertEquals("MATCH statement RETURN same WHERE thereIsAPlaceholder = $1", replacePlaceholders(raw));
 	}
 
 	@Test public void replacePlaceholderShouldReplaceQuestionMarksByDefaultWithOrderedCurlyBracesMultiple() {
 		String raw = "MATCH statement RETURN same WHERE thereIsAPlaceholder = ? AND another = ?";
-		assertEquals("MATCH statement RETURN same WHERE thereIsAPlaceholder = {1} AND another = {2}", replacePlaceholders(raw));
+		assertEquals("MATCH statement RETURN same WHERE thereIsAPlaceholder = $1 AND another = $2", replacePlaceholders(raw));
 	}
 
 	@Test public void replacePlaceholderShouldReplaceQuestionMarksByDefaultWithOrderedCurlyBracesMultipleNotInStrings() {
 		String raw = "MATCH statement RETURN same WHERE thisIs = \"a string ?\" AND thereIsAPlaceholder = ? AND another = ? AND notInString = \"shall I replace this?\"";
 		assertEquals(
-				"MATCH statement RETURN same WHERE thisIs = \"a string ?\" AND thereIsAPlaceholder = {1} AND another = {2} AND notInString = \"shall I replace this?\"",
+				"MATCH statement RETURN same WHERE thisIs = \"a string ?\" AND thereIsAPlaceholder = $1 AND another = $2 AND notInString = \"shall I replace this?\"",
 				replacePlaceholders(raw));
 	}
 
 	@Test public void replacePlaceholderShouldReplaceQuestionMarksMultiline() {
 		String raw = "MATCH statement RETURN same WHERE thereIsAPlaceholder = ? \nAND newLinePar = ?";
-		assertEquals("MATCH statement RETURN same WHERE thereIsAPlaceholder = {1} \nAND newLinePar = {2}", replacePlaceholders(raw));
+		assertEquals("MATCH statement RETURN same WHERE thereIsAPlaceholder = $1 \nAND newLinePar = $2", replacePlaceholders(raw));
 	}
 
 	@Test public void replacePlaceholderShouldReplaceQuestionMarksWithOrderedCurlyBracesNotInQuotesAndNotCommentedMultilineMulti() {
 		String raw = "MATCH statement RETURN same WHERE thisIs = \"a string ?\"\n" +
 				"AND thereIsAPlaceholder = ?\n" +
 				"AND another = ?";
-		assertEquals("MATCH statement RETURN same WHERE thisIs = \"a string ?\"\nAND thereIsAPlaceholder = {1}\nAND another = {2}", replacePlaceholders(raw));
+		assertEquals("MATCH statement RETURN same WHERE thisIs = \"a string ?\"\nAND thereIsAPlaceholder = $1\nAND another = $2", replacePlaceholders(raw));
 	}
 
 	@Test public void placeholdersCountShouldCountCorrectlyIfNoPlaceholdersArePresent() {
@@ -70,17 +70,17 @@ public class Neo4jPreparedStatementBuilderTest {
 	}
 
 	@Test public void placeholdersCountShouldCountCorrectlyIfOneLine() {
-		String raw = "MATCH n RETURN n WHERE param = {1}";
+		String raw = "MATCH n RETURN n WHERE param = $1";
 		assertEquals(1, PreparedStatementBuilder.namedParameterCount(raw));
 	}
 
 	@Test public void placeholdersCountShouldCountCorrectlyIfOneLineString() {
-		String raw = "MATCH n RETURN n WHERE param = {1} AND paramString = \"string{2}\"";
+		String raw = "MATCH n RETURN n WHERE param = $1 AND paramString = \"string$2\"";
 		assertEquals(1, PreparedStatementBuilder.namedParameterCount(raw));
 	}
 
 	@Test public void placeholdersCountShouldCountCorrectlyIfOneLineStringMultiline() {
-		String raw = "MATCH n RETURN n WHERE param = {2} AND paramString = \"string{3}\"\n" + "AND param2 = {1}";
+		String raw = "MATCH n RETURN n WHERE param = $2 AND paramString = \"string$3\"\n" + "AND param2 = $1";
 		assertEquals(2, PreparedStatementBuilder.namedParameterCount(raw));
 	}
 }

@@ -21,6 +21,7 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.*;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
+import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
@@ -42,18 +43,18 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 	static Connection connectionFlatten;
 
-	@ClassRule public static Neo4jBoltRule neo4j = new Neo4jBoltRule();
+	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
 
 
 	@Before public void setUp() {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		connectionFlatten = JdbcConnectionTestUtils.verifyConnection(connectionFlatten, neo4j,",flatten=1");
 	}
 
 	@After public void tearDown() {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CLEAR_DB);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
 	}
 
 	@AfterClass
@@ -66,7 +67,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 	/*------------------------------*/
 
 	@Test public void shouldAddVirtualColumnsOnNodeWithMultipleNodes() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_MORE);
@@ -139,7 +140,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 	}
 
 	@Test public void shouldAddVirtualColumnsOnRelationsWithMultipleRelations() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_RELATIONS);
@@ -157,7 +158,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 	}
 
 	@Test public void shouldAddVirtualColumnsOnRelationsAndNodesWithMultiple() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -198,7 +199,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 	}
 
 	@Test public void getColumnTypeShouldSucceed() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 
@@ -245,8 +246,8 @@ public class BoltNeo4jResultSetMetaDataIT {
 	}
 
 	@Test public void getColumnTypeNameShouldBeCorrectAfterFlattening() throws SQLException {
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -273,8 +274,8 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 	@Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
@@ -301,7 +302,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 	@Test public void getColumnsTypeNameShouldWorkWithVariableNumberOfProperties() throws SQLException {
 
-		neo4j.getGraphDatabase().execute(StatementData.STATEMENT_CREATE);
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);
 

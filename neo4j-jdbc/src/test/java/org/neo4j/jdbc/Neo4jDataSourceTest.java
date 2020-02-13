@@ -99,6 +99,12 @@ public class Neo4jDataSourceTest {
 
 		this.dataSource.setPortNumber(7687);
 		assertEquals("jdbc:neo4j:bolt://localhost:7687?nossl,user=test,password=password", this.dataSource.getUrl("bolt"));
+
+		this.dataSource.setPassword("pa&word");
+		this.dataSource.setIsSsl(false);
+		this.dataSource.setPortNumber(0);
+		assertEquals("jdbc:neo4j:bolt://localhost?nossl,user=test,password=pa%26word", this.dataSource.getUrl("bolt"));
+		assertEquals("jdbc:neo4j:http://localhost?nossl,user=test,password=pa%26word", this.dataSource.getUrl("http"));
 	}
 
 }

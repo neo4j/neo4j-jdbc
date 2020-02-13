@@ -20,8 +20,11 @@
 package org.neo4j.jdbc;
 
 import org.neo4j.jdbc.utils.ExceptionBuilder;
+import org.neo4j.jdbc.utils.Neo4jJdbcRuntimeException;
 
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
@@ -122,7 +125,8 @@ public abstract class Neo4jDataSource implements javax.sql.DataSource {
 		if (null != getUser()) {
 			url += "user=" + getUser();
 			if (null != getPassword()) {
-				url += ",password=" + getPassword();
+				// Passwords may contain URL unsafe characters.
+				url += ",password=" + encodeUrlComponent(getPassword());
 			}
 		}
 		return url;
@@ -135,4 +139,13 @@ public abstract class Neo4jDataSource implements javax.sql.DataSource {
 	public void setIsSsl(boolean ssl) {
 		this.isSsl = ssl;
 	}
+
+	private String encodeUrlComponent(String urlProps) {
+		try {
+			return URLEncoder.encode(urlProps, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Neo4jJdbcRuntimeException(e);
+		}
+	}
+
 }
