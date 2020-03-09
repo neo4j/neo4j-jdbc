@@ -121,7 +121,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 			} else {
 				bookmarks = null;
 			}
-			String database = this.getClientInfo(BoltNeo4jDriverImpl.DATABASE);
+			String database = (String) this.getProperties().get(BoltNeo4jDriverImpl.DATABASE);
 			final SessionConfig.Builder config = SessionConfig.builder()
 					.withBookmarks(bookmarks)
 					.withDefaultAccessMode(getReadOnly() ? AccessMode.READ : AccessMode.WRITE);

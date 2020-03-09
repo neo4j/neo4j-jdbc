@@ -770,9 +770,39 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		return emptyResultSet();
 	}
 
-	@Override public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
+	private String getIndexesV3X(String table, boolean unique, boolean hasTable) {
 		List<String> filters = new ArrayList<>();
-		boolean hasTable = table != null && !table.trim().isEmpty();
+		if (hasTable) {
+			filters.add("label = ?");
+		}
+		if (unique) {
+			filters.add("type = 'node_unique_property'");
+		}
+		StringBuilder queryBuilder = new StringBuilder();
+		queryBuilder.append("CALL db.indexes() YIELD description, label, properties, state, type\n");
+		if (!filters.isEmpty()) {
+			queryBuilder.append("WHERE " + String.join(" AND ", filters) + "\n");
+		}
+		queryBuilder.append("WITH description, label, properties, state, type\n");
+		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS index\n");
+		queryBuilder.append("RETURN null AS TABLE_CAT,\n");
+		queryBuilder.append("null AS TABLE_SCHEM,\n");
+		queryBuilder.append("label AS TABLE_NAME,\n");
+		queryBuilder.append("type <> 'node_unique_property' AS NON_UNIQUE,\n");
+		queryBuilder.append("description AS INDEX_QUALIFIER,\n");
+		queryBuilder.append("description AS INDEX_NAME,\n");
+		queryBuilder.append(DatabaseMetaData.tableIndexOther + " AS TYPE,\n");
+		queryBuilder.append("index + 1 AS ORDINAL_POSITION,\n");
+		queryBuilder.append("properties[index] AS COLUMN_NAME,\n");
+		queryBuilder.append("null AS ASC_OR_DESC,\n");
+		queryBuilder.append("null AS CARDINALITY,\n");
+		queryBuilder.append("null AS PAGES,\n");
+		queryBuilder.append("null AS FILTER_CONDITION");
+		return queryBuilder.toString();
+	}
+
+	private String getIndexesV4X(String table, boolean unique, boolean hasTable) {
+		List<String> filters = new ArrayList<>();
 		if (hasTable) {
 			filters.add("ANY(tokenName IN labelsOrTypes WHERE tokenName = ?)");
 		}
@@ -803,7 +833,15 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		queryBuilder.append("null AS CARDINALITY,\n");
 		queryBuilder.append("null AS PAGES,\n");
 		queryBuilder.append("null AS FILTER_CONDITION");
-		PreparedStatement ps = this.connection.prepareStatement(queryBuilder.toString());
+		return queryBuilder.toString();
+	}
+
+	@Override
+	public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
+		boolean hasTable = table != null && !table.trim().isEmpty();
+		final String query = databaseVersion.startsWith("4") ?
+				getIndexesV4X(table, unique, hasTable) : getIndexesV3X(table, unique, hasTable);
+		PreparedStatement ps = this.connection.prepareStatement(query);
 		if (hasTable) {
 			ps.setString(1, table);
 		}

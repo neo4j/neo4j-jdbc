@@ -24,6 +24,7 @@ package org.neo4j.jdbc.example.mybatis;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.example.mybatis.bean.Actor;
@@ -33,6 +34,7 @@ import org.neo4j.jdbc.example.mybatis.util.ActorManager;
  * @author AgileLARUS
  * @since 3.0.2
  */
+@Ignore
 public class ActorManagerIT extends MybatisTestUtil {
 
 	@ClassRule

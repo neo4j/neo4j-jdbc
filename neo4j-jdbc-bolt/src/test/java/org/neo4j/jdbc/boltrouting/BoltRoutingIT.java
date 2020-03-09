@@ -34,6 +34,7 @@ import static org.junit.Assume.assumeNotNull;
  * @author AgileLARUS
  * @since 3.3.1
  */
+@Ignore
 public class BoltRoutingIT {
     private static final String NEO4J_USER = "neo4j";
     private static final String NEO4J_PASSWORD = "jdbc";
