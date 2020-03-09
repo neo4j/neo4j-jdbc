@@ -20,22 +20,49 @@ package org.neo4j.jdbc.boltrouting;
 
 import org.junit.*;
 import org.junit.rules.ExpectedException;
+import org.neo4j.TestcontainersCausalCluster;
 
 import java.sql.*;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assume.assumeNotNull;
 
 /**
  * @author AgileLARUS
  * @since 3.3.1
  */
-public class BoltRoutingPT {
+@Ignore
+public class BoltRoutingIT {
+    private static final String NEO4J_USER = "neo4j";
+    private static final String NEO4J_PASSWORD = "jdbc";
 
-    private String connectionUrl = "jdbc:neo4j:neo4j://localhost:17681?noSsl&debug=true&routing:policy=EU&routing:servers=localhost:17682;localhost:17683;localhost:17684;localhost:17685;localhost:17686;localhost:17687";
-    private String connectionUrl2 = "jdbc:neo4j:neo4j://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&debug=true&routing:policy=EU";
+//    private String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl&debug=true&routing:policy=EU&routing:servers=localhost:17682;localhost:17683;localhost:17684;localhost:17685;localhost:17686;localhost:17687";
+//    private String connectionUrl2 = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&debug=true&routing:policy=EU";
+
+    private static TestcontainersCausalCluster cluster;
+
+    @BeforeClass
+    public static void beforeClass() {
+        try {
+            cluster = TestcontainersCausalCluster.create(3, 1, Duration.ofMinutes(4), Collections.emptyMap());
+            assumeNotNull(cluster);
+        } catch (Exception ignored) {}
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        if (cluster != null) {
+            cluster.close();
+        }
+    }
 
     @Rule public ExpectedException expectedEx = ExpectedException.none();
 
     @After public void tearDown() throws Exception {
-        try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
+        try  (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
             connection.setAutoCommit(false);
             try (Statement statement = connection.createStatement()) {
                 statement.execute("match (t) detach delete t");
@@ -47,7 +74,7 @@ public class BoltRoutingPT {
     //@Ignore
     @Test public void shouldAccessReadReplicaNodes() throws SQLException {
 
-        try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
+        try  (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
             connection.setReadOnly(true);
             try (Statement statement = connection.createStatement()) {
                 try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
@@ -61,7 +88,7 @@ public class BoltRoutingPT {
 
     @Test public void shouldAccessReadReplicaNodes2() throws SQLException {
 
-        try  (Connection connection = DriverManager.getConnection(connectionUrl2, "neo4j", "larus")) {
+        try  (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getAllMembersURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
             connection.setReadOnly(true);
             try (Statement statement = connection.createStatement()) {
                 try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
@@ -78,7 +105,7 @@ public class BoltRoutingPT {
 
         expectedEx.expect(SQLException.class);
 
-        try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
+        try  (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
             connection.setReadOnly(true);
 
             try (Statement statement = connection.createStatement()) {
@@ -92,7 +119,7 @@ public class BoltRoutingPT {
     //@Ignore
     @Test public void shouldUseBookmarkToReadYourOwnWrites() throws SQLException {
 
-        try  (Connection connection = DriverManager.getConnection(connectionUrl, "neo4j", "larus")) {
+        try  (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
 
             connection.setAutoCommit(false);
 
@@ -115,6 +142,44 @@ public class BoltRoutingPT {
                 }
             }
             connection.commit();
+        }
+    }
+
+    //@Ignore
+    @Test public void shouldPassTheBookMark() throws SQLException {
+        List<String> bookmarks = new ArrayList<>();
+        bookmarks.add(insertAndGetBookmark());
+        bookmarks.add(insertAndGetBookmark());
+
+        String bookmarksAsString = String.join(",", bookmarks);
+        try  (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
+
+            connection.setClientInfo(BoltRoutingNeo4jDriver.BOOKMARK, bookmarksAsString);
+            connection.setReadOnly(true);
+
+            try (Statement statement = connection.createStatement()) {
+                try (ResultSet resultSet = statement.executeQuery("match (t:BoltRoutingTest) return count(t) as tot")) {
+                    if (resultSet.next()) {
+                        long tot = resultSet.getLong("tot");
+                        Assert.assertEquals(2L, tot);
+                    }
+                }
+            }
+        }
+    }
+
+    private String insertAndGetBookmark() throws SQLException {
+        try (Connection connection = DriverManager.getConnection("jdbc:neo4j:" + cluster.getURI().toString(), NEO4J_USER, NEO4J_PASSWORD)) {
+            connection.setAutoCommit(false);
+
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("create (:BoltRoutingTest { protocol: 'BOLT+ROUTING' })");
+            }
+            connection.commit();
+
+            final String bookmark = connection.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+            Assert.assertNotNull(bookmark);
+            return bookmark;
         }
     }
 }
