@@ -122,9 +122,10 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 				bookmarks = null;
 			}
 			String database = (String) this.getProperties().get(BoltNeo4jDriverImpl.DATABASE);
+            final boolean readOnly = Boolean.parseBoolean(getProperties().getProperty("readOnly", String.valueOf(getReadOnly())));
 			final SessionConfig.Builder config = SessionConfig.builder()
 					.withBookmarks(bookmarks)
-					.withDefaultAccessMode(getReadOnly() ? AccessMode.READ : AccessMode.WRITE);
+					.withDefaultAccessMode(readOnly ? AccessMode.READ : AccessMode.WRITE);
 			if (database != null && !database.trim().isEmpty()) {
 				config.withDatabase(database.trim());
 			}
