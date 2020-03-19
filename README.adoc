@@ -150,6 +150,24 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 * Get a connection from `DriverManager`
 * Execute queries and transactions using the Cypher graph query language
 
+==== List of Supported Neo4j Configuration parameters
+
+|===
+|Property Name |Supported Values |Description
+
+|trust.strategy |TRUST_ALL_CERTIFICATES, TRUST_CUSTOM_CA_SIGNED_CERTIFICATES, TRUST_SYSTEM_CA_SIGNED_CERTIFICATES |The supported trusted strategies
+|trusted.certificate.file |File Path |The path of the certificate file
+|connection.acquisition.timeout |Any Long |The acquisition time
+|connection.liveness.check.timeout |Any Long |The liveness check timeout
+|connection.timeout |Any Long |The connection timeout
+|encryption |true/false |Activate the application encryption
+|leaked.sessions.logging |true/false |If log leaked session
+|max.connection.lifetime |Any Long |The connection lifetime
+|max.connection.poolsize |Any Int |The max pool size
+|max.transaction.retry.time |Any Long | The retry time for a transaction transient error
+|readonly |true/false |If specified creates a fixed read only connection , any further modification via the `Connection#setReadOnly` method will have no effect
+|===
+
 === Flattening
 
 As most JDBC clients and tools don't support complex objects, the driver can flatten returned nodes and relationships by providing all their properties as individual columns with names like `u.name`,`r.since` if you just return a node `u` or relationship `r`.

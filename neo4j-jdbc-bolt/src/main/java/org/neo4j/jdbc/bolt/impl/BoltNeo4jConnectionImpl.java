@@ -50,6 +50,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	private Transaction transaction;
 	private boolean autoCommit = true;
 	private BoltNeo4jDatabaseMetaData metadata;
+	private boolean readOnly;
 
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jConnectionImpl.class.getName());
 
@@ -62,6 +63,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 */
 	public BoltNeo4jConnectionImpl(Driver driver, Properties properties, String url) {
 		super(properties, url, BoltNeo4jResultSet.DEFAULT_HOLDABILITY);
+		this.readOnly = Boolean.parseBoolean(getProperties().getProperty("readonly"));
 		this.driver = driver;
 		this.initSession();
 	}
@@ -100,7 +102,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	public Session newNeo4jSession(){
 		try {
 			String bookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
-			return this.driver.session(getReadOnly() ? AccessMode.READ : AccessMode.WRITE, bookmark);
+			return this.driver.session(readOnly || getReadOnly() ? AccessMode.READ : AccessMode.WRITE, bookmark);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);

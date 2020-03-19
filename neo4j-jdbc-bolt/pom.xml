@@ -37,6 +37,7 @@
         <dependency>
             <groupId>org.neo4j.community</groupId>
             <artifactId>it-test-support</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
