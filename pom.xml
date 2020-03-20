@@ -8,7 +8,7 @@
 	<!-- =========== -->
 	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-jdbc-parent</artifactId>
-	<version>4.0.0</version>
+	<version>4.0.1</version>
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver Parent</name>
 	<description>Parent POM for Neo4j JDBC Driver and Modules</description>
@@ -91,7 +91,7 @@
 		<maven.plugin.compiler>3.6.1</maven.plugin.compiler>
 		<maven.plugin.resources>2.7</maven.plugin.resources>
 		<maven.plugin.shade>3.0.0</maven.plugin.shade>
-		<maven.plugin.javadoc>2.9.1</maven.plugin.javadoc>
+		<maven.plugin.javadoc>3.1.0</maven.plugin.javadoc>
 		<maven.plugin.source>3.0.1</maven.plugin.source>
 		<maven.plugin.gpg>1.4</maven.plugin.gpg>
 		<maven.plugin.surefire>2.20</maven.plugin.surefire>
@@ -284,6 +284,11 @@
 						</goals>
 					</execution>
 				</executions>
+                                <configuration>
+                                        <additionalparam>-Xdoclint:none</additionalparam>
+                                        <additionalOptions>-Xdoclint:none</additionalOptions>
+                                        <additionalJOption>-Xdoclint:none</additionalJOption>
+                                </configuration>
 			</plugin>
 		</plugins>
 	</build>
