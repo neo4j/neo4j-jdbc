@@ -284,11 +284,9 @@
 						</goals>
 					</execution>
 				</executions>
-                                <configuration>
-                                        <additionalparam>-Xdoclint:none</additionalparam>
-                                        <additionalOptions>-Xdoclint:none</additionalOptions>
-                                        <additionalJOption>-Xdoclint:none</additionalJOption>
-                                </configuration>
+				<configuration>
+					<source>8</source>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

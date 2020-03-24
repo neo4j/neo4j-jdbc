@@ -86,6 +86,7 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	 * If its is we throw an exception.
 	 *
 	 * @param parameterIndex The index parameter to check
+	 * @throws SQLException in case of the input index does not exists
 	 */
 	protected void checkParamsNumber(int parameterIndex) throws SQLException {
 		if (parameterIndex > this.parametersNumber) {
@@ -98,6 +99,7 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	 * If it's not we throw an exception.
 	 *
 	 * @param obj The object to check
+	 * @throws SQLException in case the object type is not supported
 	 */
 	private void checkValidObject(Object obj) throws SQLException {
 		// TODO: this may belong into org.neo4j.driver.v1.Values

@@ -56,6 +56,7 @@ public class ObjectConverter {
     /**
      * Convert the given object value to the given class.
      *
+     * @param <T> the destination type of the conversion
      * @param from The object value to be converted.
      * @param to   The type class which the given object should be converted to.
      * @return The converted object value.
@@ -101,7 +102,9 @@ public class ObjectConverter {
 
     // Converters ---------------------------------------------------------------------------------
     /**
-     * Generic converter for maps.
+     * Cast an object to a map
+     * @param value the object to convert
+     * @return the converted Map
      */
     public static Map anyToMap(Object value) {
         return (Map) value;

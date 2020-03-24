@@ -48,7 +48,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	private static final Pattern VERSION_REGEX = Pattern.compile("^(\\d+)\\.(\\d+)(\\.|-)?(.*)?$");
 
 	protected static final int PROPERTY_SAMPLE_SIZE = 1000;
-	
+
 	/**
 	 * Name of the driver.
 	 */
@@ -68,12 +68,12 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	 * Database labels.
 	 */
 	protected List<Table> databaseLabels;
-	
+
 	/**
 	 * Database keys.
 	 */
 	protected List<Column> databaseProperties;
-	
+
 	/**
 	 * The JDBC connection.
 	 */
@@ -100,7 +100,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 			this.driverVersion = "Unknown";
 			throw new Neo4jJdbcRuntimeException(e);
 		}
-		
+
 		this.databaseLabels = new ArrayList<>();
 		this.databaseProperties = new ArrayList<>();
 	}
@@ -273,9 +273,9 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	 * @param catalog works only with null, because #getCatalogs() return no rows
 	 * @param schemaPattern works only with null, because #getSchemas() return no rows
 	 * @param tableNamePattern works with % too
-	 * @param types
-	 * @return
-	 * @throws SQLException
+	 * @param types list of types
+	 * @return the list of related tables as ResultSet
+	 * @throws SQLException no exception is thrown by this method
 	 */
 	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
 		if (this.databaseLabels == null || this.databaseLabels.isEmpty()) {
@@ -316,8 +316,8 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	 * @param schemaPattern works only with null, because #getSchemas() return no rows
 	 * @param tableNamePattern works with % too
 	 * @param columnNamePattern works with % too
-	 * @return
-	 * @throws SQLException
+	 * @return the list of related columns as ResultSet
+	 * @throws SQLException no exception is thrown by this method
 	 */
 	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
 		if (this.databaseProperties == null || this.databaseProperties.isEmpty()) {
@@ -404,19 +404,19 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	@Override public boolean allProceduresAreCallable() throws SQLException {
 		return true;
 	}
-	
+
 	@Override public boolean allTablesAreSelectable() throws SQLException {
 		return true;
 	}
-	
+
 	@Override public boolean nullsAreSortedHigh() throws SQLException {
 		return false;
 	}
-	
+
 	@Override public boolean nullsAreSortedLow() throws SQLException {
 		return true;
 	}
-	
+
 	@Override public boolean nullsAreSortedAtStart() throws SQLException {
 		return false;
 	}
@@ -424,7 +424,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	@Override public boolean nullsAreSortedAtEnd() throws SQLException {
 		return true;
 	}
-	
+
 	/*---------------------------------*/
 	/*       Not implemented yet       */
 	/*---------------------------------*/
