@@ -27,6 +27,7 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -72,13 +73,16 @@ public class ActorManagerContainerIT {
 		ConnectionFactory.getSqlSessionFactory(configuration);
 	}
 
-	@ClassRule
 	public static Neo4jContainer neo4jContainer = (Neo4jContainer) new Neo4jContainer("neo4j:4.0.0-enterprise")
 			.withEnv("NEO4J_AUTH", "neo4j/password")
 			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
 
 	@BeforeClass
 	public static void setUp() throws URISyntaxException {
+		try {
+			neo4jContainer.start();
+		} catch (Exception ignored) {}
+		Assume.assumeTrue("neo4j container should be up and running", neo4jContainer.isRunning());
 		try (final Driver driver = GraphDatabase.driver(new URI(neo4jContainer.getBoltUrl()), AuthTokens.basic("neo4j", neo4jContainer.getAdminPassword()))) {
 			final String foo = "foo";
 			try (final Session session = driver.session(SessionConfig.forDatabase("system"))) {
