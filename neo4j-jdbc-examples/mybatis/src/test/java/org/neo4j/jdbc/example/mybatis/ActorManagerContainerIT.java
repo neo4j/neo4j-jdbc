@@ -73,13 +73,14 @@ public class ActorManagerContainerIT {
 		ConnectionFactory.getSqlSessionFactory(configuration);
 	}
 
-	public static Neo4jContainer neo4jContainer = (Neo4jContainer) new Neo4jContainer("neo4j:4.0.0-enterprise")
-			.withEnv("NEO4J_AUTH", "neo4j/password")
-			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
+	public static Neo4jContainer neo4jContainer;
 
 	@BeforeClass
 	public static void setUp() throws URISyntaxException {
 		try {
+			neo4jContainer = (Neo4jContainer) new Neo4jContainer("neo4j:4.0.0-enterprise")
+					.withEnv("NEO4J_AUTH", "neo4j/password")
+					.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
 			neo4jContainer.start();
 		} catch (Exception exception) {
 			exception.printStackTrace();
