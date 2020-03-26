@@ -285,7 +285,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<skip>true</skip>
+					<source>8</source>
 				</configuration>
 			</plugin>
 		</plugins>
