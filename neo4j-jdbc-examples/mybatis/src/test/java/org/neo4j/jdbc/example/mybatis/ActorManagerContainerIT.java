@@ -85,6 +85,7 @@ public class ActorManagerContainerIT {
 		} catch (Exception exception) {
 			exception.printStackTrace();
 		}
+		Assume.assumeTrue("neo4j container should be not null", neo4jContainer != null);
 		Assume.assumeTrue("neo4j container should be up and running", neo4jContainer.isRunning());
 		try (final Driver driver = GraphDatabase.driver(new URI(neo4jContainer.getBoltUrl()), AuthTokens.basic("neo4j", neo4jContainer.getAdminPassword()))) {
 			final String foo = "foo";
