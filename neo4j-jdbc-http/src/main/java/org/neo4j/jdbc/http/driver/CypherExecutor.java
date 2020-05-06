@@ -93,11 +93,16 @@ public class CypherExecutor {
 	private String currentTransactionUrl;
 
 	/**
+	 * Name of the database (default: neo4j)
+	 */
+	private final String databaseName;
+
+	/**
 	 * Jackson mapper object.
 	 */
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private static final String DB_DATA_TRANSACTION = "/db/data/transaction";
+	private static final String DB_DATA_TRANSACTION_TEMPLATE = "/db/%s/tx";
 
 	static {
 		mapper.configure(DeserializationFeature.USE_LONG_FOR_INTS, true);
@@ -158,7 +163,8 @@ public class CypherExecutor {
 		this.http = builder.build();
 
 		// Create the url endpoint
-		this.transactionUrl = createTransactionUrl(host, port, this.secure);
+		this.databaseName = String.valueOf(properties.getOrDefault("database", "neo4j"));
+		this.transactionUrl = createTransactionUrl(this.databaseName, host, port, this.secure);
 
 		// Setting autocommit
 		this.setAutoCommit(Boolean.valueOf(properties.getProperty("autoCommit", "true")));
@@ -182,13 +188,15 @@ public class CypherExecutor {
 		}
 	}
 
-	private String createTransactionUrl(String host, Integer port, Boolean secure) throws SQLException {
+	private String createTransactionUrl(String databaseName, String host, Integer port, Boolean secure) throws SQLException {
+		String transactionPath = transactionPath(databaseName);
 		try {
-			if(secure)
-				return new URL("https", host, port, DB_DATA_TRANSACTION).toString();
-			else
-				return new URL("http", host, port, DB_DATA_TRANSACTION).toString();
-		} catch (MalformedURLException e) {
+			if (secure) {
+				return new URL("https", host, port, transactionPath).toString();
+			}
+			return new URL("http", host, port, transactionPath).toString();
+		}
+		catch (MalformedURLException e) {
 			throw new SQLException("Invalid server URL", e);
 		}
 	}
@@ -312,7 +320,8 @@ public class CypherExecutor {
 		String result = null;
 
 		// Prepare the headers query
-		HttpGet request = new HttpGet(this.transactionUrl.replace(DB_DATA_TRANSACTION, "/db/data"));
+		HttpGet request = new HttpGet(this.transactionUrl
+				.replace(transactionPath(this.databaseName), "/db/data"));
 
 		// Adding default headers to the request
 		for (Header header : this.getDefaultHeaders()) {
@@ -375,6 +384,10 @@ public class CypherExecutor {
 	 */
 	public Integer getOpenTransactionId() {
 		return getTransactionId(this.currentTransactionUrl);
+	}
+
+	private String transactionPath(String databaseName) {
+		return String.format(DB_DATA_TRANSACTION_TEMPLATE, databaseName);
 	}
 
 	/**
