@@ -38,7 +38,7 @@ public class CypherExecutorContainerIT {
 
 	@BeforeClass
 	public static void startDockerImage() {
-		neo4jContainer = startEnterpriseDockerImage(imageCoordinates(), USERNAME, PASSWORD);
+		neo4jContainer = startEnterpriseDockerContainer(imageCoordinates(), USERNAME, PASSWORD);
 		Assume.assumeTrue("neo4j container should be not null", neo4jContainer != null);
 		Assume.assumeTrue("neo4j container should be up and running", neo4jContainer.isRunning());
 	}
@@ -106,7 +106,7 @@ public class CypherExecutorContainerIT {
 		});
 	}
 
-	private static Neo4jContainer<?> startEnterpriseDockerImage(String version, String username, String password) {
+	private static Neo4jContainer<?> startEnterpriseDockerContainer(String version, String username, String password) {
 		try {
 			Neo4jContainer<?> container = new Neo4jContainer<>(version)
 					.withEnv("NEO4J_AUTH", String.format("%s/%s", username, password))
