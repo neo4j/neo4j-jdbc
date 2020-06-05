@@ -64,6 +64,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	private boolean autoCommit = true;
 	private BoltNeo4jDatabaseMetaData metadata;
 	private boolean readOnly = false;
+	private boolean useBookmarks = true;
 
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jConnectionImpl.class.getName());
 
@@ -77,6 +78,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	public BoltNeo4jConnectionImpl(Driver driver, Properties properties, String url) {
 		super(properties, url, BoltNeo4jResultSet.DEFAULT_HOLDABILITY);
 		this.readOnly = Boolean.parseBoolean(getProperties().getProperty("readonly"));
+		this.useBookmarks = Boolean.parseBoolean(getProperties().getProperty("readonly", "true"));
 		this.driver = driver;
 		this.initSession();
 	}
@@ -189,6 +191,9 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
     }
 
 	private void setBookmark() throws SQLClientInfoException {
+    	if (!useBookmarks) {
+    		return;
+		}
 		InternalBookmark internalBookmark = (InternalBookmark) this.session.lastBookmark();
 		if (internalBookmark != null && internalBookmark.values().iterator().hasNext()) {
 			String bookmark = String.join(BOOKMARK_SEPARATOR, internalBookmark.values());
