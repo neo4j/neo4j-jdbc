@@ -146,7 +146,8 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 |max.connection.poolsize |Any Int |The max pool size
 |max.transaction.retry.time |Any Long | The retry time for a transaction transient error
 |database |String |The database name, if not specified connects to the default instance
-|readonly |true/false |If specified creates a fixed read only connection , any further modification via the `Connection#setReadOnly` method will have no effect
+|readonly |true/false |If specified creates a fixed read only connection, any further modification via the `Connection#setReadOnly` method will have no effect
+|usebookmarks |true/false |If specified disables the bookmarks
 |===
 
 
