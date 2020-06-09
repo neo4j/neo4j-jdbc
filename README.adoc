@@ -1,5 +1,5 @@
 == Overview: Neo4j JDBC Driver
-:neo4j-jdbc-version: 3.5.1
+:neo4j-jdbc-version: 3.5.2
 
 ifndef::env-docs[]
 image:https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"]
@@ -35,7 +35,7 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |===
 |Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | Protocols | Temporal and Spatial
 
-|3.5.1
+|3.5.x
 | 3.4.x 3.5.x
 |4.0.0
 |1.8
