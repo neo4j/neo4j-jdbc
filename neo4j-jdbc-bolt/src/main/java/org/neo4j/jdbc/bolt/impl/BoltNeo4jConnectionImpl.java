@@ -64,6 +64,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	private boolean autoCommit = true;
 	private BoltNeo4jDatabaseMetaData metadata;
 	private boolean readOnly = false;
+	private boolean useBookmarks = true;
 
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jConnectionImpl.class.getName());
 
@@ -77,6 +78,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	public BoltNeo4jConnectionImpl(Driver driver, Properties properties, String url) {
 		super(properties, url, BoltNeo4jResultSet.DEFAULT_HOLDABILITY);
 		this.readOnly = Boolean.parseBoolean(getProperties().getProperty("readonly"));
+		this.useBookmarks = Boolean.parseBoolean(getProperties().getProperty("usebookmarks", "true"));
 		this.driver = driver;
 		this.initSession();
 	}
@@ -114,28 +116,37 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 */
 	public Session newNeo4jSession() {
 		try {
-			String stringBookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
-			final Bookmark[] bookmarks;
-			if (StringUtils.isNotBlank(stringBookmark)) {
-				bookmarks = Stream.of(stringBookmark.split(BOOKMARK_SEPARATOR))
-						.map(b -> InternalBookmark.parse(Stream.of(b.split(BOOKMARK_VALUES_SEPARATOR)).collect(Collectors.toSet())))
-						.toArray(Bookmark[]::new);
-			} else {
-				bookmarks = null;
-			}
 			final SessionConfig.Builder config = SessionConfig.builder()
-					.withBookmarks(bookmarks)
+					.withBookmarks(extractBookmarks())
 					.withDefaultAccessMode(readOnly || getReadOnly() ? AccessMode.READ : AccessMode.WRITE);
-			String database = (String) this.getProperties().get(BoltNeo4jDriverImpl.DATABASE);
-			if (database != null && !database.trim().isEmpty()) {
-				config.withDatabase(database.trim());
-			}
+			setDatabase(config);
 			return this.driver.session(config.build());
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
+
+	private void setDatabase(SessionConfig.Builder config) {
+		String database = (String) this.getProperties().get(BoltNeo4jDriverImpl.DATABASE);
+		if (database != null && !database.trim().isEmpty()) {
+			config.withDatabase(database.trim());
+		}
+	}
+
+	private Bookmark[] extractBookmarks() throws SQLException {
+		String stringBookmark = this.getClientInfo(BoltRoutingNeo4jDriver.BOOKMARK);
+		final Bookmark[] bookmarks;
+		if (useBookmarks && StringUtils.isNotBlank(stringBookmark)) {
+			bookmarks = Stream.of(stringBookmark.split(BOOKMARK_SEPARATOR))
+					.map(b -> InternalBookmark.parse(Stream.of(b.split(BOOKMARK_VALUES_SEPARATOR)).collect(Collectors.toSet())))
+					.toArray(Bookmark[]::new);
+		} else {
+			bookmarks = null;
+		}
+		return bookmarks;
+	}
+
 
 	@Override public Neo4jDatabaseMetaData getMetaData() throws SQLException {
 		if(metadata == null){
@@ -189,6 +200,9 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
     }
 
 	private void setBookmark() throws SQLClientInfoException {
+		if (!useBookmarks) {
+			return;
+		}
 		InternalBookmark internalBookmark = (InternalBookmark) this.session.lastBookmark();
 		if (internalBookmark != null && internalBookmark.values().iterator().hasNext()) {
 			String bookmark = String.join(BOOKMARK_SEPARATOR, internalBookmark.values());
