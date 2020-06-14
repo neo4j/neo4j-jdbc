@@ -65,6 +65,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	private BoltNeo4jDatabaseMetaData metadata;
 	private boolean readOnly = false;
 	private boolean useBookmarks = true;
+	private boolean refreshSession = false;
 
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jConnectionImpl.class.getName());
 
@@ -79,6 +80,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		super(properties, url, BoltNeo4jResultSet.DEFAULT_HOLDABILITY);
 		this.readOnly = Boolean.parseBoolean(getProperties().getProperty("readonly"));
 		this.useBookmarks = Boolean.parseBoolean(getProperties().getProperty("usebookmarks", "true"));
+		this.refreshSession = Boolean.parseBoolean(getProperties().getProperty("refreshsession", "false"));
 		this.driver = driver;
 		this.initSession();
 	}
@@ -275,6 +277,10 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	}
 
 	@Override public void close() throws SQLException {
+		close(true);
+	}
+
+	private void close(boolean closeDriver) throws SQLException {
 		try {
 			if (!this.isClosed()) {
 				if (this.transaction != null) {
@@ -284,8 +290,10 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
                 if (this.session != null) {
                     this.session.close();
                     this.session = null;
-                    this.driver.close();
-                    this.driver = null;
+                    if (closeDriver) {
+						this.driver.close();
+						this.driver = null;
+					}
                 }
             }
 		} catch (Exception e) {
@@ -353,6 +361,11 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 
     private void initTransaction()  {
 	    try {
+	    	if (refreshSession) {
+	    		doCommit();
+	    		close(false);
+	    		initSession();
+			}
             if (this.transaction == null) {
                 this.transaction = this.session.beginTransaction();
 			}

@@ -148,6 +148,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 |database |String |The database name, if not specified connects to the default instance
 |readonly |true/false |If specified creates a fixed read only connection, any further modification via the `Connection#setReadOnly` method will have no effect
 |usebookmarks |true/false |If specified disables the bookmarks
+|refreshsession |false/true |If specified creates a new session for each statement
 |===
 
 
