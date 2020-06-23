@@ -2,12 +2,10 @@
 :neo4j-jdbc-version: 3.5.2
 
 ifndef::env-docs[]
-image:https://travis-ci.org/neo4j-contrib/neo4j-jdbc.svg?branch=master["Build Status", link="https://travis-ci.org/neo4j-contrib/neo4j-jdbc"]
-
 You can find the full documentation at: http://neo4j-contrib.github.io/neo4j-jdbc/
 endif::env-docs[]
 
-*This is the official JDBC driver for Neo4j*.
+*This is an JDBC driver for Neo4j which supports Cypher over JDBC*.
 
 This driver was mainly developed by http://larus-ba.it[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j.
 *Thank you* so much for all your work.
@@ -26,20 +24,23 @@ Going forward there will also be support for:
 * direct file connection
 * embedded connection
 
-[NOTE]
-The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
-
-
 
 .Versions compatibility
 |===
 |Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | Protocols | Temporal and Spatial
 
 |3.5.x
-| 3.4.x 3.5.x
-|4.0.0
+|3.4.x 3.5.x
+|1.7
 |1.8
 |http, bolt, bolt+routing
+|yes
+
+|4.x
+|4.0.x, 4.1.x
+|4.0
+|11
+|http, bolt, bolt+routing, neo4j
 |yes
 |===
 
