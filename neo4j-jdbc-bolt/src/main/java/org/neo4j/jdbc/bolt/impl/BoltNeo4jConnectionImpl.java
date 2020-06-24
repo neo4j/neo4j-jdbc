@@ -111,7 +111,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 
 	/**
 	 * Build an internal neo4j session, without saving reference (stateless)
-	 * Close using {@link #closeSession(Session)} for driver management
+	 * Close using {@link #close()} for driver management
 	 * @return
 	 */
 	public Session newNeo4jSession() {
@@ -161,10 +161,8 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
             throw new SQLException("Method can't be called during a transaction");
         }
         super.doSetReadOnly(readOnly);
-        if (this.session != null && this.session.isOpen()){
-            this.session.close();
-            initSession();
-        }
+        closeSession(false);
+        initSession();
     }
 
 	/*------------------------------*/
@@ -191,16 +189,16 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	}
 
     @Override public void doCommit() throws SQLException {
-        if (this.transaction != null && this.transaction.isOpen()) {
-            this.transaction.commit();
-            this.transaction.close();
-            this.transaction = null;
-            setBookmark();
-        }
-    }
+    	if (this.transaction != null && this.transaction.isOpen()) {
+			this.transaction.commit();
+		}
+		closeTransaction();
+		setBookmark();
+		closeSession(false);
+	}
 
 	private void setBookmark() throws SQLClientInfoException {
-		if (!useBookmarks) {
+		if (!useBookmarks || this.session == null) {
 			return;
 		}
 		InternalBookmark internalBookmark = (InternalBookmark) this.session.lastBookmark();
@@ -216,12 +214,13 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
         doRollback();
 	}
 
-    @Override public void doRollback() {
-        if (this.transaction != null && this.transaction.isOpen()) {
-            this.transaction.rollback();
-            this.transaction.close();
-            this.transaction = null;
-        }
+    @Override public void doRollback() throws SQLClientInfoException {
+		if (this.transaction != null && this.transaction.isOpen()) {
+			this.transaction.rollback();
+		}
+		closeTransaction();
+		setBookmark();
+		closeSession(false);
     }
 
 	/*------------------------------*/
@@ -277,31 +276,30 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	@Override public void close() throws SQLException {
 		try {
 			if (!this.isClosed()) {
-				if (this.transaction != null) {
-					this.transaction.close();
-					this.transaction = null;
-				}
-                if (this.session != null) {
-                    this.session.close();
-                    this.session = null;
-                    this.driver.close();
-                    this.driver = null;
-                }
-            }
+				closeTransaction();
+				closeSession(true);
+			}
 		} catch (Exception e) {
 			throw new SQLException("A database access error has occurred: " + e.getMessage());
 		}
 	}
 
-	/**
-	 * If has used {@link #newNeo4jSession()}
-	 * @param session
-	 */
-	public void closeSession(Session session){
-		if (session != null) {
-			session.close();
-			this.driver.close();
+	private void closeSession(boolean closeDriver) {
+		if (this.session != null) {
+			this.session.close();
 		}
+		this.session = null;
+		if (closeDriver && this.driver != null) {
+			this.driver.close();
+			this.driver = null;
+		}
+	}
+
+	private void closeTransaction() {
+		if (this.transaction != null && this.transaction.isOpen()) {
+			this.transaction.close();
+		}
+		this.transaction = null;
 	}
 
 	/*-------------------*/
@@ -316,15 +314,23 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 			return false;
 		}
 
-		Runnable r = new Runnable() {
-			@Override public void run() {
-				Session s = getSession();
-				Transaction tr = getTransaction();
+		Runnable r = () -> {
+			Session s = newNeo4jSession();
+			Transaction tr = s.beginTransaction();
+			try {
 				if (tr != null && tr.isOpen()) {
-					tr.run(FASTEST_STATEMENT);
+					try {
+						tr.run(FASTEST_STATEMENT);
+						tr.commit();
+
+					} finally {
+						tr.close();
+					}
 				} else {
 					s.run(FASTEST_STATEMENT);
 				}
+			} finally {
+				s.close();
 			}
 		};
 
@@ -353,15 +359,16 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 
     private void initTransaction()  {
 	    try {
-            if (this.transaction == null) {
-                this.transaction = this.session.beginTransaction();
-			}
-            else if (this.getAutoCommit()) {
+			if (this.getAutoCommit()) {
 				doCommit();
-                this.transaction = this.session.beginTransaction();
-            }
-        }
-        catch (Exception e) {
+			}
+			if (this.getAutoCommit() || this.session == null) {
+				initSession();
+			}
+			if (this.getAutoCommit() || this.transaction == null) {
+				this.transaction = this.session.beginTransaction();
+			}
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 	}

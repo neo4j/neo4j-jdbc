@@ -518,23 +518,32 @@ public class BoltNeo4jConnectionTest {
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(1)).beginTransaction();
+		final Session session = openConnection.getSession();
+		verify(session, times(1)).beginTransaction();
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(1)).beginTransaction();
+		final Session session1 = openConnection.getSession();
+		verify(session1, times(1)).beginTransaction();
+		assertEquals(session, session1);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(2)).beginTransaction();
+		final Session session2 = openConnection.getSession();
+		verify(session2, times(1)).beginTransaction();
+		assertNotEquals(session1, session2);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(3)).beginTransaction();
+		final Session session3 = openConnection.getSession();
+		verify(session3, times(1)).beginTransaction();
+		assertNotEquals(session2, session3);
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(3)).beginTransaction();
+		final Session session4 = openConnection.getSession();
+		verify(session4, times(1)).beginTransaction();
+		assertNotEquals(session3, session4);
 	}
 
 	/*------------------------------*/
