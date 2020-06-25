@@ -585,6 +585,6 @@ public class BoltNeo4jStatementTest {
 		PreparedStatement otherStatement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL);
 		Session otherSession = ReflectionUtil.getPrivateField(connection, "session", Session.class);
 		otherStatement.executeQuery();
-		assertNotEquals(session, otherSession);
+		assertNotSame(session, otherSession);
 	}
 }

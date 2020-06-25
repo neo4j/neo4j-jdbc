@@ -102,7 +102,7 @@ public class Mocker {
 		when(session.isOpen()).thenReturn(true);
 		Transaction transaction = mock(Transaction.class);
 		when(session.beginTransaction()).thenReturn(transaction);
-		when(session.run(anyString())).thenAnswer(new Answer<ResultSet>() {
+		when(transaction.run(anyString())).thenAnswer(new Answer<ResultSet>() {
 			@Override public ResultSet answer(InvocationOnMock invocation) {
 				try {
 					TimeUnit.SECONDS.sleep(5);
@@ -119,7 +119,7 @@ public class Mocker {
 		when(session.isOpen()).thenReturn(true);
 		Transaction transaction = mock(Transaction.class);
 		when(session.beginTransaction()).thenReturn(transaction);
-		when(session.run(anyString())).thenThrow(new RuntimeException("RuntimeException THROWN"));
+		when(transaction.run(anyString())).thenThrow(new RuntimeException("RuntimeException THROWN"));
 		return session;
 	}
 

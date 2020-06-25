@@ -109,7 +109,7 @@ public class BoltNeo4jConnectionTest {
 	/*------------------------------*/
 	@Test public void closeShouldCloseConnection() throws SQLException {
 		Session session = mock(Session.class);
-		when(session.isOpen()).thenReturn(true).thenReturn(false);
+		when(session.isOpen()).thenReturn(true).thenReturn(true).thenReturn(false);
 		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);
 		when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
@@ -525,25 +525,25 @@ public class BoltNeo4jConnectionTest {
 		openConnection.createStatement();
 		final Session session1 = openConnection.getSession();
 		verify(session1, times(1)).beginTransaction();
-		assertEquals(session, session1);
+		assertSame(session, session1);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
 		final Session session2 = openConnection.getSession();
 		verify(session2, times(1)).beginTransaction();
-		assertNotEquals(session1, session2);
+		assertNotSame(session1, session2);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
 		final Session session3 = openConnection.getSession();
 		verify(session3, times(1)).beginTransaction();
-		assertNotEquals(session2, session3);
+		assertNotSame(session2, session3);
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
 		final Session session4 = openConnection.getSession();
 		verify(session4, times(1)).beginTransaction();
-		assertNotEquals(session3, session4);
+		assertNotSame(session3, session4);
 	}
 
 	/*------------------------------*/

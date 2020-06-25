@@ -18,6 +18,7 @@
 package org.neo4j.jdbc.bolt.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Bookmark;
 import org.neo4j.driver.Driver;
@@ -37,6 +38,7 @@ import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
 
+import java.io.Closeable;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -285,21 +287,30 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	}
 
 	private void closeSession(boolean closeDriver) {
-		if (this.session != null) {
-			this.session.close();
+		if (this.session != null && this.session.isOpen()) {
+			closeSafely(this.session);
 		}
 		this.session = null;
 		if (closeDriver && this.driver != null) {
-			this.driver.close();
+			closeSafely(this.driver);
 			this.driver = null;
 		}
 	}
 
 	private void closeTransaction() {
 		if (this.transaction != null && this.transaction.isOpen()) {
-			this.transaction.close();
+			closeSafely(this.transaction);
 		}
 		this.transaction = null;
+	}
+
+	private void closeSafely(AutoCloseable closeable) {
+		try {
+			closeable.close();
+		} catch (Exception e) {
+			LOGGER.warning("Exception while trying to close an AutoCloseable, because of the following exception: " +
+					ExceptionUtils.getStackTrace(e));
+		}
 	}
 
 	/*-------------------*/
@@ -315,22 +326,9 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		}
 
 		Runnable r = () -> {
-			Session s = newNeo4jSession();
-			Transaction tr = s.beginTransaction();
-			try {
-				if (tr != null && tr.isOpen()) {
-					try {
-						tr.run(FASTEST_STATEMENT);
-						tr.commit();
-
-					} finally {
-						tr.close();
-					}
-				} else {
-					s.run(FASTEST_STATEMENT);
-				}
-			} finally {
-				s.close();
+			try (Session s = newNeo4jSession(); Transaction tr = s.beginTransaction()) {
+				tr.run(FASTEST_STATEMENT);
+				tr.commit();
 			}
 		};
 
@@ -361,14 +359,14 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	    try {
 			if (this.getAutoCommit()) {
 				doCommit();
-			}
-			if (this.getAutoCommit() || this.session == null) {
+				initSession();
+			} else if (this.session == null) {
 				initSession();
 			}
-			if (this.getAutoCommit() || this.transaction == null) {
+			if (this.transaction == null) {
 				this.transaction = this.session.beginTransaction();
 			}
-        } catch (Exception e) {
+		} catch (Exception e) {
             throw new RuntimeException(e);
         }
 	}
