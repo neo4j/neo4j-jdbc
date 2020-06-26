@@ -18,7 +18,6 @@
 package org.neo4j.jdbc.bolt.impl;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Bookmark;
 import org.neo4j.driver.Driver;
@@ -33,12 +32,12 @@ import org.neo4j.jdbc.bolt.BoltNeo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.BoltNeo4jPreparedStatement;
 import org.neo4j.jdbc.bolt.BoltNeo4jResultSet;
 import org.neo4j.jdbc.bolt.BoltNeo4jStatement;
+import org.neo4j.jdbc.bolt.BoltNeo4jUtils;
 import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
 
-import java.io.Closeable;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -67,6 +66,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	private BoltNeo4jDatabaseMetaData metadata;
 	private boolean readOnly = false;
 	private boolean useBookmarks = true;
+	private boolean closed = false;
 
 	private static final Logger LOGGER = Logger.getLogger(BoltNeo4jConnectionImpl.class.getName());
 
@@ -163,7 +163,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
             throw new SQLException("Method can't be called during a transaction");
         }
         super.doSetReadOnly(readOnly);
-        closeSession(false);
+        closeSession();
         initSession();
     }
 
@@ -196,7 +196,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		}
 		closeTransaction();
 		setBookmark();
-		closeSession(false);
+		closeSession();
 	}
 
 	private void setBookmark() throws SQLClientInfoException {
@@ -222,7 +222,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		}
 		closeTransaction();
 		setBookmark();
-		closeSession(false);
+		closeSession();
     }
 
 	/*------------------------------*/
@@ -272,46 +272,36 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	/*-------------------*/
 
 	@Override public boolean isClosed() throws SQLException {
-        return this.driver == null || (this.session != null && !this.session.isOpen());
+        return this.closed || (this.session != null && !this.session.isOpen());
 	}
 
 	@Override public void close() throws SQLException {
 		try {
 			if (!this.isClosed()) {
 				closeTransaction();
-				closeSession(true);
+				closeSession();
 			}
 		} catch (Exception e) {
 			throw new SQLException("A database access error has occurred: " + e.getMessage());
+		} finally {
+			this.closed = true;
 		}
 	}
 
-	private void closeSession(boolean closeDriver) {
+	private void closeSession() {
 		if (this.session != null && this.session.isOpen()) {
-			closeSafely(this.session);
+			BoltNeo4jUtils.closeSafely(this.session, LOGGER);
 		}
 		this.session = null;
-		if (closeDriver && this.driver != null) {
-			closeSafely(this.driver);
-			this.driver = null;
-		}
 	}
 
 	private void closeTransaction() {
 		if (this.transaction != null && this.transaction.isOpen()) {
-			closeSafely(this.transaction);
+			BoltNeo4jUtils.closeSafely(this.transaction, LOGGER);
 		}
 		this.transaction = null;
 	}
 
-	private void closeSafely(AutoCloseable closeable) {
-		try {
-			closeable.close();
-		} catch (Exception e) {
-			LOGGER.warning("Exception while trying to close an AutoCloseable, because of the following exception: " +
-					ExceptionUtils.getStackTrace(e));
-		}
-	}
 
 	/*-------------------*/
 	/*      isValid      */

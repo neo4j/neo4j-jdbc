@@ -1,5 +1,6 @@
 package org.neo4j.jdbc.bolt;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
@@ -8,6 +9,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * A set of common functions for bolt connector
@@ -77,6 +79,21 @@ public class BoltNeo4jUtils {
                                           Map<String, Object> params) {
         Transaction transaction = connection.getTransaction();
         return transaction.run(statement, params);
+    }
+
+    public static void closeSafely(AutoCloseable closeable, Logger logger) {
+        if (closeable == null) {
+            return;
+        }
+        try {
+            closeable.close();
+        } catch (Exception e) {
+            if (logger == null) {
+                return;
+            }
+            logger.warning("Exception while trying to close an AutoCloseable, because of the following exception: " +
+                    ExceptionUtils.getStackTrace(e));
+        }
     }
 
 }
