@@ -109,7 +109,7 @@ public class BoltNeo4jConnectionTest {
 	/*------------------------------*/
 	@Test public void closeShouldCloseConnection() throws SQLException {
 		Session session = mock(Session.class);
-		when(session.isOpen()).thenReturn(true).thenReturn(false);
+		when(session.isOpen()).thenReturn(true).thenReturn(true).thenReturn(false);
 		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);
 		when(driver.session(any(SessionConfig.class))).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
@@ -518,23 +518,32 @@ public class BoltNeo4jConnectionTest {
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(1)).beginTransaction();
+		final Session session = openConnection.getSession();
+		verify(session, times(1)).beginTransaction();
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(1)).beginTransaction();
+		final Session session1 = openConnection.getSession();
+		verify(session1, times(1)).beginTransaction();
+		assertSame(session, session1);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(2)).beginTransaction();
+		final Session session2 = openConnection.getSession();
+		verify(session2, times(1)).beginTransaction();
+		assertNotSame(session1, session2);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(3)).beginTransaction();
+		final Session session3 = openConnection.getSession();
+		verify(session3, times(1)).beginTransaction();
+		assertNotSame(session2, session3);
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		verify(openConnection.getSession(), times(3)).beginTransaction();
+		final Session session4 = openConnection.getSession();
+		verify(session4, times(1)).beginTransaction();
+		assertNotSame(session3, session4);
 	}
 
 	/*------------------------------*/

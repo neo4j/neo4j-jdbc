@@ -69,7 +69,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, e.getMessage(), e);
 			}finally{
-				connection.closeSession(session);
+				BoltNeo4jUtils.closeSafely(session, LOGGER);
 			}
 		}
 	}

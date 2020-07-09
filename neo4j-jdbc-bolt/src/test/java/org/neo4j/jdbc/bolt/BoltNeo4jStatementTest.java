@@ -36,6 +36,7 @@ import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+import org.neo4j.test.ReflectionUtil;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -573,5 +574,17 @@ public class BoltNeo4jStatementTest {
 		stmt.close();
 
 		stmt.getConnection();
+	}
+
+	@Test public void shouldCreateABrandNewSession() throws Exception {
+		Properties props = new Properties();
+		Connection connection = new BoltNeo4jConnectionImpl(mockDriverOpen(), props, "");
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL);
+		Session session = ReflectionUtil.getPrivateField(connection, "session", Session.class);
+		statement.executeQuery();
+		PreparedStatement otherStatement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL);
+		Session otherSession = ReflectionUtil.getPrivateField(connection, "session", Session.class);
+		otherStatement.executeQuery();
+		assertNotSame(session, otherSession);
 	}
 }
