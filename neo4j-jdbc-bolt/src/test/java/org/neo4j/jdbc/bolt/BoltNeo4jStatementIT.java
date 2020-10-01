@@ -288,4 +288,14 @@ public class BoltNeo4jStatementIT {
 		statement.close();
 	}
 
+	@Test public void testInvalidStatementShouldRaiseASQLException() throws SQLException {
+		expectedEx.expect(SQLException.class);
+
+		connection.setAutoCommit(false);
+
+		try (Statement statement = connection.createStatement()) {
+			statement.executeQuery("nope");
+		}
+	}
+
 }
