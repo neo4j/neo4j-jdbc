@@ -24,6 +24,7 @@ import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.exceptions.ClientException;
 import org.neo4j.driver.v1.exceptions.value.Uncoercible;
 import org.neo4j.driver.v1.types.*;
 import org.neo4j.driver.v1.util.Pair;
@@ -72,7 +73,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 *                  The defaults are <code>TYPE_FORWARD_ONLY</code>,
 	 *                  <code>CONCUR_READ_ONLY</code>,
 	 */
-	private BoltNeo4jResultSet(Statement statement, StatementResult iterator, int... params) {
+	private BoltNeo4jResultSet(Statement statement, StatementResult iterator, int... params) throws SQLException {
 		super(statement, params);
 		this.iterator = iterator;
 
@@ -85,26 +86,31 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		} catch (Exception e) {
 			this.flatten = 0;
 		}
-
-		if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
-			//Flatten the result
-			this.flattenResultSet();
-			this.flattened = true;
-		} else if (this.iterator != null) {
-			//Keys are exactly the ones returned from the iterator
-			this.keys = this.iterator.keys();
-			if (this.iterator.hasNext()) {
-				for (Value value : this.iterator.peek().values()) {
-					this.classes.add(value.type());
+		// This block may raise an exception if the Cypher statement is invalid
+		try {
+			if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
+				//Flatten the result
+				this.flattenResultSet();
+				this.flattened = true;
+			} else if (this.iterator != null) {
+				//Keys are exactly the ones returned from the iterator
+				this.keys = this.iterator.keys();
+				if (this.iterator.hasNext()) {
+					for (Value value : this.iterator.peek().values()) {
+						this.classes.add(value.type());
+					}
 				}
 			}
+		}
+		catch (ClientException ce) {
+			throw new SQLException(ce.getMessage(), ce);
 		}
 
 
 		this.metaData = BoltNeo4jResultSetMetaData.newInstance(false, this.classes, this.keys);
 	}
 
-	public static ResultSet newInstance(boolean debug, Statement statement, StatementResult iterator, int... params) {
+	public static ResultSet newInstance(boolean debug, Statement statement, StatementResult iterator, int... params) throws SQLException {
 		ResultSet rs = new BoltNeo4jResultSet(statement, iterator, params);
 		return (ResultSet) Proxy
 				.newProxyInstance(BoltNeo4jResultSet.class.getClassLoader(), new Class[] { ResultSet.class }, new Neo4jInvocationHandler(rs, debug));
