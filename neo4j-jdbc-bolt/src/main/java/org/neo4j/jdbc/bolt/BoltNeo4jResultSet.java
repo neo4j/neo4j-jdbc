@@ -86,25 +86,24 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 		} catch (Exception e) {
 			this.flatten = 0;
 		}
-
-		if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
-			//Flatten the result
-			this.flattenResultSet();
-			this.flattened = true;
-		} else if (this.iterator != null) {
-			// Keys are exactly the ones returned from the iterator
-			// This may raise an exception if the statement is invalid
-			try {
+		// This block may raise an exception if the Cypher statement is invalid
+		try {
+			if (this.flatten != 0 && this.iterator != null && this.iterator.hasNext() && this.iterator.peek() != null && this.flatteningTypes(this.iterator)) {
+				//Flatten the result
+				this.flattenResultSet();
+				this.flattened = true;
+			} else if (this.iterator != null) {
+				//Keys are exactly the ones returned from the iterator
 				this.keys = this.iterator.keys();
-			}
-			catch (ClientException ce) {
-				throw new SQLException(ce.getMessage(), ce);
-			}
-			if (this.iterator.hasNext()) {
-				for (Value value : this.iterator.peek().values()) {
-					this.classes.add(value.type());
+				if (this.iterator.hasNext()) {
+					for (Value value : this.iterator.peek().values()) {
+						this.classes.add(value.type());
+					}
 				}
 			}
+		}
+		catch (ClientException ce) {
+			throw new SQLException(ce.getMessage(), ce);
 		}
 
 
