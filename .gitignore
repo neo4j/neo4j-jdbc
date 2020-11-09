@@ -32,3 +32,5 @@ target/
 #Neo4j
 **/neo4j-home/*
 
+# jenv
+/.java-version
