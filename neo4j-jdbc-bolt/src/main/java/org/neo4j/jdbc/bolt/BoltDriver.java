@@ -79,4 +79,9 @@ public class BoltDriver extends BoltNeo4jDriverImpl {
     protected List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException {
         return Arrays.asList(new URI(boltUrl));
     }
+
+	// visible for testing
+	protected static void clearCache() {
+		cache.clear();
+	}
 }

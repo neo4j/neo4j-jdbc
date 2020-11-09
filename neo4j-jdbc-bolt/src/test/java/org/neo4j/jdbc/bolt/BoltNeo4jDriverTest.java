@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,7 +35,6 @@ import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -47,13 +47,16 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static org.neo4j.driver.Values.value;
 import static java.util.Collections.singletonMap;
 import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.internal.verification.VerificationModeFactory.atLeastOnce;
+import static org.neo4j.driver.Values.value;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 /**
@@ -73,6 +76,11 @@ public class BoltNeo4jDriverTest {
 
 	@BeforeClass public static void initialize() {
 		mockedDriver = Mocker.mockDriver();
+	}
+
+	@Before
+	public void prepare() {
+		BoltDriver.clearCache();
 	}
 
 	/*------------------------------*/
@@ -217,13 +225,13 @@ public class BoltNeo4jDriverTest {
 
 			assertEquals(PoolSettings.DEFAULT_CONNECTION_ACQUISITION_TIMEOUT, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(PoolSettings.DEFAULT_IDLE_TIME_BEFORE_CONNECTION_TEST, config.idleTimeBeforeConnectionTest());
-			assertEquals((int) TimeUnit.SECONDS.toMillis( 5 ), config.connectionTimeoutMillis());
-			assertEquals(true, config.encrypted());
-			assertEquals(false, config.logLeakedSessions());
+			assertEquals((int) TimeUnit.SECONDS.toMillis( 30 ), config.connectionTimeoutMillis());
+			assertFalse(config.encrypted());
+			assertFalse(config.logLeakedSessions());
 			// assertEquals(Config.LoadBalancingStrategy.LEAST_CONNECTED, config.loadBalancingStrategy());
 			assertEquals(PoolSettings.DEFAULT_MAX_CONNECTION_LIFETIME, config.maxConnectionLifetimeMillis());
 			assertEquals(PoolSettings.DEFAULT_MAX_CONNECTION_POOL_SIZE, config.maxConnectionPoolSize());
-			assertEquals(Config.TrustStrategy.trustAllCertificates().strategy(), config.trustStrategy().strategy());
+			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
 
 			return mockedDriver;
 		});

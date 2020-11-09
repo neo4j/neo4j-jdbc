@@ -79,4 +79,9 @@ public class BoltDriverCache {
     public Map<BoltDriverCacheKey, Driver> getCache() {
         return cache;
     }
+
+    // visible for testing
+    public void clear() {
+        cache.clear();
+    }
 }
