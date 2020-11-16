@@ -1,6 +1,5 @@
 package org.neo4j;
 
-import org.jetbrains.annotations.NotNull;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -85,7 +84,6 @@ public class TestcontainersCausalCluster {
         return new TestcontainersCausalCluster(members, sidecars.values().stream().collect(toList()));
     }
 
-    @NotNull
     private static List<Neo4jContainer> getClusterMembers(int numberOfCoreMembers,
                                                                    ClusterInstanceType instanceType,
                                                                    Map<String, GenericContainer> sidecars,
@@ -104,7 +102,6 @@ public class TestcontainersCausalCluster {
                 .collect(toList());
     }
 
-    @NotNull
     private static Map<String, GenericContainer> createSidecars(int numOfMembers, Network network, ClusterInstanceType instanceType) {
         return iterateMembers(numOfMembers, instanceType)
                 .collect(toMap(
@@ -169,22 +166,6 @@ public class TestcontainersCausalCluster {
 
     public URI getURI() {
         return this.sidecars.stream().findAny()
-                .map(instance -> String.format("bolt+routing://%s:%d", instance.getContainerIpAddress(),
-                        instance.getMappedPort(DEFAULT_BOLT_PORT)))
-                .map(uri -> {
-                    try {
-                        return new URI(uri);
-                    } catch (URISyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .orElseThrow(() -> new IllegalStateException("No sidecar as entrypoint into the cluster available."));
-    }
-
-    public URI getURIByType(ClusterInstanceType instanceType) {
-        return this.sidecars.stream()
-                .filter(instance -> instance.getLabels().getOrDefault("memberType", "").equals(instanceType.toString()))
-                .findAny()
                 .map(instance -> String.format("bolt+routing://%s:%d", instance.getContainerIpAddress(),
                         instance.getMappedPort(DEFAULT_BOLT_PORT)))
                 .map(uri -> {
