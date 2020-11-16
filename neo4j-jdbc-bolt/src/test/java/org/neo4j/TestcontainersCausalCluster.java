@@ -178,22 +178,6 @@ public class TestcontainersCausalCluster {
                 .orElseThrow(() -> new IllegalStateException("No sidecar as entrypoint into the cluster available."));
     }
 
-    public URI getURIByType(ClusterInstanceType instanceType) {
-        return this.sidecars.stream()
-                .filter(instance -> instance.getLabels().getOrDefault("memberType", "").equals(instanceType.toString()))
-                .findAny()
-                .map(instance -> String.format("bolt+routing://%s:%d", instance.getContainerIpAddress(),
-                        instance.getMappedPort(DEFAULT_BOLT_PORT)))
-                .map(uri -> {
-                    try {
-                        return new URI(uri);
-                    } catch (URISyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .orElseThrow(() -> new IllegalStateException("No sidecar as entrypoint into the cluster available."));
-    }
-
     public URI getAllMembersURI() {
         try {
             return new URI("bolt+routing://" + this.sidecars.stream()
