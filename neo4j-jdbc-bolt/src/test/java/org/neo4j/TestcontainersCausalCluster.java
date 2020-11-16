@@ -1,6 +1,5 @@
 package org.neo4j;
 
-import org.jetbrains.annotations.NotNull;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -85,7 +84,6 @@ public class TestcontainersCausalCluster {
         return new TestcontainersCausalCluster(members, sidecars.values().stream().collect(toList()));
     }
 
-    @NotNull
     private static List<Neo4jContainer> getClusterMembers(int numberOfCoreMembers,
                                                                    ClusterInstanceType instanceType,
                                                                    Map<String, GenericContainer> sidecars,
@@ -104,7 +102,6 @@ public class TestcontainersCausalCluster {
                 .collect(toList());
     }
 
-    @NotNull
     private static Map<String, GenericContainer> createSidecars(int numOfMembers, Network network, ClusterInstanceType instanceType) {
         return iterateMembers(numOfMembers, instanceType)
                 .collect(toMap(
