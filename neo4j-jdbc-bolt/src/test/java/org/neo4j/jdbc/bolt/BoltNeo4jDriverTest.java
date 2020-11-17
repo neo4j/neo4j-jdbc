@@ -231,6 +231,8 @@ public class BoltNeo4jDriverTest {
 			// assertEquals(Config.LoadBalancingStrategy.LEAST_CONNECTED, config.loadBalancingStrategy());
 			assertEquals(PoolSettings.DEFAULT_MAX_CONNECTION_LIFETIME, config.maxConnectionLifetimeMillis());
 			assertEquals(PoolSettings.DEFAULT_MAX_CONNECTION_POOL_SIZE, config.maxConnectionPoolSize());
+			System.out.println(Config.TrustStrategy.trustSystemCertificates());
+			System.out.println(config.trustStrategy());
 			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
 
 			return mockedDriver;
