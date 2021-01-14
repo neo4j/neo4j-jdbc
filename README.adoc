@@ -1,6 +1,8 @@
 == Overview: Neo4j JDBC Driver
 :neo4j-jdbc-version: 4.0.0
 
+image::https://github.com/neo4j-contrib/neo4j-jdbc/workflows/CI/badge.svg?branch=4.0[CI]
+
 ifndef::env-docs[]
 
 You can find the full documentation at: http://neo4j-contrib.github.io/neo4j-jdbc/
