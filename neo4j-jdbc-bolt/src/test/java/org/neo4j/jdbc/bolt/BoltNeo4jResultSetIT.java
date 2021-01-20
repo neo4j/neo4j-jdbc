@@ -63,7 +63,7 @@ public class BoltNeo4jResultSetIT {
 		Connection conn = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=1");
 		Statement stmt = conn.createStatement();
 
-		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
+		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u ORDER BY ID(u) ASC;");
 		assertEquals(4, rs.getMetaData().getColumnCount());
 		assertTrue(rs.next());
 
@@ -80,7 +80,7 @@ public class BoltNeo4jResultSetIT {
 		Connection conn = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=2");
 		Statement stmt = conn.createStatement();
 
-		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
+		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u ORDER BY ID(u) ASC;");
 		assertEquals(5, rs.getMetaData().getColumnCount());
 		assertTrue(rs.next());
 
@@ -101,7 +101,7 @@ public class BoltNeo4jResultSetIT {
 		Connection conn = JdbcConnectionTestUtils.getConnection(neo4j,",flatten=-1");
 		Statement stmt = conn.createStatement();
 
-		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u;");
+		ResultSet rs = stmt.executeQuery("MATCH (u:User) RETURN u ORDER BY ID(u) ASC;");
 		assertEquals(5, rs.getMetaData().getColumnCount());
 		assertTrue(rs.next());
 
