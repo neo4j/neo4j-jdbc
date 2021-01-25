@@ -20,25 +20,40 @@
 package org.neo4j.jdbc.bolt;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.neo4j.driver.AuthToken;
+import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
 import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -303,4 +318,65 @@ public class BoltNeo4jConnectionIT {
 			}
 		}
 	}
+
+    @Test
+    public void closesDriverWhenConnectivityTestFails() {
+        CustomTestBoltDriver testJdbcDriver = new CustomTestBoltDriver();
+
+        assertConnectionFails(testJdbcDriver, "jdbc:neo4j:bolt://example.com");
+        assertBoltDriverIsClosed(testJdbcDriver.getDriver());
+    }
+
+    private void assertConnectionFails(CustomTestBoltDriver testJdbcDriver, String uri) {
+        try {
+            testJdbcDriver.connect(uri, new Properties());
+            Assert.fail("Connection should fail");
+        } catch (Exception e) {
+            assertThat(e, instanceOf(SQLException.class));
+            assertThat(e.getMessage(), containsString("Unable to connect to example.com:7687"));
+        }
+    }
+
+    private void assertBoltDriverIsClosed(Driver driver) {
+        try (Session ignore = driver.session()) {
+            Assert.fail("Driver should be closed");
+        } catch (Exception e) {
+            assertThat(e, instanceOf(IllegalStateException.class));
+            assertEquals("This driver instance has already been closed", e.getMessage());
+        }
+    }
+
+    static class CustomTestBoltDriver extends BoltNeo4jDriverImpl {
+
+        private Driver driver;
+
+        protected CustomTestBoltDriver() {
+            super("bolt");
+        }
+
+        @Override
+        protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
+            driver = GraphDatabase.driver(routingUris.get(0), authToken, config);
+            return driver;
+        }
+
+        @Override
+        protected Properties getRoutingContext(String url, Properties properties) {
+            return new Properties();
+        }
+
+        @Override
+        protected String addRoutingPolicy(String url, Properties properties) {
+            return url;
+        }
+
+        @Override
+        protected List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException {
+            return Collections.singletonList(new URI(boltUrl));
+        }
+
+        public Driver getDriver() {
+            return driver;
+        }
+    }
 }

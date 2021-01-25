@@ -65,6 +65,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
         Connection connection = null;
         if (acceptsURL(url)) {
             String boltUrl = url.replace(Neo4jDriver.JDBC_PREFIX, "").replaceAll("^(" + getPrefix() + ":)([^/])", "$1//$2");
+            Driver driver = null;
             try {
                 Properties info = mergeUrlAndInfo(boltUrl, props);
 
@@ -89,10 +90,17 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 Properties routingContext = getRoutingContext(boltUrl, info);
                 boltUrl = addRoutingPolicy(boltUrl, routingContext);
                 List<URI> routingUris = buildRoutingUris(boltUrl, routingContext);
-                Driver driver = getDriver(routingUris, config, authToken, info);
+                driver = getDriver(routingUris, config, authToken, info);
                 driver.verifyConnectivity();
                 connection = BoltNeo4jConnectionImpl.newInstance(driver, info, url);
             } catch (Exception e) {
+                if (driver != null) {
+                    try {
+                        driver.close();
+                    } catch (Exception closeException) {
+                        e.addSuppressed(closeException);
+                    }
+                }
                 throw new SQLException(e);
             }
         }
