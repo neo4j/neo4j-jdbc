@@ -142,6 +142,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 				return functions;
 			});
 		} catch (Exception e) {
+			LOGGER.warning(String.format("Could not retrieve DBMS functions:%n%s", e));
 			return Collections.emptyList();
 		}
 	}

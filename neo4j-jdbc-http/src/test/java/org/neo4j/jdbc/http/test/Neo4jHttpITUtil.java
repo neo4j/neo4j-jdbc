@@ -27,35 +27,32 @@ import org.junit.runners.Parameterized;
 import org.neo4j.harness.junit.rule.Neo4jRule;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.List;
 
 @RunWith(Parameterized.class)
 public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
 
-	@Parameterized.Parameters
-	public static Iterable<? extends Object> data() {
-//		return Arrays.asList(Boolean.FALSE, Boolean.TRUE);
-		return Arrays.asList(Boolean.FALSE);
-	}
+    @Parameterized.Parameters
+    public static Iterable<? extends Object> data() {
+        return List.of(Boolean.FALSE);
+    }
 
-	@Parameterized.Parameter
-	public Boolean secureMode;
+    @Parameterized.Parameter
+    public Boolean secureMode;
 
-	@ClassRule public static Neo4jRule neo4j = new Neo4jRule()
-//			.withConfig(SettingImpl.newBuilder("dbms.connector.http.enabled",
-//					SettingValueParsers.BOOL, true).build(), true)
-//			.withConfig(SettingImpl.newBuilder("dbms.connector.http.listen_address",
-//					SettingValueParsers.STRING, ":0").build(), ":0")
-			.withFixture(new File(Neo4jHttpUnitTestUtil.class.getClassLoader().getResource("data/movie.cyp").getFile()));
+    @ClassRule
+    public static Neo4jRule neo4j = new Neo4jRule()
+            .withFixture(new File(Neo4jHttpUnitTestUtil.class.getClassLoader().getResource("data/movie.cyp").getFile()));
 
-	@Rule public ExpectedException expectedEx = ExpectedException.none();
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
 
 
-	protected String getJDBCUrl() {
-		if(secureMode)
+    protected String getJDBCUrl() {
+        if (secureMode) {
 			return "jdbc:neo4j:" + neo4j.httpsURI().toString();
-		else
-			return "jdbc:neo4j:" + neo4j.httpURI().toString();
+		}
+		return "jdbc:neo4j:" + neo4j.httpURI().toString();
 	}
 
 }
