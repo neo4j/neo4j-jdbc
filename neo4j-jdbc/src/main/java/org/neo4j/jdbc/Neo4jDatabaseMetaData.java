@@ -41,6 +41,8 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 
 	public static final Logger LOGGER = Logger.getLogger(Neo4jDatabaseMetaData.class.getName());
 
+	public static final String GET_DBMS_FUNCTIONS = "CALL dbms.functions() YIELD name, signature RETURN name ORDER BY name ASC";
+
 	/**
 	 * The regex to parse the version driver.
 	 * NUMBER + . + NUMBER + .|- + STRING
