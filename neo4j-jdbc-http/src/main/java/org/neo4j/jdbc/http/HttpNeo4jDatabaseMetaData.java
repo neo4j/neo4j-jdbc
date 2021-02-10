@@ -20,6 +20,9 @@
 package org.neo4j.jdbc.http;
 
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
+import org.neo4j.jdbc.http.driver.CypherExecutor;
+
+import java.util.List;
 
 /**
  * Provides metadata
@@ -29,14 +32,21 @@ import org.neo4j.jdbc.Neo4jDatabaseMetaData;
  */
 class HttpNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 
+	private List<String> functions;
+
 	public HttpNeo4jDatabaseMetaData(HttpNeo4jConnection connection) {
 		super(connection);
 
 		// compute database version
 		if (connection != null && connection.executor != null ) {
-			this.databaseVersion = connection.executor.getServerVersion();
+			CypherExecutor executor = connection.executor;
+			this.databaseVersion = executor.getServerVersion();
+			this.functions = executor.callDbmsFunctions();
 		}
 	}
 
-
+	@Override
+	public String getSystemFunctions() {
+		return String.join(",", functions);
+	}
 }

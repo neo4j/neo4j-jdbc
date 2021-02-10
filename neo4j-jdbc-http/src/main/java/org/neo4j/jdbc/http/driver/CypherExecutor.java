@@ -56,9 +56,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
+import static org.neo4j.jdbc.Neo4jDatabaseMetaData.GET_DBMS_FUNCTIONS;
 
 /**
  * Execute cypher queries.
@@ -103,6 +111,8 @@ public class CypherExecutor {
 	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private static final String DB_DATA_TRANSACTION_TEMPLATE = "/db/%s/tx";
+
+	private static final Logger LOGGER = Logger.getLogger(CypherExecutor.class.getCanonicalName());
 
 	static {
 		mapper.configure(DeserializationFeature.USE_LONG_FOR_INTS, true);
@@ -229,6 +239,29 @@ public class CypherExecutor {
 
 		// Make the request
 		return this.executeHttpRequest(request);
+	}
+
+	public List<String> callDbmsFunctions() {
+		try {
+			Neo4jResponse response = this.executeQuery(new Neo4jStatement(GET_DBMS_FUNCTIONS, Collections.emptyMap(), false));
+			if (response.hasErrors()) {
+				return Collections.emptyList();
+			}
+			return response.getResults()
+					.stream()
+					.flatMap(result ->
+							result.getRows()
+									.stream()
+									.map(rows -> {
+										Iterable<?> rowData = (Iterable<?>) rows.get("row");
+										return (String) rowData.iterator().next();
+									}))
+					.distinct()
+					.collect(Collectors.toList());
+		} catch (SQLException e) {
+			LOGGER.warning(String.format("Could not retrieve DBMS functions:%n%s", e));
+			return Collections.emptyList();
+		}
 	}
 
 	/**
