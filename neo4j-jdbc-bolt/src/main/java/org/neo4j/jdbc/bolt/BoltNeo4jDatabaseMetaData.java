@@ -131,20 +131,18 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	 * @return
 	 */
 	private List<String> callDbmsFunctions(Session session){
-		List<String> functions = new ArrayList<>();
-		try{
-			Result rs = session.run("CALL dbms.functions() " +
-					"YIELD name, signature\n" +
-					"RETURN name \n" +
-					"ORDER BY name ASC");
-			while (rs != null && rs.hasNext()) {
-				Record record = rs.next();
-				functions.add(record.get("name").asString());
-			}
-
-			return functions;
-		}catch(Exception e){
-			return Collections.EMPTY_LIST;
+		try {
+			return session.readTransaction(tx -> {
+				List<String> functions = new ArrayList<>();
+				Result rs = tx.run(GET_DBMS_FUNCTIONS);
+				while (rs != null && rs.hasNext()) {
+					Record record = rs.next();
+					functions.add(record.get("name").asString());
+				}
+				return functions;
+			});
+		} catch (Exception e) {
+			return Collections.emptyList();
 		}
 	}
 
