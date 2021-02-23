@@ -35,14 +35,12 @@ import static org.junit.Assert.assertEquals;
  */
 public class BoltNeo4jDatabaseMetaDataTest {
 
-	//@Rule public ExpectedException expectedEx = ExpectedException.none();
-
 	/*------------------------------*/
 	/*        getConnection         */
 	/*------------------------------*/
 
-	@Test public void getConnectionShouldGetConnection() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		BoltNeo4jConnectionImpl connection = Mockito.mock(BoltNeo4jConnectionImpl.class);
+	@Test public void getConnectionShouldGetConnection() throws SQLException {
+		BoltNeo4jConnectionImpl connection = Mockito.mock(BoltNeo4jConnectionImpl.class, Mockito.RETURNS_DEEP_STUBS);
 		BoltNeo4jDatabaseMetaData boltDatabaseMetaData = new BoltNeo4jDatabaseMetaData(connection);
 
 		assertEquals(connection, boltDatabaseMetaData.getConnection());
