@@ -25,6 +25,14 @@ import static org.neo4j.graphdb.factory.GraphDatabaseSettings.BoltConnector.Encr
  */
 public class Neo4jBoltRule implements TestRule {
 
+	static {
+		try {
+			Class.forName("org.neo4j.jdbc.bolt.BoltDriver");
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private String               hostAndPort;
 	private GraphDatabaseService graphDatabase;
 	private String               host;
