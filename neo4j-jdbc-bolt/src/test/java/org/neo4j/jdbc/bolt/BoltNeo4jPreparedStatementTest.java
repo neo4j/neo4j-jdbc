@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.ResultSummary;
@@ -37,7 +36,6 @@ import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.jdbc.utils.PreparedStatementBuilder;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -940,17 +938,19 @@ public class BoltNeo4jPreparedStatementTest {
 		stmt.setInt(1, 2);
 		stmt.addBatch();
 
-		Session session = Mockito.mock(Session.class);
-
-		Mockito.when(session.run(anyString(), anyMap())).thenThrow(RuntimeException.class);
-
+		class TxRunRuntimeException extends RuntimeException {}
+		Transaction transaction = mock(Transaction.class);
+		Mockito.when(transaction.run(anyString(), anyMap())).thenThrow(TxRunRuntimeException.class);
 		BoltNeo4jConnection connection = (BoltNeo4jConnection) stmt.getConnection();
-		Mockito.when(connection.getSession()).thenReturn(session);
+		Mockito.when(connection.getTransaction()).thenReturn(transaction);
 
 		try {
 			stmt.executeBatch();
 			fail();
 		} catch (BatchUpdateException e) {
+			Throwable wrappedException = e.getCause();
+			assertTrue("actual error is wrapped in SQLException", wrappedException instanceof SQLException);
+			assertTrue("actual error comes from `transaction.run`", wrappedException.getCause() instanceof TxRunRuntimeException);
 			assertArrayEquals(new int[0], e.getUpdateCounts());
 		}
 	}

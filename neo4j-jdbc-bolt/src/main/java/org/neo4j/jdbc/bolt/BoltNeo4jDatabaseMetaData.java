@@ -20,8 +20,9 @@
 package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.Record;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.TransactionWork;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.metadata.Column;
@@ -34,8 +35,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Provides metadata
@@ -81,47 +84,42 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 	}
 
 	private void getDatabaseVersion(Session session) {
-		Result rs = session.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
-		if (rs != null && rs.hasNext()) {
-			Record record = rs.next();
-			if (record.containsKey("version")) {
-				databaseVersion = record.get("version").asString();
+		this.databaseVersion = session.readTransaction(tx -> {
+			Result records = tx.run("CALL dbms.components() yield name,versions WITH * WHERE name=\"Neo4j Kernel\" RETURN versions[0] AS version");
+			if (!records.hasNext()) {
+				return null;
 			}
-		}
+			return records.next().get("version").asString();
+		});
 	}
 
 	private void getDatabaseLabels(Session session) {
-		Result rs = session.run("CALL db.labels() yield label return label");
-		if (rs != null) {
-			while (rs.hasNext()) {
-				Record record = rs.next();
-				this.databaseLabels.add(new Table(record.get("label").asString()));
-			}
-		}
+		this.databaseLabels = session.readTransaction(tx ->
+				tx.run("CALL db.labels() YIELD label RETURN label")
+						.list(record -> new Table(record.get("label").asString())));
 	}
 
 	private void getDatabaseProperties(Session session) {
-		if (this.databaseLabels != null) {
-			for (Table databaseLabel : this.databaseLabels) {
-				Result rs = session.run(String.format(DB_PROPERTIES_QUERY, databaseLabel.getTableName(), Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE));
-				if (rs != null) {
-					cycleResultSetToSetDatabaseProperties(rs, databaseLabel);
-				}
-			}
+		if (this.databaseLabels == null) {
+			return;
 		}
+		List<Column> properties = new ArrayList<>(this.databaseLabels.size() * 3);
+		for (Table label : this.databaseLabels) {
+			properties.addAll(session.readTransaction(getColumnSample(label.getTableName())));
+		}
+		this.databaseProperties = properties;
 	}
 
-	private void cycleResultSetToSetDatabaseProperties(Result rs, Table databaseLabel) {
-		while (rs.hasNext()) {
-			Record record = rs.next();
-			List<Object> keys = record.get("keys").asList();
-			if (keys != null) {
-				for (int i = 1; i <= keys.size(); i++) {
-					String key = (String) keys.get(i - 1);
-					this.databaseProperties.add(new Column(databaseLabel.getTableName(), key, i));
-				}
-			}
-		}
+	private TransactionWork<List<Column>> getColumnSample(String label) {
+		return tx -> {
+			String query = String.format(DB_PROPERTIES_QUERY, label, Neo4jDatabaseMetaData.PROPERTY_SAMPLE_SIZE);
+			AtomicInteger keyIndex = new AtomicInteger(0);
+			return tx.run(query)
+					.stream()
+					.flatMap(record -> record.get("keys").asList().stream())
+					.map(key -> new Column(label, (String) key, keyIndex.getAndIncrement()))
+					.collect(Collectors.toList());
+		};
 	}
 
 	/**

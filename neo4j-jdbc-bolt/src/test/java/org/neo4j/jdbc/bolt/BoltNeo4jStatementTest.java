@@ -523,22 +523,22 @@ public class BoltNeo4jStatementTest {
 
 	@Test public void executeBatchShouldThrowExceptionOnError() throws SQLException {
 		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionOpen());
-		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
-		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
-		stmt.addBatch(str1);
-		stmt.addBatch(str2);
+		stmt.addBatch("MATCH n WHERE id(n) = 1 SET n.property=1");
+		stmt.addBatch("MATCH n WHERE id(n) = 2 SET n.property=2");
 
-		Session session = Mockito.mock(Session.class);
-
-		Mockito.when(session.run(anyString())).thenThrow(RuntimeException.class);
-
+		class TxRunRuntimeException extends RuntimeException {}
+		Transaction transaction = mock(Transaction.class);
+		Mockito.when(transaction.run(anyString(), anyMap())).thenThrow(TxRunRuntimeException.class);
 		BoltNeo4jConnection connection = (BoltNeo4jConnection) stmt.getConnection();
-		Mockito.when(connection.getSession()).thenReturn(session);
+		Mockito.when(connection.getTransaction()).thenReturn(transaction);
 
 		try {
 			stmt.executeBatch();
 			fail();
 		} catch (BatchUpdateException e) {
+			Throwable wrappedException = e.getCause();
+			assertTrue("actual error is wrapped in SQLException", wrappedException instanceof SQLException);
+			assertTrue("actual error comes from `transaction.run`", wrappedException.getCause() instanceof TxRunRuntimeException);
 			assertArrayEquals(new int[0], e.getUpdateCounts());
 		}
 	}

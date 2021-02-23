@@ -53,7 +53,8 @@ public class SampleIT {
 		// hitting the DB with a bolt request
 		Driver driver = GraphDatabase.driver(neo4j.boltURI(), config);   // defaults to localhost:7687
 		Session session = driver.session();
-		Result rs = session.run("match (n) RETURN count(n)");
+		long count = session.readTransaction(tx -> tx.run("match (n) RETURN count(n) AS count").single().get("count").asLong());
+		assertEquals("there should be 1 node in the database", 1, count);
 		session.close();
 		driver.close();
 	}
