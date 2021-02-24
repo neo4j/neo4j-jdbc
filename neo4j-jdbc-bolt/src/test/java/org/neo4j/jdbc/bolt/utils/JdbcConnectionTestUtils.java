@@ -4,7 +4,12 @@ import org.neo4j.jdbc.bolt.BoltDriver;
 import org.neo4j.jdbc.bolt.Neo4jBoltRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -43,6 +48,13 @@ public class JdbcConnectionTestUtils {
             warmup();
         }
         return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters,USERNAME,PASSWORD);
+    }
+
+    public static Connection getConnectionFromUrlOnly(Neo4jBoltRule neo4j, String parameters) throws SQLException {
+        if (!warmedup) {
+            warmup();
+        }
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters);
     }
 
     public static Properties defaultInfo(){
