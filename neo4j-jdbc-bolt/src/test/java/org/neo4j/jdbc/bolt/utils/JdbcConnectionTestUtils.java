@@ -22,10 +22,9 @@ public class JdbcConnectionTestUtils {
     public static final String PASSWORD = "password";
     public static final boolean SSL_ENABLED = false;
 
-    public static boolean warmedup = false;
+    private static boolean warmedUp = false;
 
-    private static boolean warmup(){
-        // WARM UP
+    private static void warmUp(){
         long t0 = System.currentTimeMillis();
         boolean driverLoaded = false;
         while (!driverLoaded && System.currentTimeMillis() - t0 < 10_000){
@@ -36,23 +35,19 @@ public class JdbcConnectionTestUtils {
                 }
             }
         }
-
-        warmedup = driverLoaded;
-
-        return warmedup;
+        warmedUp = driverLoaded;
     }
 
     public static Connection getConnection(Neo4jBoltRule neo4j, String parameters) throws SQLException {
-        //return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl,user=neo4j,password=neo4j");
-        if(!warmedup){
-            warmup();
+        if (!warmedUp) {
+            warmUp();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters,USERNAME,PASSWORD);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters, USERNAME, PASSWORD);
     }
 
     public static Connection getConnectionFromUrlOnly(Neo4jBoltRule neo4j, String parameters) throws SQLException {
-        if (!warmedup) {
-            warmup();
+        if (!warmedUp) {
+            warmUp();
         }
         return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters);
     }
@@ -66,14 +61,14 @@ public class JdbcConnectionTestUtils {
     }
 
     public static Connection getConnection(Neo4jBoltRule neo4j, Properties info) throws SQLException {
-        if(!warmedup){
-            warmup();
+        if (!warmedUp) {
+            warmUp();
         }
         return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),info);
     }
 
     public static Connection getConnection(Neo4jBoltRule neo4j) throws SQLException {
-        return getConnection(neo4j,"");
+        return getConnection(neo4j, "");
     }
 
     public static Connection verifyConnection(Connection connection, Neo4jBoltRule neo4j, String parameters){
@@ -102,10 +97,6 @@ public class JdbcConnectionTestUtils {
 
     public static void closeConnection(Connection connection, Statement stmt){
         closeConnection(connection, stmt, null);
-    }
-
-    public static void closeStatement(Statement stmt, ResultSet rs){
-        closeConnection(null, stmt, rs);
     }
 
     public static void closeStatement(Statement stmt){
