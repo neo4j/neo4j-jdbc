@@ -4,13 +4,25 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.*;
 import org.neo4j.driver.internal.InternalBookmark;
+import org.powermock.core.IdentityHashSet;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -19,6 +31,43 @@ import static org.junit.Assert.assertTrue;
 public class BoltDriverCacheTest {
 
     Function<BoltDriverCacheKey, Driver> builder = (params -> Mockito.mock(Driver.class));
+
+    @Test
+    public void cacheShouldBeThreadSafe() throws ExecutionException, InterruptedException {
+        List<URI> url = Arrays.asList(URI.create("bolt://localhost"));
+        Config.ConfigBuilder configBuilder = Config.builder();
+        AuthToken authToken = AuthTokens.basic("neo4j", "password");
+
+        BoltDriverCache cache = new BoltDriverCache(builder);
+        assertEquals(0, cache.getCache().size());
+
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newWorkStealingPool();
+
+        AtomicBoolean running = new AtomicBoolean();
+        AtomicInteger overlaps = new AtomicInteger();
+
+        Collection<Callable<Driver>> getDriver = new ArrayList<>();
+        for (int t = 0; t < numThreads; ++t) {
+            getDriver.add(() -> {
+                if (!running.compareAndSet(false, true)) {
+                    overlaps.incrementAndGet();
+                }
+                Driver d = cache.getDriver(url, configBuilder.build(), authToken, new Properties());
+                running.compareAndSet(true, false);
+                return d;
+            });
+        }
+
+        Set<Driver> drivers = new IdentityHashSet<>();
+        for (Future<Driver> getDriverFuture : executor.invokeAll(getDriver)) {
+            drivers.add(getDriverFuture.get());
+        }
+
+        assertTrue(overlaps.get() > 0); // This might get flacky...
+        assertEquals(1, drivers.size());
+        assertEquals(1, cache.getCache().size());
+    }
 
     @Test
     public void shouldBeSameInstance() throws URISyntaxException {
