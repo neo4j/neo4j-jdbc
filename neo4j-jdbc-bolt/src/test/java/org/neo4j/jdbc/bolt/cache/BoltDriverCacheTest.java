@@ -64,7 +64,7 @@ public class BoltDriverCacheTest {
             drivers.add(getDriverFuture.get());
         }
 
-        assertTrue(overlaps.get() > 0); // This might get flacky...
+        assertTrue(overlaps.get() > 0); // This might get flaky...
         assertEquals(1, drivers.size());
         assertEquals(1, cache.getCache().size());
     }
