@@ -4,14 +4,15 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.*;
 import org.neo4j.driver.internal.InternalBookmark;
-import org.powermock.core.IdentityHashSet;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -59,9 +60,9 @@ public class BoltDriverCacheTest {
             });
         }
 
-        Set<Driver> drivers = new IdentityHashSet<>();
+        Map<Driver, Integer> drivers = new IdentityHashMap<>();
         for (Future<Driver> getDriverFuture : executor.invokeAll(getDriver)) {
-            drivers.add(getDriverFuture.get());
+            drivers.put(getDriverFuture.get(), 1);
         }
 
         assertTrue(overlaps.get() > 0); // This might get flaky...
