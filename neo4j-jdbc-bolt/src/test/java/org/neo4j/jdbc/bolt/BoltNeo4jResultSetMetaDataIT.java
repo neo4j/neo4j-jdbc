@@ -27,11 +27,19 @@ import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.neo4j.driver.internal.types.InternalTypeSystem.TYPE_SYSTEM;
 
 /**
  * @author AgileLARUS
@@ -39,17 +47,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jResultSetMetaDataIT {
 
-	//private final static String FLATTEN_URI = "flatten=1";
-
 	static Connection connectionFlatten;
 
 	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
 
-
 	@Before public void setUp() {
-		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES_REV);
-		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
-		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		connectionFlatten = JdbcConnectionTestUtils.verifyConnection(connectionFlatten, neo4j,",flatten=1");
 	}
 
@@ -67,60 +69,42 @@ public class BoltNeo4jResultSetMetaDataIT {
 	/*------------------------------*/
 
 	@Test public void shouldAddVirtualColumnsOnNodeWithMultipleNodes() throws SQLException {
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_MORE);
 
 			assertEquals(stmt, rs.getStatement());
-			ResultSetMetaData rsm = rs.getMetaData();
+			ResultSetMetaData metadata = rs.getMetaData();
 
-			assertEquals(9, rsm.getColumnCount());
+			List<String> labels = IntStream.range(1, metadata.getColumnCount() + 1)
+					.boxed()
+					.map(propagatingException(metadata::getColumnLabel))
+					.collect(Collectors.toList());
 
-			List<String> labels = new ArrayList<>();
-			labels.add(rsm.getColumnLabel(1));
-			labels.add(rsm.getColumnLabel(2));
-			labels.add(rsm.getColumnLabel(3));
-			labels.add(rsm.getColumnLabel(4));
-			labels.add(rsm.getColumnLabel(5));
-			labels.add(rsm.getColumnLabel(6));
-			labels.add(rsm.getColumnLabel(7));
-			labels.add(rsm.getColumnLabel(8));
-			labels.add(rsm.getColumnLabel(9));
-
-			assertTrue(labels.contains("n"));
-			assertTrue(labels.contains("n.id"));
-			assertTrue(labels.contains("n.labels"));
-			assertTrue(labels.contains("n.surname"));
-			assertTrue(labels.contains("n.name"));
-			assertTrue(labels.contains("s"));
-			assertTrue(labels.contains("s.id"));
-			assertTrue(labels.contains("s.labels"));
-			assertTrue(labels.contains("s.status"));
+			assertThat(labels, equalTo(asList(
+					"n", "n.id", "n.labels", "n.name", "n.surname",
+					"s", "s.id", "s.labels", "s.status"
+			)));
 
 		}
 
 	}
 
 	@Test public void shouldAddVirtualColumnsOnNodeAndPreserveResultSet() throws SQLException {
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES);
-			ResultSetMetaData rsm = rs.getMetaData();
+			ResultSetMetaData metadata = rs.getMetaData();
 
-			assertEquals(5, rsm.getColumnCount());
-			List<String> labels = new ArrayList<>();
-			labels.add(rsm.getColumnLabel(1));
-			labels.add(rsm.getColumnLabel(2));
-			labels.add(rsm.getColumnLabel(3));
-			labels.add(rsm.getColumnLabel(4));
-			labels.add(rsm.getColumnLabel(5));
+			List<String> labels = IntStream.range(1, metadata.getColumnCount() + 1)
+					.boxed()
+					.map(propagatingException(metadata::getColumnLabel))
+					.collect(Collectors.toList());
 
-			assertTrue(labels.contains("n"));
-			assertTrue(labels.contains("n.id"));
-			assertTrue(labels.contains("n.labels"));
-			assertTrue(labels.contains("n.surname"));
-			assertTrue(labels.contains("n.name"));
+			assertThat(labels, equalTo(asList("n", "n.id", "n.labels", "n.name", "n.surname")));
 
 			assertTrue(rs.next());
 			assertEquals("test", ((Map) rs.getObject(1)).get("name"));
@@ -140,6 +124,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 	}
 
 	@Test public void shouldAddVirtualColumnsOnRelationsWithMultipleRelations() throws SQLException {
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
@@ -158,42 +143,23 @@ public class BoltNeo4jResultSetMetaDataIT {
 	}
 
 	@Test public void shouldAddVirtualColumnsOnRelationsAndNodesWithMultiple() throws SQLException {
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
 		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
-			ResultSetMetaData rsm = rs.getMetaData();
+			ResultSetMetaData metadata = rs.getMetaData();
 
-			assertEquals(13, rsm.getColumnCount());
+			List<String> labels = IntStream.range(1, metadata.getColumnCount() + 1)
+					.boxed()
+					.map(propagatingException(metadata::getColumnLabel))
+					.collect(Collectors.toList());
 
-			List<String> labels = new ArrayList<>();
-			labels.add(rsm.getColumnLabel(1));
-			labels.add(rsm.getColumnLabel(2));
-			labels.add(rsm.getColumnLabel(3));
-			labels.add(rsm.getColumnLabel(4));
-			labels.add(rsm.getColumnLabel(5));
-			labels.add(rsm.getColumnLabel(6));
-			labels.add(rsm.getColumnLabel(7));
-			labels.add(rsm.getColumnLabel(8));
-			labels.add(rsm.getColumnLabel(9));
-			labels.add(rsm.getColumnLabel(10));
-			labels.add(rsm.getColumnLabel(11));
-			labels.add(rsm.getColumnLabel(12));
-			labels.add(rsm.getColumnLabel(13));
-
-			assertTrue(labels.contains("n"));
-			assertTrue(labels.contains("n.id"));
-			assertTrue(labels.contains("n.labels"));
-			assertTrue(labels.contains("n.surname"));
-			assertTrue(labels.contains("n.name"));
-			assertTrue(labels.contains("s"));
-			assertTrue(labels.contains("s.id"));
-			assertTrue(labels.contains("s.labels"));
-			assertTrue(labels.contains("s.status"));
-			assertTrue(labels.contains("r"));
-			assertTrue(labels.contains("r.id"));
-			assertTrue(labels.contains("r.type"));
-			assertTrue(labels.contains("r.date"));
+			assertThat(labels, equalTo(asList(
+					"n", "n.id", "n.labels", "n.name", "n.surname",
+					"r", "r.id", "r.type", "r.date",
+					"s", "s.id", "s.labels", "s.status"
+			)));
 		}
 
 	}
@@ -209,35 +175,35 @@ public class BoltNeo4jResultSetMetaDataIT {
 				ResultSetMetaData rsm = rs.getMetaData();
 
 				assertEquals(Types.VARCHAR, rsm.getColumnType(1));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(1));
+				assertEquals(TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(1));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(1));
 
 				assertEquals(Types.INTEGER, rsm.getColumnType(2));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(2));
+				assertEquals(TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(2));
 				assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
 
 				assertEquals(Types.FLOAT, rsm.getColumnType(3));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.FLOAT().name(), rsm.getColumnTypeName(3));
+				assertEquals(TYPE_SYSTEM.FLOAT().name(), rsm.getColumnTypeName(3));
 				assertEquals(Double.class.getName(), rsm.getColumnClassName(3));
 
 				assertEquals(Types.ARRAY, rsm.getColumnType(4));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(4));
+				assertEquals(TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(4));
 				assertEquals(Array.class.getName(), rsm.getColumnClassName(4));
 
 				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(5));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.MAP().name(), rsm.getColumnTypeName(5));
+				assertEquals(TYPE_SYSTEM.MAP().name(), rsm.getColumnTypeName(5));
 				assertEquals(Map.class.getName(), rsm.getColumnClassName(5));
 
 				assertEquals(Types.NULL, rsm.getColumnType(6));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.NULL().name(), rsm.getColumnTypeName(6));
+				assertEquals(TYPE_SYSTEM.NULL().name(), rsm.getColumnTypeName(6));
 				assertEquals(null, rsm.getColumnClassName(6));
 
 				assertEquals(Types.JAVA_OBJECT, rsm.getColumnType(7));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(7));
+				assertEquals(TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(7));
 				assertEquals(Object.class.getName(), rsm.getColumnClassName(7));
 
 				assertEquals(Types.VARCHAR, rsm.getColumnType(8));
-				assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(8));
+				assertEquals(TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(8));
 				assertEquals(String.class.getName(), rsm.getColumnClassName(8));
 			}
 		}
@@ -252,28 +218,32 @@ public class BoltNeo4jResultSetMetaDataIT {
 		try (Statement stmt = connectionFlatten.createStatement()) {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			rs.next();
+			ResultSetMetaData metadata = rs.getMetaData();
 
-			ResultSetMetaData rsm = rs.getMetaData();
+			List<String> columnTypes = IntStream.range(1, metadata.getColumnCount() + 1)
+					.boxed()
+					.map(propagatingException(metadata::getColumnTypeName))
+					.collect(Collectors.toList());
 
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(1));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(2));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(3));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(4));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(5));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.RELATIONSHIP().name(), rsm.getColumnTypeName(6));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(7));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.STRING().name(), rsm.getColumnTypeName(8));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(9));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.NODE().name(), rsm.getColumnTypeName(10));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.INTEGER().name(), rsm.getColumnTypeName(11));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.LIST().name(), rsm.getColumnTypeName(12));
-			assertEquals(InternalTypeSystem.TYPE_SYSTEM.BOOLEAN().name(), rsm.getColumnTypeName(13));
+			assertThat(columnTypes, equalTo(Arrays.asList(
+					TYPE_SYSTEM.NODE().name(),
+					TYPE_SYSTEM.INTEGER().name(),
+					TYPE_SYSTEM.LIST().name(),
+					TYPE_SYSTEM.STRING().name(),
+					TYPE_SYSTEM.RELATIONSHIP().name(),
+					TYPE_SYSTEM.INTEGER().name(),
+					TYPE_SYSTEM.STRING().name(),
+					TYPE_SYSTEM.INTEGER().name(),
+					TYPE_SYSTEM.NODE().name(),
+					TYPE_SYSTEM.INTEGER().name(),
+					TYPE_SYSTEM.LIST().name(),
+					TYPE_SYSTEM.BOOLEAN().name()
+			)));
 		}
 
 	}
 
 	@Test public void getColumnClassNameShouldBeCorrectAfterFlattening() throws SQLException {
-
 		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE);
 		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_OTHER_TYPE_AND_RELATIONS);
 
@@ -281,21 +251,26 @@ public class BoltNeo4jResultSetMetaDataIT {
 			ResultSet rs = stmt.executeQuery(StatementData.STATEMENT_MATCH_NODES_RELATIONS);
 			rs.next();
 
-			ResultSetMetaData rsm = rs.getMetaData();
+			ResultSetMetaData metadata = rs.getMetaData();
+			List<String> classNames = IntStream.range(1, metadata.getColumnCount() + 1)
+					.boxed()
+					.map(propagatingException(metadata::getColumnClassName))
+					.collect(Collectors.toList());
 
-			assertEquals(Object.class.getName(), rsm.getColumnClassName(1));
-			assertEquals(Long.class.getName(), rsm.getColumnClassName(2));
-			assertEquals(Array.class.getName(), rsm.getColumnClassName(3));
-			assertEquals(String.class.getName(), rsm.getColumnClassName(4));
-			assertEquals(String.class.getName(), rsm.getColumnClassName(5));
-			assertEquals(Object.class.getName(), rsm.getColumnClassName(6));
-			assertEquals(Long.class.getName(), rsm.getColumnClassName(7));
-			assertEquals(String.class.getName(), rsm.getColumnClassName(8));
-			assertEquals(Long.class.getName(), rsm.getColumnClassName(9));
-			assertEquals(Object.class.getName(), rsm.getColumnClassName(10));
-			assertEquals(Long.class.getName(), rsm.getColumnClassName(11));
-			assertEquals(Array.class.getName(), rsm.getColumnClassName(12));
-			assertEquals(Boolean.class.getName(), rsm.getColumnClassName(13));
+			assertThat(classNames, equalTo(Arrays.asList(
+					Object.class.getName(),
+					Long.class.getName(),
+					Array.class.getName(),
+					String.class.getName(),
+					Object.class.getName(),
+					Long.class.getName(),
+					String.class.getName(),
+					Long.class.getName(),
+					Object.class.getName(),
+					Long.class.getName(),
+					Array.class.getName(),
+					Boolean.class.getName()
+			)));
 		}
 
 	}
@@ -319,4 +294,19 @@ public class BoltNeo4jResultSetMetaDataIT {
 
 		con.close();
 	}
+
+	private static <T> Function<Integer, T> propagatingException(ThrowingFunction<Integer, T, SQLException> throwingFunc) {
+		return (i) -> {
+			try {
+				return throwingFunc.apply(i);
+			} catch (SQLException e) {
+				throw new RuntimeException(e);
+			}
+		};
+	}
+}
+
+@FunctionalInterface
+interface ThrowingFunction<T, R, E extends Exception> {
+	R apply(T t) throws E;
 }

@@ -30,7 +30,7 @@ public class StatementData {
 	public static String STATEMENT_MATCH_NODES_MORE                     = "MATCH (n:User)-[]->(s:Session) RETURN n, s;";
 	public static String STATEMENT_MATCH_MISC                           = "MATCH (n:User) RETURN n, n.name;";
 	public static String STATEMENT_MATCH_RELATIONS                      = "MATCH ()-[r:CONNECTED_IN]-() RETURN r;";
-	public static String STATEMENT_MATCH_NODES_RELATIONS                = "MATCH (n:User)-[r:CONNECTED_IN]->(s:Session) RETURN n, r, s";
+	public static String STATEMENT_MATCH_NODES_RELATIONS                = "MATCH (n:User)-[r:CONNECTED_IN]->(s:Session) RETURN n, r, s ORDER BY ID(n) ASC, ID(r) ASC, ID(s) ASC";
 	public static String STATEMENT_CREATE                               = "CREATE (n:User {name:\"test\"});";
 	public static String STATEMENT_CREATE_REV                           = "MATCH (n:User {name:\"test\"}) DELETE n;";
 	public static String STATEMENT_CREATE_TWO_PROPERTIES                = "CREATE (n:User {name:\"test\", surname:\"testAgain\"});";
