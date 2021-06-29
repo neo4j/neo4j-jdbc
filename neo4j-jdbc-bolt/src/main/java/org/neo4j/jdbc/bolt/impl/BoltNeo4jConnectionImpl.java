@@ -80,6 +80,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	public BoltNeo4jConnectionImpl(Driver driver, Properties properties, String url) {
 		super(properties, url, BoltNeo4jResultSet.DEFAULT_HOLDABILITY);
 		this.readOnly = Boolean.parseBoolean(getProperties().getProperty("readonly"));
+		this.autoCommit = Boolean.parseBoolean(getProperties().getProperty("autocommit", "true"));
 		this.useBookmarks = Boolean.parseBoolean(getProperties().getProperty("usebookmarks", "true"));
 		this.driver = driver;
 		this.initSession();

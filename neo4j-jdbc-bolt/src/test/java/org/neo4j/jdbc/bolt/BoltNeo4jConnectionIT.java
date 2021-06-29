@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,6 +37,7 @@ import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.powermock.api.mockito.PowerMockito;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -299,6 +301,14 @@ public class BoltNeo4jConnectionIT {
 					assertEquals(1, resultSet.getLong(1));
 				}
 			}
+		}
+	}
+	@Test public void shouldManageAutocommitParameter() throws SQLException, URISyntaxException {
+		try (Connection connection = JdbcConnectionTestUtils.getConnection(neo4j)) {
+			assertTrue("default is true", connection.getAutoCommit());
+		}
+		try (Connection connection = JdbcConnectionTestUtils.getConnection(neo4j, "&autocommit=false")) {
+			assertFalse("we defined false but it is not", connection.getAutoCommit());
 		}
 	}
 
