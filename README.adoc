@@ -149,6 +149,7 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 |max.transaction.retry.time |Any Long | The retry time for a transaction transient error
 |database |String |The database name, if not specified connects to the default instance
 |readonly |true/false |If specified creates a fixed read only connection, any further modification via the `Connection#setReadOnly` method will have no effect
+|autocommit |true/false |If specified sets the autocommit property as initial value, you can still change the autocommit value by using `Connection#setAutoCommit` method, but it will have effect only for newly created transactions
 |usebookmarks |true/false |If specified disables the bookmarks
 |===
 
