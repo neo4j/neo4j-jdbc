@@ -25,6 +25,7 @@ import org.neo4j.driver.Driver;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -37,8 +38,8 @@ import java.util.function.Function;
  */
 public class BoltDriverCache {
 
-    private Map<BoltDriverCacheKey, Driver> cache;
-    private Function<BoltDriverCacheKey, Driver> builder;
+    private final Map<BoltDriverCacheKey, Driver> cache;
+    private final Function<BoltDriverCacheKey, Driver> builder;
 
     /**
      * Setup the cache for the specific building function
@@ -56,16 +57,10 @@ public class BoltDriverCache {
      * @param authToken
      * @param info
      * @return
-     * @throws URISyntaxException
      */
-    public Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
-        BoltDriverCacheKey key = new BoltDriverCacheKey(routingUris, config, authToken, info);
-        Driver driver = cache.get(key);
-        if(null == driver){
-            driver = new BoltDriverCached(builder.apply(key), this, key);
-            cache.put(key, driver);
-        }
-        return driver;
+    public Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) {
+        return cache.computeIfAbsent(new BoltDriverCacheKey(routingUris, config, authToken, info),
+            key -> new BoltDriverCached(builder.apply(key), this, key));
     }
 
     public Driver removeFromCache(BoltDriverCacheKey key){
@@ -77,7 +72,7 @@ public class BoltDriverCache {
      * @return
      */
     public Map<BoltDriverCacheKey, Driver> getCache() {
-        return cache;
+        return Collections.unmodifiableMap(cache);
     }
 
     // visible for testing
