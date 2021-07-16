@@ -26,6 +26,7 @@ import org.neo4j.jdbc.Neo4jParameterMetaData;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
+import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
 import java.lang.reflect.Proxy;
@@ -39,7 +40,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static java.util.Arrays.copyOf;
-import static org.neo4j.jdbc.bolt.BoltNeo4jUtils.executeInTx;
+import static org.neo4j.jdbc.utils.BoltNeo4jUtils.executeInTx;
 
 /**
  * @author AgileLARUS

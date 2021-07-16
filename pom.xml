@@ -97,6 +97,8 @@
 		<maven.plugin.surefire>2.20</maven.plugin.surefire>
 
 		<sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+
+		<resilience4j.version>1.7.1</resilience4j.version>
 	</properties>
 
 	<!-- ============================= -->
@@ -156,6 +158,13 @@
 				<artifactId>it-test-support</artifactId>
 				<version>${neo4j.version}</version>
 			</dependency>
+
+			<dependency>
+				<groupId>io.github.resilience4j</groupId>
+				<artifactId>resilience4j-retry</artifactId>
+				<version>${resilience4j.version}</version>
+			</dependency>
+
 
 			<!-- Deps to test framework -->
 			<dependency>

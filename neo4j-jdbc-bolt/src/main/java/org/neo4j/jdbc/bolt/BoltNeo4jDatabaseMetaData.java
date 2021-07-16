@@ -27,6 +27,7 @@ import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.metadata.Column;
 import org.neo4j.jdbc.metadata.Table;
+import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
 import java.lang.reflect.Proxy;

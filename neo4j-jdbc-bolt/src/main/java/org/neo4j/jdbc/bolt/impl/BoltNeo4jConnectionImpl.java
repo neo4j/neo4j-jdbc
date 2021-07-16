@@ -32,7 +32,7 @@ import org.neo4j.jdbc.bolt.BoltNeo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.BoltNeo4jPreparedStatement;
 import org.neo4j.jdbc.bolt.BoltNeo4jResultSet;
 import org.neo4j.jdbc.bolt.BoltNeo4jStatement;
-import org.neo4j.jdbc.bolt.BoltNeo4jUtils;
+import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;

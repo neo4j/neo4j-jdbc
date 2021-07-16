@@ -1,13 +1,20 @@
-package org.neo4j.jdbc.bolt;
+package org.neo4j.jdbc.utils;
 
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
+import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
 
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -15,6 +22,13 @@ import java.util.logging.Logger;
  * A set of common functions for bolt connector
  */
 public class BoltNeo4jUtils {
+
+    public static final RetryConfig RETRY_CONFIG = RetryConfig
+            .custom()
+            .retryOnException(new RetryExceptionPredicate())
+            .waitDuration(Duration.of(1, ChronoUnit.SECONDS))
+            .maxAttempts(10)
+            .build();
 
     /**
      * Calculate, using the summary, how many operations are executed in the statement
@@ -74,11 +88,18 @@ public class BoltNeo4jUtils {
         return executeInTx(connection, sql, Collections.emptyMap(), body);
     }
 
-    public static Result execute(BoltNeo4jConnection connection,
+    private static Result execute(BoltNeo4jConnection connection,
                                           String statement,
-                                          Map<String, Object> params) {
-        Transaction transaction = connection.getTransaction();
-        return transaction.run(statement, params);
+                                          Map<String, Object> params) throws Exception {
+        return runTransactionWithRetries(connection.getTransaction(), statement, params);
+    }
+
+    public static Result runTransactionWithRetries(Transaction tx,
+                                                   String statement,
+                                                   Map<String, Object> params) throws Exception {
+        return Retry.decorateCallable(Retry.of("retryPool", RETRY_CONFIG),
+                () -> tx.run(statement, params))
+                .call();
     }
 
     public static void closeSafely(AutoCloseable closeable, Logger logger) {
