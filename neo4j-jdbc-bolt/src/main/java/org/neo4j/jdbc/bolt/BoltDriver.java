@@ -40,7 +40,7 @@ import java.util.Properties;
  */
 public class BoltDriver extends BoltNeo4jDriverImpl {
 
-	public static final String JDBC_BOLT_PREFIX = "bolt";
+	public static final String JDBC_BOLT_PREFIX = "^bolt(\\+s|\\+ssc)?$";
 	private static final BoltDriverCache cache = new BoltDriverCache(params ->
 	{
 		return GraphDatabase.driver(params.getRoutingUris().get(0), params.getAuthToken(), params.getConfig());
