@@ -162,7 +162,15 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	 */
 	@Override public boolean getMoreResults() throws SQLException {
 		this.checkClosed();
-		return this.currentResultSet != null;
+		if (this.currentResultSet == null) {
+			return false;
+		}
+		boolean isOpen = false;
+		if (!this.currentResultSet.isClosed()) {
+			isOpen = true;
+			this.currentResultSet.close();
+		}
+		return isOpen;
 	}
 
 	/**

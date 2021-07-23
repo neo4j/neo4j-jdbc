@@ -316,5 +316,18 @@ public class BoltNeo4jPreparedStatementIT {
 		assertEquals(Arrays.asList(1L,2L,4L), map.get("props"));
 		search.close();
 	}
+
+	@Test public void testMoreResultInvokedTwice() throws SQLException {
+		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_TWO_PROPERTIES);
+		PreparedStatement statement = connection.prepareStatement(StatementData.STATEMENT_MATCH_ALL_STRING_PARAMETRIC);
+		statement.setString(1, "test");
+		statement.execute();
+
+		assertTrue(statement.getMoreResults());
+
+		assertFalse(statement.getMoreResults());
+
+		statement.close();
+	}
 }
 
