@@ -22,6 +22,7 @@ package org.neo4j.jdbc.bolt;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import org.neo4j.driver.exceptions.value.Uncoercible;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.internal.value.DateTimeValue;
@@ -290,6 +291,10 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	private Value fetchValueFromLabel(String label) throws SQLException {
+		if (this.current == null) {
+			this.wasNull = true;
+			return Values.NULL;
+		}
 		Value value;
 		if (this.current.containsKey(label)) {
 			//Requested value is not flattened

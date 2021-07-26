@@ -117,6 +117,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 * Close using {@link #close()} for driver management
 	 * @return
 	 */
+	@Override
 	public Session newNeo4jSession() {
 		try {
 			final SessionConfig.Builder config = SessionConfig.builder()

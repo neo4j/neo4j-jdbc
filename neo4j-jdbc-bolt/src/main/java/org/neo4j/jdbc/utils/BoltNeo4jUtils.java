@@ -2,17 +2,21 @@ package org.neo4j.jdbc.utils;
 
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -114,6 +118,32 @@ public class BoltNeo4jUtils {
             }
             logger.warning("Exception while trying to close an AutoCloseable, because of the following exception: " +
                     ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    public static boolean hasResultSet(BoltNeo4jConnection connection, String cypher) {
+        if (StringUtils.isBlank(cypher)) {
+            return false;
+        }
+        try (final Session session = connection.newNeo4jSession();
+             final Transaction transaction = session.beginTransaction()) {
+            final String toUpperCase = cypher.trim().toUpperCase(Locale.ROOT);
+            final String cql;
+            if (toUpperCase.startsWith("EXPLAIN") || toUpperCase.startsWith("PROFILE")) {
+                cql = cypher;
+            } else {
+                cql = "EXPLAIN " + cypher;
+            }
+            return transaction
+                    .run(cql)
+                    .consume()
+                    .plan()
+                    .children()
+                    .stream()
+                    .map(f -> f.operatorType())
+                    .noneMatch(o -> o.equalsIgnoreCase("EmptyResult"));
+        } catch (Exception e) {
+            return false;
         }
     }
 

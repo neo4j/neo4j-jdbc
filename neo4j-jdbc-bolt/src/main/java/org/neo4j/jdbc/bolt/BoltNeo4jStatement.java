@@ -36,6 +36,7 @@ import java.util.function.Function;
 
 import static java.util.Arrays.copyOf;
 import static org.neo4j.jdbc.utils.BoltNeo4jUtils.executeInTx;
+import static org.neo4j.jdbc.utils.BoltNeo4jUtils.hasResultSet;
 
 /**
  * @author AgileLARUS
@@ -80,10 +81,9 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 	}
 
 	@Override public boolean execute(String sql) throws SQLException {
+		boolean hasResultSet = hasResultSet((BoltNeo4jConnection) connection, sql);
 		return executeInternal(sql, (result) -> {
-			boolean hasResultSet = false;
 			if (result != null) {
-				hasResultSet = hasResultSet(sql);
 				if (hasResultSet) {
 					this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
 					this.currentUpdateCount = -1;
@@ -101,10 +101,6 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 								  Function<Result, T> body) throws SQLException {
 		this.checkClosed();
 		return executeInTx((BoltNeo4jConnection) this.connection, statement, body);
-	}
-
-	private boolean hasResultSet(String sql) {
-		return sql != null && sql.toLowerCase().contains("return ");
 	}
 
 	/*-------------------*/
