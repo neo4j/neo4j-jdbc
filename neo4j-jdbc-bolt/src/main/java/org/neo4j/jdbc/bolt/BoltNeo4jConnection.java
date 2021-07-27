@@ -48,4 +48,11 @@ public interface BoltNeo4jConnection extends Connection {
 	void doCommit() throws SQLException;
 	void doRollback() throws SQLException;
 
+	/**
+	 * Build an internal neo4j session, without saving reference (stateless)
+	 * Close using {@link #close()} for driver management
+	 * @return
+	 */
+	Session newNeo4jSession();
+
 }

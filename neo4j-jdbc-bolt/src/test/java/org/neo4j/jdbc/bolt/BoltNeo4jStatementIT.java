@@ -305,4 +305,80 @@ public class BoltNeo4jStatementIT {
 		statement.close();
 	}
 
+	@Test public void testCallProcedure() throws SQLException {
+		connection.setAutoCommit(true);
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("CALL db.schema.visualization");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			Array arrayNodes = resultSet.getArray("nodes");
+			Object[] nodesArray = (Object[]) arrayNodes.getArray();
+			assertEquals(0, nodesArray.length);
+			Array arrayRels = resultSet.getArray("relationships");
+			Object[] relsArray = (Object[]) arrayRels.getArray();
+			assertEquals(0, relsArray.length);
+		}
+	}
+
+	@Test public void testSimpleReturn() throws SQLException {
+		connection.setAutoCommit(true);
+
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("RETURN 1 AS id");
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			final long id = resultSet.getLong("id");
+			assertEquals(1L, id);
+		}
+	}
+
+	@Test public void testUnwindNope() throws SQLException {
+		connection.setAutoCommit(true);
+
+		try (Statement statement = connection.createStatement()) {
+			final boolean execute = statement.execute("UNWIND [] AS nope RETURN nope");
+			assertTrue(execute);
+
+			ResultSet resultSet = statement.getResultSet();
+			resultSet.next();
+			final Object nope = resultSet.getObject("nope");
+			assertNull(nope);
+		}
+	}
+
+	@Test public void testCreate() throws SQLException {
+		connection.setAutoCommit(true);
+
+		try (Statement statement = connection.createStatement()) {
+			final boolean execute = statement.execute("CREATE (n:NodeTestToDelete)");
+			assertFalse(execute);
+			assertNull(statement.getResultSet());
+		}
+		neo4j.defaultDatabaseService().executeTransactionally("MATCH (n:NodeTestToDelete) DELETE n");
+	}
+
+	@Test public void testExplain() throws SQLException {
+		connection.setAutoCommit(true);
+
+		try (Statement statement = connection.createStatement()) {
+			final boolean execute = statement.execute("EXPLAIN CREATE (n:NodeTestToDelete)");
+			assertFalse(execute);
+			assertNull(statement.getResultSet());
+		}
+	}
+
+	@Test public void testProfile() throws SQLException {
+		connection.setAutoCommit(true);
+
+		try (Statement statement = connection.createStatement()) {
+			final boolean execute = statement.execute("PROFILE CREATE (n:NodeTestToDelete)");
+			assertFalse(execute);
+			assertNull(statement.getResultSet());
+		}
+		neo4j.defaultDatabaseService().executeTransactionally("MATCH (n:NodeTestToDelete) DELETE n");
+	}
+
 }

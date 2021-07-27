@@ -26,15 +26,19 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
+import org.neo4j.driver.summary.Plan;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.bolt.utils.Mocker;
+import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.test.ReflectionUtil;
 import org.powermock.api.mockito.PowerMockito;
@@ -62,7 +66,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
  * @since 3.0.0
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ BoltNeo4jStatement.class, BoltNeo4jResultSet.class, Session.class })
+@PrepareForTest({ BoltNeo4jStatement.class, BoltNeo4jResultSet.class, Session.class, BoltNeo4jUtils.class })
 
 public class BoltNeo4jStatementTest {
 
@@ -286,8 +290,10 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeShouldRunQuery() throws SQLException {
 		Result mockResult = mock(Result.class);
 
+		final BoltNeo4jConnectionImpl mockedConnection = mockConnectionOpenWithTransactionThatReturns(mockResult);
+		mockStatic(BoltNeo4jUtils.class, invocationOnMock -> invocationOnMock.getMethod().getName().equals("hasResult"));
 		Statement statement = BoltNeo4jStatement
-				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				.newInstance(false, mockedConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
