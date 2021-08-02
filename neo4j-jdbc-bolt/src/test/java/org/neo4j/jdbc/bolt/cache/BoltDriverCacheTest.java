@@ -2,7 +2,13 @@ package org.neo4j.jdbc.bolt.cache;
 
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.neo4j.driver.*;
+import org.neo4j.driver.AccessMode;
+import org.neo4j.driver.AuthToken;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.internal.InternalBookmark;
 
 import java.net.URI;
@@ -14,9 +20,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +32,7 @@ import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 public class BoltDriverCacheTest {
 
@@ -65,7 +70,7 @@ public class BoltDriverCacheTest {
             drivers.put(getDriverFuture.get(), 1);
         }
 
-        assertTrue(overlaps.get() > 0); // This might get flaky...
+        assumeTrue(overlaps.get() > 0); // This might get flaky...
         assertEquals(1, drivers.size());
         assertEquals(1, cache.getCache().size());
     }
