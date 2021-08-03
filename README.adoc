@@ -1,5 +1,5 @@
 == Overview: Neo4j JDBC Driver
-:neo4j-jdbc-version: 4.0.0
+:neo4j-jdbc-version: 4.0.2
 
 image::https://github.com/neo4j-contrib/neo4j-jdbc/workflows/CI/badge.svg?branch=4.0[CI]
 
@@ -18,37 +18,42 @@ projects that are using the classic JDBC connector in the relational paradigm to
 
 This driver supports various types of database transports, through:
 
-* The `Bolt` protocol using `jdbc:neo4j:bolt://<host>:<port>/` from Neo4j 3.0+
-* The `Bolt+Routing` protocol using `jdbc:neo4j:bolt+routing://<host>:<port>/` from Neo4j 3.1+ to 3.5.x
-* The `neo4j` protocol using `jdbc:neo4j:neo4j://<host>:<port>/` from Neo4j 4.0+
 * The `HTTP` protocol using `jdbc:neo4j:http://<host>:<port>/` from Neo4j 2.0+
+* The `Bolt` direct connection protocol using `jdbc:neo4j:bolt://<host>:<port>/` from Neo4j 3.0+
+* The `Bolt` routing-aware protocol for clusters:
+** using `jdbc:neo4j:neo4j://<host>:<port>/` from Neo4j 4.0+
+** using `jdbc:neo4j:bolt+routing://<host>:<port>/` from Neo4j 3.1+ to 3.5.x
 
-Going forward there will also be support for:
+You can also specify the encryption via the Bolt URI scheme (starting with the JDBC driver 4.0.2):
 
-* direct file connection
-* embedded connection
+ - `jdbc:neo4j:bolt://<host>:<port>/`
+ - `jdbc:neo4j:bolt+s://<host>:<port>/`
+ - `jdbc:neo4j:bolt+ssc://<host>:<port>/`
+ - `jdbc:neo4j:neo4j://<host>:<port>/`
+ - `jdbc:neo4j:neo4j+s://<host>:<port>/`
+ - `jdbc:neo4j:neo4j+ssc://<host>:<port>/`
+
+See the official https://neo4j.com/docs/java-manual/current/client-applications/#java-driver-connection-uris[Neo4j Java driver documentation] to learn more.
 
 [NOTE]
 The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
 
-
-
 .Versions compatibility
 |===
-|Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | Protocols | Temporal and Spatial
+|Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | URI Schemes | Temporal and Spatial
 
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.5.1[3.5.1]
-| 3.4.x - 3.5.x
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.5.2[3.5.2]
+|3.5.x
 |1.7.5
 |1.8
 |http, bolt, bolt+routing
 |yes
 
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.0[4.0.0]
-| 3.5.x - 4.x
-|4.0.1
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.2[4.0.2]
+|3.5.x - 4.x
+|4.3.x
 |11
-|http, bolt, bolt+routing
+|http, bolt, neo4j
 |yes
 
 |===
@@ -118,11 +123,11 @@ try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost",
 
 === Usage with Neo4j Server
 
-* Install a Neo4j 3.3.x server and start it with the Bolt protocol enabled
+* Install a Neo4j 4.x server and start it with the Bolt protocol enabled
 * Connect with URLs in the following 3 forms:
 ** `jdbc:neo4j:http://<host>:<port>/` (e.g. `jdbc:neo4j:http://localhost/`)
 ** `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
-** `jdbc:neo4j:bolt+routing://<host>:<port>/` (e.g. `jdbc:neo4j:bolt+routing://localhost?routing:policy=eu`)
+** `jdbc:neo4j:neo4j://<host>:<port>/` (e.g. `jdbc:neo4j:bolt+routing://localhost?routing:policy=eu`)
 * You can also use additional parameters in the URL separated by an `&` character for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j&password=xxxx&debug=true&nossl&flatten=[-1,100,1000]`
 
 [NOTE]
@@ -216,7 +221,7 @@ To run the performance test, you must have a Neo4j Server 3.3.x running with the
 
 === License
 
-Copyright (c) 2017 http://neo4j.com[Neo4j] and http://www.larus-ba.it[LARUS Business Automation]
+Copyright (c) https://neo4j.com[Neo4j] and http://www.larus-ba.it[LARUS Business Automation]
 
 The "Neo4j JDBC Driver" is licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
