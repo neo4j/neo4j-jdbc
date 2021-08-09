@@ -24,9 +24,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.driver.exceptions.ClientException;
-import org.neo4j.harness.junit.rule.Neo4jRule;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -42,16 +41,17 @@ import static org.hamcrest.CoreMatchers.isA;
  */
 public class BoltNeo4jAuthenticationIT {
 
+
 	@ClassRule
-	public static Neo4jRule neo4j = new Neo4jRule()
-			.withConfig(GraphDatabaseSettings.auth_enabled, true);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0")
+			.withAdminPassword("neo4j");
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	private String NEO4J_JDBC_BOLT_URL;
 
 	@Before public void setup() {
-		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + neo4j.boltURI();
+		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + neo4j.getBoltUrl();
 	}
 
 	@Test public void shouldAuthenticate() throws SQLException {

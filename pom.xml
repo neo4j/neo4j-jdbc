@@ -75,7 +75,7 @@
 	<properties>
 		<!-- General -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>11</java.version>
+		<java.version>8</java.version>
 
 		<!-- Deps version -->
 		<powermock.version>2.0.9</powermock.version>
@@ -141,22 +141,6 @@
 				<groupId>org.neo4j.driver</groupId>
 				<artifactId>neo4j-java-driver</artifactId>
 				<version>${neo4j.java.driver.version}</version>
-			</dependency>
-			<!-- Deps to Neo4j -->
-			<dependency>
-				<groupId>org.neo4j</groupId>
-				<artifactId>neo4j-kernel</artifactId>
-				<version>${neo4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.neo4j.test</groupId>
-				<artifactId>neo4j-harness</artifactId>
-				<version>${neo4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.neo4j.community</groupId>
-				<artifactId>it-test-support</artifactId>
-				<version>${neo4j.version}</version>
 			</dependency>
 
 			<dependency>
@@ -226,22 +210,6 @@
 		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-module-junit4</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<!-- Deps to Neo4j for test -->
-		<dependency>
-			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j-kernel</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.neo4j.test</groupId>
-			<artifactId>neo4j-harness</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.neo4j.community</groupId>
-			<artifactId>it-test-support</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

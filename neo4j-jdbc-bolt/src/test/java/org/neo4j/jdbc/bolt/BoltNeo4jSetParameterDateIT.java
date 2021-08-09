@@ -4,11 +4,11 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.graphdb.Result;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.harness.junit.rule.Neo4jRule;
-import org.neo4j.jdbc.bolt.data.StatementData;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -35,16 +35,15 @@ import static org.junit.Assert.assertTrue;
  * @since 3.4
  */
 public class BoltNeo4jSetParameterDateIT {
+
     @ClassRule
-    public static Neo4jRule neo4j = new Neo4jRule();
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0").withAdminPassword(null);
 
     static Connection connection;
 
     @Before
-    public void cleanDB() throws SQLException {
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            tx.execute(StatementData.STATEMENT_CLEAR_DB);
-        }
+    public void cleanDB() {
+        JdbcConnectionTestUtils.clearDatabase(neo4j);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
 
@@ -68,11 +67,12 @@ public class BoltNeo4jSetParameterDateIT {
         preparedStatement.setTimestamp(1,now);
         preparedStatement.execute();
 
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            Result result = tx.execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimestamp' RETURN e.when as when");
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            Result result = session.run("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimestamp' RETURN e.when as when");
             assertTrue("Node not found",result.hasNext());
 
-            Map<String, Object> next = result.next();
+            Map<String, Object> next = result.next().asMap();
 
             assertTrue("Result not found",next.containsKey("when"));
 
@@ -100,12 +100,13 @@ public class BoltNeo4jSetParameterDateIT {
         preparedStatement.setTimestamp(1,now, cal);
         preparedStatement.execute();
 
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            Result result = tx.execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimestampAndCalendar' RETURN e.when as when");
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            Result result = session.run("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimestampAndCalendar' RETURN e.when as when");
 
             assertTrue("Node not found",result.hasNext());
 
-            Map<String, Object> next = result.next();
+            Map<String, Object> next = result.next().asMap();
 
             assertTrue("Result not found",next.containsKey("when"));
 
@@ -139,11 +140,12 @@ public class BoltNeo4jSetParameterDateIT {
         preparedStatement.setDate(1,date);
         preparedStatement.execute();
 
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            Result result = tx.execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldDate' RETURN e.when as when");
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            Result result = session.run("MATCH (e:Event) WHERE e.test = 'shouldSetFieldDate' RETURN e.when as when");
             assertTrue("Node not found",result.hasNext());
 
-            Map<String, Object> next = result.next();
+            Map<String, Object> next = result.next().asMap();
 
             assertTrue("Result not found",next.containsKey("when"));
 
@@ -172,11 +174,12 @@ public class BoltNeo4jSetParameterDateIT {
         preparedStatement.setDate(1,date, cal);
         preparedStatement.execute();
 
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            Result result = tx.execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldDateAndCalendar' RETURN e.when as when");
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            Result result = session.run("MATCH (e:Event) WHERE e.test = 'shouldSetFieldDateAndCalendar' RETURN e.when as when");
             assertTrue("Node not found",result.hasNext());
 
-            Map<String, Object> next = result.next();
+            Map<String, Object> next = result.next().asMap();
 
             assertTrue("Result not found",next.containsKey("when"));
 
@@ -210,12 +213,13 @@ public class BoltNeo4jSetParameterDateIT {
         PreparedStatement preparedStatement = connection.prepareStatement("CREATE (e:Event {when: ?, test: 'shouldSetFieldTime' }) RETURN e AS event");
         preparedStatement.setTime(1, time);
         preparedStatement.execute();
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            Result result = tx.execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTime' RETURN e.when as when");
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            Result result = session.run("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTime' RETURN e.when as when");
 
             assertTrue("Node not found",result.hasNext());
 
-            Map<String, Object> next = result.next();
+            Map<String, Object> next = result.next().asMap();
 
             assertTrue("Result not found", next.containsKey("when"));
 
@@ -245,12 +249,13 @@ public class BoltNeo4jSetParameterDateIT {
         preparedStatement.setTime(1,time,cal);
         preparedStatement.execute();
 
-        try (Transaction tx = neo4j.defaultDatabaseService().beginTx()) {
-            Result result = tx.execute("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimeAndCalendar' RETURN e.when as when");
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            Result result = session.run("MATCH (e:Event) WHERE e.test = 'shouldSetFieldTimeAndCalendar' RETURN e.when as when");
 
             assertTrue("Node not found",result.hasNext());
 
-            Map<String, Object> next = result.next();
+            Map<String, Object> next = result.next().asMap();
 
             assertTrue("Result not found",next.containsKey("when"));
 

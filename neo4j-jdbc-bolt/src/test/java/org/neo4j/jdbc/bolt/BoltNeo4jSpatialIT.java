@@ -5,9 +5,8 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.types.Point;
-import org.neo4j.harness.junit.rule.Neo4jRule;
-import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -16,7 +15,9 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
   * Test for the spatial objects (point)
@@ -24,13 +25,13 @@ import static org.junit.Assert.*;
  */
 public class BoltNeo4jSpatialIT {
     @ClassRule
-    public static Neo4jRule neo4j = new Neo4jRule();
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0").withAdminPassword(null);
 
     static Connection connection;
 
     @Before
     public void cleanDB() throws SQLException {
-        neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
+        JdbcConnectionTestUtils.clearDatabase(neo4j);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
 
