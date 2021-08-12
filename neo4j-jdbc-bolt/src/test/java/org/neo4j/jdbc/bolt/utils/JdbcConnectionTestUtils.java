@@ -1,7 +1,9 @@
 package org.neo4j.jdbc.bolt.utils;
 
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
 import org.neo4j.jdbc.bolt.BoltDriver;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.testcontainers.containers.Neo4jContainer;
@@ -128,13 +130,26 @@ public class JdbcConnectionTestUtils {
     }
 
     public static void clearDatabase(Neo4jContainer<?> neo4j) {
-        executeTransactionally(neo4j, StatementData.STATEMENT_CLEAR_DB);
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session(SessionConfig.forDatabase("system"))) {
+            session.run("DROP DATABASE neo4j").consume();
+            session.run("CREATE DATABASE neo4j").consume();
+            int counter = 0;
+            while (++counter < 5 && session.run("show databases yield name where name = 'neo4j' return count(*) AS count")
+                    .single()
+                    .get("count")
+                    .asLong() <= 0) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {}
+            }
+        }
     }
 
     public static void executeTransactionally(Neo4jContainer<?> neo4j, String statement) {
         try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
              Session session = driver.session()) {
-            session.run(statement);
+            session.run(statement).consume();
         }
     }
 }

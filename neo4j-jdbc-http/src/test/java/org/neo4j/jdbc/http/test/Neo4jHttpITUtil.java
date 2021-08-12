@@ -19,30 +19,48 @@
  */
 package org.neo4j.jdbc.http.test;
 
+import org.apache.commons.lang3.StringUtils;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.neo4j.harness.junit.rule.Neo4jRule;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
+import org.testcontainers.containers.Neo4jContainer;
 
-import java.io.File;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Scanner;
 
 @RunWith(Parameterized.class)
 public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
 
     @Parameterized.Parameters
     public static Iterable<? extends Object> data() {
-        return List.of(Boolean.FALSE);
+        return Arrays.asList(Boolean.FALSE);
     }
 
     @Parameterized.Parameter
     public Boolean secureMode;
 
     @ClassRule
-    public static Neo4jRule neo4j = new Neo4jRule()
-            .withFixture(new File(Neo4jHttpUnitTestUtil.class.getClassLoader().getResource("data/movie.cyp").getFile()));
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+
+    @BeforeClass
+    public static void beforeClass() {
+        try (Scanner scanner = new Scanner(Thread.currentThread().getContextClassLoader().getResourceAsStream("data/movie.cyp"));
+             org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            scanner.useDelimiter(";");
+            while (scanner.hasNext()) {
+                final String query = scanner.next();
+                if (StringUtils.isNotBlank(query)) {
+                    session.run(query);
+                }
+            }
+        }
+    }
 
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();
@@ -50,9 +68,9 @@ public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
 
     protected String getJDBCUrl() {
         if (secureMode) {
-			return "jdbc:neo4j:" + neo4j.httpsURI().toString();
+			return "jdbc:neo4j:" + neo4j.getHttpsUrl();
 		}
-		return "jdbc:neo4j:" + neo4j.httpURI().toString();
+		return "jdbc:neo4j:" + neo4j.getHttpUrl();
 	}
 
 }

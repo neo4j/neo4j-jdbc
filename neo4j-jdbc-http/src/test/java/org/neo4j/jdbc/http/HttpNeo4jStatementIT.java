@@ -19,14 +19,25 @@
  */
 package org.neo4j.jdbc.http;
 
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
 import org.junit.Test;
-import org.neo4j.graphdb.Result;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Session;
+import org.neo4j.jdbc.http.test.Neo4jHttpITUtil;
 
-import java.sql.*;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 
@@ -35,7 +46,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 	/*------------------------------*/
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery("MATCH (m:Movie { title:\"The Matrix\"}) RETURN m.title");
 
@@ -46,7 +57,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 	}
 
 	@Test public void executeQueryWithNullResponseValueShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 		ResultSet rs = statement.executeQuery("MATCH (n:Person) RETURN n.title AS title");
 
@@ -61,7 +72,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("SyntaxError");
 
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 		try {
 			statement.execute("AZERTYUIOP");
@@ -75,7 +86,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("ProcedureNotFound");
 
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 		try {
 			statement.execute("CALL apoc.trigger.add('HAS_VALUE_ON_REMOVE_FROM_INDEX', \"UNWIND {deletedRelationships} AS r MATCH (d:Decision)-[r:HAS_VALUE_ON]->(Characteristic) CALL apoc.index.removeRelationshipByName('HAS_VALUE_ON', r) RETURN count(*)\", {phase:'after'})");
@@ -90,7 +101,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 	/*------------------------------*/
 
 	@Test public void executeUpdateShouldExecuteAndReturnCorrectData() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 
 		// Node insertion
@@ -114,7 +125,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 	/*         executeBatch         */
 	/*------------------------------*/
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(true);
 		statement.addBatch("CREATE (:TestExecuteBatchShouldWork {name:\"test1\"})");
@@ -128,7 +139,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 	}
 
 	@Test public void executeBatchShouldWorkWhenError() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		connection.setAutoCommit(true);
 		Statement statement = connection.createStatement();
 		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWhenError {name:\"test1\"})");
@@ -147,7 +158,7 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 	}
 
 	@Test public void executeBatchShouldWorkWithTransaction() throws SQLException {
-		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.httpURI().toString());
+		Connection connection = DriverManager.getConnection("jdbc:neo4j:" + neo4j.getHttpUrl());
 		Statement statement = connection.createStatement();
 		connection.setAutoCommit(false);
 		statement.addBatch("CREATE (:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + " {name:\"test1\"})");
@@ -159,22 +170,25 @@ public class HttpNeo4jStatementIT extends Neo4jHttpITUtil {
 		assertArrayEquals(new int[] { 1, 1, 1 }, result);
 
 		// Check if it's not yet saved into db
-		try (final Transaction transaction = neo4j.defaultDatabaseService().beginTx();) {
-			Result res = transaction.execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
+		try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+			 Session session = driver.session()) {
+			final Result res = session.run("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
 			while (res.hasNext()) {
-				assertEquals(0L, res.next().get("total"));
+				assertEquals(0L, res.next().get("total").asLong());
 			}
 		}
 
 		connection.commit();
 
 		// Check if it's saved into db
-		try (final Transaction transaction = neo4j.defaultDatabaseService().beginTx();) {
-			Result res = transaction.execute("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
+		try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+			 Session session = driver.session()) {
+			final Result res = session.run("MATCH (n:TestExecuteBatchShouldWorkWithTransaction_" + secureMode.toString() + ") RETURN count(n) AS total");
 			while (res.hasNext()) {
-				assertEquals(3L, res.next().get("total"));
+				assertEquals(3L, res.next().get("total").asLong());
 			}
 		}
+
 
 		connection.close();
 	}

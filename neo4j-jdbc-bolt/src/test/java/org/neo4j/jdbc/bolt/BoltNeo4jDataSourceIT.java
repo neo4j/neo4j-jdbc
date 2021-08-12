@@ -44,7 +44,7 @@ public class BoltNeo4jDataSourceIT {
 	public ExpectedException expectedEx = ExpectedException.none();
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	/*------------------------------*/
 	/*        getConnection         */

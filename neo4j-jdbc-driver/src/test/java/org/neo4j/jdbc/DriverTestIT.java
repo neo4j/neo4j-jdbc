@@ -28,10 +28,11 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
 import org.neo4j.jdbc.http.HttpNeo4jConnection;
+import org.testcontainers.containers.Neo4jContainer;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -48,23 +49,24 @@ public class DriverTestIT {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
+	@ClassRule
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:http://localhost:" + neo4j.httpURI().getPort(), new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:http://localhost:" + URI.create(neo4j.getHttpUrl()).getPort(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 	@Test public void shouldReturnAHttpConnection2() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:http:localhost:" + neo4j.httpURI().getPort(), new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:http:localhost:" + URI.create(neo4j.getHttpUrl()).getPort(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 
 	@Ignore
 	@Test public void shouldReturnAHttpsConnection() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.httpsURI(), new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.getHttpsUrl(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 
@@ -73,7 +75,7 @@ public class DriverTestIT {
 		Properties prop = new Properties();
 		prop.setProperty("user","user");
 		prop.setProperty("password","password");
-		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.boltURI() + "/?nossl", prop);
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.getBoltUrl() + "/?nossl", prop);
 		Assert.assertTrue(connection instanceof BoltNeo4jConnection);
 	}
 
