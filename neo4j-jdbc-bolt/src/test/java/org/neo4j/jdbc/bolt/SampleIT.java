@@ -19,18 +19,24 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Rule;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.driver.*;
-import org.neo4j.harness.junit.rule.Neo4jRule;
+import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.neo4j.driver.Config.builder;
 
 /**
@@ -38,12 +44,18 @@ import static org.neo4j.driver.Config.builder;
  */
 public class SampleIT {
 
-	@Rule public Neo4jRule neo4j = new Neo4jRule();  // here we're firing up neo4j with bolt enabled
+	@ClassRule
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+
+	@Before
+	public void prepare() {
+		JdbcConnectionTestUtils.clearDatabase(neo4j);
+	}
 
 	@Test public void shouldSimpleServerTestSucceed() throws Exception {
 
 		// if we want to have raw access to neo4j instance, e.g. for populating the DB upfront:
-		neo4j.defaultDatabaseService().executeTransactionally("create ( )");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "create ( )");
 
 		//Creating config without SSL
 		Config.ConfigBuilder builder = builder();
@@ -51,7 +63,7 @@ public class SampleIT {
 		Config config = builder.build();
 
 		// hitting the DB with a bolt request
-		Driver driver = GraphDatabase.driver(neo4j.boltURI(), config);   // defaults to localhost:7687
+		Driver driver = GraphDatabase.driver(neo4j.getBoltUrl(), config);   // defaults to localhost:7687
 		Session session = driver.session();
 		long count = session.readTransaction(tx -> tx.run("match (n) RETURN count(n) AS count").single().get("count").asLong());
 		assertEquals("there should be 1 node in the database", 1, count);
@@ -60,7 +72,7 @@ public class SampleIT {
 	}
 
 	@Test public void exampleTestInMemory() throws ClassNotFoundException, SQLException {
-		neo4j.defaultDatabaseService().executeTransactionally("create (:User{name:\"testUser\"})");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "create (:User{name:\"testUser\"})");
 
 		// Connect
 		Connection con = JdbcConnectionTestUtils.getConnection(neo4j);

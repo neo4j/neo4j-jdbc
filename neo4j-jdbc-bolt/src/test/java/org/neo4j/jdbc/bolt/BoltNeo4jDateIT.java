@@ -4,15 +4,31 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.driver.internal.value.*;
+import org.neo4j.driver.internal.value.DateTimeValue;
+import org.neo4j.driver.internal.value.DateValue;
+import org.neo4j.driver.internal.value.DurationValue;
+import org.neo4j.driver.internal.value.LocalDateTimeValue;
+import org.neo4j.driver.internal.value.LocalTimeValue;
+import org.neo4j.driver.internal.value.TimeValue;
 import org.neo4j.driver.types.IsoDuration;
-import org.neo4j.harness.junit.rule.Neo4jRule;
-import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.testcontainers.containers.Neo4jContainer;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.ParseException;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.List;
@@ -27,14 +43,15 @@ import static org.junit.Assert.assertTrue;
  * @since 3.4
  */
 public class BoltNeo4jDateIT {
+
     @ClassRule
-    public static Neo4jRule neo4j = new Neo4jRule();
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
     static Connection connection;
 
     @Before
     public void cleanDB() throws SQLException {
-        neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
+        JdbcConnectionTestUtils.clearDatabase(neo4j);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
 

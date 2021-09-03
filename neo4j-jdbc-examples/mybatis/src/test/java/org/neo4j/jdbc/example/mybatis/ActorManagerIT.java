@@ -26,9 +26,11 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.example.mybatis.bean.Actor;
 import org.neo4j.jdbc.example.mybatis.util.ActorManager;
+import org.testcontainers.containers.Neo4jContainer;
+
+import java.net.URI;
 
 /**
  * @author AgileLARUS
@@ -38,16 +40,19 @@ import org.neo4j.jdbc.example.mybatis.util.ActorManager;
 public class ActorManagerIT extends MybatisTestUtil {
 
 	@ClassRule
-	public static Neo4jRule neo4j = new Neo4jRule();
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
+			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+			.withAdminPassword(null);
 
 	@BeforeClass
 	public static void setUp() {
-		populateGraphDB(neo4j.defaultDatabaseService());
+		populateGraphDB(neo4j);
 	}
 	
 	@Test
 	public void testMybatisViaHttp() {
-		buildMybatisConfiguration("http", neo4j.httpURI().getHost(), neo4j.httpURI().getPort());
+		URI uri = URI.create(neo4j.getHttpUrl());
+		buildMybatisConfiguration("http", uri.getHost(), uri.getPort());
 		Actor actor = ActorManager.selectActorByBorn(1973);
 		Assert.assertNotNull(actor);
 		Assert.assertEquals(1973, actor.getBorn());
@@ -56,7 +61,8 @@ public class ActorManagerIT extends MybatisTestUtil {
 
 	@Test
 	public void testMybatisViaBolt() {
-		buildMybatisConfiguration("bolt", neo4j.boltURI().getHost(), neo4j.boltURI().getPort());
+		URI uri = URI.create(neo4j.getHttpUrl());
+		buildMybatisConfiguration("http", uri.getHost(), uri.getPort());
 		Actor actor = ActorManager.selectActorByBorn(1973);
 		Assert.assertNotNull(actor);
 		Assert.assertEquals(1973, actor.getBorn());

@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,11 +32,10 @@ import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
-import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
-import org.powermock.api.mockito.PowerMockito;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -50,8 +48,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -64,7 +62,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jConnectionIT {
 
-	@ClassRule public static Neo4jRule neo4j = new Neo4jRule();
+	@ClassRule
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	Connection writer;
@@ -163,7 +162,7 @@ public class BoltNeo4jConnectionIT {
 		JdbcConnectionTestUtils.closeStatement(readerStmt);
 		JdbcConnectionTestUtils.closeStatement(writerStmt);
 
-		neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CREATE_REV);
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, StatementData.STATEMENT_CREATE_REV);
 	}
 
 	@Test public void rollbackShouldWorkFine() throws SQLException {

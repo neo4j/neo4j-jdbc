@@ -141,7 +141,7 @@ public class BoltNeo4jUtils {
                     .children()
                     .stream()
                     .map(f -> f.operatorType())
-                    .noneMatch(o -> o.equalsIgnoreCase("EmptyResult"));
+                    .noneMatch(o -> o.toUpperCase(Locale.ROOT).contains("EMPTYRESULT"));
         } catch (Exception e) {
             return false;
         }

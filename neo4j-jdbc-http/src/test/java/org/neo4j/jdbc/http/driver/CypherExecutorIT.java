@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -37,8 +38,9 @@ public class CypherExecutorIT extends Neo4jHttpITUtil {
 	private CypherExecutor executor;
 
 	@Before public void before() throws IOException, SQLException {
-		String host = neo4j.httpURI().getHost();
-		Integer port = neo4j.httpURI().getPort();
+		final URI uri = URI.create(neo4j.getHttpUrl());
+		String host = uri.getHost();
+		Integer port = uri.getPort();
 		Properties properties = new Properties();
 		properties.put("userAgent", "Unit Test");
 		this.executor = new CypherExecutor(host, port, false, properties);

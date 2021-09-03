@@ -21,9 +21,12 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.*;
-import org.neo4j.harness.junit.rule.Neo4jRule;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,18 +36,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Neo4jDatabaseMetaData IT Tests class
  */
 public class BoltNeo4jDatabaseMetaDataIT {
 
-	@Rule public Neo4jRule neo4j = new Neo4jRule();
+
+	@ClassRule
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	Connection connection;
 
-	@Before public void setUp(){
+	@Before public void setUp() {
+		JdbcConnectionTestUtils.clearDatabase(neo4j);
 		connection = JdbcConnectionTestUtils.verifyConnection(connection,neo4j);
 	}
 
@@ -231,7 +242,7 @@ public class BoltNeo4jDatabaseMetaDataIT {
 	@Test
 	public void getIndexInfoWithConstraint() throws Exception {
 		// given
-		neo4j.defaultDatabaseService().executeTransactionally("CREATE CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Bar", true, false);
@@ -252,13 +263,13 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertNull(resultSet.getObject("PAGES"));
 		assertNull(resultSet.getObject("FILTER_CONDITION"));
 		assertFalse(resultSet.next());
-		neo4j.defaultDatabaseService().executeTransactionally("DROP CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
 	}
 
 	@Test
 	public void getIndexInfoWithBacktickLabels() throws Exception {
 		// given
-		neo4j.defaultDatabaseService().executeTransactionally("CREATE CONSTRAINT ON (f:`Bar Ext`) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT ON (f:`Bar Ext`) ASSERT (f.uuid) IS UNIQUE");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Bar Ext", true, false);
@@ -279,26 +290,26 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertNull(resultSet.getObject("PAGES"));
 		assertNull(resultSet.getObject("FILTER_CONDITION"));
 		assertFalse(resultSet.next());
-		neo4j.defaultDatabaseService().executeTransactionally("DROP CONSTRAINT ON (f:`Bar Ext`) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT ON (f:`Bar Ext`) ASSERT (f.uuid) IS UNIQUE");
 	}
 
 	@Test
 	public void getIndexInfoWithConstraintWrongLabel() throws Exception {
 		// given
-		neo4j.defaultDatabaseService().executeTransactionally("CREATE CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Foo", true, false);
 
 		// then
 		assertFalse(resultSet.next());
-		neo4j.defaultDatabaseService().executeTransactionally("DROP CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
 	}
 
 	@Test
 	public void getIndexInfoWithIndex() throws Exception {
 		// given
-		neo4j.defaultDatabaseService().executeTransactionally("CREATE INDEX ON :Bar(uuid)");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE INDEX ON :Bar(uuid)");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Bar", false, false);
@@ -319,6 +330,6 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertNull(resultSet.getObject("PAGES"));
 		assertNull(resultSet.getObject("FILTER_CONDITION"));
 		assertFalse(resultSet.next());
-		neo4j.defaultDatabaseService().executeTransactionally("DROP INDEX ON :Bar(uuid)");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP INDEX ON :Bar(uuid)");
 	}
 }

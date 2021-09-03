@@ -23,9 +23,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.neo4j.harness.junit.rule.Neo4jRule;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
+import org.testcontainers.containers.Neo4jContainer;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -43,7 +44,7 @@ public class BoltNeo4jDataSourceIT {
 	public ExpectedException expectedEx = ExpectedException.none();
 
 	@ClassRule
-	public static Neo4jRule neo4j = new Neo4jRule();
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	/*------------------------------*/
 	/*        getConnection         */
@@ -52,8 +53,9 @@ public class BoltNeo4jDataSourceIT {
 	@Test public void getConnectionShouldWork() throws SQLException {
 
 		BoltNeo4jDataSource boltNeo4jDataSource = new BoltNeo4jDataSource();
-		boltNeo4jDataSource.setServerName(neo4j.boltURI().getHost());
-		boltNeo4jDataSource.setPortNumber(neo4j.boltURI().getPort());
+		URI boltUri = URI.create(neo4j.getBoltUrl());
+		boltNeo4jDataSource.setServerName(boltUri.getHost());
+		boltNeo4jDataSource.setPortNumber(boltUri.getPort());
 		boltNeo4jDataSource.setIsSsl(JdbcConnectionTestUtils.SSL_ENABLED);
 		boltNeo4jDataSource.setUser(JdbcConnectionTestUtils.USERNAME);
 		boltNeo4jDataSource.setPassword(JdbcConnectionTestUtils.PASSWORD);

@@ -26,12 +26,11 @@ import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Transaction;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Session;
 import org.neo4j.jdbc.example.mybatis.mapper.ActorMapper;
 import org.neo4j.jdbc.example.mybatis.util.ConnectionFactory;
+import org.testcontainers.containers.Neo4jContainer;
 
 import javax.sql.DataSource;
 import java.util.Properties;
@@ -42,16 +41,10 @@ import java.util.Properties;
  */
 public class MybatisTestUtil {
 
-	public enum TestLabels implements Label {
-		Person
-	}
-	
-	protected static void populateGraphDB(GraphDatabaseService graphDatabaseService) {
-		try (Transaction tx = graphDatabaseService.beginTx()) { 
-			Node node = tx.createNode(TestLabels.Person);
-			node.setProperty("name", "Dave Chappelle");
-			node.setProperty("born", 1973);
-			tx.commit();
+	public static void populateGraphDB(Neo4jContainer<?> neo4j) {
+		try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+			 Session session = driver.session()) {
+			session.run("CREATE (:Person{name: 'Dave Chappelle', born: 1973})").consume();
 		}
 	}
 

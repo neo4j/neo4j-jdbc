@@ -1,10 +1,19 @@
 package org.neo4j.jdbc.bolt.utils;
 
-import org.neo4j.harness.junit.rule.Neo4jRule;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
 import org.neo4j.jdbc.bolt.BoltDriver;
 import org.neo4j.jdbc.bolt.data.StatementData;
+import org.testcontainers.containers.Neo4jContainer;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -37,12 +46,12 @@ public class JdbcConnectionTestUtils {
         return warmedup;
     }
 
-    public static Connection getConnection(Neo4jRule neo4j, String parameters) throws SQLException {
+    public static Connection getConnection(Neo4jContainer<?> neo4j, String parameters) throws SQLException {
         //return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI() + "?nossl,user=neo4j,password=neo4j");
         if(!warmedup){
             warmup();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI() + "?nossl"+parameters,USERNAME,PASSWORD);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters,USERNAME,PASSWORD);
     }
 
     public static Properties defaultInfo(){
@@ -53,18 +62,18 @@ public class JdbcConnectionTestUtils {
         return info;
     }
 
-    public static Connection getConnection(Neo4jRule neo4j, Properties info) throws SQLException {
+    public static Connection getConnection(Neo4jContainer<?> neo4j, Properties info) throws SQLException {
         if(!warmedup){
             warmup();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI(),info);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),info);
     }
 
-    public static Connection getConnection(Neo4jRule neo4j) throws SQLException {
-        return getConnection(neo4j,"");
+    public static Connection getConnection(Neo4jContainer<?> neo4j) throws SQLException {
+        return getConnection(neo4j, "");
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jRule neo4j, String parameters){
+    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j, String parameters){
         Connection res = connection;
 
         try {
@@ -80,7 +89,7 @@ public class JdbcConnectionTestUtils {
         return res;
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jRule neo4j){
+    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j){
         return verifyConnection(connection,neo4j,"");
     }
 
@@ -120,7 +129,27 @@ public class JdbcConnectionTestUtils {
         }
     }
 
-    public static void clearDatabase(Neo4jRule neo4j){
-        neo4j.defaultDatabaseService().executeTransactionally(StatementData.STATEMENT_CLEAR_DB);
+    public static void clearDatabase(Neo4jContainer<?> neo4j) {
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session(SessionConfig.forDatabase("system"))) {
+            session.run("DROP DATABASE neo4j").consume();
+            session.run("CREATE DATABASE neo4j").consume();
+            int counter = 0;
+            while (++counter < 5 && session.run("show databases yield name where name = 'neo4j' return count(*) AS count")
+                    .single()
+                    .get("count")
+                    .asLong() <= 0) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {}
+            }
+        }
+    }
+
+    public static void executeTransactionally(Neo4jContainer<?> neo4j, String statement) {
+        try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+             Session session = driver.session()) {
+            session.run(statement).consume();
+        }
     }
 }
