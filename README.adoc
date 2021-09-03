@@ -52,7 +52,7 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.2[4.0.2]
 |3.5.x - 4.x
 |4.3.x
-|11
+|1.8
 |http, bolt, neo4j
 |yes
 
