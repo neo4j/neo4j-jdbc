@@ -1,12 +1,12 @@
 package org.neo4j.jdbc.bolt.utils;
 
+import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.jdbc.bolt.BoltDriver;
-import org.neo4j.jdbc.bolt.data.StatementData;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -130,19 +130,19 @@ public class JdbcConnectionTestUtils {
     }
 
     public static void clearDatabase(Neo4jContainer<?> neo4j) {
+        String version = DockerImageName.parse(neo4j.getDockerImageName()).getVersionPart();
+        if (!(version.startsWith("4") && version.endsWith("-enterprise"))) {
+            try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+                 Session session = driver.session(SessionConfig.builder().withDefaultAccessMode(AccessMode.WRITE).build())) {
+                session.run("MATCH (n) DETACH DELETE n");
+            }
+            return;
+        }
         try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
              Session session = driver.session(SessionConfig.forDatabase("system"))) {
             session.run("DROP DATABASE neo4j").consume();
             session.run("CREATE DATABASE neo4j").consume();
-            int counter = 0;
-            while (++counter < 5 && session.run("show databases yield name where name = 'neo4j' return count(*) AS count")
-                    .single()
-                    .get("count")
-                    .asLong() <= 0) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ignored) {}
-            }
+            waitForDatabase(version, session);
         }
     }
 
@@ -150,6 +150,26 @@ public class JdbcConnectionTestUtils {
         try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
              Session session = driver.session()) {
             session.run(statement).consume();
+        }
+    }
+
+    private static void waitForDatabase(String version, Session session) {
+        // YIELD is not supported in Neo4j 4.0
+        // SHOW..YIELD..RETURN is not supported until Neo4j 4.2
+        if (version.startsWith("4.0") || version.startsWith("4.1")) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ignored) {}
+            return;
+        }
+        int counter = 0;
+        while (++counter < 5 && session.run("SHOW DATABASES YIELD name WHERE name = 'neo4j' RETURN count(*) AS count")
+                .single()
+                .get("count")
+                .asLong() <= 0) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {}
         }
     }
 }
