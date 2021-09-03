@@ -9,12 +9,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        neo4j_version:
+          - "3.5"
+          - "4.0"
+          - "4.1"
+          - "4.2"
+          - "4.3"
+        neo4j_enterprise_edition:
+          - "true"
+          - "false"
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: 11
+          java-version: 8
       - name: Cache ~/.m2/repository
         uses: actions/cache@v1
         with:
@@ -24,3 +35,6 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Build with Maven
         run: mvn --batch-mode --show-version clean test
+        env:
+          NEO4J_VERSION: ${{ matrix.neo4j_version }}
+          NEO4J_ENTERPRISE_EDITION: ${{ matrix.neo4j_enterprise_edition }}

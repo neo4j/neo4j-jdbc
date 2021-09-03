@@ -46,6 +46,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.neo4j.jdbc.bolt.utils.ContainerUtils.neo4jImageCoordinates;
 
 /**
  * @author AgileLARUS
@@ -54,7 +55,7 @@ import static org.junit.Assert.fail;
 public class BoltNeo4jStatementIT {
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 

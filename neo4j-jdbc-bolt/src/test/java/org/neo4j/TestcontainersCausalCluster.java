@@ -125,7 +125,7 @@ public class TestcontainersCausalCluster {
                                                                       ClusterInstanceType instanceType,
                                                                       Map<String, Object> neo4jConfig,
                                                                       String name) {
-        Neo4jContainer container = (Neo4jContainer) new Neo4jContainer("neo4j:3.5-enterprise")
+        Neo4jContainer container = (Neo4jContainer) new Neo4jContainer("neo4j:3.5-enterprise") // TODO: parameterize this?
                 .withNeo4jConfig("dbms.mode", instanceType.toString())
                 .withNeo4jConfig("dbms.connectors.default_listen_address", "0.0.0.0")
                 .withNeo4jConfig("dbms.connectors.default_advertised_address", name)
