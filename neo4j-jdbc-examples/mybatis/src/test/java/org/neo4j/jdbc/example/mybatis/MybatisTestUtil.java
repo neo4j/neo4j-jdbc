@@ -21,11 +21,14 @@
  */
 package org.neo4j.jdbc.example.mybatis;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
+import org.neo4j.driver.AuthToken;
+import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.neo4j.jdbc.example.mybatis.mapper.ActorMapper;
@@ -42,17 +45,26 @@ import java.util.Properties;
 public class MybatisTestUtil {
 
 	public static void populateGraphDB(Neo4jContainer<?> neo4j) {
-		try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
+		populateGraphDB(neo4j.getBoltUrl(), null, null);
+	}
+
+	public static void populateGraphDB(String url, String user, String password) {
+		final AuthToken authToken = StringUtils.isBlank(user) ? AuthTokens.none() : AuthTokens.basic(user, password);
+		try (org.neo4j.driver.Driver driver = GraphDatabase.driver(url, authToken);
 			 Session session = driver.session()) {
 			session.run("CREATE (:Person{name: 'Dave Chappelle', born: 1973})").consume();
 		}
 	}
 
 	protected void buildMybatisConfiguration(String protocol, String host, int port) {
+		buildMybatisConfiguration(protocol, host, port, "user", "password", false);
+	}
+
+	protected void buildMybatisConfiguration(String protocol, String host, int port, String user, String password, boolean ssl) {
 		Properties prop = new Properties();
-		prop.setProperty("user","user");
-		prop.setProperty("password","password");
-		DataSource dataSource = new UnpooledDataSource("org.neo4j.jdbc.Driver", "jdbc:neo4j:" + protocol + "://" + host + ":" + port + "?nossl", prop);
+		prop.setProperty("user", user);
+		prop.setProperty("password", password);
+		DataSource dataSource = new UnpooledDataSource("org.neo4j.jdbc.Driver", "jdbc:neo4j:" + protocol + "://" + host + ":" + port + (ssl ? "" : "?nossl"), prop);
 		TransactionFactory transactionFactory = new JdbcTransactionFactory();
 		Environment environment = new Environment("development", transactionFactory, dataSource);
 

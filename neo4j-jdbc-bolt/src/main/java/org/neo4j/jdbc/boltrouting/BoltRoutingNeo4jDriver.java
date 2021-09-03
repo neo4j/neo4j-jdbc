@@ -22,8 +22,10 @@ import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.jdbc.bolt.cache.BoltDriverCache;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
+import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -48,11 +50,22 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     public static final String LIST_SEPARATOR = ";";
     public static final String CUSTOM_ROUTING_POLICY_SEPARATOR = "&";
 
-    private static final BoltDriverCache cache = new BoltDriverCache(params ->
-    {
-        return GraphDatabase.routingDriver(params.getRoutingUris(), params.getAuthToken(), params.getConfig());
-    }
-    );
+    private static final BoltDriverCache cache = new BoltDriverCache(params -> {
+        for (URI uri : params.getRoutingUris()) {
+            final Driver driver = GraphDatabase.driver(uri, params.getAuthToken(), params.getConfig());
+            try {
+                driver.verifyConnectivity();
+                return driver;
+            } catch (ServiceUnavailableException e) {
+                BoltNeo4jUtils.closeSafely(driver, null);
+            } catch (Throwable e) {
+                // for any other errors, we first close the driver and then rethrow the original error out.
+                BoltNeo4jUtils.closeSafely(driver, null);
+                throw e;
+            }
+        }
+        throw new ServiceUnavailableException( "Failed to discover an available server" );
+    });
 
     static {
         try {

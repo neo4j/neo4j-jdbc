@@ -88,7 +88,7 @@ public class BoltRoutingNeo4jDriverUrlTest {
 
 	@Test public void shouldConnectCreateConnection() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.routingDriver(Mockito.eq(Arrays.asList(new URI(getBoltUrl()))), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
+		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(getBoltUrl())), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Neo4jDriver driver = new BoltRoutingNeo4jDriver();
 		Connection connection = driver.connect(completeValidUrl, null);
