@@ -22,7 +22,6 @@ package org.neo4j.jdbc;
 import org.neo4j.jdbc.impl.ListNeo4jResultSet;
 import org.neo4j.jdbc.metadata.Column;
 import org.neo4j.jdbc.metadata.Table;
-import org.neo4j.jdbc.utils.ExceptionBuilder;
 import org.neo4j.jdbc.utils.Neo4jJdbcRuntimeException;
 
 import java.io.InputStream;
@@ -772,24 +771,24 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		return emptyResultSet();
 	}
 
-	private String getIndexesV3X(String table, boolean unique, boolean hasTable) {
+	private String getIndexesV3X(boolean unique, boolean hasTable) {
 		List<String> filters = new ArrayList<>();
 		if (hasTable) {
-			filters.add("label = ?");
+			filters.add("? IN tokenNames");
 		}
 		if (unique) {
 			filters.add("type = 'node_unique_property'");
 		}
 		StringBuilder queryBuilder = new StringBuilder();
-		queryBuilder.append("CALL db.indexes() YIELD description, label, properties, state, type\n");
+		queryBuilder.append("CALL db.indexes() YIELD description, tokenNames, properties, state, type\n");
 		if (!filters.isEmpty()) {
-			queryBuilder.append("WHERE " + String.join(" AND ", filters) + "\n");
+			queryBuilder.append("WHERE ").append(String.join(" AND ", filters)).append("\n");
 		}
-		queryBuilder.append("WITH description, label, properties, state, type\n");
+		queryBuilder.append("WITH description, tokenNames, properties, state, type\n");
 		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS index\n");
 		queryBuilder.append("RETURN null AS TABLE_CAT,\n");
 		queryBuilder.append("null AS TABLE_SCHEM,\n");
-		queryBuilder.append("label AS TABLE_NAME,\n");
+		queryBuilder.append("tokenNames[0] AS TABLE_NAME,\n");
 		queryBuilder.append("type <> 'node_unique_property' AS NON_UNIQUE,\n");
 		queryBuilder.append("description AS INDEX_QUALIFIER,\n");
 		queryBuilder.append("description AS INDEX_NAME,\n");
@@ -842,7 +841,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
 		boolean hasTable = table != null && !table.trim().isEmpty();
 		final String query = databaseVersion.startsWith("4") ?
-				getIndexesV4X(table, unique, hasTable) : getIndexesV3X(table, unique, hasTable);
+				getIndexesV4X(table, unique, hasTable) : getIndexesV3X(unique, hasTable);
 		PreparedStatement ps = this.connection.prepareStatement(query);
 		if (hasTable) {
 			ps.setString(1, table);

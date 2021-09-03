@@ -6,7 +6,6 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.jdbc.bolt.BoltDriver;
 import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -16,6 +15,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Enumeration;
 import java.util.Properties;
+
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.getVersion;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.isEnterpriseEdition;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.isV4;
 
 /**
  * Help to build the connection for the IT test
@@ -28,14 +31,14 @@ public class JdbcConnectionTestUtils {
 
     public static boolean warmedup = false;
 
-    private static boolean warmup(){
+    private static boolean warmup() {
         // WARM UP
         long t0 = System.currentTimeMillis();
         boolean driverLoaded = false;
-        while (!driverLoaded && System.currentTimeMillis() - t0 < 10_000){
+        while (!driverLoaded && System.currentTimeMillis() - t0 < 10_000) {
             Enumeration<Driver> drivers = DriverManager.getDrivers();
-            while (drivers.hasMoreElements()){
-                if(BoltDriver.class.equals(drivers.nextElement().getClass())){
+            while (drivers.hasMoreElements()) {
+                if (BoltDriver.class.equals(drivers.nextElement().getClass())) {
                     driverLoaded = true;
                 }
             }
@@ -48,80 +51,80 @@ public class JdbcConnectionTestUtils {
 
     public static Connection getConnection(Neo4jContainer<?> neo4j, String parameters) throws SQLException {
         //return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI() + "?nossl,user=neo4j,password=neo4j");
-        if(!warmedup){
+        if (!warmedup) {
             warmup();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl"+parameters,USERNAME,PASSWORD);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl" + parameters, USERNAME, PASSWORD);
     }
 
-    public static Properties defaultInfo(){
+    public static Properties defaultInfo() {
         Properties info = new Properties();
-        info.setProperty("user",USERNAME);
-        info.setProperty("password",PASSWORD);
-        info.setProperty("nossl","true");
+        info.setProperty("user", USERNAME);
+        info.setProperty("password", PASSWORD);
+        info.setProperty("nossl", "true");
         return info;
     }
 
     public static Connection getConnection(Neo4jContainer<?> neo4j, Properties info) throws SQLException {
-        if(!warmedup){
+        if (!warmedup) {
             warmup();
         }
-        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(),info);
+        return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(), info);
     }
 
     public static Connection getConnection(Neo4jContainer<?> neo4j) throws SQLException {
         return getConnection(neo4j, "");
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j, String parameters){
+    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j, String parameters) {
         Connection res = connection;
 
         try {
-            if(connection == null || connection.isClosed()){
-                res =  JdbcConnectionTestUtils.getConnection(neo4j,parameters);
-            }else{
+            if (connection == null || connection.isClosed()) {
+                res = JdbcConnectionTestUtils.getConnection(neo4j, parameters);
+            } else {
                 res.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            throw new IllegalStateException(e.getMessage(),e);
+            throw new IllegalStateException(e.getMessage(), e);
         }
 
         return res;
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j){
-        return verifyConnection(connection,neo4j,"");
+    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j) {
+        return verifyConnection(connection, neo4j, "");
     }
 
-    public static void closeConnection(Connection connection){
+    public static void closeConnection(Connection connection) {
         closeConnection(connection, null, null);
     }
 
-    public static void closeConnection(Connection connection, Statement stmt){
+    public static void closeConnection(Connection connection, Statement stmt) {
         closeConnection(connection, stmt, null);
     }
 
-    public static void closeStatement(Statement stmt, ResultSet rs){
+    public static void closeStatement(Statement stmt, ResultSet rs) {
         closeConnection(null, stmt, rs);
     }
 
-    public static void closeStatement(Statement stmt){
+    public static void closeStatement(Statement stmt) {
         closeConnection(null, stmt, null);
     }
 
-    public static void closeResultSet(ResultSet rs){
+    public static void closeResultSet(ResultSet rs) {
         closeConnection(null, null, rs);
     }
 
-    public static void closeConnection(Connection connection, Statement stmt, ResultSet rs){
+    public static void closeConnection(Connection connection, Statement stmt, ResultSet rs) {
         try {
-            if(rs != null &&  !rs.isClosed()){
+            if (rs != null && !rs.isClosed()) {
                 rs.close();
             }
-            if(stmt != null &&  !stmt.isClosed()){
+            if (stmt != null && !stmt.isClosed()) {
                 stmt.close();
             }
-            if(connection != null &&  !connection.isClosed()){
+            if (connection != null && !connection.isClosed()) {
                 connection.close();
             }
         } catch (SQLException e) {
@@ -130,8 +133,7 @@ public class JdbcConnectionTestUtils {
     }
 
     public static void clearDatabase(Neo4jContainer<?> neo4j) {
-        String version = DockerImageName.parse(neo4j.getDockerImageName()).getVersionPart();
-        if (!(version.startsWith("4") && version.endsWith("-enterprise"))) {
+        if (!(isV4(neo4j) && isEnterpriseEdition(neo4j))) {
             try (org.neo4j.driver.Driver driver = GraphDatabase.driver(neo4j.getBoltUrl());
                  Session session = driver.session(SessionConfig.builder().withDefaultAccessMode(AccessMode.WRITE).build())) {
                 session.run("MATCH (n) DETACH DELETE n");
@@ -142,7 +144,7 @@ public class JdbcConnectionTestUtils {
              Session session = driver.session(SessionConfig.forDatabase("system"))) {
             session.run("DROP DATABASE neo4j").consume();
             session.run("CREATE DATABASE neo4j").consume();
-            waitForDatabase(version, session);
+            waitForDatabase(getVersion(neo4j), session);
         }
     }
 
@@ -159,7 +161,8 @@ public class JdbcConnectionTestUtils {
         if (version.startsWith("4.0") || version.startsWith("4.1")) {
             try {
                 Thread.sleep(500);
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+            }
             return;
         }
         int counter = 0;
@@ -169,7 +172,8 @@ public class JdbcConnectionTestUtils {
                 .asLong() <= 0) {
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 }
