@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -35,6 +36,7 @@ import org.neo4j.driver.internal.handlers.pulln.FetchSizeUtil;
 import org.neo4j.driver.internal.logging.DevNullLogging;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
+import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
 import java.sql.*;
 import java.util.Properties;
@@ -61,6 +63,14 @@ public class BoltNeo4jConnectionTest {
 		closedConnection = new BoltNeo4jConnectionImpl(mockDriverClosed(), new Properties(), "");
 		slowOpenConnection = new BoltNeo4jConnectionImpl(mockDriverOpenSlow(), new Properties(), "");
 		exceptionOpenConnection = new BoltNeo4jConnectionImpl(mockDriverException(), new Properties(), "");
+	}
+
+	@After
+	public void close() {
+		JdbcConnectionTestUtils.closeConnection(openConnection);
+		JdbcConnectionTestUtils.closeConnection(closedConnection);
+		JdbcConnectionTestUtils.closeConnection(slowOpenConnection);
+		JdbcConnectionTestUtils.closeConnection(exceptionOpenConnection);
 	}
 
 	/*------------------------------*/
@@ -502,6 +512,7 @@ public class BoltNeo4jConnectionTest {
 		when(driver.session()).thenReturn(session);
 		Connection connection = new BoltNeo4jConnectionImpl(driver, new Properties(), "");
 		connection.setAutoCommit(true);
+		JdbcConnectionTestUtils.closeConnection(connection);
 	}
 
 	@Test public void setAutoCommitShouldSetWhatIsPassed() throws SQLException {

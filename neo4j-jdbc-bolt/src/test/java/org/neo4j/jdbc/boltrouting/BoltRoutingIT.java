@@ -21,6 +21,7 @@ package org.neo4j.jdbc.boltrouting;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.neo4j.TestcontainersCausalCluster;
+import org.neo4j.jdbc.bolt.BoltDriver;
 
 import java.sql.*;
 import java.time.Duration;
@@ -57,6 +58,8 @@ public class BoltRoutingIT {
         if (cluster != null) {
             cluster.close();
         }
+        BoltRoutingNeo4jDriver.clearCache();
+        BoltDriver.clearCache();
     }
 
     @Rule public ExpectedException expectedEx = ExpectedException.none();
