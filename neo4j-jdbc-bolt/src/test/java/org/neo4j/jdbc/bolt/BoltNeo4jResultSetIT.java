@@ -45,20 +45,14 @@ import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinate
  * @author AgileLARUS
  * @since 3.0.0
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BoltNeo4jResultSetIT {
 
-	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates())
+	@Rule
+	public final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates())
 			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.withAdminPassword(null);
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
-
-	@Before
-	public void setUp() throws SQLException {
-		JdbcConnectionTestUtils.clearDatabase(neo4j);
-	}
 
 	/*------------------------------*/
 	/*          flattening          */
