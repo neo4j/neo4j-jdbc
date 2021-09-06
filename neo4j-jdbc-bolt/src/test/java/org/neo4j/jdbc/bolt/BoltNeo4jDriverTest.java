@@ -21,10 +21,12 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
@@ -66,7 +68,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class, SecuritySettings.class})
-
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BoltNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
