@@ -5,6 +5,7 @@ import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.jdbc.bolt.BoltDriver;
+import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
@@ -129,6 +130,9 @@ public class JdbcConnectionTestUtils {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            BoltRoutingNeo4jDriver.clearCache();
+            BoltDriver.clearCache();
         }
     }
 
