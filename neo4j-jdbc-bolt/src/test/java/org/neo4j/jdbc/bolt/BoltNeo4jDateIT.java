@@ -51,7 +51,7 @@ public class BoltNeo4jDateIT {
     static Connection connection;
 
     @Before
-    public void cleanDB() throws SQLException {
+    public void cleanDB() {
         JdbcConnectionTestUtils.clearDatabase(neo4j);
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
