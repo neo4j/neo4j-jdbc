@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -74,7 +75,7 @@ public class BoltNeo4jDriverUrlTest {
 		mockedDriver = Mocker.mockDriver();
 	}
 
-	@Before
+	@After
 	public void prepare() {
 		BoltDriver.clearCache();
 	}

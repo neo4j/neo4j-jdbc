@@ -69,8 +69,8 @@ public class BoltNeo4jResultSetMetaDataIT {
 		JdbcConnectionTestUtils.clearDatabase(neo4j);
 	}
 
-	@AfterClass
-	public static void tearDownConnection(){
+	@After
+	public void tearDownConnection(){
 		JdbcConnectionTestUtils.closeConnection(connectionFlatten);
 	}
 
