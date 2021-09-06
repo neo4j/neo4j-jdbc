@@ -104,7 +104,7 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 	}
 
 	/**
-	 * Like javadoc said, this method should be called one times.
+	 * Like javadoc said, this method should be called one time.
 	 */
 	@Override public ResultSet getResultSet() throws SQLException {
 		this.checkClosed();

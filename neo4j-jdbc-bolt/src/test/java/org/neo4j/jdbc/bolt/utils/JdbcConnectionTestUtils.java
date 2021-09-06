@@ -130,9 +130,6 @@ public class JdbcConnectionTestUtils {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            BoltRoutingNeo4jDriver.clearCache();
-            BoltDriver.clearCache();
         }
     }
 

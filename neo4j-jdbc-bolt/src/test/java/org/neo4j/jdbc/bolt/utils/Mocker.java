@@ -30,11 +30,15 @@ import org.neo4j.driver.internal.async.NetworkSession;
 import org.neo4j.driver.internal.handlers.pulln.FetchSizeUtil;
 import org.neo4j.driver.internal.logging.DevNullLogging;
 import org.neo4j.driver.internal.spi.ConnectionProvider;
+import org.neo4j.driver.summary.ResultSummary;
+import org.neo4j.driver.summary.SummaryCounters;
+import org.neo4j.jdbc.bolt.FakeRecord;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -123,7 +127,7 @@ public class Mocker {
 		return session;
 	}
 
-	public static BoltNeo4jConnectionImpl mockConnectionOpen() throws SQLException {
+	public static BoltNeo4jConnectionImpl mockOpenConnection() throws SQLException {
 		BoltNeo4jConnectionImpl mockConnection = mock(BoltNeo4jConnectionImpl.class);
 		when(mockConnection.isClosed()).thenReturn(false);
 		return mockConnection;
@@ -135,12 +139,12 @@ public class Mocker {
 		return mockConnection;
 	}
 
-	public static BoltNeo4jConnectionImpl mockConnectionOpenWithTransactionThatReturns(Result cur) throws SQLException {
+	public static BoltNeo4jConnectionImpl mockOpenConnectionWithResult(Result cur) throws SQLException {
 		Transaction mockTransaction = mock(Transaction.class);
 		when(mockTransaction.run(anyString())).thenReturn(cur);
 		when(mockTransaction.run(anyString(), any(Map.class))).thenReturn(cur);
 
-		BoltNeo4jConnectionImpl mockConnection = mockConnectionOpen();
+		BoltNeo4jConnectionImpl mockConnection = mockOpenConnection();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 		return mockConnection;
 	}
@@ -152,5 +156,21 @@ public class Mocker {
 				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
 		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(networkSession));
 		return mockedDriver;
+	}
+
+	public static Result mockResultWithUpdateCount(int count) {
+		Result result = mock(Result.class);
+		ResultSummary resultSummary = mock(ResultSummary.class);
+		SummaryCounters summaryCounters = mock(SummaryCounters.class);
+		when(summaryCounters.propertiesSet()).thenReturn(count);
+		when(resultSummary.counters()).thenReturn(summaryCounters);
+		when(result.consume()).thenReturn(resultSummary);
+		return result;
+	}
+
+	public static Result mockResultWithValues(LinkedHashMap<String, Value> values) {
+		Result result = mock(Result.class);
+		when(result.list()).thenReturn(Collections.singletonList(new FakeRecord(values)));
+		return result;
 	}
 }

@@ -23,112 +23,120 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
-import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.bolt.utils.Mocker;
 import org.neo4j.jdbc.impl.ListArray;
-import org.neo4j.jdbc.utils.PreparedStatementBuilder;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
 
-import java.sql.*;
+import java.sql.BatchUpdateException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.sql.Types.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.doNothing;
+import static java.sql.Types.ARRAY;
+import static java.sql.Types.BLOB;
+import static java.sql.Types.CLOB;
+import static java.sql.Types.DATALINK;
+import static java.sql.Types.INTEGER;
+import static java.sql.Types.JAVA_OBJECT;
+import static java.sql.Types.LONGNVARCHAR;
+import static java.sql.Types.NCHAR;
+import static java.sql.Types.NCLOB;
+import static java.sql.Types.NULL;
+import static java.sql.Types.NVARCHAR;
+import static java.sql.Types.REF;
+import static java.sql.Types.ROWID;
+import static java.sql.Types.SQLXML;
+import static java.sql.Types.STRUCT;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.anyMap;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.neo4j.jdbc.bolt.utils.Mocker.*;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockConnectionClosed;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockOpenConnection;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockOpenConnectionWithResult;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockResultWithUpdateCount;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ BoltNeo4jPreparedStatement.class, BoltNeo4jResultSet.class })
-
 public class BoltNeo4jPreparedStatementTest {
 
 	@Rule
 	public ExpectedException expectedEx = ExpectedException.none();
 
-	private PreparedStatement preparedStatementOneParam;
-	private PreparedStatement preparedStatementTwoParams;
+	private BoltNeo4jPreparedStatement preparedStatementOneParam;
+	private BoltNeo4jPreparedStatement preparedStatementTwoParams;
 
-	private BoltNeo4jResultSet mockedRS;
+	private BoltNeo4jResultSet expectedResultSet;
+	private ResultSetFactory resultSetFactory;
 
-	@Before public void interceptBoltResultSetConstructor() throws Exception {
-		preparedStatementOneParam = mock(BoltNeo4jPreparedStatement.class, CALLS_REAL_METHODS);
-		Whitebox.setInternalState(preparedStatementOneParam, "batchStatements", new ArrayList<>());
-		String statementOneParam = "MATCH n RETURN n WHERE n.name = ?";
-		String replacedStatementOneParam = PreparedStatementBuilder.replacePlaceholders(statementOneParam);
-		Whitebox.setInternalState(preparedStatementOneParam, "statement", replacedStatementOneParam);
-		Whitebox.setInternalState(preparedStatementOneParam, "connection", mockConnectionOpenWithTransactionThatReturns(null));
-		Whitebox.setInternalState(preparedStatementOneParam, "parametersNumber", PreparedStatementBuilder.namedParameterCount(replacedStatementOneParam));
-		Whitebox.setInternalState(preparedStatementOneParam, "parameters", new HashMap<>());
-
-		preparedStatementTwoParams = mock(BoltNeo4jPreparedStatement.class, CALLS_REAL_METHODS);
-		Whitebox.setInternalState(preparedStatementTwoParams, "batchStatements", new ArrayList<>());
-		String statementTwoParams = "MATCH n RETURN n WHERE n.name = ? AND n.surname = ?";
-		String replacedStatementTwoParams = PreparedStatementBuilder.replacePlaceholders(statementTwoParams);
-		Whitebox.setInternalState(preparedStatementTwoParams, "statement", replacedStatementTwoParams);
-		Whitebox.setInternalState(preparedStatementTwoParams, "connection", mockConnectionOpenWithTransactionThatReturns(null));
-		Whitebox.setInternalState(preparedStatementTwoParams, "parametersNumber", PreparedStatementBuilder.namedParameterCount(replacedStatementTwoParams));
-		Whitebox.setInternalState(preparedStatementTwoParams, "parameters", new HashMap<>());
-
-		/*this.preparedStatementOneParam = BoltNeo4jPreparedStatement.newInstance(mockConnectionOpenWithTransactionThatReturns(null),
-				"MATCH n RETURN n WHERE n.name = ?");
-		this.preparedStatementTwoParams = BoltNeo4jPreparedStatement.newInstance(mockConnectionOpenWithTransactionThatReturns(null),
-				"MATCH n RETURN n WHERE n.name = ? AND n.surname = ?");*/
-
-		this.mockedRS = mock(BoltNeo4jResultSet.class);
-		doNothing().when(this.mockedRS).close();
-		mockStatic(BoltNeo4jResultSet.class);
-		PowerMockito.when(BoltNeo4jResultSet.newInstance(anyBoolean(), any(Neo4jStatement.class), any(Result.class))).thenReturn(mockedRS);
+	@Before public void interceptBoltResultSetConstructor() throws SQLException {
+		expectedResultSet = mock(BoltNeo4jResultSet.class);
+		resultSetFactory = (debug, statement, iterator, params) -> expectedResultSet;
+		preparedStatementOneParam = new BoltNeo4jPreparedStatement(mockOpenConnection(), resultSetFactory, "RETURN $1");
+		preparedStatementTwoParams = new BoltNeo4jPreparedStatement(mockOpenConnection(), resultSetFactory, "RETURN $1+$2");
 	}
 
 	/*------------------------------*/
 	/*             close            */
 	/*------------------------------*/
 	@Test public void closeShouldCloseExistingResultSet() throws Exception {
-		Result mockedSR = mock(Result.class);
-		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR), "");
+		Result mockedDriverResult = mock(Result.class);
+		BoltNeo4jConnectionImpl connection = mockOpenConnectionWithResult(mockedDriverResult);
+		BoltNeo4jPreparedStatement prStatement = new BoltNeo4jPreparedStatement(connection, resultSetFactory, "");
 		final ResultSet resultSet = prStatement.executeQuery();
+
 		prStatement.close();
 
-		verify(resultSet, times(1)).close();
+		assertSame(resultSet, expectedResultSet);
+		verify(expectedResultSet, times(1)).close();
 	}
 
 	@Test public void closeShouldNotCallCloseOnAnyResultSet() throws Exception {
-		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(null), "");
+		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnectionWithResult(null), "");
+
 		prStatement.close();
 
-		verify(this.mockedRS, never()).close();
+		verify(expectedResultSet, never()).close();
 	}
 
 	@Test public void closeMultipleTimesIsNOOP() throws Exception {
-		Result mockedSR = mock(Result.class);
-		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockedSR), "");
+		Result mockedDriverResult = mock(Result.class);
+		BoltNeo4jConnectionImpl connection = mockOpenConnectionWithResult(mockedDriverResult);
+		BoltNeo4jPreparedStatement prStatement = new BoltNeo4jPreparedStatement(connection, resultSetFactory, "");;
 		final ResultSet resultSet = prStatement.executeQuery();
+
 		prStatement.close();
 		prStatement.close();
 		prStatement.close();
 
+		assertSame(resultSet, expectedResultSet);
 		verify(resultSet, times(1)).close();
 	}
 
@@ -136,7 +144,8 @@ public class BoltNeo4jPreparedStatementTest {
 	/*           isClosed           */
 	/*------------------------------*/
 	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
-		PreparedStatement prStatement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), "");
+		BoltNeo4jConnectionImpl connection = mockOpenConnection();
+		PreparedStatement prStatement = new BoltNeo4jPreparedStatement(connection, resultSetFactory, "");
 
 		assertFalse(prStatement.isClosed());
 	}
@@ -147,34 +156,30 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setIntShouldInsertTheCorrectIntegerValue() throws SQLException {
 		this.preparedStatementOneParam.setInt(1, 10);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10, value.get("1"));
+		assertEquals(10, this.preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setInt(2, 125);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(125, value.get("2"));
+		assertEquals(125, this.preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setIntShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setInt(1, 10);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10, value.get("1"));
-
+		assertEquals(10, this.preparedStatementOneParam.getParameters().get("1"));
 		this.preparedStatementOneParam.setInt(1, 99);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(99, value.get("1"));
+
+		assertEquals(99, this.preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setIntShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		this.preparedStatementOneParam.setInt(99, 10);
+		this.preparedStatementOneParam.setInt(2, 10);
 	}
 
 	@Test public void setIntShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarkerTwoParams() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		this.preparedStatementTwoParams.setInt(99, 10);
+		this.preparedStatementTwoParams.setInt(3, 10);
 	}
 
 	@Test public void setIntShouldThrowExceptionIfClosedPreparedStatement() throws SQLException {
@@ -190,28 +195,24 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setLongShouldInsertTheCorrectLongValue() throws SQLException {
 		this.preparedStatementOneParam.setLong(1, 10L);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10L, value.get("1"));
+		assertEquals(10L, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setLong(2, 125L);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(125L, value.get("2"));
+		assertEquals(125L, preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setLongShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setLong(1, 10L);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10L, value.get("1"));
-
+		assertEquals(10L, preparedStatementOneParam.getParameters().get("1"));
 		this.preparedStatementOneParam.setLong(1, 99L);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(99L, value.get("1"));
+
+		assertEquals(99L, preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setLongShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		this.preparedStatementOneParam.setLong(99, 10L);
+		this.preparedStatementOneParam.setLong(2, 10L);
 	}
 
 	@Test public void setLongShouldThrowExceptionIfClosedPreparedStatement() throws SQLException {
@@ -227,22 +228,18 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setFloatShouldInsertTheCorrectFloatValue() throws SQLException {
 		this.preparedStatementOneParam.setFloat(1, 10.5F);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10.5F, value.get("1"));
+		assertEquals(10.5F, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setFloat(2, 125.5F);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(125.5F, value.get("2"));
+		assertEquals(125.5F, preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setFloatShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setFloat(1, 10.5F);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10.5F, value.get("1"));
+		assertEquals(10.5F, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementOneParam.setFloat(1, 55.5F);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(55.5F, value.get("1"));
+		assertEquals(55.5F, preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setFloatShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -264,22 +261,18 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setDoubleShouldInsertTheCorrectDoubleValue() throws SQLException {
 		this.preparedStatementOneParam.setDouble(1, 10.5);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10.5, value.get("1"));
+		assertEquals(10.5, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setDouble(2, 125.5);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(125.5, value.get("2"));
+		assertEquals(125.5, preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setDoubleShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setDouble(1, 10.5);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(10.5, value.get("1"));
-
+		assertEquals(10.5, preparedStatementOneParam.getParameters().get("1"));
 		this.preparedStatementOneParam.setDouble(1, 55.5);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(55.5, value.get("1"));
+
+		assertEquals(55.5, preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setDoubleShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -301,22 +294,18 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setShortShouldInsertTheCorrectShortValue() throws SQLException {
 		this.preparedStatementOneParam.setShort(1, (short) 10);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals((short) 10, value.get("1"));
+		assertEquals((short) 10, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setShort(2, (short) 125);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals((short) 125, value.get("2"));
+		assertEquals((short) 125, preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setShortShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setShort(1, (short) 10);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals((short) 10, value.get("1"));
-
+		assertEquals((short) 10, preparedStatementOneParam.getParameters().get("1"));
 		this.preparedStatementOneParam.setShort(1, (short) 20);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals((short) 20, value.get("1"));
+
+		assertEquals((short) 20, preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setShortShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -338,22 +327,18 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setStringShouldInsertTheCorrectStringValue() throws SQLException {
 		this.preparedStatementOneParam.setString(1, "string");
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals("string", value.get("1"));
+		assertEquals("string", preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setString(2, "text");
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals("text", value.get("2"));
+		assertEquals("text", preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setStringShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setString(1, "string");
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals("string", value.get("1"));
-
+		assertEquals("string", preparedStatementOneParam.getParameters().get("1"));
 		this.preparedStatementOneParam.setString(1, "otherString");
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals("otherString", value.get("1"));
+
+		assertEquals("otherString", preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setStringShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -375,12 +360,10 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setNullShouldInsertTheCorrectNullValue() throws SQLException {
 		this.preparedStatementOneParam.setNull(1, NULL);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(null, value.get("1"));
+		assertNull(preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setNull(2, NULL);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(null, value.get("2"));
+		assertNull(preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setNullShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -466,8 +449,7 @@ public class BoltNeo4jPreparedStatementTest {
 	/*------------------------------*/
 
 	@Test public void clearParametersShouldDeleteAllParameters() throws SQLException {
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-
+		Map<String, Object> value = preparedStatementOneParam.getParameters();
 		value.put("1", "string");
 		assertEquals(1, value.size());
 
@@ -489,22 +471,18 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void setBooleanShouldInsertTheCorrectBooleanValue() throws SQLException {
 		this.preparedStatementOneParam.setBoolean(1, true);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(true, value.get("1"));
+		assertEquals(true, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setBoolean(2, false);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(false, value.get("2"));
+		assertEquals(false, preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setBooleanShouldOverrideOldValue() throws SQLException {
 		this.preparedStatementOneParam.setBoolean(1, true);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(true, value.get("1"));
-
+		assertEquals(true, preparedStatementOneParam.getParameters().get("1"));
 		this.preparedStatementOneParam.setBoolean(1, false);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(false, value.get("1"));
+
+		assertEquals(false, preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setBooleanShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -528,25 +506,21 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void setObjectShouldInsertTheCorrectObjectValue() throws SQLException {
 		Object obj = new HashMap<>();
 		this.preparedStatementOneParam.setObject(1, obj);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(obj, value.get("1"));
+		assertEquals(obj, preparedStatementOneParam.getParameters().get("1"));
 
 		this.preparedStatementTwoParams.setObject(2, obj);
-		value = Whitebox.getInternalState(this.preparedStatementTwoParams, "parameters");
-		assertEquals(obj, value.get("2"));
+		assertEquals(obj, preparedStatementTwoParams.getParameters().get("2"));
 	}
 
 	@Test public void setObjectShouldOverrideOldValue() throws SQLException {
 		Object obj = new HashMap<>();
 		this.preparedStatementOneParam.setObject(1, obj);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(obj, value.get("1"));
+		assertEquals(obj, preparedStatementOneParam.getParameters().get("1"));
 
 		Object newObj = new ArrayList<>();
 		;
 		this.preparedStatementOneParam.setObject(1, newObj);
-		value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertEquals(newObj, value.get("1"));
+		assertEquals(newObj, preparedStatementOneParam.getParameters().get("1"));
 	}
 
 	@Test public void setObjectShouldThrowExceptionIfIndexDoesNotCorrespondToParameterMarker() throws SQLException {
@@ -573,12 +547,9 @@ public class BoltNeo4jPreparedStatementTest {
 	/*------------------------------*/
 
 	@Test public void getParameterMetaDataShouldReturnANewParameterMetaData() throws Exception {
-		whenNew(BoltNeo4jParameterMetaData.class).withAnyArguments().thenReturn(null);
+		BoltNeo4jParameterMetaData parameterMetaData = (BoltNeo4jParameterMetaData) preparedStatementOneParam.getParameterMetaData();
 
-		this.preparedStatementOneParam.getParameterMetaData();
-
-		verifyNew(BoltNeo4jParameterMetaData.class).withArguments(this.preparedStatementOneParam);
-
+		assertSame(preparedStatementOneParam, parameterMetaData.getPreparedStatement());
 	}
 
 	@Test public void getParameterMetaDataShouldThrowExceptionIfCalledOnClosedStatement() throws Exception {
@@ -632,20 +603,25 @@ public class BoltNeo4jPreparedStatementTest {
 	}
 
 	@Test public void executeQueryShouldReturnCorrectResultSetStructureConnectionNotAutocommit() throws Exception {
-		BoltNeo4jConnectionImpl mockConnection = mockConnectionOpenWithTransactionThatReturns(null);
-
-		PreparedStatement statement = BoltNeo4jPreparedStatement
-				.newInstance(false, mockConnection, "", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		int[] parameters = {ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT};
+		AtomicBoolean called = new AtomicBoolean(false);
+		PreparedStatement statement = new BoltNeo4jPreparedStatement(mockOpenConnectionWithResult(null), (debug, stmt, iterator, params) -> {
+			assertFalse(debug);
+			assertNotNull(stmt);
+			assertNull(iterator);
+			assertArrayEquals(parameters, params);
+			assertTrue(called.compareAndSet(false, true));
+			return expectedResultSet;
+		}, "RETURN 42", parameters);
 		statement.executeQuery();
 
-		verifyStatic(BoltNeo4jResultSet.class);
-		BoltNeo4jResultSet.newInstance(false, statement, null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		assertTrue(called.get());
 	}
 
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnection(), StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
 		statement.executeQuery();
@@ -665,7 +641,7 @@ public class BoltNeo4jPreparedStatementTest {
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
 		PreparedStatement statement = BoltNeo4jPreparedStatement
-				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
+				.newInstance(false, mockOpenConnectionWithResult(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.setString(1, "test");
 		statement.setString(2, "test2");
@@ -675,7 +651,7 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void executeUpdateShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnection(), StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
 		statement.executeUpdate();
@@ -694,7 +670,6 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void executeShouldRunQuery() throws SQLException {
 		BoltNeo4jPreparedStatement statement = mock(BoltNeo4jPreparedStatement.class);
 		when(statement.executeQuery()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_MATCH_ALL);
 
 		statement.execute();
 	}
@@ -710,7 +685,7 @@ public class BoltNeo4jPreparedStatementTest {
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
 		PreparedStatement statement = BoltNeo4jPreparedStatement
-				.newInstance(false, mockConnectionOpenWithTransactionThatReturns(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
+				.newInstance(false, mockOpenConnectionWithResult(mockResult), StatementData.STATEMENT_CREATE_TWO_PROPERTIES_PARAMETRIC,
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.setString(1, "test");
 		statement.setString(2, "test2");
@@ -720,7 +695,7 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void executeShouldThrowExceptionOnQueryOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnection(), StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
 		statement.execute();
@@ -729,7 +704,7 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void executeShouldThrowExceptionOnUpdateOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), StatementData.STATEMENT_CREATE);
+		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnection(), StatementData.STATEMENT_CREATE);
 		statement.close();
 
 		statement.execute();
@@ -740,7 +715,6 @@ public class BoltNeo4jPreparedStatementTest {
 
 		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionClosed(), "", 0, 0, 0);
 		when(statement.executeQuery()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_MATCH_ALL);
 		statement.execute();
 	}
 
@@ -749,7 +723,6 @@ public class BoltNeo4jPreparedStatementTest {
 
 		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionClosed(), "", 0, 0, 0);
 		when(statement.executeUpdate()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "statement", StatementData.STATEMENT_CREATE);
 		statement.execute();
 	}
 
@@ -757,21 +730,16 @@ public class BoltNeo4jPreparedStatementTest {
 	/*        getUpdateCount        */
 	/*------------------------------*/
 	@Test public void getUpdateCountShouldReturnOne() throws SQLException {
-		BoltNeo4jPreparedStatement statement = mock(BoltNeo4jPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(false);
-		when(statement.getUpdateCount()).thenCallRealMethod();
-		final Object o = null;
-		Whitebox.setInternalState(statement, "currentResultSet", o);
-		Whitebox.setInternalState(statement, "currentUpdateCount", 1);
+		Result result = mockResultWithUpdateCount(1);
+		BoltNeo4jPreparedStatement statement = new BoltNeo4jPreparedStatement(mockOpenConnectionWithResult(result), resultSetFactory, "RETURN 42");
+		statement.executeUpdate();
 
 		assertEquals(1, statement.getUpdateCount());
 	}
 
 	@Test public void getUpdateCountShouldReturnMinusOne() throws SQLException {
-		BoltNeo4jPreparedStatement statement = mock(BoltNeo4jPreparedStatement.class);
-		when(statement.isClosed()).thenReturn(false);
-		when(statement.getUpdateCount()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "currentResultSet", mock(BoltNeo4jResultSet.class));
+		ResultSetFactory nullRsFactory = (debug, stmt, iterator, params) -> null;
+		BoltNeo4jPreparedStatement statement = new BoltNeo4jPreparedStatement(mockOpenConnection(), nullRsFactory, "RETURN 42");
 
 		assertEquals(-1, statement.getUpdateCount());
 	}
@@ -779,7 +747,7 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnection(), StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
 		statement.getUpdateCount();
@@ -789,28 +757,25 @@ public class BoltNeo4jPreparedStatementTest {
 	/*         getResultSet         */
 	/*------------------------------*/
 	@Test public void getResultSetShouldNotReturnNull() throws SQLException {
-		BoltNeo4jStatement statement = mock(BoltNeo4jStatement.class);
-		when(statement.isClosed()).thenReturn(false);
-		when(statement.getResultSet()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "currentResultSet", mock(BoltNeo4jResultSet.class));
-		Whitebox.setInternalState(statement, "currentUpdateCount", -1);
+		Result result = mock(Result.class, RETURNS_DEEP_STUBS);
+		BoltNeo4jPreparedStatement statement = new BoltNeo4jPreparedStatement(mockOpenConnectionWithResult(result), resultSetFactory, "RETURN 42");
+		statement.executeQuery();
 
-		assertTrue(statement.getResultSet() != null);
+		assertNotNull(statement.getResultSet());
 	}
 
 	@Test public void getResultSetShouldReturnNull() throws SQLException {
 		BoltNeo4jStatement statement = mock(BoltNeo4jStatement.class);
 		when(statement.isClosed()).thenReturn(false);
 		when(statement.getResultSet()).thenCallRealMethod();
-		Whitebox.setInternalState(statement, "currentUpdateCount", 1);
 
-		assertEquals(null, statement.getResultSet());
+		assertNull(statement.getResultSet());
 	}
 
 	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockConnectionOpen(), StatementData.STATEMENT_MATCH_ALL);
+		PreparedStatement statement = BoltNeo4jPreparedStatement.newInstance(false, mockOpenConnection(), StatementData.STATEMENT_MATCH_ALL);
 		statement.close();
 
 		statement.getResultSet();
@@ -821,15 +786,7 @@ public class BoltNeo4jPreparedStatementTest {
 	/*------------------------------*/
 
 	@Test public void addBatchShouldAddParametersToStack() throws SQLException {
-		PreparedStatement stmt = mock(BoltNeo4jPreparedStatement.class, CALLS_REAL_METHODS);
-		Whitebox.setInternalState(stmt, "batchStatements", new ArrayList<>());
-		String statementString = "MATCH n WHERE id(n) = ? SET n.property=1";
-		String replacedStatementString = PreparedStatementBuilder.replacePlaceholders(statementString);
-		Whitebox.setInternalState(stmt, "statement", replacedStatementString);
-		Whitebox.setInternalState(stmt, "connection", mockConnectionOpenWithTransactionThatReturns(null));
-		Whitebox.setInternalState(stmt, "parametersNumber", PreparedStatementBuilder.namedParameterCount(replacedStatementString));
-		Whitebox.setInternalState(stmt, "parameters", new HashMap<>());
-		Whitebox.setInternalState(stmt, "batchParameters", new ArrayList<>());
+		BoltNeo4jPreparedStatement stmt = new BoltNeo4jPreparedStatement(mockOpenConnection(), resultSetFactory, "RETURN $1");
 
 		stmt.setInt(1, 1);
 		stmt.addBatch();
@@ -844,30 +801,22 @@ public class BoltNeo4jPreparedStatementTest {
 			{
 				this.put("1", 2);
 			}
-		}), Whitebox.getInternalState(stmt, "batchParameters"));
+		}), stmt.getBatchParameters());
 	}
 
 	@Test public void addBatchShouldClearParameters() throws SQLException {
-		PreparedStatement stmt = mock(BoltNeo4jPreparedStatement.class, CALLS_REAL_METHODS);
-		Whitebox.setInternalState(stmt, "batchStatements", new ArrayList<>());
-		String statementString = "MATCH n WHERE id(n) = ? SET n.property=1";
-		String replacedStatementString = PreparedStatementBuilder.replacePlaceholders(statementString);
-		Whitebox.setInternalState(stmt, "statement", replacedStatementString);
-		Whitebox.setInternalState(stmt, "connection", mockConnectionOpenWithTransactionThatReturns(null));
-		Whitebox.setInternalState(stmt, "parametersNumber", PreparedStatementBuilder.namedParameterCount(replacedStatementString));
-		Whitebox.setInternalState(stmt, "parameters", new HashMap<>());
-		Whitebox.setInternalState(stmt, "batchParameters", new ArrayList<>());
-
+		BoltNeo4jPreparedStatement stmt = new BoltNeo4jPreparedStatement(mockOpenConnection(), resultSetFactory, "RETURN $1");
 		stmt.setInt(1, 1);
+
 		stmt.addBatch();
 
-		assertEquals(Collections.EMPTY_MAP, Whitebox.getInternalState(stmt, "parameters"));
+		assertEquals(Collections.EMPTY_MAP, stmt.getParameters());
 	}
 
 	@Test public void addBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockConnectionOpen(), "?");
+		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockOpenConnection(), "?");
 		stmt.setInt(1, 1);
 		stmt.close();
 		stmt.addBatch();
@@ -878,26 +827,18 @@ public class BoltNeo4jPreparedStatementTest {
 	/*------------------------------*/
 
 	@Test public void clearBatchShouldWork() throws SQLException {
-		PreparedStatement stmt = mock(BoltNeo4jPreparedStatement.class, CALLS_REAL_METHODS);
-		Whitebox.setInternalState(stmt, "batchStatements", new ArrayList<>());
-		String statementString = "?";
-		String replacedStatementString = PreparedStatementBuilder.replacePlaceholders(statementString);
-		Whitebox.setInternalState(stmt, "statement", replacedStatementString);
-		Whitebox.setInternalState(stmt, "connection", mockConnectionOpenWithTransactionThatReturns(null));
-		Whitebox.setInternalState(stmt, "parametersNumber", PreparedStatementBuilder.namedParameterCount(replacedStatementString));
-		Whitebox.setInternalState(stmt, "parameters", new HashMap<>());
-		Whitebox.setInternalState(stmt, "batchParameters", new ArrayList<>());
-
+		BoltNeo4jPreparedStatement stmt = new BoltNeo4jPreparedStatement(mockOpenConnection(), resultSetFactory, "RETURN $1");
 		stmt.setInt(1, 1);
+
 		stmt.clearBatch();
 
-		assertEquals(Collections.EMPTY_LIST, Whitebox.getInternalState(stmt, "batchParameters"));
+		assertEquals(Collections.EMPTY_LIST, stmt.getBatchParameters());
 	}
 
 	@Test public void clearBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockConnectionOpen(), "?");
+		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockOpenConnection(), "?");
 		stmt.close();
 		stmt.clearBatch();
 	}
@@ -908,7 +849,7 @@ public class BoltNeo4jPreparedStatementTest {
 
 	@Test public void executeBatchShouldWork() throws SQLException {
 		Transaction transaction = mock(Transaction.class);
-		BoltNeo4jConnectionImpl connection = mockConnectionOpen();
+		BoltNeo4jConnectionImpl connection = mockOpenConnection();
 		when(connection.getTransaction()).thenReturn(transaction);
         when(connection.getAutoCommit()).thenReturn(true);
 
@@ -932,7 +873,7 @@ public class BoltNeo4jPreparedStatementTest {
 	}
 
 	@Test public void executeBatchShouldThrowExceptionOnError() throws SQLException {
-		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockConnectionOpen(), "?");
+		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockOpenConnection(), "?");
 		stmt.setInt(1, 1);
 		stmt.addBatch();
 		stmt.setInt(1, 2);
@@ -973,10 +914,10 @@ public class BoltNeo4jPreparedStatementTest {
 	/*------------------------------*/
 
 	@Test public void getConnectionShouldWork() throws SQLException {
-		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockConnectionOpen(), "?");
+		PreparedStatement stmt = BoltNeo4jPreparedStatement.newInstance(false, Mocker.mockOpenConnection(), "?");
 
 		assertNotNull(stmt.getConnection());
-		assertEquals(Mocker.mockConnectionOpen().getClass(), stmt.getConnection().getClass());
+		assertEquals(Mocker.mockOpenConnection().getClass(), stmt.getConnection().getClass());
 	}
 
 	@Test public void getConnectionShouldThrowExceptionOnClosedStatement() throws SQLException {
@@ -995,7 +936,7 @@ public class BoltNeo4jPreparedStatementTest {
 	@Test public void setArrayShouldInsertTheCorrectArray() throws SQLException {
 		ListArray array = new ListArray(Arrays.asList(1L,2L,4L), INTEGER);
 		this.preparedStatementOneParam.setArray(1, array);
-		HashMap<String, Object> value = Whitebox.getInternalState(this.preparedStatementOneParam, "parameters");
-		assertArrayEquals(new Long[]{1L,2L,4L}, (Long[]) value.get("1"));
+
+		assertArrayEquals(new Long[]{1L,2L,4L}, (Long[]) preparedStatementOneParam.getParameters().get("1"));
 	}
 }

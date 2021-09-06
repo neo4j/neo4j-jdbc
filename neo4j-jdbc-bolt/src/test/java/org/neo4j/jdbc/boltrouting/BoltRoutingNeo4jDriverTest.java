@@ -21,38 +21,28 @@ package org.neo4j.jdbc.boltrouting;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.neo4j.driver.Config;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.jdbc.Neo4jDriver;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.*;
 
 /**
  * @author AgileLARUS
  * @since 3.3.1
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class})
-
 public class BoltRoutingNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
-	@Test public void shoulNotAcceptURL() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
+	@Test public void shoulNotAcceptURL() throws SQLException {
 		Neo4jDriver driver = new BoltRoutingNeo4jDriver();
 		assertFalse(driver.acceptsURL("jdbc:neo4j:http://localhost:7687"));
 		assertFalse(driver.acceptsURL("jdbc:file://192.168.0.1:7687"));
 		assertFalse(driver.acceptsURL("bolt://localhost:7687"));
 	}
 
-	@Test public void shouldThrowException() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException, SQLException {
+	@Test public void shouldThrowException() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
 		Neo4jDriver driver = new BoltRoutingNeo4jDriver();

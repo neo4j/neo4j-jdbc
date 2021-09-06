@@ -44,7 +44,7 @@ public abstract class Neo4jPreparedStatement extends Neo4jStatement implements P
 	protected String                    statement;
 	protected HashMap<String, Object>   parameters;
 	protected List<Map<String, Object>> batchParameters;
-	private   int                       parametersNumber;
+	protected int                       parametersNumber;
 	private static final List<Integer> UNSUPPORTED_TYPES = Collections .unmodifiableList(
 			Arrays.asList(
 					ARRAY,

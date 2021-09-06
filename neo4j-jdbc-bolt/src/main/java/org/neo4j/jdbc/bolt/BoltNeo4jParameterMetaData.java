@@ -27,12 +27,13 @@ import org.neo4j.jdbc.Neo4jParameterMetaData;
  */
 public class BoltNeo4jParameterMetaData extends Neo4jParameterMetaData {
 
-	private BoltNeo4jPreparedStatement preparedStatement;
+	private final BoltNeo4jPreparedStatement preparedStatement;
 
 	public BoltNeo4jParameterMetaData(BoltNeo4jPreparedStatement preparedStatement) {
 		this.preparedStatement = preparedStatement;
 	}
 
+	// visible for testing
 	public BoltNeo4jPreparedStatement getPreparedStatement() {
 		return preparedStatement;
 	}

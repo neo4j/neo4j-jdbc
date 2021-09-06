@@ -74,9 +74,4 @@ public class BoltDriverCache {
     public Map<BoltDriverCacheKey, Driver> getCache() {
         return Collections.unmodifiableMap(cache);
     }
-
-    // visible for testing
-    public void clear() {
-        cache.clear();
-    }
 }

@@ -31,8 +31,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author AgileLARUS
@@ -57,7 +58,7 @@ public class HttpNeo4jResultSetMetaDataTest {
 		row.add(1.2);
 		row.add(1.2F);
 		row.add(new HashMap<>());
-		row.add(new ArrayList());
+		row.add(new ArrayList<>());
 
 		map.put("row", row);
 
@@ -69,7 +70,7 @@ public class HttpNeo4jResultSetMetaDataTest {
 	}
 	@Test
 	public void getColumnClassNameShouldReturnTheCorrectValue() throws SQLException {
-		assertEquals(null, this.httpResultSetMetadata.getColumnClassName(1));
+		assertNull(this.httpResultSetMetadata.getColumnClassName(1));
 		assertEquals("java.lang.String", this.httpResultSetMetadata.getColumnClassName(2));
 		assertEquals("java.lang.Long", this.httpResultSetMetadata.getColumnClassName(3));
 		assertEquals("java.lang.Long", this.httpResultSetMetadata.getColumnClassName(4));

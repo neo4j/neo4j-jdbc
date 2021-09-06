@@ -107,7 +107,8 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	 *                  The defaults are <code>TYPE_FORWARD_ONLY</code>,
 	 *                  <code>CONCUR_READ_ONLY</code>,
 	 */
-	private BoltNeo4jResultSet(Statement statement, Result iterator, int... params) {
+	// visible for testing
+	BoltNeo4jResultSet(Statement statement, Result iterator, int... params) {
 		super(statement, params);
 		List<Record> recordList = iterator != null ? iterator.list() : Collections.emptyList();
 		Optional<Record> first = recordList.stream().findFirst();

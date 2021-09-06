@@ -56,13 +56,21 @@ public class BoltDriver extends BoltNeo4jDriverImpl {
 		}
 	}
 
+	private final DriverFactory driverFactory;
+
 	public BoltDriver() throws SQLException {
+		this(cache::getDriver);
+	}
+
+	// visible for testing
+	protected BoltDriver(DriverFactory driverFactory) {
 		super(JDBC_BOLT_PREFIX);
+		this.driverFactory = driverFactory;
 	}
 
 	@Override
-	protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
-		return cache.getDriver(routingUris, config, authToken, info);
+	protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) {
+		return driverFactory.createDriver(routingUris, config, authToken, info);
 	}
 
 	@Override
@@ -79,9 +87,4 @@ public class BoltDriver extends BoltNeo4jDriverImpl {
     protected List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException {
         return Arrays.asList(new URI(boltUrl));
     }
-
-	// visible for testing
-	public static void clearCache() {
-		cache.clear();
-	}
 }
