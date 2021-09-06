@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.internal.SecuritySettings;
 import org.neo4j.driver.internal.async.pool.PoolSettings;
 import org.neo4j.driver.internal.security.InternalAuthToken;
 import org.neo4j.jdbc.Neo4jDriver;
@@ -64,7 +65,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
  * @since 3.0.0
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class})
+@PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class, SecuritySettings.class})
 
 public class BoltNeo4jDriverTest {
 
@@ -134,6 +135,7 @@ public class BoltNeo4jDriverTest {
 	@Test public void shouldAcceptTrustStrategyParamsSystemCertificates() throws SQLException, URISyntaxException {
 		PowerMockito.mockStatic(GraphDatabase.class);
 		PowerMockito.mockStatic(Config.TrustStrategy.class);
+		PowerMockito.mockStatic(SecuritySettings.class);
 		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
 
 		Properties properties = new Properties();
