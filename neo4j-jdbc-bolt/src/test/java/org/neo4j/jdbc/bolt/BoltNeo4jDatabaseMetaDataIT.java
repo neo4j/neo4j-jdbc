@@ -35,6 +35,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -42,6 +43,9 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.isV3;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.isV4;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
 
 /**
  * Neo4jDatabaseMetaData IT Tests class
@@ -50,7 +54,7 @@ public class BoltNeo4jDatabaseMetaDataIT {
 
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	Connection connection;
 
@@ -79,9 +83,9 @@ public class BoltNeo4jDatabaseMetaDataIT {
 			statement.execute("create (a:A {one:1, two:2})");
 			statement.execute("create (b:B {three:3, four:4})");
 		}
-		
+
 		ResultSet labels = connection.getMetaData().getTables(null, null, null, null);
-		
+
 		assertNotNull(labels);
 		assertTrue(labels.next());
 		assertEquals("A", labels.getString("TABLE_NAME"));
@@ -251,8 +255,12 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertTrue(resultSet.next());
 		assertEquals("Bar", resultSet.getString("TABLE_NAME"));
 		assertFalse(resultSet.getBoolean("NON_UNIQUE"));
-		assertTrue(resultSet.getString("INDEX_NAME").startsWith("constraint_"));
-		assertTrue(resultSet.getString("INDEX_QUALIFIER").startsWith("constraint_"));
+		String prefix = "constraint_";
+		if (isV3(neo4j)) {
+			prefix = "index";
+		}
+		assertTrue(resultSet.getString("INDEX_NAME").toLowerCase(Locale.ROOT).startsWith(prefix));
+		assertTrue(resultSet.getString("INDEX_QUALIFIER").toLowerCase(Locale.ROOT).startsWith(prefix));
 		assertEquals(3, resultSet.getInt("TYPE"));
 		assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
 		assertEquals("uuid", resultSet.getString("COLUMN_NAME"));
@@ -278,8 +286,12 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertTrue(resultSet.next());
 		assertEquals("Bar Ext", resultSet.getString("TABLE_NAME"));
 		assertFalse(resultSet.getBoolean("NON_UNIQUE"));
-		assertTrue(resultSet.getString("INDEX_NAME").startsWith("constraint_"));
-		assertTrue(resultSet.getString("INDEX_QUALIFIER").startsWith("constraint_"));
+		String prefix = "constraint_";
+		if (isV3(neo4j)) {
+			prefix = "index";
+		}
+		assertTrue(resultSet.getString("INDEX_NAME").toLowerCase(Locale.ROOT).startsWith(prefix));
+		assertTrue(resultSet.getString("INDEX_QUALIFIER").toLowerCase(Locale.ROOT).startsWith(prefix));
 		assertEquals(3, resultSet.getInt("TYPE"));
 		assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
 		assertEquals("uuid", resultSet.getString("COLUMN_NAME"));
@@ -318,8 +330,8 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertTrue(resultSet.next());
 		assertEquals("Bar", resultSet.getString("TABLE_NAME"));
 		assertTrue(resultSet.getBoolean("NON_UNIQUE"));
-		assertTrue(resultSet.getString("INDEX_NAME").startsWith("index_"));
-		assertTrue(resultSet.getString("INDEX_QUALIFIER").startsWith("index_"));
+		assertTrue(resultSet.getString("INDEX_NAME").toLowerCase(Locale.ROOT).startsWith("index"));
+		assertTrue(resultSet.getString("INDEX_QUALIFIER").toLowerCase(Locale.ROOT).startsWith("index"));
 		assertEquals(3, resultSet.getInt("TYPE"));
 		assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
 		assertEquals("uuid", resultSet.getString("COLUMN_NAME"));

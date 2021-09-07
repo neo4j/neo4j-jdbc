@@ -50,7 +50,7 @@ public class DriverTestIT {
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
 		Driver driver = new Driver();
@@ -112,4 +112,12 @@ public class DriverTestIT {
 		verify(mysqlDriver, times(1)).connect(anyString(), any(Properties.class));
 	}
 
+	// duplicate of neo4j-jdbc-bolt ContainerUtils
+	private static String neo4jImageCoordinates() {
+		String neo4jVersion = System.getenv("NEO4J_VERSION");
+		if (neo4jVersion == null) neo4jVersion = "4.3";
+		String enterpriseEdition = System.getenv("NEO4J_ENTERPRISE_EDITION");
+		if (enterpriseEdition == null) enterpriseEdition = "false";
+		return String.format("neo4j:%s%s", neo4jVersion, Boolean.parseBoolean(enterpriseEdition) ? "-enterprise": "");
+	}
 }

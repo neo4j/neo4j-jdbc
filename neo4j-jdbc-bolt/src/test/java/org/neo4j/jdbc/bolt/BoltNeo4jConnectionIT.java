@@ -55,6 +55,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
 
 /**
  * @author AgileLARUS
@@ -63,7 +64,7 @@ import static org.junit.Assert.assertTrue;
 public class BoltNeo4jConnectionIT {
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	Connection writer;

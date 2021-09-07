@@ -48,6 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.neo4j.driver.internal.types.InternalTypeSystem.TYPE_SYSTEM;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
 
 /**
  * @author AgileLARUS
@@ -58,7 +59,7 @@ public class BoltNeo4jResultSetMetaDataIT {
 	static Connection connectionFlatten;
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
 	@Before public void setUp() {
 		connectionFlatten = JdbcConnectionTestUtils.verifyConnection(connectionFlatten, neo4j,",flatten=1");
@@ -68,8 +69,8 @@ public class BoltNeo4jResultSetMetaDataIT {
 		JdbcConnectionTestUtils.clearDatabase(neo4j);
 	}
 
-	@AfterClass
-	public static void tearDownConnection(){
+	@After
+	public void tearDownConnection(){
 		JdbcConnectionTestUtils.closeConnection(connectionFlatten);
 	}
 

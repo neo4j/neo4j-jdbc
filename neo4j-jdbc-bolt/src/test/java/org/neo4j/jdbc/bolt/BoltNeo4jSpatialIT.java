@@ -1,5 +1,6 @@
 package org.neo4j.jdbc.bolt;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -18,6 +19,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
 
 /**
   * Test for the spatial objects (point)
@@ -25,7 +27,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class BoltNeo4jSpatialIT {
     @ClassRule
-    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
 
     static Connection connection;
 
@@ -35,8 +37,8 @@ public class BoltNeo4jSpatialIT {
         connection = JdbcConnectionTestUtils.verifyConnection(connection, neo4j);
     }
 
-    @AfterClass
-    public static void tearDown(){
+    @After
+    public void tearDown(){
         JdbcConnectionTestUtils.closeConnection(connection);
     }
 

@@ -81,7 +81,7 @@ public class BoltDriver extends BoltNeo4jDriverImpl {
     }
 
 	// visible for testing
-	protected static void clearCache() {
+	public static void clearCache() {
 		cache.clear();
 	}
 }
