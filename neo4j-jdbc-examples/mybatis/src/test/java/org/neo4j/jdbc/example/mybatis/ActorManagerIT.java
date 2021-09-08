@@ -29,8 +29,13 @@ import org.junit.Test;
 import org.neo4j.jdbc.example.mybatis.bean.Actor;
 import org.neo4j.jdbc.example.mybatis.util.ActorManager;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 import java.net.URI;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 
 /**
  * @author AgileLARUS
@@ -41,6 +46,9 @@ public class ActorManagerIT extends MybatisTestUtil {
 
 	@ClassRule
 	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
+			.waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
+					.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
+					.withStrategy( new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
 			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.withAdminPassword(null);
 

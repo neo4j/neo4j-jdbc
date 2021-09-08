@@ -3,17 +3,24 @@ package org.neo4j.jdbc.http;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 
 public class HttpNeo4jConnectionWithAuthenticationIT {
 
     @ClassRule
-    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
+            .waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
+                    .withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
+            .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
 
     @Test(expected = SQLException.class)
     public void shouldThrowExceptionWithoutAuthenticationWhenItsRequired() throws SQLException {

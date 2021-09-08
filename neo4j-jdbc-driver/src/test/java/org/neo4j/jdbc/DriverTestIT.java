@@ -31,6 +31,9 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
 import org.neo4j.jdbc.http.HttpNeo4jConnection;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 import java.net.URI;
 import java.sql.Connection;
@@ -38,6 +41,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -50,16 +54,20 @@ public class DriverTestIT {
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+			.waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
+					.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
+					.withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
+			.withAdminPassword(null);
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:http://localhost:" + URI.create(neo4j.getHttpUrl()).getPort(), new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.getHttpUrl(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 	@Test public void shouldReturnAHttpConnection2() throws SQLException {
 		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:http:localhost:" + URI.create(neo4j.getHttpUrl()).getPort(), new Properties());
+		Connection connection = driver.connect("jdbc:neo4j:" +  neo4j.getHttpUrl(), new Properties());
 		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
 	}
 

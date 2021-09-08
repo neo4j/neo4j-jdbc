@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainer;
 
 /**
  * @author AgileLARUS
@@ -58,7 +58,7 @@ import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinate
 public class BoltNeo4jPreparedStatementIT {
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = createNeo4jContainer();
 
 	static Connection connection;
 

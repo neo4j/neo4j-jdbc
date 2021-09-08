@@ -19,13 +19,9 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runners.MethodSorters;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 import org.testcontainers.containers.Neo4jContainer;
@@ -39,7 +35,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainer;
 
 /**
  * @author AgileLARUS
@@ -48,9 +44,7 @@ import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinate
 public class BoltNeo4jResultSetIT {
 
 	@Rule
-	public final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates())
-			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-			.withAdminPassword(null);
+	public final Neo4jContainer<?> neo4j = createNeo4jContainer();
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 

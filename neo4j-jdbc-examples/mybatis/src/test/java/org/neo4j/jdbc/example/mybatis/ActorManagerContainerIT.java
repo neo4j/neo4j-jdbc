@@ -40,6 +40,7 @@ import org.neo4j.jdbc.example.mybatis.mapper.ActorMapper;
 import org.neo4j.jdbc.example.mybatis.util.ActorManager;
 import org.neo4j.jdbc.example.mybatis.util.ConnectionFactory;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 
 import javax.sql.DataSource;
 import java.net.URI;
@@ -75,6 +76,7 @@ public class ActorManagerContainerIT {
 	public static void setUp() throws URISyntaxException {
 		try {
 			neo4jContainer = (Neo4jContainer) new Neo4jContainer("neo4j:4.0.2-enterprise")
+					.waitingFor(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
 					.withEnv("NEO4J_AUTH", "neo4j/password")
 					.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
 			neo4jContainer.start();
