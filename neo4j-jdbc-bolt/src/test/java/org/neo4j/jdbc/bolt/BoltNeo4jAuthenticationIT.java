@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.exceptions.ClientException;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -34,7 +33,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.hamcrest.CoreMatchers.isA;
-import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainerWithDefaultPassword;
 
 
 /**
@@ -43,18 +42,15 @@ import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinate
  */
 public class BoltNeo4jAuthenticationIT {
 
-	// Neo4jContainer overwrites the default password so in order to replicate a use-case
-	// where we use the default password that needs to be changed we use a GenericContainer
 	@ClassRule
-	public static final GenericContainer<?> neo4j = new GenericContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-			.waitingFor((new LogMessageWaitStrategy()).withRegEx(String.format(".*Bolt enabled on 0\\.0\\.0\\.0:%d\\.\n", 7687)));
+	public static final GenericContainer<?> neo4j = createNeo4jContainerWithDefaultPassword();
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	private String NEO4J_JDBC_BOLT_URL;
 
 	@Before public void setup() {
-		NEO4J_JDBC_BOLT_URL = "jdbc:neo4j:" + String.format("bolt://" + neo4j.getHost() + ":" + neo4j.getMappedPort(7687));
+		NEO4J_JDBC_BOLT_URL = String.format("jdbc:neo4j:bolt://%s:%d", neo4j.getHost(), neo4j.getMappedPort(7687));
 	}
 
 	@Test public void shouldAuthenticate() throws SQLException {

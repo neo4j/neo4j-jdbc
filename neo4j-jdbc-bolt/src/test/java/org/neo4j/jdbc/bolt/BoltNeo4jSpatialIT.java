@@ -19,7 +19,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainer;
 
 /**
   * Test for the spatial objects (point)
@@ -27,7 +27,7 @@ import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinate
  */
 public class BoltNeo4jSpatialIT {
     @ClassRule
-    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+    public static final Neo4jContainer<?> neo4j = createNeo4jContainer();
 
     static Connection connection;
 

@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainer;
 
 public class TestcontainersCausalCluster {
     private static final int DEFAULT_BOLT_PORT = 7687;
@@ -124,7 +124,7 @@ public class TestcontainersCausalCluster {
                                                                       ClusterInstanceType instanceType,
                                                                       Map<String, Object> neo4jConfig,
                                                                       String name) {
-        Neo4jContainer<?> container = new Neo4jContainer<>(neo4jImageCoordinates())
+        Neo4jContainer<?> container = createNeo4jContainer()
                 .withNeo4jConfig("dbms.mode", instanceType.toString())
                 .withNeo4jConfig("dbms.connectors.default_listen_address", "0.0.0.0")
                 .withNeo4jConfig("dbms.connectors.default_advertised_address", name)

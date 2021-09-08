@@ -10,6 +10,9 @@ import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,6 +24,7 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertThat;
@@ -109,6 +113,9 @@ public class CypherExecutorContainerIT {
 	private static Neo4jContainer<?> startEnterpriseDockerContainer(String version, String username, String password) {
 		try {
 			Neo4jContainer<?> container = new Neo4jContainer<>(version)
+					.waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
+							.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
+							.withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
 					.withEnv("NEO4J_AUTH", String.format("%s/%s", username, password))
 					.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
 			container.start();

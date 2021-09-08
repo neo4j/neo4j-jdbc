@@ -29,9 +29,14 @@ import org.junit.runners.Parameterized;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 import java.util.Arrays;
 import java.util.Scanner;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 
 @RunWith(Parameterized.class)
 public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
@@ -45,7 +50,12 @@ public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
     public Boolean secureMode;
 
     @ClassRule
-    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise").withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
+            .waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
+                    .withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
+                    .withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
+            .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+            .withAdminPassword(null);
 
     @BeforeClass
     public static void beforeClass() {

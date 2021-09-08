@@ -45,7 +45,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.isV3;
 import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.isV4;
-import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
+import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainer;
 
 /**
  * Neo4jDatabaseMetaData IT Tests class
@@ -54,7 +54,7 @@ public class BoltNeo4jDatabaseMetaDataIT {
 
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes").withAdminPassword(null);
+	public static final Neo4jContainer<?> neo4j = createNeo4jContainer();
 
 	Connection connection;
 
