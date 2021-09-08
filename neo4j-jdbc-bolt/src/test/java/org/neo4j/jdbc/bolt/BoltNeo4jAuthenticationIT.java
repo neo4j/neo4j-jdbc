@@ -32,6 +32,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 
 import static org.hamcrest.CoreMatchers.isA;
 import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.neo4jImageCoordinates;
@@ -46,8 +47,10 @@ public class BoltNeo4jAuthenticationIT {
 	// Neo4jContainer overwrites the default password so in order to replicate a use-case
 	// where we use the default password that needs to be changed we use a GenericContainer
 	@ClassRule
-	public static final GenericContainer<?> neo4j = new GenericContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-			.waitingFor((new LogMessageWaitStrategy()).withRegEx(String.format(".*Bolt enabled on 0\\.0\\.0\\.0:%d\\.\n", 7687)));
+	public static final GenericContainer<?> neo4j = new GenericContainer<>(neo4jImageCoordinates()).
+			withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+			.waitingFor((new LogMessageWaitStrategy()).withRegEx(String.format(".*Bolt enabled on 0\\.0\\.0\\.0:%d\\.\n", 7687)))
+			.withStartupTimeout(Duration.ofMinutes(2L));
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
