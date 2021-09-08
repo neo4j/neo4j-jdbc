@@ -19,57 +19,40 @@
  */
 package org.neo4j.jdbc.bolt;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.mockito.Mockito;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
-import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.internal.SecuritySettings;
 import org.neo4j.driver.internal.async.pool.PoolSettings;
-import org.neo4j.driver.internal.security.InternalAuthToken;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 import org.neo4j.jdbc.bolt.utils.Mocker;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.util.Collections.singletonMap;
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.internal.verification.VerificationModeFactory.atLeastOnce;
-import static org.neo4j.driver.Values.value;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+import static org.neo4j.driver.Config.TrustStrategy.Strategy.TRUST_SYSTEM_CA_SIGNED_CERTIFICATES;
+import static org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils.PASSWORD;
+import static org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils.USERNAME;
 
 /**
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class, SecuritySettings.class})
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+
 public class BoltNeo4jDriverTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -82,39 +65,28 @@ public class BoltNeo4jDriverTest {
 		mockedDriver = Mocker.mockDriver();
 	}
 
-	@After
-	public void prepare() {
-		BoltDriver.clearCache();
-	}
-
 	/*------------------------------*/
 	/*           connect            */
 	/*------------------------------*/
 	//WARNING!! NOT COMPLETE TEST!! Needs tests for parameters
 
-	@Test public void shouldConnectCreateConnection() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
-
-		Neo4jDriver driver = new BoltDriver();
+	@Test public void shouldConnectCreateConnection() throws SQLException {
+		Neo4jDriver driver = new BoltDriver((routingUris, config, authToken, info) -> mockedDriver);
 		Connection connection = driver.connect(COMPLETE_VALID_URL, null);
 		assertNotNull(connection);
 	}
 
 	@Test public void shouldConnectCreateConnectionWithNoAuthTokenWithPropertiesObjectWithoutUserAndPassword() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
-
 		Properties properties = new Properties();
 		properties.put("test", "TEST_VALUE");
 
-		Neo4jDriver driver = new BoltDriver();
+		Neo4jDriver driver = new BoltDriver((routingUris, config, authToken, info) -> mockedDriver);
 		Connection connection = driver.connect(COMPLETE_VALID_URL, properties);
 		assertNotNull(connection);
 	}
 
 	@Test public void shouldConnectReturnNullIfUrlNotValid() throws SQLException {
-		Neo4jDriver driver = new BoltDriver();
+		Neo4jDriver driver = new BoltDriver((routingUris, config, authToken, info) -> mockedDriver);
 		assertNull(driver.connect("jdbc:neo4j:http://localhost:7474", null));
 		assertNull(driver.connect("bolt://localhost:7474", null));
 		assertNull(driver.connect("jdbcbolt://localhost:7474", null));
@@ -123,63 +95,41 @@ public class BoltNeo4jDriverTest {
 
 	@Test public void shouldConnectThrowExceptionOnNullURL() throws SQLException {
 		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("null is not a valid url");
 
-		Neo4jDriver driver = new BoltDriver();
+		Neo4jDriver driver = new BoltDriver((routingUris, config, authToken, info) -> mockedDriver);
 		driver.connect(null, null);
 	}
 
 	@Test public void shouldConnectThrowExceptionOnConnectionFailed() throws SQLException {
 		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("Unable to connect to somehost:9999");
 
 		Neo4jDriver driver = new BoltDriver();
 		driver.connect("jdbc:neo4j:bolt://somehost:9999", null);
 	}
 
 	@Test public void shouldAcceptTrustStrategyParamsSystemCertificates() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-		PowerMockito.mockStatic(Config.TrustStrategy.class);
-		PowerMockito.mockStatic(SecuritySettings.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
-
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_SYSTEM_CA_SIGNED_CERTIFICATES");
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, info) -> {
+			assertEquals(TRUST_SYSTEM_CA_SIGNED_CERTIFICATES, config.trustStrategy().strategy());
+			assertTrue(called.compareAndSet(false, true));
+			return mockedDriver;
+		});
 
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 
-		verifyStatic(Config.TrustStrategy.class, atLeastOnce());
-		Config.TrustStrategy.trustSystemCertificates();
+		assertTrue(called.get());
 	}
 
-	@Test public void shouldAcceptTrustStrategyParamsCustomCertificateWithoutFile() throws SQLException {
+	@Test public void shouldNotAcceptTrustStrategyParamsCustomCertificateWithoutFile() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		PowerMockito.mockStatic(Config.TrustStrategy.class);
+		expectedEx.expectMessage("Missing parameter 'trusted.certificate.file'");
 
 		Properties properties = new Properties();
 		properties.put("trust.strategy", "TRUST_CUSTOM_CA_SIGNED_CERTIFICATES");
-
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, properties);
-	}
-
-	@Test public void shouldAcceptTrustStrategyParamsTrustFirstUseWithoutFile() throws SQLException {
-		expectedEx.expect(SQLException.class);
-		PowerMockito.mockStatic(Config.TrustStrategy.class);
-
-		Properties properties = new Properties();
-		properties.put("trust.strategy", "TRUST_ON_FIRST_USE");
-
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, properties);
-	}
-
-	@Test public void shouldAcceptTrustStrategyParamsTrustSignedWithoutFile() throws SQLException {
-		expectedEx.expect(SQLException.class);
-		PowerMockito.mockStatic(Config.TrustStrategy.class);
-
-		Properties properties = new Properties();
-		properties.put("trust.strategy", "TRUST_SIGNED_CERTIFICATES");
-
 		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, properties);
 	}
@@ -222,56 +172,41 @@ public class BoltNeo4jDriverTest {
 	/*------------------------------*/
 	/*          Config              */
 	/*------------------------------*/
-	@Test public void shouldNotRequireConfiguration() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+	@Test public void shouldNotRequireConfiguration() throws SQLException {
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(PoolSettings.DEFAULT_CONNECTION_ACQUISITION_TIMEOUT, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(PoolSettings.DEFAULT_IDLE_TIME_BEFORE_CONNECTION_TEST, config.idleTimeBeforeConnectionTest());
 			assertEquals((int) TimeUnit.SECONDS.toMillis( 30 ), config.connectionTimeoutMillis());
 			assertFalse(config.encrypted());
 			assertFalse(config.logLeakedSessions());
-			// assertEquals(Config.LoadBalancingStrategy.LEAST_CONNECTED, config.loadBalancingStrategy());
 			assertEquals(PoolSettings.DEFAULT_MAX_CONNECTION_LIFETIME, config.maxConnectionLifetimeMillis());
 			assertEquals(PoolSettings.DEFAULT_MAX_CONNECTION_POOL_SIZE, config.maxConnectionPoolSize());
-
+			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties properties = new Properties();
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, properties);
+		driver.connect(COMPLETE_VALID_URL, new Properties());
+
+		assertTrue(called.get());
 	}
 
-	@Test public void shouldOverrideConfiguration_byUrl_empty_properties() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+	@Test public void shouldOverrideConfiguration_byUrl_empty_properties() throws SQLException {
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
 			assertEquals(123_000, config.connectionTimeoutMillis());
-			assertEquals(true, config.encrypted());
-			assertEquals(true, config.logLeakedSessions());
-			// assertEquals(Config.LoadBalancingStrategy.ROUND_ROBIN, config.loadBalancingStrategy());
+			assertTrue(config.encrypted());
+			assertTrue(config.logLeakedSessions());
 			assertEquals(123_000, config.maxConnectionLifetimeMillis());
 			assertEquals(3, config.maxConnectionPoolSize());
 			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-
-		PowerMockito.mockStatic(AuthTokens.class);
-
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), Mockito.eq(null))).thenReturn(new InternalAuthToken( singletonMap( "scheme", value( "none" ) ) ));
-		Mockito.when(AuthTokens.none()).thenCallRealMethod();
-
-		Properties properties = new Properties();
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10" +
 				"&connection.liveness.check.timeout=10" +
 				"&connection.timeout=123000" +
@@ -281,34 +216,26 @@ public class BoltNeo4jDriverTest {
 				"&max.connection.lifetime=123000" +
 				"&max.connection.poolsize=3" +
 				"&trust.strategy=TRUST_SYSTEM_CA_SIGNED_CERTIFICATES" +
-				"&max.transaction.retry.time=1000", properties);
+				"&max.transaction.retry.time=1000", new Properties());
+
+		assertTrue(called.get());
 	}
 
-	@Test public void shouldOverrideConfiguration_byUrl_no_properties() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+	@Test public void shouldOverrideConfiguration_byUrl_no_properties() throws SQLException {
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
 			assertEquals(123_000, config.connectionTimeoutMillis());
-			assertEquals(true, config.encrypted());
-			assertEquals(true, config.logLeakedSessions());
-//			// assertEquals(Config.LoadBalancingStrategy.ROUND_ROBIN, config.loadBalancingStrategy());
+			assertTrue(config.encrypted());
+			assertTrue(config.logLeakedSessions());
 			assertEquals(123_000, config.maxConnectionLifetimeMillis());
 			assertEquals(3, config.maxConnectionPoolSize());
 			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		PowerMockito.mockStatic(AuthTokens.class);
-
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), Mockito.eq(null))).thenReturn(new InternalAuthToken( singletonMap( "scheme", value( "none" ) ) ));
-		Mockito.when(AuthTokens.none()).thenCallRealMethod();
-
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10" +
 				"&connection.liveness.check.timeout=10" +
 				"&connection.timeout=123000" +
@@ -319,38 +246,30 @@ public class BoltNeo4jDriverTest {
 				"&max.connection.poolsize=3" +
 				"&trust.strategy=TRUST_SYSTEM_CA_SIGNED_CERTIFICATES" +
 				"&max.transaction.retry.time=1000", null);
+
+		assertTrue(called.get());
 	}
 
-	@Test public void shouldOverrideConfiguration_byUrl_mix_properties() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
-			assertEquals(600000, config.idleTimeBeforeConnectionTest());
-			assertEquals(123_000, config.connectionTimeoutMillis());
-			assertEquals(true, config.encrypted());
-			assertEquals(true, config.logLeakedSessions());
-			// assertEquals(Config.LoadBalancingStrategy.ROUND_ROBIN, config.loadBalancingStrategy());
-			assertEquals(123_000, config.maxConnectionLifetimeMillis());
-			assertEquals(3, config.maxConnectionPoolSize());
-			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
-
-			return mockedDriver;
-		});
-
-		PowerMockito.mockStatic(AuthTokens.class);
-
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), Mockito.eq(null))).thenReturn(new InternalAuthToken( singletonMap( "scheme", value( "none" ) ) ));
-		Mockito.when(AuthTokens.none()).thenCallRealMethod();
-
+	@Test public void shouldOverrideConfiguration_byUrl_mix_properties() throws SQLException {
+		AtomicBoolean called = new AtomicBoolean(false);
 		Properties prop = new Properties();
 		prop.setProperty("connection.acquisition.timeout","20");
 		prop.setProperty("connection.liveness.check.timeout","20");
 		prop.setProperty("connection.timeout","321000");
 
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, info) -> {
+			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
+			assertEquals(600000, config.idleTimeBeforeConnectionTest());
+			assertEquals(123_000, config.connectionTimeoutMillis());
+			assertTrue(config.encrypted());
+			assertTrue(config.logLeakedSessions());
+			assertEquals(123_000, config.maxConnectionLifetimeMillis());
+			assertEquals(3, config.maxConnectionPoolSize());
+			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
+			assertTrue(called.compareAndSet(false, true));
+			return mockedDriver;
+		});
+
 		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10" +
 				"&connection.liveness.check.timeout=10" +
 				"&connection.timeout=123000" +
@@ -361,476 +280,290 @@ public class BoltNeo4jDriverTest {
 				"&max.connection.poolsize=3" +
 				"&trust.strategy=TRUST_SYSTEM_CA_SIGNED_CERTIFICATES" +
 				"&max.transaction.retry.time=1000", prop);
+
+		assertTrue(called.get());
 	}
 
-	@Test public void shouldOverrideAuthentication_all_default() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
+	@Test public void shouldOverrideAuthentication_all_default() throws SQLException {
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertEquals(AuthTokens.none(), authToken);
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		PowerMockito.mockStatic(AuthTokens.class);
+		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10", new Properties());
 
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), Mockito.eq(null))).thenThrow(new IllegalArgumentException("Called basic auth instead of None"));
-		Mockito.when(AuthTokens.none()).thenCallRealMethod();
-
-		Properties prop = new Properties();
-
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10", prop);
+		assertTrue(called.get());
 	}
 
-	@Test public void shouldOverrideAuthentication_prop() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
+	@Test public void shouldOverrideAuthentication_prop() throws SQLException {
+		AtomicBoolean called = new AtomicBoolean(false);
+		Properties info = JdbcConnectionTestUtils.defaultInfo();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertEquals(AuthTokens.basic(USERNAME, PASSWORD), authToken);
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		PowerMockito.mockStatic(AuthTokens.class);
+		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10", info);
 
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), anyString())).thenThrow(new IllegalArgumentException("Wrong username"));
-		Mockito.when(AuthTokens.basic(Mockito.eq(JdbcConnectionTestUtils.USERNAME), Mockito.eq(JdbcConnectionTestUtils.PASSWORD))).thenReturn(new InternalAuthToken( singletonMap( "scheme", value( "none" ) ) ));
-		Mockito.when(AuthTokens.none()).thenThrow(new IllegalArgumentException("Called none auth instead of basic"));
-
-		Properties prop = JdbcConnectionTestUtils.defaultInfo();
-
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10", prop);
+		assertTrue(called.get());
 	}
 
 	@Test public void shouldOverrideAuthentication_url() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertEquals(AuthTokens.basic(USERNAME, PASSWORD), authToken);
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		PowerMockito.mockStatic(AuthTokens.class);
+		driver.connect(
+				String.format("%s?connection.acquisition.timeout=10&user=%s&password=%s", COMPLETE_VALID_URL, USERNAME, JdbcConnectionTestUtils.PASSWORD),
+				new Properties()
+		);
 
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), anyString())).thenThrow(new IllegalArgumentException("Wrong username"));
-		Mockito.when(AuthTokens.basic(Mockito.eq(JdbcConnectionTestUtils.USERNAME), Mockito.eq(JdbcConnectionTestUtils.PASSWORD))).thenReturn(new InternalAuthToken( singletonMap( "scheme", value( "none" ) ) ));
-		Mockito.when(AuthTokens.none()).thenThrow(new IllegalArgumentException("Called none auth instead of basic"));
-
-		Properties prop = new Properties();
-
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10&user="+JdbcConnectionTestUtils.USERNAME+"&password="+JdbcConnectionTestUtils.PASSWORD, prop);
+		assertTrue(called.get());
 	}
 
 	@Test public void shouldOverrideAuthentication_prop_url() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			return mockedDriver;
-		});
-
-		PowerMockito.mockStatic(AuthTokens.class);
-
-		Mockito.when(AuthTokens.basic(Mockito.eq("neo4j"), anyString())).thenThrow(new IllegalArgumentException("Wrong username"));
-		Mockito.when(AuthTokens.basic(Mockito.eq(JdbcConnectionTestUtils.USERNAME), Mockito.eq(JdbcConnectionTestUtils.PASSWORD))).thenReturn(new InternalAuthToken( singletonMap( "scheme", value( "none" ) ) ));
-		Mockito.when(AuthTokens.none()).thenThrow(new IllegalArgumentException("Called none auth instead of basic"));
-
 		Properties prop = new Properties();
 		prop.setProperty("user","neo4j");
 		prop.setProperty("password","admin");
-
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10&user="+JdbcConnectionTestUtils.USERNAME+"&password="+JdbcConnectionTestUtils.PASSWORD, prop);
-	}
-
-	@Test public void shouldConfigureConnectionAcquisitionTimeout() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
-
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertEquals(AuthTokens.basic(USERNAME, PASSWORD), authToken);
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
+		driver.connect(COMPLETE_VALID_URL+"?connection.acquisition.timeout=10&user="+ USERNAME+"&password="+JdbcConnectionTestUtils.PASSWORD, prop);
+
+		assertTrue(called.get());
+	}
+
+	@Test public void shouldConfigureConnectionAcquisitionTimeout() throws SQLException {
 		Properties info = new Properties();
 		info.setProperty("connection.acquisition.timeout","10");
-		Driver driver = new BoltDriver();
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertEquals(10, config.connectionAcquisitionTimeoutMillis());
+			assertTrue(called.compareAndSet(false, true));
+			return mockedDriver;
+		});
+
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test
-	public void shouldRefuseConnectionAcquisitionTimeout() throws SQLException, URISyntaxException {
+	public void shouldRefuseConnectionAcquisitionTimeout() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("connection.acquisition.timeout: XX is not a number");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
-
 		Properties info = new Properties();
 		info.setProperty("connection.acquisition.timeout", "XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
 
 	@Test public void shouldConfigureIdleTimeBeforeConnectionTest() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+		AtomicBoolean called = new AtomicBoolean(false);
+		Properties info = new Properties();
+		info.setProperty("connection.liveness.check.timeout","10");
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(600000, config.idleTimeBeforeConnectionTest());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("connection.liveness.check.timeout","10");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+		assertTrue(called.get());
 	}
 
 	@Test
 	public void shouldRefuseIdleTimeBeforeConnectionTest() throws SQLException, URISyntaxException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("connection.liveness.check.timeout: XX is not a number");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
 
 		Properties info = new Properties();
 		info.setProperty("connection.liveness.check.timeout","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
 
 	@Test public void shouldConfigureConnectionTimeout() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+		Properties info = new Properties();
+		info.setProperty("connection.timeout","123000");
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(123_000, config.connectionTimeoutMillis());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("connection.timeout","123000");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test
 	public void shouldRefuseConnectionTimeout() throws SQLException, URISyntaxException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("connection.timeout: XX is not a number");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
 
 		Properties info = new Properties();
 		info.setProperty("connection.timeout","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
 
-	@Test public void shouldConfigureEncryption() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			assertEquals(true, config.encrypted());
-
+	@Test public void shouldConfigureEncryption() throws SQLException {
+		Properties info = new Properties();
+		info.setProperty("encryption","true");
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertTrue(config.encrypted());
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("encryption","true");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test
-	public void shouldRefuseEncryption() throws SQLException, URISyntaxException {
+	public void shouldRefuseEncryption() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("encryption: XX is not a boolean");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
 
 		Properties info = new Properties();
 		info.setProperty("encryption","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
 
 	@Test public void shouldConfigureLeakedSessionsLogging() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			assertEquals(true, config.logLeakedSessions());;
-
+		Properties info = new Properties();
+		info.setProperty("leaked.sessions.logging","true");
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertTrue(config.logLeakedSessions());;
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("leaked.sessions.logging","true");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test
-	public void shouldRefuseLeakedSessionsLogging() throws SQLException, URISyntaxException {
+	public void shouldRefuseLeakedSessionsLogging() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("leaked.sessions.logging: XX is not a boolean");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
-
 		Properties info = new Properties();
 		info.setProperty("leaked.sessions.logging","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
-
-	@Test public void shouldConfigureLoadBalancingStrategy_LEAST_CONNECTED() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			// assertEquals(Config.LoadBalancingStrategy.LEAST_CONNECTED, config.loadBalancingStrategy());
-
-			return mockedDriver;
-		});
-
-		Properties info = new Properties();
-		info.setProperty("load.balancing.strategy","LEAST_CONNECTED");
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, info);
-	}
-
-	@Test public void shouldConfigureLoadBalancingStrategy_ROUND_ROBIN() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			// assertEquals(Config.LoadBalancingStrategy.ROUND_ROBIN, config.loadBalancingStrategy());
-
-			return mockedDriver;
-		});
-
-		Properties info = new Properties();
-		info.setProperty("load.balancing.strategy","ROUND_ROBIN");
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, info);
-	}
-
-//	@Test
-//	public void shouldRefuseLoadBalancingStrategy() throws SQLException, URISyntaxException {
-//		expectedEx.expect(SQLException.class);
-//		expectedEx.expectMessage("load.balancing.strategy: XX is not a load balancing strategy");
-//		PowerMockito.mockStatic(GraphDatabase.class);
-//
-//		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-//			Config config = invocationOnMock.getArgument(2, Config.class);
-//			return mockedDriver;
-//		});
-//
-//		Properties info = new Properties();
-//		info.setProperty("load.balancing.strategy","XX");
-//		Driver driver = new BoltDriver();
-//		driver.connect(COMPLETE_VALID_URL, info);
-//	}
 
 	@Test public void shouldConfigureMaxConnectionLifetime() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+		Properties info = new Properties();
+		info.setProperty("max.connection.lifetime","123000");
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(123_000, config.maxConnectionLifetimeMillis());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("max.connection.lifetime","123000");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test
 	public void shouldRefuseMaxConnectionLifetime() throws SQLException, URISyntaxException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("max.connection.lifetime: XX is not a number");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
-
 		Properties info = new Properties();
 		info.setProperty("max.connection.lifetime","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
 
 	@Test public void shouldConfigureMaxConnectionPoolSize() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+		Properties info = new Properties();
+		info.setProperty("max.connection.poolsize","3");
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(3, config.maxConnectionPoolSize());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("max.connection.poolsize","3");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test
-	public void shouldRefuseMaxConnectionPoolSize() throws SQLException, URISyntaxException {
+	public void shouldRefuseMaxConnectionPoolSize() throws SQLException {
 		expectedEx.expect(SQLException.class);
 		expectedEx.expectMessage("max.connection.poolsize: XX is not a number");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
-
 		Properties info = new Properties();
 		info.setProperty("max.connection.poolsize","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
 
-	@Test public void shouldConfigure_TRUST_SYSTEM_CA_SIGNED_CERTIFICATES() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
+	@Test public void shouldConfigure_TRUST_SYSTEM_CA_SIGNED_CERTIFICATES() throws SQLException {
+		Properties info = new Properties();
+		info.setProperty("trust.strategy","TRUST_SYSTEM_CA_SIGNED_CERTIFICATES");
 
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
 			assertEquals(Config.TrustStrategy.trustSystemCertificates().strategy(), config.trustStrategy().strategy());
-
+			assertTrue(called.compareAndSet(false, true));
 			return mockedDriver;
 		});
 
-		Properties info = new Properties();
-		info.setProperty("trust.strategy","TRUST_SYSTEM_CA_SIGNED_CERTIFICATES");
-		Driver driver = new BoltDriver();
 		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
 	}
 
 	@Test public void shouldConfigure_TRUST_CUSTOM_CA_SIGNED_CERTIFICATES() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			assertEquals(Config.TrustStrategy.trustCustomCertificateSignedBy(new File("empty.txt")).strategy(), config.trustStrategy().strategy());
-
-			return mockedDriver;
-		});
-
 		Properties info = new Properties();
 		info.setProperty("trust.strategy","TRUST_CUSTOM_CA_SIGNED_CERTIFICATES");
 		info.setProperty("trusted.certificate.file","empty.txt");
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, info);
-	}
-
-//	@Test public void shouldConfigure_TRUST_ON_FIRST_USE() throws SQLException, URISyntaxException {
-//		PowerMockito.mockStatic(GraphDatabase.class);
-//
-//		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-//			Config config = invocationOnMock.getArgument(2, Config.class);
-//
-//			// assertEquals(Config.TrustStrategy.trustOnFirstUse(new File("empty.txt")).strategy(), config.trustStrategy().strategy());
-//
-//			return mockedDriver;
-//		});
-//
-//		Properties info = new Properties();
-//		info.setProperty("trust.strategy","TRUST_ON_FIRST_USE");
-//		info.setProperty("trusted.certificate.file","empty.txt");
-//		Driver driver = new BoltDriver();
-//		driver.connect(COMPLETE_VALID_URL, info);
-//	}
-
-	@Test
-	public void shouldRefuseTrustStrategy() throws SQLException, URISyntaxException {
-		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Invalid value for trust.strategy param.");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
+		AtomicBoolean called = new AtomicBoolean(false);
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> {
+			assertTrue(called.compareAndSet(false, true));
+			assertEquals(Config.TrustStrategy.trustCustomCertificateSignedBy(new File("empty.txt")).strategy(), config.trustStrategy().strategy());
 			return mockedDriver;
 		});
+
+		driver.connect(COMPLETE_VALID_URL, info);
+
+		assertTrue(called.get());
+	}
+
+	@Test
+	public void shouldRefuseTrustStrategy() throws SQLException {
+		expectedEx.expect(SQLException.class);
+		expectedEx.expectMessage("Invalid value for trust.strategy param.");
 
 		Properties info = new Properties();
 		info.setProperty("trust.strategy","XX");
-		Driver driver = new BoltDriver();
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
 		driver.connect(COMPLETE_VALID_URL, info);
 	}
-
-	@Test
-	public void shouldRefuseTrustStrategyCertificate() throws SQLException, URISyntaxException {
-		expectedEx.expect(SQLException.class);
-		expectedEx.expectMessage("Missing parameter 'trusted.certificate.file' : A FILE IS REQUIRED");
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-			return mockedDriver;
-		});
-
-		Properties info = new Properties();
-		info.setProperty("trust.strategy","TRUST_CUSTOM_CA_SIGNED_CERTIFICATES");
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, info);
-	}
-
-	@Test
-	public void shouldConfigureMaxTransactionRetryTime() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(BOLT_URL)), Mockito.eq(AuthTokens.none()), any(Config.class))).thenAnswer(invocationOnMock -> {
-			Config config = invocationOnMock.getArgument(2, Config.class);
-
-			// retrySettings is not visible...
-
-			return mockedDriver;
-		});
-
-		Properties info = new Properties();
-		info.setProperty("max.transaction.retry.time","1000");//milliseconds
-		Driver driver = new BoltDriver();
-		driver.connect(COMPLETE_VALID_URL, info);
-	}
-
 }

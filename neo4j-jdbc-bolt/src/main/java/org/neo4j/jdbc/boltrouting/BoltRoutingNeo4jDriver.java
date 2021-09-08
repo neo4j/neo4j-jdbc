@@ -23,6 +23,7 @@ import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
+import org.neo4j.jdbc.bolt.DriverFactory;
 import org.neo4j.jdbc.bolt.cache.BoltDriverCache;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 import org.neo4j.jdbc.utils.BoltNeo4jUtils;
@@ -32,7 +33,7 @@ import java.net.URISyntaxException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -76,12 +77,20 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
         }
     }
 
+    private final DriverFactory driverFactory;
+
     public BoltRoutingNeo4jDriver() throws SQLException {
-        super(JDBC_BOLT_ROUTING_PREFIX);
+        this(cache::getDriver);
     }
 
-    public BoltRoutingNeo4jDriver(String prefix) throws SQLException {
+    public BoltRoutingNeo4jDriver(String prefix) {
         super(prefix);
+        this.driverFactory = cache::getDriver;
+    }
+
+    BoltRoutingNeo4jDriver(DriverFactory driverFactory) throws SQLException {
+        super(JDBC_BOLT_ROUTING_PREFIX);
+        this.driverFactory = driverFactory;
     }
 
     private boolean isSchemaMatchPrefix(String url) {
@@ -91,24 +100,20 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
 
     @Override
     protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
-        return cache.getDriver(routingUris, config, authToken, info);
+        return driverFactory.createDriver(routingUris, config, authToken, info);
     }
 
     @Override
     protected Properties getRoutingContext(String url, Properties properties) {
+        if (!isSchemaMatchPrefix(url) || !properties.containsKey(ROUTING_CONTEXT)) {
+            return new Properties();
+        }
         Properties props = new Properties();
-        if (isSchemaMatchPrefix(url) && properties.containsKey(ROUTING_CONTEXT)) {
-            List<String> routingParams;
-            if (properties.get(ROUTING_CONTEXT) instanceof String) {
-                routingParams = Arrays.asList(properties.getProperty(ROUTING_CONTEXT));
+        for (String routingParam : routingParameters(properties)) {
+            if (routingParam.startsWith(ALTERNATIVE_SERVERS)) {
+                props.put(ALTERNATIVE_SERVERS, routingParam.substring(ALTERNATIVE_SERVERS.length() + 1));
             } else {
-                routingParams = (List) properties.get(ROUTING_CONTEXT);
-            }
-            for (String routingParam : routingParams) {
-                if (routingParam.startsWith(ALTERNATIVE_SERVERS))
-                    props.put(ALTERNATIVE_SERVERS, routingParam.substring(ALTERNATIVE_SERVERS.length() + 1));
-                else
-                    props.put(ROUTING_CONTEXT, routingParam);
+                props.put(ROUTING_CONTEXT, routingParam);
             }
         }
         return props;
@@ -127,13 +132,13 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     protected List<URI> buildRoutingUris(String boltUrl, Properties properties) throws URISyntaxException {
         URI firstServer = new URI(boltUrl);
         List<URI> routingUris = new ArrayList<>();
-        String[] servers = firstServer.getAuthority().split("\\,");
+        String[] servers = firstServer.getAuthority().split(",");
         for (String server : servers) {
             routingUris.add(new URI(firstServer.getScheme(), server, firstServer.getPath(), firstServer.getQuery(), firstServer.getFragment()));
         }
         if (properties.containsKey((ALTERNATIVE_SERVERS))) {
             String alternativeServers = properties.getProperty(ALTERNATIVE_SERVERS);
-            String[] alternativeServerList = alternativeServers.split("\\" + LIST_SEPARATOR);
+            String[] alternativeServerList = alternativeServers.split(LIST_SEPARATOR);
             for (String alternativeServer: alternativeServerList) {
                 routingUris.add(new URI(firstServer.getScheme(), alternativeServer, firstServer.getPath(), firstServer.getQuery(), firstServer.getFragment()));
             }
@@ -141,8 +146,11 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
         return routingUris;
     }
 
-    // visible for testing
-    public static void clearCache() {
-        cache.clear();
+    @SuppressWarnings("unchecked")
+    private List<String> routingParameters(Properties properties) {
+        if (properties.get(ROUTING_CONTEXT) instanceof String) {
+            return Collections.singletonList(properties.getProperty(ROUTING_CONTEXT));
+        }
+        return (List<String>) properties.get(ROUTING_CONTEXT);
     }
 }

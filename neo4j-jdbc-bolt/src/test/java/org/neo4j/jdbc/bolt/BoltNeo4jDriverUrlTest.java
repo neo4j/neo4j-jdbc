@@ -28,15 +28,13 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
+import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
+import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.bolt.utils.Mocker;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,6 +42,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -53,9 +52,7 @@ import static org.mockito.Matchers.any;
  * @author AgileLARUS
  * @since 3.0.0
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GraphDatabase.class, Config.TrustStrategy.class, AuthTokens.class})
-@PowerMockRunnerDelegate(Parameterized.class)
+@RunWith(Parameterized.class)
 public class BoltNeo4jDriverUrlTest {
 
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -66,7 +63,7 @@ public class BoltNeo4jDriverUrlTest {
 	private static org.neo4j.driver.Driver mockedDriver;
 
 	@Parameterized.Parameters
-	public static Iterable<? extends Object> data() {
+	public static Iterable<?> data() {
 		return Arrays.asList("jdbc:neo4j:bolt://test", "jdbc:neo4j:bolt+s://test", "jdbc:neo4j:bolt+ssc://test");
 	}
 
@@ -77,7 +74,6 @@ public class BoltNeo4jDriverUrlTest {
 
 	@After
 	public void prepare() {
-		BoltDriver.clearCache();
 	}
 
 	private String getBoltUrl() {
@@ -89,16 +85,13 @@ public class BoltNeo4jDriverUrlTest {
 	}
 
 	@Test public void shouldConnectCreateConnection() throws SQLException, URISyntaxException {
-		PowerMockito.mockStatic(GraphDatabase.class);
-		Mockito.when(GraphDatabase.driver(Mockito.eq(new URI(getBoltUrl())), Mockito.eq(AuthTokens.none()), any(Config.class))).thenReturn(mockedDriver);
-
-		Neo4jDriver driver = new BoltDriver();
+		Neo4jDriver driver = new BoltDriver((routingUris, config, authToken, info) -> mockedDriver);
 		Connection connection = driver.connect(completeValidUrl, null);
 		assertNotNull(connection);
 	}
 
 	@Test public void shouldAcceptURL() throws SQLException {
-		Neo4jDriver driver = new BoltDriver();
+		Neo4jDriver driver = new BoltDriver((routingUris, config, authToken, info) -> mockedDriver);
 		assertTrue(driver.acceptsURL(getPrefix() + "://localhost:7687"));
 		assertTrue(driver.acceptsURL(getPrefix() + "://localhost:7687/"));
 		assertTrue(driver.acceptsURL(getPrefix() + "://192.168.0.1:7687"));

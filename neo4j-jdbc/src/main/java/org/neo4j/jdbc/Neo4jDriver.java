@@ -46,7 +46,7 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 	/**
 	 * Driver prefix for the connection url.
 	 */
-	private String driverPrefix;
+	private final String driverPrefix;
 
 	/**
 	 * Constructor for extended class.
@@ -84,13 +84,9 @@ public abstract class Neo4jDriver implements java.sql.Driver {
 		String[] pieces = url.split(":");
 		if (pieces.length > 3 && url.startsWith(JDBC_PREFIX)) {
 			if (driverPrefix != null) {
-				if (pieces[2].matches(driverPrefix)) {
-					return true;
-				}
+				return pieces[2].matches(driverPrefix);
 			}
-			else {
-				return true;
-			}
+			return true;
 		}
 		return false;
 	}

@@ -78,7 +78,7 @@
 		<java.version>8</java.version>
 
 		<!-- Deps version -->
-		<powermock.version>2.0.9</powermock.version>
+		<mockito.version>3.12.4</mockito.version>
 		<junit.version>4.13.2</junit.version>
 		<jmh.version>1.19</jmh.version>
 		<neo4j.java.driver.version>4.3.1</neo4j.java.driver.version>
@@ -157,14 +157,9 @@
 				<version>${junit.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.powermock</groupId>
-				<artifactId>powermock-module-junit4</artifactId>
-				<version>${powermock.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.powermock</groupId>
-				<artifactId>powermock-api-mockito2</artifactId>
-				<version>${powermock.version}</version>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-core</artifactId>
+				<version>${mockito.version}</version>
 			</dependency>
 
 			<!-- Deps for performance tests -->
@@ -203,13 +198,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -413,34 +403,4 @@
 			</build>
 		</profile>
 	</profiles>
-
-	<!-- ================ -->
-	<!-- = Repositories = -->
-	<!-- ================ -->
-	<repositories>
-		<!-- Adding neo4j repository to have snapshot -->
-		<repository>
-			<id>neo4j-snapshot-repository</id>
-			<name>Neo4j Maven 2 snapshot repository</name>
-			<url>http://m2.neo4j.org/content/repositories/snapshots</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-		<repository>
-			<id>neo4j-v4-repository</id>
-			<name>Neo4j Maven 2 snapshot repository</name>
-			<url>https://neo4j.bintray.com/community</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-		</repository>
-	</repositories>
-
 </project>

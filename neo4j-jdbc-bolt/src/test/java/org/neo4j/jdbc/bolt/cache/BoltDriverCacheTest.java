@@ -1,6 +1,5 @@
 package org.neo4j.jdbc.bolt.cache;
 
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.AccessMode;
@@ -11,8 +10,6 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.internal.InternalBookmark;
-import org.neo4j.jdbc.bolt.BoltDriver;
-import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,12 +37,6 @@ import static org.junit.Assume.assumeTrue;
 public class BoltDriverCacheTest {
 
     Function<BoltDriverCacheKey, Driver> builder = (params -> Mockito.mock(Driver.class));
-
-    @AfterClass
-    public static void tearDown() {
-        BoltRoutingNeo4jDriver.clearCache();
-        BoltDriver.clearCache();
-    }
 
     @Test
     public void cacheShouldBeThreadSafe() throws ExecutionException, InterruptedException {

@@ -23,19 +23,23 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
 import org.neo4j.driver.Result;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.data.ResultSetData;
-import org.powermock.reflect.Whitebox;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockResultWithValues;
 
 /**
  * @author AgileLARUS
@@ -176,10 +180,10 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		Neo4jConnection c = Mockito.mock(Neo4jConnection.class);
-		Mockito.when(c.getFlattening()).thenReturn(1);
-		Neo4jStatement stmt = Mockito.mock(Neo4jStatement.class);
-		Mockito.when(stmt.getConnection()).thenReturn(c);
+		Neo4jConnection c = mock(Neo4jConnection.class);
+		when(c.getFlattening()).thenReturn(1);
+		Neo4jStatement stmt = mock(Neo4jStatement.class);
+		when(stmt.getConnection()).thenReturn(c);
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
 
 		resultSet.next();
@@ -189,10 +193,10 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		Neo4jConnection c = Mockito.mock(Neo4jConnection.class);
-		Mockito.when(c.getFlattening()).thenReturn(1);
-		Neo4jStatement stmt = Mockito.mock(Neo4jStatement.class);
-		Mockito.when(stmt.getConnection()).thenReturn(c);
+		Neo4jConnection c = mock(Neo4jConnection.class);
+		when(c.getFlattening()).thenReturn(1);
+		Neo4jStatement stmt = mock(Neo4jStatement.class);
+		when(stmt.getConnection()).thenReturn(c);
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
 
 		resultSet.next();
@@ -335,10 +339,10 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getIntByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		Neo4jConnection c = Mockito.mock(Neo4jConnection.class);
-		Mockito.when(c.getFlattening()).thenReturn(1);
-		Neo4jStatement stmt = Mockito.mock(Neo4jStatement.class);
-		Mockito.when(stmt.getConnection()).thenReturn(c);
+		Neo4jConnection c = mock(Neo4jConnection.class);
+		when(c.getFlattening()).thenReturn(1);
+		Neo4jStatement stmt = mock(Neo4jStatement.class);
+		when(stmt.getConnection()).thenReturn(c);
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
 
 		resultSet.next();
@@ -349,10 +353,10 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getIntByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		Neo4jConnection c = Mockito.mock(Neo4jConnection.class);
-		Mockito.when(c.getFlattening()).thenReturn(1);
-		Neo4jStatement stmt = Mockito.mock(Neo4jStatement.class);
-		Mockito.when(stmt.getConnection()).thenReturn(c);
+		Neo4jConnection c = mock(Neo4jConnection.class);
+		when(c.getFlattening()).thenReturn(1);
+		Neo4jStatement stmt = mock(Neo4jStatement.class);
+		when(stmt.getConnection()).thenReturn(c);
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
 
 		resultSet.next();
@@ -1399,10 +1403,10 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getArrayByLabelShouldReturnCorrectVirtualColumn() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		Neo4jConnection c = Mockito.mock(Neo4jConnection.class);
-		Mockito.when(c.getFlattening()).thenReturn(1);
-		Neo4jStatement stmt = Mockito.mock(Neo4jStatement.class);
-		Mockito.when(stmt.getConnection()).thenReturn(c);
+		Neo4jConnection c = mock(Neo4jConnection.class);
+		when(c.getFlattening()).thenReturn(1);
+		Neo4jStatement stmt = mock(Neo4jStatement.class);
+		when(stmt.getConnection()).thenReturn(c);
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
 
 		resultSet.next();
@@ -1412,10 +1416,10 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getArrayByIndexShouldReturnCorrectVirtualColumn() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		Neo4jConnection c = Mockito.mock(Neo4jConnection.class);
-		Mockito.when(c.getFlattening()).thenReturn(1);
-		Neo4jStatement stmt = Mockito.mock(Neo4jStatement.class);
-		Mockito.when(stmt.getConnection()).thenReturn(c);
+		Neo4jConnection c = mock(Neo4jConnection.class);
+		when(c.getFlattening()).thenReturn(1);
+		Neo4jStatement stmt = mock(Neo4jStatement.class);
+		when(stmt.getConnection()).thenReturn(c);
 		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
 
 		resultSet.next();
@@ -1436,15 +1440,42 @@ public class BoltNeo4jResultSetGettersTest {
 		resultSet.wasNull();
 	}
 
-	@Test public void wasNullShouldReturnFalse() throws SQLException {
-		ResultSet resultSet = Mockito.mock(BoltNeo4jResultSet.class);
-		Whitebox.setInternalState(resultSet, "wasNull", false);
-		resultSet.wasNull();
+	@Test public void wasNullIfIterationNotStarted() throws SQLException {
+		ResultSet resultSet = new BoltNeo4jResultSet(mock(Statement.class), mock(Result.class));
+
+		boolean wasNull = resultSet.wasNull();
+
+		assertFalse(wasNull);
 	}
 
-	@Test public void wasNullShouldReturnTrue() throws SQLException {
-		ResultSet resultSet = Mockito.mock(BoltNeo4jResultSet.class);
-		Whitebox.setInternalState(resultSet, "wasNull", true);
-		resultSet.wasNull();
+	@Test public void wasNullIfLastColumnNotNull() throws SQLException {
+		Result result = mockResultWithValues(values("COLUMN", Values.value(42)));
+		ResultSet resultSet = new BoltNeo4jResultSet(mock(Statement.class), result);
+		resultSet.next();
+		int column = resultSet.getInt("COLUMN");
+
+		boolean wasNull = resultSet.wasNull();
+
+		assertEquals(42, column);
+		assertFalse(wasNull);
 	}
+
+	@Test public void wasNullIfLastColumnWasNull() throws SQLException {
+		Result result = mockResultWithValues(values("COLUMN", Values.NULL));
+		ResultSet resultSet = new BoltNeo4jResultSet(mock(Statement.class), result);
+		resultSet.next();
+		String column = resultSet.getString("COLUMN");
+
+		boolean wasNull = resultSet.wasNull();
+
+		assertNull(column);
+		assertTrue(wasNull);
+	}
+
+	private LinkedHashMap<String, Value> values(String name, Value value) {
+		LinkedHashMap<String, Value> values = new LinkedHashMap<>();
+		values.put(name, value);
+		return values;
+	}
+
 }

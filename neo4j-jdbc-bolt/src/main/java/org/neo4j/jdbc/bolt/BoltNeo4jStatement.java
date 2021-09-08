@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Arrays.copyOf;
@@ -44,28 +45,32 @@ import static org.neo4j.jdbc.utils.BoltNeo4jUtils.hasResultSet;
  */
 public class BoltNeo4jStatement extends Neo4jStatement {
 
+	private final ResultSetFactory resultSetFactory;
+
 	/**
 	 * Default Constructor
 	 *
 	 * @param connection The connection used for sharing the transaction between statements
 	 * @param rsParams   The params (type, concurrency and holdability) used to create a new ResultSet
 	 */
-	private BoltNeo4jStatement(BoltNeo4jConnectionImpl connection, int... rsParams) {
+	// visible for testing
+	BoltNeo4jStatement(BoltNeo4jConnectionImpl connection, ResultSetFactory resultSetFactory, int... rsParams) {
 		super(connection);
+		this.resultSetFactory = resultSetFactory;
 		this.resultSetParams = rsParams;
 		this.batchStatements = new ArrayList<>();
 	}
 
 	public static Statement newInstance(boolean debug, BoltNeo4jConnectionImpl connection, int... rsParams) {
-		Statement statement = new BoltNeo4jStatement(connection, rsParams);
-		((Neo4jStatement) statement).setDebug(debug);
+		Neo4jStatement statement = new BoltNeo4jStatement(connection, BoltNeo4jResultSet::newInstance, rsParams);
+		statement.setDebug(debug);
 		return (Statement) Proxy.newProxyInstance(BoltNeo4jStatement.class.getClassLoader(), new Class[] { Statement.class },
 				new Neo4jInvocationHandler(statement, debug));
 	}
 
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
 		return executeInternal(sql, (result) -> {
-			this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
+			this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
 			this.currentUpdateCount = -1;
 			return this.currentResultSet;
 		});
@@ -127,5 +132,8 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 		return result;
 	}
 
-
+	// visible for testing
+	List<String> getBatchStatements() {
+		return batchStatements;
+	}
 }

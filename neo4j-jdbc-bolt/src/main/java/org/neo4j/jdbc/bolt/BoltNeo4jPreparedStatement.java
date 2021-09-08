@@ -36,6 +36,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.Temporal;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -43,14 +45,18 @@ import static java.util.Arrays.copyOf;
 import static org.neo4j.jdbc.utils.BoltNeo4jUtils.executeInTx;
 import static org.neo4j.jdbc.utils.BoltNeo4jUtils.hasResultSet;
 
-/**
- * @author AgileLARUS
- * @since 3.0.0
- */
 public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
 
+	private final ResultSetFactory resultSetFactory;
+
 	private BoltNeo4jPreparedStatement(BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
+		this(connection, BoltNeo4jResultSet::newInstance, rawStatement, rsParams);
+	}
+
+	// visible for testing
+	BoltNeo4jPreparedStatement(BoltNeo4jConnectionImpl connection, ResultSetFactory resultSetFactory, String rawStatement, int... rsParams) {
 		super(connection, rawStatement);
+		this.resultSetFactory = resultSetFactory;
 		this.resultSetParams = rsParams;
 	}
 
@@ -63,7 +69,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 
 	@Override public ResultSet executeQuery() throws SQLException {
 		return executeInternal((result) -> {
-			this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
+			this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
 			this.currentUpdateCount = -1;
 			return currentResultSet;
 		});
@@ -82,7 +88,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		return executeInternal((result) -> {
 			boolean hasResultSet = hasResultSet((BoltNeo4jConnection) this.connection, this.statement);
 			if (hasResultSet) {
-				this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
+				this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
 				this.currentUpdateCount = -1;
 			} else {
 				this.currentResultSet = null;
@@ -177,5 +183,15 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	public void setArray(int parameterIndex, Array x) throws SQLException {
 		checkClosed();
 		insertParameter(parameterIndex, x.getArray());
+	}
+
+	// visible for testing
+	Map<String, Object> getParameters() {
+		return this.parameters;
+	}
+
+	// visible for testing
+	List<Map<String, Object>> getBatchParameters() {
+		return this.batchParameters;
 	}
 }
