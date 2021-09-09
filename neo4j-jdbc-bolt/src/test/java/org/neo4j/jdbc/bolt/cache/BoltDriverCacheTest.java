@@ -69,6 +69,7 @@ public class BoltDriverCacheTest {
         for (Future<Driver> getDriverFuture : executor.invokeAll(getDriver)) {
             drivers.put(getDriverFuture.get(), 1);
         }
+        executor.shutdown();
 
         assumeTrue(overlaps.get() > 0); // This might get flaky...
         assertEquals(1, drivers.size());
