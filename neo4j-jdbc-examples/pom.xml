@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.neo4j</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
-        <version>4.0.3</version>
+        <version>4.0.4</version>
     </parent>
 
 	<!-- =========== -->
@@ -34,7 +34,7 @@
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-driver</artifactId>
-			<version>4.0.3</version>
+			<version>4.0.4</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
