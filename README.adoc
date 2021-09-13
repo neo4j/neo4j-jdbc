@@ -24,7 +24,7 @@ This driver supports various types of database transports, through:
 ** using `jdbc:neo4j:neo4j://<host>:<port>/` from Neo4j 4.0+
 ** using `jdbc:neo4j:bolt+routing://<host>:<port>/` from Neo4j 3.1+ to 3.5.x
 
-You can also specify the encryption via the Bolt URI scheme (starting with the JDBC driver 4.0.2):
+You can also specify the encryption via the Bolt URI scheme (starting with the JDBC driver 4.0.3):
 
  - `jdbc:neo4j:bolt://<host>:<port>/`
  - `jdbc:neo4j:bolt+s://<host>:<port>/`
