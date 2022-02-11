@@ -49,9 +49,9 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |http, bolt, bolt+routing
 |yes
 
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.2[4.0.2]
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.4[4.0.4]
 |3.5.x - 4.x
-|4.3.x
+|4.4.x
 |1.8
 |http, bolt, neo4j
 |yes
@@ -68,6 +68,7 @@ For the all-in-one module supporting both Bolt and HTTP, you can simply use:
     <groupId>org.neo4j</groupId>
     <artifactId>neo4j-jdbc-driver</artifactId>
     <version>{neo4j-jdbc-version}</version>
+    <scope>runtime</scope>
 </dependency>
 
 If you want only one of the protocols, you can depend on its module:
@@ -77,6 +78,7 @@ If you want only one of the protocols, you can depend on its module:
     <groupId>org.neo4j</groupId>
     <artifactId>neo4j-jdbc-bolt</artifactId>
     <version>{neo4j-jdbc-version}</version>
+    <scope>runtime</scope>
 </dependency>
 
 or
@@ -86,6 +88,7 @@ or
     <groupId>org.neo4j</groupId>
     <artifactId>neo4j-jdbc-http</artifactId>
     <version>{neo4j-jdbc-version}</version>
+    <scope>runtime</scope>
 </dependency>
 
 === Minimum viable snippet
@@ -102,17 +105,15 @@ org.neo4j:neo4j-jdbc-driver:{neo4j-jdbc-version}
 [source,java]
 ----
 // Connecting
-try (Connection con = DriverManager.getConnection("jdbc:neo4j:bolt://localhost", 'neo4j', password)) {
-
+try (Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://localhost", "neo4j", password);
     // Querying
-    String query = "MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = {1} RETURN f.name, f.age";
-    try (PreparedStatement stmt = con.prepareStatement(query)) {
-        stmt.setString(1,"John");
-
-        try (ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
-            }
+     PreparedStatement stmt = connection.prepareStatement("MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = $0 RETURN f.name, f.age")) {
+     
+    stmt.setString(0, "John);
+    
+    try (ResultSet rs = stmt.executeQuery()) {
+        while (rs.next()) {
+            System.out.println("Friend: "+rs.getString("f.name")+" is "+rs.getInt("f.age"));
         }
     }
 }
@@ -221,7 +222,7 @@ To run the performance test, you must have a Neo4j Server 3.3.x running with the
 
 === License
 
-Copyright (c) https://neo4j.com[Neo4j] and http://www.larus-ba.it[LARUS Business Automation]
+Copyright (c) https://neo4j.com[Neo4j] and https://www.larus-ba.it[LARUS Business Automation]
 
 The "Neo4j JDBC Driver" is licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
