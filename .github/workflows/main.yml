@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-java@v2.5.0
         with:
           java-version: 8
+          distribution: adopt
       - name: Cache ~/.m2/repository
         uses: actions/cache@v1
         with:
