@@ -53,9 +53,8 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.anyMap;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -63,9 +62,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.neo4j.jdbc.bolt.utils.Mocker.mockConnectionClosed;
+import static org.neo4j.jdbc.bolt.utils.Mocker.mockDriverOpen;
 import static org.neo4j.jdbc.bolt.utils.Mocker.mockOpenConnection;
 import static org.neo4j.jdbc.bolt.utils.Mocker.mockOpenConnectionWithResult;
-import static org.neo4j.jdbc.bolt.utils.Mocker.mockDriverOpen;
 import static org.neo4j.jdbc.bolt.utils.Mocker.mockResultWithUpdateCount;
 
 /**

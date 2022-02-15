@@ -19,29 +19,21 @@
  */
 package org.neo4j.jdbc.boltrouting;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.Mockito;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Config;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.bolt.utils.Mocker;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 
 /**
  * @author AgileLARUS

@@ -35,14 +35,13 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
-import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
