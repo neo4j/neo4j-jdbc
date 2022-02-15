@@ -88,7 +88,7 @@
 		<testcontainers.version>1.16.3</testcontainers.version>
 
 		<!-- Plugin version -->
-		<maven.plugin.compiler>3.6.1</maven.plugin.compiler>
+		<maven.plugin.compiler>3.10.0</maven.plugin.compiler>
 		<maven.plugin.resources>2.7</maven.plugin.resources>
 		<maven.plugin.shade>3.2.4</maven.plugin.shade>
 		<maven.plugin.javadoc>3.2.0</maven.plugin.javadoc>
