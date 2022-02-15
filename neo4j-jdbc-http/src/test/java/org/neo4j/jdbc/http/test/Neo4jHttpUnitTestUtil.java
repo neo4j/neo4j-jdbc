@@ -21,7 +21,9 @@ package org.neo4j.jdbc.http.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
@@ -60,7 +62,12 @@ public class Neo4jHttpUnitTestUtil {
 		List<String[]> queriesCsv = new ArrayList<>();
 
 		File csv = new File(getClass().getClassLoader().getResource(filename).getFile());
-		CSVReader reader = new CSVReader(new FileReader(csv), ';', '"');
+		CSVReader reader = new CSVReaderBuilder(new FileReader(csv))
+				.withCSVParser(new CSVParserBuilder()
+						.withQuoteChar('"')
+						.withSeparator(';')
+						.build())
+				.build();
 		List<String[]> entries = reader.readAll();
 		entries.remove(0); // remove headers
 
