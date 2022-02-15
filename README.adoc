@@ -109,7 +109,7 @@ try (Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://loca
     // Querying
      PreparedStatement stmt = connection.prepareStatement("MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = $0 RETURN f.name, f.age")) {
      
-    stmt.setString(0, "John);
+    stmt.setString(0, "John");
     
     try (ResultSet rs = stmt.executeQuery()) {
         while (rs.next()) {
