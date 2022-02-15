@@ -18,6 +18,7 @@ public class Neo4jContainerUtils {
 
     public static GenericContainer<?> createNeo4jContainerWithDefaultPassword() {
         return new GenericContainer<>(neo4jImageCoordinates())
+                .withExposedPorts(7687)
                 .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
                 .waitingFor(boltStart());
     }
