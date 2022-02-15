@@ -26,7 +26,7 @@ jobs:
         with:
           java-version: 8
       - name: Cache ~/.m2/repository
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.7
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
