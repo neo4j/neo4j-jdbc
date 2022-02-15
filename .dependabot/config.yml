@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "fbiville"
+      - "conker84"
+    target-branch: "4.0"
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "fbiville"
+      - "conker84"
+    target-branch: "4.0"
