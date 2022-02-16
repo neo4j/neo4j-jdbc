@@ -505,7 +505,7 @@ public class BoltNeo4jConnectionTest {
 		expectedEx.expect(SQLException.class);
 
 		NetworkSession networkSession = new NetworkSession(null, null,
-				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
+				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
 
 		Session session = new InternalSession(networkSession);
 		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);

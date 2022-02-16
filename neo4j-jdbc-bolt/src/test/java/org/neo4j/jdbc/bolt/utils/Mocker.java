@@ -151,7 +151,7 @@ public class Mocker {
 		Driver mockedDriver = mock(org.neo4j.driver.Driver.class);
 		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
 		NetworkSession networkSession = new NetworkSession(connectionProvider, null,
-				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
+				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
 		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(networkSession));
 		return mockedDriver;
 	}
