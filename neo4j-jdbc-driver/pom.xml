@@ -65,6 +65,12 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                             </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>org.neo4j.shaded.com.fasterxml.jackson</shadedPattern>
+                                </relocation>
+                            </relocations>
 
                             <filters>
                                 <filter>
