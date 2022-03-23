@@ -54,6 +54,11 @@ public class FakeRecord implements Record {
     }
 
     @Override
+    public <T> Iterable<T> values(Function<Value, T> function) {
+        return null;
+    }
+
+    @Override
     public boolean containsKey(String key) {
         return values.containsKey(key);
     }
