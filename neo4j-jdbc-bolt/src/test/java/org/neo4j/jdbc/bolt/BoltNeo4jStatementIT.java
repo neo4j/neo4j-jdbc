@@ -93,11 +93,11 @@ public class BoltNeo4jStatementIT {
 
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
 
-		connection.commit();
 		assertTrue(rs.next());
 		assertEquals("test", rs.getString(1));
 		assertFalse(rs.next());
 		JdbcConnectionTestUtils.executeTransactionally(neo4j, StatementData.STATEMENT_CREATE_REV);
+		connection.commit();
 	}
 
 	@Test public void executeQueryShouldExecuteAndReturnCorrectDataOnAutoCommitFalseStatementAndCreatedWithParams() throws SQLException {
@@ -107,11 +107,11 @@ public class BoltNeo4jStatementIT {
 
 		ResultSet rs = statement.executeQuery(StatementData.STATEMENT_MATCH_ALL_STRING);
 
-		connection.commit();
 		assertTrue(rs.next());
 		assertEquals("test", rs.getString(1));
 		assertFalse(rs.next());
 		JdbcConnectionTestUtils.executeTransactionally(neo4j, StatementData.STATEMENT_CREATE_REV);
+		connection.commit();
 	}
 
 	/*------------------------------*/

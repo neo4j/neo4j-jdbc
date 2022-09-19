@@ -168,7 +168,11 @@ public class Mocker {
 
 	public static Result mockResultWithValues(LinkedHashMap<String, Value> values) {
 		Result result = mock(Result.class);
-		when(result.list()).thenReturn(Collections.singletonList(new FakeRecord(values)));
+		final FakeRecord fakeRecord = new FakeRecord(values);
+		when(result.list()).thenReturn(Collections.singletonList(fakeRecord));
+		when(result.next()).thenReturn(fakeRecord, null);
+		when(result.peek()).thenReturn(fakeRecord);
+		when(result.hasNext()).thenReturn(true);
 		return result;
 	}
 }
