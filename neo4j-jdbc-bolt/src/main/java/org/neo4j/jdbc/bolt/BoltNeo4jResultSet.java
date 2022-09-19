@@ -45,12 +45,14 @@ import org.neo4j.driver.util.Pair;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.jdbc.utils.JSONUtils;
 import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.ObjectConverter;
 
 import java.lang.reflect.Proxy;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -73,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import static org.neo4j.jdbc.utils.DataConverterUtils.convertObject;
 import static org.neo4j.jdbc.utils.DataConverterUtils.valueToDate;
@@ -110,9 +113,20 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 	// visible for testing
 	BoltNeo4jResultSet(Statement statement, Result iterator, int... params) {
 		super(statement, params);
-		List<Record> recordList = iterator != null ? iterator.list() : Collections.emptyList();
-		Optional<Record> first = recordList.stream().findFirst();
-		this.iterator = iterator != null ? recordList.iterator() : null;
+		Optional<Record> first = iterator != null && iterator.hasNext() ? Optional.of(iterator.peek()) : Optional.empty();
+		try {
+			// users that are not using autocommit would not materialize the result in memory
+			if (iterator != null
+					&& statement != null
+					&& statement.getConnection() != null
+					&& statement.getConnection().getAutoCommit()) {
+				this.iterator = iterator.list().iterator();
+			} else {
+				this.iterator = iterator;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 
 		this.keys = new ArrayList<>();
 		this.classes = new ArrayList<>();
@@ -128,7 +142,7 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 			//Flatten the result
 			this.flattenResultSet();
 			this.flattened = true;
-		} else if (iterator != null) {
+		} else if (this.iterator != null) {
 			//Keys are exactly the ones returned from the iterator
 			this.keys.addAll(iterator.keys());
 			first.ifPresent((record) -> {
