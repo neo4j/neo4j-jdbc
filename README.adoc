@@ -1,5 +1,5 @@
 == Overview: Neo4j JDBC Driver
-:neo4j-jdbc-version: 4.0.2
+:neo4j-jdbc-version: 5.0.0
 
 image::https://github.com/neo4j-contrib/neo4j-jdbc/workflows/CI/badge.svg?branch=4.0[CI]
 
@@ -53,6 +53,13 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |3.5.x - 4.x
 |4.4.x
 |1.8
+|http, bolt, neo4j
+|yes
+
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/5.0.0[5.0.0]
+|4.x - 5.0/1
+|5.1.0
+|17
 |http, bolt, neo4j
 |yes
 
