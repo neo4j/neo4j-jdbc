@@ -45,7 +45,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 public class ActorManagerIT extends MybatisTestUtil {
 
 	@ClassRule
-	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
+	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:enterprise")
 			.waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
 					.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
 					.withStrategy( new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))

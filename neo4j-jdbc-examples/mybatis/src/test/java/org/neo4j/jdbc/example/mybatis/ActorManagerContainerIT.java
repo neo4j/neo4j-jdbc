@@ -75,7 +75,7 @@ public class ActorManagerContainerIT {
 	@BeforeClass
 	public static void setUp() throws URISyntaxException {
 		try {
-			neo4jContainer = (Neo4jContainer) new Neo4jContainer("neo4j:4.0.2-enterprise")
+			neo4jContainer = (Neo4jContainer) new Neo4jContainer("neo4j:enterprise")
 					.waitingFor(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
 					.withEnv("NEO4J_AUTH", "neo4j/password")
 					.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");

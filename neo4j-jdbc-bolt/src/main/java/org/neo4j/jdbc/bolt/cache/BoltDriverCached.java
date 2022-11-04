@@ -5,6 +5,7 @@ import org.neo4j.driver.Metrics;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.async.AsyncSession;
+import org.neo4j.driver.reactive.ReactiveSession;
 import org.neo4j.driver.reactive.RxSession;
 import org.neo4j.driver.types.TypeSystem;
 
@@ -59,6 +60,11 @@ public class BoltDriverCached implements Driver {
 
     @Override
     public RxSession rxSession(SessionConfig sessionConfig) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public ReactiveSession reactiveSession(SessionConfig sessionConfig) {
         throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 

@@ -24,8 +24,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.neo4j.driver.*;
 import org.neo4j.driver.internal.DatabaseNameUtil;
-import org.neo4j.driver.internal.DefaultBookmarkHolder;
 import org.neo4j.driver.internal.InternalSession;
+import org.neo4j.driver.internal.Neo4jBookmarkManager;
 import org.neo4j.driver.internal.async.NetworkSession;
 import org.neo4j.driver.internal.handlers.pulln.FetchSizeUtil;
 import org.neo4j.driver.internal.logging.DevNullLogging;
@@ -40,6 +40,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.*;
@@ -151,7 +152,18 @@ public class Mocker {
 		Driver mockedDriver = mock(org.neo4j.driver.Driver.class);
 		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
 		NetworkSession networkSession = new NetworkSession(connectionProvider, null,
-				DatabaseNameUtil.database(""), AccessMode.READ, new DefaultBookmarkHolder(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING);
+				DatabaseNameUtil.database(""), AccessMode.READ, Set.of(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING,
+				new Neo4jBookmarkManager(Map.of(), (a, b) -> {}, new BookmarksSupplier() {
+					@Override
+					public Set<Bookmark> getBookmarks(String s) {
+						return Set.of();
+					}
+
+					@Override
+					public Set<Bookmark> getAllBookmarks() {
+						return Set.of();
+					}
+				}));
 		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(networkSession));
 		return mockedDriver;
 	}

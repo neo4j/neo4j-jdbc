@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.neo4j</groupId>
         <artifactId>neo4j-jdbc-parent</artifactId>
-        <version>4.0.6</version>
+        <version>5.1.0</version>
     </parent>
 
     <!-- =========== -->
@@ -20,5 +20,18 @@
     <packaging>jar</packaging>
     <name>Neo4j JDBC Driver</name>
     <description>Common module for every implementation of the Neo4j JDBC Driver</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>neo4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 </project>

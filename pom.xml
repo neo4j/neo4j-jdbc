@@ -8,7 +8,7 @@
 	<!-- =========== -->
 	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-jdbc-parent</artifactId>
-	<version>4.0.6</version>
+	<version>5.1.0</version>
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver Parent</name>
 	<description>Parent POM for Neo4j JDBC Driver and Modules</description>
@@ -75,14 +75,14 @@
 	<properties>
 		<!-- General -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>8</java.version>
+		<java.version>17</java.version>
 
 		<!-- Deps version -->
 		<mockito.version>4.7.0</mockito.version>
 		<junit.version>4.13.2</junit.version>
 		<jmh.version>1.35</jmh.version>
-		<neo4j.java.driver.version>4.4.9</neo4j.java.driver.version>
-		<neo4j.version>4.3.0</neo4j.version>
+		<neo4j.java.driver.version>5.1.0</neo4j.java.driver.version>
+		<neo4j.version>4.4.10</neo4j.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<jackson.version>2.13.3</jackson.version>
 		<testcontainers.version>1.17.3</testcontainers.version>

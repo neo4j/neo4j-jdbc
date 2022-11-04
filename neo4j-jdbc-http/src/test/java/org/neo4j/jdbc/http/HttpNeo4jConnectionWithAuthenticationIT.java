@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class HttpNeo4jConnectionWithAuthenticationIT {
 
     @ClassRule
-    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:enterprise")
             .waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
                     .withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
             .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
