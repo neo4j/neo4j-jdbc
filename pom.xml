@@ -78,7 +78,7 @@
 		<java.version>8</java.version>
 
 		<!-- Deps version -->
-		<mockito.version>4.8.1</mockito.version>
+		<mockito.version>4.9.0</mockito.version>
 		<junit.version>4.13.2</junit.version>
 		<jmh.version>1.36</jmh.version>
 		<neo4j.java.driver.version>4.4.9</neo4j.java.driver.version>
