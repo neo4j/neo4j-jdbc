@@ -116,18 +116,7 @@
 				<artifactId>neo4j-jdbc-bolt</artifactId>
 				<version>${project.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>org.neo4j</groupId>
-				<artifactId>neo4j-jdbc-http</artifactId>
-				<version>${project.version}</version>
-			</dependency>
 
-			<!-- Deps to the HTTP client -->
-			<dependency>
-				<groupId>org.apache.httpcomponents</groupId>
-				<artifactId>httpclient</artifactId>
-				<version>${httpclient.version}</version>
-			</dependency>
 			<!-- Deps to Jackson for JSON manipulation -->
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
