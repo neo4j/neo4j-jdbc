@@ -88,16 +88,6 @@ If you want only one of the protocols, you can depend on its module:
     <scope>runtime</scope>
 </dependency>
 
-or
-
-[source,xml]
-<dependency>
-    <groupId>org.neo4j</groupId>
-    <artifactId>neo4j-jdbc-http</artifactId>
-    <version>{neo4j-jdbc-version}</version>
-    <scope>runtime</scope>
-</dependency>
-
 === Minimum viable snippet
 
 // tag::mvs[]

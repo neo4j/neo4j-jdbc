@@ -20,7 +20,6 @@
 	<modules>
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-bolt</module>
-		<module>neo4j-jdbc-http</module>
 		<module>neo4j-jdbc-driver</module>
 		<module>neo4j-jdbc-examples</module>
 	</modules>
