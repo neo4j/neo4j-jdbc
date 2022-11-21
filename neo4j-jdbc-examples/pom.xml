@@ -33,7 +33,7 @@
     <dependencies>
 		<dependency>
 			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j-jdbc-driver</artifactId>
+			<artifactId>neo4j-jdbc-bolt</artifactId>
 			<version>5.1.0</version>
 			<scope>runtime</scope>
 		</dependency>
