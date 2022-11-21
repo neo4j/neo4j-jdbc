@@ -18,7 +18,6 @@ projects that are using the classic JDBC connector in the relational paradigm to
 
 This driver supports various types of database transports, through:
 
-* The `HTTP` protocol using `jdbc:neo4j:http://<host>:<port>/` from Neo4j 2.0+
 * The `Bolt` direct connection protocol using `jdbc:neo4j:bolt://<host>:<port>/` from Neo4j 3.0+
 * The `Bolt` routing-aware protocol for clusters:
 ** using `jdbc:neo4j:neo4j://<host>:<port>/` from Neo4j 4.0+
@@ -49,7 +48,7 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |http, bolt, bolt+routing
 |yes
 
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.4[4.0.4]
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.5[4.0.5]
 |3.5.x - 4.x
 |4.4.x
 |1.8
@@ -57,7 +56,7 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |yes
 
 |https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/5.0.0[5.0.0]
-|4.x - 5.0/1
+|4.4 - 5.0/1
 |5.1.0
 |17
 |http, bolt, neo4j
@@ -68,17 +67,7 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 
 === Maven dependency
 
-For the all-in-one module supporting both Bolt and HTTP, you can simply use:
-
-[source,xml]
-<dependency>
-    <groupId>org.neo4j</groupId>
-    <artifactId>neo4j-jdbc-driver</artifactId>
-    <version>{neo4j-jdbc-version}</version>
-    <scope>runtime</scope>
-</dependency>
-
-If you want only one of the protocols, you can depend on its module:
+Simply add the JDBC dependency:
 
 [source,xml]
 <dependency>
@@ -95,7 +84,7 @@ If you want only one of the protocols, you can depend on its module:
 .Dependency declaration
 [source,subs=attributes]
 -----
-org.neo4j:neo4j-jdbc-driver:{neo4j-jdbc-version}
+org.neo4j:neo4j-jdbc-bolt:{neo4j-jdbc-version}
 -----
 
 .Run Query
@@ -121,7 +110,7 @@ try (Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://loca
 
 === Usage with Neo4j Server
 
-* Install a Neo4j 4.x server and start it with the Bolt protocol enabled
+* Install a Neo4j 5.x/4.x server and start it with the Bolt protocol enabled
 * Connect with URLs in the following 3 forms:
 ** `jdbc:neo4j:http://<host>:<port>/` (e.g. `jdbc:neo4j:http://localhost/`)
 ** `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
@@ -172,7 +161,8 @@ When the JDBC driver is configured as a JNDI resource into Tomcat, you must incl
 
 Here's an example:
 
-```
+[source,xml]
+----
     <Resource name="jdbc/neo4j"
               auth="Container"
               type="javax.sql.DataSource"
@@ -183,8 +173,7 @@ Here's an example:
               removeAbandonedOnBorrow="true"
               closeMethod="close"
               />
-```
-
+----
 
 === Building the driver yourself
 
@@ -194,9 +183,6 @@ This project is composed by the following modules:
 
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
 * https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the Bolt protocol
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-http[Neo4j JDBC - HTTP] - module supporting the HTTP protocol
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-driver[Neo4j JDBC - Driver packaging] - module to package all above modules
-
 
 .Run all unit tests & integration tests
 -------------------------------------------------
@@ -214,7 +200,7 @@ mvn clean test -Pperformance-test
 --------------------------------------------------
 
 [NOTE]
-To run the performance test, you must have a Neo4j Server 3.3.x running with the Bolt protocol enabled on port 7687 (default).
+To run the performance test, you must have a Neo4j Server running with the Bolt protocol enabled on port 7687 (default).
 
 
 === License
