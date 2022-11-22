@@ -246,7 +246,8 @@ public class BoltNeo4jDatabaseMetaDataIT {
 	@Test
 	public void getIndexInfoWithConstraint() throws Exception {
 		// given
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		String constrName = "bar_uuid";
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT " + constrName + " FOR (f:Bar) REQUIRE (f.uuid) IS UNIQUE");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Bar", true, false);
@@ -255,12 +256,8 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertTrue(resultSet.next());
 		assertEquals("Bar", resultSet.getString("TABLE_NAME"));
 		assertFalse(resultSet.getBoolean("NON_UNIQUE"));
-		String prefix = "constraint_";
-		if (isV3(neo4j)) {
-			prefix = "index";
-		}
-		assertTrue(resultSet.getString("INDEX_NAME").toLowerCase(Locale.ROOT).startsWith(prefix));
-		assertTrue(resultSet.getString("INDEX_QUALIFIER").toLowerCase(Locale.ROOT).startsWith(prefix));
+		assertTrue(resultSet.getString("INDEX_NAME").equals(constrName));
+		assertTrue(resultSet.getString("INDEX_QUALIFIER").equals(constrName));
 		assertEquals(3, resultSet.getInt("TYPE"));
 		assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
 		assertEquals("uuid", resultSet.getString("COLUMN_NAME"));
@@ -271,13 +268,14 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertNull(resultSet.getObject("PAGES"));
 		assertNull(resultSet.getObject("FILTER_CONDITION"));
 		assertFalse(resultSet.next());
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT " + constrName);
 	}
 
 	@Test
 	public void getIndexInfoWithBacktickLabels() throws Exception {
 		// given
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT ON (f:`Bar Ext`) ASSERT (f.uuid) IS UNIQUE");
+		String constrName = "barExt_uuid";
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT " + constrName + " FOR (f:`Bar Ext`) REQUIRE (f.uuid) IS UNIQUE");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Bar Ext", true, false);
@@ -286,12 +284,8 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertTrue(resultSet.next());
 		assertEquals("Bar Ext", resultSet.getString("TABLE_NAME"));
 		assertFalse(resultSet.getBoolean("NON_UNIQUE"));
-		String prefix = "constraint_";
-		if (isV3(neo4j)) {
-			prefix = "index";
-		}
-		assertTrue(resultSet.getString("INDEX_NAME").toLowerCase(Locale.ROOT).startsWith(prefix));
-		assertTrue(resultSet.getString("INDEX_QUALIFIER").toLowerCase(Locale.ROOT).startsWith(prefix));
+		assertTrue(resultSet.getString("INDEX_NAME").equals(constrName));
+		assertTrue(resultSet.getString("INDEX_QUALIFIER").equals(constrName));
 		assertEquals(3, resultSet.getInt("TYPE"));
 		assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
 		assertEquals("uuid", resultSet.getString("COLUMN_NAME"));
@@ -302,26 +296,27 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertNull(resultSet.getObject("PAGES"));
 		assertNull(resultSet.getObject("FILTER_CONDITION"));
 		assertFalse(resultSet.next());
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT ON (f:`Bar Ext`) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT " + constrName);
 	}
 
 	@Test
 	public void getIndexInfoWithConstraintWrongLabel() throws Exception {
 		// given
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE CONSTRAINT bar_uuid FOR (f:Bar) REQUIRE (f.uuid) IS UNIQUE");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Foo", true, false);
 
 		// then
 		assertFalse(resultSet.next());
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT ON (f:Bar) ASSERT (f.uuid) IS UNIQUE");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP CONSTRAINT bar_uuid");
 	}
 
 	@Test
 	public void getIndexInfoWithIndex() throws Exception {
 		// given
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE INDEX ON :Bar(uuid)");
+		String indexName = "bar_uuid";
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "CREATE INDEX " + indexName + " FOR (b:Bar) ON (b.uuid)");
 
 		// when
 		ResultSet resultSet = connection.getMetaData().getIndexInfo(null, null, "Bar", false, false);
@@ -330,8 +325,8 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertTrue(resultSet.next());
 		assertEquals("Bar", resultSet.getString("TABLE_NAME"));
 		assertTrue(resultSet.getBoolean("NON_UNIQUE"));
-		assertTrue(resultSet.getString("INDEX_NAME").toLowerCase(Locale.ROOT).startsWith("index"));
-		assertTrue(resultSet.getString("INDEX_QUALIFIER").toLowerCase(Locale.ROOT).startsWith("index"));
+		assertTrue(resultSet.getString("INDEX_NAME").equals(indexName));
+		assertTrue(resultSet.getString("INDEX_QUALIFIER").equals(indexName));
 		assertEquals(3, resultSet.getInt("TYPE"));
 		assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
 		assertEquals("uuid", resultSet.getString("COLUMN_NAME"));
@@ -342,6 +337,6 @@ public class BoltNeo4jDatabaseMetaDataIT {
 		assertNull(resultSet.getObject("PAGES"));
 		assertNull(resultSet.getObject("FILTER_CONDITION"));
 		assertFalse(resultSet.next());
-		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP INDEX ON :Bar(uuid)");
+		JdbcConnectionTestUtils.executeTransactionally(neo4j, "DROP INDEX " + indexName);
 	}
 }

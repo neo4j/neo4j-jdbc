@@ -24,12 +24,10 @@ package org.neo4j.jdbc;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
-import org.neo4j.jdbc.http.HttpNeo4jConnection;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
@@ -58,24 +56,6 @@ public class DriverTestIT {
 					.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
 					.withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
 			.withAdminPassword(null);
-
-	@Test public void shouldReturnAHttpConnection() throws SQLException {
-		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.getHttpUrl(), new Properties());
-		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
-	}
-	@Test public void shouldReturnAHttpConnection2() throws SQLException {
-		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:" +  neo4j.getHttpUrl(), new Properties());
-		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
-	}
-
-	@Ignore
-	@Test public void shouldReturnAHttpsConnection() throws SQLException {
-		Driver driver = new Driver();
-		Connection connection = driver.connect("jdbc:neo4j:" + neo4j.getHttpsUrl(), new Properties());
-		Assert.assertTrue(connection instanceof HttpNeo4jConnection);
-	}
 
 	@Test public void shouldReturnABoltConnection() throws Exception {
 		Driver driver = new Driver();

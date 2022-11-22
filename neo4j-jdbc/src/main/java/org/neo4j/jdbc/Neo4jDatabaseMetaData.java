@@ -31,6 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author AgileLARUS
@@ -40,7 +42,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 
 	public static final Logger LOGGER = Logger.getLogger(Neo4jDatabaseMetaData.class.getName());
 
-	public static final String GET_DBMS_FUNCTIONS = "CALL dbms.functions() YIELD name RETURN name ORDER BY name ASC";
+	public static final String GET_DBMS_FUNCTIONS = "SHOW FUNCTIONS YIELD name RETURN name ORDER BY name ASC";
 
 	/**
 	 * The regex to parse the version driver.
@@ -771,65 +773,36 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		return emptyResultSet();
 	}
 
-	private String getIndexesV3X(boolean unique, boolean hasTable) {
-		List<String> filters = new ArrayList<>();
-		if (hasTable) {
-			filters.add("? IN tokenNames");
-		}
-		if (unique) {
-			filters.add("type = 'node_unique_property'");
-		}
-		StringBuilder queryBuilder = new StringBuilder();
-		queryBuilder.append("CALL db.indexes() YIELD description, tokenNames, properties, state, type\n");
-		if (!filters.isEmpty()) {
-			queryBuilder.append("WHERE ").append(String.join(" AND ", filters)).append("\n");
-		}
-		queryBuilder.append("WITH description, tokenNames, properties, state, type\n");
-		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS index\n");
-		queryBuilder.append("RETURN null AS TABLE_CAT,\n");
-		queryBuilder.append("null AS TABLE_SCHEM,\n");
-		queryBuilder.append("tokenNames[0] AS TABLE_NAME,\n");
-		queryBuilder.append("type <> 'node_unique_property' AS NON_UNIQUE,\n");
-		queryBuilder.append("description AS INDEX_QUALIFIER,\n");
-		queryBuilder.append("description AS INDEX_NAME,\n");
-		queryBuilder.append(DatabaseMetaData.tableIndexOther + " AS TYPE,\n");
-		queryBuilder.append("index + 1 AS ORDINAL_POSITION,\n");
-		queryBuilder.append("properties[index] AS COLUMN_NAME,\n");
-		queryBuilder.append("null AS ASC_OR_DESC,\n");
-		queryBuilder.append("null AS CARDINALITY,\n");
-		queryBuilder.append("null AS PAGES,\n");
-		queryBuilder.append("null AS FILTER_CONDITION");
-		return queryBuilder.toString();
-	}
-
-	private String getIndexesV4X(String table, boolean unique, boolean hasTable) {
+	private String getIndexesV5(boolean unique, boolean hasTable) {
 		List<String> filters = new ArrayList<>();
 		if (hasTable) {
 			filters.add("ANY(tokenName IN labelsOrTypes WHERE tokenName = ?)");
 		}
+		boolean isNeo4j5 = databaseVersion.startsWith("5");
 		if (unique) {
-			filters.add("(uniqueness = 'UNIQUE' OR uniqueness = 'NODE KEY')");
+			filters.add(isNeo4j5 ?
+					"owningConstraint IS NOT NULL" : "(uniqueness = 'UNIQUE' OR uniqueness = 'NODE KEY')");
 		}
 		filters.add("entityType = 'NODE'");
 		StringBuilder queryBuilder = new StringBuilder();
-		final String fields = "id, name, uniqueness, entityType, labelsOrTypes, properties";
-		queryBuilder.append("CALL db.indexes() YIELD " + fields + "\n");
+		String owningConstraint = isNeo4j5 ? "owningConstraint" : "uniqueness";
+		final String fields = "id, name, " + owningConstraint + ", entityType, labelsOrTypes, properties";
+		queryBuilder.append("SHOW INDEXES YIELD " + fields + "\n");
+
 		if (!filters.isEmpty()) {
 			queryBuilder.append("WHERE " + String.join(" AND ", filters) + "\n");
 		}
 
-		queryBuilder.append("WITH " + fields + "\n");
-		queryBuilder.append("UNWIND labelsOrTypes AS label\n");
-		queryBuilder.append("UNWIND range(0, size(properties) - 1) AS indexProperties\n");
 		queryBuilder.append("RETURN null AS TABLE_CAT,\n");
 		queryBuilder.append("null AS TABLE_SCHEM,\n");
-		queryBuilder.append("label AS TABLE_NAME,\n");
-		queryBuilder.append("(uniqueness <> 'UNIQUE' AND uniqueness <> 'NODE KEY') AS NON_UNIQUE,\n");
+		queryBuilder.append("labelsOrTypes AS TABLE_NAME,\n");
+		queryBuilder.append((isNeo4j5 ? "owningConstraint IS NULL" : "(uniqueness <> 'UNIQUE' AND uniqueness <> 'NODE KEY')")
+				+ " AS NON_UNIQUE,\n");
 		queryBuilder.append("name AS INDEX_QUALIFIER,\n");
 		queryBuilder.append("name AS INDEX_NAME,\n");
 		queryBuilder.append(DatabaseMetaData.tableIndexOther + " AS TYPE,\n");
-		queryBuilder.append("indexProperties + 1 AS ORDINAL_POSITION,\n");
-		queryBuilder.append("properties[indexProperties] AS COLUMN_NAME,\n");
+		queryBuilder.append("0 AS ORDINAL_POSITION,\n");
+		queryBuilder.append("properties AS COLUMN_NAME,\n");
 		queryBuilder.append("null AS ASC_OR_DESC,\n");
 		queryBuilder.append("null AS CARDINALITY,\n");
 		queryBuilder.append("null AS PAGES,\n");
@@ -840,13 +813,59 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	@Override
 	public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
 		boolean hasTable = table != null && !table.trim().isEmpty();
-		final String query = databaseVersion.startsWith("4") ?
-				getIndexesV4X(table, unique, hasTable) : getIndexesV3X(unique, hasTable);
+		final String query = getIndexesV5(unique, hasTable);
+
 		PreparedStatement ps = this.connection.prepareStatement(query);
 		if (hasTable) {
 			ps.setString(1, table);
 		}
-		return ps.executeQuery();
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData md = resultSet.getMetaData();
+		int columns = md.getColumnCount();
+		List<String> keys = new ArrayList<>();
+		for (int i = 1; i <= columns; i++) {
+			keys.add(md.getColumnName(i));
+		}
+
+		List<Map<String, Object>> rows = new ArrayList<>();
+		while (resultSet.next()) {
+			Map<String, Object> row = new HashMap<>();
+			keys.forEach(k -> {
+				try {
+					row.put(k, resultSet.getObject(k));
+				} catch (SQLException e) {
+					throw new RuntimeException(e);
+				}
+			});
+			rows.add(row);
+		}
+
+		List<List<Object>> data = rows.stream()
+				.flatMap(m -> {
+					List<String> labels = (List<String>) m.get("TABLE_NAME");
+					return labels.stream()
+							.map(label -> {
+								Map<String, Object> newRow = new HashMap<>(m);
+								newRow.put("TABLE_NAME", label);
+								return newRow;
+							});
+				})
+				.flatMap(m -> {
+					List<String> properties = (List<String>) m.get("COLUMN_NAME");
+					return IntStream.range(0, properties.size())
+							.mapToObj(i -> {
+								String prop = properties.get(i);
+								Map<String, Object> newRow = new HashMap<>(m);
+								newRow.put("ORDINAL_POSITION", i + 1);
+								newRow.put("COLUMN_NAME", prop);
+								return newRow;
+							});
+				})
+				.map(row -> keys.stream()
+						.map(row::get)
+						.collect(Collectors.toList()))
+				.collect(Collectors.toList());
+		return ListNeo4jResultSet.newInstance(false, data, keys);
 	}
 
 	@Override public boolean supportsResultSetType(int type) throws SQLException {

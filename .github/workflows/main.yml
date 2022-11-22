@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ['4.0']
+    branches: ['5.0']
   pull_request:
     branches: ['**']
 
@@ -12,15 +12,12 @@ jobs:
     strategy:
       matrix:
         neo4j_version:
-          - "3.5"
-          - "4.3"
           - "4.4"
+          - "5.1"
         neo4j_enterprise_edition:
           - "true"
           - "false"
         java_version:
-          - 8
-          - 11
           - 17
     steps:
       - uses: actions/checkout@v3
