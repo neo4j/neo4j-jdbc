@@ -9,7 +9,6 @@ public class Neo4jContainerUtils {
 
     public static Neo4jContainer<?> createNeo4jContainer() {
         return new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-                .waitingFor(boltStart())
                 .withAdminPassword(null);
     }
 
@@ -17,10 +16,8 @@ public class Neo4jContainerUtils {
     // where we use the default password that needs to be changed we use a GenericContainer
 
     public static GenericContainer<?> createNeo4jContainerWithDefaultPassword() {
-        return new GenericContainer<>(neo4jImageCoordinates())
-                .withExposedPorts(7687)
-                .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-                .waitingFor(boltStart());
+        return new Neo4jContainer<>(neo4jImageCoordinates())
+                .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
     }
     public static boolean isV3(Neo4jContainer<?> neo4j) {
         return versionStartsWith(neo4j, "3");
