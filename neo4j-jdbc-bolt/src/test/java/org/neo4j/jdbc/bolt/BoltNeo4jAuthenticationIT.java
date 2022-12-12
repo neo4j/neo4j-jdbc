@@ -19,6 +19,7 @@
  */
 package org.neo4j.jdbc.bolt;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -53,6 +54,7 @@ public class BoltNeo4jAuthenticationIT {
 	private String NEO4J_JDBC_BOLT_URL;
 
 	@Before public void setup() {
+		Assume.assumeTrue(neo4j.isRunning());
 		NEO4J_JDBC_BOLT_URL = String.format("jdbc:neo4j:bolt://%s:%d", neo4j.getHost(), neo4j.getMappedPort(7687));
 	}
 
