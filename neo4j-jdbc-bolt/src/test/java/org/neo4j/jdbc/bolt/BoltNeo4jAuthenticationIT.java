@@ -21,9 +21,11 @@ package org.neo4j.jdbc.bolt;
 
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runners.MethodSorters;
 import org.neo4j.driver.exceptions.ClientException;
 import org.testcontainers.containers.GenericContainer;
 
@@ -40,6 +42,7 @@ import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.createNeo4jContainer
  * @author AgileLARUS
  * @since 3.0.0
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BoltNeo4jAuthenticationIT {
 
 	@ClassRule
