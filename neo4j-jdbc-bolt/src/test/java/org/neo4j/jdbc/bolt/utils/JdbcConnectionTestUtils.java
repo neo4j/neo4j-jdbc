@@ -77,24 +77,20 @@ public class JdbcConnectionTestUtils {
         return getConnection(neo4j, "");
     }
 
-    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j, String parameters) {
-        Connection res = connection;
+    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j) {
+        return verifyConnection(connection, neo4j, "");
+    }
 
+    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j, String parameters) {
         try {
             if (connection == null || connection.isClosed()) {
-                res = JdbcConnectionTestUtils.getConnection(neo4j, parameters);
-            } else {
-                res.setAutoCommit(true);
+                return JdbcConnectionTestUtils.getConnection(neo4j, parameters);
             }
+            connection.setAutoCommit(true);
+            return connection;
         } catch (SQLException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
-
-        return res;
-    }
-
-    public static Connection verifyConnection(Connection connection, Neo4jContainer<?> neo4j) {
-        return verifyConnection(connection, neo4j, "");
     }
 
     public static void closeConnection(Connection connection) {
@@ -103,10 +99,6 @@ public class JdbcConnectionTestUtils {
 
     public static void closeConnection(Connection connection, Statement stmt) {
         closeConnection(connection, stmt, null);
-    }
-
-    public static void closeStatement(Statement stmt, ResultSet rs) {
-        closeConnection(null, stmt, rs);
     }
 
     public static void closeStatement(Statement stmt) {
