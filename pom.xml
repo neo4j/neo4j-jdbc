@@ -8,7 +8,7 @@
 	<!-- =========== -->
 	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-jdbc-parent</artifactId>
-	<version>5.1.0</version>
+	<version>5.0.0</version>
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver Parent</name>
 	<description>Parent POM for Neo4j JDBC Driver and Modules</description>
