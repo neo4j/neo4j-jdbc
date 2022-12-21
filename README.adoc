@@ -56,10 +56,10 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |yes
 
 |https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/5.0.0[5.0.0]
-|4.4 - 5.0/1
-|5.1.0
+|4.4 - 5
+|5.0.0
 |17
-|http, bolt, neo4j
+|bolt, neo4j
 |yes
 
 |===
