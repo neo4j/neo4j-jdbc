@@ -503,17 +503,7 @@ public class BoltNeo4jConnectionTest {
 
 		NetworkSession networkSession = new NetworkSession(null, null,
 				DatabaseNameUtil.database(""), AccessMode.READ, Set.of(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING,
-				new Neo4jBookmarkManager(Map.of(), (a, b) -> {}, new BookmarksSupplier() {
-					@Override
-					public Set<Bookmark> getBookmarks(String s) {
-						return null;
-					}
-
-					@Override
-					public Set<Bookmark> getAllBookmarks() {
-						return null;
-					}
-				}));
+				new Neo4jBookmarkManager(Set.of(), (a) -> {}, () -> Set.of()));
 
 		Session session = new InternalSession(networkSession);
 		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);

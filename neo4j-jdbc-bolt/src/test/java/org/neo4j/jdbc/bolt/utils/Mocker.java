@@ -153,17 +153,7 @@ public class Mocker {
 		ConnectionProvider connectionProvider = mock(ConnectionProvider.class, RETURNS_MOCKS);
 		NetworkSession networkSession = new NetworkSession(connectionProvider, null,
 				DatabaseNameUtil.database(""), AccessMode.READ, Set.of(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING,
-				new Neo4jBookmarkManager(Map.of(), (a, b) -> {}, new BookmarksSupplier() {
-					@Override
-					public Set<Bookmark> getBookmarks(String s) {
-						return Set.of();
-					}
-
-					@Override
-					public Set<Bookmark> getAllBookmarks() {
-						return Set.of();
-					}
-				}));
+				new Neo4jBookmarkManager(Set.of(), (a) -> {}, () -> Set.of()));
 		Mockito.when(mockedDriver.session()).thenReturn(new InternalSession(networkSession));
 		return mockedDriver;
 	}

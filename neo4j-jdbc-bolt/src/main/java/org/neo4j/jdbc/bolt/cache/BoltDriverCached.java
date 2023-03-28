@@ -1,7 +1,10 @@
 package org.neo4j.jdbc.bolt.cache;
 
+import org.neo4j.driver.BaseSession;
+import org.neo4j.driver.BookmarkManager;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Metrics;
+import org.neo4j.driver.QueryTask;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.async.AsyncSession;
@@ -37,6 +40,16 @@ public class BoltDriverCached implements Driver {
     }
 
     @Override
+    public QueryTask queryTask(String s) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public BookmarkManager queryTaskBookmarkManager() {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
     public boolean isEncrypted() {
         return internal.isEncrypted();
     }
@@ -51,6 +64,11 @@ public class BoltDriverCached implements Driver {
     public Session session(SessionConfig sessionConfig) {
         sessionCounter.incrementAndGet();
         return internal.session(sessionConfig);
+    }
+
+    @Override
+    public <T extends BaseSession> T session(Class<T> aClass, SessionConfig sessionConfig) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
     @Override
