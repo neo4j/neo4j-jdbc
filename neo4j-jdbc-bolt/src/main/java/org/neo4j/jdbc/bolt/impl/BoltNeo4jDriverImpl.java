@@ -21,6 +21,7 @@ import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Logging;
 import org.neo4j.jdbc.Neo4jDriver;
 
 import java.io.File;
@@ -33,6 +34,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 
 /**
@@ -84,6 +86,7 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 builder = setMaxConnectionLifetime(info, builder);
                 builder = setMaxConnectionPoolSize(info, builder);
                 builder = setMaxTransactionRetryTime(info, builder);
+                builder.withLogging(Logging.slf4j());
 
                 Config config = builder.build();
                 AuthToken authToken = getAuthToken(info);

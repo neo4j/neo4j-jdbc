@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.neo4j</groupId>
         <artifactId>neo4j-jdbc-examples</artifactId>
-        <version>5.0.1</version>
+        <version>5.0.2</version>
     </parent>
 
 	<!-- =========== -->
@@ -27,6 +27,12 @@
 			<groupId>org.mybatis</groupId>
 			<artifactId>mybatis</artifactId>
 			<version>3.5.14</version>
+		</dependency>
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.4.6</version>
 		</dependency>
     </dependencies>
 
