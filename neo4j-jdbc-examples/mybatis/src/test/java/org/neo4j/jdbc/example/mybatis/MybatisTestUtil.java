@@ -34,15 +34,26 @@ import org.neo4j.driver.Session;
 import org.neo4j.jdbc.example.mybatis.mapper.ActorMapper;
 import org.neo4j.jdbc.example.mybatis.util.ConnectionFactory;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
 import javax.sql.DataSource;
 import java.util.Properties;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 
 /**
  * @author AgileLARUS
  * @since 3.0.2
  */
 public class MybatisTestUtil {
+
+	public static Neo4jContainer createNeo4jContainter() {
+		return new Neo4jContainer<>("neo4j:5.6.0-enterprise")
+				.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+				.withAdminPassword(null);
+	}
 
 	public static void populateGraphDB(Neo4jContainer<?> neo4j) {
 		populateGraphDB(neo4j.getBoltUrl(), null, null);

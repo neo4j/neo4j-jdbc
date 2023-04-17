@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
@@ -41,6 +42,28 @@ import static java.net.HttpURLConnection.HTTP_OK;
 @RunWith(Parameterized.class)
 public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
 
+    public static Neo4jContainer<?> createNeo4jContainer() {
+        return new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+                .withAdminPassword(null);
+    }
+
+    private static String neo4jImageCoordinates() {
+        String neo4jVersion = System.getenv("NEO4J_VERSION");
+        if (neo4jVersion == null) neo4jVersion = "4.4";
+        String enterpriseEdition = System.getenv("NEO4J_ENTERPRISE_EDITION");
+        if (enterpriseEdition == null) enterpriseEdition = "false";
+        return String.format("neo4j:%s%s", neo4jVersion, Boolean.parseBoolean(enterpriseEdition) ? "-enterprise": "");
+    }
+
+    // Neo4jContainer overwrites the default password so in order to replicate a use-case
+    // where we use the default password that needs to be changed we use a GenericContainer
+
+    public static GenericContainer<?> createNeo4jContainerWithDefaultPassword() {
+        return new Neo4jContainer<>(neo4jImageCoordinates())
+                .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+                ;
+    }
+
     @Parameterized.Parameters
     public static Iterable<? extends Object> data() {
         return Arrays.asList(Boolean.FALSE);
@@ -50,10 +73,7 @@ public abstract class Neo4jHttpITUtil extends Neo4jHttpUnitTestUtil {
     public Boolean secureMode;
 
     @ClassRule
-    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:4.3.0-enterprise")
-            .waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
-                    .withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
-                    .withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
+    public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>("neo4j:5-enterprise")
             .withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
             .withAdminPassword(null);
 

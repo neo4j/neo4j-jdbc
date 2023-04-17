@@ -133,7 +133,7 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 		try {
 			return session.readTransaction(tx -> {
 				List<String> functions = new ArrayList<>();
-				Result rs = tx.run(GET_DBMS_FUNCTIONS);
+				Result rs = tx.run(this.databaseVersion.startsWith("3") ? GET_DBMS_FUNCTIONS_V3 : GET_DBMS_FUNCTIONS);
 				while (rs != null && rs.hasNext()) {
 					Record record = rs.next();
 					functions.add(record.get("name").asString());

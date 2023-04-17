@@ -49,12 +49,16 @@ public class CypherExecutorContainerIT {
 
 	@BeforeClass
 	public static void createExtraDatabase() throws Exception {
-		createDatabase(EXTRA_DATABASE_NAME);
+		if (neo4jContainer != null && neo4jContainer.isRunning()) {
+			createDatabase(EXTRA_DATABASE_NAME);
+		}
 	}
 
 	@AfterClass
 	public static void dropExtraDatabase() throws Exception {
-		dropDatabase(EXTRA_DATABASE_NAME);
+		if (neo4jContainer != null && neo4jContainer.isRunning()) {
+			dropDatabase(EXTRA_DATABASE_NAME);
+		}
 	}
 
 	@Test
@@ -113,9 +117,6 @@ public class CypherExecutorContainerIT {
 	private static Neo4jContainer<?> startEnterpriseDockerContainer(String version, String username, String password) {
 		try {
 			Neo4jContainer<?> container = new Neo4jContainer<>(version)
-					.waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
-							.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
-							.withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
 					.withEnv("NEO4J_AUTH", String.format("%s/%s", username, password))
 					.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes");
 			container.start();
@@ -128,29 +129,10 @@ public class CypherExecutorContainerIT {
 	}
 
 	private static String imageCoordinates() {
-		return String.format("neo4j:%s-enterprise", projectNeo4jVersion());
-	}
-
-	private static String projectNeo4jVersion() {
-		String filteredClasspathResource = "/neo4j.version";
-		List<String> lines = readLines(filteredClasspathResource);
-		int lineCount = lines.size();
-		if (lineCount != 1) {
-			throw new RuntimeException(String
-					.format("%s should have only 1 (filtered) line, found: %d", filteredClasspathResource, lineCount));
-		}
-		return lines.iterator().next();
-	}
-
-	private static List<String> readLines(String classpathResource) {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(CypherExecutorContainerIT.class
-				.getResourceAsStream(classpathResource)))) {
-
-			return reader.lines().collect(Collectors.toList());
-		}
-		catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		String neo4jVersion = System.getenv("NEO4J_VERSION");
+		if (neo4jVersion == null) neo4jVersion = "4.4";
+		Assume.assumeFalse(neo4jVersion.startsWith("3"));
+		return String.format("neo4j:%s-enterprise", neo4jVersion);
 	}
 
 	private static void createDatabase(String databaseName) throws Exception {
@@ -167,7 +149,6 @@ public class CypherExecutorContainerIT {
 		try (Driver driver = GraphDatabase
 				.driver(new URI(neo4jContainer.getBoltUrl()), AuthTokens.basic(USERNAME, PASSWORD));
 			 Session session = driver.session(sessionConfig)) {
-
 			sessionConsumer.accept(session);
 		}
 	}
