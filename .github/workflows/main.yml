@@ -13,8 +13,8 @@ jobs:
       matrix:
         neo4j_version:
           - "3.5"
-          - "4.3"
           - "4.4"
+          - "5"
         neo4j_enterprise_edition:
           - "true"
           - "false"
