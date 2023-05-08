@@ -52,20 +52,15 @@ public class BoltRoutingNeo4jDriver extends BoltNeo4jDriverImpl {
     public static final String CUSTOM_ROUTING_POLICY_SEPARATOR = "&";
 
     private static final BoltDriverCache cache = new BoltDriverCache(params -> {
-        for (URI uri : params.getRoutingUris()) {
-            final Driver driver = GraphDatabase.driver(uri, params.getAuthToken(), params.getConfig());
-            try {
-                driver.verifyConnectivity();
-                return driver;
-            } catch (ServiceUnavailableException e) {
-                BoltNeo4jUtils.closeSafely(driver, null);
-            } catch (Throwable e) {
-                // for any other errors, we first close the driver and then rethrow the original error out.
-                BoltNeo4jUtils.closeSafely(driver, null);
-                throw e;
-            }
+        final Driver driver = GraphDatabase.driver(params.getRoutingUris().get(0), params.getAuthToken(), params.getConfig());
+        try {
+            driver.verifyConnectivity();
+            return driver;
+        } catch (Throwable e) {
+            // for any other errors, we first close the driver and then rethrow the original error out.
+            BoltNeo4jUtils.closeSafely(driver, null);
+            throw e;
         }
-        throw new ServiceUnavailableException( "Failed to discover an available server" );
     });
 
     static {

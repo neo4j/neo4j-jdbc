@@ -165,7 +165,7 @@ public class TestcontainersCausalCluster {
 
     public URI getURI() {
         return this.sidecars.stream().findAny()
-                .map(instance -> String.format("bolt+routing://%s:%d", instance.getContainerIpAddress(),
+                .map(instance -> String.format("neo4j://%s:%d", instance.getContainerIpAddress(),
                         instance.getMappedPort(DEFAULT_BOLT_PORT)))
                 .map(uri -> {
                     try {
@@ -179,7 +179,7 @@ public class TestcontainersCausalCluster {
 
     public URI getAllMembersURI() {
         try {
-            return new URI("bolt+routing://" + this.sidecars.stream()
+            return new URI("neo4j://" + this.sidecars.stream()
                     .map(instance -> String.format("%s:%d", instance.getContainerIpAddress(),
                             instance.getMappedPort(DEFAULT_BOLT_PORT)))
                     .collect(Collectors.joining(",")));
