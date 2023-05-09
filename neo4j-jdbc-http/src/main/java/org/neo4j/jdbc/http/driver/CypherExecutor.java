@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.neo4j.jdbc.Neo4jDatabaseMetaData.GET_DBMS_FUNCTIONS;
+import static org.neo4j.jdbc.Neo4jDatabaseMetaData.GET_DBMS_FUNCTIONS_V3;
 
 /**
  * Execute cypher queries.
@@ -243,7 +244,9 @@ public class CypherExecutor {
 
 	public List<String> callDbmsFunctions() {
 		try {
-			Neo4jResponse response = this.executeQuery(new Neo4jStatement(GET_DBMS_FUNCTIONS, Collections.emptyMap(), false));
+			String serverVersion = getServerVersion();
+			Neo4jResponse response = this.executeQuery(new Neo4jStatement(serverVersion.startsWith("3") ?
+					GET_DBMS_FUNCTIONS_V3 : GET_DBMS_FUNCTIONS, Collections.emptyMap(), false));
 			if (response.hasErrors()) {
 				return Collections.emptyList();
 			}
@@ -350,11 +353,20 @@ public class CypherExecutor {
 	 * @return A string that represent the neo4j server version
 	 */
 	public String getServerVersion() {
+		try {
+			return getServerVersion("/db/data");
+		} catch (Exception e) {
+			return getServerVersion("");
+		}
+	}
+
+	private String getServerVersion(String dbEndpointSuffix) {
 		String result = null;
 
 		// Prepare the headers query
+
 		HttpGet request = new HttpGet(this.transactionUrl
-				.replace(transactionPath(this.databaseName), "/db/data"));
+				.replace(transactionPath(this.databaseName), dbEndpointSuffix));
 
 		// Adding default headers to the request
 		for (Header header : this.getDefaultHeaders()) {
@@ -371,7 +383,7 @@ public class CypherExecutor {
 				}
 			}
 		} catch (Exception e) {
-			result = "Unknown";
+			throw new RuntimeException(e);
 		}
 
 		return result;

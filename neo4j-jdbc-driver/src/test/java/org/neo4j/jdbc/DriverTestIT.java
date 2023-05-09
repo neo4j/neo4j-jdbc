@@ -54,9 +54,6 @@ public class DriverTestIT {
 
 	@ClassRule
 	public static final Neo4jContainer<?> neo4j = new Neo4jContainer<>(neo4jImageCoordinates()).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-			.waitingFor(new WaitAllStrategy() // no need to override this once https://github.com/testcontainers/testcontainers-java/issues/4454 is fixed
-					.withStrategy(new LogMessageWaitStrategy().withRegEx(".*Bolt enabled on .*:7687\\.\n"))
-					.withStrategy(new HttpWaitStrategy().forPort(7474).forStatusCodeMatching(response -> response == HTTP_OK)))
 			.withAdminPassword(null);
 
 	@Test public void shouldReturnAHttpConnection() throws SQLException {
@@ -122,7 +119,7 @@ public class DriverTestIT {
 	// duplicate of neo4j-jdbc-bolt ContainerUtils
 	private static String neo4jImageCoordinates() {
 		String neo4jVersion = System.getenv("NEO4J_VERSION");
-		if (neo4jVersion == null) neo4jVersion = "4.3";
+		if (neo4jVersion == null) neo4jVersion = "4.4";
 		String enterpriseEdition = System.getenv("NEO4J_ENTERPRISE_EDITION");
 		if (enterpriseEdition == null) enterpriseEdition = "false";
 		return String.format("neo4j:%s%s", neo4jVersion, Boolean.parseBoolean(enterpriseEdition) ? "-enterprise": "");

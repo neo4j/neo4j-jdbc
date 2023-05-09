@@ -103,7 +103,8 @@ public class ListNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	@Override public boolean getBoolean(int columnIndex) throws SQLException {
-		return false;
+		Object value = this.get(columnIndex);
+		return (boolean) value;
 	}
 
 	@Override public short getShort(int columnIndex) throws SQLException {
@@ -111,7 +112,8 @@ public class ListNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	@Override public int getInt(int columnIndex) throws SQLException {
-		return 0;
+		Object value = this.get(columnIndex);
+		return value instanceof Long ? ((Long) value).intValue() : (int) value;
 	}
 
 	@Override public long getLong(int columnIndex) throws SQLException {
@@ -140,7 +142,8 @@ public class ListNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	@Override public boolean getBoolean(String columnLabel) throws SQLException {
-		return false;
+		Object value = this.get(columnLabel);
+		return (boolean) value;
 	}
 
 	@Override public short getShort(String columnLabel) throws SQLException {
@@ -148,10 +151,12 @@ public class ListNeo4jResultSet extends Neo4jResultSet {
 	}
 
 	@Override public int getInt(String columnLabel) throws SQLException {
-		return 0;
+		Object value = this.get(columnLabel);
+		return value instanceof Long ? ((Long) value).intValue() : (int) value;
 	}
 
 	@Override public long getLong(String columnLabel) throws SQLException {
+		Object value = this.get(columnLabel);
 		return 0;
 	}
 
