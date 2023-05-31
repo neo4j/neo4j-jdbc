@@ -83,14 +83,14 @@
 		<neo4j.version>4.4.10</neo4j.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<jackson.version>2.15.1</jackson.version>
-		<testcontainers.version>1.18.1</testcontainers.version>
+		<testcontainers.version>1.18.2</testcontainers.version>
 
 		<!-- Plugin version -->
 		<maven.plugin.compiler>3.11.0</maven.plugin.compiler>
 		<maven.plugin.resources>2.7</maven.plugin.resources>
 		<maven.plugin.shade>3.4.1</maven.plugin.shade>
 		<maven.plugin.javadoc>3.5.0</maven.plugin.javadoc>
-		<maven.plugin.source>3.2.1</maven.plugin.source>
+		<maven.plugin.source>3.3.0</maven.plugin.source>
 		<maven.plugin.gpg>1.4</maven.plugin.gpg>
 		<maven.plugin.surefire>3.1.0</maven.plugin.surefire>
 
