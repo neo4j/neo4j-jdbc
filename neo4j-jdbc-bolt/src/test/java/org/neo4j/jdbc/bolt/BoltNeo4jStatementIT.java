@@ -147,7 +147,7 @@ public class BoltNeo4jStatementIT {
 	@Test public void executeShouldExecuteAndReturnTrue() throws SQLException {
 		Statement statement = connection.createStatement();
 		boolean result = statement.execute(StatementData.STATEMENT_MATCH_ALL);
-		assertTrue(result);
+		assertFalse(result);
 		statement.close();
 
 	}
@@ -360,12 +360,8 @@ public class BoltNeo4jStatementIT {
 
 		try (Statement statement = connection.createStatement()) {
 			final boolean execute = statement.execute("UNWIND [] AS nope RETURN nope");
-			assertTrue(execute);
-
-			ResultSet resultSet = statement.getResultSet();
-			resultSet.next();
-			final Object nope = resultSet.getObject("nope");
-			assertNull(nope);
+			assertFalse(execute);
+			assertNull(statement.getResultSet());
 		}
 	}
 
