@@ -33,10 +33,8 @@ import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 
 import java.sql.*;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -521,36 +519,30 @@ public class BoltNeo4jConnectionTest {
 	}
 
 	@Test public void setAutoCommitShouldCommit() throws SQLException {
-		openConnection.setAutoCommit(true);
-		openConnection.createStatement();
-		verify(openConnection.getSession(), times(1)).beginTransaction();
-
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		final Session session = openConnection.getSession();
+		final Session session = openConnection.getOrCreateSession();
 		verify(session, times(1)).beginTransaction();
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		final Session session1 = openConnection.getSession();
+		final Session session1 = openConnection.getOrCreateSession();
 		verify(session1, times(1)).beginTransaction();
 		assertSame(session, session1);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
-		final Session session2 = openConnection.getSession();
-		verify(session2, times(1)).beginTransaction();
+		final Session session2 = openConnection.getOrCreateSession();
 		assertNotSame(session1, session2);
 
 		openConnection.setAutoCommit(true);
 		openConnection.createStatement();
-		final Session session3 = openConnection.getSession();
-		verify(session3, times(1)).beginTransaction();
+		final Session session3 = openConnection.getOrCreateSession();
 		assertNotSame(session2, session3);
 
 		openConnection.setAutoCommit(false);
 		openConnection.createStatement();
-		final Session session4 = openConnection.getSession();
+		final Session session4 = openConnection.getOrCreateSession();
 		verify(session4, times(1)).beginTransaction();
 		assertNotSame(session3, session4);
 	}

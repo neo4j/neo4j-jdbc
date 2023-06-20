@@ -83,13 +83,11 @@ public class JdbcConnectionTestUtils {
         try {
             if (connection == null || connection.isClosed()) {
                 res = JdbcConnectionTestUtils.getConnection(neo4j, parameters);
-            } else {
-                res.setAutoCommit(true);
             }
+            res.setAutoCommit(true);
         } catch (SQLException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
-
         return res;
     }
 

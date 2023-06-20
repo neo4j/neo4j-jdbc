@@ -2,23 +2,17 @@ package org.neo4j.jdbc.utils;
 
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.jdbc.bolt.BoltNeo4jConnection;
-import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -70,34 +64,31 @@ public class BoltNeo4jUtils {
     }
 
     public static <R> R executeInTx(BoltNeo4jConnection connection,
-                                    String sql,
+                                    String cypher,
+                                    Function<Result, R> body) throws SQLException {
+        return executeInTx(connection, cypher, Collections.emptyMap(), body);
+    }
+
+    public static <R> R executeInTx(BoltNeo4jConnection connection,
+                                    String cypher,
                                     Map<String, Object> params,
                                     Function<Result, R> body) throws SQLException {
+
+        boolean autoCommit = connection.getAutoCommit();
         try {
-            Result statementResult = execute(connection, sql, params);
-            R result = body.apply(statementResult);
-            if (connection.getAutoCommit()) {
-                connection.doCommit();
+            if (!autoCommit) {
+                return body.apply(runTransactionWithRetries(connection.getTransaction(), cypher, params));
             }
-            return result;
+            return body.apply(connection.getOrCreateSession().run(cypher, params));
         }  catch (Exception e) {
-            connection.doRollback();
+            if (!autoCommit) {
+                connection.doRollback();
+            }
             throw new SQLException(e);
         }
     }
 
-    public static <R> R executeInTx(BoltNeo4jConnection connection,
-                                    String sql,
-                                    Function<Result, R> body) throws SQLException {
-        return executeInTx(connection, sql, Collections.emptyMap(), body);
-    }
-
-    private static Result execute(BoltNeo4jConnection connection,
-                                          String statement,
-                                          Map<String, Object> params) throws Exception {
-        return runTransactionWithRetries(connection.getTransaction(), statement, params);
-    }
-
+    // visible for testing
     public static Result runTransactionWithRetries(Transaction tx,
                                                    String statement,
                                                    Map<String, Object> params) throws Exception {

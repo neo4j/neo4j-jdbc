@@ -104,12 +104,14 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	}
 
 	/**
-	 * Getter for session.
-	 *
+	 * Returns the active session if any, creates and returns a new session otherwise
 	 * @return the internal session
 	 */
-	@Override public Session getSession() {
-		return this.session;
+	@Override public Session getOrCreateSession() {
+		if (session == null) {
+			session = newNeo4jSession();
+		}
+		return session;
 	}
 
 	/**
@@ -352,7 +354,9 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 			if (this.getAutoCommit()) {
 				doCommit();
 				initSession();
-			} else if (this.session == null) {
+				return;
+			}
+			if (this.session == null) {
 				initSession();
 			}
 			if (this.transaction == null) {

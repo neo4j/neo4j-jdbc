@@ -491,15 +491,15 @@ public class BoltNeo4jStatementTest {
 	/*------------------------------*/
 
 	@Test public void executeBatchShouldWork() throws SQLException {
-		Transaction transaction = mock(Transaction.class);
 		BoltNeo4jConnectionImpl connection = mockOpenConnection();
-		when(connection.getTransaction()).thenReturn(transaction);
+		Session session = mock(Session.class);
+		when(connection.getOrCreateSession()).thenReturn(session);
 		when(connection.getAutoCommit()).thenReturn(true);
 		Result stmtResult = mock(Result.class);
 		ResultSummary resultSummary = mock(ResultSummary.class);
 		SummaryCounters summaryCounters = mock(SummaryCounters.class);
 
-        when(transaction.run(anyString(), anyMap())).thenReturn(stmtResult);
+        when(session.run(anyString(), anyMap())).thenReturn(stmtResult);
 		when(stmtResult.consume()).thenReturn(resultSummary);
 		when(resultSummary.counters()).thenReturn(summaryCounters);
 		when(summaryCounters.nodesCreated()).thenReturn(1);

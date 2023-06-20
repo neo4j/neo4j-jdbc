@@ -43,7 +43,7 @@ public interface BoltNeo4jConnection extends Connection {
 	 *
 	 * @return the internal session
 	 */
-	Session getSession();
+	Session getOrCreateSession();
 
 	void doCommit() throws SQLException;
 	void doRollback() throws SQLException;
