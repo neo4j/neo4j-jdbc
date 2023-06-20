@@ -4,17 +4,13 @@ import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
-import org.neo4j.jdbc.bolt.BoltDriver;
-import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 import org.testcontainers.containers.Neo4jContainer;
 
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Enumeration;
 import java.util.Properties;
 
 import static org.neo4j.jdbc.bolt.utils.Neo4jContainerUtils.getVersion;
@@ -30,31 +26,7 @@ public class JdbcConnectionTestUtils {
     public static final String PASSWORD = "password";
     public static final boolean SSL_ENABLED = false;
 
-    public static boolean warmedup = false;
-
-    private static boolean warmup() {
-        // WARM UP
-        long t0 = System.currentTimeMillis();
-        boolean driverLoaded = false;
-        while (!driverLoaded && System.currentTimeMillis() - t0 < 10_000) {
-            Enumeration<Driver> drivers = DriverManager.getDrivers();
-            while (drivers.hasMoreElements()) {
-                if (BoltDriver.class.equals(drivers.nextElement().getClass())) {
-                    driverLoaded = true;
-                }
-            }
-        }
-
-        warmedup = driverLoaded;
-
-        return warmedup;
-    }
-
     public static Connection getConnection(Neo4jContainer<?> neo4j, String parameters) throws SQLException {
-        //return DriverManager.getConnection("jdbc:neo4j:" + neo4j.boltURI() + "?nossl,user=neo4j,password=neo4j");
-        if (!warmedup) {
-            warmup();
-        }
         return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl() + "?nossl" + parameters, USERNAME, PASSWORD);
     }
 
@@ -67,9 +39,6 @@ public class JdbcConnectionTestUtils {
     }
 
     public static Connection getConnection(Neo4jContainer<?> neo4j, Properties info) throws SQLException {
-        if (!warmedup) {
-            warmup();
-        }
         return DriverManager.getConnection("jdbc:neo4j:" + neo4j.getBoltUrl(), info);
     }
 
