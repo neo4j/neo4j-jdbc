@@ -120,31 +120,4 @@ public class BoltNeo4jUtils {
                     ExceptionUtils.getStackTrace(e));
         }
     }
-
-    public static boolean hasResultSet(BoltNeo4jConnection connection, String cypher) {
-        if (StringUtils.isBlank(cypher)) {
-            return false;
-        }
-        try (final Session session = connection.newNeo4jSession();
-             final Transaction transaction = session.beginTransaction()) {
-            final String toUpperCase = cypher.trim().toUpperCase(Locale.ROOT);
-            final String cql;
-            if (toUpperCase.startsWith("EXPLAIN") || toUpperCase.startsWith("PROFILE")) {
-                cql = cypher;
-            } else {
-                cql = "EXPLAIN " + cypher;
-            }
-            return transaction
-                    .run(cql)
-                    .consume()
-                    .plan()
-                    .children()
-                    .stream()
-                    .map(f -> f.operatorType())
-                    .noneMatch(o -> o.toUpperCase(Locale.ROOT).contains("EMPTYRESULT"));
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
 }

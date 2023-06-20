@@ -43,7 +43,6 @@ import java.util.function.Function;
 
 import static java.util.Arrays.copyOf;
 import static org.neo4j.jdbc.utils.BoltNeo4jUtils.executeInTx;
-import static org.neo4j.jdbc.utils.BoltNeo4jUtils.hasResultSet;
 
 public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
 
@@ -86,7 +85,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 
 	@Override public boolean execute() throws SQLException {
 		return executeInternal((result) -> {
-			boolean hasResultSet = hasResultSet((BoltNeo4jConnection) this.connection, this.statement);
+			boolean hasResultSet = result.hasNext();
 			if (hasResultSet) {
 				this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
 				this.currentUpdateCount = -1;
