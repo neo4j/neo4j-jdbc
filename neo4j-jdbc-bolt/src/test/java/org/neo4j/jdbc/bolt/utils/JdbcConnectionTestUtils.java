@@ -96,7 +96,7 @@ public class JdbcConnectionTestUtils {
                 connection.close();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
