@@ -29,9 +29,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.Config;
+import org.neo4j.driver.Config.ConfigBuilder;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
+import org.neo4j.driver.MetricsAdapter;
 import org.neo4j.driver.Session;
+import org.neo4j.driver.net.ServerAddressResolver;
 import org.neo4j.jdbc.bolt.data.StatementData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jDriverImpl;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
@@ -47,7 +50,11 @@ import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -365,8 +372,9 @@ public class BoltNeo4jConnectionIT {
         }
 
         @Override
-        protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException {
-            driver = GraphDatabase.driver(routingUris.get(0), authToken, config);
+        protected Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) {
+            Config configuration = overrideConfig(config, (ConfigBuilder builder) -> builder.withConnectionTimeout(3, TimeUnit.SECONDS));
+            driver = GraphDatabase.driver(routingUris.get(0), authToken, configuration);
             return driver;
         }
 
@@ -387,6 +395,43 @@ public class BoltNeo4jConnectionIT {
 
         public Driver getDriver() {
             return driver;
+        }
+
+        private static Config overrideConfig(Config config, Consumer<ConfigBuilder> override) {
+            ConfigBuilder builder = Config.builder();
+            builder.withConnectionAcquisitionTimeout(config.connectionAcquisitionTimeoutMillis(), MILLISECONDS);
+            builder.withConnectionLivenessCheckTimeout(config.idleTimeBeforeConnectionTest(), MILLISECONDS);
+            builder.withConnectionTimeout(config.connectionTimeoutMillis(), MILLISECONDS);
+            if (config.metricsAdapter() == MetricsAdapter.DEV_NULL) {
+                builder.withoutDriverMetrics();
+            } else {
+                builder.withDriverMetrics();
+            }
+            if (!config.encrypted()) {
+                builder.withoutEncryption();
+            } else {
+                builder.withEncryption();
+            }
+            if (config.eventLoopThreads() > 0) {
+                builder.withEventLoopThreads(config.eventLoopThreads());
+            }
+            builder.withFetchSize(config.fetchSize());
+            if (config.logLeakedSessions()) {
+                builder.withLeakedSessionsLogging();
+            }
+            builder.withLogging(config.logging());
+            builder.withMaxConnectionLifetime(config.maxConnectionLifetimeMillis(), MILLISECONDS);
+            builder.withMaxConnectionPoolSize(config.maxConnectionPoolSize());
+            builder.withMaxTransactionRetryTime(config.maxTransactionRetryTimeMillis(), MILLISECONDS);
+            builder.withQueryTaskBookmarkManager(config.queryTaskBookmarkManager());
+            if (config.resolver() != null) {
+                builder.withResolver(config.resolver());
+            }
+            builder.withRoutingTablePurgeDelay(config.routingTablePurgeDelayMillis(), MILLISECONDS);
+            builder.withTrustStrategy(config.trustStrategy());
+            builder.withUserAgent(config.userAgent());
+            override.accept(builder);
+            return builder.build();
         }
     }
 }
