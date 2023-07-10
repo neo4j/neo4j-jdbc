@@ -16,14 +16,26 @@ This driver was mainly developed by http://larus-ba.it[Larus BA, Italy], a certi
 Being a graph database, Neo4j is not serving data in a relational way, nevertheless thanks to this driver it's possible for
 projects that are using the classic JDBC connector in the relational paradigm to interact with Neo4j.
 
-This driver supports various types of database transports, through:
+=== Download
 
-* The `Bolt` direct connection protocol using `jdbc:neo4j:bolt://<host>:<port>/` from Neo4j 3.0+
-* The `Bolt` routing-aware protocol for clusters:
-** using `jdbc:neo4j:neo4j://<host>:<port>/` from Neo4j 4.0+
-** using `jdbc:neo4j:bolt+routing://<host>:<port>/` from Neo4j 3.1+ to 3.5.x
+Simply add the JDBC dependency to your project:
 
-You can also specify the encryption via the Bolt URI scheme (starting with the JDBC driver 4.0.3):
+[source,xml]
+<dependency>
+    <groupId>org.neo4j</groupId>
+    <artifactId>neo4j-jdbc-bolt</artifactId>
+    <version>{neo4j-jdbc-version}</version>
+    <scope>runtime</scope>
+</dependency>
+
+
+=== Transport support
+From 5.0 onwards, this driver supports only the Bolt protocol, through:
+
+* The `Bolt` direct connection protocol using `jdbc:neo4j:bolt://<host>:<port>/`
+* The `Bolt` routing-aware protocol for clusters using `jdbc:neo4j:neo4j://<host>:<port>/`
+
+You can also specify the encryption via the Bolt URI scheme:
 
  - `jdbc:neo4j:bolt://<host>:<port>/`
  - `jdbc:neo4j:bolt+s://<host>:<port>/`
@@ -33,49 +45,6 @@ You can also specify the encryption via the Bolt URI scheme (starting with the J
  - `jdbc:neo4j:neo4j+ssc://<host>:<port>/`
 
 See the official https://neo4j.com/docs/java-manual/current/client-applications/#java-driver-connection-uris[Neo4j Java driver documentation] to learn more.
-
-[NOTE]
-The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j-contrib/neo4j-jdbc-2x repository.
-
-.Versions compatibility
-|===
-|Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | URI Schemes | Temporal and Spatial
-
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.5.2[3.5.2]
-|3.5.x
-|1.7.5
-|1.8
-|http, bolt, bolt+routing
-|yes
-
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.9[4.0.9]
-|3.5.x - 4.x
-|4.4.x
-|1.8
-|http, bolt, neo4j
-|yes
-
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/5.0.0[5.0.0]
-|4.4 - 5
-|5.0.0
-|17
-|bolt, neo4j
-|yes
-
-|===
-
-
-=== Maven dependency
-
-Simply add the JDBC dependency:
-
-[source,xml]
-<dependency>
-    <groupId>org.neo4j</groupId>
-    <artifactId>neo4j-jdbc-bolt</artifactId>
-    <version>{neo4j-jdbc-version}</version>
-    <scope>runtime</scope>
-</dependency>
 
 === Minimum viable snippet
 
@@ -106,25 +75,8 @@ try (Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://loca
 ----
 // end::mvs[]
 
-*Please note* that the example above uses the try-with-resource blocks that automatically closes resources when the `try` block is exited.
 
-=== Usage with Neo4j Server
-
-* Install a Neo4j 5.x/4.x server and start it with the Bolt protocol enabled
-* Connect with URLs in the following 3 forms:
-** `jdbc:neo4j:http://<host>:<port>/` (e.g. `jdbc:neo4j:http://localhost/`)
-** `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
-** `jdbc:neo4j:neo4j://<host>:<port>/` (e.g. `jdbc:neo4j:bolt+routing://localhost?routing:policy=eu`)
-* You can also use additional parameters in the URL separated by an `&` character for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j&password=xxxx&debug=true&nossl&flatten=[-1,100,1000]`
-
-[NOTE]
-*We've deprecated the usage of `,` as the parameter separator in favour of `&` to be compliant with the URL parameter syntax.*
-
-* Add the JDBC driver dependency or jar file to your project
-* Get a connection from `DriverManager`
-* Execute queries and transactions using the Cypher graph query language
-
-==== List of Supported Neo4j Configuration parameters
+=== Configuration
 
 |===
 |Property Name |Supported Values |Description
@@ -181,8 +133,8 @@ First clone https://github.com/neo4j-contrib/neo4j-jdbc[the repository].
 
 This project is composed by the following modules:
 
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc[Neo4j JDBC] - the core module
-* https://github.com/neo4j-contrib/neo4j-jdbc/tree/master/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the Bolt protocol
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/5.0/neo4j-jdbc[Neo4j JDBC] - the core module
+* https://github.com/neo4j-contrib/neo4j-jdbc/tree/5.0/neo4j-jdbc-bolt[Neo4j JDBC - Bolt] - module supporting the Bolt protocol
 
 .Run all unit tests & integration tests
 -------------------------------------------------
