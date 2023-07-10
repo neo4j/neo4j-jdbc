@@ -22,9 +22,7 @@ package org.neo4j.jdbc.bolt;
 import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.types.Type;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
-import java.lang.reflect.Proxy;
 import java.sql.Array;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -91,10 +89,8 @@ public class BoltNeo4jResultSetMetaData extends Neo4jResultSetMetaData {
 		this.columnType = types.toArray(new Type[this.keys.size() + 1]);
 	}
 
-	public static ResultSetMetaData newInstance(boolean debug, List<Type> types, List<String> keys) {
-		ResultSetMetaData rsmd = new BoltNeo4jResultSetMetaData(types, keys);
-		return (ResultSetMetaData) Proxy
-				.newProxyInstance(BoltNeo4jResultSetMetaData.class.getClassLoader(), new Class[] { ResultSetMetaData.class }, new Neo4jInvocationHandler(rsmd, debug));
+	public static ResultSetMetaData newInstance(List<Type> types, List<String> keys) {
+		return new BoltNeo4jResultSetMetaData(types, keys);
 	}
 
 	/**

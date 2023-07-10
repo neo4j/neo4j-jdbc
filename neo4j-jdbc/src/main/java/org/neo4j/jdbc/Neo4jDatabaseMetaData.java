@@ -252,11 +252,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	@Override public ResultSet getSchemas() throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Arrays.asList("TABLE_SCHEM","TABLE_CATALOG"));
+		return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Arrays.asList("TABLE_SCHEM","TABLE_CATALOG"));
 	}
 
 	@Override public ResultSet getCatalogs() throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Arrays.asList("TABLE_CAT"));
+		return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Arrays.asList("TABLE_CAT"));
 	}
 
 	@Override public ResultSet getTableTypes() throws SQLException {
@@ -264,11 +264,11 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 		tableTypes.add("TABLE");
 		List<List<Object>> schemas = new ArrayList<>();
 		schemas.add(tableTypes);
-		return ListNeo4jResultSet.newInstance(false, schemas, Arrays.asList("TABLE_TYPE"));
+		return ListNeo4jResultSet.newInstance(schemas, Arrays.asList("TABLE_TYPE"));
 	}
 
 	@Override public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	/**
@@ -282,7 +282,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	 */
 	@Override public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
 		if (this.databaseLabels == null || this.databaseLabels.isEmpty()) {
-			return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+			return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 		}
 
 		//TODO how to manage types? nowadays there's only 'TABLE'
@@ -295,7 +295,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 				tables.add(databaseLabel.toResultSetRow());
 			}
 		}
-		return ListNeo4jResultSet.newInstance(false, tables, Table.getColumns());
+		return ListNeo4jResultSet.newInstance(tables, Table.getColumns());
 	}
 
 	/**
@@ -324,7 +324,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	 */
 	@Override public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
 		if (this.databaseProperties == null || this.databaseProperties.isEmpty()) {
-			return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+			return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 		}
 
 		String tablePattern = toPattern(tableNamePattern);
@@ -337,7 +337,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 				columns.add(databaseKey.toResultSetRow());
 			}
 		}
-		return ListNeo4jResultSet.newInstance(false, columns, Column.getColumns());
+		return ListNeo4jResultSet.newInstance(columns, Column.getColumns());
 	}
 
 	@Override public String getSearchStringEscape() throws SQLException {
@@ -729,7 +729,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 	}
 
 	private ResultSet emptyResultSet() {
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 	@Override public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
 			throws SQLException {
@@ -865,7 +865,7 @@ public abstract class Neo4jDatabaseMetaData implements java.sql.DatabaseMetaData
 						.map(row::get)
 						.collect(Collectors.toList()))
 				.collect(Collectors.toList());
-		return ListNeo4jResultSet.newInstance(false, data, keys);
+		return ListNeo4jResultSet.newInstance(data, keys);
 	}
 
 	@Override public boolean supportsResultSetType(int type) throws SQLException {

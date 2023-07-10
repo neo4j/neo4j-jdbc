@@ -32,14 +32,11 @@ import org.neo4j.jdbc.bolt.BoltNeo4jDatabaseMetaData;
 import org.neo4j.jdbc.bolt.BoltNeo4jPreparedStatement;
 import org.neo4j.jdbc.bolt.BoltNeo4jResultSet;
 import org.neo4j.jdbc.bolt.BoltNeo4jStatement;
-import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 import org.neo4j.jdbc.boltrouting.BoltRoutingNeo4jDriver;
 import org.neo4j.jdbc.impl.Neo4jConnectionImpl;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
+import org.neo4j.jdbc.utils.BoltNeo4jUtils;
 import org.neo4j.jdbc.utils.TimeLimitedCodeBlock;
 
-import java.lang.reflect.Proxy;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
@@ -87,10 +84,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	}
 
 	public static BoltNeo4jConnection newInstance(Driver driver, Properties info, String url) {
-		BoltNeo4jConnection boltConnection = new BoltNeo4jConnectionImpl(driver, info, url);
-		return (BoltNeo4jConnection) Proxy
-				.newProxyInstance(BoltNeo4jConnectionImpl.class.getClassLoader(), new Class[] { Connection.class, BoltNeo4jConnection.class },
-						new Neo4jInvocationHandler(boltConnection, BoltNeo4jConnectionImpl.hasDebug(info)));
+		return new BoltNeo4jConnectionImpl(driver, info, url);
 	}
 
 	/**

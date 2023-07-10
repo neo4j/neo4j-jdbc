@@ -45,14 +45,10 @@ import org.neo4j.driver.util.Pair;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jResultSet;
-import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.impl.ListArray;
 import org.neo4j.jdbc.utils.JSONUtils;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 import org.neo4j.jdbc.utils.ObjectConverter;
 
-import java.lang.reflect.Proxy;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -68,14 +64,12 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 
 import static org.neo4j.jdbc.utils.DataConverterUtils.convertObject;
 import static org.neo4j.jdbc.utils.DataConverterUtils.valueToDate;
@@ -151,13 +145,11 @@ public class BoltNeo4jResultSet extends Neo4jResultSet {
 				}
 			});
 		}
-		this.metaData = BoltNeo4jResultSetMetaData.newInstance(false, this.classes, this.keys);
+		this.metaData = BoltNeo4jResultSetMetaData.newInstance(this.classes, this.keys);
 	}
 
-	public static ResultSet newInstance(boolean debug, Statement statement, Result iterator, int... params) {
-		ResultSet rs = new BoltNeo4jResultSet(statement, iterator, params);
-		return (ResultSet) Proxy
-				.newProxyInstance(BoltNeo4jResultSet.class.getClassLoader(), new Class[] { ResultSet.class }, new Neo4jInvocationHandler(rs, debug));
+	public static ResultSet newInstance(Statement statement, Result iterator, int... params) {
+		return new BoltNeo4jResultSet(statement, iterator, params);
 	}
 
 	private void flattenResultSet() {

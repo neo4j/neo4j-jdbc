@@ -27,16 +27,20 @@ import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.utils.BoltNeo4jUtils;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
-import java.lang.reflect.Proxy;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.BatchUpdateException;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.Temporal;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -49,7 +53,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	private final ResultSetFactory resultSetFactory;
 
 	private BoltNeo4jPreparedStatement(BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
-		this(connection, BoltNeo4jResultSet::newInstance, rawStatement, rsParams);
+		this(connection, (debug1, statement1, iterator, params) -> BoltNeo4jResultSet.newInstance(statement1, iterator, params), rawStatement, rsParams);
 	}
 
 	// visible for testing
@@ -60,10 +64,9 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 	}
 
 	public static PreparedStatement newInstance(boolean debug, BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
-		PreparedStatement ps = new BoltNeo4jPreparedStatement(connection, rawStatement, rsParams);
-		((Neo4jPreparedStatement) ps).setDebug(debug);
-		return (PreparedStatement) Proxy.newProxyInstance(BoltNeo4jPreparedStatement.class.getClassLoader(), new Class[] { PreparedStatement.class },
-				new Neo4jInvocationHandler(ps, debug));
+		Neo4jPreparedStatement ps = new BoltNeo4jPreparedStatement(connection, rawStatement, rsParams);
+		ps.setDebug(debug);
+		return ps;
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
