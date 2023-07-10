@@ -163,7 +163,7 @@ public class BoltNeo4jStatementTest {
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 
 //		verifyStatic(BoltNeo4jResultSet.class);
-		BoltNeo4jResultSet.newInstance(false, statement, null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		BoltNeo4jResultSet.newInstance(statement, null, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {

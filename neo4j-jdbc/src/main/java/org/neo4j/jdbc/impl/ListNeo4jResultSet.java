@@ -22,9 +22,7 @@ package org.neo4j.jdbc.impl;
 import org.neo4j.jdbc.Neo4jArray;
 import org.neo4j.jdbc.Neo4jResultSet;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
-import java.lang.reflect.Proxy;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -47,10 +45,8 @@ public class ListNeo4jResultSet extends Neo4jResultSet {
 		this.keys = keys;
 	}
 
-	public static ResultSet newInstance(boolean debug, List<List<Object>> list, List<String> keys) {
-		ResultSet rs = new ListNeo4jResultSet(list, keys);
-		return (ResultSet) Proxy
-				.newProxyInstance(ListNeo4jResultSet.class.getClassLoader(), new Class[] { ResultSet.class }, new Neo4jInvocationHandler(rs, debug));
+	public static ResultSet newInstance(List<List<Object>> list, List<String> keys) {
+		return new ListNeo4jResultSet(list, keys);
 	}
 
 	@Override protected boolean innerNext() throws SQLException {

@@ -28,9 +28,7 @@ import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.metadata.Column;
 import org.neo4j.jdbc.metadata.Table;
 import org.neo4j.jdbc.utils.BoltNeo4jUtils;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
-import java.lang.reflect.Proxy;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -78,10 +76,8 @@ public class BoltNeo4jDatabaseMetaData extends Neo4jDatabaseMetaData {
 		}
 	}
 
-	public static DatabaseMetaData newInstance(boolean debug, BoltNeo4jConnectionImpl connection) {
-		DatabaseMetaData dbmd = new BoltNeo4jDatabaseMetaData(connection);
-		return (DatabaseMetaData) Proxy.newProxyInstance(BoltNeo4jDatabaseMetaData.class.getClassLoader(), new Class[] { DatabaseMetaData.class },
-				new Neo4jInvocationHandler(dbmd, debug));
+	public static DatabaseMetaData newInstance(BoltNeo4jConnectionImpl connection) {
+		return new BoltNeo4jDatabaseMetaData(connection);
 	}
 
 	private void getDatabaseVersion(Session session) {

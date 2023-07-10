@@ -51,7 +51,7 @@ public class BoltNeo4jResultSetTest {
 	@Test public void isClosedReturnFalseWhenConnectionOpen() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		assertFalse(resultSet.isClosed());
 	}
@@ -60,7 +60,7 @@ public class BoltNeo4jResultSetTest {
 	@Test public void isClosedReturnTrueWhenConnectionClosed() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		resultSet.close();
 		assertTrue(resultSet.isClosed());
@@ -72,7 +72,7 @@ public class BoltNeo4jResultSetTest {
 
 	@Test public void closeShouldThrowExceptionIfIteratorIsNull() throws SQLException {
 		expectedEx.expect(SQLException.class);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.close();
 	}
