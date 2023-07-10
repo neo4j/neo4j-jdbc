@@ -58,7 +58,6 @@ public class BoltNeo4jDriverTest {
 	@Rule public ExpectedException expectedEx = ExpectedException.none();
 
 	private static final String COMPLETE_VALID_URL = "jdbc:neo4j:bolt://test";
-	private static final String BOLT_URL = "bolt://test";
 	private static org.neo4j.driver.Driver mockedDriver;
 
 	@BeforeClass public static void initialize() {

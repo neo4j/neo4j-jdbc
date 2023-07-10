@@ -145,30 +145,6 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	}
 
 	/**
-	 * Check if can execute the query into the current mode (ie. readonly or not).
-	 * If we can't an SQLException is throw.
-	 *
-	 * @param query Cypher query
-	 * @throws SQLException sqlexception
-	 */
-	protected void checkReadOnly(String query) throws SQLException {
-		if (isReadOnly() && isMutating(query)) {
-			throw new SQLException("Mutating Query in readonly mode: " + query);
-		}
-	}
-
-	/**
-	 * Detect some cypher keyword to know if this query mutated the graph.
-	 * /!\ This not enough now due to procedure procedure.
-	 *
-	 * @param query Cypher query
-	 * @return
-	 */
-	private boolean isMutating(String query) {
-		return query.matches("(?is).*\\b(create|merge|delete|set)\\b.*");
-	}
-
-	/**
 	 * Check if the holdability parameter conform to specification.
 	 * If it doesn't, we throw an exception.
 	 * {@link java.sql.Connection#setHoldability(int)}
