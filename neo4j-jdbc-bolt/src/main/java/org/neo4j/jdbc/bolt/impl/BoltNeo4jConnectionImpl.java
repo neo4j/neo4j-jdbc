@@ -55,8 +55,9 @@ import java.util.stream.Stream;
 public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements BoltNeo4jConnection {
 	public static final String BOOKMARK_SEPARATOR = ",";
 	public static final String BOOKMARK_VALUES_SEPARATOR = ";";
+	private final Driver driver;
+	private final int flattening;
 
-	private Driver driver;
 	private Session session;
 	private Transaction transaction;
 	private boolean autoCommit = true;
@@ -76,9 +77,10 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 	 */
 	public BoltNeo4jConnectionImpl(Driver driver, Properties properties, String url) {
 		super(properties, url, BoltNeo4jResultSet.DEFAULT_HOLDABILITY);
-		this.readOnly = Boolean.parseBoolean(getProperties().getProperty("readonly"));
-		this.autoCommit = Boolean.parseBoolean(getProperties().getProperty("autocommit", "true"));
-		this.useBookmarks = Boolean.parseBoolean(getProperties().getProperty("usebookmarks", "true"));
+		this.readOnly = Boolean.parseBoolean(properties.getProperty("readonly"));
+		this.autoCommit = Boolean.parseBoolean(properties.getProperty("autocommit", "true"));
+		this.useBookmarks = Boolean.parseBoolean(properties.getProperty("usebookmarks", "true"));
+		this.flattening = Integer.parseInt(properties.getProperty("flatten", "0"));
 		this.driver = driver;
 		this.initSession();
 	}
@@ -328,8 +330,14 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		return true;
 	}
 
+	@Override
+	public int getFlattening() {
+		return flattening;
+	}
+
 	/*-------------------------------------------------------*/
 	/*       Some useful initializer and check method        */
+
 	/*-------------------------------------------------------*/
 
 	/**

@@ -39,12 +39,12 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	/**
 	 * JDBC Url used for this connection
 	 */
-	private String url;
+	private final String url;
 
 	/**
 	 * JDBC driver properties
 	 */
-	private Properties properties;
+	private final Properties properties;
 
     /**
      * Client info properties
@@ -105,16 +105,6 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 	 */
 	public String getUserName() {
 		return properties.getProperty("user");
-	}
-
-	/**
-	 * Get the flattening sample rows (-1 if no flattening).
-	 *
-	 * @return int
-	 */
-	public int getFlattening() {
-		String flatten = properties.getProperty("flatten");
-		return flatten == null ? 0 : Integer.parseInt(flatten);
 	}
 
 	/*---------------------------------------*/

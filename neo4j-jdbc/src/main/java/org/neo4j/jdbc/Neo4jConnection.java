@@ -49,7 +49,7 @@ public interface Neo4jConnection extends java.sql.Connection {
 	String getUserName();
 
 	/**
-	 * Get the flattening sample rows (-1 if no flattening).
+	 * Get the flattening sample rows (0 if no flattening).
 	 *
 	 * @return int
 	 */
