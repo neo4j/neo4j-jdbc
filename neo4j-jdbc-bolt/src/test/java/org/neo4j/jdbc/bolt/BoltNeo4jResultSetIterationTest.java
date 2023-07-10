@@ -45,14 +45,14 @@ public class BoltNeo4jResultSetIterationTest {
 	/*------------------------------*/
 	@Test public void nextShouldReturnFalseEmpty() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertFalse(resultSet.next());
 	}
 
 	@Test public void nextShouldReturnTrue() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 	}
@@ -60,7 +60,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Test public void nextShouldReturnTrueMoreElements() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 		Assert.assertTrue(resultSet.next());
@@ -69,7 +69,7 @@ public class BoltNeo4jResultSetIterationTest {
 
 	@Test public void nextShouldReturnFalseAfterLast() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 
@@ -79,7 +79,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Test public void nextShouldReturnFalseAfterLastMoreElements() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 		Assert.assertTrue(resultSet.next());
@@ -92,7 +92,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Test public void nextShouldReturnTrueAndPointNextNode() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 		Assert.assertEquals("valueA1", resultSet.getString("columnA"));
@@ -106,7 +106,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Test public void nextShouldThrowExceptionEmpty() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.next();
 	}
@@ -116,7 +116,7 @@ public class BoltNeo4jResultSetIterationTest {
 	/*------------------------------*/
 	@Ignore @Test public void previousShouldReturnFalseEmpty() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertFalse(resultSet.previous());
 	}
@@ -124,7 +124,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void previousShouldReturnTrue() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 		Assert.assertTrue(resultSet.next());
@@ -135,7 +135,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void previousShouldReturnFalseBeforeFirst() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 		Assert.assertTrue(resultSet.next());
@@ -148,7 +148,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void previousShouldReturnTrueAndPointPreviousNode() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.last());
 
@@ -164,7 +164,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void previousShouldThrowExceptionEmpty() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.previous();
 	}
@@ -174,21 +174,21 @@ public class BoltNeo4jResultSetIterationTest {
 	/*------------------------------*/
 	@Ignore @Test public void firstShouldReturnFalseEmpty() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertFalse(resultSet.first());
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueOnFirst() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.first());
 	}
 
 	@Ignore @Test public void firstShouldReturnTrueNotOnFirst() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.next());
 
@@ -197,7 +197,7 @@ public class BoltNeo4jResultSetIterationTest {
 
 	@Ignore @Test public void firstShouldReturnTrueAndPointFirstElement() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.first());
 		Assert.assertEquals("valueA1", resultSet.getString("columnA"));
@@ -207,7 +207,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void firstShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.close();
 		resultSet.first();
@@ -216,7 +216,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void firstShouldThrowExceptionForwardOnly() throws SQLException {
 		expectedEx.expect(SQLFeatureNotSupportedException.class);
 
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.first();
 	}
@@ -226,14 +226,14 @@ public class BoltNeo4jResultSetIterationTest {
 	/*------------------------------*/
 	@Ignore @Test public void lastShouldReturnFalseEmpty() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertFalse(resultSet.last());
 	}
 
 	@Ignore @Test public void lastShouldReturnTrue() throws SQLException {
 		Result Result = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.last());
 	}
@@ -241,7 +241,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void lastShouldReturnTrueAndPointLastNode() throws SQLException {
 		Result Result = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, Result);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, Result);
 
 		Assert.assertTrue(resultSet.last());
 		Assert.assertEquals("valueA3", resultSet.getString("columnA"));
@@ -251,7 +251,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void lastShouldThrowExceptionClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.close();
 		resultSet.last();
@@ -260,7 +260,7 @@ public class BoltNeo4jResultSetIterationTest {
 	@Ignore @Test public void lastShouldThrowExceptionForwardOnly() throws SQLException {
 		expectedEx.expect(SQLFeatureNotSupportedException.class);
 
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null);
 
 		resultSet.last();
 	}

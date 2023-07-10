@@ -59,7 +59,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void findColumnShouldReturnCorrectIndex() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		assertEquals(1, resultSet.findColumn("columnA"));
 		assertEquals(2, resultSet.findColumn("columnB"));
@@ -68,7 +68,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void findColumnShouldReturnCorrectIndexOnDifferentColumns() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_DIFF, ResultSetData.RECORD_LIST_MORE_ELEMENTS_DIFF);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		assertEquals(1, resultSet.findColumn("columnA"));
 		assertEquals(2, resultSet.findColumn("columnB"));
@@ -80,7 +80,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.findColumn("columnZ");
@@ -90,7 +90,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.findColumn("columnA");
@@ -103,7 +103,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringByLabelShouldReturnString() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString("columnString"));
@@ -117,7 +117,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getString("columnZ");
@@ -127,7 +127,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getString("columnString");
@@ -136,7 +136,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringByIndexShouldReturnString() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString(2));
@@ -150,7 +150,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getString(99);
@@ -161,7 +161,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getString(0);
@@ -171,7 +171,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getString(2);
@@ -184,7 +184,7 @@ public class BoltNeo4jResultSetGettersTest {
 		when(c.getFlattening()).thenReturn(1);
 		Neo4jStatement stmt = mock(Neo4jStatement.class);
 		when(stmt.getConnection()).thenReturn(c);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString("node.property1"));
@@ -197,7 +197,7 @@ public class BoltNeo4jResultSetGettersTest {
 		when(c.getFlattening()).thenReturn(1);
 		Neo4jStatement stmt = mock(Neo4jStatement.class);
 		when(stmt.getConnection()).thenReturn(c);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getString(5));
@@ -206,7 +206,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringShouldReturnStringOnNode() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("{\"_id\":1, \"_labels\":[\"label1\", \"label2\"], \"property2\":1, \"property1\":\"value1\"}", resultSet.getString("node"));
@@ -218,7 +218,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectShouldReturnStringOnNode() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("{\"_id\":1, \"_labels\":[\"label1\", \"label2\"], \"property2\":1, \"property1\":\"value1\"}", resultSet.getString("node"));
@@ -230,7 +230,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringShouldReturnStringOnRelationship() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_RELATIONS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("{\"_id\":1, \"_type\":\"type1\", \"_startId\":1, \"_endId\":2, \"property2\":100, \"property1\":\"value\"}", resultSet.getString("relation"));
@@ -242,7 +242,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getStringShouldReturnStringOnPath() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_PATHS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(
@@ -262,7 +262,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getIntByLabelShouldReturnInt() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt("columnInt"));
@@ -276,7 +276,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getInt("columnZ");
@@ -286,7 +286,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getInt("columnInt");
@@ -295,7 +295,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getIntByIndexShouldReturnInt() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt(1));
@@ -309,7 +309,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getInt(99);
@@ -320,7 +320,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getInt(0);
@@ -330,7 +330,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getInt(1);
@@ -343,7 +343,7 @@ public class BoltNeo4jResultSetGettersTest {
 		when(c.getFlattening()).thenReturn(1);
 		Neo4jStatement stmt = mock(Neo4jStatement.class);
 		when(stmt.getConnection()).thenReturn(c);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt("node.id"));
@@ -357,7 +357,7 @@ public class BoltNeo4jResultSetGettersTest {
 		when(c.getFlattening()).thenReturn(1);
 		Neo4jStatement stmt = mock(Neo4jStatement.class);
 		when(stmt.getConnection()).thenReturn(c);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(stmt, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getInt(2));
@@ -367,7 +367,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getIntShouldReturnZeroForNull() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0, resultSet.getInt("columnA"));
@@ -381,7 +381,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getFloatByLabelShouldReturnFloat() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0.1F, resultSet.getFloat("columnFloat"), 0);
@@ -395,7 +395,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getFloat("columnZ");
@@ -405,7 +405,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getFloat("columnFloat");
@@ -414,7 +414,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getFloatByIndexShouldReturnFloat() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0.1F, resultSet.getFloat(3), 0);
@@ -428,7 +428,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getFloat(99);
@@ -439,7 +439,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getFloat(0);
@@ -449,7 +449,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getFloat(3);
@@ -458,7 +458,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getFloatShouldReturnZeroForNull() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0F, resultSet.getFloat("columnA"), 0);
@@ -472,7 +472,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getShortByLabelShouldReturnShort() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getShort("columnShort"));
@@ -486,7 +486,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getShort("columnZ");
@@ -496,7 +496,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getShort("columnShort");
@@ -505,7 +505,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getShortByIndexShouldReturnShort() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(1, resultSet.getShort(1));
@@ -519,7 +519,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getShort(99);
@@ -530,7 +530,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getShort(0);
@@ -540,7 +540,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getShort(3);
@@ -549,7 +549,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getShortShouldReturnZeroForNull() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0, resultSet.getShort("columnA"));
@@ -563,7 +563,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getDoubleByLabelShouldReturnDouble() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(02.29D, resultSet.getDouble("columnDouble"), 0);
@@ -577,7 +577,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getDouble("columnZ");
@@ -587,7 +587,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getDouble("columnDouble");
@@ -596,7 +596,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getDoubleByIndexShouldReturnDouble() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(02.29D, resultSet.getDouble(5), 0);
@@ -610,7 +610,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 		resultSet.next();
 		resultSet.getDouble(99);
 	}
@@ -620,7 +620,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getDouble(0);
@@ -630,7 +630,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getDouble(5);
@@ -639,7 +639,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getDoubleShouldReturnZeroForNull() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0D, resultSet.getDouble("columnA"), 0);
@@ -653,7 +653,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectByLabelShouldReturnObject() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getObject("columnString").toString());
@@ -670,7 +670,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject("not present");
@@ -681,7 +681,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.close();
 		resultSet.getObject("not present");
@@ -690,7 +690,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectByIndexShouldReturnObject() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("value1", resultSet.getObject(2).toString());
@@ -706,7 +706,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject(99);
@@ -717,7 +717,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject(0);
@@ -728,7 +728,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.close();
 		resultSet.getObject(1);
@@ -737,7 +737,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectShouldReturnCorrectNodeAsMap() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 
@@ -763,7 +763,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectShouldReturnCorrectRelationsAsMap() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_RELATIONS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_RELATIONS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(new HashMap<String, Object>() {
@@ -792,7 +792,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectShouldReturnCorrectPathAsMap() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_PATHS, ResultSetData.RECORD_LIST_MORE_ELEMENTS_PATHS);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		assertTrue(resultSet.next());
 		assertEquals(new ArrayList<Object>() {
@@ -872,7 +872,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectByColumnLabelAndCastToClass() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.next();
@@ -909,7 +909,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject("columnA", (Class<?>) null);
@@ -920,7 +920,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject("not present", (Class<?>) null);
@@ -931,7 +931,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.close();
 		resultSet.getObject("not present", (Class<?>) null);
@@ -940,7 +940,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectByColumnIndexAndCastToClass() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertNotNull(resultSet.getObject(1, Double.class));
@@ -951,7 +951,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_ELEMENT, ResultSetData.RECORD_LIST_ONE_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject(1, (Class<?>) null);
@@ -962,7 +962,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject(0, (Class<?>) null);
@@ -973,7 +973,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject(99, Double.class);
@@ -984,7 +984,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.close();
 		resultSet.getObject(1, (Class<?>) null);
@@ -995,7 +995,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getObject("not present", (Map<String, Class<?>>) null);
@@ -1006,7 +1006,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.close();
 		resultSet.getObject("not present", (Map<String, Class<?>>) null);
@@ -1017,7 +1017,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		Map<String, Class<?>> map = new HashMap<>();
 
@@ -1030,7 +1030,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		Map<String, Class<?>> map = new HashMap<>();
 
@@ -1041,7 +1041,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getObjectByColumnLabelAndMap() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false,null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.next();
@@ -1061,7 +1061,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getBooleanByLabelShouldReturnBoolean() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertTrue(resultSet.getBoolean("columnBoolean"));
@@ -1079,7 +1079,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getBoolean("columnZ");
@@ -1089,7 +1089,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getBoolean("columnBoolean");
@@ -1098,7 +1098,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getBooleanByIndexShouldReturnBoolean() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertTrue(resultSet.getBoolean(6));
@@ -1112,7 +1112,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getBoolean(99);
@@ -1123,7 +1123,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getBoolean(0);
@@ -1133,7 +1133,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getBoolean(6);
@@ -1142,7 +1142,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getBooleanShouldReturnFalseForNull() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(false, resultSet.getBoolean("columnA"));
@@ -1156,7 +1156,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getLongByLabelShouldReturnLong() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(2L, resultSet.getLong("columnLong"));
@@ -1170,7 +1170,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getLong("columnZ");
@@ -1180,7 +1180,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getLong("columnLong");
@@ -1189,7 +1189,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getLongByIndexShouldReturnLong() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(2L, resultSet.getLong(7));
@@ -1203,7 +1203,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getLong(99);
@@ -1214,7 +1214,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getLong(0);
@@ -1224,7 +1224,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getLong(7);
@@ -1233,7 +1233,7 @@ public class BoltNeo4jResultSetGettersTest {
 	@Test public void getLongShouldReturnZeroForNull() throws SQLException {
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_ONE_NULL_ELEMENT, ResultSetData.RECORD_LIST_ONE_NULL_ELEMENT);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals(0, resultSet.getLong("columnA"));
@@ -1248,14 +1248,14 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getHoldability();
 	}
 
 	@Test public void getHoldabilityShouldReturnCorrectHoldability() throws SQLException {
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null, Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY, Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null, Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY, Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT);
 		assertEquals(Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT, resultSet.getHoldability());
 	}
 
@@ -1267,14 +1267,14 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getType();
 	}
 
 	@Test public void getTypeShouldReturnCorrectType() throws SQLException {
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null, Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY, Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null, Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY, Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT);
 		assertEquals(Neo4jResultSet.TYPE_FORWARD_ONLY, resultSet.getType());
 	}
 
@@ -1286,14 +1286,14 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getConcurrency();
 	}
 
 	@Test public void getConcurrencyShouldReturnCorrectConcurrency() throws SQLException {
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, null, Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY, Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, null, Neo4jResultSet.TYPE_FORWARD_ONLY, Neo4jResultSet.CONCUR_READ_ONLY, Neo4jResultSet.CLOSE_CURSORS_AT_COMMIT);
 		assertEquals(Neo4jResultSet.CONCUR_READ_ONLY, resultSet.getConcurrency());
 	}
 
@@ -1302,7 +1302,7 @@ public class BoltNeo4jResultSetGettersTest {
 	/*------------------------------*/
 	@Test public void getArrayByLabelShouldReturnArray() throws SQLException {
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("a", ((String[]) resultSet.getArray("array").getArray())[0]);
@@ -1329,7 +1329,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getLong("columnZ");
@@ -1339,7 +1339,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getLong("array");
@@ -1347,7 +1347,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 	@Test public void getArrayByIndexShouldReturnArray() throws SQLException {
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		assertEquals("a", ((String[]) resultSet.getArray(1).getArray())[0]);
@@ -1374,7 +1374,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getLong(99);
@@ -1384,7 +1384,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result statementResult = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.next();
 		resultSet.getLong(0);
@@ -1394,7 +1394,7 @@ public class BoltNeo4jResultSetGettersTest {
 		expectedEx.expect(SQLException.class);
 
 		Result spyCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_WITH_ARRAY, ResultSetData.RECORD_LIST_WITH_ARRAY);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, spyCursor);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, spyCursor);
 
 		resultSet.close();
 		resultSet.getLong(7);
@@ -1407,7 +1407,7 @@ public class BoltNeo4jResultSetGettersTest {
 		when(c.getFlattening()).thenReturn(1);
 		Neo4jStatement stmt = mock(Neo4jStatement.class);
 		when(stmt.getConnection()).thenReturn(c);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(stmt, statementResult);
 
 		resultSet.next();
 		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray("node.labels").getArray());
@@ -1420,7 +1420,7 @@ public class BoltNeo4jResultSetGettersTest {
 		when(c.getFlattening()).thenReturn(1);
 		Neo4jStatement stmt = mock(Neo4jStatement.class);
 		when(stmt.getConnection()).thenReturn(c);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, stmt, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(stmt, statementResult);
 
 		resultSet.next();
 		assertArrayEquals(new String[] { "label1", "label2" }, (String[]) resultSet.getArray(3).getArray());
@@ -1434,7 +1434,7 @@ public class BoltNeo4jResultSetGettersTest {
 
 		Result statementResult = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_MIXED, ResultSetData.RECORD_LIST_MORE_ELEMENTS_MIXED);
-		ResultSet resultSet = BoltNeo4jResultSet.newInstance(false, null, statementResult);
+		ResultSet resultSet = BoltNeo4jResultSet.newInstance(null, statementResult);
 
 		resultSet.close();
 		resultSet.wasNull();

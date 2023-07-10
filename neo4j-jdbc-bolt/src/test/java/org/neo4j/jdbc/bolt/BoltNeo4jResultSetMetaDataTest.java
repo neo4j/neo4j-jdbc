@@ -55,14 +55,14 @@ public class BoltNeo4jResultSetMetaDataTest {
 
 	@Test public void getColumnsCountShouldReturnCorrectNumberEmpty() throws SQLException {
 		Result resultIterator = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultIterator.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultIterator.keys());
 
 		assertEquals(0, resultSet.getColumnCount());
 	}
 
 	@Test public void getColumnsCountShouldReturnCorrectNumberMoreElements() throws SQLException {
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		assertEquals(2, resultSet.getColumnCount());
 	}
@@ -73,7 +73,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 
 	@Test public void getColumnNameShouldReturnCorrectColumnName() throws SQLException {
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		assertEquals("columnA", resultSet.getColumnName(1));
 	}
@@ -82,7 +82,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 		expectedEx.expect(SQLException.class);
 
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSetMetaData resultSetMetaData = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSetMetaData = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		resultSetMetaData.getColumnName(1);
 	}
@@ -91,7 +91,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 		expectedEx.expect(SQLException.class);
 
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		resultSet.getColumnName(99);
 	}
@@ -99,7 +99,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 	@Test public void getColumnNameShouldThrowExceptionIfCursorNull() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 
 		resultSet.getColumnName(1);
 	}
@@ -110,7 +110,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 
 	@Test public void getColumnLabelShouldReturnCorrectColumnName() throws SQLException {
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS, ResultSetData.RECORD_LIST_MORE_ELEMENTS);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		assertEquals("columnA", resultSet.getColumnLabel(1));
 	}
@@ -119,7 +119,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 		expectedEx.expect(SQLException.class);
 
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		resultSet.getColumnLabel(1);
 	}
@@ -128,7 +128,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 		expectedEx.expect(SQLException.class);
 
 		Result resultCursor = ResultSetData.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_EMPTY, ResultSetData.RECORD_LIST_EMPTY);
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, resultCursor.keys());
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, resultCursor.keys());
 
 		resultSet.getColumnLabel(99);
 	}
@@ -136,7 +136,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 	@Test public void getColumnLabelShouldThrowExceptionIfCursorNull() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 
 		resultSet.getColumnLabel(1);
 	}
@@ -146,7 +146,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getSchemaNameShouldReturnDefaultValue() throws SQLException {
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 
 		assertEquals("", resultSet.getSchemaName(1));
 	}
@@ -156,7 +156,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 	/*------------------------------*/
 
 	@Test public void getCatalogNameShouldReturnEmptyString() throws SQLException {
-		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+		ResultSetMetaData resultSet = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 
 		assertEquals("", resultSet.getCatalogName(1));
 	}
@@ -168,7 +168,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 	@Test public void flatteningTestWorking() throws SQLException {
 		Result resultCursor = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(false, Collections.EMPTY_LIST,
+		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(Collections.EMPTY_LIST,
 				Arrays.asList(new String[] { "node", "node.id", "node.label", "node.property2", "node.property1" }));
 
 		assertEquals(5, rsm.getColumnCount());
@@ -198,7 +198,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 		List<String> cols = Arrays.asList(
 				"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"
 		);
-		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(false, types, cols);
+		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(types, cols);
 		assertEquals("java.lang.String", rsm.getColumnClassName(1));
 		assertEquals("java.lang.Long", rsm.getColumnClassName(2));
 		assertEquals("java.lang.Boolean", rsm.getColumnClassName(3));
@@ -232,7 +232,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 		List<String> cols = Arrays.asList(
 				"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"
 		);
-		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(false, types, cols);
+		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(types, cols);
 		assertEquals(Types.VARCHAR, rsm.getColumnType(1));
 		assertEquals(Types.INTEGER, rsm.getColumnType(2));
 		assertEquals(Types.BOOLEAN, rsm.getColumnType(3));
@@ -250,7 +250,7 @@ public class BoltNeo4jResultSetMetaDataTest {
 	@Test public void getColumnTypeNameTest() throws SQLException {
 		Result resultCursor = ResultSetData
 				.buildResultCursor(ResultSetData.KEYS_RECORD_LIST_MORE_ELEMENTS_NODES, ResultSetData.RECORD_LIST_MORE_ELEMENTS_NODES);
-		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(false, Arrays.asList(new Type[] { InternalTypeSystem.TYPE_SYSTEM.NODE() }),
+		ResultSetMetaData rsm = BoltNeo4jResultSetMetaData.newInstance(Arrays.asList(new Type[] { InternalTypeSystem.TYPE_SYSTEM.NODE() }),
 				Arrays.asList(new String[] { "node" }));
 
 		assertEquals(1, rsm.getColumnCount());
