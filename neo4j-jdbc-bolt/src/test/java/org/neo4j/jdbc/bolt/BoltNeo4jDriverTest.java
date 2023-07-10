@@ -26,7 +26,9 @@ import org.junit.rules.ExpectedException;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.internal.async.pool.PoolSettings;
+import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.bolt.utils.JdbcConnectionTestUtils;
 import org.neo4j.jdbc.bolt.utils.Mocker;
 
@@ -553,6 +555,36 @@ public class BoltNeo4jDriverTest {
 		driver.connect(COMPLETE_VALID_URL, info);
 
 		assertTrue(called.get());
+	}
+
+	@Test
+	public void shouldFlattenViaUrlConfiguration() throws SQLException {
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+		Connection connection = driver.connect("jdbc:neo4j:bolt://example.com?flatten=23", new Properties());
+
+		int flattening = ((Neo4jConnection) connection).getFlattening();
+
+		assertEquals("flattening is set via URL", 23, flattening);
+	}
+
+	@Test
+	public void shouldFlattenViaProperties() throws SQLException {
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+		Properties properties = new Properties();
+		properties.setProperty("flatten", "32");
+		Connection connection = driver.connect("jdbc:neo4j:bolt://example.com", properties);
+
+		int flattening = ((Neo4jConnection) connection).getFlattening();
+		assertEquals("flattening is set via properties", 32, flattening);
+	}
+
+	@Test
+	public void shouldSetFlattenToZeroByDefault() throws SQLException {
+		Driver driver = new BoltDriver((routingUris, config, authToken, props) -> mockedDriver);
+		Connection connection = driver.connect("jdbc:neo4j:bolt://example.com", new Properties());
+
+		int flattening = ((Neo4jConnection) connection).getFlattening();
+		assertEquals("flattening is set to 0 by default", 0, flattening);
 	}
 
 	@Test
