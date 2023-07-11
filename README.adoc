@@ -175,5 +175,5 @@ limitations under the License.
 
 === Feedback
 
-Please provide feedback and report bugs as link:./issues[GitHub issues] or join the http://neo4j.com/slack[neo4j-users Slack] and ask on the #neo4j-jdbc channel.
-You might also ask on http://stackoverflow.com/questions/tagged/neo4j+jdbc[StackOverflow], please tag your question there with `neo4j` and `jdbc`.
+Please provide feedback and report bugs as link:./issues[GitHub issues] or join https://discord.gg/neo4j[Neo4j Discord].
+You may also post questions on https://community.neo4j.com/[Neo4j Community] or https://stackoverflow.com/questions/tagged/neo4j+jdbc[StackOverflow] with the `neo4j` and `jdbc` tags.
