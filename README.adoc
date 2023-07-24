@@ -129,7 +129,7 @@ try (Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://loca
 ** `jdbc:neo4j:http://<host>:<port>/` (e.g. `jdbc:neo4j:http://localhost/`)
 ** `jdbc:neo4j:bolt://<host>:<port>/` (e.g. `jdbc:neo4j:bolt://localhost/`)
 ** `jdbc:neo4j:neo4j://<host>:<port>/` (e.g. `jdbc:neo4j:bolt+routing://localhost?routing:policy=eu`)
-* You can also use additional parameters in the URL separated by an `&` character for authentication, debug mode, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j&password=xxxx&debug=true&nossl&flatten=[-1,100,1000]`
+* You can also use additional parameters in the URL separated by an `&` character for authentication, SSL encryption and flattening e.g. `jdbc:neo4j:bolt://localhost/?user=neo4j&password=xxxx&nossl&flatten=[-1,100,1000]`
 
 [NOTE]
 *We've deprecated the usage of `,` as the parameter separator in favour of `&` to be compliant with the URL parameter syntax.*
