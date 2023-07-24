@@ -19,7 +19,6 @@
  */
 package org.neo4j.jdbc.http;
 
-import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.http.driver.Neo4jResponse;
 
@@ -31,7 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HttpNeo4jStatement extends Neo4jStatement implements Loggable {
+public class HttpNeo4jStatement extends Neo4jStatement {
 
 	public HttpNeo4jStatement(HttpNeo4jConnection httpConnection) {
 		super(httpConnection);

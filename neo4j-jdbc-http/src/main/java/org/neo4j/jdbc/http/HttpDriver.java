@@ -20,7 +20,6 @@
 package org.neo4j.jdbc.http;
 
 import org.neo4j.jdbc.Neo4jDriver;
-import org.neo4j.jdbc.InstanceFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -73,7 +72,7 @@ public class HttpDriver extends Neo4jDriver {
 				if (neo4jUrl.getPort() > 0) {
 					port = neo4jUrl.getPort();
 				}
-				connection = InstanceFactory.debug(new HttpNeo4jConnection(host, port, secure, props, url));
+				connection = new HttpNeo4jConnection(host, port, secure, props, url);
 			}
 		} catch (MalformedURLException e) {
 			throw new SQLException(e);

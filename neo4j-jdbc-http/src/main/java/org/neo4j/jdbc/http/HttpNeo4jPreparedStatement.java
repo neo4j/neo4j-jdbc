@@ -32,7 +32,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.function.Function;
 
-public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
+public class HttpNeo4jPreparedStatement extends Neo4jPreparedStatement {
 
 	/**
 	 * Default constructor.

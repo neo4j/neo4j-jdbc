@@ -76,10 +76,6 @@ public abstract class Neo4jConnectionImpl implements Neo4jConnection {
 		this.holdability = defaultHoldability;
 	}
 
-	public static boolean hasDebug(Properties properties) {
-		return "true".equalsIgnoreCase(properties.getProperty("debug", "false"));
-	}
-
 	/**
 	 * Get the connection url.
 	 *

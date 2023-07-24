@@ -21,7 +21,6 @@ package org.neo4j.jdbc.bolt;
 
 import org.neo4j.driver.Result;
 import org.neo4j.driver.summary.SummaryCounters;
-import org.neo4j.jdbc.Loggable;
 import org.neo4j.jdbc.Neo4jParameterMetaData;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.neo4j.jdbc.Neo4jResultSetMetaData;
@@ -48,12 +47,12 @@ import java.util.function.Function;
 import static java.util.Arrays.copyOf;
 import static org.neo4j.jdbc.utils.BoltNeo4jUtils.executeInTx;
 
-public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implements Loggable {
+public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement {
 
 	private final ResultSetFactory resultSetFactory;
 
 	private BoltNeo4jPreparedStatement(BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
-		this(connection, (debug1, statement1, iterator, params) -> BoltNeo4jResultSet.newInstance(statement1, iterator, params), rawStatement, rsParams);
+		this(connection, (statement1, iterator, params) -> BoltNeo4jResultSet.newInstance(statement1, iterator, params), rawStatement, rsParams);
 	}
 
 	// visible for testing
@@ -63,15 +62,13 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		this.resultSetParams = rsParams;
 	}
 
-	public static PreparedStatement newInstance(boolean debug, BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
-		Neo4jPreparedStatement ps = new BoltNeo4jPreparedStatement(connection, rawStatement, rsParams);
-		ps.setDebug(debug);
-		return ps;
+	public static PreparedStatement newInstance(BoltNeo4jConnectionImpl connection, String rawStatement, int... rsParams) {
+		return new BoltNeo4jPreparedStatement(connection, rawStatement, rsParams);
 	}
 
 	@Override public ResultSet executeQuery() throws SQLException {
 		return executeInternal((result) -> {
-			this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
+			this.currentResultSet = this.resultSetFactory.create(this, result, this.resultSetParams);
 			this.currentUpdateCount = -1;
 			return currentResultSet;
 		});
@@ -90,7 +87,7 @@ public class BoltNeo4jPreparedStatement extends Neo4jPreparedStatement implement
 		return executeInternal((result) -> {
 			boolean hasResultSet = result.hasNext();
 			if (hasResultSet) {
-				this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
+				this.currentResultSet = this.resultSetFactory.create(this, result, this.resultSetParams);
 				this.currentUpdateCount = -1;
 			} else {
 				this.currentResultSet = null;

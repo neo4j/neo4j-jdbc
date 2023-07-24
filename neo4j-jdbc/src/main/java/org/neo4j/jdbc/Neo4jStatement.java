@@ -33,14 +33,12 @@ import java.util.List;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jStatement implements Statement, Loggable {
+public abstract class Neo4jStatement implements Statement {
 
 	protected Neo4jConnection connection;
 	protected ResultSet       currentResultSet;
 	protected int             currentUpdateCount;
 	protected List<String>    batchStatements;
-	protected boolean         debug;
-	protected int             debugLevel;
 	protected int[]           resultSetParams;
 	private   int             maxRows;
 	private   int             queryTimeout;
@@ -327,19 +325,4 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 		return false;
 	}
 
-	@Override public boolean hasDebug() {
-		return this.debug;
-	}
-
-	@Override public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	@Override public void setDebugLevel(int level) {
-		this.debugLevel = level;
-	}
-
-	@Override public int getDebugLevel() {
-		return this.debugLevel;
-	}
 }
