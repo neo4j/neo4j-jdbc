@@ -22,7 +22,6 @@ package org.neo4j.jdbc;
 import org.neo4j.jdbc.impl.ListNeo4jResultSet;
 import org.neo4j.jdbc.utils.ExceptionBuilder;
 
-import javax.xml.transform.Result;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
@@ -34,14 +33,12 @@ import java.util.List;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jStatement implements Statement, Loggable {
+public abstract class Neo4jStatement implements Statement {
 
 	protected Neo4jConnection connection;
 	protected ResultSet       currentResultSet;
 	protected int             currentUpdateCount;
 	protected List<String>    batchStatements;
-	protected boolean         debug;
-	protected int             debugLevel;
 	protected int[]           resultSetParams;
 	private   int             maxRows;
 	private   int             queryTimeout;
@@ -307,7 +304,7 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 
 	@Override public ResultSet getGeneratedKeys() throws SQLException {
 		// TODO should at least return the <id>?
-		return ListNeo4jResultSet.newInstance(false, Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
+		return ListNeo4jResultSet.newInstance(Collections.<List<Object>>emptyList(), Collections.<String>emptyList());
 	}
 
 	@Override public void cancel() throws SQLException {} // do nothing
@@ -328,19 +325,4 @@ public abstract class Neo4jStatement implements Statement, Loggable {
 		return false;
 	}
 
-	@Override public boolean hasDebug() {
-		return this.debug;
-	}
-
-	@Override public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	@Override public void setDebugLevel(int level) {
-		this.debugLevel = level;
-	}
-
-	@Override public int getDebugLevel() {
-		return this.debugLevel;
-	}
 }

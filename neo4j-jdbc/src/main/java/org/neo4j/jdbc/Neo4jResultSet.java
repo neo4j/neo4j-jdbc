@@ -33,7 +33,7 @@ import java.util.Map;
  * @author AgileLARUS
  * @since 3.0.0
  */
-public abstract class Neo4jResultSet implements ResultSet, Loggable {
+public abstract class Neo4jResultSet implements ResultSet {
 
 	public static final int DEFAULT_TYPE        = TYPE_FORWARD_ONLY;
 	public static final int DEFAULT_CONCURRENCY = CONCUR_READ_ONLY;
@@ -47,8 +47,6 @@ public abstract class Neo4jResultSet implements ResultSet, Loggable {
 	 */
 	protected boolean isClosed         = false;
 	protected int     currentRowNumber = 0;
-	protected boolean debug;
-	protected int     debugLevel;
 	protected int     type;
 	protected int     concurrency;
 	protected int     holdability;
@@ -770,21 +768,5 @@ public abstract class Neo4jResultSet implements ResultSet, Loggable {
 
 	@Override public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
 		throw ExceptionBuilder.buildUnsupportedOperationException();
-	}
-
-	@Override public boolean hasDebug() {
-		return this.debug;
-	}
-
-	@Override public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	@Override public void setDebugLevel(int debugLevel) {
-		this.debugLevel = debugLevel;
-	}
-
-	@Override public int getDebugLevel() {
-		return this.debugLevel;
 	}
 }

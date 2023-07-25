@@ -24,9 +24,7 @@ import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.jdbc.Neo4jStatement;
 import org.neo4j.jdbc.bolt.impl.BoltNeo4jConnectionImpl;
 import org.neo4j.jdbc.utils.BoltNeo4jUtils;
-import org.neo4j.jdbc.utils.Neo4jInvocationHandler;
 
-import java.lang.reflect.Proxy;
 import java.sql.BatchUpdateException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,16 +58,13 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 		this.batchStatements = new ArrayList<>();
 	}
 
-	public static Statement newInstance(boolean debug, BoltNeo4jConnectionImpl connection, int... rsParams) {
-		Neo4jStatement statement = new BoltNeo4jStatement(connection, BoltNeo4jResultSet::newInstance, rsParams);
-		statement.setDebug(debug);
-		return (Statement) Proxy.newProxyInstance(BoltNeo4jStatement.class.getClassLoader(), new Class[] { Statement.class },
-				new Neo4jInvocationHandler(statement, debug));
+	public static Statement newInstance(BoltNeo4jConnectionImpl connection, int... rsParams) {
+		return new BoltNeo4jStatement(connection, BoltNeo4jResultSet::newInstance, rsParams);
 	}
 
 	@Override public ResultSet executeQuery(String sql) throws SQLException {
 		return executeInternal(sql, (result) -> {
-			this.currentResultSet = this.resultSetFactory.create(this.hasDebug(), this, result, this.resultSetParams);
+			this.currentResultSet = this.resultSetFactory.create(this, result, this.resultSetParams);
 			this.currentUpdateCount = -1;
 			return this.currentResultSet;
 		});
@@ -89,7 +84,7 @@ public class BoltNeo4jStatement extends Neo4jStatement {
 			if (result != null) {
 				boolean hasResultSet = result.hasNext();
 				if (hasResultSet) {
-					this.currentResultSet = BoltNeo4jResultSet.newInstance(this.hasDebug(), this, result, this.resultSetParams);
+					this.currentResultSet = BoltNeo4jResultSet.newInstance(this, result, this.resultSetParams);
 					this.currentUpdateCount = -1;
 				} else {
 					this.currentResultSet = null;

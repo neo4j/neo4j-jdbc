@@ -8,5 +8,5 @@ import java.sql.Statement;
 @FunctionalInterface
 interface ResultSetFactory {
 
-    ResultSet create(boolean debug, Statement statement, Result iterator, int... params);
+    ResultSet create(Statement statement, Result iterator, int... params);
 }

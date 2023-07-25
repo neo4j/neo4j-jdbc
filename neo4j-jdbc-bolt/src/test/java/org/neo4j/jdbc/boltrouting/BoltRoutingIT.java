@@ -49,9 +49,6 @@ public class BoltRoutingIT {
     private static final String NEO4J_USER = "neo4j";
     private static final String NEO4J_PASSWORD = "jdbc";
 
-//    private String connectionUrl = "jdbc:neo4j:bolt+routing://localhost:17681?noSsl&debug=true&routing:policy=EU&routing:servers=localhost:17682;localhost:17683;localhost:17684;localhost:17685;localhost:17686;localhost:17687";
-//    private String connectionUrl2 = "jdbc:neo4j:bolt+routing://localhost:17681,localhost:17682,localhost:17683,localhost:17684,localhost:17685,localhost:17686,localhost:17687?noSsl&debug=true&routing:policy=EU";
-
     private static TestcontainersCausalCluster cluster;
 
     @BeforeClass
