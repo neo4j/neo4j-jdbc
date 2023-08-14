@@ -1,0 +1,43 @@
+= Neo4j JDBC
+Michael Simons <michael.simons@neo4j.com>
+:doctype: article
+:lang: en
+:listing-caption: Listing
+:source-highlighter: coderay
+:icons: font
+// tag::properties[]
+:groupId: org.neo4j.drivers
+:artifactIdCore: neo4j-jdbc
+:branch: main
+// end::properties[]
+
+[abstract]
+--
+This is another shot at implementing a JDBC driver for Neo4j.
+It does not wrap the https://github.com/neo4j/neo4j-java-driver[Neo4j-Java-Driver] but does implement the necessary pieces of the https://neo4j.com/docs/bolt/current/[Bolt protocol] itself.
+It won't flatten nodes and relationships and will use `java.sql.Struct` for structured types such as nodes and entities.
+--
+
+== Desired features
+
+- Full support for JDBC 4 automatic service discovery of JDBC driver (via service loader)
+- Full configurability via url
+- No wrapping of the Java driver
+- There must be a built-in abstraction for schema discovery. For the first iterations we will use the same or a similar algorithm to introspect the graph as suggested in the https://github.com/neo4j/graph-schema-introspector/blob/main/src/main/java/org/neo4j/graph_schema/introspector/GraphSchema.java#L160[graph-schema-introspector] which is a copy of https://github.com/neo4j/graphql/blob/d9fa063652ddbbd61d14b47debaf1d21be2805b9/packages/introspector/src/to-internal-struct.ts#L50[essentially]
+- Optionally translating SQL to Cypher
+- logging only via `java.util.logging`
+
+== TODOs
+
+- [ ] Define URL format
+- [ ] Implement service loader functionality
+- [ ] Research what parts of the Bolt protocol stack from the Java driver needs to be ported / copied
+- [ ] Work along the JDBC interfaces to implement piece by piece
+- [ ] Define type mappings for structured types
+- [ ] Define custom useragent and required infra
+
+== Resources
+
+- https://download.oracle.com/otndocs/jcp/jdbc-4_3-mrel3-spec/index.html[JDBC 4.3 Spec]
+- https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC Spec for Java 17]
+- https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html[JDBC Basics] (JDK 8 based, still useful though)

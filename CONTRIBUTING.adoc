@@ -1,0 +1,55 @@
+= Contributing
+
+== Building and compiling the Neo4j JDBC driver
+
+JDK 17 and Maven is required. Please run to test and package the project:
+
+[source,bash]
+----
+./mvnw verify
+----
+
+There's a `fast` profile that will skip all the tests and validations:
+
+[source,bash]
+----
+./mvnw -Dfast package
+----
+
+== Tasks
+
+=== Keep the build descriptor (`pom.xml`) sorted
+
+[source,bash]
+----
+./mvnw sortpom:sort
+----
+
+=== Formatting sources / adding headers
+
+When you add new files, you can run
+
+[source,bash]
+----
+./mvnw license:format
+----
+
+to add required headers automatically.
+
+We use https://github.com/spring-io/spring-javaformat[spring-javaformat] to format the source files.
+
+[source,bash]
+----
+./mvnw spring-javaformat:apply
+----
+
+TIP: The Spring Developers write: "The source formatter does not fundamentally change your code. For example, it will not change the order of import statements. It is effectively limited to adding or removing whitespace and line feeds."
+     This means the following checkstyle check might still fail.
+     Some common errors:
+     +
+     Static imports, import `javax.*` and `java.*` before others
+     +
+     Static imports are helpful, yes, but when working with 2 builders in the same project (here jOOQ and Cypher-DSL), they can be quite confusing.
+
+There are plugins for https://github.com/spring-io/spring-javaformat#eclipse[Eclipse] and https://github.com/spring-io/spring-javaformat#intellij-idea[IntelliJ IDEA] and the Checkstyle settings https://github.com/spring-io/spring-javaformat#checkstyle-idea-plugin[can be imported as well].
+We took those "as is" and just disabled the lambda check (requiring even single parameters to have parenthesis).
