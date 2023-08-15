@@ -88,7 +88,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<slf4j.version>2.0.7</slf4j.version>
 		<sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
-		<sortpom-maven-plugin.version>3.2.0</sortpom-maven-plugin.version>
+		<sortpom-maven-plugin.version>3.3.0</sortpom-maven-plugin.version>
 		<spring-javaformat.version>0.0.39</spring-javaformat.version>
 		<testcontainers.version>1.18.3</testcontainers.version>
 	</properties>
