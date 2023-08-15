@@ -91,6 +91,7 @@
 		<maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
+		<mockito.version>5.2.0</mockito.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.10.0</neo4j.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -122,6 +123,11 @@
 				<groupId>org.assertj</groupId>
 				<artifactId>assertj-core</artifactId>
 				<version>${assertj.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-core</artifactId>
+				<version>${mockito.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
