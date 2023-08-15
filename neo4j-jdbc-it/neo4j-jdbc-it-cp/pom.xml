@@ -32,4 +32,7 @@
 	<name>Neo4j JDBC Driver (IT on classpath)</name>
 	<description>Integration tests on the classpath.</description>
 
+	<properties>
+		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+	</properties>
 </project>

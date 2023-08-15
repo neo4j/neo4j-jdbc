@@ -62,7 +62,15 @@
 		<module>neo4j-jdbc-it</module>
 	</modules>
 
+	<scm>
+		<connection>scm:git:git@github.com:neo4j/neo4j-jdbc.git</connection>
+		<developerConnection>scm:git:git@github.com:neo4j/neo4j-jdbc.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/neo4j/neo4j-jdbc</url>
+	</scm>
+
 	<properties>
+		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
 		<artifactsDir>${project.build.directory}</artifactsDir>
 		<assertj.version>3.24.2</assertj.version>
 		<checkstyle.version>10.9.2</checkstyle.version>
@@ -399,6 +407,46 @@
 	</build>
 
 	<profiles>
+		<profile>
+			<id>no-release</id>
+			<!--
+			According to https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin
+			skipNexusStagingDeployMojo may not be set to true in the last reactor module. Because we don't
+			want to deploy our last module, nor a dummy module, we simply omit the relevant modules when
+			a deploy is in progress.
+			-->
+			<activation>
+				<property>
+					<name>!release</name>
+				</property>
+			</activation>
+			<modules>
+				<module>neo4j-jdbc-test-results</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>sonar</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.sonarsource.scanner.maven</groupId>
+						<artifactId>sonar-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sonar</id>
+								<goals>
+									<goal>sonar</goal>
+								</goals>
+								<phase>verify</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 		<profile>
 			<id>fast</id>
 			<activation>

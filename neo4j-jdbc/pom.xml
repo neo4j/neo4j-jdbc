@@ -34,6 +34,10 @@
 	<name>Neo4j JDBC Driver (Core)</name>
 	<description>Implementation of the Neo4j JDBC driver.</description>
 
+	<properties>
+		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.assertj</groupId>

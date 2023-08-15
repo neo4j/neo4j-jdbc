@@ -28,8 +28,28 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-${{ github.sha }}
 
+      - name: 'Enable Sonar for local PRs not from Dependabot'
+        if:  ${{ github.event.sender.login != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: echo "USE_SONAR=sonar" >> $GITHUB_ENV
+      - name: 'Disable Sonar for foreign PRs or from Dependabot'
+        if:  ${{ github.event.sender.login == 'dependabot[bot]' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
+        run: echo "USE_SONAR=-sonar" >> $GITHUB_ENV
+
+      - name: 'Cache SonarQube packages'
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: 'Checkout'
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: 'Clean and verify'
-        run: ./mvnw --no-transfer-progress clean verify
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: ./mvnw --no-transfer-progress clean verify -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc'

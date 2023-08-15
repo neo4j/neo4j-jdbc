@@ -18,6 +18,10 @@ It does not wrap the https://github.com/neo4j/neo4j-java-driver[Neo4j-Java-Drive
 It won't flatten nodes and relationships and will use `java.sql.Struct` for structured types such as nodes and entities.
 --
 
+image:https://github.com/neo4j/neo4j-jdbc/workflows/build/badge.svg[link=https://github.com/neo4j/neo4j-jdbc/actions]
+image:https://sonar.neo4j.ninja/api/project_badges/measure?project=neo4j-jdbc&token=sqb_6d14b417b6cd8c19820429dde7fd0dd34f0f5302&metric=coverage[link=https://sonarcloud.io/summary/new_code?id=eu.michael-simons.neo4j%3Aneo4j-migrations-parent]
+image:https://sonar.neo4j.ninja/api/project_badges/measure?project=neo4j-jdbc&token=sqb_6d14b417b6cd8c19820429dde7fd0dd34f0f5302&metric=alert_status[link=https://sonarcloud.io/dashboard?id=eu.michael-simons.neo4j%3Aneo4j-migrations-parent]
+
 == Desired features
 
 - Full support for JDBC 4 automatic service discovery of JDBC driver (via service loader)
