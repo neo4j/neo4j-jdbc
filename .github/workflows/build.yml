@@ -1,0 +1,35 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.adoc'
+      - 'CONTRIBUTING.adoc'
+  pull_request:
+    paths-ignore:
+      - 'README.adoc'
+      - 'CONTRIBUTING.adoc'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Set up JDK'
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: 'Cache Maven packages'
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-${{ github.sha }}
+
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: 'Clean and verify'
+        run: ./mvnw --no-transfer-progress clean verify
