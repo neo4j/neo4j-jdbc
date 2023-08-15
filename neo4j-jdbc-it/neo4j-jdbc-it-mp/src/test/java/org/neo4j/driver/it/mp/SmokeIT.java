@@ -19,39 +19,39 @@
 package org.neo4j.driver.it.mp;
 
 import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.time.Duration;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.junit.jupiter.api.condition.EnabledIf;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * Just making sure the driver can be loaded on the module path.
+ * <p>
+ * Not using Testcontainers here as it is quite some pain doing it on the module path.
  */
-@Testcontainers(disabledWithoutDocker = true)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SmokeIT {
 
-	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = new Neo4jContainer<>(System.getProperty("neo4j-jdbc.default-neo4j-image"))
-		.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-		.withReuse(true);
-
-	@BeforeAll
-	void startNeo4j() {
-
-		this.neo4j.start();
-	}
-
 	@Test
+	@EnabledIf("boltPortIsReachable")
 	void driverShouldBeLoaded() {
 
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> DriverManager.getDriver("jdbc:neo4j:notyet"))
-			.withMessage("No suitable driver");
+		var url = "jdbc:neo4j:onlyfortesting://%s:%d".formatted(getHost(), getPort());
+		assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
+	}
+
+	static boolean boltPortIsReachable() {
+
+		return new BoltHandshaker(getHost(), getPort()).isBoltPortReachable(Duration.ofSeconds(10));
+	}
+
+	private static int getPort() {
+		return Integer.parseInt(System.getProperty("it-database-port", "7687"));
+	}
+
+	private static String getHost() {
+		return "localhost";
 	}
 
 }

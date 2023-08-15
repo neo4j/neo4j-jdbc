@@ -36,4 +36,58 @@
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<configuration>
+					<images>
+						<image>
+							<name>${neo4j.image}</name>
+							<run>
+								<env>
+									<NEO4J_AUTH>neo4j/one-does-not-simply-use-a-6-digit-password-for-an-enterprise-app</NEO4J_AUTH>
+								</env>
+								<wait>
+									<log>http://localhost:7474/</log>
+									<time>20000</time>
+								</wait>
+								<ports>
+									<port>it-database-port:7687</port>
+								</ports>
+							</run>
+						</image>
+					</images>
+				</configuration>
+				<executions>
+					<execution>
+						<id>prepare-it-database</id>
+						<goals>
+							<goal>start</goal>
+						</goals>
+						<phase>pre-integration-test</phase>
+					</execution>
+					<execution>
+						<id>remove-it-database</id>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+						<phase>post-integration-test</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${maven-failsafe-plugin.version}</version>
+				<configuration combine.self="append">
+					<systemPropertyVariables>
+						<it-database-port>${it-database-port}</it-database-port>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

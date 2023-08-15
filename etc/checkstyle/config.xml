@@ -27,4 +27,14 @@
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringHeaderCheck"/>
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringLambdaCheck"/>
 	</module>
+	<module name="NewlineAtEndOfFile"/>
+	<module name="SuppressWarningsFilter"/>
+	<module name="com.puppycrawl.tools.checkstyle.TreeWalker">
+		<module name="SuppressWarningsHolder"/>
+		<!-- System.outs -->
+		<module name="Regexp">
+			<property name="format" value="System\.out\.println"/>
+			<property name="illegalPattern" value="true"/>
+		</module>
+	</module>
 </module>

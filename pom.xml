@@ -76,6 +76,7 @@
 		<checkstyle.version>10.9.2</checkstyle.version>
 		<covered-ratio-complexity>0.75</covered-ratio-complexity>
 		<covered-ratio-instructions>0.75</covered-ratio-instructions>
+		<docker-maven-plugin.version>0.43.2</docker-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
 		<java.version>17</java.version>
 		<junit-jupiter.version>5.10.0</junit-jupiter.version>
@@ -298,6 +299,11 @@
 							<migrations.default-neo4j-image>${neo4j.image}</migrations.default-neo4j-image>
 						</systemPropertyVariables>
 					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>io.fabric8</groupId>
+					<artifactId>docker-maven-plugin</artifactId>
+					<version>${docker-maven-plugin.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

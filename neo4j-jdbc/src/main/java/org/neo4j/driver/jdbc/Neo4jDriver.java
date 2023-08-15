@@ -20,6 +20,7 @@ package org.neo4j.driver.jdbc;
 
 import java.sql.Connection;
 import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -28,6 +29,22 @@ import java.util.logging.Logger;
 
 public final class Neo4jDriver implements Driver {
 
+	/*
+	 * This is the recommended - and AFAIK - required way to register a new driver the
+	 * default way. The driver manager will use the service loader mechanism to load all
+	 * drivers and that in turn will trigger the static initializer block. We would also
+	 * have the chance here to register a <code>DriverAction</code> that will be notified
+	 * on deregistration.
+	 */
+	static {
+		try {
+			DriverManager.registerDriver(new Neo4jDriver());
+		}
+		catch (SQLException ex) {
+			throw new ExceptionInInitializerError(ex);
+		}
+	}
+
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
 		throw new UnsupportedOperationException();
@@ -35,6 +52,9 @@ public final class Neo4jDriver implements Driver {
 
 	@Override
 	public boolean acceptsURL(String url) throws SQLException {
+		if (url.startsWith("jdbc:neo4j:onlyfortesting")) {
+			return true;
+		}
 		throw new UnsupportedOperationException();
 	}
 

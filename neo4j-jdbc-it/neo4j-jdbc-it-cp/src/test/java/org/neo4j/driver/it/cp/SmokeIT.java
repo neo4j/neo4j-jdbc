@@ -19,7 +19,6 @@
 package org.neo4j.driver.it.cp;
 
 import java.sql.DriverManager;
-import java.sql.SQLException;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * Just making sure the driver can be loaded on the module path.
@@ -50,8 +49,8 @@ public class SmokeIT {
 	@Test
 	void driverShouldBeLoaded() {
 
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> DriverManager.getDriver("jdbc:neo4j:notyet"))
-			.withMessage("No suitable driver");
+		var url = "jdbc:neo4j:onlyfortesting://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+		assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
 	}
 
 }
