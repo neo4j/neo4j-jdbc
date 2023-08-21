@@ -56,20 +56,6 @@ class Neo4jDriverTests {
 	}
 
 	@Test
-	void driverMajorVersionMustWork() {
-
-		var driver = new Neo4jDriver();
-		assertThat(driver.getMajorVersion()).isOne();
-	}
-
-	@Test
-	void driverMinorVersionMustWork() {
-
-		var driver = new Neo4jDriver();
-		assertThat(driver.getMinorVersion()).isZero();
-	}
-
-	@Test
 	void getParentLoggerShouldWork() {
 
 		var driver = new Neo4jDriver();

@@ -27,6 +27,13 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+/**
+ * The main entry point for the Neo4j JDBC driver. There is usually little need to use
+ * this class directly, it registers automatically with the {@link DriverManager}.
+ *
+ * @author Michael J. Simons
+ * @since 1.0.0
+ */
 public final class Neo4jDriver implements Driver {
 
 	/*
@@ -43,6 +50,12 @@ public final class Neo4jDriver implements Driver {
 		catch (SQLException ex) {
 			throw new ExceptionInInitializerError(ex);
 		}
+	}
+
+	public Neo4jDriver() {
+		// This is not only fine, but also required on the module path so that this public
+		// class
+		// can be properly exported.
 	}
 
 	@Override
@@ -65,12 +78,12 @@ public final class Neo4jDriver implements Driver {
 
 	@Override
 	public int getMajorVersion() {
-		return 1;
+		return ProductVersion.getMajorVersion();
 	}
 
 	@Override
 	public int getMinorVersion() {
-		return 0;
+		return ProductVersion.getMinorVersion();
 	}
 
 	/**

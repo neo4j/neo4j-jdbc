@@ -16,11 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module neo4j.jdbc {
-	requires transitive java.sql;
+package org.neo4j.driver.jdbc;
 
-	exports org.neo4j.driver.jdbc;
+import java.sql.SQLException;
 
-	provides java.sql.Driver with
-		org.neo4j.driver.jdbc.Neo4jDriver;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class ConnectionImplTests {
+
+	@Test
+	void getMetaData() throws SQLException {
+		try (var c = new ConnectionImpl()) {
+			assertThat(c.getMetaData()).isNotNull();
+		}
+		catch (UnsupportedOperationException ex) {
+			// ignored
+		}
+	}
+
 }

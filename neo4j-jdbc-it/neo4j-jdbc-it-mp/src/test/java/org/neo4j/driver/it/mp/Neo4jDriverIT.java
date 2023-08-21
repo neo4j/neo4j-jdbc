@@ -16,11 +16,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module neo4j.jdbc {
-	requires transitive java.sql;
+package org.neo4j.driver.it.mp;
 
-	exports org.neo4j.driver.jdbc;
+import org.junit.jupiter.api.Test;
+import org.neo4j.driver.jdbc.Neo4jDriver;
 
-	provides java.sql.Driver with
-		org.neo4j.driver.jdbc.Neo4jDriver;
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class Neo4jDriverIT {
+
+	@Test
+	void driverMajorVersionMustWork() {
+
+		var driver = new Neo4jDriver();
+		assertThat(driver.getMajorVersion()).isOne();
+	}
+
+	@Test
+	void driverMinorVersionMustWork() {
+
+		var driver = new Neo4jDriver();
+		assertThat(driver.getMinorVersion()).isZero();
+	}
+
 }

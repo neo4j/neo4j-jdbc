@@ -16,11 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module neo4j.jdbc {
-	requires transitive java.sql;
+package org.neo4j.driver.jdbc;
 
-	exports org.neo4j.driver.jdbc;
+import java.sql.Connection;
 
-	provides java.sql.Driver with
-		org.neo4j.driver.jdbc.Neo4jDriver;
+/**
+ * A Neo4j specific extension of {@link Connection}. It may be referred to for use with
+ * {@link #unwrap(Class)} to access specific Neo4j functionality.
+ *
+ * @author Michael J. Simons
+ * @since 1.0.0
+ */
+public sealed interface Neo4jConnection extends Connection permits ConnectionImpl {
+
 }
