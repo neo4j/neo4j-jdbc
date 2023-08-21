@@ -80,7 +80,7 @@ public class BoltNeo4jStatementTest {
 
 	@Before public void interceptBoltResultSetConstructor() throws Exception {
 		expectedResultSet = mock(BoltNeo4jResultSet.class);
-		resultSetFactory = (debug, statement, iterator, params) -> expectedResultSet;
+		resultSetFactory = (statement, iterator, params) -> expectedResultSet;
 		BoltNeo4jResultSet mockedRS = mock(BoltNeo4jResultSet.class);
 		doNothing().when(mockedRS).close();
 	}
@@ -117,7 +117,7 @@ public class BoltNeo4jStatementTest {
 		BoltNeo4jConnectionImpl mockConnection = mockOpenConnection();
 		when(mockConnection.getTransaction()).thenReturn(mockTransaction);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnection);
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnection);
 
 		statement.close();
 
@@ -131,7 +131,7 @@ public class BoltNeo4jStatementTest {
 	/*------------------------------*/
 
 	@Test public void isClosedShouldReturnFalseWhenCreated() throws SQLException {
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockOpenConnection());
+		Statement statement = BoltNeo4jStatement.newInstance(mockOpenConnection());
 		assertFalse(statement.isClosed());
 	}
 
@@ -143,7 +143,7 @@ public class BoltNeo4jStatementTest {
 		Result mockResult = mock(Result.class);
 
 		Statement statement = BoltNeo4jStatement
-				.newInstance(false, mockOpenConnectionWithResult(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				.newInstance(mockOpenConnectionWithResult(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
 	}
@@ -151,7 +151,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeQueryShouldThrowExceptionWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed(), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnectionClosed(), 0, 0, 0);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 	}
 
@@ -159,7 +159,7 @@ public class BoltNeo4jStatementTest {
 		BoltNeo4jConnectionImpl mockConnection = mockOpenConnectionWithResult(null);
 
 		Statement statement = BoltNeo4jStatement
-				.newInstance(false, mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+				.newInstance(mockConnection, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
 
 //		verifyStatic(BoltNeo4jResultSet.class);
@@ -169,7 +169,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeQueryShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockOpenConnection());
+		Statement statement = BoltNeo4jStatement.newInstance(mockOpenConnection());
 		statement.close();
 
 		statement.executeQuery(StatementData.STATEMENT_MATCH_ALL);
@@ -194,7 +194,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeQueryShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
 		statement.setQueryTimeout(1);
 		statement.executeQuery(StatementData.STATEMENT_CREATE);
 
@@ -216,7 +216,7 @@ public class BoltNeo4jStatementTest {
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
 		Statement statement = BoltNeo4jStatement
-				.newInstance(false, mockOpenConnectionWithResult(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				.newInstance(mockOpenConnectionWithResult(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 	}
@@ -249,7 +249,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeUpdateShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
 		statement.setQueryTimeout(1);
 		statement.executeUpdate(StatementData.STATEMENT_CREATE);
 
@@ -262,7 +262,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void getResultSetConcurrencyShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed());
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnectionClosed());
 		statement.close();
 		statement.getResultSetConcurrency();
 	}
@@ -273,7 +273,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void getResultSetHoldabilityShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed());
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnectionClosed());
 		statement.close();
 		statement.getResultSetHoldability();
 	}
@@ -284,7 +284,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void getResultSetTypeShouldThrowExceptionWhenCalledOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed());
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnectionClosed());
 		statement.close();
 		statement.getResultSetType();
 	}
@@ -311,7 +311,7 @@ public class BoltNeo4jStatementTest {
 		when(mockSummaryCounters.nodesDeleted()).thenReturn(0);
 
 		Statement statement = BoltNeo4jStatement
-				.newInstance(false, mockOpenConnectionWithResult(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				.newInstance(mockOpenConnectionWithResult(mockResult), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
 						ResultSet.HOLD_CURSORS_OVER_COMMIT);
 		statement.execute(StatementData.STATEMENT_CREATE);
 	}
@@ -319,21 +319,21 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeShouldThrowExceptionOnQueryWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed(), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnectionClosed(), 0, 0, 0);
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
 	}
 
 	@Test public void executeShouldThrowExceptionOnUpdateWhenClosedConnection() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockConnectionClosed(), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(mockConnectionClosed(), 0, 0, 0);
 		statement.execute(StatementData.STATEMENT_CREATE);
 	}
 
 	@Test public void executeShouldThrowExceptionOnQueryOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockOpenConnection());
+		Statement statement = BoltNeo4jStatement.newInstance(mockOpenConnection());
 		statement.close();
 
 		statement.execute(StatementData.STATEMENT_MATCH_ALL);
@@ -342,7 +342,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeShouldThrowExceptionOnUpdateOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockOpenConnection());
+		Statement statement = BoltNeo4jStatement.newInstance(mockOpenConnection());
 		statement.close();
 
 		statement.execute(StatementData.STATEMENT_CREATE);
@@ -376,7 +376,7 @@ public class BoltNeo4jStatementTest {
 	@Ignore @Test public void executeShouldThrowExceptionOnTimeoutExceeded() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
+		Statement statement = BoltNeo4jStatement.newInstance(new BoltNeo4jConnectionImpl(mockDriverOpen(), new Properties(), ""), 0, 0, 0);
 		statement.setQueryTimeout(1);
 		statement.execute(StatementData.STATEMENT_CREATE);
 
@@ -405,7 +405,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void getUpdateCountShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockOpenConnection());
+		Statement statement = BoltNeo4jStatement.newInstance(mockOpenConnection());
 		statement.close();
 
 		statement.getUpdateCount();
@@ -434,7 +434,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void getResultSetShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement statement = BoltNeo4jStatement.newInstance(false, mockOpenConnection());
+		Statement statement = BoltNeo4jStatement.newInstance(mockOpenConnection());
 		statement.close();
 
 		statement.getResultSet();
@@ -459,7 +459,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void addBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockOpenConnection());
+		Statement stmt = BoltNeo4jStatement.newInstance(Mocker.mockOpenConnection());
 		stmt.close();
 		stmt.addBatch("");
 	}
@@ -481,7 +481,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void clearBatchShouldThrowExceptionIfClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockOpenConnection());
+		Statement stmt = BoltNeo4jStatement.newInstance(Mocker.mockOpenConnection());
 		stmt.close();
 		stmt.clearBatch();
 	}
@@ -505,7 +505,7 @@ public class BoltNeo4jStatementTest {
 		when(summaryCounters.nodesCreated()).thenReturn(1);
 		when(summaryCounters.nodesDeleted()).thenReturn(0);
 
-		Statement stmt = BoltNeo4jStatement.newInstance(false, connection);
+		Statement stmt = BoltNeo4jStatement.newInstance(connection);
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
 		stmt.addBatch(str1);
@@ -515,7 +515,7 @@ public class BoltNeo4jStatementTest {
 	}
 
 	@Test public void executeBatchShouldThrowExceptionOnError() throws SQLException {
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockOpenConnection());
+		Statement stmt = BoltNeo4jStatement.newInstance(Mocker.mockOpenConnection());
 		stmt.addBatch("MATCH n WHERE id(n) = 1 SET n.property=1");
 		stmt.addBatch("MATCH n WHERE id(n) = 2 SET n.property=2");
 
@@ -539,7 +539,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void executeBatchShouldThrowExceptionOnClosed() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionClosed());
+		Statement stmt = BoltNeo4jStatement.newInstance(Mocker.mockConnectionClosed());
 		String str1 = "MATCH n WHERE id(n) = 1 SET n.property=1";
 		String str2 = "MATCH n WHERE id(n) = 2 SET n.property=2";
 		stmt.addBatch(str1);
@@ -554,7 +554,7 @@ public class BoltNeo4jStatementTest {
 	/*------------------------------*/
 
 	@Test public void getConnectionShouldWork() throws SQLException {
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockOpenConnection());
+		Statement stmt = BoltNeo4jStatement.newInstance(Mocker.mockOpenConnection());
 
 		assertNotNull(stmt.getConnection());
 		assertEquals(Mocker.mockOpenConnection().getClass(), stmt.getConnection().getClass());
@@ -563,7 +563,7 @@ public class BoltNeo4jStatementTest {
 	@Test public void getConnectionShouldThrowExceptionOnClosedStatement() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		Statement stmt = BoltNeo4jStatement.newInstance(false, Mocker.mockConnectionClosed());
+		Statement stmt = BoltNeo4jStatement.newInstance(Mocker.mockConnectionClosed());
 		stmt.close();
 
 		stmt.getConnection();

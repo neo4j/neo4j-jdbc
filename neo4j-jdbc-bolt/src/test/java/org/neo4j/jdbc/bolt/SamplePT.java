@@ -75,19 +75,16 @@ public class SamplePT {
 	@State(Scope.Benchmark) public static class Data {
 		@Setup public void initialize() throws ClassNotFoundException, SQLException, IOException {
 			jdbcConnection = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test");
-			jdbcConnectionDebug = DriverManager.getConnection("jdbc:neo4j:bolt://localhost:7687?user=neo4j,password=test,debug");
 			driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "test"));
 		}
 
 		@TearDown public void close() throws ClassNotFoundException, SQLException, IOException {
 			jdbcConnection.close();
-			jdbcConnectionDebug.close();
 			driver.close();
 		}
 
 		public String query = "MATCH (n) RETURN n";
 		public Connection jdbcConnection;
-		public Connection jdbcConnectionDebug;
 		public org.neo4j.driver.Driver driver;
 
 	}
@@ -104,13 +101,5 @@ public class SamplePT {
 		Session session = driver.session();
 		bh.consume(session.run(data.query));
 		session.close();
-	}
-
-	@Benchmark public void testSimpleQueryWithDebugJDBC(Data data, Blackhole bh) throws SQLException {
-		System.setOut(Mockito.mock(PrintStream.class));
-		Connection conn = data.jdbcConnectionDebug;
-		Statement stmt = conn.createStatement();
-		bh.consume(stmt.executeQuery(data.query));
-		stmt.close();
 	}
 }
