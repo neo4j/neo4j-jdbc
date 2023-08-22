@@ -239,7 +239,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		this.checkConcurrencyParams(resultSetConcurrency);
 		this.checkHoldabilityParams(resultSetHoldability);
 		this.initTransaction();
-		return BoltNeo4jStatement.newInstance(false, this, resultSetType, resultSetConcurrency, resultSetHoldability);
+		return BoltNeo4jStatement.newInstance(this, resultSetType, resultSetConcurrency, resultSetHoldability);
 	}
 
 	/*-------------------------------*/
@@ -260,7 +260,7 @@ public class BoltNeo4jConnectionImpl extends Neo4jConnectionImpl implements Bolt
 		this.checkConcurrencyParams(resultSetConcurrency);
 		this.checkHoldabilityParams(resultSetHoldability);
 		this.initTransaction();
-		return BoltNeo4jPreparedStatement.newInstance(false, this, nativeSQL(sql), resultSetType, resultSetConcurrency, resultSetHoldability);
+		return BoltNeo4jPreparedStatement.newInstance(this, nativeSQL(sql), resultSetType, resultSetConcurrency, resultSetHoldability);
 	}
 
 	/*-------------------*/
