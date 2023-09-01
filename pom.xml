@@ -192,6 +192,16 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-enforcer-plugin</artifactId>
 					<version>${maven-enforcer-plugin.version}</version>
+					<configuration>
+						<rules>
+							<requireJavaVersion>
+								<version>${java.version}</version>
+							</requireJavaVersion>
+							<requireMavenVersion>
+								<version>${maven.version}</version>
+							</requireMavenVersion>
+						</rules>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>io.spring.javaformat</groupId>
@@ -358,16 +368,6 @@
 							<goal>enforce</goal>
 						</goals>
 						<phase>validate</phase>
-						<configuration>
-							<rules>
-								<requireJavaVersion>
-									<version>${java.version}</version>
-								</requireJavaVersion>
-								<requireMavenVersion>
-									<version>${maven.version}</version>
-								</requireMavenVersion>
-							</rules>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
