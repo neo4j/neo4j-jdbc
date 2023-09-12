@@ -501,9 +501,19 @@ public class BoltNeo4jConnectionTest {
 	@Ignore @Test public void setAutoCommitShouldThrowExceptionOnDatabaseAccessErrorOccurred() throws SQLException {
 		expectedEx.expect(SQLException.class);
 
-		NetworkSession networkSession = new NetworkSession(null, null,
-				DatabaseNameUtil.database(""), AccessMode.READ, Set.of(), "", FetchSizeUtil.UNLIMITED_FETCH_SIZE, DevNullLogging.DEV_NULL_LOGGING,
-				new Neo4jBookmarkManager(Set.of(), (a) -> {}, () -> Set.of()));
+		NetworkSession networkSession = new NetworkSession(
+				null,
+				null,
+				DatabaseNameUtil.database(""),
+				AccessMode.READ,
+				Set.of(),
+				"",
+				FetchSizeUtil.UNLIMITED_FETCH_SIZE,
+				DevNullLogging.DEV_NULL_LOGGING,
+				new Neo4jBookmarkManager(Set.of(), (a) -> {}, Set::of),
+				NotificationConfig.defaultConfig(),
+				null
+		);
 
 		Session session = new InternalSession(networkSession);
 		org.neo4j.driver.Driver driver = mock(org.neo4j.driver.Driver.class);

@@ -88,10 +88,10 @@ public class ActorManagerContainerIT {
 		try (final Driver driver = GraphDatabase.driver(new URI(neo4jContainer.getBoltUrl()), AuthTokens.basic("neo4j", neo4jContainer.getAdminPassword()))) {
 			final String foo = "foo";
 			try (final Session session = driver.session(SessionConfig.forDatabase("system"))) {
-				session.writeTransaction(tx -> tx.run("create database " + foo + " if not exists"));
+				session.writeTransaction(tx -> tx.run("create database " + foo + " if not exists").consume());
 			}
 			try (final Session session = driver.session(SessionConfig.forDatabase(foo))) {
-				session.writeTransaction(tx -> tx.run("create (p:Person{name: 'Dave Chappelle', born: 1973})"));
+				session.writeTransaction(tx -> tx.run("create (p:Person{name: 'Dave Chappelle', born: 1973})").consume());
 			}
 		}
 	}
