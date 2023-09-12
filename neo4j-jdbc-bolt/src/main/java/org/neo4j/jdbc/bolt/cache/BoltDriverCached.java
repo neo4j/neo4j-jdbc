@@ -1,10 +1,11 @@
 package org.neo4j.jdbc.bolt.cache;
 
+import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.BaseSession;
 import org.neo4j.driver.BookmarkManager;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.ExecutableQuery;
 import org.neo4j.driver.Metrics;
-import org.neo4j.driver.QueryTask;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.async.AsyncSession;
@@ -40,12 +41,12 @@ public class BoltDriverCached implements Driver {
     }
 
     @Override
-    public QueryTask queryTask(String s) {
+    public ExecutableQuery executableQuery(String ignored) {
         throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
     @Override
-    public BookmarkManager queryTaskBookmarkManager() {
+    public BookmarkManager executableQueryBookmarkManager() {
         throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
@@ -68,6 +69,11 @@ public class BoltDriverCached implements Driver {
 
     @Override
     public <T extends BaseSession> T session(Class<T> aClass, SessionConfig sessionConfig) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public <T extends BaseSession> T session(Class<T> aClass, SessionConfig sessionConfig, AuthToken authToken) {
         throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
@@ -131,6 +137,16 @@ public class BoltDriverCached implements Driver {
 
     @Override
     public CompletionStage<Void> verifyConnectivityAsync() {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public boolean verifyAuthentication(AuthToken authToken) {
+        throw UNSUPPORTED_OPERATION_EXCEPTION;
+    }
+
+    @Override
+    public boolean supportsSessionAuth() {
         throw UNSUPPORTED_OPERATION_EXCEPTION;
     }
 
