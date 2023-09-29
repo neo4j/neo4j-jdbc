@@ -69,19 +69,15 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration combine.self="override">
-					<archive>
-						<manifest>
-							<addDefaultEntries>true</addDefaultEntries>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-							<addBuildEnvironmentEntries>true</addBuildEnvironmentEntries>
-						</manifest>
-						<manifestEntries>
-							<Artifact-Id>${project.artifactId}</Artifact-Id>
-						</manifestEntries>
-					</archive>
-				</configuration>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

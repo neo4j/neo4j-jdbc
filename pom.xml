@@ -60,6 +60,7 @@
 	<modules>
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-it</module>
+		<module>neo4j-jdbc-bundle</module>
 	</modules>
 
 	<scm>
@@ -77,6 +78,8 @@
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<docker-maven-plugin.version>0.43.2</docker-maven-plugin.version>
+		<duplicate-finder-maven-plugin.version>1.3.0</duplicate-finder-maven-plugin.version>
+		<exec-maven-plugin.version>3.1.0</exec-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
 		<java.version>17</java.version>
 		<junit-jupiter.version>5.10.0</junit-jupiter.version>
@@ -89,11 +92,13 @@
 		<maven-install-plugin.version>3.1.1</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
 		<maven-javadoc-plugin.version>3.6.0</maven-javadoc-plugin.version>
-		<maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
+		<maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
+		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>
 		<maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
 		<mockito.version>5.2.0</mockito.version>
+		<moditect-maven-plugin.version>1.0.0.Final</moditect-maven-plugin.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.10.0</neo4j.version>
 		<netty.version>4.1.99.Final</netty.version>
@@ -341,6 +346,18 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>${maven-jar-plugin.version}</version>
+					<configuration>
+						<archive>
+							<manifest>
+								<addDefaultEntries>true</addDefaultEntries>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+								<addBuildEnvironmentEntries>true</addBuildEnvironmentEntries>
+							</manifest>
+							<manifestEntries>
+								<Artifact-Id>${project.artifactId}</Artifact-Id>
+							</manifestEntries>
+						</archive>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -368,6 +385,45 @@
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>${maven-javadoc-plugin.version}</version>
 				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>${maven-source-plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>${maven-shade-plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.basepom.maven</groupId>
+					<artifactId>duplicate-finder-maven-plugin</artifactId>
+					<version>${duplicate-finder-maven-plugin.version}</version>
+					<configuration>
+						<failBuildInCaseOfDifferentContentConflict>true</failBuildInCaseOfDifferentContentConflict>
+						<failBuildInCaseOfEqualContentConflict>true</failBuildInCaseOfEqualContentConflict>
+						<failBuildInCaseOfConflict>true</failBuildInCaseOfConflict>
+						<checkCompileClasspath>true</checkCompileClasspath>
+						<checkRuntimeClasspath>true</checkRuntimeClasspath>
+						<checkTestClasspath>false</checkTestClasspath>
+						<preferLocal>true</preferLocal>
+						<useResultFile>true</useResultFile>
+						<resultFile>${project.build.directory}/duplicate-finder-result.xml</resultFile>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>exec-maven-plugin</artifactId>
+					<version>${exec-maven-plugin.version}</version>
+					<configuration>
+						<skip>true</skip>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.moditect</groupId>
+					<artifactId>moditect-maven-plugin</artifactId>
+					<version>${moditect-maven-plugin.version}</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -380,6 +436,19 @@
 						<id>enforce</id>
 						<goals>
 							<goal>enforce</goal>
+						</goals>
+						<phase>validate</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.basepom.maven</groupId>
+				<artifactId>duplicate-finder-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default</id>
+						<goals>
+							<goal>check</goal>
 						</goals>
 						<phase>validate</phase>
 					</execution>

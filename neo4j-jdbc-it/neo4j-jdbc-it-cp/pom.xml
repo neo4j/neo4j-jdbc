@@ -54,29 +54,4 @@
 		</dependency>
 	</dependencies>
 
-	<build>
-		<plugins>
-			<plugin>
-				<!--
-				This module has a proper module, we must not add the automatic module entry to the jar. The maven-jar-plugin
-				must also be declared _before_ the maven-shade-plugin, otherwise no sources will be available for the javadoc-plugin
-				for whatever god-damn reasons I dare not to ask about.
-				 -->
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration combine.self="override">
-					<archive>
-						<manifest>
-							<addDefaultEntries>true</addDefaultEntries>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-							<addBuildEnvironmentEntries>true</addBuildEnvironmentEntries>
-						</manifest>
-						<manifestEntries>
-							<Artifact-Id>${project.artifactId}</Artifact-Id>
-						</manifestEntries>
-					</archive>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 </project>

@@ -16,22 +16,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.neo4j.driver.bundle;
 
-@SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
-module neo4j.jdbc {
-	requires transitive java.sql;
+import org.junit.jupiter.api.Test;
+import org.neo4j.driver.jdbc.Neo4jDriver;
 
-	// start::shaded-dependencies
-	requires io.netty.buffer;
-	requires io.netty.codec;
-	requires io.netty.common;
-	requires io.netty.handler;
-	requires io.netty.resolver;
-	requires io.netty.transport;
-	// end::shaded-dependencies
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
-	exports org.neo4j.driver.jdbc;
+public class ProductVersionBundleIT {
 
-	provides java.sql.Driver with
-		org.neo4j.driver.jdbc.Neo4jDriver;
+	@Test
+	void driverMajorVersionMustWork() {
+
+		var driver = new Neo4jDriver();
+		assertThatNoException().isThrownBy(driver::getMajorVersion);
+	}
+
+	@Test
+	void driverMinorVersionMustWork() {
+
+		var driver = new Neo4jDriver();
+		assertThatNoException().isThrownBy(driver::getMinorVersion);
+	}
+
 }

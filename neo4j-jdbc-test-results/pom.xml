@@ -42,6 +42,7 @@
 			<groupId>org.neo4j.driver</groupId>
 			<artifactId>neo4j-jdbc-it-cp</artifactId>
 			<version>${project.version}</version>
+			<classifier>tests</classifier>
 			<exclusions>
 				<exclusion>
 					<groupId>*</groupId>
@@ -53,6 +54,7 @@
 			<groupId>org.neo4j.driver</groupId>
 			<artifactId>neo4j-jdbc-it-mp</artifactId>
 			<version>${project.version}</version>
+			<classifier>tests</classifier>
 			<exclusions>
 				<exclusion>
 					<groupId>*</groupId>

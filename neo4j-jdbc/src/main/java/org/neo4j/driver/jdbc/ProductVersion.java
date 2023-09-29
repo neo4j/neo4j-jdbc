@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -90,8 +91,9 @@ final class ProductVersion {
 	}
 
 	private static boolean isApplicableManifest(Manifest manifest) {
-		Attributes attributes = manifest.getMainAttributes();
-		return "neo4j-jdbc".equals(get(attributes, "Artifact-Id"));
+		var attributes = manifest.getMainAttributes();
+		var artifactId = (String) get(attributes, "Artifact-Id");
+		return artifactId != null && Set.of("neo4j-jdbc", "neo4j-jdbc-bundle").contains(artifactId);
 	}
 
 	private static Object get(Attributes attributes, String key) {

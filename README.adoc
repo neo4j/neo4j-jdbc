@@ -1,4 +1,4 @@
-= Neo4j JDBC
+= Neo4j JDBC Driver
 Michael Simons <michael.simons@neo4j.com>
 :doctype: article
 :lang: en
