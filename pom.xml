@@ -166,24 +166,28 @@
 					<artifactId>license-maven-plugin</artifactId>
 					<version>${license-maven-plugin.version}</version>
 					<configuration>
-						<header>etc/license.tpl</header>
-						<strictCheck>true</strictCheck>
+						<licenseSets>
+							<licenseSet>
+								<header>etc/license.tpl</header>
+								<properties>
+									<year>2023</year>
+								</properties>
+								<includes>
+									<include>**</include>
+								</includes>
+								<excludes>
+									<exclude>**/*.adoc</exclude>
+									<exclude>**/*.cypher</exclude>
+									<exclude>**/*.tpl</exclude>
+									<exclude>**/package-info.java</exclude>
+									<exclude>LICENSE.txt</exclude>
+								</excludes>
+							</licenseSet>
+						</licenseSets>
 						<mapping>
 							<factories>SCRIPT_STYLE</factories>
 						</mapping>
-						<properties>
-							<year>2023</year>
-						</properties>
-						<includes>
-							<include>**</include>
-						</includes>
-						<excludes>
-							<exclude>**/*.adoc</exclude>
-							<exclude>**/*.cypher</exclude>
-							<exclude>**/*.tpl</exclude>
-							<exclude>**/package-info.java</exclude>
-							<exclude>LICENSE.txt</exclude>
-						</excludes>
+						<strictCheck>true</strictCheck>
 					</configuration>
 				</plugin>
 				<plugin>
