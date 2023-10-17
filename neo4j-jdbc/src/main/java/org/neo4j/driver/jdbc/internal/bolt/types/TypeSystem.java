@@ -22,6 +22,9 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.types.InternalTypeSystem;
 
 /**
  * A listing of all database types.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface TypeSystem {
 

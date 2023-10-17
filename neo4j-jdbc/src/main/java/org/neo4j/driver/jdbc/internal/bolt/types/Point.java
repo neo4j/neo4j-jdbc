@@ -26,6 +26,9 @@ import org.neo4j.driver.jdbc.internal.bolt.Values;
  * Value that represents a point can be created using
  * {@link Values#point(int, double, double)} or
  * {@link Values#point(int, double, double, double)} method.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface Point {
 

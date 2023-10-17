@@ -36,7 +36,8 @@ package org.neo4j.driver.jdbc.internal.bolt.types;
  *     }
  * </pre>
  *
- * @since 1.0
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface Path extends Iterable<Path.Segment> {
 

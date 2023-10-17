@@ -28,6 +28,9 @@ package org.neo4j.driver.jdbc.internal.bolt.response;
  * <p>
  * Keeping the result summary around does not influence the lifecycle of any associated
  * session and/or transaction.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface ResultSummary {
 

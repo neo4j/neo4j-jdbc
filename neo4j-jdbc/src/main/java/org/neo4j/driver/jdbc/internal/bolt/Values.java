@@ -77,7 +77,8 @@ import org.neo4j.driver.jdbc.internal.bolt.types.TypeSystem;
  * for methods like {@link Value#asList(Function)}, {@link Value#asMap(Function)},
  * {@link BoltRecord#asMap(Function)} and so on.
  *
- * @since 1.0
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public final class Values {
 

@@ -31,6 +31,9 @@ import org.neo4j.driver.jdbc.internal.bolt.Value;
  * specifying the return type of the value found in map by key. If the type of the value
  * found A differs from the type of the default value B, a cast from A to B would happen
  * automatically. Note: Error might arise if the cast from A to B is not possible.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface MapAccessorWithDefaultValue extends MapAccessor {
 

@@ -30,7 +30,7 @@ import java.sql.SQLException;
  * @author Michael J. Simons
  * @since 1.0.0
  */
-class DatabaseMetadataImpl implements DatabaseMetaData {
+final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final Connection connection;
 

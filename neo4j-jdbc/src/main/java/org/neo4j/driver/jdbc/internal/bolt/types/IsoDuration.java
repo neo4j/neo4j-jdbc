@@ -28,6 +28,9 @@ import org.neo4j.driver.jdbc.internal.bolt.Values;
  * <p>
  * Value that represents a duration can be created using
  * {@link Values#isoDuration(long, long, long, int)} method.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface IsoDuration extends TemporalAmount {
 

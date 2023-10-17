@@ -20,6 +20,9 @@ package org.neo4j.driver.jdbc.internal.bolt;
 
 /**
  * This is a logger name handle for Bolt message exchange logging.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public final class BoltMessageExchange {
 

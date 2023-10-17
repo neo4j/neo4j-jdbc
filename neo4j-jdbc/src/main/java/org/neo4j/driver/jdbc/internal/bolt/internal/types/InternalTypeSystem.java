@@ -25,6 +25,8 @@ import org.neo4j.driver.jdbc.internal.bolt.types.TypeSystem;
 /**
  * Utility class for determining and working with the Cypher types of values.
  *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  * @see Value
  * @see Type
  */

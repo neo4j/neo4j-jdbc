@@ -18,30 +18,33 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal.response;
 
-import java.util.stream.IntStream;
-
 import org.neo4j.driver.jdbc.internal.bolt.response.SummaryCounters;
 
 public record InternalSummaryCounters(int nodesCreated, int nodesDeleted, int relationshipsCreated,
 		int relationshipsDeleted, int propertiesSet, int labelsAdded, int labelsRemoved, int indexesAdded,
 		int indexesRemoved, int constraintsAdded, int constraintsRemoved,
 		int systemUpdates) implements SummaryCounters {
+
 	@Override
 	public int totalCount() {
-		return IntStream
-			.of(this.nodesCreated, this.nodesDeleted, this.relationshipsCreated, this.relationshipsDeleted,
-					this.propertiesSet, this.labelsAdded, this.labelsRemoved, this.indexesAdded, this.indexesRemoved,
-					this.constraintsAdded, this.constraintsRemoved)
-			.sum();
+
+		int sum = this.nodesCreated;
+		sum += this.nodesDeleted;
+		sum += this.relationshipsCreated;
+		sum += this.relationshipsDeleted;
+		sum += this.propertiesSet;
+		sum += this.labelsAdded;
+		sum += this.labelsRemoved;
+		sum += this.indexesAdded;
+		sum += this.indexesRemoved;
+		sum += this.constraintsAdded;
+		sum += this.constraintsRemoved;
+		return sum;
 	}
 
 	@Override
 	public boolean containsUpdates() {
-		return IntStream
-			.of(this.nodesCreated, this.nodesDeleted, this.relationshipsCreated, this.relationshipsDeleted,
-					this.propertiesSet, this.labelsAdded, this.labelsRemoved, this.indexesAdded, this.indexesRemoved,
-					this.constraintsAdded, this.constraintsRemoved)
-			.anyMatch(this::isPositive);
+		return isPositive(this.totalCount());
 	}
 
 	@Override

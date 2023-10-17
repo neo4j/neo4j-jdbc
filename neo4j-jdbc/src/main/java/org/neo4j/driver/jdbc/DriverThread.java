@@ -20,7 +20,7 @@ package org.neo4j.driver.jdbc;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
 
-class DriverThread extends FastThreadLocalThread {
+final class DriverThread extends FastThreadLocalThread {
 
 	DriverThread(ThreadGroup group, Runnable target, String name) {
 		super(group, target, name);

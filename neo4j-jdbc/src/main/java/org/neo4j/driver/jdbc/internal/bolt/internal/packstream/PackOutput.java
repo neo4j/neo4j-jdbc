@@ -22,6 +22,9 @@ import java.io.IOException;
 
 /**
  * This is where {@link PackStream} writes its output to.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface PackOutput {
 

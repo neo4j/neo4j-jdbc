@@ -25,6 +25,9 @@ import org.neo4j.driver.jdbc.internal.bolt.types.MapAccessorWithDefaultValue;
 
 /**
  * Container for Cypher result values.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public sealed interface BoltRecord extends MapAccessorWithDefaultValue permits InternalBoltRecord {
 

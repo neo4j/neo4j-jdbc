@@ -102,8 +102,9 @@ final class ResultSetImpl implements ResultSet {
 			return;
 		}
 		var autocommit = this.statement.isAutoCommit();
+		var flush = !autocommit;
 		var discardFuture = (this.pullResponse.hasMore())
-				? this.boltConnection.discard(this.runResponse, -1, !autocommit).toCompletableFuture()
+				? this.boltConnection.discard(this.runResponse, -1, flush).toCompletableFuture()
 				: CompletableFuture.completedFuture(null);
 		var commitStage = autocommit ? this.boltConnection.commit().toCompletableFuture()
 				: CompletableFuture.completedFuture(null);

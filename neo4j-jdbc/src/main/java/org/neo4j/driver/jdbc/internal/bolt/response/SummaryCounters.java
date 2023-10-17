@@ -20,6 +20,9 @@ package org.neo4j.driver.jdbc.internal.bolt.response;
 
 /**
  * Contains counters for various operations that a query triggered.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface SummaryCounters {
 

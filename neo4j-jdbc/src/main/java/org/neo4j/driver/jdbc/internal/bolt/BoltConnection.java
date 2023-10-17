@@ -30,6 +30,9 @@ import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 
 /**
  * A Bolt connection.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface BoltConnection {
 

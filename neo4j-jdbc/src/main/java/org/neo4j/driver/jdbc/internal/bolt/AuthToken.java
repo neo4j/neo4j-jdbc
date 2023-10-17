@@ -25,6 +25,8 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.InternalAuthToken;
  * <em>password</em>. Such a token is required by a {@link BoltConnection} to authenticate
  * with a Neo4j instance.
  *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  * @see AuthTokens
  */
 public sealed interface AuthToken permits InternalAuthToken {

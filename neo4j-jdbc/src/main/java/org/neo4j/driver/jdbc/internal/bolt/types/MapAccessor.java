@@ -30,6 +30,9 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.value.NullValue;
  * <p>
  * This provides only read methods. Subclasses may choose to provide additional methods
  * for changing the underlying map.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface MapAccessor {
 

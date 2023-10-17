@@ -28,6 +28,9 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.util.Iterables;
 /**
  * This is a listing of the various methods of authentication supported by this driver.
  * The scheme used must be supported by the Neo4j Instance you are connecting to.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public final class AuthTokens {
 

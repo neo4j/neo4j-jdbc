@@ -108,6 +108,9 @@ import org.neo4j.driver.jdbc.internal.bolt.types.TypeSystem;
  * }
  * }
  * </pre>
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface Value extends MapAccessor, MapAccessorWithDefaultValue {
 

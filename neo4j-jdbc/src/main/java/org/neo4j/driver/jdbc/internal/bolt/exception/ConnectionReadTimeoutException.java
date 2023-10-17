@@ -27,6 +27,9 @@ import java.io.Serial;
  * considered broken if client does not get any communication from the server within the
  * specified timeout period. This results in the server being removed from the routing
  * table.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public final class ConnectionReadTimeoutException extends BoltException {
 

@@ -20,7 +20,7 @@ package org.neo4j.driver.jdbc;
 
 import io.netty.util.concurrent.DefaultThreadFactory;
 
-class DriverThreadFactory extends DefaultThreadFactory {
+final class DriverThreadFactory extends DefaultThreadFactory {
 
 	private static final String THREAD_NAME_PREFIX = "Neo4jDriverIO";
 

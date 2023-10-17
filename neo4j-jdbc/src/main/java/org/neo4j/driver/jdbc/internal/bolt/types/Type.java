@@ -22,6 +22,9 @@ import org.neo4j.driver.jdbc.internal.bolt.Value;
 
 /**
  * The type of {@link Value} as defined by the Cypher language.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public interface Type {
 

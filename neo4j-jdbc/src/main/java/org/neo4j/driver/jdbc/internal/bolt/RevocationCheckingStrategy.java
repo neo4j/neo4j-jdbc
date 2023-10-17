@@ -20,6 +20,9 @@ package org.neo4j.driver.jdbc.internal.bolt;
 
 /**
  * Defines strategy for revocation checks.
+ *
+ * @author Neo4j Drivers Team
+ * @since 1.0.0
  */
 public enum RevocationCheckingStrategy {
 

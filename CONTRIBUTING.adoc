@@ -54,6 +54,9 @@ TIP: The Spring Developers write: "The source formatter does not fundamentally c
 There are plugins for https://github.com/spring-io/spring-javaformat#eclipse[Eclipse] and https://github.com/spring-io/spring-javaformat#intellij-idea[IntelliJ IDEA] and the Checkstyle settings https://github.com/spring-io/spring-javaformat#checkstyle-idea-plugin[can be imported as well].
 We took those "as is" and just disabled the lambda check (requiring even single parameters to have parenthesis).
 
+Public classes do require an author tag.
+Please add yourself as an `@author` to the `.java` files you added or that modified substantially (more than cosmetic changes).
+
 == Conventions
 
 === Code
