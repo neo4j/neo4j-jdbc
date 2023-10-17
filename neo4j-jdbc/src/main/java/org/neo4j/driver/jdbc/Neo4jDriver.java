@@ -24,8 +24,19 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.time.Clock;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import org.neo4j.driver.jdbc.internal.bolt.AuthTokens;
+import org.neo4j.driver.jdbc.internal.bolt.BoltAgentUtil;
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProvider;
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProviders;
+import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
+import org.neo4j.driver.jdbc.internal.bolt.SecurityPlans;
 
 /**
  * The main entry point for the Neo4j JDBC driver. There is usually little need to use
@@ -35,6 +46,11 @@ import java.util.logging.Logger;
  * @since 1.0.0
  */
 public final class Neo4jDriver implements Driver {
+
+	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
+
+	private final BoltConnectionProvider boltConnectionProvider = BoltConnectionProviders.netty(eventLoopGroup,
+			Clock.systemUTC());
 
 	/*
 	 * This is the recommended - and AFAIK - required way to register a new driver the
@@ -60,12 +76,45 @@ public final class Neo4jDriver implements Driver {
 
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (url == null || info == null) {
+			throw new UnsupportedOperationException();
+		}
+		var pattern = Pattern.compile("^jdbc:neo4j:onlyfortesting://([^:]+):(\\d+)$");
+		var matcher = pattern.matcher(url);
+		if (matcher.matches()) {
+			var host = matcher.group(1);
+			var port = Integer.parseInt(matcher.group(2));
+			var address = new BoltServerAddress(host, port);
+
+			var securityPlan = SecurityPlans.insecure();
+
+			var databaseName = info.getProperty("database", "neo4j");
+
+			var user = info.getProperty("user", "neo4j");
+			var password = info.getProperty("password");
+			var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
+
+			var boltAgent = BoltAgentUtil.boltAgent();
+			var userAgent = info.getProperty("agent", "neo4j-jdbc");
+			var connectTimeoutMillis = Integer.parseInt(info.getProperty("timeout", "1000"));
+
+			var boltConnection = this.boltConnectionProvider
+				.connect(address, securityPlan, databaseName, authToken, boltAgent, userAgent, connectTimeoutMillis)
+				.toCompletableFuture()
+				.join();
+
+			return new ConnectionImpl(boltConnection);
+		}
+		else {
+			return null;
+		}
 	}
 
 	@Override
 	public boolean acceptsURL(String url) throws SQLException {
-		if (url.startsWith("jdbc:neo4j:onlyfortesting")) {
+		var pattern = Pattern.compile("^jdbc:neo4j:onlyfortesting://([^:]+):(\\d+)$");
+		var matcher = pattern.matcher(url);
+		if (matcher.matches()) {
 			return true;
 		}
 		throw new UnsupportedOperationException();

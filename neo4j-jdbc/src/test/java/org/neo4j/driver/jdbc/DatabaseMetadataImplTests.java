@@ -20,11 +20,9 @@ package org.neo4j.driver.jdbc;
 
 import java.sql.Connection;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.mock;
+import org.mockito.Mockito;
 
 class DatabaseMetadataImplTests {
 
@@ -40,7 +38,7 @@ class DatabaseMetadataImplTests {
 	void getDriverMajorVersion() {
 
 		var databaseMetadata = newDatabaseMetadata();
-		assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
 			.isThrownBy(databaseMetadata::getDriverMajorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
@@ -48,7 +46,7 @@ class DatabaseMetadataImplTests {
 	@Test
 	void getDriverMinorVersion() {
 		var databaseMetadata = newDatabaseMetadata();
-		assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
 			.isThrownBy(databaseMetadata::getDriverMinorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
@@ -57,18 +55,18 @@ class DatabaseMetadataImplTests {
 	void getJDBCMajorVersion() {
 
 		var databaseMetadata = newDatabaseMetadata();
-		assertThat(databaseMetadata.getJDBCMajorVersion()).isEqualTo(4);
+		Assertions.assertThat(databaseMetadata.getJDBCMajorVersion()).isEqualTo(4);
 	}
 
 	@Test
 	void getJDBCMinorVersion() {
 
 		var databaseMetadata = newDatabaseMetadata();
-		assertThat(databaseMetadata.getJDBCMinorVersion()).isEqualTo(3);
+		Assertions.assertThat(databaseMetadata.getJDBCMinorVersion()).isEqualTo(3);
 	}
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		var connection = mock(Connection.class);
+		var connection = Mockito.mock(Connection.class);
 		return new DatabaseMetadataImpl(connection);
 	}
 

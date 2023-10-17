@@ -32,4 +32,4 @@ echo "$OUT"
 
 mkdir -p "$(dirname "${OUT}")"
 
-sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | cat -s > "$OUT"
+sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | sed 's/\/\/ automatic::jdk.unsupported/requires jdk.unsupported;/' | cat -s > "$OUT"

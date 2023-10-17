@@ -19,17 +19,22 @@
 package org.neo4j.driver.jdbc;
 
 import java.sql.SQLException;
+import java.util.concurrent.CompletableFuture;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.mockito.BDDMockito;
+import org.mockito.Mockito;
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 
 class ConnectionImplTests {
 
 	@Test
 	void getMetaData() throws SQLException {
-		try (var c = new ConnectionImpl()) {
-			assertThat(c.getMetaData()).isNotNull();
+		var boltConnection = Mockito.mock(BoltConnection.class);
+		BDDMockito.given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
+		try (var c = new ConnectionImpl(boltConnection)) {
+			Assertions.assertThat(c.getMetaData()).isNotNull();
 		}
 		catch (UnsupportedOperationException ex) {
 			// ignored

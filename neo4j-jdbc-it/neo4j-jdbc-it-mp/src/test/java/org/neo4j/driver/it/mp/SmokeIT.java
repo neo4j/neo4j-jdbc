@@ -21,10 +21,9 @@ package org.neo4j.driver.it.mp;
 import java.sql.DriverManager;
 import java.time.Duration;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
-
-import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * Just making sure the driver can be loaded on the module path.
@@ -38,7 +37,7 @@ public class SmokeIT {
 	void driverShouldBeLoaded() {
 
 		var url = "jdbc:neo4j:onlyfortesting://%s:%d".formatted(getHost(), getPort());
-		assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
+		Assertions.assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
 	}
 
 	static boolean boltPortIsReachable() {

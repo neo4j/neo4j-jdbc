@@ -26,16 +26,21 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 
 /**
  * A Neo4j specific implementation of {@link Connection}.
@@ -45,14 +50,47 @@ import java.util.concurrent.Executor;
  */
 final class ConnectionImpl implements Neo4jConnection {
 
+	private final BoltConnection boltConnection;
+
+	private boolean autoCommit = true;
+
+	private boolean readOnly;
+
+	private Statement statement;
+
+	private boolean transactionOpen;
+
+	private boolean closed;
+
+	ConnectionImpl(BoltConnection boltConnection) {
+		this.boltConnection = Objects.requireNonNull(boltConnection);
+	}
+
 	@Override
 	public Statement createStatement() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.closed) {
+			throw new SQLException("The connection is closed");
+		}
+		if (this.statement != null) {
+			this.statement.close();
+		}
+		this.transactionOpen = true;
+		this.statement = new StatementImpl(this.boltConnection, this.autoCommit);
+		return this.statement;
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.closed) {
+			throw new SQLException("The connection is closed");
+		}
+		if (this.statement != null) {
+			this.statement.close();
+		}
+		this.transactionOpen = true;
+		var statement = new PreparedStatementImpl(this.boltConnection, this.autoCommit, sql);
+		this.statement = statement;
+		return statement;
 	}
 
 	@Override
@@ -69,32 +107,51 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		throw new UnsupportedOperationException();
+		this.autoCommit = autoCommit;
 	}
 
 	@Override
 	public boolean getAutoCommit() throws SQLException {
-		throw new UnsupportedOperationException();
+		return this.autoCommit;
 	}
 
 	@Override
 	public void commit() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.autoCommit) {
+			return;
+		}
+		if (this.statement != null) {
+			this.statement.close();
+		}
+		if (this.transactionOpen) {
+			this.boltConnection.commit().toCompletableFuture().join();
+			this.transactionOpen = false;
+		}
 	}
 
 	@Override
 	public void rollback() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.autoCommit) {
+			return;
+		}
+		if (this.statement != null) {
+			this.statement.close();
+		}
+		if (this.transactionOpen) {
+			this.boltConnection.rollback().toCompletableFuture().join();
+			this.transactionOpen = false;
+		}
 	}
 
 	@Override
 	public void close() throws SQLException {
-		throw new UnsupportedOperationException();
+		this.boltConnection.close().toCompletableFuture().join();
+		this.closed = true;
 	}
 
 	@Override
 	public boolean isClosed() throws SQLException {
-		throw new UnsupportedOperationException();
+		return this.closed;
 	}
 
 	@Override
@@ -104,12 +161,12 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setReadOnly(boolean readOnly) throws SQLException {
-		throw new UnsupportedOperationException();
+		this.readOnly = readOnly;
 	}
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
-		throw new UnsupportedOperationException();
+		return this.readOnly;
 	}
 
 	@Override
@@ -150,110 +207,110 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public Map<String, Class<?>> getTypeMap() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setHoldability(int holdability) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getHoldability() throws SQLException {
-		throw new UnsupportedOperationException();
+		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override
 	public Savepoint setSavepoint() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public Savepoint setSavepoint(String name) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void rollback(Savepoint savepoint) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
 			int resultSetHoldability) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
 			int resultSetHoldability) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public Clob createClob() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public Blob createBlob() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public NClob createNClob() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public SQLXML createSQLXML() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean isValid(int timeout) throws SQLException {
-		throw new UnsupportedOperationException();
+		return true;
 	}
 
 	@Override
@@ -278,22 +335,22 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setSchema(String schema) throws SQLException {
-		throw new UnsupportedOperationException();
+		// not supported
 	}
 
 	@Override
 	public String getSchema() throws SQLException {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override
@@ -303,12 +360,12 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getNetworkTimeout() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override

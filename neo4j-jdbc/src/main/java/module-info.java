@@ -30,6 +30,8 @@ module neo4j.jdbc {
 	requires io.netty.transport;
 	// end::shaded-dependencies
 
+	// automatic::jdk.unsupported
+
 	exports org.neo4j.driver.jdbc;
 
 	provides java.sql.Driver with

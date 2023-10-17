@@ -18,29 +18,29 @@
  */
 package org.neo4j.driver.jdbc;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class ProductVersionTests {
 
 	@Test
 	void getValueShouldWork() {
-		assertThat(ProductVersion.getValue()).isEqualTo("unknown");
+		Assertions.assertThat(ProductVersion.getValue()).isEqualTo("unknown");
 	}
 
 	@Test
 	void getMajorVersion() {
 
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ProductVersion::getMajorVersion)
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+			.isThrownBy(ProductVersion::getMajorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
 
 	@Test
 	void getMinorVersion() {
 
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ProductVersion::getMinorVersion)
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+			.isThrownBy(ProductVersion::getMinorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
 

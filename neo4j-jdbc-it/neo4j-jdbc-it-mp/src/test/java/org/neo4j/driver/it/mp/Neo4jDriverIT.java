@@ -18,10 +18,9 @@
  */
 package org.neo4j.driver.it.mp;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.jdbc.Neo4jDriver;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class Neo4jDriverIT {
 
@@ -29,14 +28,14 @@ public class Neo4jDriverIT {
 	void driverMajorVersionMustWork() {
 
 		var driver = new Neo4jDriver();
-		assertThat(driver.getMajorVersion()).isOne();
+		Assertions.assertThat(driver.getMajorVersion()).isOne();
 	}
 
 	@Test
 	void driverMinorVersionMustWork() {
 
 		var driver = new Neo4jDriver();
-		assertThat(driver.getMinorVersion()).isZero();
+		Assertions.assertThat(driver.getMinorVersion()).isZero();
 	}
 
 }

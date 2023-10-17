@@ -18,25 +18,24 @@
  */
 package org.neo4j.driver.jdbc;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class Neo4jDriverTests {
 
 	@Test
 	void driverMustNotMarkItselfAsJDBCCompliant() {
-		assertThat(new Neo4jDriver().jdbcCompliant()).isFalse();
+		Assertions.assertThat(new Neo4jDriver().jdbcCompliant()).isFalse();
 	}
 
 	@Test
 	void driverMustConnect() {
 
 		var driver = new Neo4jDriver();
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> driver.connect(null, null));
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+			.isThrownBy(() -> driver.connect(null, null));
 	}
 
 	@ParameterizedTest
@@ -44,14 +43,15 @@ class Neo4jDriverTests {
 	void driverMustAcceptValidUrl(String url) {
 
 		var driver = new Neo4jDriver();
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> driver.acceptsURL(url));
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+			.isThrownBy(() -> driver.acceptsURL(url));
 	}
 
 	@Test
 	void driverMustReturnPropertyInfo() {
 
 		var driver = new Neo4jDriver();
-		assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
 			.isThrownBy(() -> driver.getPropertyInfo(null, null));
 	}
 
@@ -59,7 +59,7 @@ class Neo4jDriverTests {
 	void getParentLoggerShouldWork() {
 
 		var driver = new Neo4jDriver();
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(driver::getParentLogger);
+		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(driver::getParentLogger);
 	}
 
 }
