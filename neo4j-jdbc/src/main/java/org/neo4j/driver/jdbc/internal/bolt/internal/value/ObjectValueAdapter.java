@@ -20,7 +20,7 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.value;
 
 import java.util.Objects;
 
-public abstract class ObjectValueAdapter<V> extends ValueAdapter {
+abstract class ObjectValueAdapter<V> extends ValueAdapter {
 
 	private final V adapted;
 

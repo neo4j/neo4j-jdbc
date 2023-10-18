@@ -22,8 +22,11 @@ import com.openpojo.reflection.impl.PojoClassFactory;
 import com.openpojo.validation.ValidatorBuilder;
 import com.openpojo.validation.test.impl.GetterTester;
 import com.openpojo.validation.test.impl.SetterTester;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 class DataSourceImplTests {
 
@@ -31,53 +34,49 @@ class DataSourceImplTests {
 	void getLogWriter() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ds::getLogWriter);
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ds::getLogWriter);
 	}
 
 	@Test
 	void setLogWriter() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> ds.setLogWriter(null));
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> ds.setLogWriter(null));
 	}
 
 	@Test
 	void setLoginTimeout() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> ds.setLoginTimeout(1));
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> ds.setLoginTimeout(1));
 	}
 
 	@Test
 	void getLoginTimeout() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ds::getLoginTimeout);
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ds::getLoginTimeout);
 	}
 
 	@Test
 	void getParentLogger() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ds::getParentLogger);
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(ds::getParentLogger);
 	}
 
 	@Test
 	void unwrap() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> ds.unwrap(String.class));
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> ds.unwrap(String.class));
 	}
 
 	@Test
 	void isWrapperFor() {
 
 		var ds = new DataSourceImpl();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> ds.isWrapperFor(String.class));
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> ds.isWrapperFor(String.class));
 	}
 
 	@Test
@@ -85,8 +84,7 @@ class DataSourceImplTests {
 
 		var ds = new DataSourceImpl();
 		ds.setServerName("whatever");
-		Assertions.assertThatNullPointerException()
-			.isThrownBy(ds::getUrl)
+		assertThatNullPointerException().isThrownBy(ds::getUrl)
 			.withMessage("The network protocol must be specified on the data source");
 	}
 
@@ -95,8 +93,7 @@ class DataSourceImplTests {
 
 		var ds = new DataSourceImpl();
 		ds.setNetworkProtocol("whatever");
-		Assertions.assertThatNullPointerException()
-			.isThrownBy(ds::getUrl)
+		assertThatNullPointerException().isThrownBy(ds::getUrl)
 			.withMessage("The server name must be specified on the data source");
 	}
 
@@ -107,7 +104,7 @@ class DataSourceImplTests {
 		ds.setNetworkProtocol("onlyfortesting");
 		ds.setServerName("localhost");
 		ds.setDatabaseName("movies");
-		Assertions.assertThat(ds.getUrl()).isEqualTo("jdbc:neo4j:onlyfortesting://localhost:7687/movies");
+		assertThat(ds.getUrl()).isEqualTo("jdbc:neo4j:onlyfortesting://localhost:7687/movies");
 	}
 
 	@Test
@@ -124,7 +121,7 @@ class DataSourceImplTests {
 
 		var ds = new DataSourceImpl();
 		ds.setPassword("foo");
-		Assertions.assertThat(ds.getPassword()).isEqualTo("foo");
+		assertThat(ds.getPassword()).isEqualTo("foo");
 	}
 
 }

@@ -49,6 +49,11 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
@@ -61,6 +66,12 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<!-- Needed for Archunit -->
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -24,6 +24,7 @@
 		"https://checkstyle.org/dtds/configuration_1_3.dtd">
 <module name="com.puppycrawl.tools.checkstyle.Checker">
 	<module name="io.spring.javaformat.checkstyle.SpringChecks">
+		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringAvoidStaticImportCheck"/>
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringHeaderCheck"/>
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringLambdaCheck"/>
 	</module>
@@ -35,6 +36,17 @@
 		<module name="Regexp">
 			<property name="format" value="System\.out\.println"/>
 			<property name="illegalPattern" value="true"/>
+		</module>
+
+		<module name="io.spring.javaformat.checkstyle.check.SpringAvoidStaticImportCheck">
+			<property
+					name="excludes"
+					value="
+                    com.tngtech.archunit.base.DescribedPredicate.*,
+                    com.tngtech.archunit.core.domain.JavaClass.Predicates.*,
+                    com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+                "
+			/>
 		</module>
 	</module>
 </module>
