@@ -42,14 +42,13 @@ public class SmokeIT {
 
 	@BeforeAll
 	void startNeo4j() {
-
 		this.neo4j.start();
 	}
 
 	@Test
 	void driverShouldBeLoaded() {
 
-		var url = "jdbc:neo4j:onlyfortesting://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
 		assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
 	}
 

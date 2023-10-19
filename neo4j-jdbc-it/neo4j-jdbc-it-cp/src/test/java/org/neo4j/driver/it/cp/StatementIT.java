@@ -95,7 +95,7 @@ class StatementIT {
 	}
 
 	private Connection getConnection() throws SQLException {
-		var url = "jdbc:neo4j:onlyfortesting://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
 		var driver = DriverManager.getDriver(url);
 		var properties = new Properties();
 		properties.put("user", "neo4j");

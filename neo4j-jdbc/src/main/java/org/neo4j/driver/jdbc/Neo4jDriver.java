@@ -49,8 +49,11 @@ public final class Neo4jDriver implements Driver {
 
 	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
 
-	private final BoltConnectionProvider boltConnectionProvider = BoltConnectionProviders.netty(eventLoopGroup,
-			Clock.systemUTC());
+	private final BoltConnectionProvider boltConnectionProvider;
+
+	private static final String URL_REGEX = "^jdbc:neo4j://(?<host>[^:|/]+):?(?<port>\\d+)?/?(?<database>\\S+)?$";
+
+	private static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
 
 	/*
 	 * This is the recommended - and AFAIK - required way to register a new driver the
@@ -72,23 +75,34 @@ public final class Neo4jDriver implements Driver {
 		// This is not only fine, but also required on the module path so that this public
 		// class
 		// can be properly exported.
+		this.boltConnectionProvider = BoltConnectionProviders.netty(eventLoopGroup, Clock.systemUTC());
+	}
+
+	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
+		this.boltConnectionProvider = boltConnectionProvider;
 	}
 
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
 		if (url == null || info == null) {
-			throw new UnsupportedOperationException();
+			throw new SQLException("url and info cannot be null.");
 		}
-		var pattern = Pattern.compile("^jdbc:neo4j:onlyfortesting://([^:]+):(\\d+)$");
-		var matcher = pattern.matcher(url);
+
+		var matcher = URL_PATTERN.matcher(url);
+
 		if (matcher.matches()) {
-			var host = matcher.group(1);
-			var port = Integer.parseInt(matcher.group(2));
+			var host = matcher.group("host");
+
+			var port = (matcher.group("port") != null) ? Integer.parseInt(matcher.group(2)) : 7687;
+
 			var address = new BoltServerAddress(host, port);
 
 			var securityPlan = SecurityPlans.insecure();
 
-			var databaseName = info.getProperty("database", "neo4j");
+			var databaseName = matcher.group("database");
+			if (databaseName == null) {
+				databaseName = info.getProperty("database", "neo4j");
+			}
 
 			var user = info.getProperty("user", "neo4j");
 			var password = info.getProperty("password");
@@ -106,18 +120,19 @@ public final class Neo4jDriver implements Driver {
 			return new ConnectionImpl(boltConnection);
 		}
 		else {
-			return null;
+			throw new SQLException("Invalid url.");
 		}
 	}
 
 	@Override
 	public boolean acceptsURL(String url) throws SQLException {
-		var pattern = Pattern.compile("^jdbc:neo4j:onlyfortesting://([^:]+):(\\d+)$");
-		var matcher = pattern.matcher(url);
-		if (matcher.matches()) {
-			return true;
+		if (url == null) {
+			throw new SQLException("url cannot be null.");
 		}
-		throw new UnsupportedOperationException();
+
+		var matcher = URL_PATTERN.matcher(url);
+
+		return matcher.matches();
 	}
 
 	@Override

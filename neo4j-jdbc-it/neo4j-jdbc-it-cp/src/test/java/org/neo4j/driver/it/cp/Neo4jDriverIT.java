@@ -18,12 +18,32 @@
  */
 package org.neo4j.driver.it.cp;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
+
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.neo4j.driver.jdbc.Neo4jDriver;
+import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers(disabledWithoutDocker = true)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Neo4jDriverIT {
+
+	@SuppressWarnings("resource") // On purpose to reuse this
+	protected final Neo4jContainer<?> neo4j = new Neo4jContainer<>(System.getProperty("neo4j-jdbc.default-neo4j-image"))
+		.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+		.withReuse(true);
+
+	@BeforeAll
+	void startNeo4j() {
+		this.neo4j.start();
+	}
 
 	@Test
 	void driverMajorVersionMustWork() {
@@ -37,6 +57,26 @@ public class Neo4jDriverIT {
 
 		var driver = new Neo4jDriver();
 		assertThat(driver.getMinorVersion()).isZero();
+	}
+
+	@Test
+	void shouldConnect() throws SQLException {
+		var driver = new Neo4jDriver();
+
+		var properties = new Properties();
+		properties.put("user", "neo4j");
+		properties.put("password", this.neo4j.getAdminPassword());
+
+		var url = "jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+
+		var connection = driver.connect(url, properties);
+		assertThat(connection).isNotNull();
+		assertThat(validateConnection(connection)).isTrue();
+	}
+
+	private boolean validateConnection(Connection connection) throws SQLException {
+		var resultSet = connection.createStatement().executeQuery("UNWIND 10 as x return x");
+		return resultSet.next();
 	}
 
 }

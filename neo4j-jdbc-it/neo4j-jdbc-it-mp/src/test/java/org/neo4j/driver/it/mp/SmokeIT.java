@@ -36,7 +36,7 @@ public class SmokeIT {
 	@EnabledIf("boltPortIsReachable")
 	void driverShouldBeLoaded() {
 
-		var url = "jdbc:neo4j:onlyfortesting://%s:%d".formatted(getHost(), getPort());
+		var url = "jdbc:neo4j://%s:%d".formatted(getHost(), getPort());
 		Assertions.assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
 	}
 
