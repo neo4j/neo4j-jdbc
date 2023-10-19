@@ -20,7 +20,6 @@ package org.neo4j.driver.jdbc.internal.bolt;
 
 import java.util.List;
 
-import org.neo4j.driver.jdbc.internal.bolt.internal.InternalBoltRecord;
 import org.neo4j.driver.jdbc.internal.bolt.types.MapAccessorWithDefaultValue;
 
 /**
@@ -29,7 +28,7 @@ import org.neo4j.driver.jdbc.internal.bolt.types.MapAccessorWithDefaultValue;
  * @author Neo4j Drivers Team
  * @since 1.0.0
  */
-public sealed interface BoltRecord extends MapAccessorWithDefaultValue permits InternalBoltRecord {
+public interface BoltRecord extends MapAccessorWithDefaultValue {
 
 	/**
 	 * Retrieve the keys of the underlying map.

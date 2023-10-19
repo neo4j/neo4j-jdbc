@@ -43,15 +43,17 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.BoltRecord;
 import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.types.TypeSystem;
 
 final class ResultSetImpl implements ResultSet {
+
+	private static final TypeSystem typeSystem = TypeSystem.getDefault();
 
 	private final StatementImpl statement;
 
@@ -122,42 +124,42 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public String getString(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asString);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToString);
 	}
 
 	@Override
 	public boolean getBoolean(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asBoolean);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBoolean);
 	}
 
 	@Override
 	public byte getByte(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> value.asNumber().byteValue());
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToByte);
 	}
 
 	@Override
 	public short getShort(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> value.asNumber().shortValue());
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToShort);
 	}
 
 	@Override
 	public int getInt(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asInt);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToInteger);
 	}
 
 	@Override
 	public long getLong(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asLong);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToLong);
 	}
 
 	@Override
 	public float getFloat(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asFloat);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToFloat);
 	}
 
 	@Override
 	public double getDouble(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asDouble);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToDouble);
 	}
 
 	@Override
@@ -168,7 +170,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public byte[] getBytes(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asByteArray);
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBytes);
 	}
 
 	@Override
@@ -204,42 +206,42 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public String getString(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asString);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToString);
 	}
 
 	@Override
 	public boolean getBoolean(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asBoolean);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBoolean);
 	}
 
 	@Override
 	public byte getByte(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> value.asNumber().byteValue());
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToByte);
 	}
 
 	@Override
 	public short getShort(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> value.asNumber().shortValue());
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToShort);
 	}
 
 	@Override
 	public int getInt(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asInt);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToInteger);
 	}
 
 	@Override
 	public long getLong(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asLong);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToLong);
 	}
 
 	@Override
 	public float getFloat(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asFloat);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToFloat);
 	}
 
 	@Override
 	public double getDouble(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asDouble);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToDouble);
 	}
 
 	@Override
@@ -250,7 +252,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public byte[] getBytes(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asByteArray);
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBytes);
 	}
 
 	@Override
@@ -1082,17 +1084,155 @@ final class ResultSetImpl implements ResultSet {
 		}
 	}
 
-	private <T> T getValueByColumnIndex(int columnIndex, Function<Value, T> mapper) throws SQLException {
+	private <T> T getValueByColumnIndex(int columnIndex, ValueMapper<T> valueMapper) throws SQLException {
 		verifyCursorPosition();
 		verifyColumnIndex(columnIndex);
 		columnIndex--;
-		return mapper.apply(this.currentRecord.get(columnIndex));
+		return valueMapper.map(this.currentRecord.get(columnIndex));
 	}
 
-	private <T> T getValueByColumnLabel(String columnLabel, Function<Value, T> mapper) throws SQLException {
+	private <T> T getValueByColumnLabel(String columnLabel, ValueMapper<T> valueMapper) throws SQLException {
 		verifyCursorPosition();
 		verifyColumnLabel(columnLabel);
-		return mapper.apply(this.currentRecord.get(columnLabel));
+		return valueMapper.map(this.currentRecord.get(columnLabel));
+	}
+
+	private static String mapToString(Value value) throws SQLException {
+		if (value.hasType(typeSystem.STRING())) {
+			return value.asString();
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to String.", value.type()));
+	}
+
+	private static boolean mapToBoolean(Value value) throws SQLException {
+		if (value.hasType(typeSystem.BOOLEAN())) {
+			return value.asBoolean();
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return false;
+		}
+		if (value.hasType(typeSystem.INTEGER())) {
+			var number = value.asNumber().longValue();
+			if (number == 0) {
+				return false;
+			}
+			else if (number == 1) {
+				return true;
+			}
+			else {
+				throw new SQLException("Number values can not be mapped to boolean aside from 0 and 1 values.");
+			}
+		}
+		if (value.hasType(typeSystem.STRING())) {
+			var string = value.asString();
+			if ("0".equals(string)) {
+				return false;
+			}
+			else if ("1".equals(string)) {
+				return true;
+			}
+			else {
+				throw new SQLException("String values can not be mapped to boolean aside from '0' and '1' values.");
+			}
+		}
+		throw new SQLException(String.format("%s value can not be mapped to boolean.", value.type()));
+	}
+
+	private static Byte mapToByte(Value value) throws SQLException {
+		if (value.hasType(typeSystem.INTEGER())) {
+			var longValue = value.asNumber().longValue();
+			if (longValue >= Byte.MIN_VALUE && longValue <= Byte.MAX_VALUE) {
+				return (byte) longValue;
+			}
+			throw new SQLException("The number is out of byte range.");
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return (byte) 0;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to byte.", value.type()));
+	}
+
+	private static Short mapToShort(Value value) throws SQLException {
+		if (value.hasType(typeSystem.INTEGER())) {
+			var longValue = value.asNumber().longValue();
+			if (longValue >= Short.MIN_VALUE && longValue <= Short.MAX_VALUE) {
+				return (short) longValue;
+			}
+			throw new SQLException("The number is out of short range.");
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return (short) 0;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to short.", value.type()));
+	}
+
+	private static int mapToInteger(Value value) throws SQLException {
+		if (value.hasType(typeSystem.INTEGER())) {
+			var longValue = value.asNumber().longValue();
+			if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+				return (int) longValue;
+			}
+			throw new SQLException("The number is out of int range.");
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return 0;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to int.", value.type()));
+	}
+
+	private static long mapToLong(Value value) throws SQLException {
+		if (value.hasType(typeSystem.INTEGER())) {
+			return value.asNumber().longValue();
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return 0L;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to long.", value.type()));
+	}
+
+	private static float mapToFloat(Value value) throws SQLException {
+		if (value.hasType(typeSystem.FLOAT())) {
+			var doubleValue = value.asNumber().doubleValue();
+			var floatValue = (float) doubleValue;
+			if (doubleValue == floatValue) {
+				return floatValue;
+			}
+			throw new SQLException("The number is out of float range.");
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return 0.0f;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to float.", value.type()));
+	}
+
+	private static double mapToDouble(Value value) throws SQLException {
+		if (value.hasType(typeSystem.FLOAT())) {
+			return value.asNumber().doubleValue();
+		}
+		if (value.hasType(typeSystem.NULL())) {
+			return 0.0;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to double.", value.type()));
+	}
+
+	private static byte[] mapToBytes(Value value) throws SQLException {
+		if (value.hasType(typeSystem.NULL())) {
+			return null;
+		}
+		if (value.hasType(typeSystem.BYTES())) {
+			return value.asByteArray();
+		}
+		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
+	}
+
+	@FunctionalInterface
+	private interface ValueMapper<T> {
+
+		T map(Value value) throws SQLException;
+
 	}
 
 }
