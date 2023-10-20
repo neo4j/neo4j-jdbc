@@ -30,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.driver.jdbc.internal.bolt.AuthTokens;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProvider;
 import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
@@ -176,6 +177,91 @@ class Neo4jDriverUrlParsingTests {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect("jdbc:neo4j://host", null));
+	}
+
+	@Test
+	void driverMustParseUrlParamsWithJustHost() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("username", "incorrectUser");
+		props.put("password", "incorrectPassword");
+
+		driver.connect("jdbc:neo4j://host?user=correctUser&password=correctPassword", props);
+
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+
+		then(this.boltConnectionProvider).should()
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), eq(expectedAuthToken), any(),
+					any(), anyInt());
+	}
+
+	@Test
+	void driverMustParseUrlParamsWithHostAndPort() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("username", "incorrectUser");
+		props.put("password", "incorrectPassword");
+
+		driver.connect("jdbc:neo4j://host:1000?user=correctUser&password=correctPassword", props);
+
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+
+		then(this.boltConnectionProvider).should()
+			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), eq(expectedAuthToken), any(), any(),
+					anyInt());
+	}
+
+	@Test
+	void driverMustParseUrlParamsWithHostAndPortAndDatabase() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("username", "incorrectUser");
+		props.put("password", "incorrectPassword");
+
+		driver.connect("jdbc:neo4j://host:1000/database?user=correctUser&password=correctPassword", props);
+
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+
+		then(this.boltConnectionProvider).should()
+			.connect(eq(new BoltServerAddress("host", 1000)), any(), eq("database"), eq(expectedAuthToken), any(),
+					any(), anyInt());
+	}
+
+	@Test
+	void driverMustParseUrlParamsWithHostAndDatabase() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("username", "incorrectUser");
+		props.put("password", "incorrectPassword");
+
+		driver.connect("jdbc:neo4j://host/database?user=correctUser&password=correctPassword", props);
+
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+
+		then(this.boltConnectionProvider).should()
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), eq(expectedAuthToken),
+					any(), any(), anyInt());
+	}
+
+	@Test
+	void driverMustUsePropsIfUrlParamsEmpty() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("user", "correctUser");
+		props.put("password", "correctPassword");
+
+		driver.connect("jdbc:neo4j://host/database", props);
+
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+
+		then(this.boltConnectionProvider).should()
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), eq(expectedAuthToken),
+					any(), any(), anyInt());
 	}
 
 	private static Stream<Arguments> jdbcURLProvider() {

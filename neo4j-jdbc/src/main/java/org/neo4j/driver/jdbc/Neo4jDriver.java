@@ -51,7 +51,7 @@ public final class Neo4jDriver implements Driver {
 
 	private final BoltConnectionProvider boltConnectionProvider;
 
-	private static final String URL_REGEX = "^jdbc:neo4j://(?<host>[^:|/]+):?(?<port>\\d+)?/?(?<database>\\S+)?$";
+	private static final String URL_REGEX = "^jdbc:neo4j://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	private static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
 
@@ -104,8 +104,18 @@ public final class Neo4jDriver implements Driver {
 				databaseName = info.getProperty("database", "neo4j");
 			}
 
-			var user = info.getProperty("user", "neo4j");
-			var password = info.getProperty("password");
+			var splitParams = splitUrlParams(matcher.group("urlParams"));
+
+			var user = parseUrlParams(splitParams, "user");
+			if (user == null) {
+				user = info.getProperty("user", "neo4j");
+			}
+
+			var password = parseUrlParams(splitParams, "password");
+			if (password == null) {
+				password = info.getProperty("password");
+			}
+
 			var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
 
 			var boltAgent = BoltAgentUtil.boltAgent();
@@ -167,6 +177,28 @@ public final class Neo4jDriver implements Driver {
 	@Override
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
 		throw new UnsupportedOperationException();
+	}
+
+	private String parseUrlParams(String[] spitUrlParams, String urlParmKey) {
+		var regex = "^(%s=+)(?<value>\\S+)$".formatted(urlParmKey);
+		var pattern = Pattern.compile(regex);
+
+		for (String param : spitUrlParams) {
+			var matcher = pattern.matcher(param);
+			if (matcher.matches()) {
+				return matcher.group("value");
+			}
+		}
+
+		return null;
+	}
+
+	private String[] splitUrlParams(String urlParams) {
+		if (urlParams != null) {
+			return urlParams.split("&");
+		}
+
+		return new String[0];
 	}
 
 }
