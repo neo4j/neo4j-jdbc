@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
-import org.neo4j.driver.jdbc.internal.bolt.internal.TransactionType;
+import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 
 public final class BeginMessage extends MessageWithMetadata {
 

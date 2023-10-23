@@ -26,6 +26,7 @@ import java.util.concurrent.CompletionStage;
 
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
+import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;

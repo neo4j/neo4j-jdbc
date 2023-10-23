@@ -34,6 +34,7 @@ import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackages;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -47,6 +48,16 @@ class PackageStructureTests {
 	void importAllClasses() {
 		this.allClasses = new ClassFileImporter().withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
 			.importPackages("org.neo4j.driver.jdbc..");
+	}
+
+	@Test
+	void boltInternalsShouldOnlyBeUsedFromBoltApi() {
+		var rule = classes().that()
+			.resideInAPackage("..jdbc.internal.bolt.internal..")
+			.should()
+			.onlyBeAccessed()
+			.byAnyPackage("..jdbc.internal.bolt..");
+		rule.check(this.allClasses);
 	}
 
 	@Test

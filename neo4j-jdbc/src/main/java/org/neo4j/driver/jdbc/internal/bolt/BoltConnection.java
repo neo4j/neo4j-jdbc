@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
-import org.neo4j.driver.jdbc.internal.bolt.internal.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;

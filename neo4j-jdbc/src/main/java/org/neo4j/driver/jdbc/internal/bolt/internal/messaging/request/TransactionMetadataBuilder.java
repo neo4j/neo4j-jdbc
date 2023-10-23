@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
+import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.Values;
-import org.neo4j.driver.jdbc.internal.bolt.internal.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.Iterables;
 
 public final class TransactionMetadataBuilder {
