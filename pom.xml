@@ -100,12 +100,16 @@
 		<maven.version>3.9.4</maven.version>
 		<mockito.version>5.6.0</mockito.version>
 		<moditect-maven-plugin.version>1.0.0.Final</moditect-maven-plugin.version>
+		<native-maven-plugin.version>0.9.28</native-maven-plugin.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.10.0</neo4j.version>
 		<netty.version>4.1.100.Final</netty.version>
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<skipITs>${skipTests}</skipITs>
+		<skipTests>false</skipTests>
+		<skipUTs>${skipTests}</skipUTs>
 		<slf4j.version>2.0.9</slf4j.version>
 		<sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>3.3.0</sortpom-maven-plugin.version>
@@ -349,8 +353,9 @@
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
 						<argLine>@{argLine} -Xverify:all</argLine>
+						<skipTests>${skipUTs}</skipTests>
 						<systemPropertyVariables>
-							<migrations.default-neo4j-image>${neo4j.image}</migrations.default-neo4j-image>
+							<neo4j-jdbc.default-neo4j-image>${neo4j.image}</neo4j-jdbc.default-neo4j-image>
 						</systemPropertyVariables>
 					</configuration>
 				</plugin>
@@ -382,8 +387,11 @@
 					<version>${maven-failsafe-plugin.version}</version>
 					<configuration>
 						<argLine>@{argLine} -Xverify:all</argLine>
+						<skipTests>${skipTests}</skipTests>
+						<skipITs>${skipITs}</skipITs>
 						<systemPropertyVariables>
 							<neo4j-jdbc.default-neo4j-image>${neo4j.image}</neo4j-jdbc.default-neo4j-image>
+							<junit.platform.listeners.uid.tracking.enabled>true</junit.platform.listeners.uid.tracking.enabled>
 						</systemPropertyVariables>
 					</configuration>
 				</plugin>
@@ -589,8 +597,6 @@
 				<license.skip>true</license.skip>
 				<maven.javadoc.skip>true</maven.javadoc.skip>
 				<pmd.skip>true</pmd.skip>
-				<skipITs>true</skipITs>
-				<skipNativeBuild>true</skipNativeBuild>
 				<skipTests>true</skipTests>
 			</properties>
 		</profile>

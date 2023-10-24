@@ -36,11 +36,14 @@ jobs:
         run: echo "USE_SONAR=-sonar" >> $GITHUB_ENV
 
       - name: 'Cache SonarQube packages'
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
+      - name: 'Enable reusable Testcontainers'
+        run: echo "testcontainers.reuse.enable=true" > ~/.testcontainers.properties
 
       - name: 'Checkout'
         uses: actions/checkout@v3
@@ -53,3 +56,30 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: ./mvnw --no-transfer-progress clean verify -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc'
+
+  native_build:
+    name: Test using native image
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 'Setup GraalVM'
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: 'graalvm-community'
+          java-version: '17'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Cache Maven packages'
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-${{ github.sha }}
+
+      - name: 'Enable reusable Testcontainers'
+        run: echo "testcontainers.reuse.enable=true" > ~/.testcontainers.properties
+
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: 'Run native tests'
+        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -am -pl neo4j-jdbc-it/neo4j-jdbc-it-cp

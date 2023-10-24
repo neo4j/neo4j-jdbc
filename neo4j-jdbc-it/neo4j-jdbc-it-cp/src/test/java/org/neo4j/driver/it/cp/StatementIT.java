@@ -38,9 +38,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class StatementIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = new Neo4jContainer<>(System.getProperty("neo4j-jdbc.default-neo4j-image"))
-		.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-		.withReuse(true);
+	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
 
 	@BeforeAll
 	void startNeo4j() {
