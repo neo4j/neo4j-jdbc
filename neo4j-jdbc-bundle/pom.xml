@@ -92,6 +92,7 @@
 							<artifactSet>
 								<includes>
 									<include>org.neo4j.driver:neo4j-jdbc:*</include>
+									<include>org.neo4j.driver:neo4j-jdbc-translator-spi:*</include>
 									<include>io.netty:*</include>
 								</includes>
 							</artifactSet>

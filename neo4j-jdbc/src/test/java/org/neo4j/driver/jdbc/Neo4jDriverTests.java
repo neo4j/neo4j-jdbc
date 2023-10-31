@@ -18,10 +18,19 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
+import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class Neo4jDriverTests {
 
@@ -43,6 +52,43 @@ class Neo4jDriverTests {
 
 		var driver = new Neo4jDriver();
 		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(driver::getParentLogger);
+	}
+
+	@Test
+	void noSqlTranslatorsShouldWork() {
+
+		assertThat(Neo4jDriver.uniqueOrThrow(new Iterator<>() {
+			@Override
+			public boolean hasNext() {
+				return false;
+			}
+
+			@Override
+			public SqlTranslator next() {
+				return null;
+			}
+		})).isNull();
+	}
+
+	@Test
+	void oneSqlTranslatorShouldWork() {
+
+		var sqlTranslators = List.of((SqlTranslator) sql -> null);
+		assertThat(Neo4jDriver.uniqueOrThrow(sqlTranslators.iterator())).isEqualTo(sqlTranslators.get(0));
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = { 2, 3 })
+	void severalSqlTranslatorsMustFail(int numTranslators) {
+
+		var sqlTranslators = new ArrayList<SqlTranslator>();
+		for (int i = 0; i < numTranslators; ++i) {
+			sqlTranslators.add(Mockito.mock(SqlTranslator.class));
+		}
+		var it = sqlTranslators.iterator();
+		assertThatIllegalArgumentException().isThrownBy(() -> Neo4jDriver.uniqueOrThrow(it))
+			.withMessageMatching(
+					"More than one implementation of a SQL translator was found: \\[(.*SqlTranslator.*,){1,2}(.*SqlTranslator.*)?]");
 	}
 
 }

@@ -17,26 +17,7 @@
  * limitations under the License.
  */
 
-@SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
-module neo4j.jdbc {
-	requires transitive java.sql;
+module neo4j.jdbc.translator.spi {
 
-	// start::shaded-dependencies
-	requires io.netty.buffer;
-	requires io.netty.codec;
-	requires io.netty.common;
-	requires io.netty.handler;
-	requires io.netty.resolver;
-	requires io.netty.transport;
-	requires neo4j.jdbc.translator.spi;
-	// end::shaded-dependencies
-
-	// automatic::jdk.unsupported
-
-	exports org.neo4j.driver.jdbc;
-
-	provides java.sql.Driver with
-		org.neo4j.driver.jdbc.Neo4jDriver;
-
-	uses org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
+	exports org.neo4j.driver.jdbc.translator.spi;
 }

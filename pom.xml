@@ -58,6 +58,7 @@
 	</developers>
 
 	<modules>
+		<module>neo4j-jdbc-translator</module>
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-it</module>
 		<module>neo4j-jdbc-bundle</module>
@@ -534,6 +535,18 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -92,7 +92,6 @@
 					<skipIfEmpty>true</skipIfEmpty>
 				</configuration>
 				<executions>
-
 					<execution>
 						<goals>
 							<goal>test-jar</goal>

@@ -25,9 +25,13 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -37,6 +41,7 @@ import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProvider;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProviders;
 import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.SecurityPlans;
+import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
 /**
  * The main entry point for the Neo4j JDBC driver. There is usually little need to use
@@ -48,8 +53,6 @@ import org.neo4j.driver.jdbc.internal.bolt.SecurityPlans;
 public final class Neo4jDriver implements Driver {
 
 	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
-
-	private final BoltConnectionProvider boltConnectionProvider;
 
 	private static final String URL_REGEX = "^jdbc:neo4j://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
@@ -71,15 +74,42 @@ public final class Neo4jDriver implements Driver {
 		}
 	}
 
+	private final BoltConnectionProvider boltConnectionProvider;
+
 	public Neo4jDriver() {
-		// This is not only fine, but also required on the module path so that this public
-		// class
-		// can be properly exported.
-		this.boltConnectionProvider = BoltConnectionProviders.netty(eventLoopGroup, Clock.systemUTC());
+		// Having a public default constructor is not only fine here, but also required on
+		// the module path so that this public class can be properly exported.
+		this(BoltConnectionProviders.netty(eventLoopGroup, Clock.systemUTC()));
 	}
 
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
 		this.boltConnectionProvider = boltConnectionProvider;
+	}
+
+	/**
+	 * Returns the first element of the iterator or null, when the iterator is empty.
+	 * Throws an {@link IllegalArgumentException} if the iterator contains more than one
+	 * element.
+	 * @param source the SQL translators found via a {@link ServiceLoader} or any other
+	 * machinery
+	 * @return a unique SQL translator or {@literal null} if no SQL translator was found
+	 */
+	static SqlTranslator uniqueOrThrow(Iterator<SqlTranslator> source) {
+		if (!source.hasNext()) {
+			return null;
+		}
+		var result = source.next();
+		if (source.hasNext()) {
+			var implementations = new ArrayList<String>();
+			implementations.add(result.getClass().getName());
+			do {
+				implementations.add(source.next().getClass().getName());
+			}
+			while (source.hasNext());
+			throw new IllegalArgumentException("More than one implementation of a SQL translator was found: "
+					+ implementations.stream().collect(Collectors.joining(", ", "[", "]")));
+		}
+		return result;
 	}
 
 	@Override
