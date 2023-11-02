@@ -23,12 +23,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
-import org.neo4j.driver.jdbc.internal.bolt.internal.value.BooleanValue;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
+import org.neo4j.driver.jdbc.internal.bolt.values.BooleanValue;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class DiscardResponseHandler implements ResponseHandler {
 

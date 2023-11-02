@@ -21,7 +21,7 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.util;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.neo4j.driver.jdbc.internal.bolt.internal.BoltProtocolVersion;
-import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.v51.BoltProtocolV51;
+import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.protocol.BoltProtocolV51;
 
 public final class BoltProtocolUtil {
 

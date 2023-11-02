@@ -43,7 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.driver.jdbc.internal.bolt.Values;
+import org.neo4j.driver.jdbc.internal.bolt.values.Values;
 
 final class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
 

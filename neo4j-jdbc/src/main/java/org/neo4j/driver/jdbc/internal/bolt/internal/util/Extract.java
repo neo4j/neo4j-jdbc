@@ -18,21 +18,13 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal.util;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.neo4j.driver.jdbc.internal.bolt.BoltRecord;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
-import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
-import org.neo4j.driver.jdbc.internal.bolt.internal.value.NodeValue;
-import org.neo4j.driver.jdbc.internal.bolt.internal.value.PathValue;
-import org.neo4j.driver.jdbc.internal.bolt.internal.value.RelationshipValue;
-import org.neo4j.driver.jdbc.internal.bolt.types.Node;
-import org.neo4j.driver.jdbc.internal.bolt.types.Path;
-import org.neo4j.driver.jdbc.internal.bolt.types.Relationship;
+import org.neo4j.driver.jdbc.internal.bolt.values.Record;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class Extract {
 
@@ -48,42 +40,7 @@ public final class Extract {
 		};
 	}
 
-	public static <T> List<T> list(Value[] data, Function<Value, T> mapFunction) {
-		var size = data.length;
-		switch (size) {
-			case 0 -> {
-				return Collections.emptyList();
-			}
-			case 1 -> {
-				return Collections.singletonList(mapFunction.apply(data[0]));
-			}
-			default -> {
-				return Arrays.stream(data).map(mapFunction).toList();
-			}
-		}
-	}
-
-	public static <T> Map<String, T> map(Map<String, Value> data, Function<Value, T> mapFunction) {
-		if (data.isEmpty()) {
-			return Collections.emptyMap();
-		}
-		else {
-			var size = data.size();
-			if (size == 1) {
-				var head = data.entrySet().iterator().next();
-				return Collections.singletonMap(head.getKey(), mapFunction.apply(head.getValue()));
-			}
-			else {
-				Map<String, T> map = Iterables.newLinkedHashMapWithSize(size);
-				for (var entry : data.entrySet()) {
-					map.put(entry.getKey(), mapFunction.apply(entry.getValue()));
-				}
-				return Collections.unmodifiableMap(map);
-			}
-		}
-	}
-
-	public static <T> Map<String, T> map(BoltRecord record, Function<Value, T> mapFunction) {
+	public static <T> Map<String, T> map(Record record, Function<Value, T> mapFunction) {
 		var size = record.size();
 		switch (size) {
 			case 0 -> {
@@ -100,18 +57,6 @@ public final class Extract {
 				}
 				return Collections.unmodifiableMap(map);
 			}
-		}
-	}
-
-	public static void assertParameter(Object value) {
-		if (value instanceof Node || value instanceof NodeValue) {
-			throw new BoltException("Nodes can't be used as parameters.");
-		}
-		if (value instanceof Relationship || value instanceof RelationshipValue) {
-			throw new BoltException("Relationships can't be used as parameters.");
-		}
-		if (value instanceof Path || value instanceof PathValue) {
-			throw new BoltException("Paths can't be used as parameters.");
 		}
 	}
 

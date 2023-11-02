@@ -21,7 +21,7 @@ package org.neo4j.driver.jdbc.internal.bolt.response;
 import java.util.List;
 import java.util.Optional;
 
-import org.neo4j.driver.jdbc.internal.bolt.BoltRecord;
+import org.neo4j.driver.jdbc.internal.bolt.values.Record;
 
 public interface PullResponse {
 
@@ -29,7 +29,7 @@ public interface PullResponse {
 		return resultSummary().isEmpty();
 	}
 
-	List<BoltRecord> records();
+	List<Record> records();
 
 	Optional<ResultSummary> resultSummary();
 

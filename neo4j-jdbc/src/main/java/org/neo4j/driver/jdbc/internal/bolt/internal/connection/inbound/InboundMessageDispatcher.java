@@ -27,11 +27,11 @@ import java.util.Queue;
 
 import io.netty.channel.Channel;
 import org.neo4j.driver.jdbc.internal.bolt.BoltMessageExchange;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.driver.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.driver.jdbc.internal.bolt.internal.handler.ResponseHandler;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ResponseMessageHandler;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class InboundMessageDispatcher implements ResponseMessageHandler {
 

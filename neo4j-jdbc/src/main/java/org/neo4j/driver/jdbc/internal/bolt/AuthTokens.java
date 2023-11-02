@@ -24,6 +24,8 @@ import java.util.Objects;
 
 import org.neo4j.driver.jdbc.internal.bolt.internal.InternalAuthToken;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.Iterables;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.internal.bolt.values.Values;
 
 /**
  * This is a listing of the various methods of authentication supported by this driver.

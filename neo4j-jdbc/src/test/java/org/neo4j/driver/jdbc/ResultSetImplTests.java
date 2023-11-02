@@ -29,11 +29,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.driver.jdbc.internal.bolt.BoltRecord;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
-import org.neo4j.driver.jdbc.internal.bolt.Values;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.values.Record;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.internal.bolt.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -467,7 +467,7 @@ class ResultSetImplTests {
 		given(statement.getBoltConnection()).willReturn(boltConnection);
 		var runResponse = mock(RunResponse.class);
 
-		var boltRecord = mock(BoltRecord.class);
+		var boltRecord = mock(Record.class);
 		given(boltRecord.size()).willReturn(1);
 		given(boltRecord.get(INDEX - 1)).willReturn(expectedValue);
 		given(boltRecord.get(LABEL)).willReturn(expectedValue);

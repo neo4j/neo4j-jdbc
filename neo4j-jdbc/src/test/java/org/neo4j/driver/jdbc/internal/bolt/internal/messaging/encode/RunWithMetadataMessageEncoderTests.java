@@ -26,10 +26,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
-import org.neo4j.driver.jdbc.internal.bolt.Values;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.RunWithMetadataMessage;
+import org.neo4j.driver.jdbc.internal.bolt.values.Values;
 
 class RunWithMetadataMessageEncoderTests {
 

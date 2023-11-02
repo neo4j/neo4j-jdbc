@@ -28,16 +28,16 @@ import io.netty.channel.ChannelPromise;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
 import org.neo4j.driver.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.driver.jdbc.internal.bolt.internal.connection.ChannelAttributes;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.MessageFormat;
-import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.v51.BoltProtocolV51;
+import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.protocol.BoltProtocolV51;
 import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public interface BoltProtocol {
 

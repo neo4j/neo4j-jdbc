@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.neo4j.driver.jdbc.internal.bolt.AuthToken;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class InternalAuthToken implements AuthToken {
 

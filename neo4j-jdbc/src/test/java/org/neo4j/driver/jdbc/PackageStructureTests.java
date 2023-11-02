@@ -18,8 +18,6 @@
  */
 package org.neo4j.driver.jdbc;
 
-import java.util.function.Predicate;
-
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -28,6 +26,8 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 import static com.tngtech.archunit.base.DescribedPredicate.describe;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
@@ -73,18 +73,17 @@ class PackageStructureTests {
 	@Test
 	void typeSystemShouldBeFreeOfBoltDependencies() {
 
+		var packageUnderTest = Value.class.getPackageName();
 		var rule = noClasses().that()
-			.resideInAPackage("org.neo4j.driver.jdbc.internal.bolt.types")
+			.resideInAPackage(packageUnderTest)
 			.should()
-			.dependOnClassesThat(resideOutsideOfPackages("java..", "org.neo4j.driver.jdbc.internal.bolt.types").and(not(
-					describe("only dependencies allowed are primitives and some classes that need to find a new home",
-							arePrimitives()
-								.or(assignableTo("org.neo4j.driver.jdbc.internal.bolt.Value").or(assignableTo(
-										"org.neo4j.driver.jdbc.internal.bolt.internal.types.InternalTypeSystem")))))));
+			.dependOnClassesThat(resideOutsideOfPackages("java..", packageUnderTest)
+				.and(describe("are not primitives or the base bolt exception",
+						not(arePrimitives().or(assignableTo(BoltException.class))))));
 		rule.check(this.allClasses);
 	}
 
-	private static Predicate<JavaClass> arePrimitives() {
+	private static DescribedPredicate<JavaClass> arePrimitives() {
 		return new DescribedPredicate<>("Should be a primitive") {
 			@Override
 			public boolean test(JavaClass input) {

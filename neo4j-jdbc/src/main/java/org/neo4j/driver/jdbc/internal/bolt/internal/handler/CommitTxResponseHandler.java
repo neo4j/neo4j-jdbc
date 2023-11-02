@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class CommitTxResponseHandler implements ResponseHandler {
 

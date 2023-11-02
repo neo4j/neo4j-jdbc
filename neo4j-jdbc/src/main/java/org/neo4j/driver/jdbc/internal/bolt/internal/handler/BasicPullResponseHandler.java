@@ -26,14 +26,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import org.neo4j.driver.jdbc.internal.bolt.BoltRecord;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
-import org.neo4j.driver.jdbc.internal.bolt.internal.InternalBoltRecord;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
-import org.neo4j.driver.jdbc.internal.bolt.internal.value.BooleanValue;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.values.BooleanValue;
+import org.neo4j.driver.jdbc.internal.bolt.values.Record;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class BasicPullResponseHandler implements ResponseHandler {
 
@@ -41,7 +40,7 @@ public final class BasicPullResponseHandler implements ResponseHandler {
 
 	private final CompletableFuture<PullResponse> pullFuture;
 
-	private final List<BoltRecord> records = new ArrayList<>();
+	private final List<Record> records = new ArrayList<>();
 
 	public BasicPullResponseHandler(CompletionStage<RunResponse> runStage, CompletableFuture<PullResponse> pullFuture) {
 		this.runStage = runStage;
@@ -63,11 +62,11 @@ public final class BasicPullResponseHandler implements ResponseHandler {
 	@Override
 	public void onRecord(Value[] fields) {
 		var runResponse = this.runStage.toCompletableFuture().join();
-		var record = new InternalBoltRecord(runResponse.keys(), fields);
+		var record = new RecordImpl(runResponse.keys(), fields);
 		this.records.add(record);
 	}
 
-	private record InternalPullResponse(List<BoltRecord> records, ResultSummary summary) implements PullResponse {
+	private record InternalPullResponse(List<Record> records, ResultSummary summary) implements PullResponse {
 		@Override
 		public Optional<ResultSummary> resultSummary() {
 			return Optional.ofNullable(this.summary);

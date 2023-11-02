@@ -33,11 +33,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
-import org.neo4j.driver.jdbc.internal.bolt.Values;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.BeginMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.internal.bolt.values.Values;
 
 class BeginMessageEncoderTests {
 

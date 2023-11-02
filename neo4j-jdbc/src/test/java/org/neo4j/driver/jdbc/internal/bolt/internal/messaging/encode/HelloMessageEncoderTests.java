@@ -25,11 +25,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
-import org.neo4j.driver.jdbc.internal.bolt.Values;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.HelloMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.internal.bolt.values.Values;
 
 class HelloMessageEncoderTests {
 

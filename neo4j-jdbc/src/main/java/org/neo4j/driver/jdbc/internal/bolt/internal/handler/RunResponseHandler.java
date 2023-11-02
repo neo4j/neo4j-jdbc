@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 public final class RunResponseHandler implements ResponseHandler {
 

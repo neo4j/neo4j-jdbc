@@ -45,15 +45,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.driver.jdbc.internal.bolt.BoltRecord;
-import org.neo4j.driver.jdbc.internal.bolt.Value;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.driver.jdbc.internal.bolt.types.TypeSystem;
+import org.neo4j.driver.jdbc.internal.bolt.values.Record;
+import org.neo4j.driver.jdbc.internal.bolt.values.Type;
+import org.neo4j.driver.jdbc.internal.bolt.values.Value;
 
 final class ResultSetImpl implements ResultSet {
-
-	private static final TypeSystem typeSystem = TypeSystem.getDefault();
 
 	private final StatementImpl statement;
 
@@ -65,9 +63,9 @@ final class ResultSetImpl implements ResultSet {
 
 	private int fetchSize;
 
-	private Iterator<BoltRecord> recordInterator;
+	private Iterator<Record> recordInterator;
 
-	private BoltRecord currentRecord;
+	private Record currentRecord;
 
 	private boolean closed;
 
@@ -1098,23 +1096,23 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	private static String mapToString(Value value) throws SQLException {
-		if (value.hasType(typeSystem.STRING())) {
+		if (Type.STRING.isTypeOf(value)) {
 			return value.asString();
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to String.", value.type()));
 	}
 
 	private static boolean mapToBoolean(Value value) throws SQLException {
-		if (value.hasType(typeSystem.BOOLEAN())) {
+		if (Type.BOOLEAN.isTypeOf(value)) {
 			return value.asBoolean();
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return false;
 		}
-		if (value.hasType(typeSystem.INTEGER())) {
+		if (Type.INTEGER.isTypeOf(value)) {
 			var number = value.asNumber().longValue();
 			if (number == 0) {
 				return false;
@@ -1126,7 +1124,7 @@ final class ResultSetImpl implements ResultSet {
 				throw new SQLException("Number values can not be mapped to boolean aside from 0 and 1 values.");
 			}
 		}
-		if (value.hasType(typeSystem.STRING())) {
+		if (Type.STRING.isTypeOf(value)) {
 			var string = value.asString();
 			if ("0".equals(string)) {
 				return false;
@@ -1142,59 +1140,59 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	private static Byte mapToByte(Value value) throws SQLException {
-		if (value.hasType(typeSystem.INTEGER())) {
+		if (Type.INTEGER.isTypeOf(value)) {
 			var longValue = value.asNumber().longValue();
 			if (longValue >= Byte.MIN_VALUE && longValue <= Byte.MAX_VALUE) {
 				return (byte) longValue;
 			}
 			throw new SQLException("The number is out of byte range.");
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return (byte) 0;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to byte.", value.type()));
 	}
 
 	private static Short mapToShort(Value value) throws SQLException {
-		if (value.hasType(typeSystem.INTEGER())) {
+		if (Type.INTEGER.isTypeOf(value)) {
 			var longValue = value.asNumber().longValue();
 			if (longValue >= Short.MIN_VALUE && longValue <= Short.MAX_VALUE) {
 				return (short) longValue;
 			}
 			throw new SQLException("The number is out of short range.");
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return (short) 0;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to short.", value.type()));
 	}
 
 	private static int mapToInteger(Value value) throws SQLException {
-		if (value.hasType(typeSystem.INTEGER())) {
+		if (Type.INTEGER.isTypeOf(value)) {
 			var longValue = value.asNumber().longValue();
 			if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
 				return (int) longValue;
 			}
 			throw new SQLException("The number is out of int range.");
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return 0;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to int.", value.type()));
 	}
 
 	private static long mapToLong(Value value) throws SQLException {
-		if (value.hasType(typeSystem.INTEGER())) {
+		if (Type.INTEGER.isTypeOf(value)) {
 			return value.asNumber().longValue();
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return 0L;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to long.", value.type()));
 	}
 
 	private static float mapToFloat(Value value) throws SQLException {
-		if (value.hasType(typeSystem.FLOAT())) {
+		if (Type.FLOAT.isTypeOf(value)) {
 			var doubleValue = value.asNumber().doubleValue();
 			var floatValue = (float) doubleValue;
 			if (doubleValue == floatValue) {
@@ -1202,27 +1200,27 @@ final class ResultSetImpl implements ResultSet {
 			}
 			throw new SQLException("The number is out of float range.");
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return 0.0f;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to float.", value.type()));
 	}
 
 	private static double mapToDouble(Value value) throws SQLException {
-		if (value.hasType(typeSystem.FLOAT())) {
+		if (Type.FLOAT.isTypeOf(value)) {
 			return value.asNumber().doubleValue();
 		}
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return 0.0;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to double.", value.type()));
 	}
 
 	private static byte[] mapToBytes(Value value) throws SQLException {
-		if (value.hasType(typeSystem.NULL())) {
+		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		if (value.hasType(typeSystem.BYTES())) {
+		if (Type.BYTES.isTypeOf(value)) {
 			return value.asByteArray();
 		}
 		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
