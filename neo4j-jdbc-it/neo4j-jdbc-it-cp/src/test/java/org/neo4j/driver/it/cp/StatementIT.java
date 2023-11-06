@@ -45,14 +45,16 @@ class StatementIT {
 		this.neo4j.start();
 	}
 
-	@Test
-	void shouldExecuteQuery() throws SQLException {
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void shouldExecuteQuery(boolean getByLabel) throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			statement.setFetchSize(5);
 			var resultSet = statement.executeQuery("UNWIND range(1, 10000) AS x RETURN x");
 			for (var i = 1; i <= 17; i++) {
 				Assertions.assertThat(resultSet.next()).isTrue();
-				Assertions.assertThat(resultSet.getInt(1)).isEqualTo(i);
+				var value = getByLabel ? resultSet.getInt("x") : resultSet.getInt(1);
+				Assertions.assertThat(value).isEqualTo(i);
 			}
 		}
 	}

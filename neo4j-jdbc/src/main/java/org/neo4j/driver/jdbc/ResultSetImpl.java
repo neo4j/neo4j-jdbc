@@ -18,10 +18,13 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -39,7 +42,9 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -59,23 +64,29 @@ final class ResultSetImpl implements ResultSet {
 
 	private final RunResponse runResponse;
 
-	private PullResponse pullResponse;
+	private final List<String> keys;
+
+	private PullResponse batchPullResponse;
 
 	private int fetchSize;
 
-	private Iterator<Record> recordInterator;
+	private Iterator<Record> recordsBatchIterator;
 
 	private Record currentRecord;
 
+	private Value value;
+
 	private boolean closed;
 
-	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse pullResponse, int fetchSize) {
+	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize) {
 		this.statement = Objects.requireNonNull(statement);
 		this.boltConnection = Objects.requireNonNull(this.statement.getBoltConnection());
 		this.runResponse = Objects.requireNonNull(runResponse);
-		this.pullResponse = Objects.requireNonNull(pullResponse);
+		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
 		this.fetchSize = (fetchSize > 0) ? fetchSize : StatementImpl.DEFAULT_FETCH_SIZE;
-		this.recordInterator = pullResponse.records().iterator();
+		var recordsBatch = batchPullResponse.records();
+		this.recordsBatchIterator = recordsBatch.iterator();
+		this.keys = recordsBatch.isEmpty() ? Collections.emptyList() : recordsBatch.get(0).keys();
 	}
 
 	@Override
@@ -83,13 +94,15 @@ final class ResultSetImpl implements ResultSet {
 		if (this.closed) {
 			throw new SQLException("This result set is closed.");
 		}
-		if (this.recordInterator.hasNext()) {
-			this.currentRecord = this.recordInterator.next();
+		if (this.recordsBatchIterator.hasNext()) {
+			this.currentRecord = this.recordsBatchIterator.next();
 			return true;
 		}
-		if (this.pullResponse.hasMore()) {
-			this.pullResponse = this.boltConnection.pull(this.runResponse, this.fetchSize).toCompletableFuture().join();
-			this.recordInterator = this.pullResponse.records().iterator();
+		if (this.batchPullResponse.hasMore()) {
+			this.batchPullResponse = this.boltConnection.pull(this.runResponse, this.fetchSize)
+				.toCompletableFuture()
+				.join();
+			this.recordsBatchIterator = this.batchPullResponse.records().iterator();
 			return next();
 		}
 		this.currentRecord = null;
@@ -103,7 +116,7 @@ final class ResultSetImpl implements ResultSet {
 		}
 		var autocommit = this.statement.isAutoCommit();
 		var flush = !autocommit;
-		var discardFuture = (this.pullResponse.hasMore())
+		var discardFuture = (this.batchPullResponse.hasMore())
 				? this.boltConnection.discard(this.runResponse, -1, flush).toCompletableFuture()
 				: CompletableFuture.completedFuture(null);
 		var commitStage = autocommit ? this.boltConnection.commit().toCompletableFuture()
@@ -117,7 +130,11 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public boolean wasNull() throws SQLException {
-		return false;
+		assertIsOpen();
+		if (this.value == null) {
+			throw new SQLException("No column has been read prior to this call.");
+		}
+		return Type.NULL.isTypeOf(this.value);
 	}
 
 	@Override
@@ -173,22 +190,22 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToDate);
 	}
 
 	@Override
 	public Time getTime(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToTimestamp);
 	}
 
 	@Override
 	public InputStream getAsciiStream(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToAsciiStream);
 	}
 
 	@Override
@@ -199,7 +216,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBinaryStream);
 	}
 
 	@Override
@@ -255,22 +272,22 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToDate);
 	}
 
 	@Override
 	public Time getTime(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToTimestamp);
 	}
 
 	@Override
 	public InputStream getAsciiStream(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToAsciiStream);
 	}
 
 	@Override
@@ -281,17 +298,18 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getBinaryStream(String columnLabel) throws SQLException {
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBinaryStream);
+	}
+
+	@Override
+	public SQLWarning getWarnings() {
+		// warnings are not supported
 		return null;
 	}
 
 	@Override
-	public SQLWarning getWarnings() throws SQLException {
-		return null;
-	}
-
-	@Override
-	public void clearWarnings() throws SQLException {
-
+	public void clearWarnings() {
+		// warnings are not supported
 	}
 
 	@Override
@@ -300,43 +318,48 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public ResultSetMetaData getMetaData() throws SQLException {
+	public ResultSetMetaData getMetaData() {
 		return null;
 	}
 
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, Value::asObject);
 	}
 
 	@Override
 	public Object getObject(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, Value::asObject);
 	}
 
 	@Override
 	public int findColumn(String columnLabel) throws SQLException {
-		return 0;
+		assertIsOpen();
+		var index = this.keys.indexOf(columnLabel);
+		if (index == -1) {
+			throw new SQLException("No such column is present.");
+		}
+		return ++index;
 	}
 
 	@Override
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToReader);
 	}
 
 	@Override
 	public Reader getCharacterStream(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToReader);
 	}
 
 	@Override
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBigDecimal);
 	}
 
 	@Override
 	public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBigDecimal);
 	}
 
 	@Override
@@ -400,32 +423,32 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public void setFetchDirection(int direction) throws SQLException {
+	public void setFetchDirection(int direction) {
 		// this hint is not supported
 	}
 
 	@Override
-	public int getFetchDirection() throws SQLException {
+	public int getFetchDirection() {
 		return FETCH_FORWARD;
 	}
 
 	@Override
-	public void setFetchSize(int rows) throws SQLException {
+	public void setFetchSize(int rows) {
 		this.fetchSize = (rows > 0) ? rows : StatementImpl.DEFAULT_FETCH_SIZE;
 	}
 
 	@Override
-	public int getFetchSize() throws SQLException {
+	public int getFetchSize() {
 		return this.fetchSize;
 	}
 
 	@Override
-	public int getType() throws SQLException {
+	public int getType() {
 		return TYPE_FORWARD_ONLY;
 	}
 
 	@Override
-	public int getConcurrency() throws SQLException {
+	public int getConcurrency() {
 		return CONCUR_READ_ONLY;
 	}
 
@@ -670,7 +693,7 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public Statement getStatement() throws SQLException {
+	public Statement getStatement() {
 		return this.statement;
 	}
 
@@ -726,32 +749,32 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, value -> mapToDate(value, cal));
 	}
 
 	@Override
 	public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, value -> mapToDate(value, cal));
 	}
 
 	@Override
 	public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, value -> mapToTime(value, cal));
 	}
 
 	@Override
 	public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, value -> mapToTime(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-		return null;
+		return getValueByColumnIndex(columnIndex, value -> mapToTimestamp(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-		return null;
+		return getValueByColumnLabel(columnLabel, value -> mapToTimestamp(value, cal));
 	}
 
 	@Override
@@ -825,12 +848,12 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public int getHoldability() throws SQLException {
+	public int getHoldability() {
 		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override
-	public boolean isClosed() throws SQLException {
+	public boolean isClosed() {
 		return this.closed;
 	}
 
@@ -1056,43 +1079,58 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
-		return null;
+		if (iface.isAssignableFrom(getClass())) {
+			return iface.cast(this);
+		}
+		else {
+			throw new SQLException("This object does not implement the given interface.");
+		}
 	}
 
 	@Override
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return false;
+	public boolean isWrapperFor(Class<?> iface) {
+		return iface.isAssignableFrom(getClass());
 	}
 
-	private void verifyCursorPosition() throws SQLException {
+	private void assertCurrentRecordIsNotNull() throws SQLException {
 		if (this.currentRecord == null) {
 			throw new SQLException("Invalid cursor position");
 		}
 	}
 
-	private void verifyColumnIndex(int columnIndex) throws SQLException {
+	private void assertIsOpen() throws SQLException {
+		if (this.closed) {
+			throw new SQLException("The result set is closed");
+		}
+	}
+
+	private void assertColumnIndexIsPresent(int columnIndex) throws SQLException {
 		if (columnIndex < 1 || columnIndex > this.currentRecord.size()) {
 			throw new SQLException("Invalid column index value");
 		}
 	}
 
-	private void verifyColumnLabel(String columnLabel) throws SQLException {
-		if (this.currentRecord.containsKey(columnLabel)) {
-			throw new SQLException("Invalid column index value");
+	private void assertColumnLabelIsPresent(String columnLabel) throws SQLException {
+		if (!this.currentRecord.containsKey(columnLabel)) {
+			throw new SQLException("Invalid column label value");
 		}
 	}
 
 	private <T> T getValueByColumnIndex(int columnIndex, ValueMapper<T> valueMapper) throws SQLException {
-		verifyCursorPosition();
-		verifyColumnIndex(columnIndex);
+		assertIsOpen();
+		assertCurrentRecordIsNotNull();
+		assertColumnIndexIsPresent(columnIndex);
 		columnIndex--;
-		return valueMapper.map(this.currentRecord.get(columnIndex));
+		this.value = this.currentRecord.get(columnIndex);
+		return valueMapper.map(this.value);
 	}
 
 	private <T> T getValueByColumnLabel(String columnLabel, ValueMapper<T> valueMapper) throws SQLException {
-		verifyCursorPosition();
-		verifyColumnLabel(columnLabel);
-		return valueMapper.map(this.currentRecord.get(columnLabel));
+		assertIsOpen();
+		assertCurrentRecordIsNotNull();
+		assertColumnLabelIsPresent(columnLabel);
+		this.value = this.currentRecord.get(columnLabel);
+		return valueMapper.map(this.value);
 	}
 
 	private static String mapToString(Value value) throws SQLException {
@@ -1224,6 +1262,109 @@ final class ResultSetImpl implements ResultSet {
 			return value.asByteArray();
 		}
 		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
+	}
+
+	private static Date mapToDate(Value value) throws SQLException {
+		if (Type.DATE.isTypeOf(value)) {
+			return Date.valueOf(value.asLocalDate());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to date.", value.type()));
+	}
+
+	private static Date mapToDate(Value value, Calendar calendar) throws SQLException {
+		if (Type.DATE_TIME.isTypeOf(value)) {
+			return Date.valueOf(value.asZonedDateTime().toLocalDate());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to zoned date.", value.type()));
+	}
+
+	private static Time mapToTime(Value value) throws SQLException {
+		if (Type.LOCAL_TIME.isTypeOf(value)) {
+			return Time.valueOf(value.asLocalTime());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to time.", value.type()));
+	}
+
+	private static Time mapToTime(Value value, Calendar calendar) throws SQLException {
+		if (Type.DATE_TIME.isTypeOf(value)) {
+			return Time.valueOf(value.asZonedDateTime().toLocalTime());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to zoned time.", value.type()));
+	}
+
+	private static Timestamp mapToTimestamp(Value value) throws SQLException {
+		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
+			return Timestamp.valueOf(value.asLocalDateTime());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to timestamp.", value.type()));
+	}
+
+	private static Timestamp mapToTimestamp(Value value, Calendar calendar) throws SQLException {
+		if (Type.DATE_TIME.isTypeOf(value)) {
+			return Timestamp.valueOf(value.asZonedDateTime().toLocalDateTime());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
+	}
+
+	private static Reader mapToReader(Value value) throws SQLException {
+		if (Type.STRING.isTypeOf(value)) {
+			return new StringReader(value.asString());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to Reader.", value.type()));
+	}
+
+	private static BigDecimal mapToBigDecimal(Value value) throws SQLException {
+		if (Type.INTEGER.isTypeOf(value)) {
+			return BigDecimal.valueOf(value.asLong());
+		}
+		if (Type.FLOAT.isTypeOf(value)) {
+			return BigDecimal.valueOf(value.asDouble());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to BigDecimal.", value.type()));
+	}
+
+	private static InputStream mapToAsciiStream(Value value) throws SQLException {
+		if (Type.STRING.isTypeOf(value)) {
+			return new ByteArrayInputStream(value.asString().getBytes(StandardCharsets.US_ASCII));
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to InputStream.", value.type()));
+	}
+
+	private static InputStream mapToBinaryStream(Value value) throws SQLException {
+		if (Type.STRING.isTypeOf(value)) {
+			return new ByteArrayInputStream(value.asString().getBytes());
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to InputStream.", value.type()));
 	}
 
 	@FunctionalInterface
