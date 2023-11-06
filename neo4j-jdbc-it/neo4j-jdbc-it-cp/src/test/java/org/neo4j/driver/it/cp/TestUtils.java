@@ -18,6 +18,8 @@
  */
 package org.neo4j.driver.it.cp;
 
+import java.util.Optional;
+
 import org.testcontainers.containers.Neo4jContainer;
 
 final class TestUtils {
@@ -26,16 +28,27 @@ final class TestUtils {
 	}
 
 	/**
-	 * {@return a Neo4j testcontainer configured to the needs of the integration tests}.
+	 * Uses the default image configured via system property
+	 * {@code neo4j-jdbc.default-neo4j-image}
+	 * @return a Neo4j testcontainer configured to the needs of the integration tests
+	 * @see #getNeo4jContainer(String)
+	 */
+	static Neo4jContainer<?> getNeo4jContainer() {
+		return getNeo4jContainer(null);
+	}
+
+	/**
+	 * {@return a Neo4j testcontainer configured to the needs of the integration tests}
 	 */
 	@SuppressWarnings("resource")
-	static Neo4jContainer<?> getNeo4jContainer() {
-		return new Neo4jContainer<>(System.getProperty("neo4j-jdbc.default-neo4j-image"))
+	static Neo4jContainer<?> getNeo4jContainer(String image) {
+		return new Neo4jContainer<>(
+				Optional.ofNullable(image).orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image")))
 			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT) // The HTTP wait strategy used by
-														// default seems not to work in
-														// native image, bolt must be
-														// sufficed.
+			// default seems not to work in
+			// native image, bolt must be
+			// sufficed.
 			.withReuse(true);
 	}
 

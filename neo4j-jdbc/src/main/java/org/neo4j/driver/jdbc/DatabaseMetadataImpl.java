@@ -20,9 +20,12 @@ package org.neo4j.driver.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Internal implementation for providing Neo4j specific database metadata.
@@ -34,13 +37,42 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final Connection connection;
 
+	private PreparedStatement getUsername;
+
+	private PreparedStatement getAllExecutableProcedures;
+
+	private PreparedStatement getDatabaseProductVersion;
+
 	DatabaseMetadataImpl(Connection connection) {
 		this.connection = connection;
 	}
 
 	@Override
 	public boolean allProceduresAreCallable() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.getAllExecutableProcedures == null) {
+			this.getAllExecutableProcedures = this.connection
+				.prepareStatement("SHOW PROCEDURE EXECUTABLE YIELD name AS PROCEDURE_NAME");
+		}
+
+		List<String> executableProcedures = new ArrayList<>();
+		try (var allProceduresExecutableResultSet = this.getAllExecutableProcedures.executeQuery()) {
+			while (allProceduresExecutableResultSet.next()) {
+				executableProcedures.add(allProceduresExecutableResultSet.getString(1));
+			}
+		}
+
+		if (executableProcedures.isEmpty()) {
+			return false;
+		}
+		try (var proceduresResultSet = getProcedures(null, null, null)) {
+			while (proceduresResultSet.next()) {
+				if (!executableProcedures.contains(proceduresResultSet.getString(3))) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	@Override
@@ -55,7 +87,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getUserName() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.getUsername == null) {
+			this.getUsername = this.connection.prepareStatement("SHOW CURRENT USER YIELD user");
+		}
+		var usernameRs = this.getUsername.executeQuery();
+
+		usernameRs.next();
+		var userName = usernameRs.getString(1);
+		usernameRs.close();
+
+		return userName;
+
 	}
 
 	@Override
@@ -85,17 +127,42 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getDatabaseProductName() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.getDatabaseProductVersion == null) {
+			this.getDatabaseProductVersion = this.connection.prepareStatement("""
+					call dbms.components() yield name, versions,
+					edition unwind versions as version return name, edition, version""");
+		}
+
+		try (var productVersionRs = this.getDatabaseProductVersion.executeQuery()) {
+			if (productVersionRs.next()) { // will only ever have one result.
+				return "%s-%s-%s".formatted(productVersionRs.getString(1), productVersionRs.getString(2),
+						productVersionRs.getString(3));
+			}
+		}
+
+		return ProductVersion.getValue();
 	}
 
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
-		throw new UnsupportedOperationException();
+		if (this.getDatabaseProductVersion == null) {
+			this.getDatabaseProductVersion = this.connection.prepareStatement("""
+					call dbms.components() yield versions
+					unwind versions as version return version""");
+		}
+
+		try (var productVersionRs = this.getDatabaseProductVersion.executeQuery()) {
+			if (productVersionRs.next()) { // will only ever have one result.
+				return productVersionRs.getString(1);
+			}
+		}
+
+		throw new SQLException("Cannot retrieve product version");
 	}
 
 	@Override
 	public String getDriverName() throws SQLException {
-		throw new UnsupportedOperationException();
+		return ProductVersion.getName();
 	}
 
 	@Override
@@ -170,6 +237,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getSQLKeywords() throws SQLException {
+		// Do we just list all the keywords here?
 		throw new UnsupportedOperationException();
 	}
 
@@ -628,10 +696,58 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * In order to honour the three reserved columns in the return from getProcedures as
+	 * outlined in the docs for jdbc we have used reserved_1 reserved_2 reserved_3 these
+	 * should not be used.
+	 * @param catalog should always be null as does not apply to Neo4j.
+	 * @param schemaPattern should always be null as does not apply to Neo4j.
+	 * @param procedureNamePattern a procedure name pattern; must match the procedure name
+	 * as it is stored in the database
+	 * @return resultset that contains the procedures that you can execute with the
+	 * columns: name, description, mode and worksOnSystem.
+	 * @throws SQLException if you try and call with catalog or schema
+	 */
 	@Override
 	public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+
+		if (schemaPattern != null) {
+			throw new SQLException("Schema is not applicable to Neo4j please leave null.");
+		}
+
+		if (catalog != null) {
+			var catalogs = getCatalogs();
+			var foundCatalog = false;
+			while (catalogs.next()) {
+				if (catalog.equals(catalogs.getString(1))) {
+					foundCatalog = true;
+					break;
+				}
+			}
+			if (!foundCatalog) {
+				throw new SQLException("catalog: %s is not valid for the current database.".formatted(catalog));
+			}
+		}
+
+		if (procedureNamePattern == null) {
+			return this.connection.createStatement().executeQuery("""
+					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
+					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
+					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
+					""");
+		}
+		else {
+			var proceduresFiltered = this.connection.prepareStatement("""
+					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
+					WHERE name = $1
+					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
+					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
+					""");
+
+			proceduresFiltered.setString(1, procedureNamePattern);
+			return proceduresFiltered.executeQuery();
+		}
 	}
 
 	@Override
@@ -646,14 +762,26 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		throw new UnsupportedOperationException();
 	}
 
+	/***
+	 * Neo4j does not support schemas.
+	 * @return nothing
+	 * @throws SQLException if you call this you will receive an
+	 * UnsupportedOperationException
+	 */
 	@Override
 	public ResultSet getSchemas() throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
+	/***
+	 * Returns all the catalogs for the current neo4j instance. For Neo4j catalogs are the
+	 * databases on the current Neo4j instance.
+	 * @return all catalogs
+	 * @throws SQLException will be thrown if cannot connect to current DB
+	 */
 	@Override
 	public ResultSet getCatalogs() throws SQLException {
-		throw new UnsupportedOperationException();
+		return this.connection.createStatement().executeQuery("SHOW DATABASE yield name AS TABLE_CAT");
 	}
 
 	@Override

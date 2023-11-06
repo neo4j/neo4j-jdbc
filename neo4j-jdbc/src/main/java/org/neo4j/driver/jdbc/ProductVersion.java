@@ -52,6 +52,10 @@ final class ProductVersion {
 		return computedVersion;
 	}
 
+	static String getName() {
+		return "Neo4jJdbcDriver";
+	}
+
 	static int getMajorVersion() {
 		return getVersion(0);
 	}

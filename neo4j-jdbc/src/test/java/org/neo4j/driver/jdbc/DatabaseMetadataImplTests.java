@@ -19,12 +19,56 @@
 package org.neo4j.driver.jdbc;
 
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProvider;
+
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 class DatabaseMetadataImplTests {
+
+	private BoltConnectionProvider boltConnectionProvider;
+
+	@BeforeEach
+	void beforeEach() {
+		this.boltConnectionProvider = mock();
+		CompletionStage<BoltConnection> mockedFuture = mock();
+		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
+		given(boltConnectionCompletableFuture.join()).willReturn(mock());
+		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), any(), any(), anyInt()))
+			.willReturn(mockedFuture);
+	}
+
+	@Test
+	void getProcedureNamesShouldFailIfYouPassSchema() throws SQLException {
+		var url = "jdbc:neo4j://host";
+
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var props = new Properties();
+		props.put("username", "test");
+		props.put("password", "password");
+
+		var connection = driver.connect(url, props);
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getProcedures("NotNull", "NotNull", null));
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getProcedures(null, "NotNull", null));
+	}
 
 	@Test
 	void getDriverName() {
