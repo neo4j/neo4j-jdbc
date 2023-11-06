@@ -1,0 +1,81 @@
+:toc:
+
+= Tests for simple select queries
+
+These tests cover single table selects and basic conditions.
+
+== PoC
+
+The input
+
+[source,sql,id=t1_0,name=select_with_condition]
+----
+SELECT t.a, t.b
+FROM `MY_TABLE` AS t
+WHERE t.a = 1
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_0_expected]
+----
+MATCH (t:MY_TABLE)
+WHERE t.a = 1
+RETURN t.a, t.b
+----
+
+[source,sql,id=t1_1,name=no_driving_table]
+----
+SELECT 1
+----
+
+[source,cypher,id=t1_1_expected]
+----
+RETURN 1
+----
+
+== Comparing SQL with Cypher examples
+
+Sources of the following examples are from https://neo4j.com/developer/cypher/guide-sql-to-cypher/[Comparing SQL with Cypher].
+
+=== Find all Products
+
+==== Select and Return Records
+
+Easy in SQL, just select everything from the `products` table.
+
+[source,sql,id=t2_0,name=select_and_return_records,table_mappings=products:Product]
+----
+SELECT p.*
+FROM products as p
+----
+
+Similarly, in Cypher, you just *match* a simple pattern: all nodes with the *label* `:Product` and `RETURN` them.
+
+[source,cypher,id=t2_0_expected]
+----
+MATCH (p:Product)
+RETURN p
+----
+
+==== Field Access, Ordering and Paging
+
+*More efficient is to return only a subset of attributes*, like `ProductName` and `UnitPrice`.
+And while we're on it, let's also order by price and only return the 10 most expensive items.
+
+[source,sql,id=t2_1,name=field_acces_ordering_paging,table_mappings=products:Product]
+----
+SELECT p.`productName`, p.`unitPrice`
+FROM products as p
+ORDER BY p.`unitPrice` DESC
+LIMIT 10
+----
+
+You can copy and paste the changes from SQL to Cypher, it's thankfully unsurprising.
+But remember that labels, relationship-types and property-names are *case sensitive* in Neo4j.
+
+[source,cypher,id=t2_1_expected]
+----
+MATCH (p:Product)
+RETURN p.productName, p.unitPrice ORDER BY p.unitPrice DESC LIMIT 10
+----

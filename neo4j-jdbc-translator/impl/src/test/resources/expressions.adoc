@@ -1,0 +1,305 @@
+:toc:
+
+= Tests for column expressions
+
+These tests cover column expressions.
+
+== Literal Values
+
+The input
+
+[source,sql,id=t0_0,name=select_literal_values]
+----
+SELECT
+    1, TRUE, FALSE, NULL
+----
+
+will be transpiled to
+
+[source,cypher,id=t0_0_expected]
+----
+RETURN 1, TRUE, FALSE, NULL
+----
+
+== Arithmetic expressions
+
+The input
+
+[source,sql,id=t1_0,name=select_with_arithmetic]
+----
+SELECT
+    1 + 2,
+    1 - 2,
+    1 * 2,
+    1 / 2,
+    square(2)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_0_expected]
+----
+RETURN
+    (1 + 2),
+    (1 - 2),
+    (1 * 2),
+    (1 / 2),
+    (2 * 2)
+----
+
+== Numeric functions
+
+See https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/
+
+The input
+
+[source,sql,id=t2_0,name=select_with_mathematical_functions]
+----
+SELECT
+    abs(1),
+    ceil(1),
+    floor(1),
+    round(1),
+    round(1, 1),
+    sign(1)
+----
+
+will be transpiled to
+
+[source,cypher,id=t2_0_expected]
+----
+RETURN
+    abs(1),
+    ceil(1),
+    floor(1),
+    round(1),
+    round(1, 1),
+    sign(1)
+----
+
+== Logarithmic functions
+
+See https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/
+
+The input
+
+[source,sql,id=t3_0,name=select_with_logarithmic_functions]
+----
+SELECT
+    exp(1),
+    ln(1),
+    log(2, 1),
+    log10(1),
+    sqrt(1)
+----
+
+will be transpiled to
+
+[source,cypher,id=t3_0_expected]
+----
+RETURN
+    exp(1),
+    log(1),
+    (log(1) / log(2)),
+    log10(1),
+    sqrt(1)
+----
+
+
+== Trigonometric functions
+
+See https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/
+
+The input
+
+[source,sql,id=t4_0,name=select_with_trigonometric_functions]
+----
+SELECT
+    acos(1),
+    asin(1),
+    atan(1),
+    atan2(1, 2),
+    cos(1),
+    cot(1),
+    degrees(1),
+    pi(),
+    radians(1),
+    sin(1),
+    tan(1)
+----
+
+will be transpiled to
+
+[source,cypher,id=t4_0_expected]
+----
+RETURN
+    acos(1),
+    asin(1),
+    atan(1),
+    atan2(1, 2),
+    cos(1),
+    cot(1),
+    degrees(1),
+    pi(),
+    radians(1),
+    sin(1),
+    tan(1)
+----
+
+
+
+== String functions
+
+See https://neo4j.com/docs/cypher-manual/current/functions/string/
+
+The input
+
+[source,sql,id=t5_0,name=select_with_string_functions]
+----
+SELECT
+    lower('abc'),
+    cast(3 as varchar),
+    trim(' abc '),
+    length('abc'),
+    left('abc', 2),
+    ltrim(' abc '),
+    replace('abc', 'b'),
+    replace('abc', 'b', 'x'),
+    reverse('abc'),
+    right('abc', 2),
+    rtrim(' abc '),
+    substring('abc', 2 - 1),
+    substring('abc', 2 - 1, 2),
+    upper('abc')
+----
+
+will be transpiled to
+
+[source,cypher,id=t5_0_expected]
+----
+RETURN
+    toLower('abc'),
+    toString(3),
+    trim(' abc '),
+    size('abc'),
+    left('abc', 2),
+    ltrim(' abc '),
+    replace('abc', 'b', NULL),
+    replace('abc', 'b', 'x'),
+    reverse('abc'),
+    right('abc', 2),
+    rtrim(' abc '),
+    substring('abc', (2 - 1)),
+    substring('abc', (2 - 1), 2),
+    toUpper('abc')
+----
+
+
+== Scalar functions
+
+See https://neo4j.com/docs/cypher-manual/current/functions/scalar/
+
+The input
+
+[source,sql,id=t6_0,name=select_with_string_functions]
+----
+SELECT
+    coalesce(1, 2),
+    coalesce(1, 2, 3),
+    nvl(1, 2),
+    cast('1' as boolean),
+    cast(1 as float),
+    cast(1 as double precision),
+    cast(1 as real),
+    cast(1 as tinyint),
+    cast(1 as smallint),
+    cast(1 as int),
+    cast(1 as bigint)
+----
+
+will be transpiled to
+
+[source,cypher,id=t6_0_expected]
+----
+RETURN
+    coalesce(1, 2),
+    coalesce(1, 2, 3),
+    coalesce(1, 2),
+    toBoolean('1'),
+    toFloat(1),
+    toFloat(1),
+    toFloat(1),
+    toInteger(1),
+    toInteger(1),
+    toInteger(1),
+    toInteger(1)
+----
+
+
+== Query syntax expressions
+
+See https://neo4j.com/docs/cypher-manual/current/syntax/expressions
+
+=== `CASE` simple
+
+The input
+
+[source,sql,id=t7_0,name=select_with_string_functions]
+----
+SELECT
+    CASE 1 WHEN 2 THEN 3 END,
+    CASE 1 WHEN 2 THEN 3 ELSE 4 END,
+    CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 END,
+    CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
+----
+
+will be transpiled to
+
+[source,cypher,id=t7_0_expected]
+----
+RETURN CASE 1 WHEN 2 THEN 3 END, CASE 1 WHEN 2 THEN 3 ELSE 4 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
+----
+
+=== `CASE` searched
+
+The input
+
+[source,sql,id=t7_1,name=select_with_string_functions]
+----
+SELECT
+    CASE WHEN 1 = 2 THEN 3 END,
+    CASE WHEN 1 = 2 THEN 3 ELSE 4 END,
+    CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 END,
+    CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 ELSE 7 END
+----
+
+will be transpiled to
+
+[source,cypher,id=t7_1_expected]
+----
+RETURN
+    CASE WHEN 1 = 2 THEN 3 END,
+    CASE WHEN 1 = 2 THEN 3 ELSE 4 END,
+    CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 END,
+    CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 ELSE 7 END
+----
+
+=== `CASE` abbreviations (which aren't `COALESCE` or `NVL`)
+
+The input
+
+[source,sql,id=t7_2,name=select_with_string_functions]
+----
+SELECT
+    nullif(1, 2),
+    nvl2(1, 2, 3)
+----
+
+will be transpiled to
+
+[source,cypher,id=t7_2_expected]
+----
+RETURN
+    CASE WHEN 1 = 2 THEN NULL ELSE 1 END,
+    CASE WHEN 1 IS NOT NULL THEN 2 ELSE 3 END
+----

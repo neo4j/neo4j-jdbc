@@ -27,8 +27,10 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,6 +44,7 @@ import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProviders;
 import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.SecurityPlans;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
+import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
 
 /**
  * The main entry point for the Neo4j JDBC driver. There is usually little need to use
@@ -76,6 +79,8 @@ public final class Neo4jDriver implements Driver {
 
 	private final BoltConnectionProvider boltConnectionProvider;
 
+	private volatile SqlTranslatorFactory sqlTranslatorFactory;
+
 	public Neo4jDriver() {
 		// Having a public default constructor is not only fine here, but also required on
 		// the module path so that this public class can be properly exported.
@@ -86,32 +91,6 @@ public final class Neo4jDriver implements Driver {
 		this.boltConnectionProvider = boltConnectionProvider;
 	}
 
-	/**
-	 * Returns the first element of the iterator or null, when the iterator is empty.
-	 * Throws an {@link IllegalArgumentException} if the iterator contains more than one
-	 * element.
-	 * @param source the SQL translators found via a {@link ServiceLoader} or any other
-	 * machinery
-	 * @return a unique SQL translator or {@literal null} if no SQL translator was found
-	 */
-	static SqlTranslator uniqueOrThrow(Iterator<SqlTranslator> source) {
-		if (!source.hasNext()) {
-			return null;
-		}
-		var result = source.next();
-		if (source.hasNext()) {
-			var implementations = new ArrayList<String>();
-			implementations.add(result.getClass().getName());
-			do {
-				implementations.add(source.next().getClass().getName());
-			}
-			while (source.hasNext());
-			throw new IllegalArgumentException("More than one implementation of a SQL translator was found: "
-					+ implementations.stream().collect(Collectors.joining(", ", "[", "]")));
-		}
-		return result;
-	}
-
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
 		if (url == null || info == null) {
@@ -120,48 +99,46 @@ public final class Neo4jDriver implements Driver {
 
 		var matcher = URL_PATTERN.matcher(url);
 
-		if (matcher.matches()) {
-			var host = matcher.group("host");
-
-			var port = (matcher.group("port") != null) ? Integer.parseInt(matcher.group(2)) : 7687;
-
-			var address = new BoltServerAddress(host, port);
-
-			var securityPlan = SecurityPlans.insecure();
-
-			var databaseName = matcher.group("database");
-			if (databaseName == null) {
-				databaseName = info.getProperty("database", "neo4j");
-			}
-
-			var splitParams = splitUrlParams(matcher.group("urlParams"));
-
-			var user = parseUrlParams(splitParams, "user");
-			if (user == null) {
-				user = info.getProperty("user", "neo4j");
-			}
-
-			var password = parseUrlParams(splitParams, "password");
-			if (password == null) {
-				password = info.getProperty("password");
-			}
-
-			var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
-
-			var boltAgent = BoltAgentUtil.boltAgent();
-			var userAgent = info.getProperty("agent", "neo4j-jdbc");
-			var connectTimeoutMillis = Integer.parseInt(info.getProperty("timeout", "1000"));
-
-			var boltConnection = this.boltConnectionProvider
-				.connect(address, securityPlan, databaseName, authToken, boltAgent, userAgent, connectTimeoutMillis)
-				.toCompletableFuture()
-				.join();
-
-			return new ConnectionImpl(boltConnection);
-		}
-		else {
+		if (!matcher.matches()) {
 			throw new SQLException("Invalid url.");
 		}
+
+		var host = matcher.group("host");
+		var port = (matcher.group("port") != null) ? Integer.parseInt(matcher.group(2)) : 7687;
+		var address = new BoltServerAddress(host, port);
+
+		var securityPlan = SecurityPlans.insecure();
+
+		var databaseName = matcher.group("database");
+		if (databaseName == null) {
+			databaseName = info.getProperty("database", "neo4j");
+		}
+
+		var splitParams = splitUrlParams(matcher.group("urlParams"));
+
+		var user = parseUrlParams(splitParams, "user");
+		if (user == null) {
+			user = info.getProperty("user", "neo4j");
+		}
+
+		var password = parseUrlParams(splitParams, "password");
+		if (password == null) {
+			password = info.getProperty("password");
+		}
+
+		var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
+
+		var boltAgent = BoltAgentUtil.boltAgent();
+		var userAgent = info.getProperty("agent", "neo4j-jdbc");
+		var connectTimeoutMillis = Integer.parseInt(info.getProperty("timeout", "1000"));
+
+		var boltConnection = this.boltConnectionProvider
+			.connect(address, securityPlan, databaseName, authToken, boltAgent, userAgent, connectTimeoutMillis)
+			.toCompletableFuture()
+			.join();
+
+		return new ConnectionImpl(boltConnection,
+				getSqlTranslatorSupplier(splitParams, info, this::getSqlTranslatorFactory));
 	}
 
 	@Override
@@ -209,7 +186,7 @@ public final class Neo4jDriver implements Driver {
 		throw new UnsupportedOperationException();
 	}
 
-	private String parseUrlParams(String[] spitUrlParams, String urlParmKey) {
+	private static String parseUrlParams(String[] spitUrlParams, String urlParmKey) {
 		var regex = "^(%s=+)(?<value>\\S+)$".formatted(urlParmKey);
 		var pattern = Pattern.compile(regex);
 
@@ -223,12 +200,100 @@ public final class Neo4jDriver implements Driver {
 		return null;
 	}
 
-	private String[] splitUrlParams(String urlParams) {
+	private static String[] splitUrlParams(String urlParams) {
 		if (urlParams != null) {
 			return urlParams.split("&");
 		}
 
 		return new String[0];
+	}
+
+	/**
+	 * Returns the first element of the iterator or null, when the iterator is empty.
+	 * Throws an {@link IllegalArgumentException} if the iterator contains more than one
+	 * element.
+	 * @param source the SQL translators found via a {@link ServiceLoader} or any other
+	 * machinery
+	 * @return a unique SQL translator or {@literal null} if no SQL translator was found
+	 * @throws IllegalArgumentException when more than one translator is found
+	 * @throws NoSuchElementException when no translator is found
+	 */
+	static SqlTranslatorFactory uniqueOrThrow(Iterator<SqlTranslatorFactory> source) {
+		if (!source.hasNext()) {
+			throw new NoSuchElementException("No SQL translators available");
+		}
+		var result = source.next();
+		if (source.hasNext()) {
+			var implementations = new ArrayList<String>();
+			implementations.add(result.getName());
+			do {
+				implementations.add(source.next().getName());
+			}
+			while (source.hasNext());
+			throw new IllegalArgumentException("More than one SQL translator found: "
+					+ implementations.stream().collect(Collectors.joining(", ", "[", "]")));
+		}
+		return result;
+	}
+
+	/**
+	 * Tries to load a unique {@link SqlTranslator} via the {@link ServiceLoader}
+	 * machinery. Throws an exception if there is more than one implementation on the
+	 * class- or module-path.
+	 * @return an instance of a SQL translator.
+	 */
+	private SqlTranslatorFactory getSqlTranslatorFactory() {
+
+		SqlTranslatorFactory result = this.sqlTranslatorFactory;
+		if (result == null) {
+			synchronized (this) {
+				result = this.sqlTranslatorFactory;
+				if (result == null) {
+					this.sqlTranslatorFactory = uniqueOrThrow(
+							ServiceLoader.load(SqlTranslatorFactory.class).iterator());
+					result = this.sqlTranslatorFactory;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Evaluates whether SQL should be automatically be translated to Cypher. Any
+	 * externally passed SQL to this driver will be translated to cypher if the URL
+	 * parameter {@code sql2cypher} or a property with the same name being
+	 * {@literal true}. The URL parameter has always precedence.
+	 * @param urlParams original URL parameter passed when creating the {@link Neo4jDriver
+	 * driver}
+	 * @param properties any additional properties
+	 * @return {@literal true} if either URL parameter or properties indicate to
+	 * automatically translate SQL to cypher
+	 */
+	static boolean isAutomaticSqlTranslation(String[] urlParams, Properties properties) {
+		var sql2cypher = parseUrlParams(urlParams, "sql2cypher");
+		if (sql2cypher == null) {
+			return Boolean.parseBoolean(properties.getProperty("sql2cypher"));
+		}
+		return Boolean.parseBoolean(sql2cypher);
+	}
+
+	static Supplier<SqlTranslator> getSqlTranslatorSupplier(String[] urlParams, Properties properties,
+			Supplier<SqlTranslatorFactory> sqlTranslatorFactorySupplier) {
+
+		if (isAutomaticSqlTranslation(urlParams, properties)) {
+			// If the driver should translate all queries into cypher, we can make sure
+			// this is possible by resolving
+			// the factory right now and configure the translator from the given
+			// connection properties, too
+			var sqlTranslator = sqlTranslatorFactorySupplier.get().create(properties);
+			return () -> sqlTranslator;
+		}
+		else {
+			// we delay this until we are explicitly asked for
+			// Copy the properties, so that they can't be changed until we need them
+			var localProperties = new Properties(properties);
+			return () -> sqlTranslatorFactorySupplier.get().create(localProperties);
+		}
 	}
 
 }

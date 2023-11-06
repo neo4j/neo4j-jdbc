@@ -39,8 +39,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
+import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
 /**
  * A Neo4j specific implementation of {@link Connection}.
@@ -51,6 +53,8 @@ import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 final class ConnectionImpl implements Neo4jConnection {
 
 	private final BoltConnection boltConnection;
+
+	private final Lazy<SqlTranslator> sqlTranslator;
 
 	private boolean autoCommit = true;
 
@@ -63,7 +67,14 @@ final class ConnectionImpl implements Neo4jConnection {
 	private boolean closed;
 
 	ConnectionImpl(BoltConnection boltConnection) {
+		this(boltConnection, () -> {
+			throw new UnsupportedOperationException("No SQL translator available");
+		});
+	}
+
+	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
+		this.sqlTranslator = Lazy.of(sqlTranslator);
 	}
 
 	@Override
@@ -99,10 +110,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override
-	public String nativeSQL(String sql) throws SQLException {
-
-		// TODO perfect point to hook up sql2cypher
-		throw new UnsupportedOperationException();
+	public String nativeSQL(String sql) {
+		return this.sqlTranslator.resolve().translate(sql);
 	}
 
 	@Override

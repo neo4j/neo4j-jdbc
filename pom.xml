@@ -32,7 +32,7 @@
 
 	<inceptionYear>2023</inceptionYear>
 	<organization>
-		<name>Neo4j, Neo4j Sweden AB</name>
+		<name>Neo4j</name>
 		<url>https://neo4j.com</url>
 	</organization>
 	<licenses>
@@ -48,10 +48,54 @@
 			<id>msimons</id>
 			<name>Michael Simons</name>
 			<email>michael.simons at neo4j.com</email>
-			<organization>Neo Technology</organization>
+			<organization>Neo4j</organization>
 			<organizationUrl>https://neo4j.com</organizationUrl>
 			<roles>
 				<role>Project Lead</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>dtverdiakov</id>
+			<name>Dmitriy Tverdiakov</name>
+			<email>dmitriy.tverdiakov at neo4j.com</email>
+			<organization>Neo4j</organization>
+			<organizationUrl>https://neo4j.com</organizationUrl>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>0</timezone>
+		</developer>
+		<developer>
+			<id>cwatson</id>
+			<name>Conor Watson</name>
+			<email>conor.watson at neo4j.com</email>
+			<organization>Neo4j</organization>
+			<organizationUrl>https://neo4j.com</organizationUrl>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>0</timezone>
+		</developer>
+		<developer>
+			<id>leder</id>
+			<name>Lukas Eder</name>
+			<email>lukas.eder at gmail.com</email>
+			<organization>jOOQ</organization>
+			<organizationUrl>https://jooq.org</organizationUrl>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>mhunger</id>
+			<name>Michael Hunger</name>
+			<email>michael.hunger at neo4j.com</email>
+			<organization>Neo4j</organization>
+			<organizationUrl>https://neo4j.com</organizationUrl>
+			<roles>
+				<role>Developer</role>
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
@@ -75,6 +119,7 @@
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
 		<archunit.version>1.2.0</archunit.version>
 		<artifactsDir>${project.build.directory}</artifactsDir>
+		<asciidoctorj.version>2.5.7</asciidoctorj.version>
 		<assertj.version>3.24.2</assertj.version>
 		<checkstyle.version>10.9.2</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
@@ -84,6 +129,8 @@
 		<exec-maven-plugin.version>3.1.0</exec-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<java.version>17</java.version>
+		<jaxb-api.version>4.0.1</jaxb-api.version>
+		<jooq.version>3.18.7</jooq.version>
 		<junit-jupiter.version>5.10.1</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
 		<maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
@@ -102,6 +149,7 @@
 		<mockito.version>5.7.0</mockito.version>
 		<moditect-maven-plugin.version>1.1.0</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.9.28</native-maven-plugin.version>
+		<neo4j-cypher-dsl.version>2023.5.0</neo4j-cypher-dsl.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.10.0</neo4j.version>
 		<netty.version>4.1.100.Final</netty.version>
@@ -159,14 +207,39 @@
 				<version>${archunit.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>jakarta.xml.bind</groupId>
+				<artifactId>jakarta.xml.bind-api</artifactId>
+				<version>${jaxb-api.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.asciidoctor</groupId>
+				<artifactId>asciidoctorj</artifactId>
+				<version>${asciidoctorj.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.assertj</groupId>
 				<artifactId>assertj-core</artifactId>
 				<version>${assertj.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq</artifactId>
+				<version>${jooq.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
 				<version>${mockito.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-cypher-dsl</artifactId>
+				<version>${neo4j-cypher-dsl.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-cypher-dsl-parser</artifactId>
+				<version>${neo4j-cypher-dsl.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
@@ -197,7 +270,6 @@
 									<exclude>**/*.adoc</exclude>
 									<exclude>**/*.cypher</exclude>
 									<exclude>**/*.tpl</exclude>
-									<exclude>**/package-info.java</exclude>
 									<exclude>LICENSE.txt</exclude>
 								</excludes>
 							</licenseSet>

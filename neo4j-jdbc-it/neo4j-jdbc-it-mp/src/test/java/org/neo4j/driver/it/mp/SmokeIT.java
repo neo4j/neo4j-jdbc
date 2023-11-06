@@ -19,25 +19,39 @@
 package org.neo4j.driver.it.mp;
 
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.Duration;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * Just making sure the driver can be loaded on the module path.
  * <p>
  * Not using Testcontainers here as it is quite some pain doing it on the module path.
  */
+@EnabledIf("boltPortIsReachable")
 public class SmokeIT {
 
 	@Test
-	@EnabledIf("boltPortIsReachable")
 	void driverShouldBeLoaded() {
 
 		var url = "jdbc:neo4j://%s:%d".formatted(getHost(), getPort());
 		Assertions.assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
+	}
+
+	@Test
+	void shouldConfigureConnectionToUseSqlTranslator() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%d?user=%s&password=%s".formatted(getHost(), getPort(), "neo4j", getPassword());
+		var connection = DriverManager.getConnection(url);
+		assertThat(connection).isNotNull();
+		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("""
+				MATCH (foobar:foobar)
+				RETURN *""");
 	}
 
 	static boolean boltPortIsReachable() {
@@ -51,6 +65,10 @@ public class SmokeIT {
 
 	private static String getHost() {
 		return "localhost";
+	}
+
+	private static String getPassword() {
+		return System.getProperty("it-database-password", "verysecret");
 	}
 
 }

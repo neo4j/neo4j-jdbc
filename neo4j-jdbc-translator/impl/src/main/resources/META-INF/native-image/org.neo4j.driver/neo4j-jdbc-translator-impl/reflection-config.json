@@ -1,0 +1,187 @@
+[
+  {
+    "name": "org.jooq.impl.SQLDataType",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.util.cubrid.CUBRIDDataType"
+  },
+  {
+    "name": "org.jooq.util.derby.DerbyDataType"
+  },
+  {
+    "name": "org.jooq.util.firebird.FirebirdDataType"
+  },
+  {
+    "name": "org.jooq.util.h2.H2DataType"
+  },
+  {
+    "name": "org.jooq.util.hsqldb.HSQLDBDataType"
+  },
+  {
+    "name": "org.jooq.util.ignite.IgniteDataType"
+  },
+  {
+    "name": "org.jooq.util.mariadb.MariaDBDataType"
+  },
+  {
+    "name": "org.jooq.util.mysql.MySQLDataType"
+  },
+  {
+    "name": "org.jooq.util.postgres.PostgresDataType"
+  },
+  {
+    "name": "org.jooq.util.sqlite.SQLiteDataType"
+  },
+  {
+    "name": "org.jooq.util.yugabytedb.YugabyteDBDataType"
+  },
+  {
+    "name": "java.lang.Boolean[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Byte[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Double[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Float[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Integer[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Long[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Object[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.Short[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.lang.String[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.math.BigDecimal[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.math.BigInteger[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.sql.Date[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.sql.Time[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.sql.Timestamp[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.Instant[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.LocalDateTime[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.LocalDate[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.LocalTime[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.OffsetDateTime[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.OffsetTime[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.time.Year[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "java.util.UUID[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.Geography[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.Geometry[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.JSONB[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.JSON[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.XML[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.DayToSecond[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.UByte[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.UInteger[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.ULong[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.UShort[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.YearToMonth[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.types.YearToSecond[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.Record[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.Result[]",
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jooq.RowId[]",
+    "allPublicConstructors": true
+  }
+]

@@ -1,0 +1,86 @@
+:toc:
+
+= Joins to represent relationships
+
+These tests cover `ON JOIN` syntax to represent relationships
+
+== Foreign Key Joins
+
+The input
+
+[source,sql,id=t1_0,name=foreign_key_join]
+----
+SELECT p.name, m.title
+FROM `Person` as p
+JOIN `Movie` as m ON (m.id = p.`DIRECTED`)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_0_expected]
+----
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+RETURN p.name, m.title
+----
+
+== Foreign Key Joins with simple syntax
+
+Statements shall be translated when not using backticks etc., too. The input
+
+[source,sql,id=t1_1,name=foreign_key_join_simple,table_mappings=people:Person;movies:Movie]
+----
+SELECT p.name, m.title
+FROM people p
+JOIN movies m ON m.id = p.directed
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_1_expected]
+----
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+RETURN p.name, m.title
+----
+
+== Join Table Joins
+
+The name of the join table will be used as the relationship type.
+In the example below, table mappings are configured:
+
+[source,sql,id=t2_0,name=join_table_join,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN]
+----
+SELECT p.name, m.title
+FROM people p
+JOIN movie_actors r ON r.person_id = p.id
+JOIN movies m ON m.id = r.person_id
+----
+
+as demonstrated by
+
+[source,cypher,id=t2_0_expected]
+----
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
+RETURN p.name, m.title
+----
+
+Multiple joins will result in a chain of relationships:
+
+[source,sql,id=t2_1,name=join_multiple_table_join,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN;movie_directors:DIRECTED]
+----
+SELECT p.name AS actor, d.name AS director, m.title
+FROM people p
+ JOIN movie_actors r ON r.person_id = p.id
+ JOIN movies m ON m.id = r.person_id
+ JOIN movie_directors r2 ON r2.movie_id = m.id
+ JOIN people d ON r2.person_id = d.id
+----
+
+as demonstrated by
+
+[source,cypher,id=t2_1_expected]
+----
+MATCH (p:`Person`)-[r:`ACTED_IN`]->(m:`Movie`)<-[r2:`DIRECTED`]-(d:`Person`)
+RETURN p.name AS actor, d.name AS director, m.title
+----
+
+Notice how the direction of the `DIRECTED` relationship is defined by the order of the join columns.

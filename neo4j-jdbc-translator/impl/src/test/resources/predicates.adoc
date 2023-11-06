@@ -1,0 +1,186 @@
+:toc:
+
+= Tests for logical predicates
+
+These tests cover logical expressions and predicates
+
+== Logical Expressions / Conditions
+
+The input
+
+[source,sql,id=t1_0,name=logic_operators]
+----
+SELECT 1 FROM p WHERE 1 = 1 AND 2 = 2 OR 3 = 3
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_0_expected]
+----
+MATCH (p:p)
+WHERE ((1 = 1
+    AND 2 = 2)
+  OR 3 = 3)
+RETURN 1
+----
+
+The input
+
+[source,sql,id=t1_1,name=logic_operators_rare]
+----
+SELECT 1 FROM p WHERE NOT 1 = 1 XOR 2 = 2
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_1_expected]
+----
+MATCH (p:p)
+WHERE (NOT (1 = 1)
+  XOR 2 = 2)
+RETURN 1
+----
+
+
+== Logical Expressions / Conditions (row value expressions)
+
+The input
+
+[source,sql,id=t1_2,name=logic_operators]
+----
+SELECT 1
+FROM p
+WHERE (1, 2) = (3, 4)
+OR (1, 2) < (3, 4)
+OR (1, 2) <= (3, 4)
+OR (1, 2, 3) <> (4, 5, 6)
+OR (1, 2, 3) > (4, 5, 6)
+OR (1, 2, 3) >= (4, 5, 6)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_2_expected]
+----
+MATCH (p:p)
+WHERE 1 = 3 AND 2 = 4
+OR (1 < 3 OR 1 = 3 AND 2 < 4)
+OR (1 < 3 OR 1 = 3 AND 2 <= 4)
+OR (1 != 4 AND 2 != 5 AND 3 != 6)
+OR (1 > 4 OR 1 = 4 AND (2 > 5 OR 2 = 5 AND 3 > 6))
+OR (1 > 4 OR 1 = 4 AND (2 > 5 OR 2 = 5 AND 3 >= 6))
+RETURN 1
+----
+
+
+== Arithmetic Operators
+
+The input
+
+[source,sql,id=t2_0,name=predicates_with_arithmetics]
+----
+SELECT 1 FROM p WHERE 1 = 1 AND 2 > 1 AND 1 < 2 AND 1 <= 2 AND 2 >= 1 AND 1 != 2
+----
+
+will be transpiled to
+
+[source,cypher,id=t2_0_expected]
+----
+MATCH (p:p)
+WHERE (1 = 1
+  AND 2 > 1
+  AND 1 < 2
+  AND 1 <= 2
+  AND 2 >= 1
+  AND 1 <> 2)
+RETURN 1
+----
+
+=== Between
+
+Between in SQL is inclusive
+
+[source,sql,id=t2_1,name=predicate_between]
+----
+SELECT 1 FROM p WHERE 2 BETWEEN 1 AND 3
+----
+
+will be transpiled to.
+There is a shorter form in Cypher (`1 <= 2 <= 3`) but that's parsed into `AND` form.
+
+[source,cypher,id=t2_1_expected]
+----
+MATCH (p:p)
+WHERE (1 <= 2) AND (2 <= 3)
+RETURN 1
+----
+
+[source,sql,id=t2_2,name=predicate_between_symmetric]
+----
+SELECT 1 FROM p WHERE 2 BETWEEN SYMMETRIC 3 AND 1
+----
+
+[source,cypher,id=t2_2_expected]
+----
+MATCH (p:p)
+WHERE (3 <= 2) AND (2 <= 1) OR (1 <= 2) AND (2 <= 3)
+RETURN 1
+----
+
+
+== Null Handling
+
+The input
+
+[source,sql,id=t3_0,name=predicates_nullability]
+----
+SELECT 1 FROM p WHERE 1 IS NULL AND 2 IS NOT NULL
+----
+
+will be transpiled to
+
+[source,cypher,id=t3_0_expected]
+----
+MATCH (p:p)
+WHERE (1 IS NULL
+  AND 2 IS NOT NULL)
+RETURN 1
+----
+
+
+== Null handling (row value expressions)
+
+The input
+
+[source,sql,id=t4_0,name=predicates_row_is_null]
+----
+SELECT 1 FROM p WHERE (1, 2) IS NULL OR (3, 4) IS NOT NULL
+----
+
+will be transpiled to
+
+[source,cypher,id=t4_0_expected]
+----
+MATCH (p:p)
+WHERE
+  (1 IS NULL AND 2 IS NULL)
+  OR (3 IS NOT NULL AND 4 IS NOT NULL)
+RETURN 1
+----
+
+== `LIKE` can be used
+
+The `LIKE` comparator can be used, too:
+
+[source,sql,id=t5_0,name=predicates_like]
+----
+SELECT * FROM movies m WHERE m.title LIKE '%Matrix%'
+----
+
+will be transpiled to
+
+[source,cypher,id=t5_0_expected]
+----
+MATCH (m:`movies`) WHERE m.title =~ '.*Matrix.*'
+RETURN *
+----

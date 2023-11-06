@@ -1,0 +1,158 @@
+:toc:
+
+= Tests for DML statements
+
+These tests cover SQL DML statements and their Cypher equivalents
+
+== Plain `DELETE`
+
+The input
+
+[source,sql,id=t0_0,name=delete]
+----
+DELETE FROM person
+----
+
+will be transpiled to
+
+[source,cypher,id=t0_0_expected]
+----
+MATCH (person:person)
+DELETE person
+----
+
+== `DELETE .. WHERE`
+
+The input
+
+[source,sql,id=t0_1,name=delete]
+----
+DELETE FROM person
+WHERE person.id = 1
+----
+
+will be transpiled to
+
+[source,cypher,id=t0_1_expected]
+----
+MATCH (person:person)
+WHERE person.id = 1
+DELETE person
+----
+
+== Plain `DELETE` with alias
+
+The input
+
+[source,sql,id=t0_2,name=delete]
+----
+DELETE FROM person p
+----
+
+will be transpiled to
+
+[source,cypher,id=t0_2_expected]
+----
+MATCH (p:person)
+DELETE p
+----
+
+== Plain `DELETE` with alias and table mapping
+
+The input
+
+[source,sql,id=t0_3,name=delete,table_mappings=person:Person]
+----
+DELETE FROM person p
+----
+
+will be transpiled to
+
+[source,cypher,id=t0_3_expected]
+----
+MATCH (p:Person)
+DELETE p
+----
+
+== Truncate
+
+The input
+
+[source,sql,id=t0_4,name=truncate,table_mappings=people:Person]
+----
+TRUNCATE TABLE people
+----
+
+will be transpiled to
+
+[source,cypher,id=t0_4_expected]
+----
+MATCH (people:Person)
+DETACH DELETE people
+----
+
+
+== Inserting data
+
+A single list of values with explicit columns and constant values
+
+[source,sql,id=t1_0,name=insert,table_mappings=people:Person]
+----
+INSERT INTO People (first_name, last_name, born) VALUES ('Helge', 'Schneider', 1955)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_0_expected]
+----
+CREATE (people:`Person` {first_name: 'Helge', last_name: 'Schneider', born: 1955})
+----
+
+A single list of values with explicit columns and arguments
+
+[source,sql,id=t1_1,name=insert,table_mappings=people:Person]
+----
+INSERT INTO People (first_name, last_name, born) VALUES (?, ?, ?)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_1_expected]
+----
+CREATE (people:`Person` {first_name: $0, last_name: $1, born: $2})
+----
+
+A single list of values with implicit columns and constant values
+
+[source,sql,id=t1_2,name=insert,table_mappings=people:Person]
+----
+INSERT INTO People VALUES ('Helge', 'Schneider', 1955)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_2_expected]
+----
+CREATE (people:`Person` {`unknown field 0`: 'Helge', `unknown field 1`: 'Schneider', `unknown field 2`: 1955})
+----
+
+Multiple list of values with explicit columns and constant values
+
+[source,sql,id=t1_3,name=insert,table_mappings=people:Person]
+----
+INSERT INTO People (first_name, last_name, born) VALUES
+    ('Helge', 'Schneider', 1955),
+    ('Bela', 'B', 1962)
+----
+
+will be transpiled to
+
+[source,cypher,id=t1_3_expected]
+----
+UNWIND [
+  {first_name: 'Helge', last_name: 'Schneider', born: 1955},
+  {first_name: 'Bela', last_name: 'B', born: 1962}]
+AS properties
+CREATE (people:`Person`)
+SET people = properties
+----

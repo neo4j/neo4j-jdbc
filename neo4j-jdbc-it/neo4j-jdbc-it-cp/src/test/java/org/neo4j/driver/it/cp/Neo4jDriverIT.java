@@ -19,6 +19,7 @@
 package org.neo4j.driver.it.cp;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -70,6 +71,20 @@ public class Neo4jDriverIT {
 		var connection = driver.connect(url, properties);
 		assertThat(connection).isNotNull();
 		assertThat(validateConnection(connection)).isTrue();
+	}
+
+	@Test
+	void shouldConfigureConnectionToUseSqlTranslator() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%s?user=%s&password=%s".formatted(this.neo4j.getHost(),
+				this.neo4j.getMappedPort(7687), "neo4j", this.neo4j.getAdminPassword());
+
+		var connection = DriverManager.getConnection(url);
+		assertThat(connection).isNotNull();
+		assertThat(validateConnection(connection)).isTrue();
+		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("""
+				MATCH (foobar:foobar)
+				RETURN *""");
 	}
 
 	private boolean validateConnection(Connection connection) throws SQLException {

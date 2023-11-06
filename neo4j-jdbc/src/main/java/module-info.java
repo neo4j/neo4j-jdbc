@@ -38,5 +38,5 @@ module neo4j.jdbc {
 	provides java.sql.Driver with
 		org.neo4j.driver.jdbc.Neo4jDriver;
 
-	uses org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
+	uses org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
 }

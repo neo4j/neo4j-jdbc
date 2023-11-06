@@ -35,5 +35,6 @@
 
 	<modules>
 		<module>spi</module>
+		<module>impl</module>
 	</modules>
 </project>

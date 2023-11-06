@@ -33,6 +33,7 @@
 	<description>Integration tests on the module path.</description>
 
 	<properties>
+		<neo4j.password>one-does-not-simply-use-a-6-digit-password-for-an-enterprise-app</neo4j.password>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
@@ -47,7 +48,7 @@
 							<name>${neo4j.image}</name>
 							<run>
 								<env>
-									<NEO4J_AUTH>neo4j/one-does-not-simply-use-a-6-digit-password-for-an-enterprise-app</NEO4J_AUTH>
+									<NEO4J_AUTH>neo4j/${neo4j.password}</NEO4J_AUTH>
 								</env>
 								<wait>
 									<log>http://localhost:7474/</log>
@@ -84,6 +85,7 @@
 				<configuration combine.self="append">
 					<systemPropertyVariables>
 						<it-database-port>${it-database-port}</it-database-port>
+						<it-database-password>${neo4j.password}</it-database-password>
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>
