@@ -73,7 +73,7 @@
 
 	<properties>
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
-		<archunit.version>1.1.0</archunit.version>
+		<archunit.version>1.2.0</archunit.version>
 		<artifactsDir>${project.build.directory}</artifactsDir>
 		<assertj.version>3.24.2</assertj.version>
 		<checkstyle.version>10.9.2</checkstyle.version>
