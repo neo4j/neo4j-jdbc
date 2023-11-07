@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Record;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Record;
+import org.neo4j.driver.jdbc.values.Value;
 
 public final class Extract {
 

@@ -21,7 +21,7 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request;
 import java.util.Map;
 
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.Message;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public abstract class MessageWithMetadata implements Message {
 

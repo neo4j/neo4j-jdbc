@@ -20,8 +20,8 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.protocol;
 
 import java.util.Map;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Relationship;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Relationship;
+import org.neo4j.driver.jdbc.values.Value;
 
 final class RelationshipImpl extends AbstractEntity implements Relationship {
 

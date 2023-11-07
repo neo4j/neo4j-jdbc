@@ -34,6 +34,7 @@ module neo4j.jdbc {
 	// automatic::jdk.unsupported
 
 	exports org.neo4j.driver.jdbc;
+	exports org.neo4j.driver.jdbc.values;
 
 	provides java.sql.Driver with
 		org.neo4j.driver.jdbc.Neo4jDriver;

@@ -24,8 +24,8 @@ import java.util.Objects;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
 import org.neo4j.driver.jdbc.internal.bolt.internal.InternalAuthToken;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 public final class HelloMessage extends MessageWithMetadata {
 

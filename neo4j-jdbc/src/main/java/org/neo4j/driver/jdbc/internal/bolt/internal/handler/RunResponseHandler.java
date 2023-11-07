@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public final class RunResponseHandler implements ResponseHandler {
 

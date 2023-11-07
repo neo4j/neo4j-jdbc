@@ -59,8 +59,8 @@ import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 public final class BoltProtocolV51 implements BoltProtocol {
 

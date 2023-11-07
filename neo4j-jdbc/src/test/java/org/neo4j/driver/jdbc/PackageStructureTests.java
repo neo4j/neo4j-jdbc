@@ -26,12 +26,10 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 import static com.tngtech.archunit.base.DescribedPredicate.describe;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackages;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
@@ -78,8 +76,7 @@ class PackageStructureTests {
 			.resideInAPackage(packageUnderTest)
 			.should()
 			.dependOnClassesThat(resideOutsideOfPackages("java..", packageUnderTest)
-				.and(describe("are not primitives or the base bolt exception",
-						not(arePrimitives().or(assignableTo(BoltException.class))))));
+				.and(describe("are not primitives", not(arePrimitives()))));
 		rule.check(this.allClasses);
 	}
 

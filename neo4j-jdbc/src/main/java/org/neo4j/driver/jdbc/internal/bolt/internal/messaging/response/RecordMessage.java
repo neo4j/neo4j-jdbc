@@ -21,7 +21,7 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.response;
 import java.util.Arrays;
 
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.Message;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public record RecordMessage(Value[] fields) implements Message {
 	public static final byte SIGNATURE = 0x71;

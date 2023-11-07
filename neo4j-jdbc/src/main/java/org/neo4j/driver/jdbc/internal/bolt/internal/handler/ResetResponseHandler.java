@@ -21,7 +21,7 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.handler;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public final class ResetResponseHandler implements ResponseHandler {
 

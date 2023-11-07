@@ -24,12 +24,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Entity;
-import org.neo4j.driver.jdbc.internal.bolt.values.Node;
-import org.neo4j.driver.jdbc.internal.bolt.values.Path;
-import org.neo4j.driver.jdbc.internal.bolt.values.Relationship;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Entity;
+import org.neo4j.driver.jdbc.values.Node;
+import org.neo4j.driver.jdbc.values.Path;
+import org.neo4j.driver.jdbc.values.Relationship;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 final class PathImpl implements Path {
 

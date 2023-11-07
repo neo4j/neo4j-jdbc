@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.netty.channel.Channel;
 import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public final class LogonResponseHandler implements ResponseHandler {
 

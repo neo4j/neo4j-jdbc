@@ -21,8 +21,8 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.protocol;
 import java.util.Collection;
 import java.util.Map;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Node;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Node;
+import org.neo4j.driver.jdbc.values.Value;
 
 final class NodeImpl extends AbstractEntity implements Node {
 

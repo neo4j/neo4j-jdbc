@@ -26,10 +26,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.Extract;
-import org.neo4j.driver.jdbc.internal.bolt.values.AbstractMapAccessorWithDefaultValue;
-import org.neo4j.driver.jdbc.internal.bolt.values.Record;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.AbstractMapAccessorWithDefaultValue;
+import org.neo4j.driver.jdbc.values.Record;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
 

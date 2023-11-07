@@ -22,9 +22,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.Iterables;
-import org.neo4j.driver.jdbc.internal.bolt.values.Entity;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Entity;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 abstract class AbstractEntity implements Entity {
 

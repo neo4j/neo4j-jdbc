@@ -56,10 +56,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.driver.jdbc.internal.bolt.values.Record;
-import org.neo4j.driver.jdbc.internal.bolt.values.Type;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Record;
+import org.neo4j.driver.jdbc.values.Type;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

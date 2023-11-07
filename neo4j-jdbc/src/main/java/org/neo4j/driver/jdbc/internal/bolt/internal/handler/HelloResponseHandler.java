@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import io.netty.channel.Channel;
 import org.neo4j.driver.jdbc.internal.bolt.internal.connection.ChannelAttributes;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public final class HelloResponseHandler implements ResponseHandler {
 

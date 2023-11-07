@@ -29,7 +29,7 @@ import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.RunWithMetadataMessage;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Values;
 
 class RunWithMetadataMessageEncoderTests {
 

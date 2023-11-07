@@ -21,7 +21,7 @@ package org.neo4j.driver.jdbc.internal.bolt.response;
 import java.util.List;
 import java.util.Optional;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Record;
+import org.neo4j.driver.jdbc.values.Record;
 
 public interface PullResponse {
 

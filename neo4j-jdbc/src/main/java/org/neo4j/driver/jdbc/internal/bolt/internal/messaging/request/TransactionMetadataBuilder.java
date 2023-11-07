@@ -25,8 +25,8 @@ import java.util.Set;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.Iterables;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 public final class TransactionMetadataBuilder {
 

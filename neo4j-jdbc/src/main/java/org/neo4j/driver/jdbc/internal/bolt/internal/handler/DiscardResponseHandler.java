@@ -27,8 +27,8 @@ import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.driver.jdbc.internal.bolt.values.BooleanValue;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.BooleanValue;
+import org.neo4j.driver.jdbc.values.Value;
 
 public final class DiscardResponseHandler implements ResponseHandler {
 

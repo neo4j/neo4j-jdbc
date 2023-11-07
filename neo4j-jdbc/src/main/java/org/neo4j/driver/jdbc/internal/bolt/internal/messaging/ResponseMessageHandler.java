@@ -20,7 +20,7 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging;
 
 import java.util.Map;
 
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.Value;
 
 public interface ResponseMessageHandler {
 

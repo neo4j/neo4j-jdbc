@@ -30,9 +30,9 @@ import java.util.Map;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.packstream.PackOutput;
 import org.neo4j.driver.jdbc.internal.bolt.internal.packstream.PackStream;
-import org.neo4j.driver.jdbc.internal.bolt.values.IsoDuration;
-import org.neo4j.driver.jdbc.internal.bolt.values.Point;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
+import org.neo4j.driver.jdbc.values.IsoDuration;
+import org.neo4j.driver.jdbc.values.Point;
+import org.neo4j.driver.jdbc.values.Value;
 
 class CommonValuePacker implements ValuePacker {
 

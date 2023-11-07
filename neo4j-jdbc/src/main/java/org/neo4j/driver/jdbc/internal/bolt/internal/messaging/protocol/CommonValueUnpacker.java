@@ -40,13 +40,13 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValueUnpacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.packstream.PackInput;
 import org.neo4j.driver.jdbc.internal.bolt.internal.packstream.PackStream;
 import org.neo4j.driver.jdbc.internal.bolt.internal.util.Iterables;
-import org.neo4j.driver.jdbc.internal.bolt.values.Node;
-import org.neo4j.driver.jdbc.internal.bolt.values.Path;
-import org.neo4j.driver.jdbc.internal.bolt.values.Relationship;
-import org.neo4j.driver.jdbc.internal.bolt.values.Type;
-import org.neo4j.driver.jdbc.internal.bolt.values.UnsupportedDateTimeValue;
-import org.neo4j.driver.jdbc.internal.bolt.values.Value;
-import org.neo4j.driver.jdbc.internal.bolt.values.Values;
+import org.neo4j.driver.jdbc.values.Node;
+import org.neo4j.driver.jdbc.values.Path;
+import org.neo4j.driver.jdbc.values.Relationship;
+import org.neo4j.driver.jdbc.values.Type;
+import org.neo4j.driver.jdbc.values.UnsupportedDateTimeValue;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 class CommonValueUnpacker implements ValueUnpacker {
 
