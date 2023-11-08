@@ -122,10 +122,10 @@ final class ResultSetImpl implements ResultSet {
 		var commitStage = autocommit ? this.boltConnection.commit().toCompletableFuture()
 				: CompletableFuture.completedFuture(null);
 		CompletableFuture.allOf(discardFuture, commitStage).join();
+		this.closed = true;
 		if (this.statement.isCloseOnCompletion()) {
 			this.statement.close();
 		}
-		this.closed = true;
 	}
 
 	@Override

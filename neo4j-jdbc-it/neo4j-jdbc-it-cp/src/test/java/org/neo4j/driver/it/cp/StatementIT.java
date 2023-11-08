@@ -20,11 +20,11 @@ package org.neo4j.driver.it.cp;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -32,6 +32,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -52,9 +54,9 @@ class StatementIT {
 			statement.setFetchSize(5);
 			var resultSet = statement.executeQuery("UNWIND range(1, 10000) AS x RETURN x");
 			for (var i = 1; i <= 17; i++) {
-				Assertions.assertThat(resultSet.next()).isTrue();
+				assertThat(resultSet.next()).isTrue();
 				var value = getByLabel ? resultSet.getInt("x") : resultSet.getInt(1);
-				Assertions.assertThat(value).isEqualTo(i);
+				assertThat(value).isEqualTo(i);
 			}
 		}
 	}
@@ -81,7 +83,7 @@ class StatementIT {
 				var resultSet = statement
 					.executeQuery(String.format("MATCH (n:Test {testId: '%s'}) RETURN count(n)", testId));
 				resultSet.next();
-				Assertions.assertThat(resultSet.getInt(1)).isEqualTo((commit) ? 5 : 0);
+				assertThat(resultSet.getInt(1)).isEqualTo((commit) ? 5 : 0);
 			}
 		}
 	}
@@ -90,8 +92,19 @@ class StatementIT {
 	void shouldExecuteUpdate() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			var num = statement.executeUpdate("UNWIND range(1, 5) AS x CREATE ()");
-			Assertions.assertThat(num).isEqualTo(5);
+			assertThat(num).isEqualTo(5);
 		}
+	}
+
+	@Test
+	void closingOnCompletionShouldWork() throws SQLException {
+		ResultSet rs;
+		try (var connection = getConnection(); var stmt = connection.createStatement();) {
+			stmt.closeOnCompletion();
+			rs = stmt.executeQuery("MATCH (n) RETURN count(n)");
+		}
+		assertThat(rs).isNotNull();
+		assertThat(rs.isClosed()).isTrue();
 	}
 
 	private Connection getConnection() throws SQLException {
