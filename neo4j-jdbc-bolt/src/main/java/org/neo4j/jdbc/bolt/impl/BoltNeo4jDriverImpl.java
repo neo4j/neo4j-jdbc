@@ -21,6 +21,8 @@ import org.neo4j.driver.AuthToken;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Logging;
+import org.neo4j.driver.net.ServerAddress;
 import org.neo4j.jdbc.Neo4jDriver;
 
 import java.io.File;
@@ -28,11 +30,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 /**
@@ -84,12 +89,15 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
                 builder = setMaxConnectionLifetime(info, builder);
                 builder = setMaxConnectionPoolSize(info, builder);
                 builder = setMaxTransactionRetryTime(info, builder);
+                builder.withLogging(Logging.slf4j());
 
-                Config config = builder.build();
-                AuthToken authToken = getAuthToken(info);
                 Properties routingContext = getRoutingContext(boltUrl, info);
                 boltUrl = addRoutingPolicy(boltUrl, routingContext);
                 List<URI> routingUris = buildRoutingUris(boltUrl, routingContext);
+                builder = setAddressResolvers(routingUris, builder);
+
+                Config config = builder.build();
+                AuthToken authToken = getAuthToken(info);
                 driver = getDriver(routingUris, config, authToken, info);
                 driver.verifyConnectivity();
                 connection = BoltNeo4jConnectionImpl.newInstance(driver, info, url);
@@ -105,6 +113,13 @@ public abstract class BoltNeo4jDriverImpl extends Neo4jDriver {
             }
         }
         return connection;
+    }
+
+    private Config.ConfigBuilder setAddressResolvers(List<URI> routingUris, Config.ConfigBuilder builder) {
+        if (routingUris.size() <= 1) return builder;
+        return builder.withResolver(serverAddress -> routingUris.stream()
+                .map(m -> ServerAddress.of(m.getHost(), m.getPort()))
+                .collect(Collectors.toCollection(LinkedHashSet::new)));
     }
 
     protected abstract Driver getDriver(List<URI> routingUris, Config config, AuthToken authToken, Properties info) throws URISyntaxException;
