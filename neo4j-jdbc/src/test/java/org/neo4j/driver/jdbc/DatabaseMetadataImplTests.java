@@ -80,7 +80,6 @@ class DatabaseMetadataImplTests {
 
 	@Test
 	void getDriverMajorVersion() {
-
 		var databaseMetadata = newDatabaseMetadata();
 		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
 			.isThrownBy(databaseMetadata::getDriverMajorVersion)
@@ -97,16 +96,32 @@ class DatabaseMetadataImplTests {
 
 	@Test
 	void getJDBCMajorVersion() {
-
 		var databaseMetadata = newDatabaseMetadata();
 		Assertions.assertThat(databaseMetadata.getJDBCMajorVersion()).isEqualTo(4);
 	}
 
 	@Test
 	void getJDBCMinorVersion() {
-
 		var databaseMetadata = newDatabaseMetadata();
 		Assertions.assertThat(databaseMetadata.getJDBCMinorVersion()).isEqualTo(3);
+	}
+
+	@Test
+	void getAllTablesShouldErrorIfYouPassSchema() throws SQLException {
+		var url = "jdbc:neo4j://host";
+
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var props = new Properties();
+		props.put("username", "test");
+		props.put("password", "password");
+
+		var connection = driver.connect(url, props);
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", "NotNull", null, null));
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getTables(null, "NotNull", null, null));
 	}
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {

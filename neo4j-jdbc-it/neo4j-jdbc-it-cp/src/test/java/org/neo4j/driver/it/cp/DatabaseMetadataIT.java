@@ -24,9 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.driver.jdbc.Neo4jDriver;
@@ -43,17 +41,16 @@ public class DatabaseMetadataIT {
 	private Connection connection;
 
 	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer("neo4j:5.13.0-enterprise")
-		.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-		.withReuse(true);
+	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer("neo4j:5.13.0-enterprise");
 
 	@BeforeAll
-	void startNeo4j() {
+	void startNeo4j() throws SQLException {
 		this.neo4j.start();
+
 	}
 
-	@BeforeEach
-	void createConnectionAndDriver() throws SQLException {
+	@BeforeAll
+	void startDriver() throws SQLException {
 		var driver = new Neo4jDriver();
 
 		var properties = new Properties();
@@ -67,44 +64,47 @@ public class DatabaseMetadataIT {
 
 	@Test
 	void getAllProcedures() throws SQLException {
-		var results = this.connection.getMetaData().getProcedures(null, null, null);
+		try (var results = this.connection.getMetaData().getProcedures(null, null, null)) {
 
-		var resultCount = 0;
-		while (results.next()) {
-			resultCount++;
-			Assertions.assertThat(results.getString(1)).isNotNull();
+			var resultCount = 0;
+			while (results.next()) {
+				resultCount++;
+				assertThat(results.getString(1)).isNotNull();
+			}
+			assertThat(resultCount).isGreaterThan(0);
 		}
-		assertThat(resultCount).isGreaterThan(0);
 	}
 
 	@Test
 	public void getMetaDataProcedure() throws SQLException {
-		var results = this.connection.getMetaData().getProcedures(null, null, "tx.getMetaData");
-
 		var resultCount = 0;
-		while (results.next()) {
-			resultCount++;
-			assertThat(results.getString(3)).isEqualTo("tx.getMetaData");
+		try (var results = this.connection.getMetaData().getProcedures(null, null, "tx.getMetaData")) {
+
+			while (results.next()) {
+				resultCount++;
+				assertThat(results.getString(3)).isEqualTo("tx.getMetaData");
+			}
+
+			assertThat(resultCount).isEqualTo(1);
 		}
-
-		assertThat(resultCount).isEqualTo(1);
-		results.close();
-
-		results = this.connection.getMetaData().getProcedures(null, null, "tx.setMetaData");
 
 		resultCount = 0;
-		while (results.next()) {
-			resultCount++;
-			assertThat(results.getString(3)).isEqualTo("tx.setMetaData");
-		}
+		try (var results = this.connection.getMetaData().getProcedures(null, null, "tx.setMetaData")) {
 
-		assertThat(resultCount).isEqualTo(1);
+			while (results.next()) {
+				resultCount++;
+				assertThat(results.getString(3)).isEqualTo("tx.setMetaData");
+			}
+
+			assertThat(resultCount).isEqualTo(1);
+		}
 	}
 
 	@Test
 	public void passingAnUnknownCatalogMustError() throws SQLException {
+		var metaData = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> this.connection.getMetaData().getProcedures("somethingRandom", null, null));
+			.isThrownBy(() -> metaData.getProcedures("somethingRandom", null, null));
 	}
 
 	@Test
@@ -116,17 +116,22 @@ public class DatabaseMetadataIT {
 
 	@Test
 	public void afterDenyingExecutionAllProceduresAreCallableShouldFail() throws SQLException {
-		this.connection.createStatement().executeQuery("DENY EXECUTE PROCEDURE tx.getMetaData ON DBMS TO admin");
+		executeQueryWithoutResult("DENY EXECUTE PROCEDURE tx.getMetaData ON DBMS TO admin");
 		var executable = this.connection.getMetaData().allProceduresAreCallable();
 
 		assertThat(executable).isFalse();
 
-		this.connection.createStatement()
-			.executeQuery("REVOKE DENY EXECUTE PROCEDURE tx.getMetaData ON DBMS FROM admin");
+		executeQueryWithoutResult("REVOKE DENY EXECUTE PROCEDURE tx.getMetaData ON DBMS FROM admin");
 		executable = this.connection.getMetaData().allProceduresAreCallable();
 
 		assertThat(executable).isTrue();
 
+	}
+
+	void executeQueryWithoutResult(String query) throws SQLException {
+		try (var stmt = this.connection.createStatement(); var result = stmt.executeQuery(query)) {
+			result.next();
+		}
 	}
 
 	@Test
@@ -150,39 +155,85 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void testGetDatabaseProductName() throws SQLException {
+	public void testGetDatabaseProductNameShouldReturnNeo4j() throws SQLException {
 		var productName = this.connection.getMetaData().getDatabaseProductName();
 
 		assertThat(productName).isEqualTo("Neo4j Kernel-enterprise-5.13.0");
 	}
 
 	@Test
-	public void testGetDatabaseProductVersion() throws SQLException {
+	public void getDatabaseProductVersionShouldReturnTestContainerVersion() throws SQLException {
 		var productName = this.connection.getMetaData().getDatabaseProductVersion();
 
 		assertThat(productName).isEqualTo("5.13.0");
 	}
 
-	// @Test
-	// public void testColumnNamesGetAllCatalogs() throws SQLException {
-	// var catalogRs = this.connection.getMetaData().getCatalogs();
-	// assertThat(catalogRs.getMetaData().getCatalogName(1)).isEqualTo("TABLE_CAT");
-	// }
-	//
-	// @Test
-	// public void testColumnNamesGetAllProcedures() throws SQLException {
-	// var proceduresRs = this.connection.getMetaData().getProcedures(null, null, null);
-	//
-	// assertThat(proceduresRs.getMetaData().getCatalogName(1)).isEqualTo("PROCEDURE_CAT");
-	// assertThat(proceduresRs.getMetaData().getCatalogName(2)).isEqualTo("PROCEDURE_SCHEM");
-	// assertThat(proceduresRs.getMetaData().getCatalogName(3)).isEqualTo("PROCEDURE_NAME");
-	// //these should not change as are reserved for the spec
-	// assertThat(proceduresRs.getMetaData().getCatalogName(4)).isEqualTo("RESERVED_1");
-	// assertThat(proceduresRs.getMetaData().getCatalogName(5)).isEqualTo("RESERVED_2");
-	// assertThat(proceduresRs.getMetaData().getCatalogName(6)).isEqualTo("RESERVED_3");
-	//
-	// assertThat(proceduresRs.getMetaData().getCatalogName(7)).isEqualTo("REMARKS");
-	// assertThat(proceduresRs.getMetaData().getCatalogName(8)).isEqualTo("PROCEDURE_TYPE");
-	// }
+	@Test
+	public void getAllTablesShouldReturnAllLabelsOnATable() throws SQLException {
+		List<String> expectedLabels = new ArrayList<>();
+		expectedLabels.add("TestLabel1");
+		expectedLabels.add("TestLabel2");
+
+		for (String label : expectedLabels) {
+			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label));
+		}
+
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
+			while (labelsRs.next()) {
+				var labelName = labelsRs.getString(3);
+				assertThat(expectedLabels).contains(labelName);
+			}
+		}
+	}
+
+	@Test
+	public void getAllTablesShouldReturnCurrentCatalog() throws SQLException {
+		List<String> expectedLabels = new ArrayList<>();
+		expectedLabels.add("TestLabel1");
+		expectedLabels.add("TestLabel2");
+
+		for (String label : expectedLabels) {
+			executeQueryWithoutResult("Create (:%s)".formatted(label));
+		}
+
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
+			while (labelsRs.next()) {
+				var catalog = labelsRs.getString(1);
+				assertThat(catalog).isEqualTo("neo4j");
+			}
+		}
+	}
+
+	@Test
+	public void getAllTablesShouldOnlyReturnSpecifiedCatalog() throws SQLException {
+		List<String> expectedLabels = new ArrayList<>();
+		expectedLabels.add("TestLabel1");
+		expectedLabels.add("TestLabel2");
+
+		for (String label : expectedLabels) {
+			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label));
+		}
+
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, expectedLabels.get(0), null)) {
+			assertThat(labelsRs.next()).isTrue();
+			var catalog = labelsRs.getString(3);
+			assertThat(catalog).isEqualTo(expectedLabels.get(0));
+			assertThat(labelsRs.next()).isFalse();
+		}
+	}
+
+	@Test
+	public void getAllTablesShouldErrorIfYouPassGarbageToCatalog() throws SQLException {
+		var getMetadata = this.connection.getMetaData();
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> getMetadata.getTables("someRandomGarbage", null, "", new String[0]));
+	}
+
+	@Test
+	public void getAllTablesShouldErrorIfYouPassAValidCatalogButNotTheCurrentOne() throws SQLException {
+		var getMetadata = this.connection.getMetaData();
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> getMetadata.getTables("system", null, "", new String[0]));
+	}
 
 }
