@@ -149,7 +149,7 @@
 		<mockito.version>5.7.0</mockito.version>
 		<moditect-maven-plugin.version>1.1.0</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.9.28</native-maven-plugin.version>
-		<neo4j-cypher-dsl.version>2023.5.0</neo4j-cypher-dsl.version>
+		<neo4j-cypher-dsl.version>2023.8.1</neo4j-cypher-dsl.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.10.0</neo4j.version>
 		<netty.version>4.1.101.Final</netty.version>
