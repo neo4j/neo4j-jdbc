@@ -152,7 +152,7 @@
 		<neo4j-cypher-dsl.version>2023.5.0</neo4j-cypher-dsl.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.10.0</neo4j.version>
-		<netty.version>4.1.100.Final</netty.version>
+		<netty.version>4.1.101.Final</netty.version>
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
