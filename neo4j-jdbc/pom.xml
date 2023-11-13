@@ -44,6 +44,10 @@
 			<artifactId>netty-handler</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.neo4j.driver</groupId>
 			<artifactId>neo4j-jdbc-translator-spi</artifactId>
 			<version>${project.version}</version>

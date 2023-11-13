@@ -29,6 +29,7 @@ module neo4j.jdbc {
 	requires io.netty.resolver;
 	requires io.netty.transport;
 	requires neo4j.jdbc.translator.spi;
+	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies
 
 	// automatic::jdk.unsupported

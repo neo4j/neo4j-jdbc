@@ -93,6 +93,7 @@
 								<includes>
 									<include>org.neo4j.driver:neo4j-jdbc:*</include>
 									<include>org.neo4j.driver:neo4j-jdbc-translator-spi:*</include>
+									<include>org.neo4j:neo4j-cypher-dsl-schema-name-support</include>
 									<include>io.netty:*</include>
 								</includes>
 							</artifactSet>
@@ -100,6 +101,10 @@
 								<relocation>
 									<pattern>io.netty</pattern>
 									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.io.netty</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.neo4j.cypherdsl.support.schema_name</pattern>
+									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.schema_name</shadedPattern>
 								</relocation>
 							</relocations>
 							<transformers>

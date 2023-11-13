@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -105,6 +106,18 @@ class StatementIT {
 		}
 		assertThat(rs).isNotNull();
 		assertThat(rs.isClosed()).isTrue();
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			foo,`foo`,true
+			foo,foo,false
+			das ist ein test,`das ist ein test`,false
+			""")
+	void shouldQuoteIdentifier(String identifier, String expected, boolean alwaysQuote) throws SQLException {
+		try (var connection = getConnection(); var stmt = connection.createStatement()) {
+			assertThat(stmt.enquoteIdentifier(identifier, alwaysQuote)).isEqualTo(expected);
+		}
 	}
 
 	private Connection getConnection() throws SQLException {

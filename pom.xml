@@ -242,6 +242,11 @@
 				<version>${neo4j-cypher-dsl.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
+				<version>${neo4j-cypher-dsl.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-simple</artifactId>
 				<version>${slf4j.version}</version>

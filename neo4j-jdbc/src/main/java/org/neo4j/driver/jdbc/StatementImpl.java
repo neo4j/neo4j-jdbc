@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
@@ -345,6 +346,12 @@ class StatementImpl implements Statement {
 
 	protected Map<String, Object> parameters() {
 		return Collections.emptyMap();
+	}
+
+	@Override
+	public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
+		return SchemaNames.sanitize(identifier, alwaysQuote)
+			.orElseThrow(() -> new SQLException("Cannot quote identifier " + identifier));
 	}
 
 }
