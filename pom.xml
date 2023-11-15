@@ -83,7 +83,7 @@
 		<neo4j.version>4.4.10</neo4j.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<jackson.version>2.15.3</jackson.version>
-		<testcontainers.version>1.19.1</testcontainers.version>
+		<testcontainers.version>1.19.2</testcontainers.version>
 
 		<!-- Plugin version -->
 		<maven.plugin.compiler>3.11.0</maven.plugin.compiler>
