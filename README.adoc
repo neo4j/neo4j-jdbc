@@ -31,11 +31,67 @@ image:https://sonar.neo4j.ninja/api/project_badges/measure?project=neo4j-jdbc&to
 - Optionally translating SQL to Cypher
 - logging only via `java.util.logging`
 
+== Metadata
+
+=== Catalog and schema
+
+All the methods on connection level dealing out metadata and information about the available content deal in terms that are defined in the SQL standard, including catalogs and schemas.
+
+From the SQL 1992 standard (find an archived copy http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt[here]):
+
+> (4.12) Catalogs are named collections of schemas in an SQL-environment. An
+SQL-environment contains zero or more catalogs. A catalog con-
+tains one or more schemas, but always contains a schema named
+INFORMATION_SCHEMA that contains the views and domains of the
+Information Schema.
+
+We decided in https://github.com/neo4j/neo4j-jdbc/discussions/55[55] to not support catalogs at the beginning, so any metadata result set will return literal `null` when asked for the catalog of a database object.
+No metadata method does support filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
+Future developments might use catalogs to describe composite databases, in essence listing the constituents of the composite database defined in the connection.
+
+The same standard defines schemas as follows:
+
+> (4.11) An SQL-schema is a persistent descriptor that includes:
+>
+> […] the descriptor of every component of the SQL-schema.
+>
+> In this International Standard, the term "schema" is used only
+> in the sense of SQL-schema. Each component descriptor is either
+> a domain descriptor, a base table descriptor, a view descriptor,
+> an assertion descriptor, a privilege descriptor, a character set
+> descriptor, a collation descriptor, or a translation descriptor.
+> The persistent objects described by the descriptors are said to be
+> owned by or to have been created by the <authorization identifier>
+> of the schema.
+
+We report the literal name `public` as schema for any result component of a metadata result set.
+We support querying for objects in any schema, however only literal `null` or `public` will potentially produce a result.
+
+Labels will be reported as table objects with the `TABLE_TYPE` being literal `TABLE`.
+
+==== Summary
+
+* Catalog: Always `null`, trying to filter on anything non-null does not yield results
+* Schema: Always `public`, filtering on `public` and literal will yield result, anything else won't.
+* Table descriptors: Reported as `TABLE` in the `TABLE_TYPE` column.
+
+=== Labels to tables
+
+The CLG and Langstar groups speak about https://docs.google.com/document/d/1WwQ7Y_YS8e2A9v1uM8JE7uQquFkwWBgs-xiFIWQ8KFY/edit?pli=1#heading=h.yeg3e4six5xr[Node type combinations] and gravitates towards "open node type semantics" in the GQL standard.
+
+An example for their proposal can be seen https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19[here].
+
+We therefor compute node types in a similar way:
+
+* Single label nodes will map naturally to a table name, the single label will be lowercased to be the table name
+* Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically, so that it is independent of the way Neo4j will return those
+* Property sets for these Node type combinations will then be computed
+
 == TODOs
 
-- [ ] Define URL format
-- [ ] Implement service loader functionality
-- [ ] Research what parts of the Bolt protocol stack from the Java driver needs to be ported / copied
+- [x] Define URL format (See https://github.com/neo4j/neo4j-jdbc/discussions/26[26])
+- [x] Implement service loader functionality
+- [x] Research what parts of the Bolt protocol stack from the Java driver needs to be ported / copied
 - [ ] Work along the JDBC interfaces to implement piece by piece
 - [ ] Define type mappings for structured types
 - [ ] Define custom useragent and required infra
