@@ -21,7 +21,6 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.encode;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
@@ -30,6 +29,8 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.HelloMessa
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.Values;
+
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class HelloMessageEncoderTests {
 
@@ -58,8 +59,7 @@ class HelloMessageEncoderTests {
 
 	@Test
 	void shouldFailToEncodeWrongMessage() {
-		Assertions.assertThrows(IllegalArgumentException.class,
-				() -> this.encoder.encode(ResetMessage.RESET, this.packer));
+		assertThatIllegalArgumentException().isThrownBy(() -> this.encoder.encode(ResetMessage.RESET, this.packer));
 	}
 
 }

@@ -18,12 +18,13 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.encode;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.RollbackMessage;
+
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class RollbackMessageEncoderTests {
 
@@ -40,8 +41,7 @@ class RollbackMessageEncoderTests {
 
 	@Test
 	void shouldFailToEncodeWrongMessage() {
-		Assertions.assertThrows(IllegalArgumentException.class,
-				() -> this.encoder.encode(ResetMessage.RESET, this.packer));
+		assertThatIllegalArgumentException().isThrownBy(() -> this.encoder.encode(ResetMessage.RESET, this.packer));
 	}
 
 }

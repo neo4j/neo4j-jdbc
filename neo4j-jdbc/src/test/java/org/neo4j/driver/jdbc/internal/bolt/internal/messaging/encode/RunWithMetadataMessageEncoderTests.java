@@ -20,7 +20,6 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.encode;
 
 import java.util.Collections;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -30,6 +29,8 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.RunWithMetadataMessage;
 import org.neo4j.driver.jdbc.values.Values;
+
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class RunWithMetadataMessageEncoderTests {
 
@@ -54,8 +55,7 @@ class RunWithMetadataMessageEncoderTests {
 
 	@Test
 	void shouldFailToEncodeWrongMessage() {
-		Assertions.assertThrows(IllegalArgumentException.class,
-				() -> this.encoder.encode(ResetMessage.RESET, this.packer));
+		assertThatIllegalArgumentException().isThrownBy(() -> this.encoder.encode(ResetMessage.RESET, this.packer));
 	}
 
 }

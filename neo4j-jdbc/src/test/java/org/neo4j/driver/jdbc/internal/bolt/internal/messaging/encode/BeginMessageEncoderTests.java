@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -38,6 +37,8 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.BeginMessa
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.Values;
+
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class BeginMessageEncoderTests {
 
@@ -73,8 +74,7 @@ class BeginMessageEncoderTests {
 
 	@Test
 	void shouldFailToEncodeWrongMessage() {
-		Assertions.assertThrows(IllegalArgumentException.class,
-				() -> this.encoder.encode(ResetMessage.RESET, this.packer));
+		assertThatIllegalArgumentException().isThrownBy(() -> this.encoder.encode(ResetMessage.RESET, this.packer));
 	}
 
 }

@@ -20,12 +20,13 @@ package org.neo4j.driver.jdbc.internal.bolt.internal.messaging.encode;
 
 import java.util.Collections;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.LogonMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
+
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class ResetMessageEncoderTests {
 
@@ -42,8 +43,8 @@ class ResetMessageEncoderTests {
 
 	@Test
 	void shouldFailToEncodeWrongMessage() {
-		Assertions.assertThrows(IllegalArgumentException.class,
-				() -> this.encoder.encode(new LogonMessage(Collections.emptyMap()), this.packer));
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> this.encoder.encode(new LogonMessage(Collections.emptyMap()), this.packer));
 	}
 
 }
