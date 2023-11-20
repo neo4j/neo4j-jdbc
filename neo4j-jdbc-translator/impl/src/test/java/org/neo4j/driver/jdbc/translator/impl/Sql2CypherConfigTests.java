@@ -60,13 +60,14 @@ class Sql2CypherConfigTests {
 	@Test
 	void shouldParseKnowns() {
 
-		var config = Sql2CypherConfig.of(properties(Map.of("s2c.parse-name-case", ParseNameCase.LOWER.name(),
-				"s2c.renderNameCase", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true",
-				"s2c.sql-dialect", SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix",
-				"foo", "s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
-				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN")));
+		var config = Sql2CypherConfig
+			.of(properties(Map.of("s2c.parse-name-case", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.renderNameCase",
+					ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true", "s2c.sql-dialect",
+					SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix", "foo",
+					"s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
+					"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN")));
 
-		assertThat(config.getParseNameCase()).isEqualTo(ParseNameCase.LOWER);
+		assertThat(config.getParseNameCase()).isEqualTo(ParseNameCase.LOWER_IF_UNQUOTED);
 		assertThat(config.getRenderNameCase()).isEqualTo(RenderNameCase.LOWER_IF_UNQUOTED);
 		assertThat(config.isJooqDiagnosticLogging()).isTrue();
 		assertThat(config.getSqlDialect()).isEqualTo(SQLDialect.FIREBIRD);

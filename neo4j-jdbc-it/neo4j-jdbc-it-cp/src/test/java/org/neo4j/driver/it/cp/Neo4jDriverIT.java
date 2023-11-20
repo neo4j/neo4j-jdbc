@@ -83,7 +83,7 @@ public class Neo4jDriverIT {
 		assertThat(connection).isNotNull();
 		assertThat(validateConnection(connection)).isTrue();
 		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("""
-				MATCH (foobar:foobar)
+				MATCH (foobar:FooBar)
 				RETURN *""");
 	}
 

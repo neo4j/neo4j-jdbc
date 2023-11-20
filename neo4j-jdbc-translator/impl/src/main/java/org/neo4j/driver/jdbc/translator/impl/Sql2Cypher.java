@@ -22,9 +22,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -46,6 +48,7 @@ import org.jooq.SelectFieldOrAsterisk;
 import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.conf.ParseUnknownFunctions;
 import org.jooq.conf.ParseWithMetaLookups;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
@@ -67,7 +70,9 @@ import org.neo4j.cypherdsl.core.Statement;
 import org.neo4j.cypherdsl.core.StatementBuilder;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
+import org.neo4j.cypherdsl.core.SymbolicName;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
+import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
@@ -92,9 +97,15 @@ final class Sql2Cypher implements SqlTranslator {
 
 	private final Sql2CypherConfig config;
 
+	private final Configuration rendererConfig;
+
 	private Sql2Cypher(Sql2CypherConfig config) {
 
 		this.config = config;
+		this.rendererConfig = Configuration.newConfig()
+			.withPrettyPrint(this.config.isPrettyPrint())
+			.withDialect(Dialect.NEO4J_5)
+			.build();
 	}
 
 	// Unsure how thread safe this should be (wrt the node lookup table), but this here
@@ -128,6 +139,7 @@ final class Sql2Cypher implements SqlTranslator {
 			.withRenderNameCase(this.config.getRenderNameCase())
 			.withParseWithMetaLookups(ParseWithMetaLookups.IGNORE_ON_FAILURE)
 			.withDiagnosticsLogging(true)
+			.withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
 			.withParseDialect(this.config.getSqlDialect());
 
 		Optional.ofNullable(this.config.getParseNamedParamPrefix())
@@ -163,9 +175,7 @@ final class Sql2Cypher implements SqlTranslator {
 	}
 
 	private String render(Statement statement) {
-		Renderer renderer = Renderer
-			.getRenderer(this.config.isPrettyPrint() ? Configuration.prettyPrinting() : Configuration.defaultConfig());
-		return renderer.render(statement);
+		return Renderer.getRenderer(this.rendererConfig).render(statement);
 	}
 
 	Statement statement(QOM.Delete<?> d) {
@@ -277,6 +287,10 @@ final class Sql2Cypher implements SqlTranslator {
 	}
 
 	private Expression expression(Field<?> f) {
+		return expression(f, false);
+	}
+
+	private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
 		if (f instanceof Param<?> p) {
 			if (p.$inline()) {
 				return Cypher.literalOf(p.getValue());
@@ -521,6 +535,14 @@ final class Sql2Cypher implements SqlTranslator {
 		else if (f instanceof QOM.Null || f == null || f instanceof org.jooq.Null) {
 			return Cypher.literalNull();
 		}
+		else if (f instanceof QOM.Function<?> func) {
+			Function<Field<?>, Expression> asExpression = v -> expression(v, true);
+			var args = func.$args().stream().map(asExpression).toArray(Expression[]::new);
+			return Cypher.call(func.getName()).withArgs(args).asFunction();
+		}
+		else if (turnUnknownIntoNames) {
+			return Cypher.name(f.getName());
+		}
 		else {
 			throw unsupported(f);
 		}
@@ -650,7 +672,7 @@ final class Sql2Cypher implements SqlTranslator {
 		if (t instanceof QOM.Join<?> join && join.$on() instanceof QOM.Eq<?> eq) {
 
 			String relType;
-			String relSymbolicName = null;
+			SymbolicName relSymbolicName = null;
 
 			PatternElement lhs;
 			PatternElement rhs;
@@ -659,7 +681,7 @@ final class Sql2Cypher implements SqlTranslator {
 				lhs = resolveTableOrJoin(lhsJoin.$table1());
 				relType = labelOrType(lhsJoin.$table2());
 				if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
-					relSymbolicName = tableAlias.getName();
+					relSymbolicName = symbolicName(tableAlias.getName());
 				}
 			}
 			else {
@@ -695,15 +717,19 @@ final class Sql2Cypher implements SqlTranslator {
 
 		if (t instanceof TableAlias<?> ta) {
 			if (resolveTableOrJoin(ta.$aliased()) instanceof Node) {
-				return Cypher.node(labelOrType(ta.$aliased())).named(ta.$alias().last());
+				return Cypher.node(labelOrType(ta.$aliased())).named(symbolicName(ta.$alias().last()));
 			}
 			else {
 				throw unsupported(ta);
 			}
 		}
 		else {
-			return Cypher.node(labelOrType(t)).named(t.getName());
+			return Cypher.node(labelOrType(t)).named(symbolicName(t.getName()));
 		}
+	}
+
+	private SymbolicName symbolicName(String value) {
+		return Cypher.name(value.toLowerCase(Locale.ROOT));
 	}
 
 	private String labelOrType(Table<?> tableOrAlias) {
@@ -717,7 +743,13 @@ final class Sql2Cypher implements SqlTranslator {
 			return config.getOrDefault("label", t.getName());
 		}
 
-		return t.getName();
+		return this.config.getTableToLabelMappings()
+			.entrySet()
+			.stream()
+			.filter(e -> e.getKey().equalsIgnoreCase(t.getName()))
+			.findFirst()
+			.map(Map.Entry::getValue)
+			.orElseGet(t::getName);
 	}
 
 	private String relationshipTypeName(Field<?> lhsJoinColumn) {

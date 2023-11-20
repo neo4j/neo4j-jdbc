@@ -210,8 +210,7 @@ public final class Sql2CypherConfig {
 		private String parseNamedParamPrefix;
 
 		private Builder() {
-			this(ParseNameCase.LOWER_IF_UNQUOTED, RenderNameCase.LOWER, false, Map.of(), Map.of(), SQLDialect.DEFAULT,
-					true, null);
+			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null);
 		}
 
 		private Builder(Sql2CypherConfig config) {

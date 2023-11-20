@@ -41,6 +41,8 @@ import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.neo4j.cypherdsl.parser.CypherParser;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +58,19 @@ class Sql2CypherTests {
 		var translator = Sql2Cypher
 			.with(Sql2CypherConfig.builder().withParseNamedParamPrefix("$").withPrettyPrint(false).build());
 		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($1)"))
-			.isEqualTo("CREATE (movie:`movie` {title: $1})");
+			.isEqualTo("CREATE (movie:`Movie` {title: $1})");
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|", textBlock = """
+			SELECT id(n) FROM Movies n|MATCH (n:`Movies`) RETURN id(n)
+			SELECT elementId(n) FROM Movies n|MATCH (n:`Movies`) RETURN elementId(n)
+			SELECT foobar('const', bazbar(:1))|RETURN foobar('const', bazbar($1))
+			""")
+	void parserShallNotFailOnUnknownFunctions(String in, String expected) {
+
+		var translator = Sql2Cypher.with(Sql2CypherConfig.builder().withPrettyPrint(false).build());
+		assertThat(translator.translate(in)).isEqualTo(expected);
 	}
 
 	static List<TestData> getTestData(Path path) {
