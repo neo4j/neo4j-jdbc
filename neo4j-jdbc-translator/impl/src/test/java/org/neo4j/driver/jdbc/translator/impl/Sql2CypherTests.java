@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -115,6 +116,36 @@ class Sql2CypherTests {
 		assertThat(Sql2Cypher.with(
 				Sql2CypherConfig.builder().withPrettyPrint(prettyPrint).withTableToLabelMappings(tableMappings).build())
 			.translate(sql)).isEqualTo(expected);
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			,,MATCH (movies:movies)$RETURN *
+			true,,MATCH (movies:movies)$RETURN *
+			false,,MATCH (movies:`movies`) RETURN *
+			,true,MATCH (movies:`movies`)$RETURN *
+			,false,MATCH (movies:movies)$RETURN *
+			true,false,MATCH (movies:movies)$RETURN *
+			true,true,MATCH (movies:`movies`)$RETURN *
+			false,false,MATCH (movies:movies)$RETURN *
+			false,true,MATCH (movies:`movies`)$RETURN *
+			""")
+	void escapingShouldWork(Boolean prettyPrint, Boolean alwaysEscapeNames, String expected) {
+		var properties = new Properties();
+		if (prettyPrint != null) {
+			properties.put("s2c.prettyPrint", prettyPrint.toString());
+		}
+		if (alwaysEscapeNames != null) {
+			properties.put("s2c.alwaysEscapeNames", alwaysEscapeNames.toString());
+		}
+		var cfg = Sql2CypherConfig.of(properties);
+		var defaultCfg = Sql2CypherConfig.defaultConfig();
+		assertThat(cfg.isPrettyPrint()).isEqualTo((prettyPrint != null) ? prettyPrint : defaultCfg.isPrettyPrint());
+		assertThat(cfg.isAlwaysEscapeNames())
+			.isEqualTo((alwaysEscapeNames != null) ? alwaysEscapeNames : !cfg.isPrettyPrint());
+		var sql = "Select * from movies";
+		var cypher = Sql2Cypher.with(cfg).translate(sql);
+		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));
 	}
 
 	private static class TestDataExtractor extends Treeprocessor {

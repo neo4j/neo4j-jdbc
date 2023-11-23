@@ -79,6 +79,7 @@ public final class Sql2CypherConfig {
 				case "joinColumnsToTypeMappings" -> builder.withJoinColumnsToTypeMappings(buildMap(v));
 				case "sqlDialect" -> builder.withSqlDialect(SQLDialect.valueOf(v));
 				case "prettyPrint" -> builder.withPrettyPrint(Boolean.parseBoolean(v));
+				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(Boolean.parseBoolean(v));
 				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(v);
 				default -> {
 					Sql2Cypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
@@ -134,6 +135,8 @@ public final class Sql2CypherConfig {
 
 	private final boolean prettyPrint;
 
+	private final Boolean alwaysEscapeNames;
+
 	private final String parseNamedParamPrefix;
 
 	private Sql2CypherConfig(Builder builder) {
@@ -145,6 +148,7 @@ public final class Sql2CypherConfig {
 		this.joinColumnsToTypeMappings = builder.joinColumnsToTypeMappings;
 		this.sqlDialect = builder.sqlDialect;
 		this.prettyPrint = builder.prettyPrint;
+		this.alwaysEscapeNames = builder.alwaysEscapeNames();
 		this.parseNamedParamPrefix = builder.parseNamedParamPrefix;
 	}
 
@@ -184,6 +188,10 @@ public final class Sql2CypherConfig {
 		return this.prettyPrint;
 	}
 
+	public boolean isAlwaysEscapeNames() {
+		return this.alwaysEscapeNames;
+	}
+
 	public String getParseNamedParamPrefix() {
 		return this.parseNamedParamPrefix;
 	}
@@ -209,19 +217,22 @@ public final class Sql2CypherConfig {
 
 		private String parseNamedParamPrefix;
 
+		private Boolean alwaysEscapeNames;
+
 		private Builder() {
-			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null);
+			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null,
+					null);
 		}
 
 		private Builder(Sql2CypherConfig config) {
 			this(config.parseNameCase, config.renderNameCase, config.jooqDiagnosticLogging, config.tableToLabelMappings,
-					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint,
+					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint, config.alwaysEscapeNames,
 					config.parseNamedParamPrefix);
 		}
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
-				SQLDialect sqlDialect, boolean prettyPrint, String parseNamedParamPrefix) {
+				SQLDialect sqlDialect, boolean prettyPrint, Boolean alwaysEscapeNames, String parseNamedParamPrefix) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
 			this.jooqDiagnosticLogging = jooqDiagnosticLogging;
@@ -229,6 +240,7 @@ public final class Sql2CypherConfig {
 			this.joinColumnsToTypeMappings = joinColumnsToTypeMappings;
 			this.sqlDialect = sqlDialect;
 			this.prettyPrint = prettyPrint;
+			this.alwaysEscapeNames = alwaysEscapeNames;
 			this.parseNamedParamPrefix = parseNamedParamPrefix;
 		}
 
@@ -315,11 +327,25 @@ public final class Sql2CypherConfig {
 		}
 
 		/**
+		 * Configure whether names should be always escaped.
+		 * @param alwaysEscapeNames use {@literal true} to always escape names
+		 * @return this builder
+		 */
+		public Builder withAlwaysEscapeNames(boolean alwaysEscapeNames) {
+			this.alwaysEscapeNames = alwaysEscapeNames;
+			return this;
+		}
+
+		/**
 		 * Finishes building a new configuration. The builder is safe to reuse afterward.
 		 * @return a new immutable configuration
 		 */
 		public Sql2CypherConfig build() {
 			return new Sql2CypherConfig(this);
+		}
+
+		private boolean alwaysEscapeNames() {
+			return (this.alwaysEscapeNames != null) ? this.alwaysEscapeNames : !this.prettyPrint;
 		}
 
 	}

@@ -104,6 +104,7 @@ final class Sql2Cypher implements SqlTranslator {
 		this.config = config;
 		this.rendererConfig = Configuration.newConfig()
 			.withPrettyPrint(this.config.isPrettyPrint())
+			.alwaysEscapeNames(this.config.isAlwaysEscapeNames())
 			.withDialect(Dialect.NEO4J_5)
 			.build();
 	}
