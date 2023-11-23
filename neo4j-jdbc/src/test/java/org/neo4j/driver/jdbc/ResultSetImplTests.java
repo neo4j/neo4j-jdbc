@@ -1177,7 +1177,7 @@ class ResultSetImplTests {
 		var pullResponse = mock(PullResponse.class);
 		given(pullResponse.records()).willReturn(List.of(boltRecord));
 
-		return new ResultSetImpl(statement, runResponse, pullResponse, 1000);
+		return new ResultSetImpl(statement, runResponse, pullResponse, 1000, 0);
 	}
 
 	@FunctionalInterface

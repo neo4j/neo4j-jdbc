@@ -70,6 +70,8 @@ final class ResultSetImpl implements ResultSet {
 
 	private int fetchSize;
 
+	private int remainingRowAllowance;
+
 	private Iterator<Record> recordsBatchIterator;
 
 	private Record currentRecord;
@@ -78,12 +80,14 @@ final class ResultSetImpl implements ResultSet {
 
 	private boolean closed;
 
-	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize) {
+	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize,
+			int maxRowLimit) {
 		this.statement = Objects.requireNonNull(statement);
 		this.boltConnection = Objects.requireNonNull(this.statement.getBoltConnection());
 		this.runResponse = Objects.requireNonNull(runResponse);
 		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
 		this.fetchSize = (fetchSize > 0) ? fetchSize : StatementImpl.DEFAULT_FETCH_SIZE;
+		this.remainingRowAllowance = (maxRowLimit > 0) ? maxRowLimit : -1;
 		var recordsBatch = batchPullResponse.records();
 		this.recordsBatchIterator = recordsBatch.iterator();
 		this.keys = recordsBatch.isEmpty() ? Collections.emptyList() : recordsBatch.get(0).keys();
@@ -94,12 +98,16 @@ final class ResultSetImpl implements ResultSet {
 		if (this.closed) {
 			throw new SQLException("This result set is closed.");
 		}
+		if (this.remainingRowAllowance == 0) {
+			return false;
+		}
 		if (this.recordsBatchIterator.hasNext()) {
 			this.currentRecord = this.recordsBatchIterator.next();
+			decrementRemainingRowAllowance();
 			return true;
 		}
 		if (this.batchPullResponse.hasMore()) {
-			this.batchPullResponse = this.boltConnection.pull(this.runResponse, this.fetchSize)
+			this.batchPullResponse = this.boltConnection.pull(this.runResponse, calculateFetchSize())
 				.toCompletableFuture()
 				.join();
 			this.recordsBatchIterator = this.batchPullResponse.records().iterator();
@@ -1131,6 +1139,16 @@ final class ResultSetImpl implements ResultSet {
 		assertColumnLabelIsPresent(columnLabel);
 		this.value = this.currentRecord.get(columnLabel);
 		return valueMapper.map(this.value);
+	}
+
+	private int calculateFetchSize() {
+		return (this.remainingRowAllowance > 0) ? Math.min(this.remainingRowAllowance, this.fetchSize) : this.fetchSize;
+	}
+
+	private void decrementRemainingRowAllowance() {
+		if (this.remainingRowAllowance > 0) {
+			this.remainingRowAllowance--;
+		}
 	}
 
 	private static String mapToString(Value value) throws SQLException {
