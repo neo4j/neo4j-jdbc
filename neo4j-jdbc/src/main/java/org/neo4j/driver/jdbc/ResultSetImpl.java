@@ -66,6 +66,8 @@ final class ResultSetImpl implements ResultSet {
 
 	private final List<String> keys;
 
+	private final int maxFieldSize;
+
 	private PullResponse batchPullResponse;
 
 	private int fetchSize;
@@ -81,7 +83,7 @@ final class ResultSetImpl implements ResultSet {
 	private boolean closed;
 
 	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize,
-			int maxRowLimit) {
+			int maxRowLimit, int maxFieldSize) {
 		this.statement = Objects.requireNonNull(statement);
 		this.boltConnection = Objects.requireNonNull(this.statement.getBoltConnection());
 		this.runResponse = Objects.requireNonNull(runResponse);
@@ -91,6 +93,7 @@ final class ResultSetImpl implements ResultSet {
 		var recordsBatch = batchPullResponse.records();
 		this.recordsBatchIterator = recordsBatch.iterator();
 		this.keys = recordsBatch.isEmpty() ? Collections.emptyList() : recordsBatch.get(0).keys();
+		this.maxFieldSize = maxFieldSize;
 	}
 
 	@Override
@@ -147,7 +150,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public String getString(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToString);
+		return getValueByColumnIndex(columnIndex, value -> mapToString(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -193,7 +196,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public byte[] getBytes(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBytes);
+		return getValueByColumnIndex(columnIndex, value -> mapToBytes(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -213,7 +216,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getAsciiStream(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToAsciiStream);
+		return getValueByColumnIndex(columnIndex, value -> mapToAsciiStream(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -224,12 +227,12 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBinaryStream);
+		return getValueByColumnIndex(columnIndex, value -> mapToBinaryStream(value, this.maxFieldSize));
 	}
 
 	@Override
 	public String getString(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToString);
+		return getValueByColumnLabel(columnLabel, value -> mapToString(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -275,7 +278,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public byte[] getBytes(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBytes);
+		return getValueByColumnLabel(columnLabel, value -> mapToBytes(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -295,7 +298,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getAsciiStream(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToAsciiStream);
+		return getValueByColumnLabel(columnLabel, value -> mapToAsciiStream(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -306,7 +309,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getBinaryStream(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBinaryStream);
+		return getValueByColumnLabel(columnLabel, value -> mapToBinaryStream(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -332,12 +335,12 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, Value::asObject);
+		return getValueByColumnIndex(columnIndex, value -> mapToObject(value, this.maxFieldSize));
 	}
 
 	@Override
 	public Object getObject(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, Value::asObject);
+		return getValueByColumnLabel(columnLabel, value -> mapToObject(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -352,12 +355,12 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToReader);
+		return getValueByColumnIndex(columnIndex, value -> mapToReader(value, this.maxFieldSize));
 	}
 
 	@Override
 	public Reader getCharacterStream(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToReader);
+		return getValueByColumnLabel(columnLabel, value -> mapToReader(value, this.maxFieldSize));
 	}
 
 	@Override
@@ -1151,9 +1154,9 @@ final class ResultSetImpl implements ResultSet {
 		}
 	}
 
-	private static String mapToString(Value value) throws SQLException {
+	private static String mapToString(Value value, int maxFieldSize) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
-			return value.asString();
+			return truncate(value.asString(), maxFieldSize);
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
@@ -1272,12 +1275,12 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to double.", value.type()));
 	}
 
-	private static byte[] mapToBytes(Value value) throws SQLException {
+	private static byte[] mapToBytes(Value value, int maxFieldSize) throws SQLException {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
 		if (Type.BYTES.isTypeOf(value)) {
-			return value.asByteArray();
+			return truncate(value.asByteArray(), maxFieldSize);
 		}
 		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
 	}
@@ -1342,9 +1345,9 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
 	}
 
-	private static Reader mapToReader(Value value) throws SQLException {
+	private static Reader mapToReader(Value value, int maxFieldSize) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
-			return new StringReader(value.asString());
+			return new StringReader(truncate(value.asString(), maxFieldSize));
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
@@ -1365,9 +1368,10 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to BigDecimal.", value.type()));
 	}
 
-	private static InputStream mapToAsciiStream(Value value) throws SQLException {
+	private static InputStream mapToAsciiStream(Value value, int maxFieldSize) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
-			return new ByteArrayInputStream(value.asString().getBytes(StandardCharsets.US_ASCII));
+			return new ByteArrayInputStream(
+					truncate(value.asString(), maxFieldSize).getBytes(StandardCharsets.US_ASCII));
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
@@ -1375,14 +1379,44 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to InputStream.", value.type()));
 	}
 
-	private static InputStream mapToBinaryStream(Value value) throws SQLException {
+	private static InputStream mapToBinaryStream(Value value, int maxFieldSize) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
-			return new ByteArrayInputStream(value.asString().getBytes());
+			return new ByteArrayInputStream(truncate(value.asString(), maxFieldSize).getBytes());
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to InputStream.", value.type()));
+	}
+
+	private static Object mapToObject(Value value, int maxFieldSize) {
+		if (Type.STRING.isTypeOf(value)) {
+			return truncate(value.asString(), maxFieldSize);
+		}
+		if (Type.BYTES.isTypeOf(value)) {
+			return truncate(value.asByteArray(), maxFieldSize);
+		}
+		return value.asObject();
+	}
+
+	private static String truncate(String string, int limit) {
+		if (limit > 0) {
+			var bytes = string.getBytes(StandardCharsets.UTF_8);
+			if (bytes.length > limit) {
+				string = new String(truncateBytes(bytes, limit), StandardCharsets.UTF_8);
+			}
+		}
+		return string;
+	}
+
+	private static byte[] truncate(byte[] bytes, int limit) {
+		return (limit > 0 && bytes.length > limit) ? truncateBytes(bytes, limit) : bytes;
+	}
+
+	private static byte[] truncateBytes(byte[] bytes, int limit) {
+		var truncatedBytes = new byte[limit];
+		System.arraycopy(bytes, 0, truncatedBytes, 0, limit);
+		return truncatedBytes;
 	}
 
 	@FunctionalInterface

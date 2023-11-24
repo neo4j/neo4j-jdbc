@@ -55,6 +55,8 @@ class StatementImpl implements Statement {
 
 	private int maxRows = 0;
 
+	private int maxFieldSize = 0;
+
 	private ResultSet resultSet;
 
 	private int queryTimeout;
@@ -97,7 +99,8 @@ class StatementImpl implements Statement {
 			this.boltConnection.reset(true).toCompletableFuture().join();
 			throw new SQLTimeoutException("Query timeout has been exceeded");
 		}
-		this.resultSet = new ResultSetImpl(this, runFuture.join(), pullResponse, this.fetchSize, this.maxRows);
+		this.resultSet = new ResultSetImpl(this, runFuture.join(), pullResponse, this.fetchSize, this.maxRows,
+				this.maxFieldSize);
 		return this.resultSet;
 	}
 
@@ -135,13 +138,16 @@ class StatementImpl implements Statement {
 	}
 
 	@Override
-	public int getMaxFieldSize() throws SQLException {
-		return 0;
+	public int getMaxFieldSize() {
+		return this.maxFieldSize;
 	}
 
 	@Override
 	public void setMaxFieldSize(int max) throws SQLException {
-
+		if (max < 0) {
+			throw new SQLException("Max field size can not be negative.");
+		}
+		this.maxFieldSize = max;
 	}
 
 	@Override

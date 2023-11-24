@@ -79,7 +79,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetString(Value value, VerificationLogic<String> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -118,7 +118,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetBoolean(Value value, VerificationLogic<Boolean> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -202,7 +202,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetByte(Value value, VerificationLogic<Byte> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -247,7 +247,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetShort(Value value, VerificationLogic<Short> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -292,7 +292,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetInt(Value value, VerificationLogic<Integer> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -337,7 +337,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetLong(Value value, VerificationLogic<Long> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -376,7 +376,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetFloat(Value value, VerificationLogic<Float> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -421,7 +421,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetDouble(Value value, VerificationLogic<Double> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -460,7 +460,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetBytes(Value value, VerificationLogic<byte[]> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -496,7 +496,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetDate(Value value, VerificationLogic<Date> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -544,7 +544,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetDateWithCalendar(Value value, VerificationLogic<Date> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -593,7 +593,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetTime(Value value, VerificationLogic<Time> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -641,7 +641,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetTimeWithCalendar(Value value, VerificationLogic<Time> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -690,7 +690,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetTimestamp(Value value, VerificationLogic<Timestamp> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -740,7 +740,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetTimestampWithCalendar(Value value, VerificationLogic<Timestamp> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -791,7 +791,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetCharacterStream(Value value, VerificationLogic<Reader> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -827,7 +827,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetBigDecimal(Value value, VerificationLogic<BigDecimal> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -865,7 +865,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetAsciiStream(Value value, VerificationLogic<InputStream> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -908,7 +908,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetBinaryStream(Value value, VerificationLogic<InputStream> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -950,7 +950,7 @@ class ResultSetImplTests {
 	void shouldProcessValueOnGetObject(Value value, VerificationLogic<Object> verificationLogic, boolean indexAccess)
 			throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 
 		// when & then
@@ -1050,7 +1050,7 @@ class ResultSetImplTests {
 	@Test
 	void shouldThrowOnWasNullWhenClosed() throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value((Object) null));
+		this.resultSet = setupWithValue(Values.value((Object) null), 0);
 		this.resultSet.close();
 
 		// when & then
@@ -1060,7 +1060,7 @@ class ResultSetImplTests {
 	@Test
 	void shouldThrowOnWasNullWhenNotReadFirst() throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value((Object) null));
+		this.resultSet = setupWithValue(Values.value((Object) null), 0);
 
 		// when & then
 		assertThatThrownBy(() -> this.resultSet.wasNull()).isInstanceOf(SQLException.class);
@@ -1070,7 +1070,7 @@ class ResultSetImplTests {
 	@MethodSource("getWasNullArgs")
 	void shouldHandleWasNull(Value value) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(value);
+		this.resultSet = setupWithValue(value, 0);
 		this.resultSet.next();
 		this.resultSet.getObject(1);
 
@@ -1087,7 +1087,7 @@ class ResultSetImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value(1));
+		this.resultSet = setupWithValue(Values.value(1), 0);
 
 		// when & then
 		if (shouldUnwrap) {
@@ -1103,7 +1103,7 @@ class ResultSetImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldSomethinhg(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value(1));
+		this.resultSet = setupWithValue(Values.value(1), 0);
 
 		// when
 		var wrapperFor = this.resultSet.isWrapperFor(cls);
@@ -1122,7 +1122,7 @@ class ResultSetImplTests {
 	@ValueSource(strings = { LABEL, "nonexistent" })
 	void shouldFindColumn(String label) throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value(1));
+		this.resultSet = setupWithValue(Values.value(1), 0);
 		var exists = LABEL.equals(label);
 
 		// when & then
@@ -1138,7 +1138,7 @@ class ResultSetImplTests {
 	@Test
 	void shouldReturnNullOnGetWarnings() throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value(1));
+		this.resultSet = setupWithValue(Values.value(1), 0);
 
 		// when
 		var warnings = this.resultSet.getWarnings();
@@ -1150,7 +1150,7 @@ class ResultSetImplTests {
 	@Test
 	void shouldReturnSuccessfullyOnClearWarnings() throws SQLException {
 		// given
-		this.resultSet = setupWithValue(Values.value(1));
+		this.resultSet = setupWithValue(Values.value(1), 0);
 
 		// when & then
 		this.resultSet.clearWarnings();
@@ -1161,7 +1161,213 @@ class ResultSetImplTests {
 				Arguments.of(Stream.concat(Arrays.stream(arguments.get()), Stream.of(false)).toArray()));
 	}
 
-	private ResultSet setupWithValue(Value expectedValue) throws SQLException {
+	@ParameterizedTest
+	@MethodSource("shouldTruncateOnGetStringArgs")
+	void shouldTruncateOnGetString(Value value, int maxFieldSize, VerificationLogic<String> verificationLogic,
+			boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic.run(() -> indexAccess ? this.resultSet.getString(INDEX) : this.resultSet.getString(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateOnGetStringArgs() {
+		return Stream
+			.of(Arguments.of(Values.value("12345678"), 1,
+					Named.<VerificationLogic<String>>of("truncates to 1",
+							supplier -> assertThat(supplier.get()).isEqualTo("1"))),
+					Arguments.of(Values.value("12345678"), 5,
+							Named.<VerificationLogic<String>>of("truncates to 5",
+									supplier -> assertThat(supplier.get()).isEqualTo("12345"))),
+					Arguments.of(Values.value("12345678"), 8,
+							Named.<VerificationLogic<String>>of("truncates to 8",
+									supplier -> assertThat(supplier.get()).isEqualTo("12345678"))),
+					Arguments.of(Values.value("12345678"), 0,
+							Named.<VerificationLogic<String>>of("does not truncate",
+									supplier -> assertThat(supplier.get()).isEqualTo("12345678"))))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("shouldTruncateStringOnGetObjectArgs")
+	void shouldTruncateOnGetObject(Value value, int maxFieldSize, VerificationLogic<Object> verificationLogic,
+			boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic.run(() -> indexAccess ? this.resultSet.getObject(INDEX) : this.resultSet.getObject(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateStringOnGetObjectArgs() {
+		return Stream
+			.of(Arguments.of(Values.value("12345678"), 1,
+					Named.<VerificationLogic<Object>>of("truncates to 1",
+							supplier -> assertThat(supplier.get()).isEqualTo("1"))),
+					Arguments.of(Values.value("12345678"), 5,
+							Named.<VerificationLogic<Object>>of("truncates to 5",
+									supplier -> assertThat(supplier.get()).isEqualTo("12345"))),
+					Arguments.of(Values.value("12345678"), 8,
+							Named.<VerificationLogic<Object>>of("truncates to 8",
+									supplier -> assertThat(supplier.get()).isEqualTo("12345678"))),
+					Arguments.of(Values.value("12345678"), 0,
+							Named.<VerificationLogic<Object>>of("does not truncate",
+									supplier -> assertThat(supplier.get()).isEqualTo("12345678"))))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("shouldTruncateOnGetBytesArgs")
+	void shouldTruncateOnGetBytes(Value value, int maxFieldSize, VerificationLogic<byte[]> verificationLogic,
+			boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic.run(() -> indexAccess ? this.resultSet.getBytes(INDEX) : this.resultSet.getBytes(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateOnGetBytesArgs() {
+		return Stream
+			.of(Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 1,
+					Named.<VerificationLogic<byte[]>>of("truncates to 1",
+							supplier -> assertThat(supplier.get()).isEqualTo(new byte[] { 1 }))),
+					Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 5,
+							Named.<VerificationLogic<byte[]>>of("truncates to 5",
+									supplier -> assertThat(supplier.get()).isEqualTo(new byte[] { 1, 2, 3, 4, 5 }))),
+					Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 8,
+							Named.<VerificationLogic<byte[]>>of("truncates to 8",
+									supplier -> assertThat(supplier.get())
+										.isEqualTo(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }))),
+					Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 0,
+							Named.<VerificationLogic<byte[]>>of("does not truncate",
+									supplier -> assertThat(supplier.get())
+										.isEqualTo(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }))))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("shouldTruncateBytesOnGetObjectArgs")
+	void shouldTruncateBytesOnGetBytes(Value value, int maxFieldSize, VerificationLogic<Object> verificationLogic,
+			boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic.run(() -> indexAccess ? this.resultSet.getObject(INDEX) : this.resultSet.getObject(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateBytesOnGetObjectArgs() {
+		return Stream
+			.of(Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 1,
+					Named.<VerificationLogic<Object>>of("truncates to 1",
+							supplier -> assertThat(supplier.get()).isEqualTo(new byte[] { 1 }))),
+					Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 5,
+							Named.<VerificationLogic<Object>>of("truncates to 5",
+									supplier -> assertThat(supplier.get()).isEqualTo(new byte[] { 1, 2, 3, 4, 5 }))),
+					Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 8,
+							Named.<VerificationLogic<Object>>of("truncates to 8",
+									supplier -> assertThat(supplier.get())
+										.isEqualTo(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }))),
+					Arguments.of(Values.value(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }), 0,
+							Named.<VerificationLogic<Object>>of("does not truncate",
+									supplier -> assertThat(supplier.get())
+										.isEqualTo(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }))))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("shouldTruncateOnGetAsciiStreamArgs")
+	void shouldTruncateOnGetAsciiStream(Value value, int maxFieldSize, VerificationLogic<InputStream> verificationLogic,
+			boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic
+			.run(() -> indexAccess ? this.resultSet.getAsciiStream(INDEX) : this.resultSet.getAsciiStream(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateOnGetAsciiStreamArgs() {
+		return Stream.of(Arguments.of(Values.value("12345678"), 1,
+				Named.<VerificationLogic<InputStream>>of("verify returns InputStream", supplier -> {
+					String value;
+					try {
+						value = new String((new BufferedInputStream(supplier.get()).readAllBytes()),
+								StandardCharsets.US_ASCII);
+					}
+					catch (IOException ex) {
+						throw new RuntimeException(ex);
+					}
+					assertThat(value).isEqualTo("1");
+				})))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("shouldTruncateOnGetBinaryStreamArgs")
+	void shouldTruncateOnGetBinaryStream(Value value, int maxFieldSize,
+			VerificationLogic<InputStream> verificationLogic, boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic
+			.run(() -> indexAccess ? this.resultSet.getAsciiStream(INDEX) : this.resultSet.getAsciiStream(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateOnGetBinaryStreamArgs() {
+		return Stream.of(Arguments.of(Values.value("12345678"), 1,
+				Named.<VerificationLogic<InputStream>>of("verify returns InputStream", supplier -> {
+					byte[] value;
+					try {
+						value = new BufferedInputStream(supplier.get()).readAllBytes();
+					}
+					catch (IOException ex) {
+						throw new RuntimeException(ex);
+					}
+					assertThat(Arrays.equals("1".getBytes(), value)).isTrue();
+				})))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("shouldTruncateOnGetCharacterStreamArgs")
+	void shouldTruncateOnGetCharacterStream(Value value, int maxFieldSize, VerificationLogic<Reader> verificationLogic,
+			boolean indexAccess) throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, maxFieldSize);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic.run(() -> indexAccess ? this.resultSet.getCharacterStream(INDEX)
+				: this.resultSet.getCharacterStream(LABEL));
+	}
+
+	private static Stream<Arguments> shouldTruncateOnGetCharacterStreamArgs() {
+		return Stream.of(Arguments.of(Values.value("12345678"), 1,
+				Named.<VerificationLogic<Reader>>of("verify returns Reader", supplier -> {
+					var value = new BufferedReader(supplier.get()).lines().collect(Collectors.joining());
+					assertThat(value).isEqualTo("1");
+				})))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	private ResultSet setupWithValue(Value expectedValue, int maxFieldSize) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
 		var statement = mock(StatementImpl.class);
 		given(statement.getBoltConnection()).willReturn(boltConnection);
@@ -1177,7 +1383,7 @@ class ResultSetImplTests {
 		var pullResponse = mock(PullResponse.class);
 		given(pullResponse.records()).willReturn(List.of(boltRecord));
 
-		return new ResultSetImpl(statement, runResponse, pullResponse, 1000, 0);
+		return new ResultSetImpl(statement, runResponse, pullResponse, 1000, 0, maxFieldSize);
 	}
 
 	@FunctionalInterface
