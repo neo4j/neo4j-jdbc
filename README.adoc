@@ -42,14 +42,7 @@ The previous JDBC driver for Neo4j 2.x was moved to the https://github.com/neo4j
 |===
 |Neo4j-JDBC | Neo4j version | Neo4j Driver | Java | URI Schemes | Temporal and Spatial
 
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/3.5.2[3.5.2]
-|3.5.x
-|1.7.5
-|1.8
-|http, bolt, bolt+routing
-|yes
-
-|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.9[4.0.9]
+|https://github.com/neo4j-contrib/neo4j-jdbc/releases/tag/4.0.10[4.0.10]
 |3.5.x - 4.x
 |4.4.x
 |1.8
@@ -104,10 +97,8 @@ org.neo4j:neo4j-jdbc-driver:{neo4j-jdbc-version}
 .Run Query
 [source,java]
 ----
-// Connecting
 try (Connection connection = DriverManager.getConnection("jdbc:neo4j:bolt://localhost", "neo4j", password);
-    // Querying
-     PreparedStatement stmt = connection.prepareStatement("MATCH (u:User)-[:FRIEND]-(f:User) WHERE u.name = $0 RETURN f.name, f.age")) {
+     PreparedStatement stmt = connection.prepareStatement("MATCH (u:User {name: $0})-[:FRIEND]-(f:User) RETURN f.name, f.age")) {
      
     stmt.setString(0, "John");
     
