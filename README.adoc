@@ -1,5 +1,5 @@
 == Overview: Neo4j JDBC Driver
-:neo4j-jdbc-version: 4.0.2
+:neo4j-jdbc-version: 4.0.10
 
 image::https://github.com/neo4j-contrib/neo4j-jdbc/workflows/CI/badge.svg?branch=4.0[CI]
 
