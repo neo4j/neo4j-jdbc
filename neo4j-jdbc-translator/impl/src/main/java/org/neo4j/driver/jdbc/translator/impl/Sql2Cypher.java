@@ -59,7 +59,6 @@ import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.ExposesRelationships;
 import org.neo4j.cypherdsl.core.Expression;
-import org.neo4j.cypherdsl.core.Functions;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.Relationship;
@@ -336,117 +335,117 @@ final class Sql2Cypher implements SqlTranslator {
 
 		// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/
 		else if (f instanceof QOM.Abs<?> e) {
-			return Functions.abs(expression(e.$arg1()));
+			return Cypher.abs(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Ceil<?> e) {
-			return Functions.ceil(expression(e.$arg1()));
+			return Cypher.ceil(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Floor<?> e) {
-			return Functions.floor(expression(e.$arg1()));
+			return Cypher.floor(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Round<?> e) {
 			if (e.$arg2() == null) {
-				return Functions.round(expression(e.$arg1()));
+				return Cypher.round(expression(e.$arg1()));
 			}
 			else {
-				return Functions.round(expression(e.$arg1()), expression(e.$arg2()));
+				return Cypher.round(expression(e.$arg1()), expression(e.$arg2()));
 			}
 		}
 		else if (f instanceof QOM.Sign e) {
-			return Functions.sign(expression(e.$arg1()));
+			return Cypher.sign(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Rand) {
-			return Functions.rand();
+			return Cypher.rand();
 		}
 
 		// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/
 		else if (f instanceof QOM.Euler) {
-			return Functions.e();
+			return Cypher.e();
 		}
 		else if (f instanceof QOM.Exp e) {
-			return Functions.exp(expression(e.$arg1()));
+			return Cypher.exp(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Ln e) {
-			return Functions.log(expression(e.$arg1()));
+			return Cypher.log(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Log e) {
-			return Functions.log(expression(e.$arg1())).divide(Functions.log(expression(e.$arg2())));
+			return Cypher.log(expression(e.$arg1())).divide(Cypher.log(expression(e.$arg2())));
 		}
 		else if (f instanceof QOM.Log10 e) {
-			return Functions.log10(expression(e.$arg1()));
+			return Cypher.log10(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Sqrt e) {
-			return Functions.sqrt(expression(e.$arg1()));
+			return Cypher.sqrt(expression(e.$arg1()));
 		}
 		// TODO: Hyperbolic functions
 
 		// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/
 		else if (f instanceof QOM.Acos e) {
-			return Functions.acos(expression(e.$arg1()));
+			return Cypher.acos(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Asin e) {
-			return Functions.asin(expression(e.$arg1()));
+			return Cypher.asin(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Atan e) {
-			return Functions.atan(expression(e.$arg1()));
+			return Cypher.atan(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Atan2 e) {
-			return Functions.atan2(expression(e.$arg1()), expression(e.$arg2()));
+			return Cypher.atan2(expression(e.$arg1()), expression(e.$arg2()));
 		}
 		else if (f instanceof QOM.Cos e) {
-			return Functions.cos(expression(e.$arg1()));
+			return Cypher.cos(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Cot e) {
-			return Functions.cot(expression(e.$arg1()));
+			return Cypher.cot(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Degrees e) {
-			return Functions.degrees(expression(e.$arg1()));
+			return Cypher.degrees(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Pi) {
-			return Functions.pi();
+			return Cypher.pi();
 		}
 		else if (f instanceof QOM.Radians e) {
-			return Functions.radians(expression(e.$arg1()));
+			return Cypher.radians(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Sin e) {
-			return Functions.sin(expression(e.$arg1()));
+			return Cypher.sin(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Tan e) {
-			return Functions.tan(expression(e.$arg1()));
+			return Cypher.tan(expression(e.$arg1()));
 		}
 
 		// https://neo4j.com/docs/cypher-manual/current/functions/string/
 		else if (f instanceof QOM.CharLength e) {
-			return Functions.size(expression(e.$arg1()));
+			return Cypher.size(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Left e) {
-			return Functions.left(expression(e.$arg1()), expression(e.$arg2()));
+			return Cypher.left(expression(e.$arg1()), expression(e.$arg2()));
 		}
 		else if (f instanceof QOM.Lower e) {
-			return Functions.toLower(expression(e.$arg1()));
+			return Cypher.toLower(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Ltrim e) {
-			return Functions.ltrim(expression(e.$arg1()));
+			return Cypher.ltrim(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Replace e) {
-			return Functions.replace(expression(e.$arg1()), expression(e.$arg2()), expression(e.$arg3()));
+			return Cypher.replace(expression(e.$arg1()), expression(e.$arg2()), expression(e.$arg3()));
 		}
 		else if (f instanceof QOM.Reverse e) {
-			return Functions.reverse(expression(e.$arg1()));
+			return Cypher.reverse(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Right e) {
-			return Functions.right(expression(e.$arg1()), expression(e.$arg2()));
+			return Cypher.right(expression(e.$arg1()), expression(e.$arg2()));
 		}
 		else if (f instanceof QOM.Rtrim e) {
-			return Functions.rtrim(expression(e.$arg1()));
+			return Cypher.rtrim(expression(e.$arg1()));
 		}
 		else if (f instanceof QOM.Substring e) {
 			var length = expression(e.$arg3());
 			if (length != Cypher.literalNull()) {
-				return Functions.substring(expression(e.$arg1()), expression(e.$arg2()), length);
+				return Cypher.substring(expression(e.$arg1()), expression(e.$arg2()), length);
 			}
 			else {
-				return Functions.substring(expression(e.$arg1()), expression(e.$arg2()), null);
+				return Cypher.substring(expression(e.$arg1()), expression(e.$arg2()), null);
 			}
 		}
 		else if (f instanceof QOM.Trim e) {
@@ -454,19 +453,19 @@ final class Sql2Cypher implements SqlTranslator {
 				throw unsupported(e);
 			}
 			else {
-				return Functions.trim(expression(e.$arg1()));
+				return Cypher.trim(expression(e.$arg1()));
 			}
 		}
 		else if (f instanceof QOM.Upper e) {
-			return Functions.toUpper(expression(e.$arg1()));
+			return Cypher.toUpper(expression(e.$arg1()));
 		}
 
 		// https://neo4j.com/docs/cypher-manual/current/functions/scalar/
 		else if (f instanceof QOM.Coalesce<?> e) {
-			return Functions.coalesce(e.$arg1().stream().map(this::expression).toArray(Expression[]::new));
+			return Cypher.coalesce(e.$arg1().stream().map(this::expression).toArray(Expression[]::new));
 		}
 		else if (f instanceof QOM.Nvl<?> e) {
-			return Functions.coalesce(expression(e.$arg1()), expression(e.$arg2()));
+			return Cypher.coalesce(expression(e.$arg1()), expression(e.$arg2()));
 		}
 
 		// https://neo4j.com/docs/cypher-manual/current/syntax/expressions/
@@ -512,16 +511,16 @@ final class Sql2Cypher implements SqlTranslator {
 		// Others
 		else if (f instanceof QOM.Cast<?> e) {
 			if (e.$dataType().isString()) {
-				return Functions.toString(expression(e.$field()));
+				return Cypher.toString(expression(e.$field()));
 			}
 			else if (e.$dataType().isBoolean()) {
-				return Functions.toBoolean(expression(e.$field()));
+				return Cypher.toBoolean(expression(e.$field()));
 			}
 			else if (e.$dataType().isFloat()) {
-				return Functions.toFloat(expression(e.$field()));
+				return Cypher.toFloat(expression(e.$field()));
 			}
 			else if (e.$dataType().isInteger()) {
-				return Functions.toInteger(expression(e.$field()));
+				return Cypher.toInteger(expression(e.$field()));
 			}
 			else {
 				throw unsupported(f);
