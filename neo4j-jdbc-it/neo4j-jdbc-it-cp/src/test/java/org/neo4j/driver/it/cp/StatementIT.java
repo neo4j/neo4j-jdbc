@@ -20,7 +20,6 @@ package org.neo4j.driver.it.cp;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.UUID;
@@ -100,15 +99,21 @@ class StatementIT {
 		}
 	}
 
-	@Test
-	void closingOnCompletionShouldWork() throws SQLException {
-		ResultSet rs;
-		try (var connection = getConnection(); var stmt = connection.createStatement();) {
-			stmt.closeOnCompletion();
-			rs = stmt.executeQuery("MATCH (n) RETURN count(n)");
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void closingOnCompletionShouldWork(boolean enableBeforeExecute) throws SQLException {
+		try (var connection = getConnection(); var stmt = connection.createStatement()) {
+			if (enableBeforeExecute) {
+				stmt.closeOnCompletion();
+			}
+			try (var rs = stmt.executeQuery("MATCH (n) RETURN count(n)")) {
+				assertThat(rs).isNotNull();
+				if (!enableBeforeExecute) {
+					stmt.closeOnCompletion();
+				}
+			}
+			assertThat(stmt.isClosed()).isTrue();
 		}
-		assertThat(rs).isNotNull();
-		assertThat(rs.isClosed()).isTrue();
 	}
 
 	@ParameterizedTest

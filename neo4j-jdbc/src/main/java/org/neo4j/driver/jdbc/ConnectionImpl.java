@@ -86,7 +86,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.statement.close();
 		}
 		this.transactionOpen = true;
-		this.statement = new StatementImpl(this.boltConnection, this.autoCommit);
+		this.statement = new StatementImpl(this, this.boltConnection, this.autoCommit);
 		return this.statement;
 	}
 
@@ -99,7 +99,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.statement.close();
 		}
 		this.transactionOpen = true;
-		var statement = new PreparedStatementImpl(this.boltConnection, this.autoCommit, sql);
+		var statement = new PreparedStatementImpl(this, this.boltConnection, this.autoCommit, sql);
 		this.statement = statement;
 		return statement;
 	}

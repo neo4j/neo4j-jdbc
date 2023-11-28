@@ -25,6 +25,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
@@ -51,8 +52,8 @@ final class PreparedStatementImpl extends StatementImpl implements PreparedState
 
 	private final Map<String, Object> parameters = new HashMap<>();
 
-	PreparedStatementImpl(BoltConnection boltConnection, boolean autoCommit, String query) {
-		super(boltConnection, autoCommit);
+	PreparedStatementImpl(Connection connection, BoltConnection boltConnection, boolean autoCommit, String query) {
+		super(connection, boltConnection, autoCommit);
 		this.query = query;
 	}
 
