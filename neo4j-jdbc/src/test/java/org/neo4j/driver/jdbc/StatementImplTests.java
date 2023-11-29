@@ -318,7 +318,7 @@ class StatementImplTests {
 
 	@ParameterizedTest
 	@MethodSource("getUnwrapArgs")
-	void shouldSomethinhg(Class<?> cls, boolean shouldUnwrap) throws SQLException {
+	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) {
 		// given
 		this.statement = new StatementImpl(mock(Connection.class), mock(BoltConnection.class), true);
 

@@ -67,7 +67,7 @@ class StatementImpl implements Statement {
 
 	private int queryTimeout;
 
-	private boolean poolable;
+	protected boolean poolable;
 
 	private boolean closeOnCompletion;
 
@@ -400,7 +400,7 @@ class StatementImpl implements Statement {
 			.orElseThrow(() -> new SQLException("Cannot quote identifier " + identifier));
 	}
 
-	private void assertIsOpen() throws SQLException {
+	protected void assertIsOpen() throws SQLException {
 		if (this.closed) {
 			throw new SQLException("The statement set is closed");
 		}
