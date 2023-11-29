@@ -160,6 +160,11 @@
 							<goal>integration-test</goal>
 							<goal>verify</goal>
 						</goals>
+						<configuration>
+							<classpathDependencyExcludes>
+								<classpathDependencyExclude>${groupId}:neo4j-jdbc</classpathDependencyExclude>
+							</classpathDependencyExcludes>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
