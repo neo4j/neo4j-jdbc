@@ -85,7 +85,7 @@ final class ResultSetImpl implements ResultSet {
 	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize,
 			int maxRowLimit, int maxFieldSize) {
 		this.statement = Objects.requireNonNull(statement);
-		this.boltConnection = Objects.requireNonNull(this.statement.getBoltConnection());
+		this.boltConnection = this.statement.getBoltConnection();
 		this.runResponse = Objects.requireNonNull(runResponse);
 		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
 		this.fetchSize = (fetchSize > 0) ? fetchSize : StatementImpl.DEFAULT_FETCH_SIZE;

@@ -101,7 +101,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void passingAnUnknownCatalogMustError() throws SQLException {
+	public void passingAnyCatalogMustError() throws SQLException {
 		var metaData = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> metaData.getProcedures("somethingRandom", null, null));
@@ -135,16 +135,18 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllCatalogsShouldReturnAllDbs() throws SQLException {
+	public void getAllCatalogsShouldReturnAnEmptyResultSet() throws SQLException {
 		var catalogRs = this.connection.getMetaData().getCatalogs();
+		assertThat(catalogRs.next()).isFalse();
+	}
 
-		List<String> names = new ArrayList<>();
-		while (catalogRs.next()) {
-			var name = catalogRs.getString(1);
-			names.add(name);
+	@Test
+	public void getAllSchemasShouldReturnPublic() throws SQLException {
+		var schemasRs = this.connection.getMetaData().getSchemas();
+
+		if (schemasRs.next()) {
+			assertThat(schemasRs.getString(1)).isEqualTo("public");
 		}
-
-		assertThat(names).contains("system", "neo4j");
 	}
 
 	@Test
@@ -175,7 +177,7 @@ public class DatabaseMetadataIT {
 		expectedLabels.add("TestLabel2");
 
 		for (String label : expectedLabels) {
-			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label));
+			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label)).close();
 		}
 
 		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
@@ -187,7 +189,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldReturnCurrentCatalog() throws SQLException {
+	public void getAllTablesShouldReturnEmptyForCatalogAndSchema() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -199,19 +201,55 @@ public class DatabaseMetadataIT {
 		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
 			while (labelsRs.next()) {
 				var catalog = labelsRs.getString(1);
-				assertThat(catalog).isEqualTo("neo4j");
+				assertThat(catalog).isEqualTo("");
 			}
 		}
 	}
 
 	@Test
-	public void getAllTablesShouldOnlyReturnSpecifiedCatalog() throws SQLException {
+	public void getAllTablesShouldReturnPublicForSchema() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
 
 		for (String label : expectedLabels) {
-			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label));
+			executeQueryWithoutResult("Create (:%s)".formatted(label));
+		}
+
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
+			while (labelsRs.next()) {
+				var schema = labelsRs.getString(2);
+				assertThat(schema).isEqualTo("public");
+			}
+		}
+	}
+
+	@Test
+	public void getAllTablesShouldReturnPublicForSchemaIfPassingPublicForSchema() throws SQLException {
+		List<String> expectedLabels = new ArrayList<>();
+		expectedLabels.add("TestLabel1");
+		expectedLabels.add("TestLabel2");
+
+		for (String label : expectedLabels) {
+			executeQueryWithoutResult("Create (:%s)".formatted(label));
+		}
+
+		try (var labelsRs = this.connection.getMetaData().getTables(null, "public", "", null)) {
+			while (labelsRs.next()) {
+				var schema = labelsRs.getString(2);
+				assertThat(schema).isEqualTo("public");
+			}
+		}
+	}
+
+	@Test
+	public void getAllTablesShouldOnlyReturnSpecifiedTables() throws SQLException {
+		List<String> expectedLabels = new ArrayList<>();
+		expectedLabels.add("TestLabel1");
+		expectedLabels.add("TestLabel2");
+
+		for (String label : expectedLabels) {
+			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label)).close();
 		}
 
 		try (var labelsRs = this.connection.getMetaData().getTables(null, null, expectedLabels.get(0), null)) {
@@ -223,17 +261,17 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldErrorIfYouPassGarbageToCatalog() throws SQLException {
+	public void getAllTablesShouldErrorIfYouPassAnythingToCatalog() throws SQLException {
 		var getMetadata = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> getMetadata.getTables("someRandomGarbage", null, "", new String[0]));
 	}
 
 	@Test
-	public void getAllTablesShouldErrorIfYouPassAValidCatalogButNotTheCurrentOne() throws SQLException {
+	public void getAllTablesShouldErrorIfYouPassAnythingButPublicToSchema() throws SQLException {
 		var getMetadata = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> getMetadata.getTables("system", null, "", new String[0]));
+			.isThrownBy(() -> getMetadata.getTables(null, "notPublic", "", new String[0]));
 	}
 
 }

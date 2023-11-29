@@ -165,7 +165,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public DatabaseMetaData getMetaData() {
-		return new DatabaseMetadataImpl(this);
+		return new DatabaseMetadataImpl(this.boltConnection);
 	}
 
 	@Override

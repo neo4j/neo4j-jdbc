@@ -79,6 +79,15 @@ class StatementImpl implements Statement {
 		this.autoCommit = autoCommit;
 	}
 
+	/**
+	 * This is for use with LocalStatement.
+	 */
+	StatementImpl() {
+		this.connection = null;
+		this.boltConnection = null;
+		this.autoCommit = false;
+	}
+
 	@Override
 	public ResultSet executeQuery(String sql) throws SQLException {
 		assertIsOpen();

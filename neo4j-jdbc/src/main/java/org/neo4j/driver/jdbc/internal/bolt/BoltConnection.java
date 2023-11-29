@@ -145,4 +145,10 @@ public interface BoltConnection {
 	 */
 	CompletionStage<Void> close();
 
+	/**
+	 * Gets the Database name that was passed to the driver on creation.
+	 * @return currently connected DB name
+	 */
+	String getDatabaseName();
+
 }

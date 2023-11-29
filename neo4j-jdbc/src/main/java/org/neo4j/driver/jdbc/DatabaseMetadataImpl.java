@@ -24,7 +24,22 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
+import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
+import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
+import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
+import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
+import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.value.RecordImpl;
+import org.neo4j.driver.jdbc.values.Record;
+import org.neo4j.driver.jdbc.values.Value;
+import org.neo4j.driver.jdbc.values.Values;
 
 /**
  * Internal implementation for providing Neo4j specific database metadata.
@@ -34,29 +49,25 @@ import java.util.List;
  */
 final class DatabaseMetadataImpl implements DatabaseMetaData {
 
-	private final Connection connection;
+	private final BoltConnection boltConnection;
 
-	DatabaseMetadataImpl(Connection connection) {
-		this.connection = connection;
+	DatabaseMetadataImpl(BoltConnection boltConnection) {
+		this.boltConnection = boltConnection;
 	}
 
 	@Override
 	public boolean allProceduresAreCallable() throws SQLException {
-
-		var getAllExecutableProcedures = this.connection
-			.prepareStatement("SHOW PROCEDURE EXECUTABLE YIELD name AS PROCEDURE_NAME");
-		getAllExecutableProcedures.closeOnCompletion();
+		var query = "SHOW PROCEDURE EXECUTABLE YIELD name AS PROCEDURE_NAME";
+		var response = doQueryForPullResponse(query);
 
 		List<String> executableProcedures = new ArrayList<>();
-		try (var allProceduresExecutableResultSet = getAllExecutableProcedures.executeQuery()) {
-			while (allProceduresExecutableResultSet.next()) {
-				executableProcedures.add(allProceduresExecutableResultSet.getString(1));
-			}
+		for (Record record : response.records()) {
+			executableProcedures.add(record.get(0).asString());
 		}
-
 		if (executableProcedures.isEmpty()) {
 			return false;
 		}
+
 		try (var proceduresResultSet = getProcedures(null, null, null)) {
 			while (proceduresResultSet.next()) {
 				if (!executableProcedures.contains(proceduresResultSet.getString(3))) {
@@ -80,11 +91,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getUserName() throws SQLException {
-		try (var stmt = this.connection.prepareStatement("SHOW CURRENT USER YIELD user");
-				var usernameRs = stmt.executeQuery()) {
-			usernameRs.next();
-			return usernameRs.getString(1);
-		}
+		var response = doQueryForPullResponse("SHOW CURRENT USER YIELD user");
+		return response.records().get(0).get(0).asString();
 	}
 
 	@Override
@@ -114,32 +122,21 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getDatabaseProductName() throws SQLException {
+		var response = doQueryForPullResponse("""
+				CALL dbms.components() YIELD name, versions, edition
+				UNWIND versions AS version RETURN name, edition, version""");
 
-		try (var getDatabaseProductVersion = this.connection.prepareStatement("""
-				call dbms.components() yield name, versions,
-				edition unwind versions as version return name, edition, version""");
-				var productVersionRs = getDatabaseProductVersion.executeQuery()) {
-			if (productVersionRs.next()) { // will only ever have one result.
-				return "%s-%s-%s".formatted(productVersionRs.getString(1), productVersionRs.getString(2),
-						productVersionRs.getString(3));
-			}
-		}
-
-		return ProductVersion.getValue();
+		var record = response.records().get(0);
+		return "%s-%s-%s".formatted(record.get(0).asString(), record.get(1).asString(), record.get(2).asString());
 	}
 
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
-		try (var getDatabaseProductVersion = this.connection.prepareStatement("""
-				call dbms.components() yield versions
-				unwind versions as version return version""");
-				var productVersionRs = getDatabaseProductVersion.executeQuery()) {
-			if (productVersionRs.next()) { // will only ever have one result.
-				return productVersionRs.getString(1);
-			}
-		}
+		var response = doQueryForPullResponse("""
+				CALL dbms.components() YIELD versions
+				UNWIND versions AS version RETURN version""");
 
-		throw new SQLException("Cannot retrieve product version");
+		return response.records().get(0).get(0).asString();
 	}
 
 	@Override
@@ -213,8 +210,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public String getIdentifierQuoteString() throws SQLException {
-		return "\"";
+	public String getIdentifierQuoteString() {
+		return "`";
 	}
 
 	@Override
@@ -686,40 +683,31 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	 * @param schemaPattern should always be null as does not apply to Neo4j.
 	 * @param procedureNamePattern a procedure name pattern; must match the procedure name
 	 * as it is stored in the database
-	 * @return resultset that contains the procedures that you can execute with the
-	 * columns: name, description, mode and worksOnSystem.
+	 * @return a {@link ResultSet} that contains the procedures that you can execute with
+	 * the columns: name, description, mode and worksOnSystem.
 	 * @throws SQLException if you try and call with catalog or schema
 	 */
 	@Override
 	public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
 			throws SQLException {
 
-		if (schemaPattern != null) {
-			throw new SQLException("Schema is not applicable to Neo4j please leave null.");
-		}
-
-		assertCatalogExists(catalog);
+		assertCatalogIsNull(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
 
 		if (procedureNamePattern == null) {
-			var statement = this.connection.createStatement();
-			statement.closeOnCompletion();
-			return statement.executeQuery("""
+			return doQueryForResultSet("""
 					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
 					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
 					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
 					""");
 		}
 		else {
-			var proceduresFiltered = this.connection.prepareStatement("""
+			return doQueryForResultSet("""
 					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
-					WHERE name = $1
+					WHERE name = "%s"
 					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
 					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
-					""");
-
-			proceduresFiltered.setString(1, procedureNamePattern);
-			proceduresFiltered.closeOnCompletion();
-			return proceduresFiltered.executeQuery();
+					""".formatted(procedureNamePattern));
 		}
 	}
 
@@ -733,64 +721,77 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
 			throws SQLException {
 
-		assertSchemaIsNull(schemaPattern);
-
-		var currentDb = getCurrentDb();
-		if (catalog != null) {
-			// if you try to get labels of another db we will error.
-			if (!catalog.equals(getCurrentDb())) {
-				throw new SQLException(String
-					.format("Cannot get Tables for another catalog. You are currently connected to %s", currentDb));
-			}
-		}
+		assertSchemaIsPublicOrNull(schemaPattern);
+		assertCatalogIsNull(catalog);
 
 		if (tableNamePattern != null) {
-			var preparedStatement = this.connection.prepareStatement("""
-					call db.labels() YIELD label AS TABLE_NAME WHERE TABLE_NAME=$1 RETURN "%s" as TABLE_CAT,
-					"" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
+			return doQueryForResultSet("""
+					CALL db.labels() YIELD label AS TABLE_NAME WHERE TABLE_NAME="%s" RETURN "" as TABLE_CAT,
+					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
 					"" AS TYPE_CAT, "" AS TYPE_SCHEM, "" AS TYPE_NAME, "" AS SELF_REFERENCES_COL_NAME,
-					"" AS REF_GENERATION""".formatted(currentDb));
-
-			preparedStatement.setString(1, tableNamePattern);
-			preparedStatement.closeOnCompletion();
-
-			return preparedStatement.executeQuery();
+					"" AS REF_GENERATION""".formatted(tableNamePattern));
 		}
 		else {
-			var statement = this.connection.createStatement();
-			statement.closeOnCompletion();
-
-			return statement.executeQuery("""
-					call db.labels() YIELD label AS TABLE_NAME RETURN "%s" as TABLE_CAT,
-					"" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
+			return doQueryForResultSet("""
+					CALL db.labels() YIELD label AS TABLE_NAME RETURN "" as TABLE_CAT,
+					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
 					"" AS TYPE_CAT, "" AS TYPE_SCHEM, "" AS TYPE_NAME, "" AS SELF_REFERENCES_COL_NAME,
-					"" AS REF_GENERATION""".formatted(currentDb));
+					"" AS REF_GENERATION""");
 		}
 	}
 
-	/***
-	 * Neo4j does not support schemas.
-	 * @return nothing
-	 * @throws SQLException if you call this you will receive an
-	 * UnsupportedOperationException
-	 */
 	@Override
-	public ResultSet getSchemas() throws SQLException {
-		throw new UnsupportedOperationException();
+	public ResultSet getSchemas() {
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_CATALOG");
+		// return RS with just public in it
+		var pull = new PullResponse() {
+			@Override
+			public List<Record> records() {
+				var values = new Value[] { Values.value("public"), Values.value("") };
+				return Collections.singletonList(new RecordImpl(keys, values));
+			}
+
+			@Override
+			public Optional<ResultSummary> resultSummary() {
+				return Optional.empty();
+			}
+		};
+
+		var response = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
 	}
 
 	/***
-	 * Returns all the catalogs for the current neo4j instance. For Neo4j catalogs are the
-	 * databases on the current Neo4j instance.
+	 * Returns an empty Result set as there cannot be Catalogs in neo4j.
 	 * @return all catalogs
-	 * @throws SQLException will be thrown if cannot connect to current DB
 	 */
 	@Override
-	public ResultSet getCatalogs() throws SQLException {
-		var statement = this.connection.createStatement();
-		statement.closeOnCompletion();
+	public ResultSet getCatalogs() {
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_CAT");
 
-		return statement.executeQuery("SHOW DATABASE yield name AS TABLE_CAT");
+		var pull = new PullResponse() {
+			@Override
+			public List<Record> records() {
+				return new ArrayList<>();
+			}
+
+			@Override
+			public Optional<ResultSummary> resultSummary() {
+				return Optional.empty();
+			}
+
+			@Override
+			public boolean hasMore() {
+				return false;
+			}
+		};
+
+		var response = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
+
 	}
 
 	@Override
@@ -978,12 +979,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getDatabaseMajorVersion() throws SQLException {
-		return Integer.parseInt(getDatabaseProductVersion().split(".")[0]);
+		return Integer.parseInt(getDatabaseProductVersion().split("\\.")[0]);
 	}
 
 	@Override
 	public int getDatabaseMinorVersion() throws SQLException {
-		return Integer.parseInt(getDatabaseProductVersion().split(".")[1]);
+		return Integer.parseInt(getDatabaseProductVersion().split("\\.")[1]);
 	}
 
 	@Override
@@ -1017,13 +1018,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	/***
-	 * Neo4j does not support schemas.
+	 * Neo4j does not support schemas, this method does always throw an
+	 * {@link UnsupportedOperationException}.
 	 * @return nothing
-	 * @throws SQLException if you call this you will receive an
-	 * UnsupportedOperationException
+	 * @throws UnsupportedOperationException in all cases
 	 */
 	@Override
-	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+	public ResultSet getSchemas(String catalog, String schemaPattern) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -1075,39 +1076,65 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		throw new UnsupportedOperationException();
 	}
 
-	private String getCurrentDb() throws SQLException {
-		try (var getCurrentDb = this.connection.prepareStatement("CALL db.info() YIELD name");
-				var rs = getCurrentDb.executeQuery()) {
-			if (rs.next()) { // only will have one result
-				return rs.getString(1);
+	private static RunResponse createRunResponseForStaticKeys(ArrayList<String> keys) {
+		return new RunResponse() {
+			@Override
+			public long queryId() {
+				return 0;
 			}
-		}
 
-		throw new SQLException("Cannot retrieve current DB");
+			@Override
+			public List<String> keys() {
+				return keys;
+			}
+		};
 	}
 
-	private void assertSchemaIsNull(String schemaPattern) throws SQLException {
-		if (schemaPattern != null) {
-			throw new SQLException("Schema is not applicable to Neo4j please leave null.");
+	private void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
+		if (schemaPattern != null && !"public".equals(schemaPattern)) {
+			throw new SQLException("Schema must be public or null.");
 		}
 	}
 
-	private void assertCatalogExists(String catalog) throws SQLException {
+	private static void assertCatalogIsNull(String catalog) throws SQLException {
 		if (catalog != null) {
-			var foundCatalog = false;
-			try (var catalogsResultSet = getCatalogs()) {
-				while (catalogsResultSet.next()) {
-					if (catalog.equals(catalogsResultSet.getString(1))) {
-						foundCatalog = true;
-						break;
-					}
-				}
-			}
-
-			if (!foundCatalog) {
-				throw new SQLException("catalog: %s is not valid for the current database.".formatted(catalog));
-			}
+			throw new SQLException("Catalog is not applicable to Neo4j please leave null.");
 		}
+	}
+
+	private PullResponse doQueryForPullResponse(String query) throws SQLException {
+		var response = doQuery(query);
+		return response.pullResponse;
+	}
+
+	private ResultSet doQueryForResultSet(String query) throws SQLException {
+		var response = doQuery(query);
+
+		return new ResultSetImpl(new LocalStatementImpl(), response.runFuture.join(), response.pullResponse, -1, -1,
+				-1);
+	}
+
+	private QueryAndRunResponse doQuery(String query) throws SQLException {
+		var beginFuture = this.boltConnection
+			.beginTransaction(Collections.emptySet(), AccessMode.READ, TransactionType.DEFAULT, false)
+			.toCompletableFuture();
+		var runFuture = this.boltConnection.run(query, Collections.emptyMap(), false).toCompletableFuture();
+		var pullFuture = this.boltConnection.pull(runFuture, -1).toCompletableFuture();
+		var joinedFuture = CompletableFuture.allOf(beginFuture, runFuture).thenCompose(ignored -> pullFuture);
+
+		try {
+			var pullResponse = joinedFuture.get();
+			this.boltConnection.reset(true);
+			return new QueryAndRunResponse(pullResponse, runFuture);
+		}
+		catch (InterruptedException | ExecutionException ex) {
+			this.boltConnection.reset(true).toCompletableFuture().join();
+			var cause = ex.getCause();
+			throw new SQLException("An error occurred when running the query", (cause != null) ? cause : ex);
+		}
+	}
+
+	private record QueryAndRunResponse(PullResponse pullResponse, CompletableFuture<RunResponse> runFuture) {
 	}
 
 }

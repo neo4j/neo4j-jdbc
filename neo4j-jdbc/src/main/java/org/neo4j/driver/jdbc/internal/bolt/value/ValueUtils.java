@@ -16,31 +16,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.driver.jdbc.internal.bolt.internal.util;
+package org.neo4j.driver.jdbc.internal.bolt.value;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 import org.neo4j.driver.jdbc.values.Record;
 import org.neo4j.driver.jdbc.values.Value;
 
-public final class Extract {
+final class ValueUtils {
 
-	private Extract() {
+	private ValueUtils() {
 		throw new UnsupportedOperationException();
 	}
 
-	public static List<Value> list(Value[] values) {
-		return switch (values.length) {
-			case 0 -> Collections.emptyList();
-			case 1 -> Collections.singletonList(values[0]);
-			default -> List.of(values);
-		};
-	}
-
-	public static <T> Map<String, T> map(Record record, Function<Value, T> mapFunction) {
+	static <T> Map<String, T> map(Record record, Function<Value, T> mapFunction) {
 		var size = record.size();
 		switch (size) {
 			case 0 -> {
@@ -50,7 +42,7 @@ public final class Extract {
 				return Collections.singletonMap(record.keys().get(0), mapFunction.apply(record.get(0)));
 			}
 			default -> {
-				Map<String, T> map = Iterables.newLinkedHashMapWithSize(size);
+				Map<String, T> map = new LinkedHashMap<>(size);
 				var keys = record.keys();
 				for (var i = 0; i < size; i++) {
 					map.put(keys.get(i), mapFunction.apply(record.get(i)));

@@ -30,6 +30,7 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.jdbc.internal.bolt.value.RecordImpl;
 import org.neo4j.driver.jdbc.values.BooleanValue;
 import org.neo4j.driver.jdbc.values.Record;
 import org.neo4j.driver.jdbc.values.Value;

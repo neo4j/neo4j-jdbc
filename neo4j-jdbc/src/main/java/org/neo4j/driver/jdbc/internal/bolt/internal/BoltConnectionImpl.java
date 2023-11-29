@@ -103,4 +103,9 @@ public final class BoltConnectionImpl implements BoltConnection {
 		return this.protocol.close(this.connection);
 	}
 
+	@Override
+	public String getDatabaseName() {
+		return this.connection.databaseName();
+	}
+
 }

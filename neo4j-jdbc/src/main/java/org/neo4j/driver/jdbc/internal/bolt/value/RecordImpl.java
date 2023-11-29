@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.driver.jdbc.internal.bolt.internal.handler;
+package org.neo4j.driver.jdbc.internal.bolt.value;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,13 +25,12 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.neo4j.driver.jdbc.internal.bolt.internal.util.Extract;
 import org.neo4j.driver.jdbc.values.AbstractMapAccessorWithDefaultValue;
 import org.neo4j.driver.jdbc.values.Record;
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.Values;
 
-final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
+public final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
 
 	private final List<String> keys;
 
@@ -39,7 +38,7 @@ final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Re
 
 	private int hashCode = 0;
 
-	RecordImpl(List<String> keys, Value[] values) {
+	public RecordImpl(List<String> keys, Value[] values) {
 		this.keys = keys;
 		this.values = values;
 	}
@@ -99,12 +98,12 @@ final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Re
 
 	@Override
 	public Map<String, Object> asMap() {
-		return Extract.map(this, Values.ofObject());
+		return ValueUtils.map(this, Values.ofObject());
 	}
 
 	@Override
 	public <T> Map<String, T> asMap(Function<Value, T> mapper) {
-		return Extract.map(this, mapper);
+		return ValueUtils.map(this, mapper);
 	}
 
 	@Override

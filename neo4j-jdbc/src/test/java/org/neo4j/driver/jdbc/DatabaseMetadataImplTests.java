@@ -18,7 +18,6 @@
  */
 package org.neo4j.driver.jdbc;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -63,11 +62,11 @@ class DatabaseMetadataImplTests {
 
 		var connection = driver.connect(url, props);
 
+		var metaData = connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> connection.getMetaData().getProcedures("NotNull", "NotNull", null));
+			.isThrownBy(() -> metaData.getProcedures("NotNull", "NotNull", null));
 
-		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> connection.getMetaData().getProcedures(null, "NotNull", null));
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> metaData.getProcedures(null, "NotNull", null));
 	}
 
 	@Test
@@ -107,7 +106,7 @@ class DatabaseMetadataImplTests {
 	}
 
 	@Test
-	void getAllTablesShouldErrorIfYouPassSchema() throws SQLException {
+	void getAllTablesShouldErrorIfYouPassNonPublicSchema() throws SQLException {
 		var url = "jdbc:neo4j://host";
 
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
@@ -118,15 +117,30 @@ class DatabaseMetadataImplTests {
 		var connection = driver.connect(url, props);
 
 		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", "NotNull", null, null));
-
-		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> connection.getMetaData().getTables(null, "NotNull", null, null));
 	}
 
+	@Test
+	void getAllTablesShouldErrorIfYouPassCatalog() throws SQLException {
+		var url = "jdbc:neo4j://host";
+
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var props = new Properties();
+		props.put("username", "test");
+		props.put("password", "password");
+
+		var connection = driver.connect(url, props);
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", null, null, null));
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", "public", null, null));
+	}
+
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		var connection = Mockito.mock(Connection.class);
-		return new DatabaseMetadataImpl(connection);
+		var boltConnection = Mockito.mock(BoltConnection.class);
+		return new DatabaseMetadataImpl(boltConnection);
 	}
 
 }

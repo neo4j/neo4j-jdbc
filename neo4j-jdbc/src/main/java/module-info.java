@@ -36,6 +36,7 @@ module neo4j.jdbc {
 
 	exports org.neo4j.driver.jdbc;
 	exports org.neo4j.driver.jdbc.values;
+	exports org.neo4j.driver.jdbc.internal.bolt.value;
 
 	provides java.sql.Driver with
 		org.neo4j.driver.jdbc.Neo4jDriver;
