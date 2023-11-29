@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -58,7 +59,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public boolean allProceduresAreCallable() throws SQLException {
 		var query = "SHOW PROCEDURE EXECUTABLE YIELD name AS PROCEDURE_NAME";
-		var response = doQueryForPullResponse(query);
+		var response = doQueryForPullResponse(query, Map.of());
 
 		List<String> executableProcedures = new ArrayList<>();
 		for (Record record : response.records()) {
@@ -91,7 +92,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getUserName() throws SQLException {
-		var response = doQueryForPullResponse("SHOW CURRENT USER YIELD user");
+		var response = doQueryForPullResponse("SHOW CURRENT USER YIELD user", Map.of());
 		return response.records().get(0).get(0).asString();
 	}
 
@@ -124,7 +125,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	public String getDatabaseProductName() throws SQLException {
 		var response = doQueryForPullResponse("""
 				CALL dbms.components() YIELD name, versions, edition
-				UNWIND versions AS version RETURN name, edition, version""");
+				UNWIND versions AS version RETURN name, edition, version""", Map.of());
 
 		var record = response.records().get(0);
 		return "%s-%s-%s".formatted(record.get(0).asString(), record.get(1).asString(), record.get(2).asString());
@@ -134,7 +135,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	public String getDatabaseProductVersion() throws SQLException {
 		var response = doQueryForPullResponse("""
 				CALL dbms.components() YIELD versions
-				UNWIND versions AS version RETURN version""");
+				UNWIND versions AS version RETURN version""", Map.of());
 
 		return response.records().get(0).get(0).asString();
 	}
@@ -699,15 +700,15 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
 					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
 					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
-					""");
+					""", Map.of());
 		}
 		else {
 			return doQueryForResultSet("""
 					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
-					WHERE name = "%s"
+					WHERE name = $name
 					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
 					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
-					""".formatted(procedureNamePattern));
+					""", Map.of("name", procedureNamePattern));
 		}
 	}
 
@@ -726,17 +727,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		if (tableNamePattern != null) {
 			return doQueryForResultSet("""
-					CALL db.labels() YIELD label AS TABLE_NAME WHERE TABLE_NAME="%s" RETURN "" as TABLE_CAT,
+					CALL db.labels() YIELD label AS TABLE_NAME WHERE TABLE_NAME=$name RETURN "" as TABLE_CAT,
 					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
 					"" AS TYPE_CAT, "" AS TYPE_SCHEM, "" AS TYPE_NAME, "" AS SELF_REFERENCES_COL_NAME,
-					"" AS REF_GENERATION""".formatted(tableNamePattern));
+					"" AS REF_GENERATION""", Map.of("name", tableNamePattern));
 		}
 		else {
 			return doQueryForResultSet("""
 					CALL db.labels() YIELD label AS TABLE_NAME RETURN "" as TABLE_CAT,
 					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
 					"" AS TYPE_CAT, "" AS TYPE_SCHEM, "" AS TYPE_NAME, "" AS SELF_REFERENCES_COL_NAME,
-					"" AS REF_GENERATION""");
+					"" AS REF_GENERATION""", Map.of());
 		}
 	}
 
@@ -1102,23 +1103,23 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		}
 	}
 
-	private PullResponse doQueryForPullResponse(String query) throws SQLException {
-		var response = doQuery(query);
+	private PullResponse doQueryForPullResponse(String query, Map<String, Object> args) throws SQLException {
+		var response = doQuery(query, args);
 		return response.pullResponse;
 	}
 
-	private ResultSet doQueryForResultSet(String query) throws SQLException {
-		var response = doQuery(query);
+	private ResultSet doQueryForResultSet(String query, Map<String, Object> args) throws SQLException {
+		var response = doQuery(query, args);
 
 		return new ResultSetImpl(new LocalStatementImpl(), response.runFuture.join(), response.pullResponse, -1, -1,
 				-1);
 	}
 
-	private QueryAndRunResponse doQuery(String query) throws SQLException {
+	private QueryAndRunResponse doQuery(String query, Map<String, Object> args) throws SQLException {
 		var beginFuture = this.boltConnection
 			.beginTransaction(Collections.emptySet(), AccessMode.READ, TransactionType.DEFAULT, false)
 			.toCompletableFuture();
-		var runFuture = this.boltConnection.run(query, Collections.emptyMap(), false).toCompletableFuture();
+		var runFuture = this.boltConnection.run(query, args, false).toCompletableFuture();
 		var pullFuture = this.boltConnection.pull(runFuture, -1).toCompletableFuture();
 		var joinedFuture = CompletableFuture.allOf(beginFuture, runFuture).thenCompose(ignored -> pullFuture);
 
