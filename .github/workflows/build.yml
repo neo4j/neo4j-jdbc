@@ -83,3 +83,16 @@ jobs:
 
       - name: 'Run native tests'
         run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -am -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
+
+  security_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: 'Run Snyk to check for vulnerabilities'
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --maven-aggregate-project
