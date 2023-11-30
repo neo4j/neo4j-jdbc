@@ -29,14 +29,17 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.UnaryOperator;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
+import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
@@ -73,10 +76,14 @@ class StatementImpl implements Statement {
 
 	private boolean closed;
 
-	StatementImpl(Connection connection, BoltConnection boltConnection, boolean autoCommit) {
+	private final UnaryOperator<String> sqlProcessor;
+
+	StatementImpl(Connection connection, BoltConnection boltConnection, boolean autoCommit,
+			UnaryOperator<String> sqlProcessor) {
 		this.connection = Objects.requireNonNull(connection);
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.autoCommit = autoCommit;
+		this.sqlProcessor = Objects.requireNonNullElseGet(sqlProcessor, UnaryOperator::identity);
 	}
 
 	/**
@@ -86,6 +93,7 @@ class StatementImpl implements Statement {
 		this.connection = null;
 		this.boltConnection = null;
 		this.autoCommit = false;
+		this.sqlProcessor = UnaryOperator.identity();
 	}
 
 	@Override
@@ -382,14 +390,15 @@ class StatementImpl implements Statement {
 		return iface.isAssignableFrom(getClass());
 	}
 
-	BoltConnection getBoltConnection() {
-		return this.boltConnection;
-	}
-
 	boolean isAutoCommit() {
 		return this.autoCommit;
 	}
 
+	/**
+	 * This extension method can be used for any derived statement implementations to
+	 * supply parameters to {@link #sendQuery(String, boolean)}.
+	 * @return parameters to this statement if any
+	 */
 	protected Map<String, Object> parameters() {
 		return Collections.emptyMap();
 	}
@@ -398,6 +407,18 @@ class StatementImpl implements Statement {
 	public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
 		return SchemaNames.sanitize(identifier, alwaysQuote)
 			.orElseThrow(() -> new SQLException("Cannot quote identifier " + identifier));
+	}
+
+	final CompletionStage<PullResponse> pull(RunResponse runResponse, long request) {
+		return this.boltConnection.pull(runResponse, request);
+	}
+
+	final CompletionStage<DiscardResponse> discard(RunResponse runResponse, long number, boolean flush) {
+		return this.boltConnection.discard(runResponse, number, flush);
+	}
+
+	final CompletionStage<CommitResponse> commit() {
+		return this.boltConnection.commit();
 	}
 
 	protected void assertIsOpen() throws SQLException {
@@ -418,7 +439,8 @@ class StatementImpl implements Statement {
 		var beginFuture = this.boltConnection
 			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false)
 			.toCompletableFuture();
-		var runFuture = this.boltConnection.run(sql, parameters(), false).toCompletableFuture();
+		var runFuture = this.boltConnection.run(this.sqlProcessor.apply(sql), parameters(), false)
+			.toCompletableFuture();
 		CompletableFuture<QueryResponses> joinedFuture;
 
 		if (pull) {

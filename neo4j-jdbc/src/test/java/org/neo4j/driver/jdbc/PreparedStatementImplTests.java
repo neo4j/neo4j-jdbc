@@ -99,7 +99,7 @@ class PreparedStatementImplTests {
 		var pullResponse = mock(PullResponse.class);
 		given(boltConnection.pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE))
 			.willReturn(CompletableFuture.completedStage(pullResponse));
-		this.statement = new PreparedStatementImpl(mock(Connection.class), boltConnection, true, query);
+		this.statement = newStatement(mock(Connection.class), boltConnection, true, query);
 
 		// when
 		var resultSet = this.statement.executeQuery();
@@ -113,6 +113,11 @@ class PreparedStatementImplTests {
 		then(boltConnection).should().run(query, Collections.emptyMap(), false);
 		then(boltConnection).should().pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE);
 		then(boltConnection).shouldHaveNoMoreInteractions();
+	}
+
+	private static PreparedStatementImpl newStatement(Connection connection, BoltConnection boltConnection,
+			boolean autoCommit, String query) {
+		return new PreparedStatementImpl(connection, boltConnection, autoCommit, null, null, query);
 	}
 
 	@Test
@@ -135,7 +140,7 @@ class PreparedStatementImplTests {
 		var totalUpdates = 5;
 		given(counters.totalCount()).willReturn(totalUpdates);
 		given(boltConnection.commit()).willReturn(CompletableFuture.completedFuture(null));
-		this.statement = new PreparedStatementImpl(mock(Connection.class), boltConnection, true, query);
+		this.statement = newStatement(mock(Connection.class), boltConnection, true, query);
 
 		// when
 		var updates = this.statement.executeUpdate();
@@ -171,7 +176,7 @@ class PreparedStatementImplTests {
 		given(boltConnection.pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE))
 			.willReturn(CompletableFuture.completedStage(pullResponse));
 		given(boltConnection.commit()).willReturn(CompletableFuture.completedFuture(null));
-		this.statement = new PreparedStatementImpl(mock(Connection.class), boltConnection, true, query);
+		this.statement = newStatement(mock(Connection.class), boltConnection, true, query);
 
 		// when
 		var hasResultSet = this.statement.execute();
@@ -199,14 +204,14 @@ class PreparedStatementImplTests {
 
 	@Test
 	void shouldBePoolableByDefault() throws SQLException {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "");
 		assertThat(this.statement.isPoolable()).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("getShouldThrowWhenClosedArgs")
 	void shouldThrowWhenClosed(StatementMethodRunner consumer) throws SQLException {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 		this.statement.close();
 		assertThat(this.statement.isClosed()).isTrue();
 		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(SQLException.class);
@@ -283,7 +288,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldThrowUnsupportedArgs")
 	void shouldThrowUnsupported(StatementMethodRunner consumer, Class<? extends SQLException> exceptionType) {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(exceptionType);
 	}
 
@@ -357,7 +362,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldThrowOnExplicitlyProhibitedMethodsArgs")
 	void shouldThrowOnExplicitlyProhibitedMethods(StatementMethodRunner consumer) {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(SQLException.class);
 	}
 
@@ -385,7 +390,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldThrowOnInvalidParameterIndexArgs")
 	void shouldThrowOnInvalidParameterIndex(StatementMethodRunner consumer) {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(SQLException.class);
 	}
 
@@ -427,7 +432,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldSetParameterArgs")
 	void shouldSetParameter(StatementMethodRunner parameterSettingRunner, Value expectedValue) throws SQLException {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 
 		parameterSettingRunner.run(this.statement);
 
@@ -514,7 +519,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldSetObjectParameterArgs")
 	void shouldSetObjectParameter(Object object, Value expectedValue) throws SQLException {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 
 		this.statement.setObject(1, object);
 
@@ -536,7 +541,7 @@ class PreparedStatementImplTests {
 
 	@Test
 	void shouldClearParameters() throws SQLException {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 		this.statement.setBoolean(1, true);
 
 		this.statement.clearParameters();
@@ -546,7 +551,7 @@ class PreparedStatementImplTests {
 
 	@Test
 	void shouldReturnParameterMetaData() {
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 
 		var metaData = this.statement.getParameterMetaData();
 
@@ -557,7 +562,7 @@ class PreparedStatementImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 
 		// when & then
 		if (shouldUnwrap) {
@@ -573,7 +578,7 @@ class PreparedStatementImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) {
 		// given
-		this.statement = new PreparedStatementImpl(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
 
 		// when
 		var wrapperFor = this.statement.isWrapperFor(cls);

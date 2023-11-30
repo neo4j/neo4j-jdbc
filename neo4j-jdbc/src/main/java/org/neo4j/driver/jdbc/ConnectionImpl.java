@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
@@ -58,6 +59,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private boolean autoCommit = true;
 
+	private final boolean automaticSqlTranslation;
+
 	private boolean readOnly;
 
 	private Statement statement;
@@ -69,12 +72,22 @@ final class ConnectionImpl implements Neo4jConnection {
 	ConnectionImpl(BoltConnection boltConnection) {
 		this(boltConnection, () -> {
 			throw new UnsupportedOperationException("No SQL translator available");
-		});
+		}, false);
 	}
 
-	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator) {
+	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator,
+			boolean automaticSqlTranslation) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.sqlTranslator = Lazy.of(sqlTranslator);
+		this.automaticSqlTranslation = automaticSqlTranslation;
+	}
+
+	UnaryOperator<String> getSqlProcessor() {
+		return this.automaticSqlTranslation ? this.sqlTranslator.resolve()::translate : null;
+	}
+
+	UnaryOperator<Integer> getIndexProcessor() {
+		return this.automaticSqlTranslation ? idx -> idx - 1 : null;
 	}
 
 	@Override
@@ -86,7 +99,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.statement.close();
 		}
 		this.transactionOpen = true;
-		this.statement = new StatementImpl(this, this.boltConnection, this.autoCommit);
+		this.statement = new StatementImpl(this, this.boltConnection, this.autoCommit, getSqlProcessor());
 		return this.statement;
 	}
 
@@ -99,7 +112,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.statement.close();
 		}
 		this.transactionOpen = true;
-		var statement = new PreparedStatementImpl(this, this.boltConnection, this.autoCommit, sql);
+		var statement = new PreparedStatementImpl(this, this.boltConnection, this.autoCommit, getSqlProcessor(),
+				getIndexProcessor(), sql);
 		this.statement = statement;
 		return statement;
 	}

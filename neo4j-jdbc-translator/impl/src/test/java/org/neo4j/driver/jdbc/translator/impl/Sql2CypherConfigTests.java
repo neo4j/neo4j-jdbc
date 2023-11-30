@@ -19,7 +19,6 @@
 package org.neo4j.driver.jdbc.translator.impl;
 
 import java.util.Map;
-import java.util.Properties;
 
 import org.jooq.SQLDialect;
 import org.jooq.conf.ParseNameCase;
@@ -40,32 +39,31 @@ class Sql2CypherConfigTests {
 	@Test
 	void configFromEmptyPropertiesShouldUseDefault() {
 
-		var config = Sql2CypherConfig.of(properties(Map.of()));
+		var config = Sql2CypherConfig.of(Map.of());
 		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
 	}
 
 	@Test
 	void configFromNonMatchingPropertiesShouldUseDefault() {
 
-		var config = Sql2CypherConfig.of(properties(Map.of("a", "b")));
+		var config = Sql2CypherConfig.of(Map.of("a", "b"));
 		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
 	}
 
 	@Test
 	void shouldIgnoreUnknowns() {
-		var config = Sql2CypherConfig.of(properties(Map.of("s2c.foobar", "whatever")));
+		var config = Sql2CypherConfig.of(Map.of("s2c.foobar", "whatever"));
 		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
 	}
 
 	@Test
 	void shouldParseKnowns() {
 
-		var config = Sql2CypherConfig
-			.of(properties(Map.of("s2c.parse-name-case", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.renderNameCase",
-					ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true", "s2c.sql-dialect",
-					SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix", "foo",
-					"s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
-					"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN")));
+		var config = Sql2CypherConfig.of(Map.of("s2c.parse-name-case", ParseNameCase.LOWER_IF_UNQUOTED.name(),
+				"s2c.renderNameCase", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true",
+				"s2c.sql-dialect", SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix",
+				"foo", "s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
+				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN"));
 
 		assertThat(config.getParseNameCase()).isEqualTo(ParseNameCase.LOWER_IF_UNQUOTED);
 		assertThat(config.getRenderNameCase()).isEqualTo(RenderNameCase.LOWER_IF_UNQUOTED);
@@ -77,12 +75,6 @@ class Sql2CypherConfigTests {
 				Map.of("people", "Person", "movies", "Movie", "movie_actors", "ACTED_IN"));
 		assertThat(config.getJoinColumnsToTypeMappings())
 			.containsExactlyInAnyOrderEntriesOf(Map.of("actor_id", "ACTED_IN"));
-	}
-
-	static Properties properties(Map<String, String> src) {
-		var properties = new Properties();
-		src.forEach(properties::setProperty);
-		return properties;
 	}
 
 }

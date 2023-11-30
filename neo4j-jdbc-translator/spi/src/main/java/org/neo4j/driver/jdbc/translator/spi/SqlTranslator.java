@@ -25,6 +25,7 @@ package org.neo4j.driver.jdbc.translator.spi;
  * @author Michael J. Simons
  * @since 1.0.0
  */
+@FunctionalInterface
 public interface SqlTranslator {
 
 	/**

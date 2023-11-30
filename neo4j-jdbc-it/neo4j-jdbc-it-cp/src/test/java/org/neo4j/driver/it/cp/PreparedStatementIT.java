@@ -18,32 +18,16 @@
  */
 package org.neo4j.driver.it.cp;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.UUID;
 
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers(disabledWithoutDocker = true)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class PreparedStatementIT {
+import static org.assertj.core.api.Assertions.assertThat;
 
-	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
-
-	@BeforeAll
-	void startNeo4j() {
-		this.neo4j.start();
-	}
+class PreparedStatementIT extends IntegrationTestBase {
 
 	@Test
 	void shouldExecuteQuery() throws SQLException {
@@ -54,8 +38,8 @@ class PreparedStatementIT {
 			statement.setInt(1, limit);
 			var resultSet = statement.executeQuery();
 			for (var i = 1; i <= 17; i++) {
-				Assertions.assertThat(resultSet.next()).isTrue();
-				Assertions.assertThat(resultSet.getInt(1)).isEqualTo(i);
+				assertThat(resultSet.next()).isTrue();
+				assertThat(resultSet.getInt(1)).isEqualTo(i);
 			}
 		}
 	}
@@ -84,18 +68,30 @@ class PreparedStatementIT {
 				statement.setString(1, testId);
 				var resultSet = statement.executeQuery();
 				resultSet.next();
-				Assertions.assertThat(resultSet.getInt(1)).isEqualTo((commit) ? limit : 0);
+				assertThat(resultSet.getInt(1)).isEqualTo((commit) ? limit : 0);
 			}
 		}
 	}
 
-	private Connection getConnection() throws SQLException {
-		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
-		var driver = DriverManager.getDriver(url);
-		var properties = new Properties();
-		properties.put("user", "neo4j");
-		properties.put("password", this.neo4j.getAdminPassword());
-		return driver.connect(url, properties);
+	@Test
+	void executeShouldAutomaticallyTranslate() throws SQLException {
+
+		try (var connection = getConnection(true)) {
+
+			try (var ps = connection.prepareStatement("INSERT INTO Movie(name) VALUES (?)")) {
+				ps.setString(1, "Praxis Dr. Hasenbein");
+				var cnt = ps.executeUpdate();
+				assertThat(cnt).isEqualTo(3); // one node, one label, one property
+			}
+
+			try (var ps = connection.prepareStatement("SELECT elementId(m) AS id FROM Movie m WHERE m.name = ?")) {
+				ps.setString(1, "Praxis Dr. Hasenbein");
+				try (var result = ps.executeQuery()) {
+					assertThat(result.next()).isTrue();
+					assertThat(result.getString("id")).matches("\\d+:.+:\\d+");
+				}
+			}
+		}
 	}
 
 }

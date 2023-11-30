@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,6 +59,16 @@ class Sql2CypherTests {
 			.with(Sql2CypherConfig.builder().withParseNamedParamPrefix("$").withPrettyPrint(false).build());
 		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($1)"))
 			.isEqualTo("CREATE (movie:`Movie` {title: $1})");
+	}
+
+	@Test
+	void simpleUpdateShouldWork() {
+
+		var translator = Sql2Cypher.defaultTranslator();
+		assertThat(translator.translate("UPDATE Actor a SET name = 'Foo' WHERE id(a) = 4711")).isEqualTo("""
+				MATCH (a:Actor)
+				WHERE id(a) = 4711
+				SET a.name = 'Foo'""");
 	}
 
 	@ParameterizedTest
@@ -131,7 +140,7 @@ class Sql2CypherTests {
 			false,true,MATCH (movies:`movies`)$RETURN *
 			""")
 	void escapingShouldWork(Boolean prettyPrint, Boolean alwaysEscapeNames, String expected) {
-		var properties = new Properties();
+		var properties = new HashMap<String, String>();
 		if (prettyPrint != null) {
 			properties.put("s2c.prettyPrint", prettyPrint.toString());
 		}

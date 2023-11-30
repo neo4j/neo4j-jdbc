@@ -18,7 +18,7 @@
  */
 package org.neo4j.driver.jdbc.translator.spi;
 
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Factories that produce {@link SqlTranslator SQL translators}. Any implementation is
@@ -37,7 +37,7 @@ public interface SqlTranslatorFactory {
 	 * @param properties properties that will be used to configure the translator
 	 * @return a new or a cached translator instance
 	 */
-	SqlTranslator create(Properties properties);
+	SqlTranslator create(Map<String, String> properties);
 
 	/**
 	 * Return a human-readable name of the translators that are produced by this factory.

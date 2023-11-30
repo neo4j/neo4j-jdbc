@@ -18,6 +18,7 @@
  */
 package org.neo4j.driver.jdbc.translator.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -125,6 +126,9 @@ final class Sql2Cypher implements SqlTranslator {
 		}
 		else if (query instanceof QOM.Insert<?> t) {
 			return render(statement(t));
+		}
+		else if (query instanceof QOM.Update<?> u) {
+			return render(statement(u));
 		}
 		else {
 			throw unsupported(query);
@@ -252,6 +256,19 @@ final class Sql2Cypher implements SqlTranslator {
 				.set(node, Cypher.name("properties"))
 				.build();
 		}
+	}
+
+	Statement statement(QOM.Update<?> update) {
+		var table = update.$table();
+		var node = (Node) this.resolveTableOrJoin(table);
+
+		var updates = new ArrayList<Expression>();
+		update.$set().forEach((c, v) -> {
+			updates.add(node.property(((Field<?>) c).getName()));
+			updates.add(expression((Field<?>) v));
+		});
+
+		return Cypher.match(node).where(condition(update.$where())).set(updates).build();
 	}
 
 	private Expression expression(SelectFieldOrAsterisk t) {

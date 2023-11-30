@@ -18,7 +18,11 @@
  */
 package org.neo4j.driver.it.cp;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Optional;
+import java.util.Properties;
 
 import org.testcontainers.containers.Neo4jContainer;
 
@@ -50,6 +54,24 @@ final class TestUtils {
 			// native image, bolt must be
 			// sufficed.
 			.withReuse(true);
+	}
+
+	static Connection getConnection(Neo4jContainer<?> neo4j) throws SQLException {
+		return getConnection(neo4j, false);
+	}
+
+	static Connection getConnection(Neo4jContainer<?> neo4j, boolean translate) throws SQLException {
+		var url = "jdbc:neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687));
+		var driver = DriverManager.getDriver(url);
+		var properties = new Properties();
+		properties.put("user", "neo4j");
+		properties.put("password", neo4j.getAdminPassword());
+		if (translate) {
+			properties.put("sql2cypher", "true");
+			properties.put("s2c.alwaysEscapeNames", "false");
+			properties.put("s2c.prettyPrint", "false");
+		}
+		return driver.connect(url, properties);
 	}
 
 }

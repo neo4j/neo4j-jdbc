@@ -53,7 +53,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.driver.jdbc.values.Record;
@@ -1368,9 +1367,7 @@ class ResultSetImplTests {
 	}
 
 	private ResultSet setupWithValue(Value expectedValue, int maxFieldSize) throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
 		var statement = mock(StatementImpl.class);
-		given(statement.getBoltConnection()).willReturn(boltConnection);
 		var runResponse = mock(RunResponse.class);
 
 		var boltRecord = mock(Record.class);

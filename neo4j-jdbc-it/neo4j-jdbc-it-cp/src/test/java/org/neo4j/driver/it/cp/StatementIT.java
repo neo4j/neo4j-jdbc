@@ -18,37 +18,20 @@
  */
 package org.neo4j.driver.it.cp;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers(disabledWithoutDocker = true)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class StatementIT {
-
-	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
-
-	@BeforeAll
-	void startNeo4j() {
-		this.neo4j.start();
-	}
+class StatementIT extends IntegrationTestBase {
 
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
@@ -143,19 +126,32 @@ class StatementIT {
 		}
 	}
 
+	@Test
+	void executeShouldAutomaticallyTranslate() throws SQLException {
+
+		try (var connection = getConnection(true); var statement = connection.createStatement()) {
+			var isUpdate = statement.execute("INSERT INTO Movie(name) VALUES ('Praxis Dr. Hasenbein')");
+			assertThat(isUpdate).isFalse();
+
+			String id;
+			try (var result = statement
+				.executeQuery("SELECT elementId(m) FROM Movie m WHERE m.name = 'Praxis Dr. Hasenbein'")) {
+				assertThat(result.next()).isTrue();
+				id = result.getString(1);
+				assertThat(id).isNotNull();
+			}
+
+			var updated = statement.executeUpdate(
+					"UPDATE Movie SET name = '00 Schneider – Jagd auf Nihil Baxter' WHERE elementId(movie) = '%s'"
+						.formatted(id));
+			assertThat(updated).isOne();
+		}
+	}
+
 	private Stream<Arguments> getExecuteWithRowLimitArgs() {
 		return Stream.of(Arguments.of(5, 15, 15), Arguments.of(5, 13, 13), Arguments.of(100, 100, 100),
 				Arguments.of(100, 0, 1000), Arguments.of(1000, 0, 1000), Arguments.of(1000, 1000, 1000),
 				Arguments.of(1000, 5000, 1000), Arguments.of(0, 0, 1000));
-	}
-
-	private Connection getConnection() throws SQLException {
-		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
-		var driver = DriverManager.getDriver(url);
-		var properties = new Properties();
-		properties.put("user", "neo4j");
-		properties.put("password", this.neo4j.getAdminPassword());
-		return driver.connect(url, properties);
 	}
 
 }

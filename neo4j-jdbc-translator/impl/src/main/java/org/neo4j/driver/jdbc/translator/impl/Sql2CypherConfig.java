@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,13 +44,13 @@ public final class Sql2CypherConfig {
 
 	/**
 	 * Derives a configuration for {@code Sql2Cypher} based from the properties given.
-	 * @param properties will be searched for values under keys prefixed with {@code s2c}.
+	 * @param config will be searched for values under keys prefixed with {@code s2c}.
 	 * @return a new configuration object or the default config if there are no matching
 	 * properties.
 	 */
-	public static Sql2CypherConfig of(Properties properties) {
+	public static Sql2CypherConfig of(Map<String, String> config) {
 
-		if (properties == null || properties.isEmpty()) {
+		if (config == null || config.isEmpty()) {
 			return defaultConfig();
 		}
 
@@ -59,17 +58,13 @@ public final class Sql2CypherConfig {
 		var dashWord = Pattern.compile("-(\\w)");
 
 		var builder = builder();
-		var relevantProperties = properties.stringPropertyNames()
-			.stream()
-			.map(prefix::matcher)
-			.filter(Matcher::matches)
-			.toList();
+		var relevantProperties = config.keySet().stream().map(prefix::matcher).filter(Matcher::matches).toList();
 		if (relevantProperties.isEmpty()) {
 			return defaultConfig();
 		}
 		boolean customConfig = false;
 		for (Matcher m : relevantProperties) {
-			var v = properties.getProperty(m.group());
+			var v = config.get(m.group());
 			var k = dashWord.matcher(m.group(1)).replaceAll(mr -> mr.group(1).toUpperCase(Locale.ROOT));
 			customConfig = null != switch (k) {
 				case "parseNameCase" -> builder.withParseNameCase(ParseNameCase.fromValue(v));

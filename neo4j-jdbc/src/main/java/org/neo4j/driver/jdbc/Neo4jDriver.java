@@ -26,7 +26,9 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -114,31 +116,48 @@ public final class Neo4jDriver implements Driver {
 			databaseName = info.getProperty("database", "neo4j");
 		}
 
-		var splitParams = splitUrlParams(matcher.group("urlParams"));
+		var urlParams = splitUrlParams(matcher.group("urlParams"));
+		var config = mergeConfig(urlParams, info);
 
-		var user = parseUrlParams(splitParams, "user");
-		if (user == null) {
-			user = info.getProperty("user", "neo4j");
-		}
+		var user = config.getOrDefault("user", "neo4j");
 
-		var password = parseUrlParams(splitParams, "password");
-		if (password == null) {
-			password = info.getProperty("password");
-		}
-
+		var password = config.getOrDefault("password", "password");
 		var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
 
 		var boltAgent = BoltAgentUtil.boltAgent();
-		var userAgent = info.getProperty("agent", "neo4j-jdbc");
-		var connectTimeoutMillis = Integer.parseInt(info.getProperty("timeout", "1000"));
+		var userAgent = config.getOrDefault("agent", "neo4j-jdbc");
+		var connectTimeoutMillis = Integer.parseInt(config.getOrDefault("timeout", "1000"));
 
 		var boltConnection = this.boltConnectionProvider
 			.connect(address, securityPlan, databaseName, authToken, boltAgent, userAgent, connectTimeoutMillis)
 			.toCompletableFuture()
 			.join();
 
+		var automaticSqlTranslation = Boolean.parseBoolean(config.getOrDefault("sql2cypher", "false"));
+
 		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(splitParams, info, this::getSqlTranslatorFactory));
+				getSqlTranslatorSupplier(automaticSqlTranslation, config, this::getSqlTranslatorFactory),
+				automaticSqlTranslation);
+	}
+
+	static Map<String, String> mergeConfig(String[] urlParams, Properties jdbcProperties) {
+
+		var result = new HashMap<String, String>();
+		for (Object key : jdbcProperties.keySet()) {
+			if (key instanceof String name) {
+				result.put(name, jdbcProperties.getProperty(name));
+			}
+		}
+		var regex = "^(?<name>\\S+)=(?<value>\\S+)$";
+		var pattern = Pattern.compile(regex);
+		for (String param : urlParams) {
+			var matcher = pattern.matcher(param);
+			if (matcher.matches()) {
+				result.put(matcher.group("name"), matcher.group("value"));
+			}
+		}
+
+		return Map.copyOf(result);
 	}
 
 	@Override
@@ -184,20 +203,6 @@ public final class Neo4jDriver implements Driver {
 	@Override
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
 		throw new UnsupportedOperationException();
-	}
-
-	private static String parseUrlParams(String[] spitUrlParams, String urlParmKey) {
-		var regex = "^(%s=+)(?<value>\\S+)$".formatted(urlParmKey);
-		var pattern = Pattern.compile(regex);
-
-		for (String param : spitUrlParams) {
-			var matcher = pattern.matcher(param);
-			if (matcher.matches()) {
-				return matcher.group("value");
-			}
-		}
-
-		return null;
 	}
 
 	private static String[] splitUrlParams(String urlParams) {
@@ -258,41 +263,22 @@ public final class Neo4jDriver implements Driver {
 		return result;
 	}
 
-	/**
-	 * Evaluates whether SQL should be automatically be translated to Cypher. Any
-	 * externally passed SQL to this driver will be translated to cypher if the URL
-	 * parameter {@code sql2cypher} or a property with the same name being
-	 * {@literal true}. The URL parameter has always precedence.
-	 * @param urlParams original URL parameter passed when creating the {@link Neo4jDriver
-	 * driver}
-	 * @param properties any additional properties
-	 * @return {@literal true} if either URL parameter or properties indicate to
-	 * automatically translate SQL to cypher
-	 */
-	static boolean isAutomaticSqlTranslation(String[] urlParams, Properties properties) {
-		var sql2cypher = parseUrlParams(urlParams, "sql2cypher");
-		if (sql2cypher == null) {
-			return Boolean.parseBoolean(properties.getProperty("sql2cypher"));
-		}
-		return Boolean.parseBoolean(sql2cypher);
-	}
-
-	static Supplier<SqlTranslator> getSqlTranslatorSupplier(String[] urlParams, Properties properties,
+	static Supplier<SqlTranslator> getSqlTranslatorSupplier(boolean automaticSqlTranslation, Map<String, String> config,
 			Supplier<SqlTranslatorFactory> sqlTranslatorFactorySupplier) {
 
-		if (isAutomaticSqlTranslation(urlParams, properties)) {
+		if (automaticSqlTranslation) {
 			// If the driver should translate all queries into cypher, we can make sure
 			// this is possible by resolving
 			// the factory right now and configure the translator from the given
 			// connection properties, too
-			var sqlTranslator = sqlTranslatorFactorySupplier.get().create(properties);
+			var sqlTranslator = sqlTranslatorFactorySupplier.get().create(config);
 			return () -> sqlTranslator;
 		}
 		else {
 			// we delay this until we are explicitly asked for
 			// Copy the properties, so that they can't be changed until we need them
-			var localProperties = new Properties(properties);
-			return () -> sqlTranslatorFactorySupplier.get().create(localProperties);
+			var localConfig = Map.copyOf(config);
+			return () -> sqlTranslatorFactorySupplier.get().create(localConfig);
 		}
 	}
 

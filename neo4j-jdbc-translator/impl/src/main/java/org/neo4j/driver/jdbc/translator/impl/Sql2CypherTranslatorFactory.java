@@ -18,7 +18,7 @@
  */
 package org.neo4j.driver.jdbc.translator.impl;
 
-import java.util.Properties;
+import java.util.Map;
 
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
@@ -33,8 +33,8 @@ import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
 public final class Sql2CypherTranslatorFactory implements SqlTranslatorFactory {
 
 	@Override
-	public SqlTranslator create(Properties properties) {
-		return Sql2Cypher.defaultTranslator();
+	public SqlTranslator create(Map<String, String> config) {
+		return Sql2Cypher.with(Sql2CypherConfig.of(config));
 	}
 
 	@Override

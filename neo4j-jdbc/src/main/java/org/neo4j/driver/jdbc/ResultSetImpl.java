@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.driver.jdbc.values.Record;
@@ -59,8 +58,6 @@ import org.neo4j.driver.jdbc.values.Value;
 final class ResultSetImpl implements ResultSet {
 
 	private final StatementImpl statement;
-
-	private final BoltConnection boltConnection;
 
 	private final RunResponse runResponse;
 
@@ -85,7 +82,6 @@ final class ResultSetImpl implements ResultSet {
 	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize,
 			int maxRowLimit, int maxFieldSize) {
 		this.statement = Objects.requireNonNull(statement);
-		this.boltConnection = this.statement.getBoltConnection();
 		this.runResponse = Objects.requireNonNull(runResponse);
 		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
 		this.fetchSize = (fetchSize > 0) ? fetchSize : StatementImpl.DEFAULT_FETCH_SIZE;
@@ -110,7 +106,7 @@ final class ResultSetImpl implements ResultSet {
 			return true;
 		}
 		if (this.batchPullResponse.hasMore()) {
-			this.batchPullResponse = this.boltConnection.pull(this.runResponse, calculateFetchSize())
+			this.batchPullResponse = this.statement.pull(this.runResponse, calculateFetchSize())
 				.toCompletableFuture()
 				.join();
 			this.recordsBatchIterator = this.batchPullResponse.records().iterator();
@@ -128,9 +124,9 @@ final class ResultSetImpl implements ResultSet {
 		var autocommit = this.statement.isAutoCommit();
 		var flush = !autocommit;
 		var discardFuture = (this.batchPullResponse.hasMore())
-				? this.boltConnection.discard(this.runResponse, -1, flush).toCompletableFuture()
+				? this.statement.discard(this.runResponse, -1, flush).toCompletableFuture()
 				: CompletableFuture.completedFuture(null);
-		var commitStage = autocommit ? this.boltConnection.commit().toCompletableFuture()
+		var commitStage = autocommit ? this.statement.commit().toCompletableFuture()
 				: CompletableFuture.completedFuture(null);
 		CompletableFuture.allOf(discardFuture, commitStage).join();
 		this.closed = true;

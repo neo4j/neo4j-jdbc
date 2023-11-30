@@ -85,7 +85,7 @@ class Neo4jDriverTests {
 	@Test
 	void oneSqlTranslatorShouldWork() {
 
-		var sqlTranslators = List.of((SqlTranslatorFactory) sql -> null);
+		var sqlTranslators = List.of((SqlTranslatorFactory) (config) -> null);
 		assertThat(Neo4jDriver.uniqueOrThrow(sqlTranslators.iterator())).isEqualTo(sqlTranslators.get(0));
 	}
 
@@ -108,7 +108,7 @@ class Neo4jDriverTests {
 		sqlTranslators.forEach(t -> verify(t).getName());
 	}
 
-	static Stream<Arguments> determinationToAutomaticallyTranslateSqlToCypherShouldWork() {
+	static Stream<Arguments> mergeOfUrlParamsAndPropertiesShouldWork() {
 		return Stream.of(Arguments.of(new String[0], properties(Map.of()), false),
 				Arguments.of(new String[0], properties(Map.of("sql2cypher", "true")), true),
 				Arguments.of(new String[] { "sql2cypher=false" }, properties(Map.of("sql2cypher", "true")), false),
@@ -124,16 +124,21 @@ class Neo4jDriverTests {
 
 	@ParameterizedTest
 	@MethodSource
-	void determinationToAutomaticallyTranslateSqlToCypherShouldWork(String[] urlParams, Properties properties,
-			boolean expected) {
+	void mergeOfUrlParamsAndPropertiesShouldWork(String[] urlParams, Properties properties, boolean expected) {
 
-		assertThat(Neo4jDriver.isAutomaticSqlTranslation(urlParams, properties)).isEqualTo(expected);
+		var config = Neo4jDriver.mergeConfig(urlParams, properties);
+		if (urlParams.length == 0 && properties.isEmpty()) {
+			assertThat(config).isEmpty();
+		}
+		else {
+			assertThat(config).containsEntry("sql2cypher", Boolean.toString(expected));
+		}
 	}
 
 	@Test
 	void sqlTranslatorShouldBeLazilyLoadedWithoutAutomaticTranslation() {
 
-		var sqlTranslatorSupplier = Neo4jDriver.getSqlTranslatorSupplier(new String[0], properties(Map.of()), () -> {
+		var sqlTranslatorSupplier = Neo4jDriver.getSqlTranslatorSupplier(false, Map.of(), () -> {
 			throw new UnsupportedOperationException("later");
 		});
 		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(sqlTranslatorSupplier::get)
@@ -143,13 +148,11 @@ class Neo4jDriverTests {
 	@Test
 	void sqlTranslatorShouldBeLoadedImmediateWithAutomaticTranslation() {
 
-		var urlParams = new String[0];
-		var properties = properties(Map.of("sql2cypher", "true"));
 		Supplier<SqlTranslatorFactory> throwingSupplier = () -> {
 			throw new UnsupportedOperationException("now");
 		};
 		assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> Neo4jDriver.getSqlTranslatorSupplier(urlParams, properties, throwingSupplier))
+			.isThrownBy(() -> Neo4jDriver.getSqlTranslatorSupplier(true, Map.of(), throwingSupplier))
 			.withMessage("now");
 	}
 
