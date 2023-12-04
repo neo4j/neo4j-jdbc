@@ -27,6 +27,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
+import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.exception.BoltException;
 import org.neo4j.driver.jdbc.internal.bolt.exception.Neo4jException;
@@ -50,6 +51,7 @@ public interface BoltProtocol {
 	/**
 	 * Initialize channel after it is connected and handshake selected this protocol
 	 * version.
+	 * @param address the server address for routing context
 	 * @param userAgent the user agent string
 	 * @param boltAgent the bolt agent
 	 * @param authToken the auth token
@@ -57,8 +59,8 @@ public interface BoltProtocol {
 	 * completed
 	 * @param clock the clock to use
 	 */
-	void initializeChannel(String userAgent, BoltAgent boltAgent, Map<String, Value> authToken,
-			ChannelPromise channelInitializedPromise, Clock clock);
+	void initializeChannel(BoltServerAddress address, String userAgent, BoltAgent boltAgent,
+			Map<String, Value> authToken, ChannelPromise channelInitializedPromise, Clock clock);
 
 	CompletionStage<Void> beginTransaction(Connection connection, Set<String> bookmarks, AccessMode accessMode,
 			TransactionType transactionType, boolean flush);

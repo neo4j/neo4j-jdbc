@@ -68,7 +68,8 @@ public final class NettyConnectionProvider implements ConnectionProvider {
 		var connectionInitialized = channel.newPromise();
 
 		installChannelConnectedListeners(address, connectedFuture, handshakeCompleted, connectTimeoutMillis);
-		installHandshakeCompletedListeners(handshakeCompleted, connectionInitialized, authToken, boltAgent, userAgent);
+		installHandshakeCompletedListeners(handshakeCompleted, connectionInitialized, address, authToken, boltAgent,
+				userAgent);
 
 		var future = new CompletableFuture<Connection>();
 		connectionInitialized.addListener((ChannelFutureListener) f -> {
@@ -100,7 +101,8 @@ public final class NettyConnectionProvider implements ConnectionProvider {
 	}
 
 	private void installHandshakeCompletedListeners(ChannelPromise handshakeCompleted,
-			ChannelPromise connectionInitialized, AuthToken authToken, BoltAgent boltAgent, String userAgent) {
+			ChannelPromise connectionInitialized, BoltServerAddress address, AuthToken authToken, BoltAgent boltAgent,
+			String userAgent) {
 		var pipeline = handshakeCompleted.channel().pipeline();
 
 		// remove timeout handler from the pipeline once TLS and Bolt handshakes are
@@ -111,8 +113,8 @@ public final class NettyConnectionProvider implements ConnectionProvider {
 		// add listener that sends an INIT message. connection is now fully established.
 		// channel pipeline is fully
 		// set to send/receive messages for a selected protocol version
-		handshakeCompleted.addListener(
-				new HandshakeCompletedListener(userAgent, boltAgent, authToken, connectionInitialized, this.clock));
+		handshakeCompleted.addListener(new HandshakeCompletedListener(address, userAgent, boltAgent, authToken,
+				connectionInitialized, this.clock));
 	}
 
 }

@@ -1,0 +1,124 @@
+#
+# Copyright (c) 2023 "Neo4j,"
+# Neo4j Sweden AB [https://neo4j.com]
+#
+# This file is part of Neo4j.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: '3.8'
+
+# Custom top-level network
+networks:
+  neo4j-internal:
+
+services:
+
+  server1:
+    # Docker image to be used
+    image: "neo4j:5.13-enterprise"
+
+    # Hostname
+    hostname: server1
+
+    # Service-level network, which specifies the networks, from the list of the top-level networks (in this case only neo4j-internal), that the server will connect to.
+    # Adds a network alias (used in neo4j.conf when configuring the discovery members)
+    networks:
+      neo4j-internal:
+        aliases:
+          - neo4j-network
+
+    # Uncomment the volumes to be mounted to make them accessible from outside the container.
+    volumes:
+      - ./neo4j.conf:/conf/neo4j.conf # This is the main configuration file.
+
+    # Passes the following environment variables to the container
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_AUTH=neo4j/verysecret
+      - EXTENDED_CONF=yes
+      - NEO4J_EDITION=docker_compose
+      - NEO4J_initial_server_mode__constraint=PRIMARY
+
+    # Simple check testing whether the port 7474 is opened.
+    # If so, the instance running inside the container is considered as "healthy".
+    # This status can be checked using the "docker ps" command.
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+    # Set up the user
+    user: ${USER_ID}:${GROUP_ID}
+
+    # The ports that will be accessible from outside the container - HTTP (7474) and Bolt (7687).
+    # Uncomment if you use this file outside TC
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+  server2:
+    image: "neo4j:5.13-enterprise"
+    hostname: server2
+    networks:
+      neo4j-internal:
+        aliases:
+          - neo4j-network
+    volumes:
+      - ./neo4j.conf:/conf/neo4j.conf
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_AUTH=neo4j/verysecret
+      - EXTENDED_CONF=yes
+      - NEO4J_EDITION=docker_compose
+      - NEO4J_initial_server_mode__constraint=PRIMARY
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+    user: ${USER_ID}:${GROUP_ID}
+
+  server3:
+    image: "neo4j:5.13-enterprise"
+    hostname: server3
+    networks:
+      neo4j-internal:
+        aliases:
+          - neo4j-network
+    volumes:
+      - ./neo4j.conf:/conf/neo4j.conf
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_AUTH=neo4j/verysecret
+      - EXTENDED_CONF=yes
+      - NEO4J_EDITION=docker_compose
+      - NEO4J_initial_server_mode__constraint=PRIMARY
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+    user: ${USER_ID}:${GROUP_ID}
+
+  server4:
+    image: "neo4j:5.13-enterprise"
+    hostname: server4
+    networks:
+      neo4j-internal:
+        aliases:
+          - neo4j-network
+    volumes:
+      - ./neo4j.conf:/conf/neo4j.conf
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_AUTH=neo4j/verysecret
+      - EXTENDED_CONF=yes
+      - NEO4J_EDITION=docker_compose
+      - NEO4J_initial_server_mode__constraint=SECONDARY
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+    user: ${USER_ID}:${GROUP_ID}
+    

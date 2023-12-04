@@ -162,7 +162,7 @@
 						</goals>
 						<configuration>
 							<classpathDependencyExcludes>
-								<classpathDependencyExclude>${groupId}:neo4j-jdbc</classpathDependencyExclude>
+								<classpathDependencyExclude>${project.groupId}:neo4j-jdbc</classpathDependencyExclude>
 							</classpathDependencyExcludes>
 						</configuration>
 					</execution>

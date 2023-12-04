@@ -21,9 +21,6 @@ package org.neo4j.driver.jdbc.internal.bolt;
 import java.util.Objects;
 
 public record BoltServerAddress(String host, int port) {
-
-	public static final int DEFAULT_PORT = 7687;
-
 	public BoltServerAddress(String host, int port) {
 		this.host = Objects.requireNonNull(host, "host");
 		this.port = requireValidPort(port);

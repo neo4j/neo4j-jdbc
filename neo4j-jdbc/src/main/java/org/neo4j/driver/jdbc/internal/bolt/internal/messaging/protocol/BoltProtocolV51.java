@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import io.netty.channel.ChannelPromise;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
+import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.internal.BoltProtocol;
 import org.neo4j.driver.jdbc.internal.bolt.internal.BoltProtocolVersion;
@@ -74,11 +75,11 @@ public final class BoltProtocolV51 implements BoltProtocol {
 	}
 
 	@Override
-	public void initializeChannel(String userAgent, BoltAgent boltAgent, Map<String, Value> authToken,
-			ChannelPromise channelInitializedPromise, Clock clock) {
+	public void initializeChannel(BoltServerAddress address, String userAgent, BoltAgent boltAgent,
+			Map<String, Value> authToken, ChannelPromise channelInitializedPromise, Clock clock) {
 		var channel = channelInitializedPromise.channel();
 
-		var helloMessage = new HelloMessage(userAgent, boltAgent, Collections.emptyMap());
+		var helloMessage = new HelloMessage(address, userAgent, boltAgent, Collections.emptyMap());
 		var helloFuture = new CompletableFuture<Void>();
 		ChannelAttributes.messageDispatcher(channel).enqueue(new HelloResponseHandler(channel, helloFuture));
 		channel.write(helloMessage, channel.voidPromise());

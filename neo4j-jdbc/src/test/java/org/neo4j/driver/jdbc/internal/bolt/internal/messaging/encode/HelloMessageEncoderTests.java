@@ -24,6 +24,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
+import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.ValuePacker;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.HelloMessage;
 import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.request.ResetMessage;
@@ -46,7 +47,8 @@ class HelloMessageEncoderTests {
 		authToken.put("username", Values.value("bob"));
 		authToken.put("password", Values.value("secret"));
 
-		this.encoder.encode(new HelloMessage("MyDriver", VALUE, authToken), this.packer);
+		this.encoder.encode(new HelloMessage(new BoltServerAddress("localhost", 7687), "MyDriver", VALUE, authToken),
+				this.packer);
 
 		var order = Mockito.inOrder(this.packer);
 		order.verify(this.packer).packStructHeader(1, HelloMessage.SIGNATURE);
@@ -54,6 +56,7 @@ class HelloMessageEncoderTests {
 		Map<String, Value> expectedMetadata = new HashMap<>(authToken);
 		expectedMetadata.put("user_agent", Values.value("MyDriver"));
 		expectedMetadata.put("bolt_agent", Values.value(Map.of("product", VALUE.product())));
+		expectedMetadata.put("routing", Values.value(Map.of("address", "localhost:7687")));
 		order.verify(this.packer).pack(expectedMetadata);
 	}
 

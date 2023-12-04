@@ -50,6 +50,9 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
+      - name: 'Ensure read permissions for neo4j.conf'
+        run: chmod 640 neo4j-jdbc-it/neo4j-jdbc-it-cp/src/test/resources/cc/neo4j.conf
+
       - name: 'Clean and verify'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any

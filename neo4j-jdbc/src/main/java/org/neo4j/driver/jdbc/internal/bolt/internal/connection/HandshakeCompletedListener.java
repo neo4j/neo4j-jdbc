@@ -26,10 +26,13 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelPromise;
 import org.neo4j.driver.jdbc.internal.bolt.AuthToken;
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
+import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.internal.BoltProtocol;
 import org.neo4j.driver.jdbc.internal.bolt.internal.InternalAuthToken;
 
 public final class HandshakeCompletedListener implements ChannelFutureListener {
+
+	private final BoltServerAddress address;
 
 	private final String userAgent;
 
@@ -41,14 +44,14 @@ public final class HandshakeCompletedListener implements ChannelFutureListener {
 
 	private final Clock clock;
 
-	public HandshakeCompletedListener(String userAgent, BoltAgent boltAgent, AuthToken authToken,
-			ChannelPromise connectionInitializedPromise, Clock clock) {
-		Objects.requireNonNull(clock, "clock must not be null");
+	public HandshakeCompletedListener(BoltServerAddress address, String userAgent, BoltAgent boltAgent,
+			AuthToken authToken, ChannelPromise connectionInitializedPromise, Clock clock) {
+		this.address = Objects.requireNonNull(address);
 		this.userAgent = Objects.requireNonNull(userAgent);
 		this.boltAgent = Objects.requireNonNull(boltAgent);
 		this.authToken = authToken;
 		this.connectionInitializedPromise = Objects.requireNonNull(connectionInitializedPromise);
-		this.clock = clock;
+		this.clock = Objects.requireNonNull(clock);
 	}
 
 	@Override
@@ -56,8 +59,8 @@ public final class HandshakeCompletedListener implements ChannelFutureListener {
 		if (future.isSuccess()) {
 			var protocol = BoltProtocol.forChannel(future.channel());
 			var channel = this.connectionInitializedPromise.channel();
-			protocol.initializeChannel(this.userAgent, this.boltAgent, ((InternalAuthToken) this.authToken).toMap(),
-					this.connectionInitializedPromise, this.clock);
+			protocol.initializeChannel(this.address, this.userAgent, this.boltAgent,
+					((InternalAuthToken) this.authToken).toMap(), this.connectionInitializedPromise, this.clock);
 		}
 		else {
 			this.connectionInitializedPromise.setFailure(future.cause());

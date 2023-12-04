@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.neo4j.driver.jdbc.internal.bolt.BoltAgent;
+import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.driver.jdbc.internal.bolt.internal.InternalAuthToken;
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.Values;
@@ -49,8 +50,9 @@ public final class HelloMessage extends MessageWithMetadata {
 
 	private static final String DATE_TIME_UTC_PATCH_VALUE = "utc";
 
-	public HelloMessage(String userAgent, BoltAgent boltAgent, Map<String, Value> authToken) {
-		super(buildMetadata(userAgent, boltAgent, authToken));
+	public HelloMessage(BoltServerAddress address, String userAgent, BoltAgent boltAgent,
+			Map<String, Value> authToken) {
+		super(buildMetadata(address, userAgent, boltAgent, authToken));
 	}
 
 	@Override
@@ -82,7 +84,7 @@ public final class HelloMessage extends MessageWithMetadata {
 		return "HELLO " + metadataCopy;
 	}
 
-	private static Map<String, Value> buildMetadata(String userAgent, BoltAgent boltAgent,
+	private static Map<String, Value> buildMetadata(BoltServerAddress address, String userAgent, BoltAgent boltAgent,
 			Map<String, Value> authToken) {
 		Map<String, Value> result = new HashMap<>(authToken);
 		if (userAgent != null) {
@@ -102,6 +104,8 @@ public final class HelloMessage extends MessageWithMetadata {
 			}
 			result.put(BOLT_AGENT_METADATA_KEY, Values.value(boltAgentMap));
 		}
+		result.put(ROUTING_CONTEXT_METADATA_KEY,
+				Values.value(Map.of("address", "%s:%d".formatted(address.host(), address.port()))));
 		return result;
 	}
 
