@@ -773,22 +773,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_CAT");
 
-		var pull = new PullResponse() {
-			@Override
-			public List<Record> records() {
-				return new ArrayList<>();
-			}
-
-			@Override
-			public Optional<ResultSummary> resultSummary() {
-				return Optional.empty();
-			}
-
-			@Override
-			public boolean hasMore() {
-				return false;
-			}
-		};
+		var pull = getEmptyPullResponse();
 
 		var response = createRunResponseForStaticKeys(keys);
 		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
@@ -1018,15 +1003,25 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		throw new UnsupportedOperationException();
 	}
 
-	/***
-	 * Neo4j does not support schemas, this method does always throw an
-	 * {@link UnsupportedOperationException}.
-	 * @return nothing
-	 * @throws UnsupportedOperationException in all cases
-	 */
 	@Override
-	public ResultSet getSchemas(String catalog, String schemaPattern) {
-		throw new UnsupportedOperationException();
+	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+
+		assertCatalogIsNull(catalog);
+
+		if (schemaPattern.equals("public")) {
+			return getSchemas();
+		}
+
+		// return an empty result set if anything other than public is asked for.
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_CATALOG");
+		// return RS with just public in it
+		PullResponse pull = getEmptyPullResponse();
+
+		var runResponse = createRunResponseForStaticKeys(keys);
+
+		return new ResultSetImpl(new LocalStatementImpl(), runResponse, pull, -1, -1, -1);
 	}
 
 	@Override
@@ -1087,6 +1082,25 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			@Override
 			public List<String> keys() {
 				return keys;
+			}
+		};
+	}
+
+	private static PullResponse getEmptyPullResponse() {
+		return new PullResponse() {
+			@Override
+			public List<Record> records() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public Optional<ResultSummary> resultSummary() {
+				return Optional.empty();
+			}
+
+			@Override
+			public boolean hasMore() {
+				return false;
 			}
 		};
 	}

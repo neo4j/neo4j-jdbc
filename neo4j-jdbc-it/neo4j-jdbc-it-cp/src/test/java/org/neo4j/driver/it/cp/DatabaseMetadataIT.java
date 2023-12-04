@@ -150,6 +150,22 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
+	public void getAllSchemasAskingForPublicShouldReturnPublic() throws SQLException {
+		var schemasRs = this.connection.getMetaData().getSchemas(null, "public");
+
+		if (schemasRs.next()) {
+			assertThat(schemasRs.getString(1)).isEqualTo("public");
+		}
+	}
+
+	@Test
+	public void getAllSchemasAskingForPublicShouldReturnAnEmptyRs() throws SQLException {
+		var schemasRs = this.connection.getMetaData().getSchemas(null, "notPublic");
+
+		assertThat(schemasRs.next()).isFalse();
+	}
+
+	@Test
 	public void testGetUser() throws SQLException {
 		var username = this.connection.getMetaData().getUserName();
 
