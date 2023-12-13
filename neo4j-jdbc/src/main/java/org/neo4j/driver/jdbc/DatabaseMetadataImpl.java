@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,14 +47,18 @@ import org.neo4j.driver.jdbc.values.Values;
  * Internal implementation for providing Neo4j specific database metadata.
  *
  * @author Michael J. Simons
+ * @author Conor Watson
  * @since 1.0.0
  */
 final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final BoltConnection boltConnection;
 
-	DatabaseMetadataImpl(BoltConnection boltConnection) {
+	private final boolean automaticSqlTranslation;
+
+	DatabaseMetadataImpl(BoltConnection boltConnection, boolean automaticSqlTranslation) {
 		this.boltConnection = boltConnection;
+		this.automaticSqlTranslation = automaticSqlTranslation;
 	}
 
 	@Override
@@ -101,24 +106,26 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		throw new UnsupportedOperationException();
 	}
 
+	// Wrt ordering see
+	// https://neo4j.com/docs/cypher-manual/current/clauses/order-by/#order-null
 	@Override
-	public boolean nullsAreSortedHigh() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean nullsAreSortedHigh() {
+		return true;
 	}
 
 	@Override
-	public boolean nullsAreSortedLow() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean nullsAreSortedLow() {
+		return false;
 	}
 
 	@Override
-	public boolean nullsAreSortedAtStart() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean nullsAreSortedAtStart() {
+		return false;
 	}
 
 	@Override
-	public boolean nullsAreSortedAtEnd() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean nullsAreSortedAtEnd() {
+		return true;
 	}
 
 	@Override
@@ -161,53 +168,60 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean usesLocalFiles() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean usesLocalFiles() {
+		return false;
 	}
 
 	@Override
-	public boolean usesLocalFilePerTable() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean usesLocalFilePerTable() {
+		return false;
+	}
+
+	// Identifiers are actually all case-sensitive in neo4j (apart from build in
+	// procedures), i.e.
+	// WITH 1 AS foobar WITH FooBar AS bazbar RETURN bazbar
+	// will fail with Variable `FooBar` not defined, which also applies to result.
+	// From
+	// WITH 1 AS FooBar RETURN FooBar AS foobar, FooBar
+	// you can request both foobar and FooBar
+	@Override
+	public boolean supportsMixedCaseIdentifiers() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsMixedCaseIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean storesUpperCaseIdentifiers() {
+		return false;
 	}
 
 	@Override
-	public boolean storesUpperCaseIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean storesLowerCaseIdentifiers() {
+		return false;
 	}
 
 	@Override
-	public boolean storesLowerCaseIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean storesMixedCaseIdentifiers() {
+		return true;
 	}
 
 	@Override
-	public boolean storesMixedCaseIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsMixedCaseQuotedIdentifiers() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean storesUpperCaseQuotedIdentifiers() {
+		return false;
 	}
 
 	@Override
-	public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean storesLowerCaseQuotedIdentifiers() {
+		return false;
 	}
 
 	@Override
 	public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-		throw new UnsupportedOperationException();
+		return true;
 	}
 
 	@Override
@@ -268,7 +282,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean nullPlusNonNullIsNull() throws SQLException {
-		throw new UnsupportedOperationException();
+		return true;
 	}
 
 	@Override
@@ -282,38 +296,41 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsTableCorrelationNames() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsTableCorrelationNames() {
+		return this.automaticSqlTranslation;
+	}
+
+	// This method is supposed to return `false` when table correlations names are
+	// restricted to being different
+	// from the referenced table.
+	@Override
+	public boolean supportsDifferentTableCorrelationNames() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsExpressionsInOrderBy() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsExpressionsInOrderBy() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsOrderByUnrelated() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsOrderByUnrelated() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsGroupBy() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsGroupBy() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsGroupByUnrelated() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsGroupByUnrelated() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean supportsGroupByBeyondSelect() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsGroupByBeyondSelect() {
+		return true;
 	}
 
 	@Override
@@ -322,8 +339,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsMultipleResultSets() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsMultipleResultSets() {
+		return false;
 	}
 
 	@Override
@@ -462,23 +479,23 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsPositionedDelete() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsPositionedDelete() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsPositionedUpdate() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsPositionedUpdate() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsSelectForUpdate() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsSelectForUpdate() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsStoredProcedures() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsStoredProcedures() {
+		return true;
 	}
 
 	@Override
@@ -487,8 +504,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsSubqueriesInExists() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsSubqueriesInExists() {
+		return true;
 	}
 
 	@Override
@@ -507,33 +524,33 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsUnion() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsUnion() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsUnionAll() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsUnionAll() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsOpenCursorsAcrossCommit() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsOpenCursorsAcrossRollback() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsOpenStatementsAcrossCommit() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsOpenStatementsAcrossRollback() {
+		return false;
 	}
 
 	@Override
@@ -578,7 +595,15 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getMaxConnections() throws SQLException {
-		throw new UnsupportedOperationException();
+		var response = doQueryForPullResponse(
+				"SHOW SETTINGS YIELD * WHERE name =~ 'server.bolt.thread_pool_max_size' RETURN toInteger(value)",
+				Map.of());
+
+		if (response.records().isEmpty()) {
+			return 0;
+		}
+		var record = response.records().get(0);
+		return record.get(0).asInt();
 	}
 
 	@Override
@@ -617,8 +642,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public int getMaxStatementLength() throws SQLException {
-		throw new UnsupportedOperationException();
+	public int getMaxStatementLength() {
+		return 0;
 	}
 
 	@Override
@@ -918,23 +943,23 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsSavepoints() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsSavepoints() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsNamedParameters() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsNamedParameters() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsMultipleOpenResults() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsMultipleOpenResults() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsGetGeneratedKeys() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsGetGeneratedKeys() {
+		return false;
 	}
 
 	@Override
@@ -1058,18 +1083,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean generatedKeyAlwaysReturned() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean generatedKeyAlwaysReturned() {
+		return false;
 	}
 
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	private static RunResponse createRunResponseForStaticKeys(ArrayList<String> keys) {

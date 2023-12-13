@@ -31,7 +31,6 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
 import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -55,7 +54,7 @@ import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.ValueException;
 import org.neo4j.driver.jdbc.values.Values;
 
-final class PreparedStatementImpl extends StatementImpl implements PreparedStatement {
+final class PreparedStatementImpl extends StatementImpl implements Neo4jPreparedStatement {
 
 	private final String sql;
 
@@ -215,11 +214,18 @@ final class PreparedStatementImpl extends StatementImpl implements PreparedState
 	}
 
 	@Override
-	public void setString(int parameterIndex, String string) throws SQLException {
+	public void setString(String parameterName, String string) throws SQLException {
 		assertIsOpen();
-		assertValidParameterIndex(parameterIndex);
+		Objects.requireNonNull(parameterName);
 		Objects.requireNonNull(string);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(string));
+		this.parameters.put(parameterName, Values.value(string));
+	}
+
+	@Override
+	public void setString(int parameterIndex, String string) throws SQLException {
+
+		assertValidParameterIndex(parameterIndex);
+		setString(computeParameterIndex(parameterIndex), string);
 	}
 
 	private String computeParameterIndex(int parameterIndex) {

@@ -53,6 +53,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 						// GraalVM, which ofc is not there when the tests run to be
 						// discovered
 @DisabledIfSystemProperty(named = "native", matches = ".+", disabledReason = "Because $tools.")
+@DisabledIfSystemProperty(named = "skipClusterIT", matches = ".+", disabledReason = "Because $tools.")
 class ClusterIT {
 
 	static final String USERNAME = "neo4j";

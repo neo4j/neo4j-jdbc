@@ -148,6 +148,57 @@ class StatementIT extends IntegrationTestBase {
 		}
 	}
 
+	@Test
+	void orderOrGroupByUnrelated() throws SQLException {
+
+		try (var connection = getConnection(true)) {
+
+			record Movie(String title, int year) {
+			}
+
+			try (var ps = connection.prepareStatement("INSERT INTO Movie(title, year) VALUES (?, ?)")) {
+				for (var movie : new Movie[] { new Movie("Praxis Dr. Hasenbein", 1997),
+						new Movie("Jazzclub - Der frühe Vogel fängt den Wurm", 2004) }) {
+					ps.setString(1, movie.title);
+					ps.setInt(2, movie.year);
+					ps.executeUpdate();
+				}
+			}
+
+			// supportsOrderByUnrelated
+			try (var ps = connection.prepareStatement("SELECT m.title FROM Movie m ORDER BY m.year DESC")) {
+				try (var result = ps.executeQuery()) {
+					assertThat(result.next()).isTrue();
+					assertThat(result.getString(1)).startsWith("Jazzclub");
+					assertThat(result.next()).isTrue();
+					assertThat(result.getString(1)).startsWith("Praxis");
+				}
+			}
+
+			// supportsGroupByUnrelated
+			try (var ps = connection.prepareStatement("SELECT m.title FROM Movie m GROUP BY m.year")) {
+				try (var result = ps.executeQuery()) {
+					int cnt = 0;
+					while (result.next()) {
+						++cnt;
+					}
+					assertThat(cnt).isEqualTo(2);
+				}
+			}
+
+			// supportsGroupByBeyondSelect
+			try (var ps = connection.prepareStatement("SELECT m.title FROM Movie m GROUP BY m.title, m.year")) {
+				try (var result = ps.executeQuery()) {
+					int cnt = 0;
+					while (result.next()) {
+						++cnt;
+					}
+					assertThat(cnt).isEqualTo(2);
+				}
+			}
+		}
+	}
+
 	private Stream<Arguments> getExecuteWithRowLimitArgs() {
 		return Stream.of(Arguments.of(5, 15, 15), Arguments.of(5, 13, 13), Arguments.of(100, 100, 100),
 				Arguments.of(100, 0, 1000), Arguments.of(1000, 0, 1000), Arguments.of(1000, 1000, 1000),

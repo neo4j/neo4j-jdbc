@@ -140,7 +140,7 @@ class DatabaseMetadataImplTests {
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
 		var boltConnection = Mockito.mock(BoltConnection.class);
-		return new DatabaseMetadataImpl(boltConnection);
+		return new DatabaseMetadataImpl(boltConnection, false);
 	}
 
 }

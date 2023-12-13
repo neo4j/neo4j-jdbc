@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class DatabaseMetadataIT {
+class DatabaseMetadataIT {
 
 	private Connection connection;
 
@@ -76,7 +76,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getMetaDataProcedure() throws SQLException {
+	void getMetaDataProcedure() throws SQLException {
 		var resultCount = 0;
 		try (var results = this.connection.getMetaData().getProcedures(null, null, "tx.getMetaData")) {
 
@@ -101,21 +101,21 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void passingAnyCatalogMustError() throws SQLException {
+	void passingAnyCatalogMustError() throws SQLException {
 		var metaData = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> metaData.getProcedures("somethingRandom", null, null));
 	}
 
 	@Test
-	public void proceduresShouldBeExecutable() throws SQLException {
+	void proceduresShouldBeExecutable() throws SQLException {
 		var executable = this.connection.getMetaData().allProceduresAreCallable();
 
 		assertThat(executable).isTrue();
 	}
 
 	@Test
-	public void afterDenyingExecutionAllProceduresAreCallableShouldFail() throws SQLException {
+	void afterDenyingExecutionAllProceduresAreCallableShouldFail() throws SQLException {
 		executeQueryWithoutResult("DENY EXECUTE PROCEDURE tx.getMetaData ON DBMS TO admin");
 		var executable = this.connection.getMetaData().allProceduresAreCallable();
 
@@ -135,13 +135,13 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllCatalogsShouldReturnAnEmptyResultSet() throws SQLException {
+	void getAllCatalogsShouldReturnAnEmptyResultSet() throws SQLException {
 		var catalogRs = this.connection.getMetaData().getCatalogs();
 		assertThat(catalogRs.next()).isFalse();
 	}
 
 	@Test
-	public void getAllSchemasShouldReturnPublic() throws SQLException {
+	void getAllSchemasShouldReturnPublic() throws SQLException {
 		var schemasRs = this.connection.getMetaData().getSchemas();
 
 		if (schemasRs.next()) {
@@ -150,7 +150,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllSchemasAskingForPublicShouldReturnPublic() throws SQLException {
+	void getAllSchemasAskingForPublicShouldReturnPublic() throws SQLException {
 		var schemasRs = this.connection.getMetaData().getSchemas(null, "public");
 
 		if (schemasRs.next()) {
@@ -159,35 +159,35 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllSchemasAskingForPublicShouldReturnAnEmptyRs() throws SQLException {
+	void getAllSchemasAskingForPublicShouldReturnAnEmptyRs() throws SQLException {
 		var schemasRs = this.connection.getMetaData().getSchemas(null, "notPublic");
 
 		assertThat(schemasRs.next()).isFalse();
 	}
 
 	@Test
-	public void testGetUser() throws SQLException {
+	void testGetUser() throws SQLException {
 		var username = this.connection.getMetaData().getUserName();
 
 		assertThat(username).isEqualTo("neo4j");
 	}
 
 	@Test
-	public void testGetDatabaseProductNameShouldReturnNeo4j() throws SQLException {
+	void testGetDatabaseProductNameShouldReturnNeo4j() throws SQLException {
 		var productName = this.connection.getMetaData().getDatabaseProductName();
 
 		assertThat(productName).isEqualTo("Neo4j Kernel-enterprise-5.13.0");
 	}
 
 	@Test
-	public void getDatabaseProductVersionShouldReturnTestContainerVersion() throws SQLException {
+	void getDatabaseProductVersionShouldReturnTestContainerVersion() throws SQLException {
 		var productName = this.connection.getMetaData().getDatabaseProductVersion();
 
 		assertThat(productName).isEqualTo("5.13.0");
 	}
 
 	@Test
-	public void getAllTablesShouldReturnAllLabelsOnATable() throws SQLException {
+	void getAllTablesShouldReturnAllLabelsOnATable() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -205,7 +205,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldReturnEmptyForCatalogAndSchema() throws SQLException {
+	void getAllTablesShouldReturnEmptyForCatalogAndSchema() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -223,7 +223,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldReturnPublicForSchema() throws SQLException {
+	void getAllTablesShouldReturnPublicForSchema() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -241,7 +241,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldReturnPublicForSchemaIfPassingPublicForSchema() throws SQLException {
+	void getAllTablesShouldReturnPublicForSchemaIfPassingPublicForSchema() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -259,7 +259,7 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldOnlyReturnSpecifiedTables() throws SQLException {
+	void getAllTablesShouldOnlyReturnSpecifiedTables() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -277,17 +277,24 @@ public class DatabaseMetadataIT {
 	}
 
 	@Test
-	public void getAllTablesShouldErrorIfYouPassAnythingToCatalog() throws SQLException {
+	void getAllTablesShouldErrorIfYouPassAnythingToCatalog() throws SQLException {
 		var getMetadata = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> getMetadata.getTables("someRandomGarbage", null, "", new String[0]));
 	}
 
 	@Test
-	public void getAllTablesShouldErrorIfYouPassAnythingButPublicToSchema() throws SQLException {
+	void getAllTablesShouldErrorIfYouPassAnythingButPublicToSchema() throws SQLException {
 		var getMetadata = this.connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> getMetadata.getTables(null, "notPublic", "", new String[0]));
+	}
+
+	@Test
+	void maxConnectionsShouldWork() throws SQLException {
+
+		var metadata = this.connection.getMetaData();
+		assertThat(metadata.getMaxConnections()).isGreaterThan(0);
 	}
 
 }

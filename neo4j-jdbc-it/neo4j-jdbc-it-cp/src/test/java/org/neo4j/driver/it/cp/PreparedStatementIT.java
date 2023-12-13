@@ -24,6 +24,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.driver.jdbc.Neo4jPreparedStatement;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -69,6 +70,22 @@ class PreparedStatementIT extends IntegrationTestBase {
 				var resultSet = statement.executeQuery();
 				resultSet.next();
 				assertThat(resultSet.getInt(1)).isEqualTo((commit) ? limit : 0);
+			}
+		}
+	}
+
+	@Test
+	void shouldBeAbleToUseNamedParameters() throws SQLException {
+
+		try (var connection = getConnection()) {
+			try (var statement = connection.prepareStatement("CREATE (n:Test {testId: $id}) RETURN n.testId")) {
+				var neo4jStatement = statement.unwrap(Neo4jPreparedStatement.class);
+
+				var id = UUID.randomUUID().toString();
+				neo4jStatement.setString("id", id);
+				var resultSet = statement.executeQuery();
+				assertThat(resultSet.next()).isTrue();
+				assertThat(resultSet.getString(1)).isEqualTo(id);
 			}
 		}
 	}

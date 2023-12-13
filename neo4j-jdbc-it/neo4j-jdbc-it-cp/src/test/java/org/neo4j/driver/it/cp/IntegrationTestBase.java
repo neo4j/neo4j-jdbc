@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -36,9 +37,13 @@ abstract class IntegrationTestBase {
 	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
 
 	@BeforeAll
-	void startNeo4j() throws SQLException {
+	void startNeo4j() {
 
 		this.neo4j.start();
+	}
+
+	@BeforeEach
+	void clearDatabase() throws SQLException {
 		try (var stmt = this.getConnection().createStatement()) {
 			stmt.execute("""
 					MATCH (n)
