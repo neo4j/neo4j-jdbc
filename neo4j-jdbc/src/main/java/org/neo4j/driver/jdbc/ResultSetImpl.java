@@ -42,7 +42,6 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +61,8 @@ final class ResultSetImpl implements ResultSet {
 	private final RunResponse runResponse;
 
 	private final List<String> keys;
+
+	private final Record firstRecord;
 
 	private final int maxFieldSize;
 
@@ -88,7 +89,8 @@ final class ResultSetImpl implements ResultSet {
 		this.remainingRowAllowance = (maxRowLimit > 0) ? maxRowLimit : -1;
 		var recordsBatch = batchPullResponse.records();
 		this.recordsBatchIterator = recordsBatch.iterator();
-		this.keys = recordsBatch.isEmpty() ? Collections.emptyList() : recordsBatch.get(0).keys();
+		this.firstRecord = recordsBatch.isEmpty() ? null : recordsBatch.get(0);
+		this.keys = (this.firstRecord != null) ? recordsBatch.get(0).keys() : runResponse.keys();
 		this.maxFieldSize = maxFieldSize;
 	}
 
@@ -326,7 +328,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public ResultSetMetaData getMetaData() {
-		return null;
+		return new ResultSetMetaDataImpl(this.keys, this.firstRecord);
 	}
 
 	@Override

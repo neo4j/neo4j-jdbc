@@ -30,6 +30,7 @@ import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProvider;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -103,6 +104,77 @@ class DatabaseMetadataImplTests {
 	void getJDBCMinorVersion() {
 		var databaseMetadata = newDatabaseMetadata();
 		Assertions.assertThat(databaseMetadata.getJDBCMinorVersion()).isEqualTo(3);
+	}
+
+	@Test
+	void getTableTypes() throws SQLException {
+		var databaseMetadata = newDatabaseMetadata();
+		try (var tableTypes = databaseMetadata.getTableTypes()) {
+			assertThat(tableTypes.next()).isTrue();
+			assertThat(tableTypes.getString(1)).isEqualTo("TABLE");
+			assertThat(tableTypes.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getPrimaryKeysShouldReturnEmptyResultSet() throws SQLException {
+		var databaseMetadata = newDatabaseMetadata();
+		try (var tableTypes = databaseMetadata.getPrimaryKeys(null, "public", "someTableDoesNotMatter")) {
+			assertThat(tableTypes.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getPrimaryKeysShouldErrorWhenNonPublicSchemaPassed() {
+		var databaseMetadata = newDatabaseMetadata();
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> databaseMetadata.getPrimaryKeys(null, "notPublic", "someTableDoesNotMatter"));
+	}
+
+	@Test
+	void getImportedKeysShouldReturnEmptyResultSet() throws SQLException {
+		var databaseMetadata = newDatabaseMetadata();
+		try (var tableTypes = databaseMetadata.getImportedKeys(null, "public", "someTableDoesNotMatter")) {
+			assertThat(tableTypes.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getImportedKeysShouldErrorWhenNonPublicSchemaPassed() {
+		var databaseMetadata = newDatabaseMetadata();
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> databaseMetadata.getImportedKeys(null, "notPublic", "someTableDoesNotMatter"));
+	}
+
+	@Test
+	void getExportedKeysShouldReturnEmptyResultSet() throws SQLException {
+		var databaseMetadata = newDatabaseMetadata();
+		try (var tableTypes = databaseMetadata.getExportedKeys(null, "public", "someTableDoesNotMatter")) {
+			assertThat(tableTypes.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getExportedKeysShouldErrorWhenNonPublicSchemaPassed() {
+		var databaseMetadata = newDatabaseMetadata();
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> databaseMetadata.getExportedKeys(null, "notPublic", "someTableDoesNotMatter"));
+	}
+
+	@Test
+	void getFunctionColumnsShouldReturnEmptyResultSet() throws SQLException {
+		var databaseMetadata = newDatabaseMetadata();
+		try (var tableTypes = databaseMetadata.getFunctionColumns(null, "public", "someNameDoesNotMatter",
+				"SomeColumnNameDoesNotMatter")) {
+			assertThat(tableTypes.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getFunctionColumnsShouldErrorWhenNonPublicSchemaPassed() {
+		var databaseMetadata = newDatabaseMetadata();
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> databaseMetadata.getFunctionColumns(null,
+				"notPublic", "someNameDoesNotMatter", "SomeColumnNameDoesNotMatter"));
 	}
 
 	@Test

@@ -65,11 +65,12 @@ class DatabaseMetadataIT {
 	@Test
 	void getAllProcedures() throws SQLException {
 		try (var results = this.connection.getMetaData().getProcedures(null, null, null)) {
-
 			var resultCount = 0;
 			while (results.next()) {
 				resultCount++;
-				assertThat(results.getString(1)).isNotNull();
+				assertThat(results.getString(3)).isNotNull();
+				assertThat(results.getString(1)).isNull(); // Catalog
+				assertThat(results.getString(2)).isEqualTo("public"); // Schema
 			}
 			assertThat(resultCount).isGreaterThan(0);
 		}
@@ -292,9 +293,25 @@ class DatabaseMetadataIT {
 
 	@Test
 	void maxConnectionsShouldWork() throws SQLException {
-
 		var metadata = this.connection.getMetaData();
 		assertThat(metadata.getMaxConnections()).isGreaterThan(0);
+	}
+
+	@Test
+	void getProceduresShouldMatchTheSpec() throws SQLException {
+		var databaseMetadata = this.connection.getMetaData();
+		try (var expectedKeysRs = databaseMetadata.getProcedures(null, "public", "someProc")) {
+			var rsMetadata = expectedKeysRs.getMetaData();
+			assertThat(rsMetadata.getColumnCount()).isEqualTo(8);
+			assertThat(rsMetadata.getColumnName(1)).isEqualTo("PROCEDURE_CAT");
+			assertThat(rsMetadata.getColumnName(2)).isEqualTo("PROCEDURE_SCHEM");
+			assertThat(rsMetadata.getColumnName(3)).isEqualTo("PROCEDURE_NAME");
+			assertThat(rsMetadata.getColumnName(4)).isEqualTo("reserved_1");
+			assertThat(rsMetadata.getColumnName(5)).isEqualTo("reserved_2");
+			assertThat(rsMetadata.getColumnName(6)).isEqualTo("reserved_3");
+			assertThat(rsMetadata.getColumnName(7)).isEqualTo("REMARKS");
+			assertThat(rsMetadata.getColumnName(8)).isEqualTo("SPECIFIC_NAME");
+		}
 	}
 
 }

@@ -27,7 +27,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
@@ -194,12 +193,12 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setCatalog(String catalog) throws SQLException {
-		throw new UnsupportedOperationException();
+		// cannot have catalog.
 	}
 
 	@Override
 	public String getCatalog() throws SQLException {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override
@@ -213,13 +212,13 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override
-	public SQLWarning getWarnings() throws SQLException {
-		throw new UnsupportedOperationException();
+	public SQLWarning getWarnings() {
+		return null;
 	}
 
 	@Override
-	public void clearWarnings() throws SQLException {
-		throw new UnsupportedOperationException();
+	public void clearWarnings() {
+
 	}
 
 	@Override
@@ -332,28 +331,28 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override
-	public boolean isValid(int timeout) throws SQLException {
+	public boolean isValid(int timeout) {
 		return true;
 	}
 
 	@Override
-	public void setClientInfo(String name, String value) throws SQLClientInfoException {
-		throw new UnsupportedOperationException();
+	public void setClientInfo(String name, String value) {
+		// Do nothing for now but don't break
 	}
 
 	@Override
-	public void setClientInfo(Properties properties) throws SQLClientInfoException {
-		throw new UnsupportedOperationException();
+	public void setClientInfo(Properties properties) {
+		// Do nothing for now but don't break
 	}
 
 	@Override
-	public String getClientInfo(String name) throws SQLException {
-		throw new UnsupportedOperationException();
+	public String getClientInfo(String name) {
+		return null; // Do nothing for now but don't break
 	}
 
 	@Override
-	public Properties getClientInfo() throws SQLException {
-		throw new UnsupportedOperationException();
+	public Properties getClientInfo() {
+		return new Properties(); // Do nothing for now but don't break
 	}
 
 	@Override
@@ -373,7 +372,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String getSchema() throws SQLException {
-		return null;
+		return "public";
 	}
 
 	@Override

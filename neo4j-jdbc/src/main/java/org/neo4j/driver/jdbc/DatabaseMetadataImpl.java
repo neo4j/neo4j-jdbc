@@ -23,9 +23,9 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +39,7 @@ import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.driver.jdbc.internal.bolt.value.RecordImpl;
+import org.neo4j.driver.jdbc.values.Neo4jTypeToSqlTypeMapper;
 import org.neo4j.driver.jdbc.values.Record;
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.Values;
@@ -257,12 +258,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getSearchStringEscape() throws SQLException {
-		throw new UnsupportedOperationException();
+		return "'";
 	}
 
 	@Override
 	public String getExtraNameCharacters() throws SQLException {
-		throw new UnsupportedOperationException();
+		return "";
 	}
 
 	@Override
@@ -405,17 +406,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getSchemaTerm() throws SQLException {
-		throw new UnsupportedOperationException();
+		return "schema";
 	}
 
 	@Override
 	public String getProcedureTerm() throws SQLException {
-		throw new UnsupportedOperationException();
+		return "procedure";
 	}
 
 	@Override
 	public String getCatalogTerm() throws SQLException {
-		throw new UnsupportedOperationException();
+		return "catalog";
 	}
 
 	@Override
@@ -717,30 +718,60 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
 			throws SQLException {
 
-		assertCatalogIsNull(catalog);
+		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
+		var query = """
+				SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS REMARKS
+				%s
+				RETURN NULL AS PROCEDURE_CAT, "public" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
+				NULL AS reserved_1, NULL AS reserved_2, NULL AS reserved_3, REMARKS, "" as SPECIFIC_NAME
+				""";
+
+		Map<String, Object> procedureNameParams;
+
 		if (procedureNamePattern == null) {
-			return doQueryForResultSet("""
-					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
-					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
-					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
-					""", Map.of());
+			query = query.formatted("");
+			procedureNameParams = Map.of();
 		}
 		else {
-			return doQueryForResultSet("""
-					SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS PROCEDURE_DESCRIPTION
-					WHERE name = $name
-					RETURN "" AS PROCEDURE_CAT, "" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
-					"" AS reserved_1, "" AS reserved_2, "" AS reserved_3, PROCEDURE_DESCRIPTION
-					""", Map.of("name", procedureNamePattern));
+			query = query.formatted("WHERE name = $name");
+			procedureNameParams = Map.of("name", procedureNamePattern);
 		}
+
+		return doQueryForResultSet(query, procedureNameParams);
+
 	}
 
 	@Override
 	public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
 			String columnNamePattern) throws SQLException {
-		throw new UnsupportedOperationException();
+		var pullResponse = createEmptyPullResponse();
+
+		var keys = new ArrayList<String>();
+		keys.add("PROCEDURE_CAT");
+		keys.add("PROCEDURE_SCHEM");
+		keys.add("PROCEDURE_NAME");
+		keys.add("COLUMN_NAME");
+		keys.add("COLUMN_TYPE");
+		keys.add("DATA_TYPE");
+		keys.add("TYPE_NAME");
+		keys.add("PRECISION");
+		keys.add("LENGTH");
+		keys.add("SCALE");
+		keys.add("RADIX");
+		keys.add("NULLABLE");
+		keys.add("REMARKS");
+		keys.add("COLUMN_DEF");
+		keys.add("SQL_DATA_TYPE");
+		keys.add("SQL_DATETIME_SUB");
+		keys.add("CHAR_OCTET_LENGTH");
+		keys.add("ORDINAL_POSITION");
+		keys.add("IS_NULLABLE");
+		keys.add("SPECIFIC_NAME");
+
+		var response = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), response, pullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -748,9 +779,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			throws SQLException {
 
 		assertSchemaIsPublicOrNull(schemaPattern);
-		assertCatalogIsNull(catalog);
+		assertCatalogIsNullOrEmpty(catalog);
 
-		if (tableNamePattern != null) {
+		if (tableNamePattern != null && !tableNamePattern.equals("%")) {
 			return doQueryForResultSet("""
 					CALL db.labels() YIELD label AS TABLE_NAME WHERE TABLE_NAME=$name RETURN "" as TABLE_CAT,
 					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
@@ -760,9 +791,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		else {
 			return doQueryForResultSet("""
 					CALL db.labels() YIELD label AS TABLE_NAME RETURN "" as TABLE_CAT,
-					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
-					"" AS TYPE_CAT, "" AS TYPE_SCHEM, "" AS TYPE_NAME, "" AS SELF_REFERENCES_COL_NAME,
-					"" AS REF_GENERATION""", Map.of());
+					"public" AS TABLE_SCHEM, TABLE_NAME, "TABLE" as TABLE_TYPE, NULL as REMARKS,
+					NULL AS TYPE_CAT, NULL AS TYPE_SCHEM, NULL AS TYPE_NAME, NULL AS SELF_REFERENCES_COL_NAME,
+					NULL AS REF_GENERATION""", Map.of());
 		}
 	}
 
@@ -781,7 +812,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 			@Override
 			public Optional<ResultSummary> resultSummary() {
-				return Optional.empty();
+				return Optional.empty(); // might need to populate this at some point.
+			}
+
+			@Override
+			public boolean hasMore() {
+				return false;
 			}
 		};
 
@@ -798,7 +834,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_CAT");
 
-		var pull = getEmptyPullResponse();
+		var pull = createEmptyPullResponse();
 
 		var response = createRunResponseForStaticKeys(keys);
 		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
@@ -807,13 +843,164 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getTableTypes() throws SQLException {
-		throw new UnsupportedOperationException();
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_TYPE");
+
+		var pull = new PullResponse() {
+			@Override
+			public List<Record> records() {
+				var values = new Value[] { Values.value("TABLE") };
+				return Collections.singletonList(new RecordImpl(keys, values));
+			}
+
+			@Override
+			public Optional<ResultSummary> resultSummary() {
+				return Optional.empty(); // might need to populate this at some point.
+			}
+
+			@Override
+			public boolean hasMore() {
+				return false;
+			}
+		};
+
+		var response = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
 	}
 
 	@Override
 	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var query = "call db.schema.nodeTypeProperties() yield nodeLabels, propertyName, propertyTypes %s";
+
+		Map<String, Object> queryParams = new HashMap<>();
+		String composedWhere = "";
+
+		if (tableNamePattern != null && !tableNamePattern.equals("%")) {
+			composedWhere = "WHERE TABLE_NAME=$name";
+			queryParams.put("name", tableNamePattern);
+		}
+
+		if (columnNamePattern != null && !columnNamePattern.equals("%")) {
+			var columnNameWhereStatement = "COLUMN_NAME=$column_name";
+
+			if (composedWhere.isEmpty()) {
+				composedWhere = "WHERE %s".formatted(columnNameWhereStatement);
+			}
+			else {
+				composedWhere += " AND " + columnNameWhereStatement;
+				queryParams.put("column_name", columnNamePattern);
+			}
+		}
+
+		query = query.formatted(composedWhere);
+
+		var pullResponse = doQueryForPullResponse(query, queryParams);
+		var records = pullResponse.records();
+
+		var rows = new ArrayList<Value[]>();
+
+		// now we need to flatten the table arrays and the type arrays then put it back
+		// into a resultSet.
+
+		for (Record record : records) {
+			var nodeLabels = record.get(0);
+			var propertyName = record.get(1);
+			var propertyTypes = record.get(2);
+
+			var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
+			if (propertyTypeList.size() > 1) {
+				// some kind of logging?
+			}
+			var propertyType = propertyTypeList.get(0);
+
+			var nodeLabelList = nodeLabels.asList(label -> label);
+			for (Value nodeLabel : nodeLabelList) {
+				var values = new Value[22];
+				values[0] = Values.NULL; // TABLE_CAT
+				values[1] = Values.value("public"); // TABLE_SCHEM is always public
+				values[2] = nodeLabel; // TABLE_NAME
+				values[3] = propertyName; // COLUMN_NAME
+				values[4] = Values.value(Neo4jTypeToSqlTypeMapper.toSqlType(propertyType.type())); // DATA_TYPE
+				values[5] = propertyType; // TYPE_NAME
+				values[6] = Values.value(-1); // COLUMN_SIZE
+				values[7] = Values.NULL; // BUFFER_LENGTH
+				values[8] = Values.NULL; // DECIMAL_DIGITS
+				values[9] = Values.value(2); // NUM_PREC_RADIX
+				values[10] = Values.value(1); // NULLABLE = true
+				values[11] = Values.NULL; // REMARKS
+				values[12] = Values.NULL; // COLUMN_DEF
+				values[13] = Values.value(Neo4jTypeToSqlTypeMapper.toSqlType(propertyType.type())); // SQL_DATA_TYPE
+				values[14] = Values.NULL; // SQL_DATETIME_SUB
+				values[15] = Values.NULL; // CHAR_OCTET_LENGTH
+				values[16] = Values.value(nodeLabelList.indexOf(nodeLabel)); // ORDINAL_POSITION
+				values[17] = Values.value("YES"); // IS_NULLABLE
+				values[18] = Values.NULL; // SCOPE_CATALOG
+				values[19] = Values.NULL; // SCOPE_SCHEMA
+				values[20] = Values.NULL; // SCOPE_TABLE
+				values[21] = Values.NULL; // SOURCE_DATA_TYPE
+
+				rows.add(values);
+			}
+		}
+
+		var keys = getKeysForGetColumns();
+		var runResponse = createRunResponseForStaticKeys(keys);
+
+		var staticPullResponse = new PullResponse() {
+			@Override
+			public List<Record> records() {
+				var records = new ArrayList<Record>(rows.size());
+
+				for (Value[] values : rows) {
+					records.add(new RecordImpl(keys, values));
+				}
+
+				return records;
+			}
+
+			@Override
+			public Optional<ResultSummary> resultSummary() {
+				return Optional.empty(); // might need to populate this at some point.
+			}
+
+			@Override
+			public boolean hasMore() {
+				return false;
+			}
+		};
+
+		return new ResultSetImpl(new LocalStatementImpl(), runResponse, staticPullResponse, -1, -1, -1);
+	}
+
+	private static ArrayList<String> getKeysForGetColumns() {
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_CAT");
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_NAME");
+		keys.add("COLUMN_NAME");
+		keys.add("DATA_TYPE");
+		keys.add("TYPE_NAME"); // this will be computed if possible.
+		keys.add("COLUMN_SIZE");
+		keys.add("BUFFER_LENGTH");
+		keys.add("DECIMAL_DIGITS");
+		keys.add("NUM_PREC_RADIX");
+		keys.add("NULLABLE");
+		keys.add("REMARKS");
+		keys.add("SQL_DATA_TYPE");
+		keys.add("SQL_DATETIME_SUB");
+		keys.add("CHAR_OCTET_LENGTH");
+		keys.add("ORDINAL_POSITION");
+		keys.add("IS_NULLABLE");
+		keys.add("SCOPE_CATALOG");
+		keys.add("SCOPE_SCHEMA");
+		keys.add("SCOPE_TABLE");
+		keys.add("SOURCE_DATA_TYPE");
+		return keys;
 	}
 
 	@Override
@@ -835,23 +1022,67 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
+	public ResultSet getVersionColumns(String catalog, String schema, String table) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-		throw new UnsupportedOperationException();
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_CATALOG");
+		keys.add("TABLE_NAME");
+		keys.add("COLUMN_NAME");
+		keys.add("KEY_SEQ");
+		keys.add("PK_NAME");
+
+		var emptyPullResponse = createEmptyPullResponse();
+		var runResponse = createRunResponseForStaticKeys(keys);
+
+		return new ResultSetImpl(new LocalStatementImpl(), runResponse, emptyPullResponse, -1, -1, -1);
 	}
 
 	@Override
 	public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-		throw new UnsupportedOperationException();
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = new ArrayList<String>();
+		return createKeysResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-		throw new UnsupportedOperationException();
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = new ArrayList<String>();
+		return createKeysResultSet(keys);
+	}
+
+	private ResultSet createKeysResultSet(ArrayList<String> keys) {
+		keys.add("PKTABLE_CAT");
+		keys.add("PKTABLE_SCHEM");
+		keys.add("PKTABLE_NAME");
+		keys.add("PKCOLUMN_NAME");
+		keys.add("FKTABLE_CAT");
+		keys.add("FKTABLE_SCHEM");
+		keys.add("FKTABLE_NAME");
+		keys.add("FKCOLUMN_NAME");
+		keys.add("KEY_SEQ");
+		keys.add("UPDATE_RULE");
+		keys.add("DELETE_RULE");
+		keys.add("FK_NAME");
+		keys.add("PK_NAME");
+		keys.add("DEFERRABILITY");
+
+		var emptyPullResponse = createEmptyPullResponse();
+		var runResponse = createRunResponseForStaticKeys(keys);
+
+		return new ResultSetImpl(new LocalStatementImpl(), runResponse, emptyPullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -868,7 +1099,30 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_CAT");
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_NAME");
+		keys.add("PKCOLUMN_NAME");
+		keys.add("NON_UNIQUE");
+		keys.add("INDEX_QUALIFIER");
+		keys.add("INDEX_NAME");
+		keys.add("FKCOLUMN_NAME");
+		keys.add("TYPE");
+		keys.add("ORDINAL_POSITION");
+		keys.add("COLUMN_NAME");
+		keys.add("ASC_OR_DESC");
+		keys.add("CARDINALITY");
+		keys.add("PAGES");
+		keys.add("FILTER_CONDITION");
+
+		var emptyPullResponse = createEmptyPullResponse();
+		var runResponse = createRunResponseForStaticKeys(keys);
+
+		return new ResultSetImpl(new LocalStatementImpl(), runResponse, emptyPullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -1031,7 +1285,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
 
-		assertCatalogIsNull(catalog);
+		assertCatalogIsNullOrEmpty(catalog);
 
 		if (schemaPattern.equals("public")) {
 			return getSchemas();
@@ -1042,7 +1296,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("TABLE_SCHEM");
 		keys.add("TABLE_CATALOG");
 		// return RS with just public in it
-		PullResponse pull = getEmptyPullResponse();
+		PullResponse pull = createEmptyPullResponse();
 
 		var runResponse = createRunResponseForStaticKeys(keys);
 
@@ -1067,13 +1321,49 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		// Do we have functions?
+		var pullResponse = createEmptyPullResponse();
+
+		var keys = new ArrayList<String>();
+		keys.add("FUNCTION_CAT");
+		keys.add("FUNCTION_SCHEM");
+		keys.add("FUNCTION_NAME");
+		keys.add("REMARKS");
+		keys.add("FUNCTION_TYPE");
+
+		var response = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), response, pullResponse, -1, -1, -1);
 	}
 
 	@Override
 	public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern,
 			String columnNamePattern) throws SQLException {
-		throw new UnsupportedOperationException();
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var pullResponse = createEmptyPullResponse();
+
+		var keys = new ArrayList<String>();
+		keys.add("FUNCTION_CAT");
+		keys.add("FUNCTION_SCHEM");
+		keys.add("FUNCTION_NAME");
+		keys.add("COLUMN_NAME");
+		keys.add("COLUMN_TYPE");
+		keys.add("DATA_TYPE");
+		keys.add("TYPE_NAME");
+		keys.add("PRECISION");
+		keys.add("LENGTH");
+		keys.add("SCALE");
+		keys.add("RADIX");
+		keys.add("NULLABLE");
+		keys.add("REMARKS");
+		keys.add("CHAR_OCTET_LENGTH");
+		keys.add("ORDINAL_POSITION");
+		keys.add("IS_NULLABLE");
+		keys.add("SPECIFIC_NAME");
+
+		var response = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), response, pullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -1089,12 +1379,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		if (iface.isAssignableFrom(getClass())) {
+			return iface.cast(this);
+		}
+		else {
+			throw new SQLException("This object does not implement the given interface.");
+		}
 	}
 
 	@Override
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return iface.isAssignableFrom(getClass());
 	}
 
 	private static RunResponse createRunResponseForStaticKeys(ArrayList<String> keys) {
@@ -1111,7 +1406,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		};
 	}
 
-	private static PullResponse getEmptyPullResponse() {
+	private static PullResponse createEmptyPullResponse() {
 		return new PullResponse() {
 			@Override
 			public List<Record> records() {
@@ -1136,8 +1431,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		}
 	}
 
-	private static void assertCatalogIsNull(String catalog) throws SQLException {
-		if (catalog != null) {
+	private static void assertCatalogIsNullOrEmpty(String catalog) throws SQLException {
+		if (catalog != null && !catalog.isEmpty()) {
 			throw new SQLException("Catalog is not applicable to Neo4j please leave null.");
 		}
 	}
