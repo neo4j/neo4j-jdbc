@@ -1250,7 +1250,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.FLOAT.isTypeOf(value)) {
 			var doubleValue = value.asNumber().doubleValue();
 			var floatValue = (float) doubleValue;
-			if (doubleValue == floatValue) {
+			if (Double.compare(doubleValue, floatValue) == 0) {
 				return floatValue;
 			}
 			throw new SQLException("The number is out of float range.");

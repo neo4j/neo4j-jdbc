@@ -58,15 +58,15 @@ class StatementImpl implements Statement {
 
 	private int fetchSize = DEFAULT_FETCH_SIZE;
 
-	private int maxRows = 0;
+	private int maxRows;
 
-	private int maxFieldSize = 0;
+	private int maxFieldSize;
 
 	private ResultSet resultSet;
 
 	private int updateCount = -1;
 
-	private boolean multipleResultsApi = false;
+	private boolean multipleResultsApi;
 
 	private int queryTimeout;
 
@@ -463,6 +463,9 @@ class StatementImpl implements Statement {
 		catch (InterruptedException | ExecutionException ex) {
 			this.boltConnection.reset(true).toCompletableFuture().join();
 			var cause = ex.getCause();
+			if (ex instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
+			}
 			throw new SQLException("An error occured when running the query", (cause != null) ? cause : ex);
 		}
 		catch (TimeoutException ignored) {

@@ -70,7 +70,7 @@ public final class NettyChannelInitializer extends ChannelInitializer<Channel> {
 		return sslEngine;
 	}
 
-	private void updateChannelAttributes(Channel channel) {
+	private static void updateChannelAttributes(Channel channel) {
 		ChannelAttributes.setMessageDispatcher(channel, new InboundMessageDispatcher(channel));
 	}
 

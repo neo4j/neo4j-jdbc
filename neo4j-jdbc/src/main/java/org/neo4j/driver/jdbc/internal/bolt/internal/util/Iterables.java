@@ -108,6 +108,8 @@ public final class Iterables {
 		return new LinkedHashMap<>(hashMapCapacity(expectedSize));
 	}
 
+	@SuppressWarnings("squid:S3518") // Complaining about division by zero, which cannot
+										// happen
 	private static int hashMapCapacity(int expectedSize) {
 		if (expectedSize < 3) {
 			if (expectedSize < 0) {

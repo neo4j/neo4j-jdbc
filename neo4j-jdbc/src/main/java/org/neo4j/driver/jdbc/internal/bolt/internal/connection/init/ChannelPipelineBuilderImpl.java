@@ -33,7 +33,6 @@ public final class ChannelPipelineBuilderImpl implements ChannelPipelineBuilder 
 		// inbound handlers
 		pipeline.addLast(new ChunkDecoder());
 		pipeline.addLast(new MessageDecoder());
-		var channel = pipeline.channel();
 		var inboundMessageHandler = new InboundMessageHandler(messageFormat);
 		pipeline.addLast(inboundMessageHandler);
 

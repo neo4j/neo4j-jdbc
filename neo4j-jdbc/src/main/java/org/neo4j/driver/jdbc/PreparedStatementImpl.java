@@ -565,11 +565,11 @@ final class PreparedStatementImpl extends StatementImpl implements Neo4jPrepared
 		return this.parameters;
 	}
 
-	private SQLException newIllegalMethodInvocation() throws SQLException {
+	private static SQLException newIllegalMethodInvocation() throws SQLException {
 		throw new SQLException("This method must not be called on PreparedStatement");
 	}
 
-	private void assertValidParameterIndex(int index) throws SQLException {
+	private static void assertValidParameterIndex(int index) throws SQLException {
 		if (index < 1) {
 			throw new SQLException("Parameter index must be equal or more than 1");
 		}

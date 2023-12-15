@@ -85,7 +85,7 @@ public final class NettyConnectionProvider implements ConnectionProvider {
 		return future;
 	}
 
-	private void installChannelConnectedListeners(BoltServerAddress address, ChannelFuture channelConnected,
+	private static void installChannelConnectedListeners(BoltServerAddress address, ChannelFuture channelConnected,
 			ChannelPromise handshakeCompleted, int connectTimeoutMillis) {
 		var pipeline = channelConnected.channel().pipeline();
 

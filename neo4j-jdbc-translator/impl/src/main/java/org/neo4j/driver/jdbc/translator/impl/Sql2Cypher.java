@@ -565,7 +565,7 @@ final class Sql2Cypher implements SqlTranslator {
 		}
 	}
 
-	private IllegalArgumentException unsupported(QueryPart p) {
+	private static IllegalArgumentException unsupported(QueryPart p) {
 		return new IllegalArgumentException("Unsupported SQL expression: " + p);
 	}
 
@@ -651,10 +651,15 @@ final class Sql2Cypher implements SqlTranslator {
 			return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lte);
 		}
 		else if (c instanceof QOM.RowIsNull e) {
-			return e.$arg1().$fields().stream().map(f -> expression(f).isNull()).reduce(Condition::and).get();
+			return e.$arg1().$fields().stream().map(f -> expression(f).isNull()).reduce(Condition::and).orElseThrow();
 		}
 		else if (c instanceof QOM.RowIsNotNull e) {
-			return e.$arg1().$fields().stream().map(f -> expression(f).isNotNull()).reduce(Condition::and).get();
+			return e.$arg1()
+				.$fields()
+				.stream()
+				.map(f -> expression(f).isNotNull())
+				.reduce(Condition::and)
+				.orElseThrow();
 		}
 		else if (c instanceof QOM.Like like) {
 			Expression rhs;

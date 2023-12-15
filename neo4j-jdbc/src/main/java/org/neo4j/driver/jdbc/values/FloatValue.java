@@ -39,7 +39,7 @@ public final class FloatValue extends AbstractNumberValue<Double> {
 	@Override
 	public long asLong() {
 		var longVal = (long) this.val;
-		if ((double) longVal != this.val) {
+		if (Double.compare(longVal, this.val) != 0) {
 			throw new LossyCoercion(type().name(), "Java long");
 		}
 
@@ -49,7 +49,7 @@ public final class FloatValue extends AbstractNumberValue<Double> {
 	@Override
 	public int asInt() {
 		var intVal = (int) this.val;
-		if ((double) intVal != this.val) {
+		if (Double.compare(intVal, this.val) != 0) {
 			throw new LossyCoercion(type().name(), "Java int");
 		}
 
@@ -64,7 +64,7 @@ public final class FloatValue extends AbstractNumberValue<Double> {
 	@Override
 	public float asFloat() {
 		var floatVal = (float) this.val;
-		if ((double) floatVal != this.val) {
+		if (Double.compare(floatVal, this.val) != 0) {
 			throw new LossyCoercion(type().name(), "Java float");
 		}
 

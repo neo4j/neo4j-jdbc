@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 public final class ListValue extends AbstractValue {
@@ -77,6 +78,9 @@ public final class ListValue extends AbstractValue {
 
 			@Override
 			public T next() {
+				if (this.cursor >= ListValue.this.values.length) {
+					throw new NoSuchElementException();
+				}
 				return mapFunction.apply(ListValue.this.values[this.cursor++]);
 			}
 

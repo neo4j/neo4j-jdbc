@@ -58,7 +58,6 @@ public final class HandshakeCompletedListener implements ChannelFutureListener {
 	public void operationComplete(ChannelFuture future) {
 		if (future.isSuccess()) {
 			var protocol = BoltProtocol.forChannel(future.channel());
-			var channel = this.connectionInitializedPromise.channel();
 			protocol.initializeChannel(this.address, this.userAgent, this.boltAgent,
 					((InternalAuthToken) this.authToken).toMap(), this.connectionInitializedPromise, this.clock);
 		}

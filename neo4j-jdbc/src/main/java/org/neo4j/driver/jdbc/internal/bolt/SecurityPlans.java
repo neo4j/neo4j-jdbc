@@ -99,7 +99,7 @@ public final class SecurityPlans {
 
 		// Get hold of the default trust manager
 		var x509TrustManager = (X509TrustManager) Arrays.stream(tempFactory.getTrustManagers())
-			.filter(trustManager -> trustManager instanceof X509TrustManager)
+			.filter(X509TrustManager.class::isInstance)
 			.findFirst()
 			.orElse(null);
 

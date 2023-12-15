@@ -1130,7 +1130,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		};
 	}
 
-	private void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
+	private static void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
 		if (schemaPattern != null && !"public".equals(schemaPattern)) {
 			throw new SQLException("Schema must be public or null.");
 		}
@@ -1170,6 +1170,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		catch (InterruptedException | ExecutionException ex) {
 			this.boltConnection.reset(true).toCompletableFuture().join();
 			var cause = ex.getCause();
+			if (ex instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
+			}
 			throw new SQLException("An error occurred when running the query", (cause != null) ? cause : ex);
 		}
 	}
