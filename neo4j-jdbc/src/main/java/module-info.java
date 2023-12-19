@@ -32,7 +32,7 @@ module neo4j.jdbc {
 	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies
 
-	// automatic::jdk.unsupported
+	// requires jdk.unsupported;
 
 	exports org.neo4j.driver.jdbc;
 	exports org.neo4j.driver.jdbc.values;
@@ -40,6 +40,7 @@ module neo4j.jdbc {
 
 	provides java.sql.Driver with
 		org.neo4j.driver.jdbc.Neo4jDriver;
+	// provides org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory with org.neo4j.driver.jdbc.translator.impl.Sql2CypherTranslatorFactory;
 
 	uses org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
 }

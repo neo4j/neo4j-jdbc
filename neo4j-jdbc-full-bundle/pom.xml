@@ -28,11 +28,11 @@
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>neo4j-jdbc-bundle</artifactId>
+	<artifactId>neo4j-jdbc-full-bundle</artifactId>
 
 	<packaging>jar</packaging>
-	<name>Neo4j JDBC Driver (Bundle)</name>
-	<description>Single jar package of the Neo4j JDBC Driver.</description>
+	<name>Neo4j JDBC Driver (Full Bundle)</name>
+	<description>Single jar package of the Neo4j JDBC Driver, including the default SQL to Cypher translator.</description>
 
 	<properties>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
@@ -45,6 +45,11 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.neo4j.driver</groupId>
+			<artifactId>neo4j-jdbc-translator-impl</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
@@ -52,6 +57,21 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>neo4j</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -73,6 +93,7 @@
 							<arguments>
 								<argument>${project.basedir}/../neo4j-jdbc/src/main/java/module-info.java</argument>
 								<argument>${project.build.directory}/jpms/module-info.java</argument>
+								<argument>full</argument>
 							</arguments>
 							<skip>false</skip>
 						</configuration>
@@ -91,16 +112,27 @@
 						<configuration>
 							<artifactSet>
 								<includes>
+									<include>io.netty:*</include>
+									<include>org.jooq:*</include>
 									<include>org.neo4j.driver:neo4j-jdbc:*</include>
 									<include>org.neo4j.driver:neo4j-jdbc-translator-spi:*</include>
+									<include>org.neo4j.driver:neo4j-jdbc-translator-impl:*</include>
 									<include>org.neo4j:neo4j-cypher-dsl-schema-name-support</include>
-									<include>io.netty:*</include>
+									<include>org.neo4j:neo4j-cypher-dsl</include>
 								</includes>
 							</artifactSet>
 							<relocations>
 								<relocation>
 									<pattern>io.netty</pattern>
 									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.io.netty</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.jooq</pattern>
+									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.jooq</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.neo4j.cypherdsl.core</pattern>
+									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.cypherdsl</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>org.neo4j.cypherdsl.support.schema_name</pattern>
@@ -128,17 +160,25 @@
 									</excludes>
 								</filter>
 								<filter>
-									<artifact>org.neo4j.driver:neo4j-jdbc-translator-spi</artifact>
+									<artifact>org.neo4j.driver:neo4j-jdbc-translator-*</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
 										<exclude>module-info.class</exclude>
 									</excludes>
 								</filter>
 								<filter>
-									<artifact>org.neo4j:neo4j-cypher-dsl-schema-name-support</artifact>
+									<artifact>org.neo4j:neo4j-cypher-dsl*</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
 										<exclude>module-info.class</exclude>
+									</excludes>
+								</filter>
+								<filter>
+									<artifact>org.jooq:*</artifact>
+									<excludes>
+										<exclude>META-INF/MANIFEST.MF</exclude>
+										<exclude>module-info.class</exclude>
+										<exclude>migrations/*</exclude>
 									</excludes>
 								</filter>
 							</filters>
@@ -177,6 +217,7 @@
 						<configuration>
 							<classpathDependencyExcludes>
 								<classpathDependencyExclude>${project.groupId}:neo4j-jdbc</classpathDependencyExclude>
+								<classpathDependencyExclude>${project.groupId}:neo4j-jdbc-translator-impl</classpathDependencyExclude>
 							</classpathDependencyExcludes>
 						</configuration>
 					</execution>

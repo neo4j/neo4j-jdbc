@@ -106,6 +106,7 @@
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-it</module>
 		<module>neo4j-jdbc-bundle</module>
+		<module>neo4j-jdbc-full-bundle</module>
 	</modules>
 
 	<scm>

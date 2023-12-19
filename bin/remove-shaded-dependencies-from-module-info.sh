@@ -24,12 +24,15 @@ set -euo pipefail
 # Expects to arguments
 # 1. Absolute path of the existing module descriptor
 # 2. Absolute path of the target module descriptor
+# 3. Is optional and if set to an arbitrary value creates the module in such a way that the service provider implementations are bundled
 
 IN="$1"
 OUT="$2"
 
-echo "$OUT"
-
 mkdir -p "$(dirname "${OUT}")"
 
-sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | sed 's/\/\/ automatic::jdk.unsupported/requires jdk.unsupported;/' | cat -s > "$OUT"
+if [ "$#" -ne 3 ]; then
+  sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | sed 's/\/\/ requires \(.*\);/requires \1;/' | cat -s > "$OUT"
+else
+  sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | sed 's/\/\/ requires \(.*\);/requires \1;/' | sed 's/\/\/ provides \(.*\);/provides \1;/' | cat -s > "$OUT"
+fi;

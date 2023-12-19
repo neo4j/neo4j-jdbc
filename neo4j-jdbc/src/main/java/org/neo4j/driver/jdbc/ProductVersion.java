@@ -97,7 +97,8 @@ final class ProductVersion {
 	private static boolean isApplicableManifest(Manifest manifest) {
 		var attributes = manifest.getMainAttributes();
 		var artifactId = (String) get(attributes, "Artifact-Id");
-		return artifactId != null && Set.of("neo4j-jdbc", "neo4j-jdbc-bundle").contains(artifactId);
+		return artifactId != null
+				&& Set.of("neo4j-jdbc", "neo4j-jdbc-bundle", "neo4j-jdbc-full-bundle").contains(artifactId);
 	}
 
 	private static Object get(Attributes attributes, String key) {

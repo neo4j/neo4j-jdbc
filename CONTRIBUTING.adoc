@@ -16,6 +16,13 @@ There's a `fast` profile that will skip all the tests and validations:
 ./mvnw -Dfast package
 ----
 
+If the cluster integration test is flaky or does not work at all in your build, you can skip it like this without skipping any other integration tests:
+
+[source,bash]
+----
+./mvnw -DskipClusterIT verify
+----
+
 == Tasks
 
 === Keep the build descriptor (`pom.xml`) sorted
