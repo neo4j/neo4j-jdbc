@@ -690,6 +690,13 @@ final class Sql2Cypher implements SqlTranslator {
 		return result;
 	}
 
+	private PatternElement resolveTableOrJoin(QOM.UnmodifiableList<? extends Table<?>> tables) {
+		if (tables.size() > 1) {
+			throw new UnsupportedOperationException();
+		}
+		return resolveTableOrJoin(tables.$first());
+	}
+
 	private PatternElement resolveTableOrJoin(Table<?> t) {
 		if (t instanceof QOM.Join<?> join && join.$on() instanceof QOM.Eq<?> eq) {
 
