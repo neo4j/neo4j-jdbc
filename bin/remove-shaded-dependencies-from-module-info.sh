@@ -32,7 +32,10 @@ OUT="$2"
 mkdir -p "$(dirname "${OUT}")"
 
 if [ "$#" -ne 3 ]; then
-  sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | sed 's/\/\/ requires \(.*\);/requires \1;/' | cat -s > "$OUT"
+  sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
+      -e 's/\/\/ requires \(.*\);/requires \1;/' "$IN" | cat -s > "$OUT"
 else
-  sed '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' "$IN" | sed 's/\/\/ requires \(.*\);/requires \1;/' | sed 's/\/\/ provides \(.*\);/provides \1;/' | cat -s > "$OUT"
+  sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
+      -e 's/\/\/ requires \(.*\);/requires \1;/' \
+      -e 's/\/\/ provides \(.*\);/provides \1;/' "$IN" | cat -s > "$OUT"
 fi;
