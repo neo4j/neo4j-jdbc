@@ -1,0 +1,24 @@
+{
+  "name": "neo4j-jdbc-manual",
+  "version": "1.0.0",
+  "description": "Neo4j JDBC Driver Documentation Site",
+  "private": true,
+  "scripts": {
+    "build-preview": "antora preview.yml",
+    "preview": "npm run build-preview && npx http-server -a localhost -o -c-1 ../../target/antora"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neo4j/neo4j-jdbc.git"
+  },
+  "keywords": [],
+  "author": "Michael Simons <michael.simons@neo4j.com>",
+  "license": "Apache License, Version 2.0",
+  "bugs": {
+    "url": "https://github.com/neo4j/neo4j-jdbc/issues"
+  },
+  "homepage": "https://github.com/neo4j/neo4j-jdbc",
+  "devDependencies": {
+    "antora": "~3.1"
+  }
+}

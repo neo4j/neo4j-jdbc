@@ -107,6 +107,7 @@
 		<module>neo4j-jdbc-it</module>
 		<module>neo4j-jdbc-bundle</module>
 		<module>neo4j-jdbc-full-bundle</module>
+		<module>docs</module>
 	</modules>
 
 	<scm>
@@ -120,6 +121,8 @@
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
 		<archunit.version>1.2.1</archunit.version>
 		<artifactsDir>${project.build.directory}</artifactsDir>
+		<asciidoctor-maven-plugin.version>2.2.4</asciidoctor-maven-plugin.version>
+		<asciidoctorj.pdf.version>2.3.9</asciidoctorj.pdf.version>
 		<asciidoctorj.version>2.5.10</asciidoctorj.version>
 		<assertj.version>3.24.2</assertj.version>
 		<byte-buddy.version>1.14.10</byte-buddy.version>
@@ -136,6 +139,7 @@
 		<jooq.version>3.19.0</jooq.version>
 		<junit-jupiter.version>5.10.1</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
+		<maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
 		<maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
@@ -144,6 +148,7 @@
 		<maven-install-plugin.version>3.1.1</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
 		<maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
 		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>
 		<maven-surefire-plugin.version>3.2.3</maven-surefire-plugin.version>
@@ -513,6 +518,11 @@
 					<version>${maven-shade-plugin.version}</version>
 				</plugin>
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>${maven-resources-plugin.version}</version>
+				</plugin>
+				<plugin>
 					<groupId>org.basepom.maven</groupId>
 					<artifactId>duplicate-finder-maven-plugin</artifactId>
 					<version>${duplicate-finder-maven-plugin.version}</version>
@@ -540,6 +550,23 @@
 					<groupId>org.moditect</groupId>
 					<artifactId>moditect-maven-plugin</artifactId>
 					<version>${moditect-maven-plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.asciidoctor</groupId>
+					<artifactId>asciidoctor-maven-plugin</artifactId>
+					<version>${asciidoctor-maven-plugin.version}</version>
+					<dependencies>
+						<dependency>
+							<groupId>org.asciidoctor</groupId>
+							<artifactId>asciidoctorj</artifactId>
+							<version>${asciidoctorj.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.asciidoctor</groupId>
+							<artifactId>asciidoctorj-pdf</artifactId>
+							<version>${asciidoctorj.pdf.version}</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 			</plugins>
 		</pluginManagement>

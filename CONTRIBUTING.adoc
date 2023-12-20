@@ -76,3 +76,31 @@ Public classes must be final unless explicitly designed as SPI.
 Please use conventional commits when possible: https://www.conventionalcommits.org/en/v1.0.0/[Convential Commits].
 Two live examples: https://github.com/neo4j-contrib/cypher-dsl[cypher-dsl] and https://github.com/michael-simons/neo4j-migrations[neo4j-migrations].
 
+== Building the documentation
+
+The docs are written with AsciiDoctor inside the `docs` module.
+The module is build with Maven.
+The `package` goal will process all asciidoc files and bundle them up both as generated site and as an Antora-ready zip archive, ready to be included somewhere else.
+
+[source,bash]
+----
+./mvnw -Dfast clean package -pl docs -am
+----
+
+On JDK21 you can bring up a web-server like this to view the documentation on http://localhost:8000[localhost:8000]
+
+[source,bash]
+----
+jwebserver -d `pwd`/docs/target/generated-docs/
+----
+
+To preview the Antora docs you can run this after the above Maven build succeeds.
+The Maven build is necessary so that the version numbers and other references in the soruce files are processed proper:
+
+[source,bash]
+----
+npm --prefix etc/antora i
+npm --prefix etc/antora run preview
+----
+
+The build also provides a zipped version of the Antora module alone, ready to be pushed into another repo under `docs/target/jdbc-manual.zip`.

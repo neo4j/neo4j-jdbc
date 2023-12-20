@@ -1,0 +1,25 @@
+= Neo4j JDBC Driver
+Michael Simons <michael.simons@neo4j.com>
+:doctype: article
+:lang: en
+:listing-caption: Listing
+:source-highlighter: coderay
+:icons: font
+:groupId: ${groupId}
+
+ifndef::site-gen-antora[]
+:examplesDir: ../examples
+endif::[]
+
+ifdef::site-gen-antora[]
+:examplesDir: examples$
+endif::[]
+
+:copyright: Copyright 2023-2024 the original author or authors.
+
+(C) {copyright}
+
+[abstract]
+--
+This is the manual for the official Neo4j JDBC Driver.
+--
