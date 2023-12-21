@@ -1,0 +1,41 @@
+= Quickstart
+
+Add the JDBC driver to your application, for example as a Gradle dependency:
+
+[source, kotlin, subs="verbatim,attributes"]]
+.Using the full bundle as a runtime dependency inside a Gradle based project
+----
+dependencies {
+    runtimeOnly({group-id}:{artifact-id-full-bundle}:{version})
+}
+----
+
+With that in place, you can use the JDBC driver for Neo4j as you would do with any other JDBC driver.
+
+[source, java, tabsize=4]
+.Acquire a connection using the JDBC driver and execute a query
+----
+include::{examplesDir}/Quickstart.java[tag=pt1]
+----
+<.> Get a JDBC connection, no need to do any class loading beforehand, the driver will be automatically registered
+<.> Create a reusable statement
+<.> Immediate execute a query on it
+<.> Iterate the results like you would do with any other JDBC result set
+<.> JDBC is index 1 based
+<.> JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complexe objects such as lists
+
+In the example above we used Neo4j's lingua franca, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query Neo4j.
+The Neo4j JDBC Driver has limited support for using SQL as well.
+It will do so automatically or on a case by case basis.
+For the latter you can use `java.sql.Connection#nativeSQL(String)` and use the result in your queries
+For automatic translation instantiate the driver using an additional URL parameter, `sql2cypher` set to `true`.
+The following example shows how:
+
+[source, java, tabsize=4, indent=0]
+.Configure the JDBC driver to automatically translate SQL to cypher.
+----
+include::{examplesDir}/Quickstart.java[tag=pt2]
+----
+<.> This SQL query will be translated into the same Cypher query shown before, the remainder of the method is identical to before.
+
+We will cover the SQL to Cypher translation in detail later in this manual.

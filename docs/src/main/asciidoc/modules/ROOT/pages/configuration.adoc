@@ -1,0 +1,75 @@
+= Configuration
+
+== Driver class name
+
+The Neo4j JDBC Driver is `org.neo4j.driver.jdbc.Neo4jDriver`.
+In modern Java tools you should not have to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
+The class is public API.
+
+== URL and connection properties
+
+The canonical URL format for the Neo4j JDBC Driver is
+
+[source, text]
+----
+jdbc:neo4j://<host>:<port>/<database>?param1=value1&param2=value2
+----
+
+The database name and any query parameters are optional and can be omitted.
+All configuration arguments, except username and password, can be passed either as query parameters or via a `java.util.Properties` object.
+The latter is sometimes defined by tooling for you.
+With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.
+
+TIP: There is no need to specify `bolt` or other additional prefixes in the URL, as a matter of fact: The driver does not support this.
+
+The driver accepts the following configuration arguments, either properties or as URL query parameters:
+
+.Configuration arguments
+|===
+|Name|Type|Meaning|Default
+
+|`timeout`
+|`Integer`
+|Timeout for connection acquisition in milliseconds
+|`1000`
+
+|`agent`
+|`String`
+|User agent
+|`neo4jd-jdbc`
+
+|`sql2cyper`
+|`Boolean`
+|Flag that enables automatic translation from SQL to Cypher (requires a translator on the classpath)
+|`false`
+
+|===
+
+== Getting a driver or a connection instance
+
+NOTE: This section most likely only applies if you use the Neo4j JDBC Driver as part of application development in contrast to using it as part of front-end tool such as https://dbeaver.io[DBeaver], https://www.jetbrains.com/datagrip/[DataGrip] or UI-based ETL tools.
+
+The easiest way to acquire a connection is directly through the `java.sql.DriverManager`.
+
+[source, java, tabsize=4]
+.Acquiring a JDBC connection towards Neo4j
+----
+include::{examplesDir}/Configuration.java[tag=cdm]
+----
+
+While our connection implementation is thread-safe, it does—as dictated by the JDBC Spec—only allow one concurrent transaction per connection.
+For a multi-thread application you want to use a connection pool.
+There's https://github.com/brettwooldridge/HikariCP[HikariCP], but usually application server and containers or frameworks bring their own.
+It's safe to use any of them, as the Neo4j JDBC Driver does not do internal pooling.
+
+If you need access to an instance of the Neo4j driver itself, you can use the following approach:
+
+[source, java, tabsize=4]
+.Acquiring an instance of the Neo4j JDBC Driver
+----
+include::{examplesDir}/Configuration.java[tag=ddm]
+----
+
+== Using a .dotenv file to configure the Driver
+
+This needs to be written. This paragraph is a to-do to add this information for Aura.

@@ -44,7 +44,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.neo4j.driver</groupId>
-			<artifactId>neo4j-jdbc</artifactId>
+			<artifactId>neo4j-jdbc-full-bundle</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>

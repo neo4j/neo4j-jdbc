@@ -73,7 +73,7 @@ Public classes must be final unless explicitly designed as SPI.
 
 === Commits
 
-Please use conventional commits when possible: https://www.conventionalcommits.org/en/v1.0.0/[Convential Commits].
+Please use conventional commits when possible: https://www.conventionalcommits.org/en/v1.0.0/[Conventional Commits].
 Two live examples: https://github.com/neo4j-contrib/cypher-dsl[cypher-dsl] and https://github.com/michael-simons/neo4j-migrations[neo4j-migrations].
 
 == Building the documentation
@@ -95,7 +95,7 @@ jwebserver -d `pwd`/docs/target/generated-docs/
 ----
 
 To preview the Antora docs you can run this after the above Maven build succeeds.
-The Maven build is necessary so that the version numbers and other references in the soruce files are processed proper:
+The Maven build is necessary so that the version numbers and other references in the source files are processed proper:
 
 [source,bash]
 ----

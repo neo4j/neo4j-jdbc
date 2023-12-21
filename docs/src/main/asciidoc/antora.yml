@@ -26,3 +26,13 @@ title: Neo4j JDBC Driver manual
 start_page: ROOT:index.adoc
 nav:
   - modules/ROOT/nav.adoc
+
+asciidoc:
+  attributes:
+    group-id: ${groupId}
+    artifact-id: ${mainArtifactId}
+    artifact-id-spi: ${mainArtifactId}-translator-spi
+    artifact-id-impl: ${mainArtifactId}-translator-impl
+    artifact-id-bundle: ${mainArtifactId}-bundle
+    artifact-id-full-bundle: ${mainArtifactId}-full-bundle
+    version: ${project.version}
