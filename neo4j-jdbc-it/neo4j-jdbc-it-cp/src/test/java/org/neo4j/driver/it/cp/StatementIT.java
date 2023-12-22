@@ -145,6 +145,11 @@ class StatementIT extends IntegrationTestBase {
 					"UPDATE Movie SET name = '00 Schneider – Jagd auf Nihil Baxter' WHERE elementId(movie) = '%s'"
 						.formatted(id));
 			assertThat(updated).isOne();
+
+			var cnt = statement.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH (n:Movie) RETURN count(n)");
+
+			assertThat(cnt.next()).isTrue();
+			assertThat(cnt.getInt(1)).isGreaterThan(0);
 		}
 	}
 

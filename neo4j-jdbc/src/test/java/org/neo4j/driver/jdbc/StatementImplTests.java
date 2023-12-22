@@ -468,6 +468,20 @@ class StatementImplTests {
 		assertThat(this.statement.isCloseOnCompletion()).isTrue();
 	}
 
+	static Stream<Arguments> shouldEnforceCypher() {
+		return Stream.of(Arguments.of("/*+ NEO4J FORCE_CYPHER */ MATCH (n) RETURN n", true),
+				Arguments.of("MATCH /*+ NEO4J FORCE_CYPHER */ (n) RETURN n", true),
+				Arguments.of("MATCH (n:`/*+ NEO4J FORCE_CYPHER */`) RETURN n", false),
+				Arguments.of("MATCH (n) SET n.f = '/*+ NEO4J FORCE_CYPHER */' RETURN n", false),
+				Arguments.of("MATCH (n) SET n.f = \"/*+ NEO4J FORCE_CYPHER */\" RETURN n", false));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldEnforceCypher(String sql, boolean shouldEnforceCypher) {
+		assertThat(StatementImpl.forceCypher(sql)).isEqualTo(shouldEnforceCypher);
+	}
+
 	@FunctionalInterface
 	private interface StatementMethodRunner {
 

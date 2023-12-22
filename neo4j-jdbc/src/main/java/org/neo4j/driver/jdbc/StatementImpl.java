@@ -33,7 +33,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
@@ -49,6 +51,13 @@ import org.neo4j.driver.jdbc.internal.bolt.response.SummaryCounters;
 class StatementImpl implements Statement {
 
 	static final int DEFAULT_FETCH_SIZE = 1000;
+
+	// Adding the comment /*+ NEO4J FORCE_CYPHER */ to your Cypher statement will make the
+	// JDBC driver opt-out from translating it to Cypher, even if the driver has been
+	// configured for automatic translation.
+	private static final Predicate<String> PATTERN_ENFORCE_CYPHER = Pattern
+		.compile("/\\*\\+ NEO4J FORCE_CYPHER \\*/(?=(?:[^'`\"]*'[^'`\"]*'`\")*[^'`\"]*\\Z)")
+		.asPredicate();
 
 	private final Connection connection;
 
@@ -434,13 +443,17 @@ class StatementImpl implements Statement {
 		}
 	}
 
+	static boolean forceCypher(String sql) {
+		return PATTERN_ENFORCE_CYPHER.test(sql);
+	}
+
 	private QueryResponses sendQuery(String sql, boolean pull) throws SQLException {
 		var transactionType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		var beginFuture = this.boltConnection
 			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false)
 			.toCompletableFuture();
-		var runFuture = this.boltConnection.run(this.sqlProcessor.apply(sql), parameters(), false)
-			.toCompletableFuture();
+		var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
+		var runFuture = this.boltConnection.run(processor.apply(sql), parameters(), false).toCompletableFuture();
 		CompletableFuture<QueryResponses> joinedFuture;
 
 		if (pull) {
