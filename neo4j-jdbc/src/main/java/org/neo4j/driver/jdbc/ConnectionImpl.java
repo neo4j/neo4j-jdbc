@@ -207,8 +207,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	@Override
-	public int getTransactionIsolation() throws SQLException {
-		throw new UnsupportedOperationException();
+	public int getTransactionIsolation() {
+		return Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override
@@ -229,7 +229,13 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
 			throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		if (resultSetType != ResultSet.TYPE_FORWARD_ONLY) {
+			throw new UnsupportedOperationException("Unsupported result set type: " + resultSetType);
+		}
+		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
+			throw new UnsupportedOperationException("Unsupported result set concurrency: " + resultSetConcurrency);
+		}
+		return prepareStatement(sql);
 	}
 
 	@Override
