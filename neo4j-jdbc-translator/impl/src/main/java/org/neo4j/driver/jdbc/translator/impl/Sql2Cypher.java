@@ -299,8 +299,9 @@ final class Sql2Cypher implements SqlTranslator {
 	}
 
 	private SortItem expression(SortField<?> s) {
+		var direction = s.$sortOrder().name().toUpperCase(Locale.ROOT);
 		return Cypher.sort(expression(s.$field()),
-				SortItem.Direction.valueOf(s.$sortOrder().name().toUpperCase(Locale.ROOT)));
+				"DEFAULT".equals(direction) ? SortItem.Direction.UNDEFINED : SortItem.Direction.valueOf(direction));
 	}
 
 	private Expression expression(Field<?> f) {

@@ -79,3 +79,16 @@ But remember that labels, relationship-types and property-names are *case sensit
 MATCH (p:Product)
 RETURN p.productName, p.unitPrice ORDER BY p.unitPrice DESC LIMIT 10
 ----
+
+Default order direction will be translated as is:
+
+[source,sql,id=t2_2,name=order_by_default]
+----
+SELECT * FROM Movies m ORDER BY m.title
+----
+
+[source,cypher,id=t2_2_expected,parseCypher=false]
+----
+MATCH (m:Movies)
+RETURN * ORDER BY m.title
+----
