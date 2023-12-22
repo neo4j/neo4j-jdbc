@@ -36,6 +36,7 @@
 	<modules>
 		<module>neo4j-jdbc-it-cp</module>
 		<module>neo4j-jdbc-it-mp</module>
+		<module>quarkus-smoke-tests</module>
 	</modules>
 
 	<dependencies>
