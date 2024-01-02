@@ -124,7 +124,7 @@
 		<asciidoctor-maven-plugin.version>2.2.4</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.10</asciidoctorj.pdf.version>
 		<asciidoctorj.version>2.5.11</asciidoctorj.version>
-		<assertj.version>3.24.2</assertj.version>
+		<assertj.version>3.25.0</assertj.version>
 		<byte-buddy.version>1.14.11</byte-buddy.version>
 		<checkstyle.version>10.9.2</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
