@@ -125,7 +125,7 @@
 		<asciidoctorj.pdf.version>2.3.9</asciidoctorj.pdf.version>
 		<asciidoctorj.version>2.5.10</asciidoctorj.version>
 		<assertj.version>3.24.2</assertj.version>
-		<byte-buddy.version>1.14.10</byte-buddy.version>
+		<byte-buddy.version>1.14.11</byte-buddy.version>
 		<checkstyle.version>10.9.2</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
