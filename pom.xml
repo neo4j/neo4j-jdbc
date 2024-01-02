@@ -136,7 +136,7 @@
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.1</jaxb-api.version>
 		<jdbi3.version>3.42.0</jdbi3.version>
-		<jooq.version>3.19.0</jooq.version>
+		<jooq.version>3.19.1</jooq.version>
 		<junit-jupiter.version>5.10.1</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
