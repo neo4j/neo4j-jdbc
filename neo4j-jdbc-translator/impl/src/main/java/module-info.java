@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 "Neo4j,"
+ * Copyright (c) 2023-2024 "Neo4j,"
  * Neo4j Sweden AB [https://neo4j.com]
  *
  * This file is part of Neo4j.
@@ -16,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import org.neo4j.driver.jdbc.translator.impl.Sql2CypherTranslatorFactory;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
 

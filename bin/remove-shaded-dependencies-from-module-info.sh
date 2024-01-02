@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2023 "Neo4j,"
+# Copyright (c) 2023-2024 "Neo4j,"
 # Neo4j Sweden AB [https://neo4j.com]
 #
 # This file is part of Neo4j.
