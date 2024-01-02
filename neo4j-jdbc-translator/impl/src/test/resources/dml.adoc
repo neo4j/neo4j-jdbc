@@ -156,3 +156,114 @@ AS properties
 CREATE (people:`Person`)
 SET people = properties
 ----
+
+=== Upserts
+
+We support a restricted range of "upserts" via the non-standard but pretty common `ON DUPLICATE` and `ON CONFLICT` SQL clauses.
+Upserts will generally be translated to `MERGE` statements.
+While they tend to work without constraints, you really should but unique-constraints on the node properties you merge on.
+Otherwise, Neo4j create duplicates due to locking issues.
+Read me more about the latter https://neo4j.com/developer/kb/understanding-how-merge-works/[here].
+
+Two options are possible to merge on all columns inserted via `ON DUPLICATE KEY IGNORE` and `ON CONFLICT IGNORE`.
+
+[source,sql,id=upsert1]
+----
+INSERT INTO Movie(title, released) VALUES(?, ?) ON DUPLICATE KEY IGNORE
+----
+
+will be translated to:
+
+[source,cypher,id=upsert1_expected]
+----
+MERGE (movie:`Movie` {title: $0, released: $1})
+----
+
+The same goes for `ON CONFLICT DO NOTHING`.
+In the example we configured a table mapping:
+
+[source,sql,id=upsert2,table_mappings=actors:Actor]
+----
+INSERT INTO actors(name, firstname) VALUES(?, ?) ON CONFLICT DO NOTHING
+----
+
+will be translated to:
+
+[source,cypher,id=upsert2_expected]
+----
+MERGE (actors:`Actor` {name: $0, firstname: $1})
+----
+
+If you want to define an action, you must use `ON CONFLICT` specifying the key you want to merge on.
+While `ON DUPLICATE KEY` does offer upgrade options, it assumes the primary (or unique) key being violated to be known.
+This is most certainly the case in a relational system, but not in this translation layer, that does run without a database connection:
+
+[source,sql,id=upsert3]
+----
+INSERT INTO tbl(i, j, k) VALUES (1, 40, 700)
+ON CONFLICT (i) DO UPDATE SET j = 0, k = 2 * EXCLUDED.k
+----
+
+Take note how the special reference `EXCLUDED` can be used to refer to the values of columns that have not been part of the key.
+They will be reused with their values in the `ON MATCH SET` clause.
+
+[source,cypher,id=upsert3_expected]
+----
+MERGE (tbl:`tbl` {i: 1})
+ON CREATE SET tbl.j = 40, tbl.k = 700
+ON MATCH SET tbl.j = 0, tbl.k = (2 * 700)
+----
+
+This works with parameters, too:
+
+[source,sql,id=upsert4]
+----
+INSERT INTO tbl(i, j, k) VALUES (1, 2, ?)
+ON CONFLICT (i) DO UPDATE SET j = EXCLUDED.k
+----
+
+Same result, but referring to the parameter:
+
+[source,cypher,id=upsert4_expected]
+----
+MERGE (tbl:`tbl` {i: 1})
+ON CREATE SET tbl.j = 2, tbl.k = $0
+ON MATCH SET tbl.j = $0
+----
+
+If you just want to specify a concrete merge column instead of merging on all columns, this possible too:
+
+[source,sql,id=upsert3b]
+----
+INSERT INTO tbl(i, j, k) VALUES (1, 40, 700)
+ON CONFLICT (i) DO NOTHING
+----
+
+will be using `ON CREATE` only:
+
+[source,cypher,id=upsert3b_expected]
+----
+MERGE (tbl:`tbl` {i: 1})
+ON CREATE SET tbl.j = 40, tbl.k = 700
+----
+
+
+Using `ON CONFLICT` and specifying a key is the only way to insert multiple rows with a `MERGE` statement:
+
+[source,sql,id=upsert5]
+----
+INSERT INTO People (first_name, last_name, born) VALUES
+    ('Helge', 'Schneider', 1955),
+    ('Bela', 'B', 1962)
+ON CONFLICT(last_name) DO UPDATE SET born = EXCLUDED.born
+----
+
+[source,cypher,id=upsert5_expected]
+----
+UNWIND [{first_name: 'Helge', last_name: 'Schneider', born: 1955}, {first_name: 'Bela', last_name: 'B', born: 1962}] AS properties
+MERGE (people:`People` {last_name: properties['last_name']})
+ON CREATE SET
+  people.first_name = properties.first_name,
+  people.born = properties.born
+ON MATCH SET people.born = properties['born']
+----

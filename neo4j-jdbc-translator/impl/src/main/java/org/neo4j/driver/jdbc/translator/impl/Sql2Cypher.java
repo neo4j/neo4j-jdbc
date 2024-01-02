@@ -21,6 +21,7 @@ package org.neo4j.driver.jdbc.translator.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jooq.Asterisk;
 import org.jooq.CreateTableElementListStep;
@@ -109,26 +111,25 @@ final class Sql2Cypher implements SqlTranslator {
 			.build();
 	}
 
-	// Unsure how thread safe this should be (wrt the node lookup table), but this here
-	// will do for the purpose of adding some tests
 	@Override
 	public String translate(String sql) {
 		Query query = parse(sql);
 
+		ContextAwareStatementBuilder statementBuilder = new ContextAwareStatementBuilder();
 		if (query instanceof Select<?> s) {
-			return render(statement(s));
+			return render(statementBuilder.statement(s));
 		}
 		else if (query instanceof QOM.Delete<?> d) {
-			return render(statement(d));
+			return render(statementBuilder.statement(d));
 		}
 		else if (query instanceof QOM.Truncate<?> t) {
-			return render(statement(t));
+			return render(statementBuilder.statement(t));
 		}
 		else if (query instanceof QOM.Insert<?> t) {
-			return render(statement(t));
+			return render(statementBuilder.statement(t));
 		}
 		else if (query instanceof QOM.Update<?> u) {
-			return render(statement(u));
+			return render(statementBuilder.statement(u));
 		}
 		else {
 			throw unsupported(query);
@@ -182,609 +183,709 @@ final class Sql2Cypher implements SqlTranslator {
 		return Renderer.getRenderer(this.rendererConfig).render(statement);
 	}
 
-	Statement statement(QOM.Delete<?> d) {
-		Node e = (Node) resolveTableOrJoin(d.$from());
-
-		OngoingReadingWithoutWhere m1 = Cypher.match(e);
-		OngoingReadingWithWhere m2 = (d.$where() != null) ? m1.where(condition(d.$where()))
-				: (OngoingReadingWithWhere) m1;
-		return m2.delete(e.asExpression()).build();
+	private static IllegalArgumentException unsupported(QueryPart p) {
+		return new IllegalArgumentException("Unsupported SQL expression: " + p);
 	}
 
-	Statement statement(QOM.Truncate<?> t) {
-		Node e = (Node) resolveTableOrJoin(t.$table());
-
-		return Cypher.match(e).detachDelete(e.asExpression()).build();
+	private static Node nodeWithProperties(Node src, Map<String, Expression> properties) {
+		// Due to a slightly problematic API in the Cypher-DSL ^ms
+		return src
+			.withProperties(properties.entrySet().stream().flatMap(e -> Stream.of(e.getKey(), e.getValue())).toArray());
 	}
 
-	ResultStatement statement(Select<?> x) {
-
-		// Done lazy as otherwise the property containers won't be resolved
-		Supplier<List<Expression>> resultColumnsSupplier = () -> x.$select().stream().map(this::expression).toList();
-
-		if (x.$from().isEmpty()) {
-			return Cypher.returning(resultColumnsSupplier.get()).build();
-		}
-
-		OngoingReadingWithoutWhere m1 = Cypher.match(x.$from().stream().map(this::resolveTableOrJoin).toList());
-
-		OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
-				: (OngoingReadingWithWhere) m1;
-
-		var returning = m2.returning(resultColumnsSupplier.get())
-			.orderBy(x.$orderBy().stream().map(this::expression).toList());
-
-		StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
-		if (!(x.$limit() instanceof Param<?> param)) {
-			buildableStatement = returning;
-		}
-		else {
-			buildableStatement = returning.limit(expression(param));
-		}
-
-		return buildableStatement.build();
+	private static SymbolicName symbolicName(String value) {
+		return Cypher.name(value.toLowerCase(Locale.ROOT));
 	}
 
-	Statement statement(QOM.Insert<?> insert) {
-		var table = insert.$into();
-		// TODO handle if this resolves to something unexpectedly different
-		var node = (Node) this.resolveTableOrJoin(table);
+	private static String relationshipTypeName(Field<?> lhsJoinColumn) {
+		return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
+	}
 
-		var rows = insert.$values();
-		var columns = insert.$columns();
+	class ContextAwareStatementBuilder {
 
-		if (rows.size() == 1) {
-			Object[] keysAndValues = new Object[columns.size() * 2];
-			var row = rows.get(0);
-			for (int i = 0; i < columns.size(); ++i) {
-				keysAndValues[i * 2] = columns.get(i).getName();
-				keysAndValues[i * 2 + 1] = expression(row.field(i));
+		/**
+		 * Column assignments known in this context.
+		 */
+		private final Map<String, Expression> columnsAndValues = new LinkedHashMap<>();
+
+		Statement statement(QOM.Delete<?> d) {
+			Node e = (Node) resolveTableOrJoin(d.$from());
+
+			OngoingReadingWithoutWhere m1 = Cypher.match(e);
+			OngoingReadingWithWhere m2 = (d.$where() != null) ? m1.where(condition(d.$where()))
+					: (OngoingReadingWithWhere) m1;
+			return m2.delete(e.asExpression()).build();
+		}
+
+		Statement statement(QOM.Truncate<?> t) {
+			Node e = (Node) resolveTableOrJoin(t.$table());
+
+			return Cypher.match(e).detachDelete(e.asExpression()).build();
+		}
+
+		ResultStatement statement(Select<?> x) {
+
+			// Done lazy as otherwise the property containers won't be resolved
+			Supplier<List<Expression>> resultColumnsSupplier = () -> x.$select()
+				.stream()
+				.map(this::expression)
+				.toList();
+
+			if (x.$from().isEmpty()) {
+				return Cypher.returning(resultColumnsSupplier.get()).build();
 			}
-			return Cypher.create(node.withProperties(keysAndValues)).build();
+
+			OngoingReadingWithoutWhere m1 = Cypher.match(x.$from().stream().map(this::resolveTableOrJoin).toList());
+
+			OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
+					: (OngoingReadingWithWhere) m1;
+
+			var returning = m2.returning(resultColumnsSupplier.get())
+				.orderBy(x.$orderBy().stream().map(this::expression).toList());
+
+			StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
+			if (!(x.$limit() instanceof Param<?> param)) {
+				buildableStatement = returning;
+			}
+			else {
+				buildableStatement = returning.limit(expression(param));
+			}
+
+			return buildableStatement.build();
 		}
-		else {
-			var props = insert.$values().stream().map(row -> {
-				var result = new HashMap<String, Object>(columns.size());
+
+		Statement statement(QOM.Insert<?> insert) {
+			var table = insert.$into();
+			// TODO handle if this resolves to something unexpectedly different
+			var node = (Node) this.resolveTableOrJoin(table);
+
+			var rows = insert.$values();
+			var columns = insert.$columns();
+			var hasMergeProperties = !insert.$onConflict().isEmpty();
+			var useMerge = insert.$onDuplicateKeyIgnore() || hasMergeProperties;
+			if (rows.size() == 1) {
+				var row = rows.get(0);
+				Map<String, Expression> nodeProperties = new LinkedHashMap<>();
 				for (int i = 0; i < columns.size(); ++i) {
-					result.put(columns.get(i).getName(), expression(row.field(i)));
+					nodeProperties.put(columns.get(i).getName(), expression(row.field(i)));
 				}
-				return Cypher.literalOf(result);
-			}).toList();
-			return Cypher.unwind(Cypher.listOf(props))
-				.as("properties")
-				.create(node)
-				.set(node, Cypher.name("properties"))
-				.build();
-		}
-	}
+				if (useMerge) {
+					Map<String, Expression> mergeProperties = hasMergeProperties ? new LinkedHashMap<>()
+							: nodeProperties;
+					insert.$onConflict().forEach(c -> {
+						mergeProperties.put(c.getName(), nodeProperties.get(c.getName()));
+						nodeProperties.remove(c.getName());
+					});
 
-	Statement statement(QOM.Update<?> update) {
-		var table = update.$table();
-		var node = (Node) this.resolveTableOrJoin(table);
+					var properties = new ArrayList<Expression>();
+					nodeProperties.forEach((k, v) -> properties.add(Cypher.set(node.property(k), v)));
 
-		var updates = new ArrayList<Expression>();
-		update.$set().forEach((c, v) -> {
-			updates.add(node.property(((Field<?>) c).getName()));
-			updates.add(expression((Field<?>) v));
-		});
-
-		return Cypher.match(node).where(condition(update.$where())).set(updates).build();
-	}
-
-	private Expression expression(SelectFieldOrAsterisk t) {
-		if (t instanceof SelectField<?> s) {
-			return expression(s);
-		}
-		else if (t instanceof Asterisk) {
-			return Cypher.asterisk();
-		}
-		else if (t instanceof QualifiedAsterisk q && resolveTableOrJoin(q.$table()) instanceof Node node) {
-			return node.getSymbolicName().orElseGet(() -> Cypher.name(q.$table().getName()));
-		}
-		else {
-			throw unsupported(t);
-		}
-	}
-
-	private Expression expression(SelectField<?> s) {
-		if (s instanceof QOM.FieldAlias<?> fa) {
-			return expression(fa.$aliased()).as(fa.$alias().last());
-		}
-		else if (s instanceof Field<?> f) {
-			return expression(f);
-		}
-		else {
-			throw unsupported(s);
-		}
-	}
-
-	private SortItem expression(SortField<?> s) {
-		var direction = s.$sortOrder().name().toUpperCase(Locale.ROOT);
-		return Cypher.sort(expression(s.$field()),
-				"DEFAULT".equals(direction) ? SortItem.Direction.UNDEFINED : SortItem.Direction.valueOf(direction));
-	}
-
-	private Expression expression(Field<?> f) {
-		return expression(f, false);
-	}
-
-	private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
-		if (f instanceof Param<?> p) {
-			if (p.$inline()) {
-				return Cypher.literalOf(p.getValue());
-			}
-			else if (p.getParamName() != null) {
-				return Cypher.parameter(p.getParamName(), p.getValue());
+					StatementBuilder.BuildableStatement<?> merge = Cypher
+						.merge(nodeWithProperties(node, mergeProperties));
+					if (hasMergeProperties) {
+						merge = ((StatementBuilder.ExposesMergeAction) merge).onCreate().set(properties);
+					}
+					if (!insert.$updateSet().isEmpty()) {
+						var updates = new ArrayList<Expression>();
+						insert.$updateSet().forEach((c, v) -> {
+							synchronized (this) {
+								try {
+									this.columnsAndValues.putAll(nodeProperties);
+									updates.add(Cypher.set(node.property(((Field<?>) c).getName()),
+											expression((Field<?>) v)));
+								}
+								finally {
+									nodeProperties.keySet().forEach(this.columnsAndValues::remove);
+								}
+							}
+						});
+						merge = ((StatementBuilder.ExposesMergeAction) merge).onMatch().set(updates);
+					}
+					return merge.build();
+				}
+				return Cypher.create(nodeWithProperties(node, nodeProperties)).build();
 			}
 			else {
-				return Cypher.anonParameter(p.getValue());
+				if (useMerge && !hasMergeProperties) {
+					throw new UnsupportedOperationException(
+							"MERGE is not supported when inserting multiple rows without using a property to merge on");
+				}
+				var props = Cypher.listOf(insert.$values().stream().map(row -> {
+					var result = new HashMap<String, Object>(columns.size());
+					for (int i = 0; i < columns.size(); ++i) {
+						result.put(columns.get(i).getName(), expression(row.field(i)));
+					}
+					return Cypher.literalOf(result);
+				}).toList());
+
+				if (useMerge) {
+
+					var symName = Cypher.name("properties");
+					var mergeProperties = new LinkedHashMap<String, Expression>();
+
+					insert.$onConflict()
+						.forEach(c -> mergeProperties.put(c.getName(),
+								Cypher.property(symName, Cypher.literalOf(c.getName()))));
+
+					var properties = new ArrayList<Expression>();
+					columns.stream()
+						.filter(c -> !mergeProperties.containsKey(c.getName()))
+						.forEach(c -> properties
+							.add(Cypher.set(node.property(c.getName()), Cypher.property(symName, c.getName()))));
+
+					var updates = new ArrayList<Expression>();
+					synchronized (this) {
+						try {
+							columns.forEach(c -> this.columnsAndValues.put(c.getName(),
+									Cypher.property(symName, Cypher.literalOf(c.getName()))));
+							insert.$updateSet()
+								.forEach((c, v) -> updates.add(
+										Cypher.set(node.property(((Field<?>) c).getName()), expression((Field<?>) v))));
+						}
+						finally {
+							columns.forEach(c -> this.columnsAndValues.remove(c.getName()));
+						}
+					}
+
+					return Cypher.unwind(props)
+						.as("properties")
+						.merge(nodeWithProperties(node, mergeProperties))
+						.onCreate()
+						.set(properties)
+						.onMatch()
+						.set(updates)
+						.build();
+				}
+
+				return Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")).build();
 			}
 		}
-		else if (f instanceof TableField<?, ?> tf && tf.getTable() != null) {
-			var pe = resolveTableOrJoin(tf.getTable());
-			if (pe instanceof Node node) {
-				return node.property(tf.getName());
+
+		Statement statement(QOM.Update<?> update) {
+			var table = update.$table();
+			var node = (Node) this.resolveTableOrJoin(table);
+
+			var updates = new ArrayList<Expression>();
+			update.$set().forEach((c, v) -> {
+				updates.add(node.property(((Field<?>) c).getName()));
+				updates.add(expression((Field<?>) v));
+			});
+
+			return Cypher.match(node).where(condition(update.$where())).set(updates).build();
+		}
+
+		private Expression expression(SelectFieldOrAsterisk t) {
+			if (t instanceof SelectField<?> s) {
+				return expression(s);
 			}
-			else if (pe instanceof Relationship rel) {
-				return rel.property(tf.getName());
+			else if (t instanceof Asterisk) {
+				return Cypher.asterisk();
+			}
+			else if (t instanceof QualifiedAsterisk q && resolveTableOrJoin(q.$table()) instanceof Node node) {
+				return node.getSymbolicName().orElseGet(() -> Cypher.name(q.$table().getName()));
 			}
 			else {
-				throw unsupported(tf);
+				throw unsupported(t);
 			}
 		}
-		else if (f instanceof QOM.Add<?> e) {
-			return expression(e.$arg1()).add(expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Sub<?> e) {
-			return expression(e.$arg1()).subtract(expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Mul<?> e) {
-			return expression(e.$arg1()).multiply(expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Square<?> e) {
-			return expression(e.$arg1()).multiply(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Div<?> e) {
-			return expression(e.$arg1()).divide(expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Neg<?> e) {
-			throw unsupported(e);
-		}
 
-		// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/
-		else if (f instanceof QOM.Abs<?> e) {
-			return Cypher.abs(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Ceil<?> e) {
-			return Cypher.ceil(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Floor<?> e) {
-			return Cypher.floor(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Round<?> e) {
-			if (e.$arg2() == null) {
-				return Cypher.round(expression(e.$arg1()));
+		private Expression expression(SelectField<?> s) {
+			if (s instanceof QOM.FieldAlias<?> fa) {
+				return expression(fa.$aliased()).as(fa.$alias().last());
+			}
+			else if (s instanceof Field<?> f) {
+				return expression(f);
 			}
 			else {
-				return Cypher.round(expression(e.$arg1()), expression(e.$arg2()));
+				throw unsupported(s);
 			}
 		}
-		else if (f instanceof QOM.Sign e) {
-			return Cypher.sign(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Rand) {
-			return Cypher.rand();
+
+		private SortItem expression(SortField<?> s) {
+			var direction = s.$sortOrder().name().toUpperCase(Locale.ROOT);
+			return Cypher.sort(expression(s.$field()),
+					"DEFAULT".equals(direction) ? SortItem.Direction.UNDEFINED : SortItem.Direction.valueOf(direction));
 		}
 
-		// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/
-		else if (f instanceof QOM.Euler) {
-			return Cypher.e();
-		}
-		else if (f instanceof QOM.Exp e) {
-			return Cypher.exp(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Ln e) {
-			return Cypher.log(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Log e) {
-			return Cypher.log(expression(e.$arg1())).divide(Cypher.log(expression(e.$arg2())));
-		}
-		else if (f instanceof QOM.Log10 e) {
-			return Cypher.log10(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Sqrt e) {
-			return Cypher.sqrt(expression(e.$arg1()));
-		}
-		// TODO: Hyperbolic functions
-
-		// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/
-		else if (f instanceof QOM.Acos e) {
-			return Cypher.acos(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Asin e) {
-			return Cypher.asin(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Atan e) {
-			return Cypher.atan(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Atan2 e) {
-			return Cypher.atan2(expression(e.$arg1()), expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Cos e) {
-			return Cypher.cos(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Cot e) {
-			return Cypher.cot(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Degrees e) {
-			return Cypher.degrees(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Pi) {
-			return Cypher.pi();
-		}
-		else if (f instanceof QOM.Radians e) {
-			return Cypher.radians(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Sin e) {
-			return Cypher.sin(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Tan e) {
-			return Cypher.tan(expression(e.$arg1()));
+		private Expression expression(Field<?> f) {
+			return expression(f, false);
 		}
 
-		// https://neo4j.com/docs/cypher-manual/current/functions/string/
-		else if (f instanceof QOM.CharLength e) {
-			return Cypher.size(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Left e) {
-			return Cypher.left(expression(e.$arg1()), expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Lower e) {
-			return Cypher.toLower(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Ltrim e) {
-			return Cypher.ltrim(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Replace e) {
-			return Cypher.replace(expression(e.$arg1()), expression(e.$arg2()), expression(e.$arg3()));
-		}
-		else if (f instanceof QOM.Reverse e) {
-			return Cypher.reverse(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Right e) {
-			return Cypher.right(expression(e.$arg1()), expression(e.$arg2()));
-		}
-		else if (f instanceof QOM.Rtrim e) {
-			return Cypher.rtrim(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Substring e) {
-			var length = expression(e.$arg3());
-			if (length != Cypher.literalNull()) {
-				return Cypher.substring(expression(e.$arg1()), expression(e.$arg2()), length);
+		private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
+			if (f instanceof Param<?> p) {
+				if (p.$inline()) {
+					return Cypher.literalOf(p.getValue());
+				}
+				else if (p.getParamName() != null) {
+					return Cypher.parameter(p.getParamName(), p.getValue());
+				}
+				else {
+					return Cypher.anonParameter(p.getValue());
+				}
 			}
-			else {
-				return Cypher.substring(expression(e.$arg1()), expression(e.$arg2()), null);
+			else if (f instanceof TableField<?, ?> tf && tf.getTable() != null) {
+				var pe = resolveTableOrJoin(tf.getTable());
+				if (pe instanceof Node node) {
+					return node.property(tf.getName());
+				}
+				else if (pe instanceof Relationship rel) {
+					return rel.property(tf.getName());
+				}
+				else {
+					throw unsupported(tf);
+				}
 			}
-		}
-		else if (f instanceof QOM.Trim e) {
-			if (e.$arg2() != null) {
+			else if (f instanceof QOM.Add<?> e) {
+				return expression(e.$arg1()).add(expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Sub<?> e) {
+				return expression(e.$arg1()).subtract(expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Mul<?> e) {
+				return expression(e.$arg1()).multiply(expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Square<?> e) {
+				return expression(e.$arg1()).multiply(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Div<?> e) {
+				return expression(e.$arg1()).divide(expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Neg<?> e) {
 				throw unsupported(e);
 			}
-			else {
-				return Cypher.trim(expression(e.$arg1()));
+
+			// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/
+			else if (f instanceof QOM.Abs<?> e) {
+				return Cypher.abs(expression(e.$arg1()));
 			}
-		}
-		else if (f instanceof QOM.Upper e) {
-			return Cypher.toUpper(expression(e.$arg1()));
-		}
-
-		// https://neo4j.com/docs/cypher-manual/current/functions/scalar/
-		else if (f instanceof QOM.Coalesce<?> e) {
-			return Cypher.coalesce(e.$arg1().stream().map(this::expression).toArray(Expression[]::new));
-		}
-		else if (f instanceof QOM.Nvl<?> e) {
-			return Cypher.coalesce(expression(e.$arg1()), expression(e.$arg2()));
-		}
-
-		// https://neo4j.com/docs/cypher-manual/current/syntax/expressions/
-		else if (f instanceof QOM.Nullif<?> e) {
-			return Cypher.caseExpression()
-				.when(expression(e.$arg1()).eq(expression(e.$arg2())))
-				.then(Cypher.literalNull())
-				.elseDefault(expression(e.$arg1()));
-		}
-		else if (f instanceof QOM.Nvl2<?> e) {
-			return Cypher.caseExpression()
-				.when(expression(e.$arg1()).isNotNull())
-				.then(expression(e.$arg2()))
-				.elseDefault(expression(e.$arg3()));
-		}
-		else if (f instanceof QOM.CaseSimple<?, ?> e) {
-			Case c = Cypher.caseExpression(expression(e.$value()));
-
-			for (var w : e.$when()) {
-				c = c.when(expression(w.$1())).then(expression(w.$2()));
+			else if (f instanceof QOM.Ceil<?> e) {
+				return Cypher.ceil(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Floor<?> e) {
+				return Cypher.floor(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Round<?> e) {
+				if (e.$arg2() == null) {
+					return Cypher.round(expression(e.$arg1()));
+				}
+				else {
+					return Cypher.round(expression(e.$arg1()), expression(e.$arg2()));
+				}
+			}
+			else if (f instanceof QOM.Sign e) {
+				return Cypher.sign(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Rand) {
+				return Cypher.rand();
 			}
 
-			if (e.$else() != null) {
-				c = ((Case.CaseEnding) c).elseDefault(expression(e.$else()));
+			// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/
+			else if (f instanceof QOM.Euler) {
+				return Cypher.e();
+			}
+			else if (f instanceof QOM.Exp e) {
+				return Cypher.exp(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Ln e) {
+				return Cypher.log(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Log e) {
+				return Cypher.log(expression(e.$arg1())).divide(Cypher.log(expression(e.$arg2())));
+			}
+			else if (f instanceof QOM.Log10 e) {
+				return Cypher.log10(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Sqrt e) {
+				return Cypher.sqrt(expression(e.$arg1()));
+			}
+			// TODO: Hyperbolic functions
+
+			// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/
+			else if (f instanceof QOM.Acos e) {
+				return Cypher.acos(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Asin e) {
+				return Cypher.asin(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Atan e) {
+				return Cypher.atan(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Atan2 e) {
+				return Cypher.atan2(expression(e.$arg1()), expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Cos e) {
+				return Cypher.cos(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Cot e) {
+				return Cypher.cot(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Degrees e) {
+				return Cypher.degrees(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Pi) {
+				return Cypher.pi();
+			}
+			else if (f instanceof QOM.Radians e) {
+				return Cypher.radians(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Sin e) {
+				return Cypher.sin(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Tan e) {
+				return Cypher.tan(expression(e.$arg1()));
 			}
 
-			return c;
-		}
-		else if (f instanceof QOM.CaseSearched<?> e) {
-			Case c = Cypher.caseExpression();
-
-			for (var w : e.$when()) {
-				c = c.when(condition(w.$1())).then(expression(w.$2()));
+			// https://neo4j.com/docs/cypher-manual/current/functions/string/
+			else if (f instanceof QOM.CharLength e) {
+				return Cypher.size(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Left e) {
+				return Cypher.left(expression(e.$arg1()), expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Lower e) {
+				return Cypher.toLower(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Ltrim e) {
+				return Cypher.ltrim(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Replace e) {
+				return Cypher.replace(expression(e.$arg1()), expression(e.$arg2()), expression(e.$arg3()));
+			}
+			else if (f instanceof QOM.Reverse e) {
+				return Cypher.reverse(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Right e) {
+				return Cypher.right(expression(e.$arg1()), expression(e.$arg2()));
+			}
+			else if (f instanceof QOM.Rtrim e) {
+				return Cypher.rtrim(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Substring e) {
+				var length = expression(e.$arg3());
+				if (length != Cypher.literalNull()) {
+					return Cypher.substring(expression(e.$arg1()), expression(e.$arg2()), length);
+				}
+				else {
+					return Cypher.substring(expression(e.$arg1()), expression(e.$arg2()), null);
+				}
+			}
+			else if (f instanceof QOM.Trim e) {
+				if (e.$arg2() != null) {
+					throw unsupported(e);
+				}
+				else {
+					return Cypher.trim(expression(e.$arg1()));
+				}
+			}
+			else if (f instanceof QOM.Upper e) {
+				return Cypher.toUpper(expression(e.$arg1()));
 			}
 
-			if (e.$else() != null) {
-				c = ((Case.CaseEnding) c).elseDefault(expression(e.$else()));
+			// https://neo4j.com/docs/cypher-manual/current/functions/scalar/
+			else if (f instanceof QOM.Coalesce<?> e) {
+				return Cypher.coalesce(e.$arg1().stream().map(this::expression).toArray(Expression[]::new));
+			}
+			else if (f instanceof QOM.Nvl<?> e) {
+				return Cypher.coalesce(expression(e.$arg1()), expression(e.$arg2()));
 			}
 
-			return c;
-		}
+			// https://neo4j.com/docs/cypher-manual/current/syntax/expressions/
+			else if (f instanceof QOM.Nullif<?> e) {
+				return Cypher.caseExpression()
+					.when(expression(e.$arg1()).eq(expression(e.$arg2())))
+					.then(Cypher.literalNull())
+					.elseDefault(expression(e.$arg1()));
+			}
+			else if (f instanceof QOM.Nvl2<?> e) {
+				return Cypher.caseExpression()
+					.when(expression(e.$arg1()).isNotNull())
+					.then(expression(e.$arg2()))
+					.elseDefault(expression(e.$arg3()));
+			}
+			else if (f instanceof QOM.CaseSimple<?, ?> e) {
+				Case c = Cypher.caseExpression(expression(e.$value()));
 
-		// Others
-		else if (f instanceof QOM.Cast<?> e) {
-			if (e.$dataType().isString()) {
-				return Cypher.toString(expression(e.$field()));
+				for (var w : e.$when()) {
+					c = c.when(expression(w.$1())).then(expression(w.$2()));
+				}
+
+				if (e.$else() != null) {
+					c = ((Case.CaseEnding) c).elseDefault(expression(e.$else()));
+				}
+
+				return c;
 			}
-			else if (e.$dataType().isBoolean()) {
-				return Cypher.toBoolean(expression(e.$field()));
+			else if (f instanceof QOM.CaseSearched<?> e) {
+				Case c = Cypher.caseExpression();
+
+				for (var w : e.$when()) {
+					c = c.when(condition(w.$1())).then(expression(w.$2()));
+				}
+
+				if (e.$else() != null) {
+					c = ((Case.CaseEnding) c).elseDefault(expression(e.$else()));
+				}
+
+				return c;
 			}
-			else if (e.$dataType().isFloat()) {
-				return Cypher.toFloat(expression(e.$field()));
+
+			// Others
+			else if (f instanceof QOM.Cast<?> e) {
+				if (e.$dataType().isString()) {
+					return Cypher.toString(expression(e.$field()));
+				}
+				else if (e.$dataType().isBoolean()) {
+					return Cypher.toBoolean(expression(e.$field()));
+				}
+				else if (e.$dataType().isFloat()) {
+					return Cypher.toFloat(expression(e.$field()));
+				}
+				else if (e.$dataType().isInteger()) {
+					return Cypher.toInteger(expression(e.$field()));
+				}
+				else {
+					throw unsupported(f);
+				}
 			}
-			else if (e.$dataType().isInteger()) {
-				return Cypher.toInteger(expression(e.$field()));
+			else if (f instanceof org.jooq.True) {
+				return Cypher.literalTrue();
+			}
+			else if (f instanceof org.jooq.False) {
+				return Cypher.literalFalse();
+			}
+			else if (f instanceof QOM.Null || f == null || f instanceof org.jooq.Null) {
+				return Cypher.literalNull();
+			}
+			else if (f instanceof QOM.Function<?> func) {
+				Function<Field<?>, Expression> asExpression = v -> expression(v, true);
+				var args = func.$args().stream().map(asExpression).toArray(Expression[]::new);
+				return Cypher.call(func.getName()).withArgs(args).asFunction();
+			}
+			else if (f instanceof QOM.Excluded<?> excluded
+					&& this.columnsAndValues.containsKey(excluded.$field().getName())) {
+				return this.columnsAndValues.get(excluded.$field().getName());
+			}
+			else if (turnUnknownIntoNames) {
+				return Cypher.name(f.getName());
 			}
 			else {
 				throw unsupported(f);
 			}
 		}
-		else if (f instanceof org.jooq.True) {
-			return Cypher.literalTrue();
-		}
-		else if (f instanceof org.jooq.False) {
-			return Cypher.literalFalse();
-		}
-		else if (f instanceof QOM.Null || f == null || f instanceof org.jooq.Null) {
-			return Cypher.literalNull();
-		}
-		else if (f instanceof QOM.Function<?> func) {
-			Function<Field<?>, Expression> asExpression = v -> expression(v, true);
-			var args = func.$args().stream().map(asExpression).toArray(Expression[]::new);
-			return Cypher.call(func.getName()).withArgs(args).asFunction();
-		}
-		else if (turnUnknownIntoNames) {
-			return Cypher.name(f.getName());
-		}
-		else {
-			throw unsupported(f);
-		}
-	}
 
-	private static IllegalArgumentException unsupported(QueryPart p) {
-		return new IllegalArgumentException("Unsupported SQL expression: " + p);
-	}
+		private <T> Condition condition(org.jooq.Condition c) {
+			if (c instanceof QOM.And a) {
+				return condition(a.$arg1()).and(condition(a.$arg2()));
+			}
+			else if (c instanceof QOM.Or o) {
+				return condition(o.$arg1()).or(condition(o.$arg2()));
+			}
+			else if (c instanceof QOM.Xor o) {
+				return condition(o.$arg1()).xor(condition(o.$arg2()));
+			}
+			else if (c instanceof QOM.Not o) {
+				return condition(o.$arg1()).not();
+			}
+			else if (c instanceof QOM.Eq<?> e) {
+				return expression(e.$arg1()).eq(expression(e.$arg2()));
+			}
+			else if (c instanceof QOM.Gt<?> e) {
+				return expression(e.$arg1()).gt(expression(e.$arg2()));
+			}
+			else if (c instanceof QOM.Ge<?> e) {
+				return expression(e.$arg1()).gte(expression(e.$arg2()));
+			}
+			else if (c instanceof QOM.Lt<?> e) {
+				return expression(e.$arg1()).lt(expression(e.$arg2()));
+			}
+			else if (c instanceof QOM.Le<?> e) {
+				return expression(e.$arg1()).lte(expression(e.$arg2()));
+			}
+			else if (c instanceof QOM.Between<?> e) {
+				if (e.$symmetric()) {
+					@SuppressWarnings("unchecked")
+					QOM.Between<T> t = (QOM.Between<T>) e;
+					return condition(t.$symmetric(false))
+						.or(condition(t.$symmetric(false).$arg2(t.$arg3()).$arg3(t.$arg2())));
+				}
+				else {
+					return expression(e.$arg2()).lte(expression(e.$arg1()))
+						.and(expression(e.$arg1()).lte(expression(e.$arg3())));
+				}
+			}
+			else if (c instanceof QOM.Ne<?> e) {
+				return expression(e.$arg1()).ne(expression(e.$arg2()));
+			}
+			else if (c instanceof QOM.IsNull e) {
+				return expression(e.$arg1()).isNull();
+			}
+			else if (c instanceof QOM.IsNotNull e) {
+				return expression(e.$arg1()).isNotNull();
+			}
+			else if (c instanceof QOM.RowEq<?> e) {
+				Condition result = null;
 
-	private <T> Condition condition(org.jooq.Condition c) {
-		if (c instanceof QOM.And a) {
-			return condition(a.$arg1()).and(condition(a.$arg2()));
-		}
-		else if (c instanceof QOM.Or o) {
-			return condition(o.$arg1()).or(condition(o.$arg2()));
-		}
-		else if (c instanceof QOM.Xor o) {
-			return condition(o.$arg1()).xor(condition(o.$arg2()));
-		}
-		else if (c instanceof QOM.Not o) {
-			return condition(o.$arg1()).not();
-		}
-		else if (c instanceof QOM.Eq<?> e) {
-			return expression(e.$arg1()).eq(expression(e.$arg2()));
-		}
-		else if (c instanceof QOM.Gt<?> e) {
-			return expression(e.$arg1()).gt(expression(e.$arg2()));
-		}
-		else if (c instanceof QOM.Ge<?> e) {
-			return expression(e.$arg1()).gte(expression(e.$arg2()));
-		}
-		else if (c instanceof QOM.Lt<?> e) {
-			return expression(e.$arg1()).lt(expression(e.$arg2()));
-		}
-		else if (c instanceof QOM.Le<?> e) {
-			return expression(e.$arg1()).lte(expression(e.$arg2()));
-		}
-		else if (c instanceof QOM.Between<?> e) {
-			if (e.$symmetric()) {
-				@SuppressWarnings("unchecked")
-				QOM.Between<T> t = (QOM.Between<T>) e;
-				return condition(t.$symmetric(false))
-					.or(condition(t.$symmetric(false).$arg2(t.$arg3()).$arg3(t.$arg2())));
+				for (int i = 0; i < e.$arg1().size(); i++) {
+					Condition r = expression(e.$arg1().field(i)).eq(expression(e.$arg2().field(i)));
+					result = (result != null) ? result.and(r) : r;
+				}
+
+				return result;
+			}
+			else if (c instanceof QOM.RowNe<?> e) {
+				Condition result = null;
+
+				for (int i = 0; i < e.$arg1().size(); i++) {
+					Condition r = expression(e.$arg1().field(i)).ne(expression(e.$arg2().field(i)));
+					result = (result != null) ? result.and(r) : r;
+				}
+
+				return result;
+			}
+			else if (c instanceof QOM.RowGt<?> e) {
+				return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gt);
+			}
+			else if (c instanceof QOM.RowGe<?> e) {
+				return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gte);
+			}
+			else if (c instanceof QOM.RowLt<?> e) {
+				return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lt);
+			}
+			else if (c instanceof QOM.RowLe<?> e) {
+				return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lte);
+			}
+			else if (c instanceof QOM.RowIsNull e) {
+				return e.$arg1()
+					.$fields()
+					.stream()
+					.map(f -> expression(f).isNull())
+					.reduce(Condition::and)
+					.orElseThrow();
+			}
+			else if (c instanceof QOM.RowIsNotNull e) {
+				return e.$arg1()
+					.$fields()
+					.stream()
+					.map(f -> expression(f).isNotNull())
+					.reduce(Condition::and)
+					.orElseThrow();
+			}
+			else if (c instanceof QOM.Like like) {
+				Expression rhs;
+				if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
+					rhs = Cypher.literalOf(s.replace("%", ".*"));
+				}
+				else {
+					rhs = expression(like.$arg2());
+				}
+				return expression(like.$arg1()).matches(rhs);
 			}
 			else {
-				return expression(e.$arg2()).lte(expression(e.$arg1()))
-					.and(expression(e.$arg1()).lte(expression(e.$arg3())));
+				throw unsupported(c);
 			}
 		}
-		else if (c instanceof QOM.Ne<?> e) {
-			return expression(e.$arg1()).ne(expression(e.$arg2()));
-		}
-		else if (c instanceof QOM.IsNull e) {
-			return expression(e.$arg1()).isNull();
-		}
-		else if (c instanceof QOM.IsNotNull e) {
-			return expression(e.$arg1()).isNotNull();
-		}
-		else if (c instanceof QOM.RowEq<?> e) {
-			Condition result = null;
 
-			for (int i = 0; i < e.$arg1().size(); i++) {
-				Condition r = expression(e.$arg1().field(i)).eq(expression(e.$arg2().field(i)));
-				result = (result != null) ? result.and(r) : r;
+		private Condition rowCondition(Row r1, Row r2,
+				BiFunction<? super Expression, ? super Expression, ? extends Condition> comp,
+				BiFunction<? super Expression, ? super Expression, ? extends Condition> last) {
+			Condition result = last.apply(expression(r1.field(r1.size() - 1)), expression(r2.field(r1.size() - 1)));
+
+			for (int i = r1.size() - 2; i >= 0; i--) {
+				Expression e1 = expression(r1.field(i));
+				Expression e2 = expression(r2.field(i));
+				result = comp.apply(e1, e2).or(e1.eq(e2).and(result));
 			}
 
 			return result;
 		}
-		else if (c instanceof QOM.RowNe<?> e) {
-			Condition result = null;
 
-			for (int i = 0; i < e.$arg1().size(); i++) {
-				Condition r = expression(e.$arg1().field(i)).ne(expression(e.$arg2().field(i)));
-				result = (result != null) ? result.and(r) : r;
+		private PatternElement resolveTableOrJoin(QOM.UnmodifiableList<? extends Table<?>> tables) {
+			if (tables.size() > 1) {
+				throw new UnsupportedOperationException();
+			}
+			return resolveTableOrJoin(tables.$first());
+		}
+
+		private PatternElement resolveTableOrJoin(Table<?> t) {
+			if (t instanceof QOM.Join<?> join && join.$on() instanceof QOM.Eq<?> eq) {
+
+				String relType;
+				SymbolicName relSymbolicName = null;
+
+				PatternElement lhs;
+				PatternElement rhs;
+
+				if (join.$table1() instanceof QOM.Join<?> lhsJoin) {
+					lhs = resolveTableOrJoin(lhsJoin.$table1());
+					relType = labelOrType(lhsJoin.$table2());
+					if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
+						relSymbolicName = symbolicName(tableAlias.getName());
+					}
+				}
+				else {
+					lhs = resolveTableOrJoin(join.$table1());
+					relType = relationshipTypeName(eq.$arg2());
+				}
+
+				rhs = resolveTableOrJoin(join.$table2());
+
+				if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
+
+					var direction = Relationship.Direction.LTR;
+					if (join.$table2() instanceof TableAlias<?> ta
+							&& ta.$alias().last().equals(eq.$arg2().getQualifiedName().first())) {
+						direction = Relationship.Direction.RTL;
+					}
+
+					var relationship = from.relationshipWith(to, direction, relType);
+					if (relSymbolicName != null) {
+						if (relationship instanceof Relationship r) {
+							relationship = r.named(relSymbolicName);
+						}
+						else if (relationship instanceof RelationshipChain r) {
+							relationship = r.named(relSymbolicName);
+						}
+					}
+					return relationship;
+				}
+				else {
+					throw unsupported(join);
+				}
 			}
 
-			return result;
+			if (t instanceof TableAlias<?> ta) {
+				if (resolveTableOrJoin(ta.$aliased()) instanceof Node) {
+					return Cypher.node(labelOrType(ta.$aliased())).named(symbolicName(ta.$alias().last()));
+				}
+				else {
+					throw unsupported(ta);
+				}
+			}
+			else {
+				return Cypher.node(labelOrType(t)).named(symbolicName(t.getName()));
+			}
 		}
-		else if (c instanceof QOM.RowGt<?> e) {
-			return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gt);
-		}
-		else if (c instanceof QOM.RowGe<?> e) {
-			return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gte);
-		}
-		else if (c instanceof QOM.RowLt<?> e) {
-			return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lt);
-		}
-		else if (c instanceof QOM.RowLe<?> e) {
-			return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lte);
-		}
-		else if (c instanceof QOM.RowIsNull e) {
-			return e.$arg1().$fields().stream().map(f -> expression(f).isNull()).reduce(Condition::and).orElseThrow();
-		}
-		else if (c instanceof QOM.RowIsNotNull e) {
-			return e.$arg1()
-				.$fields()
+
+		private String labelOrType(Table<?> tableOrAlias) {
+
+			var t = (tableOrAlias instanceof TableAlias<?> ta) ? ta.$aliased() : tableOrAlias;
+			var comment = t.getComment();
+			if (!comment.isBlank()) {
+				var config = Arrays.stream(comment.split(","))
+					.map((s) -> s.split("="))
+					.collect(Collectors.toMap((a) -> a[0], (a) -> a[1]));
+				return config.getOrDefault("label", t.getName());
+			}
+
+			return Sql2Cypher.this.config.getTableToLabelMappings()
+				.entrySet()
 				.stream()
-				.map(f -> expression(f).isNotNull())
-				.reduce(Condition::and)
-				.orElseThrow();
-		}
-		else if (c instanceof QOM.Like like) {
-			Expression rhs;
-			if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
-				rhs = Cypher.literalOf(s.replace("%", ".*"));
-			}
-			else {
-				rhs = expression(like.$arg2());
-			}
-			return expression(like.$arg1()).matches(rhs);
-		}
-		else {
-			throw unsupported(c);
-		}
-	}
-
-	private Condition rowCondition(Row r1, Row r2,
-			BiFunction<? super Expression, ? super Expression, ? extends Condition> comp,
-			BiFunction<? super Expression, ? super Expression, ? extends Condition> last) {
-		Condition result = last.apply(expression(r1.field(r1.size() - 1)), expression(r2.field(r1.size() - 1)));
-
-		for (int i = r1.size() - 2; i >= 0; i--) {
-			Expression e1 = expression(r1.field(i));
-			Expression e2 = expression(r2.field(i));
-			result = comp.apply(e1, e2).or(e1.eq(e2).and(result));
+				.filter(e -> e.getKey().equalsIgnoreCase(t.getName()))
+				.findFirst()
+				.map(Map.Entry::getValue)
+				.orElseGet(t::getName);
 		}
 
-		return result;
-	}
-
-	private PatternElement resolveTableOrJoin(QOM.UnmodifiableList<? extends Table<?>> tables) {
-		if (tables.size() > 1) {
-			throw new UnsupportedOperationException();
-		}
-		return resolveTableOrJoin(tables.$first());
-	}
-
-	private PatternElement resolveTableOrJoin(Table<?> t) {
-		if (t instanceof QOM.Join<?> join && join.$on() instanceof QOM.Eq<?> eq) {
-
-			String relType;
-			SymbolicName relSymbolicName = null;
-
-			PatternElement lhs;
-			PatternElement rhs;
-
-			if (join.$table1() instanceof QOM.Join<?> lhsJoin) {
-				lhs = resolveTableOrJoin(lhsJoin.$table1());
-				relType = labelOrType(lhsJoin.$table2());
-				if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
-					relSymbolicName = symbolicName(tableAlias.getName());
-				}
-			}
-			else {
-				lhs = resolveTableOrJoin(join.$table1());
-				relType = relationshipTypeName(eq.$arg2());
-			}
-
-			rhs = resolveTableOrJoin(join.$table2());
-
-			if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
-
-				var direction = Relationship.Direction.LTR;
-				if (join.$table2() instanceof TableAlias<?> ta
-						&& ta.$alias().last().equals(eq.$arg2().getQualifiedName().first())) {
-					direction = Relationship.Direction.RTL;
-				}
-
-				var relationship = from.relationshipWith(to, direction, relType);
-				if (relSymbolicName != null) {
-					if (relationship instanceof Relationship r) {
-						relationship = r.named(relSymbolicName);
-					}
-					else if (relationship instanceof RelationshipChain r) {
-						relationship = r.named(relSymbolicName);
-					}
-				}
-				return relationship;
-			}
-			else {
-				throw unsupported(join);
-			}
-		}
-
-		if (t instanceof TableAlias<?> ta) {
-			if (resolveTableOrJoin(ta.$aliased()) instanceof Node) {
-				return Cypher.node(labelOrType(ta.$aliased())).named(symbolicName(ta.$alias().last()));
-			}
-			else {
-				throw unsupported(ta);
-			}
-		}
-		else {
-			return Cypher.node(labelOrType(t)).named(symbolicName(t.getName()));
-		}
-	}
-
-	private SymbolicName symbolicName(String value) {
-		return Cypher.name(value.toLowerCase(Locale.ROOT));
-	}
-
-	private String labelOrType(Table<?> tableOrAlias) {
-
-		var t = (tableOrAlias instanceof TableAlias<?> ta) ? ta.$aliased() : tableOrAlias;
-		var comment = t.getComment();
-		if (!comment.isBlank()) {
-			var config = Arrays.stream(comment.split(","))
-				.map((s) -> s.split("="))
-				.collect(Collectors.toMap((a) -> a[0], (a) -> a[1]));
-			return config.getOrDefault("label", t.getName());
-		}
-
-		return this.config.getTableToLabelMappings()
-			.entrySet()
-			.stream()
-			.filter(e -> e.getKey().equalsIgnoreCase(t.getName()))
-			.findFirst()
-			.map(Map.Entry::getValue)
-			.orElseGet(t::getName);
-	}
-
-	private String relationshipTypeName(Field<?> lhsJoinColumn) {
-
-		return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
 	}
 
 }

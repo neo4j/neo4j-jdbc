@@ -27,7 +27,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +71,14 @@ class Sql2CypherTests {
 				MATCH (a:Actor)
 				WHERE id(a) = 4711
 				SET a.name = 'Foo'""");
+	}
+
+	@Test
+	void upsert() {
+
+		var translator = Sql2Cypher.with(Sql2CypherConfig.builder().withPrettyPrint(false).build());
+		assertThat(translator.translate("INSERT INTO Movie(title) VALUES(?) ON DUPLICATE KEY IGNORE"))
+			.isEqualTo("MERGE (movie:`Movie` {title: $0})");
 	}
 
 	@ParameterizedTest
@@ -113,7 +123,8 @@ class Sql2CypherTests {
 
 		return Arrays.stream(files).map(file -> {
 			var tests = getTestData(file.toPath()).stream()
-				.map(t -> DynamicTest.dynamicTest(t.name,
+				.map(t -> DynamicTest.dynamicTest(
+						Optional.ofNullable(t.name).filter(Predicate.not(String::isBlank)).orElse(t.id),
 						() -> assertThatSqlIsTranslatedAsExpected(t.sql, t.cypher, t.tableMappings, t.prettyPrint)))
 				.toList();
 			return DynamicContainer.dynamicContainer(file.getName(), tests);
@@ -189,14 +200,14 @@ class Sql2CypherTests {
 					cypher = CypherParser.parse(cypher).getCypher();
 					prettyPrint = false;
 				}
-				return new TestData(name, sql, cypher, tableMappings, prettyPrint);
+				return new TestData(sqlBlock.getId(), name, sql, cypher, tableMappings, prettyPrint);
 			}).forEach(this.testData::add);
 			return document;
 		}
 
 	}
 
-	private record TestData(String name, String sql, String cypher, Map<String, String> tableMappings,
+	private record TestData(String id, String name, String sql, String cypher, Map<String, String> tableMappings,
 			boolean prettyPrint) {
 	}
 
