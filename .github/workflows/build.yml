@@ -50,15 +50,52 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: 'Ensure read permissions for neo4j.conf'
-        run: chmod 640 neo4j-jdbc-it/neo4j-jdbc-it-cp/src/test/resources/cc/neo4j.conf
-
       - name: 'Clean and verify'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: ./mvnw --no-transfer-progress clean verify -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc'
+        run: >
+          ./mvnw --no-transfer-progress
+          -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc'
+          -am -pl neo4j-jdbc -pl neo4j-jdbc-bundle -pl neo4j-jdbc-full-bundle          
+          clean install
+
+  integration_tests:
+    name: Integration tests using Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17', '21' ]
+    needs: build
+    steps:
+      - name: 'Set up JDK'
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+
+      - name: 'Cache Maven packages'
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-${{ github.sha }}
+
+      - name: 'Enable reusable Testcontainers'
+        run: echo "testcontainers.reuse.enable=true" > ~/.testcontainers.properties
+
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: 'Ensure read permissions for neo4j.conf'
+        run: chmod 640 neo4j-jdbc-it/neo4j-jdbc-it-cp/src/test/resources/cc/neo4j.conf
+
+      - name: 'Run integration tests'
+        run: > 
+           ./mvnw --no-transfer-progress 
+           -DskipUTs 
+           -f neo4j-jdbc-it
+           clean verify
 
   native_build:
     name: Test using native image
@@ -85,7 +122,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: 'Run native tests'
-        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -am -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
+        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
 
   security_test:
     runs-on: ubuntu-latest
