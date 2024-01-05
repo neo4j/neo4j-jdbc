@@ -39,3 +39,30 @@ include::{examplesDir}/Quickstart.java[tag=pt2]
 <.> This SQL query will be translated into the same Cypher query shown before, the remainder of the method is identical to before.
 
 We will cover the SQL to Cypher translation in detail later in this manual.
+
+The JDBC Spec does not support named parameters, only index based parameters.
+Indexes start at `1` in SQL.
+So for all `PreparedStatement` instances you would want to specify your parameters like this:
+
+[source, java, tabsize=4, indent=0]
+.Using parameters with a `PreparedStatement`
+----
+include::{examplesDir}/NamedParameters.java[tag=index]
+----
+
+This is independent of the SQL to Cypher translation mechanism:
+
+[source, java, tabsize=4, indent=0]
+.Using parameters with a `PreparedStatement` (SQL variant)
+----
+include::{examplesDir}/NamedParameters.java[tag=index-sql]
+----
+
+You can downcast the `PreparedStatement` to `Neo4jPreparedStatement`.
+This JDBC extension will let you use named parameters:
+
+[source, java, tabsize=4, indent=0]
+.Using named parameters with the `Neo4jPreparedStatement`
+----
+include::{examplesDir}/NamedParameters.java[tag=index-np]
+----

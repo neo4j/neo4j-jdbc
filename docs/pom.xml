@@ -38,6 +38,7 @@
 	<properties>
 		<filtered-asciidoc-directory>${project.build.directory}/asciidoc</filtered-asciidoc-directory>
 		<manual-name>jdbc-manual</manual-name>
+		<revdate>${maven.build.timestamp}</revdate>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
@@ -58,6 +59,7 @@
 		</resources>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
 				<executions>
 					<execution>
@@ -180,6 +182,11 @@
 							<goal>process-asciidoc</goal>
 						</goals>
 						<phase>prepare-package</phase>
+						<configuration>
+							<attributes>
+								<toc/>
+							</attributes>
+						</configuration>
 					</execution>
 					<execution>
 						<id>generate-pdf-doc</id>

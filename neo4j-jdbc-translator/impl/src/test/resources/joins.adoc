@@ -1,63 +1,107 @@
-:toc:
+= Using joins to map relationships
 
-= Joins to represent relationships
+On the surface joins are relationships materialized in SQL (Foreign keys are not).
+Sadly, it's not as straight forward to map.
+There are several options and possibilities to handle things:
 
-These tests cover `ON JOIN` syntax to represent relationships
+* When joining two tables on a column, taking the left hand table column, use its name as relationship type and treat it as outgoing from left to right
+* When joining two tables with an intersection table (which you usually model in SQL for m:n relationships with attributes), use the name of that intersection table as relationship type
 
-== Foreign Key Joins
+We implemented some variants thereof, however we don't claim their absolute usefulness in all cases
 
-The input
+== 1:n joins
 
-[source,sql,id=t1_0,name=foreign_key_join]
-----
-SELECT p.name, m.title
-FROM `Person` as p
-JOIN `Movie` as m ON (m.id = p.`DIRECTED`)
-----
+=== Simple join
 
-will be transpiled to
+We configured the translator use the following table mapping:
 
-[source,cypher,id=t1_0_expected]
-----
-MATCH (p:Person)-[:DIRECTED]->(m:Movie)
-RETURN p.name, m.title
-----
+* `people` mapped to label `People`
+* `movies` mapped to label `Movie`
 
-== Foreign Key Joins with simple syntax
+With that in place, we translate
 
-Statements shall be translated when not using backticks etc., too. The input
-
-[source,sql,id=t1_1,name=foreign_key_join_simple,table_mappings=people:Person;movies:Movie]
+[source,sql,id=r1_1,name=foreign_key_join_simple,table_mappings=people:Person;movies:Movie]
 ----
 SELECT p.name, m.title
 FROM people p
 JOIN movies m ON m.id = p.directed
 ----
 
-will be transpiled to
+to
 
-[source,cypher,id=t1_1_expected]
+[source,cypher,id=r1_1_expected]
 ----
 MATCH (p:Person)-[:DIRECTED]->(m:Movie)
 RETURN p.name, m.title
 ----
 
-== Join Table Joins
+`DIRECTED` is the uppercase version of the join column in the left table (`p.directed`).
 
-The name of the join table will be used as the relationship type.
-In the example below, table mappings are configured:
+We can add a join column mapping in the form of `people.movie_id:DIRECTED` if we have different column names:
 
-[source,sql,id=t2_0,name=join_table_join,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN]
+[source,sql,id=r1_1b,name=foreign_key_join_simple,table_mappings=people:Person;movies:Movie,join_column_mappings=people.movie_id:DIRECTED]
 ----
 SELECT p.name, m.title
 FROM people p
-JOIN movie_actors r ON r.person_id = p.id
-JOIN movies m ON m.id = r.person_id
+JOIN movies m ON m.id = p.movie_id
 ----
 
-as demonstrated by
+to
 
-[source,cypher,id=t2_0_expected]
+[source,cypher,id=r1_1b_expected]
+----
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+RETURN p.name, m.title
+----
+
+=== Using the `ON` clause
+
+We used backticks here for the table- and column names and no mapping.
+
+[source,sql,id=r1_0,name=foreign_key_join]
+----
+SELECT p.name, m.title
+FROM `Person` as p
+JOIN `Movie` as m ON (m.id = p.`DIRECTED`)
+----
+
+The translation yields in the same result as before
+
+[source,cypher,id=r1_0_expected]
+----
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+RETURN p.name, m.title
+----
+
+== m:n joins
+
+An intersection table is a table that contains references to two other tables in the form of at least two columns—hopefully with foreign keys and therefor indexes defined on them.
+This construct is usually required in the relational model to create an m:n relationship.
+Sometimes the intersection table also spots additional columns.
+Of course, such an auxiliary construct is not necessary in Neo4j.
+We can model as many outgoing and incoming relationships from one label to another as we desire and they can also have properties.
+We can hover use that construct for our translator
+
+The following example uses a configured mapping as follows:
+
+* `people` mapped to label `People`
+* `movies` mapped to label `Movie`
+* `movie_actors` mapped to `ACTED_IN`
+
+[source,sql,id=r2_0,name=join_table_join,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN]
+----
+SELECT p.name, m.title
+FROM people p -- <.>
+JOIN movie_actors r ON r.person_id = p.id -- <.>
+JOIN movies m ON m.id = r.person_id -- <.>
+----
+<.> The driving table from which we map outgoing relationships
+<.> An intersection table, that is used again in the next `JOIN` clause
+<.> The final join clause
+
+We don't do semantic analysis, the order of the joins matter and will lead to the following query:
+
+[source,cypher,id=r2_0_expected]
 ----
 MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
 RETURN p.name, m.title
@@ -65,7 +109,7 @@ RETURN p.name, m.title
 
 Multiple joins will result in a chain of relationships:
 
-[source,sql,id=t2_1,name=join_multiple_table_join,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN;movie_directors:DIRECTED]
+[source,sql,id=r2_1,name=join_multiple_table_join,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN;movie_directors:DIRECTED]
 ----
 SELECT p.name AS actor, d.name AS director, m.title
 FROM people p
@@ -77,7 +121,7 @@ FROM people p
 
 as demonstrated by
 
-[source,cypher,id=t2_1_expected]
+[source,cypher,id=r2_1_expected]
 ----
 MATCH (p:`Person`)-[r:`ACTED_IN`]->(m:`Movie`)<-[r2:`DIRECTED`]-(d:`Person`)
 RETURN p.name AS actor, d.name AS director, m.title

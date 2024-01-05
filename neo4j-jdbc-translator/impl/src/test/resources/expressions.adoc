@@ -1,31 +1,29 @@
-:toc:
+= Expressions
 
-= Tests for column expressions
-
-These tests cover column expressions.
+Most SQL expressions will have a corresponding Cypher expression and can be translated straigt forward:
 
 == Literal Values
 
-The input
+Literal values are usually 1:1 translations:
 
-[source,sql,id=t0_0,name=select_literal_values]
+[source,sql,id=e0_0,name=select_literal_values]
 ----
 SELECT
-    1, TRUE, FALSE, NULL
+    1, TRUE, FALSE, NULL, 'a'
 ----
 
-will be transpiled to
+become
 
-[source,cypher,id=t0_0_expected]
+[source,cypher,id=e0_0_expected]
 ----
-RETURN 1, TRUE, FALSE, NULL
+RETURN 1, TRUE, FALSE, NULL, 'a'
 ----
 
 == Arithmetic expressions
 
-The input
+So are the arithmetic expressions:
 
-[source,sql,id=t1_0,name=select_with_arithmetic]
+[source,sql,id=e1_0,name=select_with_arithmetic]
 ----
 SELECT
     1 + 2,
@@ -35,9 +33,9 @@ SELECT
     square(2)
 ----
 
-will be transpiled to
+Note that the underlying tech of the default translator uses https://github.com/neo4j-contrib/cypher-dsl[Cypher-DSL] internally, which will wrap arithmetic (and logical expressions) with parentheses:
 
-[source,cypher,id=t1_0_expected]
+[source,cypher,id=e1_0_expected]
 ----
 RETURN
     (1 + 2),
@@ -47,13 +45,13 @@ RETURN
     (2 * 2)
 ----
 
-== Numeric functions
+== Functions
 
-See https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/
+=== Numeric functions
 
-The input
+We can translate all numeric functions that are supported by Neo4j's Cypher implementation: https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/[Mathematical functions - numeric]:
 
-[source,sql,id=t2_0,name=select_with_mathematical_functions]
+[source,sql,id=e2_0,name=select_with_mathematical_functions]
 ----
 SELECT
     abs(1),
@@ -64,9 +62,9 @@ SELECT
     sign(1)
 ----
 
-will be transpiled to
+will be translated to
 
-[source,cypher,id=t2_0_expected]
+[source,cypher,id=e2_0_expected]
 ----
 RETURN
     abs(1),
@@ -77,13 +75,11 @@ RETURN
     sign(1)
 ----
 
-== Logarithmic functions
+=== Logarithmic functions
 
-See https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/
+Neo4j supports a brought range of https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/[logarithmic functions] and the input
 
-The input
-
-[source,sql,id=t3_0,name=select_with_logarithmic_functions]
+[source,sql,id=e3_0,name=select_with_logarithmic_functions]
 ----
 SELECT
     exp(1),
@@ -93,9 +89,9 @@ SELECT
     sqrt(1)
 ----
 
-will be transpiled to
+will be translated to
 
-[source,cypher,id=t3_0_expected]
+[source,cypher,id=e3_0_expected]
 ----
 RETURN
     exp(1),
@@ -105,14 +101,11 @@ RETURN
     sqrt(1)
 ----
 
+=== Trigonometric functions
 
-== Trigonometric functions
+Calls to trigonometric functions
 
-See https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/
-
-The input
-
-[source,sql,id=t4_0,name=select_with_trigonometric_functions]
+[source,sql,id=e4_0,name=select_with_trigonometric_functions]
 ----
 SELECT
     acos(1),
@@ -128,9 +121,9 @@ SELECT
     tan(1)
 ----
 
-will be transpiled to
+will be translated to the corresponding https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/[Neo4j functions]:
 
-[source,cypher,id=t4_0_expected]
+[source,cypher,id=e4_0_expected]
 ----
 RETURN
     acos(1),
@@ -146,15 +139,11 @@ RETURN
     tan(1)
 ----
 
+=== String functions
 
+The following string manipulations are guaranteed to work:
 
-== String functions
-
-See https://neo4j.com/docs/cypher-manual/current/functions/string/
-
-The input
-
-[source,sql,id=t5_0,name=select_with_string_functions]
+[source,sql,id=e5_0,name=select_with_string_functions]
 ----
 SELECT
     lower('abc'),
@@ -173,9 +162,9 @@ SELECT
     upper('abc')
 ----
 
-will be transpiled to
+and will be translated https://neo4j.com/docs/cypher-manual/current/functions/string/[to Neo4j's versions]:
 
-[source,cypher,id=t5_0_expected]
+[source,cypher,id=e5_0_expected]
 ----
 RETURN
     toLower('abc'),
@@ -194,14 +183,11 @@ RETURN
     toUpper('abc')
 ----
 
-
-== Scalar functions
-
-See https://neo4j.com/docs/cypher-manual/current/functions/scalar/
+=== Scalar functions
 
 The input
 
-[source,sql,id=t6_0,name=select_with_string_functions]
+[source,sql,id=e6_0,name=select_with_string_functions]
 ----
 SELECT
     coalesce(1, 2),
@@ -217,9 +203,9 @@ SELECT
     cast(1 as bigint)
 ----
 
-will be transpiled to
+will be translated to (Compare https://neo4j.com/docs/cypher-manual/current/functions/scalar/[Scalar functions]):
 
-[source,cypher,id=t6_0_expected]
+[source,cypher,id=e6_0_expected]
 ----
 RETURN
     coalesce(1, 2),
@@ -235,16 +221,15 @@ RETURN
     toInteger(1)
 ----
 
+== Query expressions
 
-== Query syntax expressions
-
-See https://neo4j.com/docs/cypher-manual/current/syntax/expressions
+Several advanced SQL expressions are supported as well, such as
 
 === `CASE` simple
 
-The input
+The simple `CASE` expressions
 
-[source,sql,id=t7_0,name=select_with_string_functions]
+[source,sql,id=e7_0,name=select_with_string_functions]
 ----
 SELECT
     CASE 1 WHEN 2 THEN 3 END,
@@ -253,18 +238,18 @@ SELECT
     CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
 ----
 
-will be transpiled to
+which will be translated to
 
-[source,cypher,id=t7_0_expected]
+[source,cypher,id=e7_0_expected]
 ----
 RETURN CASE 1 WHEN 2 THEN 3 END, CASE 1 WHEN 2 THEN 3 ELSE 4 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
 ----
 
-=== `CASE` searched
+=== `CASE` advanced
 
-The input
+And `CASE` statement using a search (See https://neo4j.com/docs/cypher-manual/current/syntax/expressions[expressions] for more information):
 
-[source,sql,id=t7_1,name=select_with_string_functions]
+[source,sql,id=e7_1,name=select_with_string_functions]
 ----
 SELECT
     CASE WHEN 1 = 2 THEN 3 END,
@@ -273,9 +258,9 @@ SELECT
     CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 ELSE 7 END
 ----
 
-will be transpiled to
+will be translated to
 
-[source,cypher,id=t7_1_expected]
+[source,cypher,id=e7_1_expected]
 ----
 RETURN
     CASE WHEN 1 = 2 THEN 3 END,
@@ -288,16 +273,16 @@ RETURN
 
 The input
 
-[source,sql,id=t7_2,name=select_with_string_functions]
+[source,sql,id=e7_2,name=select_with_string_functions]
 ----
 SELECT
     nullif(1, 2),
     nvl2(1, 2, 3)
 ----
 
-will be transpiled to
+will be translated to
 
-[source,cypher,id=t7_2_expected]
+[source,cypher,id=e7_2_expected]
 ----
 RETURN
     CASE WHEN 1 = 2 THEN NULL ELSE 1 END,

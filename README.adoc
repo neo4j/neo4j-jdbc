@@ -83,7 +83,9 @@ An example for their proposal can be seen https://urban-adventure-ov6lvqn.pages.
 
 We therefor compute node types in a similar way:
 
-* Single label nodes will map naturally to a table name, the single label will be lowercased to be the table name
+* Single label nodes will map naturally to a table name, the single label will become the table name
+** The label name will be taken as is and will be case-sensitive. So if you have three labels `Movie`, `movie`, `MOVIE` you will see three tables in the meta-data
+** This is in-line with the default SQL to Cypher translation
 * Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically, so that it is independent of the way Neo4j will return those
 * Property sets for these Node type combinations will then be computed
 

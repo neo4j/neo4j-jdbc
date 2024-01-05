@@ -125,16 +125,21 @@ class Sql2CypherTests {
 			var tests = getTestData(file.toPath()).stream()
 				.map(t -> DynamicTest.dynamicTest(
 						Optional.ofNullable(t.name).filter(Predicate.not(String::isBlank)).orElse(t.id),
-						() -> assertThatSqlIsTranslatedAsExpected(t.sql, t.cypher, t.tableMappings, t.prettyPrint)))
+						() -> assertThatSqlIsTranslatedAsExpected(t.sql, t.cypher, t.tableMappings,
+								t.joinColumnsMappings, t.prettyPrint)))
 				.toList();
 			return DynamicContainer.dynamicContainer(file.getName(), tests);
 		});
 	}
 
 	void assertThatSqlIsTranslatedAsExpected(String sql, String expected, Map<String, String> tableMappings,
-			boolean prettyPrint) {
-		assertThat(Sql2Cypher.with(
-				Sql2CypherConfig.builder().withPrettyPrint(prettyPrint).withTableToLabelMappings(tableMappings).build())
+			Map<String, String> join_columns_mappings, boolean prettyPrint) {
+		assertThat(Sql2Cypher
+			.with(Sql2CypherConfig.builder()
+				.withPrettyPrint(prettyPrint)
+				.withTableToLabelMappings(tableMappings)
+				.withJoinColumnsToTypeMappings(join_columns_mappings)
+				.build())
 			.translate(sql)).isEqualTo(expected);
 	}
 
@@ -191,8 +196,13 @@ class Sql2CypherTests {
 				var cypherBlock = blocks.get(sqlBlock.getId() + "_expected");
 				var cypher = String.join("\n", cypherBlock.getLines());
 				Map<String, String> tableMappings = new HashMap<>();
+				Map<String, String> join_columns_mappings = new HashMap<>();
 				if (sqlBlock.getAttribute("table_mappings") != null) {
 					tableMappings = Sql2CypherConfig.buildMap((String) sqlBlock.getAttribute("table_mappings"));
+				}
+				if (sqlBlock.getAttribute("join_column_mappings") != null) {
+					join_columns_mappings = Sql2CypherConfig
+						.buildMap((String) sqlBlock.getAttribute("join_column_mappings"));
 				}
 				boolean parseCypher = Boolean.parseBoolean(((String) cypherBlock.getAttribute("parseCypher", "true")));
 				boolean prettyPrint = true;
@@ -200,7 +210,8 @@ class Sql2CypherTests {
 					cypher = CypherParser.parse(cypher).getCypher();
 					prettyPrint = false;
 				}
-				return new TestData(sqlBlock.getId(), name, sql, cypher, tableMappings, prettyPrint);
+				return new TestData(sqlBlock.getId(), name, sql, cypher, tableMappings, join_columns_mappings,
+						prettyPrint);
 			}).forEach(this.testData::add);
 			return document;
 		}
@@ -208,7 +219,7 @@ class Sql2CypherTests {
 	}
 
 	private record TestData(String id, String name, String sql, String cypher, Map<String, String> tableMappings,
-			boolean prettyPrint) {
+			Map<String, String> joinColumnsMappings, boolean prettyPrint) {
 	}
 
 }

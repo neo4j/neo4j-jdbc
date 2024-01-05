@@ -815,7 +815,8 @@ final class Sql2Cypher implements SqlTranslator {
 				PatternElement lhs;
 				PatternElement rhs;
 
-				if (join.$table1() instanceof QOM.Join<?> lhsJoin) {
+				Table<?> t1 = join.$table1();
+				if (t1 instanceof QOM.Join<?> lhsJoin) {
 					lhs = resolveTableOrJoin(lhsJoin.$table1());
 					relType = labelOrType(lhsJoin.$table2());
 					if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
@@ -823,8 +824,8 @@ final class Sql2Cypher implements SqlTranslator {
 					}
 				}
 				else {
-					lhs = resolveTableOrJoin(join.$table1());
-					relType = relationshipTypeName(eq.$arg2());
+					lhs = resolveTableOrJoin(t1);
+					relType = type(t1, eq.$arg2());
 				}
 
 				rhs = resolveTableOrJoin(join.$table2());
@@ -884,6 +885,19 @@ final class Sql2Cypher implements SqlTranslator {
 				.findFirst()
 				.map(Map.Entry::getValue)
 				.orElseGet(t::getName);
+		}
+
+		private String type(Table<?> tableOrAlias, Field<?> field) {
+			var t = (tableOrAlias instanceof TableAlias<?> ta) ? ta.$aliased() : tableOrAlias;
+			var key = t.getName() + "." + field.getName();
+
+			return Sql2Cypher.this.config.getJoinColumnsToTypeMappings()
+				.entrySet()
+				.stream()
+				.filter(e -> e.getKey().equalsIgnoreCase(key))
+				.findFirst()
+				.map(Map.Entry::getValue)
+				.orElseGet(() -> relationshipTypeName(field));
 		}
 
 	}

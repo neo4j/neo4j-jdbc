@@ -1,37 +1,76 @@
-:toc:
+= Translation concepts
 
-= Tests for simple select queries
+== Table names to labels
 
-These tests cover single table selects and basic conditions.
-
-== PoC
-
-The input
-
-[source,sql,id=t1_0,name=select_with_condition]
-----
-SELECT t.a, t.b
-FROM `MY_TABLE` AS t
-WHERE t.a = 1
-----
-
-will be transpiled to
-
-[source,cypher,id=t1_0_expected]
-----
-MATCH (t:MY_TABLE)
-WHERE t.a = 1
-RETURN t.a, t.b
-----
+The most simple select statement to translate is a statement without the `FROM` clause, such as:
 
 [source,sql,id=t1_1,name=no_driving_table]
 ----
 SELECT 1
 ----
 
+It is equivalent without loss to the following Cypher:
+
 [source,cypher,id=t1_1_expected]
 ----
 RETURN 1
+----
+
+`SELECT` statements without further `JOIN` clauses are pretty straight forward to translate.
+The hardest challenge here is how to map the table name to labels:
+
+* We parse the SQL Statement case-sensitive by default
+* Table names will be mapped to node labels
+* Table aliases will be used as identifiable symbolic names
+
+[source,sql,id=t1_0,name=select_with_condition]
+----
+SELECT t.a, t.b
+FROM My_Table -- <.>
+  AS t -- <.>
+WHERE t.a = 1
+----
+<.> Will be used as the label to match, as-is, i.e. `My_Table`
+<.> The table alias will become the node-alias
+
+The whole construct will be translated to
+
+[source,cypher,id=t1_0_expected]
+----
+MATCH (t:My_Table)
+WHERE t.a = 1
+RETURN t.a, t.b
+----
+
+We recommend using table aliases, but the translations works without them as well:
+
+[source,sql,id=t1_2]
+----
+SELECT my_table.* FROM My_Table
+----
+
+In that case we use the lower-cased table name as symbolic name:
+
+[source,cypher,id=t1_2_expected]
+----
+MATCH (my_table:My_Table)
+RETURN my_table
+----
+
+In the example above we used de-referenced the whole table with the `*`, which was translated into the name for the table.
+If you use the asterisk without an alias, it will be used as is:
+
+[source,sql,id=t1_3]
+----
+SELECT * FROM My_Table
+----
+
+So that it returns all the names as well as properties if any:
+
+[source,cypher,id=t1_3_expected]
+----
+MATCH (my_table:My_Table)
+RETURN *
 ----
 
 == Comparing SQL with Cypher examples
@@ -40,7 +79,7 @@ Sources of the following examples are from https://neo4j.com/developer/cypher/gu
 
 === Find all Products
 
-==== Select and Return Records
+=== Select and Return Records
 
 Easy in SQL, just select everything from the `products` table.
 
@@ -58,7 +97,7 @@ MATCH (p:Product)
 RETURN p
 ----
 
-==== Field Access, Ordering and Paging
+=== Field Access, Ordering and Paging
 
 *More efficient is to return only a subset of attributes*, like `ProductName` and `UnitPrice`.
 And while we're on it, let's also order by price and only return the 10 most expensive items.

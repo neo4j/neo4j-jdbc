@@ -132,6 +132,7 @@
 		<docker-maven-plugin.version>0.43.4</docker-maven-plugin.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
+		<git-commit-id-maven-plugin.version>7.0.0</git-commit-id-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.1</jaxb-api.version>
@@ -569,10 +570,32 @@
 						</dependency>
 					</dependencies>
 				</plugin>
+				<plugin>
+					<groupId>io.github.git-commit-id</groupId>
+					<artifactId>git-commit-id-maven-plugin</artifactId>
+					<version>${git-commit-id-maven-plugin.version}</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
 		<plugins>
+			<plugin>
+				<groupId>io.github.git-commit-id</groupId>
+				<artifactId>git-commit-id-maven-plugin</artifactId>
+				<configuration>
+					<generateGitPropertiesFile>false</generateGitPropertiesFile>
+					<commitIdGenerationMode>full</commitIdGenerationMode>
+				</configuration>
+				<executions>
+					<execution>
+						<id>get-the-git-infos</id>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>

@@ -1,153 +1,148 @@
-:toc:
+= DML statements
 
-= Tests for DML statements
+In this section we list the supported Data-Manipulation-Language (DML) statements.
+While a `SELECT` statement is technically DML as well, as it is used to project existing relations into new relations, it has been covered previously.
 
-These tests cover SQL DML statements and their Cypher equivalents
+== Deleting nodes
 
-== Plain `DELETE`
+Nodes can be deleted via the SQL `DELETE` statement.
+This can happen unconditionally:
 
-The input
-
-[source,sql,id=t0_0,name=delete]
+[source,sql,id=d0_0,name=delete]
 ----
 DELETE FROM person
 ----
 
-will be transpiled to
+which will delete all `person` nodes:
 
-[source,cypher,id=t0_0_expected]
+[source,cypher,id=d0_0_expected]
 ----
 MATCH (person:person)
 DELETE person
 ----
 
-== `DELETE .. WHERE`
+A `WHERE` clause can be added to prevent this and all conditions can be used:
 
-The input
-
-[source,sql,id=t0_1,name=delete]
+[source,sql,id=d0_1,name=delete]
 ----
 DELETE FROM person
 WHERE person.id = 1
 ----
 
-will be transpiled to
+so that only the `person` node with a matching property is deleted.
 
-[source,cypher,id=t0_1_expected]
+[source,cypher,id=d0_1_expected]
 ----
 MATCH (person:person)
 WHERE person.id = 1
 DELETE person
 ----
 
-== Plain `DELETE` with alias
+Tables can be aliased
 
-The input
-
-[source,sql,id=t0_2,name=delete]
+[source,sql,id=d0_2,name=delete]
 ----
 DELETE FROM person p
 ----
 
-will be transpiled to
+and the alias will be used in Cypher, too:
 
-[source,cypher,id=t0_2_expected]
+[source,cypher,id=d0_2_expected]
 ----
 MATCH (p:person)
 DELETE p
 ----
 
-== Plain `DELETE` with alias and table mapping
+Alias tables is also support in combination with specifying the label to which the table name is mapped.
+Using the same query with `table_mappings=person:Person` configured,
 
-The input
-
-[source,sql,id=t0_3,name=delete,table_mappings=person:Person]
+[source,sql,id=d0_3,name=delete,table_mappings=person:Person]
 ----
 DELETE FROM person p
 ----
 
-will be transpiled to
+will be translated to
 
-[source,cypher,id=t0_3_expected]
+[source,cypher,id=d0_3_expected]
 ----
 MATCH (p:Person)
 DELETE p
 ----
 
-== Truncate
+== Deleting nodes and their related nodes
 
-The input
+You can use SQL `TRUNCATE` to detach delete nodes.
 
-[source,sql,id=t0_4,name=truncate,table_mappings=people:Person]
+[source,sql,id=d0_4,name=truncate,table_mappings=people:Person]
 ----
 TRUNCATE TABLE people
 ----
 
-will be transpiled to
+will be translated to
 
-[source,cypher,id=t0_4_expected]
+[source,cypher,id=d0_4_expected]
 ----
 MATCH (people:Person)
 DETACH DELETE people
 ----
 
-
 == Inserting data
 
-A single list of values with explicit columns and constant values
+A single list of values with explicit columns and constant values can be inserted with a simple `INSERT` statement:
 
-[source,sql,id=t1_0,name=insert,table_mappings=people:Person]
+[source,sql,id=d1_0,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People (first_name, last_name, born) VALUES ('Helge', 'Schneider', 1955)
 ----
 
-will be transpiled to
+which will be translated to:
 
-[source,cypher,id=t1_0_expected]
+[source,cypher,id=d1_0_expected]
 ----
 CREATE (people:`Person` {first_name: 'Helge', last_name: 'Schneider', born: 1955})
 ----
 
-A single list of values with explicit columns and arguments
+All expressions, including parameters, are supported:
 
-[source,sql,id=t1_1,name=insert,table_mappings=people:Person]
+[source,sql,id=d1_1,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People (first_name, last_name, born) VALUES (?, ?, ?)
 ----
 
-will be transpiled to
+Parameters will be named from 0 on upwards in Cypher:
 
-[source,cypher,id=t1_1_expected]
+[source,cypher,id=d1_1_expected]
 ----
 CREATE (people:`Person` {first_name: $0, last_name: $1, born: $2})
 ----
 
-A single list of values with implicit columns and constant values
+If you omit the columns names on the insertion target, we generate names:
 
-[source,sql,id=t1_2,name=insert,table_mappings=people:Person]
+[source,sql,id=d1_2,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People VALUES ('Helge', 'Schneider', 1955)
 ----
 
-will be transpiled to
+Note the `unknown field xxx` graph properties created:
 
-[source,cypher,id=t1_2_expected]
+[source,cypher,id=d1_2_expected]
 ----
 CREATE (people:`Person` {`unknown field 0`: 'Helge', `unknown field 1`: 'Schneider', `unknown field 2`: 1955})
 ----
 
-Multiple list of values with explicit columns and constant values
+The SQL `VALUES` clause actually supports list of values:
 
-[source,sql,id=t1_3,name=insert,table_mappings=people:Person]
+[source,sql,id=d1_3,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People (first_name, last_name, born) VALUES
     ('Helge', 'Schneider', 1955),
     ('Bela', 'B', 1962)
 ----
 
-will be transpiled to
+Those values will be translated into a Cypher array to be unwind in the Cypher statement.
+This is a great solution for batching inserts:
 
-[source,cypher,id=t1_3_expected]
+[source,cypher,id=d1_3_expected]
 ----
 UNWIND [
   {first_name: 'Helge', last_name: 'Schneider', born: 1955},
@@ -157,7 +152,7 @@ CREATE (people:`Person`)
 SET people = properties
 ----
 
-=== Upserts
+== Upserts
 
 We support a restricted range of "upserts" via the non-standard but pretty common `ON DUPLICATE` and `ON CONFLICT` SQL clauses.
 Upserts will generally be translated to `MERGE` statements.
