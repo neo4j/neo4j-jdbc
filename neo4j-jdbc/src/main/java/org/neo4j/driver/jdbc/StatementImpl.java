@@ -33,7 +33,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
@@ -55,9 +54,8 @@ class StatementImpl implements Statement {
 	// Adding the comment /*+ NEO4J FORCE_CYPHER */ to your Cypher statement will make the
 	// JDBC driver opt-out from translating it to Cypher, even if the driver has been
 	// configured for automatic translation.
-	private static final Predicate<String> PATTERN_ENFORCE_CYPHER = Pattern
-		.compile("/\\*\\+ NEO4J FORCE_CYPHER \\*/(?=(?:[^'`\"]*'[^'`\"]*'`\")*[^'`\"]*\\Z)")
-		.asPredicate();
+	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
+		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
 	private final Connection connection;
 
@@ -444,7 +442,14 @@ class StatementImpl implements Statement {
 	}
 
 	static boolean forceCypher(String sql) {
-		return PATTERN_ENFORCE_CYPHER.test(sql);
+		var matcher = PATTERN_ENFORCE_CYPHER.matcher(sql);
+		while (matcher.find()) {
+			if (matcher.group(1) != null && matcher.group(1).equals(matcher.group(2))) {
+				continue;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	private QueryResponses sendQuery(String sql, boolean pull) throws SQLException {
