@@ -18,12 +18,13 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal.connection.inbound;
 
-import java.lang.System.Logger;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.netty.channel.Channel;
 import org.neo4j.driver.jdbc.internal.bolt.BoltMessageExchange;
@@ -35,7 +36,7 @@ import org.neo4j.driver.jdbc.values.Value;
 
 public final class InboundMessageDispatcher implements ResponseMessageHandler {
 
-	private static final Logger boltLogger = System.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
 
 	private final Channel channel;
 
@@ -60,7 +61,7 @@ public final class InboundMessageDispatcher implements ResponseMessageHandler {
 
 	@Override
 	public void handleSuccessMessage(Map<String, Value> meta) {
-		boltLogger.log(Logger.Level.DEBUG, "S: SUCCESS {0}", meta);
+		boltLogger.log(Level.FINE, "S: SUCCESS {0}", meta);
 		invokeBeforeLastHandlerHook(HandlerHook.MessageType.SUCCESS);
 		var handler = removeHandler();
 		handler.onSuccess(meta);
@@ -68,7 +69,7 @@ public final class InboundMessageDispatcher implements ResponseMessageHandler {
 
 	@Override
 	public void handleRecordMessage(Value[] fields) {
-		boltLogger.log(Logger.Level.DEBUG, "S: RECORD {0}", Arrays.toString(fields));
+		boltLogger.log(Level.FINE, "S: RECORD {0}", Arrays.toString(fields));
 		var handler = this.handlers.peek();
 		if (handler == null) {
 			throw new IllegalStateException(
@@ -79,14 +80,14 @@ public final class InboundMessageDispatcher implements ResponseMessageHandler {
 
 	@Override
 	public void handleFailureMessage(String code, String message) {
-		boltLogger.log(Logger.Level.DEBUG, "S: FAILURE {0} \"{1}\"", code, message);
+		boltLogger.log(Level.FINE, "S: FAILURE {0} \"{1}\"", new Object[] { code, message });
 		var handler = removeHandler();
 		handler.onFailure(new Neo4jException(code, message));
 	}
 
 	@Override
 	public void handleIgnoredMessage() {
-		boltLogger.log(Logger.Level.DEBUG, "S: IGNORED");
+		boltLogger.log(Level.FINE, "S: IGNORED");
 		var handler = removeHandler();
 		handler.onFailure(new MessageIgnoredException("The server has ignored the message"));
 	}

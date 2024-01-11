@@ -19,6 +19,8 @@
 package org.neo4j.driver.jdbc.internal.bolt.internal.connection.outbound;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.EncoderException;
@@ -30,7 +32,7 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.util.BoltProtocolUtil;
 
 public final class OutboundMessageHandler extends MessageToMessageEncoder<Message> {
 
-	private static final System.Logger boltLogger = System.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
 
 	public static final String NAME = OutboundMessageHandler.class.getSimpleName();
 
@@ -56,7 +58,7 @@ public final class OutboundMessageHandler extends MessageToMessageEncoder<Messag
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Message msg, List<Object> out) {
-		boltLogger.log(System.Logger.Level.DEBUG, "C: {0}", msg);
+		boltLogger.log(Level.FINE, "C: {0}", msg);
 
 		var messageBuf = ctx.alloc().ioBuffer();
 		this.output.start(messageBuf);

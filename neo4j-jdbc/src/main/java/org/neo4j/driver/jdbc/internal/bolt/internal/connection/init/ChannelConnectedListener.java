@@ -18,7 +18,8 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal.connection.init;
 
-import java.lang.System.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -31,7 +32,7 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.util.BoltProtocolUtil;
 
 public final class ChannelConnectedListener implements ChannelFutureListener {
 
-	private static final Logger boltLogger = System.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
 
 	private final BoltServerAddress address;
 
@@ -53,7 +54,7 @@ public final class ChannelConnectedListener implements ChannelFutureListener {
 		if (future.isSuccess()) {
 			var pipeline = channel.pipeline();
 			pipeline.addLast(new HandshakeHandler(this.pipelineBuilder, this.handshakeCompletedPromise));
-			boltLogger.log(Logger.Level.DEBUG, "C: [Bolt Handshake] {0}", BoltProtocolUtil.handshakeString());
+			boltLogger.log(Level.FINE, "C: [Bolt Handshake] {0}", BoltProtocolUtil.handshakeString());
 			channel.writeAndFlush(BoltProtocolUtil.handshakeBuf(), channel.voidPromise());
 		}
 		else {

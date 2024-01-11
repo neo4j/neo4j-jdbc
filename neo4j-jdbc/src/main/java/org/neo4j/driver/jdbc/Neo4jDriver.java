@@ -23,7 +23,6 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -201,8 +200,8 @@ public final class Neo4jDriver implements Driver {
 	}
 
 	@Override
-	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		throw new UnsupportedOperationException();
+	public Logger getParentLogger() {
+		return Logger.getLogger(this.getClass().getPackageName());
 	}
 
 	private static String[] splitUrlParams(String urlParams) {

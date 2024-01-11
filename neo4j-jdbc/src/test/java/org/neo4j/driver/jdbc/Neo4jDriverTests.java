@@ -60,7 +60,7 @@ class Neo4jDriverTests {
 	void getParentLoggerShouldWork() {
 
 		var driver = new Neo4jDriver();
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(driver::getParentLogger);
+		assertThat(driver.getParentLogger().getName()).isEqualTo("org.neo4j.driver.jdbc");
 	}
 
 	@Test

@@ -18,8 +18,9 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal.connection;
 
-import java.lang.System.Logger;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLHandshakeException;
 
@@ -40,9 +41,9 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.util.ErrorUtil;
 
 public final class HandshakeHandler extends ReplayingDecoder<Void> {
 
-	private static final Logger log = System.getLogger(HandshakeHandler.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(HandshakeHandler.class.getCanonicalName());
 
-	private static final Logger boltLogger = System.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
 
 	private final ChannelPipelineBuilder pipelineBuilder;
 
@@ -62,7 +63,7 @@ public final class HandshakeHandler extends ReplayingDecoder<Void> {
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) {
-		log.log(Logger.Level.DEBUG, "Channel is inactive");
+		log.log(Level.FINE, "Channel is inactive");
 
 		if (!this.failed) {
 			// channel became inactive while doing bolt handshake, not because of some
@@ -75,7 +76,7 @@ public final class HandshakeHandler extends ReplayingDecoder<Void> {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) {
 		if (this.failed) {
-			log.log(Logger.Level.DEBUG, "Another fatal error occurred in the pipeline", error);
+			log.log(Level.FINE, "Another fatal error occurred in the pipeline", error);
 		}
 		else {
 			this.failed = true;
@@ -87,7 +88,7 @@ public final class HandshakeHandler extends ReplayingDecoder<Void> {
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
 		var serverSuggestedVersion = BoltProtocolVersion.fromRawBytes(in.readInt());
-		boltLogger.log(Logger.Level.DEBUG, "S: [Bolt Handshake] {0}", serverSuggestedVersion);
+		boltLogger.log(Level.FINE, "S: [Bolt Handshake] {0}", serverSuggestedVersion);
 
 		// this is a one-time handler, remove it when protocol version has been read
 		ctx.pipeline().remove(this);

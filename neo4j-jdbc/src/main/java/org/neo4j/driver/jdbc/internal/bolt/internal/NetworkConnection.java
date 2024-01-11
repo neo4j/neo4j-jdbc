@@ -18,11 +18,12 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal;
 
-import java.lang.System.Logger;
 import java.time.Clock;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -35,7 +36,7 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.Message;
 
 public final class NetworkConnection implements Connection {
 
-	private static final Logger log = System.getLogger(NetworkConnection.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(NetworkConnection.class.getCanonicalName());
 
 	private final Channel channel;
 
@@ -107,12 +108,12 @@ public final class NetworkConnection implements Connection {
 			this.connectionReadTimeoutHandler = new ConnectionReadTimeoutHandler(this.connectionReadTimeout,
 					TimeUnit.SECONDS);
 			channel.pipeline().addFirst(this.connectionReadTimeoutHandler);
-			log.log(Logger.Level.DEBUG, "Added ConnectionReadTimeoutHandler");
+			log.log(Level.FINE, "Added ConnectionReadTimeoutHandler");
 			this.messageDispatcher.setBeforeLastHandlerHook((messageType) -> {
 				channel.pipeline().remove(this.connectionReadTimeoutHandler);
 				this.connectionReadTimeoutHandler = null;
 				this.messageDispatcher.setBeforeLastHandlerHook(null);
-				log.log(Logger.Level.DEBUG, "Removed ConnectionReadTimeoutHandler");
+				log.log(Level.FINE, "Removed ConnectionReadTimeoutHandler");
 			});
 		}
 	}
