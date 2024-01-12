@@ -124,7 +124,7 @@ public final class Neo4jDriver implements Driver {
 		var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
 
 		var boltAgent = BoltAgentUtil.boltAgent();
-		var userAgent = config.getOrDefault("agent", "neo4j-jdbc");
+		var userAgent = config.getOrDefault("agent", getDefaultUserAgent());
 		var connectTimeoutMillis = Integer.parseInt(config.getOrDefault("timeout", "1000"));
 
 		var boltConnection = this.boltConnectionProvider
@@ -137,6 +137,10 @@ public final class Neo4jDriver implements Driver {
 		return new ConnectionImpl(boltConnection,
 				getSqlTranslatorSupplier(automaticSqlTranslation, config, this::getSqlTranslatorFactory),
 				automaticSqlTranslation);
+	}
+
+	static String getDefaultUserAgent() {
+		return "neo4j-jdbc/%s".formatted(ProductVersion.getValue());
 	}
 
 	static Map<String, String> mergeConfig(String[] urlParams, Properties jdbcProperties) {
