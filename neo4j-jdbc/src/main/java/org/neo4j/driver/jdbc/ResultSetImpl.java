@@ -46,7 +46,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
@@ -57,6 +56,8 @@ import org.neo4j.driver.jdbc.values.Value;
 final class ResultSetImpl implements ResultSet {
 
 	private final StatementImpl statement;
+
+	private final Neo4jTransaction transaction;
 
 	private final RunResponse runResponse;
 
@@ -80,9 +81,10 @@ final class ResultSetImpl implements ResultSet {
 
 	private boolean closed;
 
-	ResultSetImpl(StatementImpl statement, RunResponse runResponse, PullResponse batchPullResponse, int fetchSize,
-			int maxRowLimit, int maxFieldSize) {
+	ResultSetImpl(StatementImpl statement, Neo4jTransaction transaction, RunResponse runResponse,
+			PullResponse batchPullResponse, int fetchSize, int maxRowLimit, int maxFieldSize) {
 		this.statement = Objects.requireNonNull(statement);
+		this.transaction = Objects.requireNonNull(transaction);
 		this.runResponse = Objects.requireNonNull(runResponse);
 		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
 		this.fetchSize = (fetchSize > 0) ? fetchSize : StatementImpl.DEFAULT_FETCH_SIZE;
@@ -108,9 +110,7 @@ final class ResultSetImpl implements ResultSet {
 			return true;
 		}
 		if (this.batchPullResponse.hasMore()) {
-			this.batchPullResponse = this.statement.pull(this.runResponse, calculateFetchSize())
-				.toCompletableFuture()
-				.join();
+			this.batchPullResponse = this.transaction.pull(this.runResponse, calculateFetchSize());
 			this.recordsBatchIterator = this.batchPullResponse.records().iterator();
 			return next();
 		}
@@ -123,14 +123,9 @@ final class ResultSetImpl implements ResultSet {
 		if (this.closed) {
 			return;
 		}
-		var autocommit = this.statement.isAutoCommit();
-		var flush = !autocommit;
-		var discardFuture = (this.batchPullResponse.hasMore())
-				? this.statement.discard(this.runResponse, -1, flush).toCompletableFuture()
-				: CompletableFuture.completedFuture(null);
-		var commitStage = autocommit ? this.statement.commit().toCompletableFuture()
-				: CompletableFuture.completedFuture(null);
-		CompletableFuture.allOf(discardFuture, commitStage).join();
+		if (this.transaction.isAutoCommit() && this.transaction.isRunnable()) {
+			this.transaction.commit();
+		}
 		this.closed = true;
 		if (this.statement.isCloseOnCompletion()) {
 			this.statement.close();

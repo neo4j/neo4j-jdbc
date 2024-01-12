@@ -30,8 +30,47 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StatementIT extends IntegrationTestBase {
+
+	@Test
+	void shouldAllowSubsequentQueriesAfterTransactionErrorInAutoCommit() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			assertThatThrownBy(() -> statement.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
+				.isExactlyInstanceOf(SQLException.class);
+			var resultSet = statement.executeQuery("RETURN 1");
+			assertThat(resultSet.next()).isTrue();
+			assertThat(resultSet.getInt(1)).isEqualTo(1);
+		}
+	}
+
+	@Test
+	void shouldExpectRollbackInExplicitTransaction() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			connection.setAutoCommit(false);
+			assertThatThrownBy(() -> statement.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
+				.isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1")).isExactlyInstanceOf(SQLException.class);
+			connection.rollback();
+			var resultSet = statement.executeQuery("RETURN 1");
+			assertThat(resultSet.next()).isTrue();
+			assertThat(resultSet.getInt(1)).isEqualTo(1);
+		}
+	}
+
+	@Test
+	void shouldFailOnMultipleOpenAutoCommit() throws SQLException {
+		try (var connection = getConnection();
+				var statement1 = connection.createStatement();
+				var statement2 = connection.createStatement()) {
+			statement1.setFetchSize(5);
+			statement2.setFetchSize(5);
+			var resultSet1 = statement1.executeQuery("UNWIND range(1, 10000) AS x RETURN x");
+			assertThatThrownBy(() -> statement2.executeQuery("UNWIND range(1, 10000) AS x RETURN x"))
+				.isExactlyInstanceOf(SQLException.class);
+		}
+	}
 
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })

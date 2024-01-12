@@ -162,7 +162,7 @@ class ResultSetMetaDataImplTests {
 		var pullResponse = mock(PullResponse.class);
 		given(pullResponse.records()).willReturn(boltRecords);
 
-		return new ResultSetImpl(statement, runResponse, pullResponse, 1000, 0, 0);
+		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0, 0);
 	}
 
 }

@@ -29,7 +29,8 @@ import java.sql.SQLException;
  * @author Conor Watson
  * @author Dmitriy Tverdiakov
  */
-public sealed interface Neo4jPreparedStatement extends PreparedStatement permits PreparedStatementImpl {
+public sealed interface Neo4jPreparedStatement
+		extends PreparedStatement permits PreparedStatementImpl, CallableStatementImpl {
 
 	/**
 	 * Named-parameter version of {@link #setString(int, String)}.

@@ -30,6 +30,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PreparedStatementIT extends IntegrationTestBase {
 
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void shouldExecuteUpdateWithoutAutoCommit(boolean commit) throws SQLException {
+		var limit = 5;
+		var testId = UUID.randomUUID().toString();
+		try (var connection = getConnection()) {
+			connection.setAutoCommit(false);
+			for (int i = 0; i < 2; ++i) {
+				try (var statement = connection
+					.prepareStatement("UNWIND range(1, $1) AS x CREATE (n:Test {testId: $2})")) {
+					statement.setInt(1, limit);
+					statement.setString(2, testId);
+					statement.executeUpdate();
+				}
+			}
+
+			if (commit) {
+				connection.commit();
+			}
+			else {
+				connection.rollback();
+			}
+
+			try (var statement = connection.prepareStatement("MATCH (n:Test {testId: $1}) RETURN count(n)")) {
+				statement.setString(1, testId);
+				var resultSet = statement.executeQuery();
+				resultSet.next();
+				assertThat(resultSet.getInt(1)).isEqualTo((commit) ? limit * 2 : 0);
+			}
+		}
+	}
+
 	@Test
 	void shouldExecuteQuery() throws SQLException {
 		var limit = 10_000;

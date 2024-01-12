@@ -22,31 +22,18 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
-import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
-import org.neo4j.driver.jdbc.internal.bolt.response.CommitResponse;
-import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
-import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.SummaryCounters;
 
 class StatementImpl implements Statement {
@@ -63,9 +50,7 @@ class StatementImpl implements Statement {
 
 	private final Connection connection;
 
-	private final BoltConnection boltConnection;
-
-	private final boolean autoCommit;
+	private final Neo4jTransactionSupplier transactionSupplier;
 
 	private int fetchSize = DEFAULT_FETCH_SIZE;
 
@@ -89,11 +74,10 @@ class StatementImpl implements Statement {
 
 	private final UnaryOperator<String> sqlProcessor;
 
-	StatementImpl(Connection connection, BoltConnection boltConnection, boolean autoCommit,
+	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor) {
 		this.connection = Objects.requireNonNull(connection);
-		this.boltConnection = Objects.requireNonNull(boltConnection);
-		this.autoCommit = autoCommit;
+		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.sqlProcessor = Objects.requireNonNullElseGet(sqlProcessor, UnaryOperator::identity);
 	}
 
@@ -102,8 +86,7 @@ class StatementImpl implements Statement {
 	 */
 	StatementImpl() {
 		this.connection = null;
-		this.boltConnection = null;
-		this.autoCommit = false;
+		this.transactionSupplier = null;
 		this.sqlProcessor = UnaryOperator.identity();
 	}
 
@@ -113,8 +96,11 @@ class StatementImpl implements Statement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = false;
-		var queryResponses = sendQuery(sql, true);
-		this.resultSet = new ResultSetImpl(this, queryResponses.runResponse(), queryResponses.pullResponse(),
+		var transaction = this.transactionSupplier.getTransaction();
+		sql = processSQL(sql);
+		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
+		var runAndPull = transaction.runAndPull(sql, parameters(), fetchSize, this.queryTimeout);
+		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
 				this.fetchSize, this.maxRows, this.maxFieldSize);
 		return this.resultSet;
 	}
@@ -125,7 +111,9 @@ class StatementImpl implements Statement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = false;
-		return sendQuery(sql, false).discardResponse()
+		var transaction = this.transactionSupplier.getTransaction();
+		sql = processSQL(sql);
+		return transaction.runAndDiscard(sql, parameters(), this.queryTimeout, transaction.isAutoCommit())
 			.resultSummary()
 			.map(ResultSummary::counters)
 			.map(SummaryCounters::totalCount)
@@ -218,9 +206,12 @@ class StatementImpl implements Statement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = true;
-		var queryResponses = sendQuery(sql, true);
-		var pullResponse = queryResponses.pullResponse();
-		this.resultSet = new ResultSetImpl(this, queryResponses.runResponse(), pullResponse, this.fetchSize,
+		var transaction = this.transactionSupplier.getTransaction();
+		sql = processSQL(sql);
+		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
+		var runAndPull = transaction.runAndPull(sql, parameters(), fetchSize, this.queryTimeout);
+		var pullResponse = runAndPull.pullResponse();
+		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse, this.fetchSize,
 				this.maxRows, this.maxFieldSize);
 		this.updateCount = pullResponse.resultSummary()
 			.map(summary -> summary.counters().totalCount())
@@ -401,13 +392,10 @@ class StatementImpl implements Statement {
 		return iface.isAssignableFrom(getClass());
 	}
 
-	boolean isAutoCommit() {
-		return this.autoCommit;
-	}
-
 	/**
 	 * This extension method can be used for any derived statement implementations to
-	 * supply parameters to {@link #sendQuery(String, boolean)}.
+	 * supply parameters to {@link Neo4jTransaction#runAndPull(String, Map, int, int)} and
+	 * {@link Neo4jTransaction#runAndDiscard(String, Map, int)}.
 	 * @return parameters to this statement if any
 	 */
 	protected Map<String, Object> parameters() {
@@ -418,18 +406,6 @@ class StatementImpl implements Statement {
 	public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
 		return SchemaNames.sanitize(identifier, alwaysQuote)
 			.orElseThrow(() -> new SQLException("Cannot quote identifier " + identifier));
-	}
-
-	final CompletionStage<PullResponse> pull(RunResponse runResponse, long request) {
-		return this.boltConnection.pull(runResponse, request);
-	}
-
-	final CompletionStage<DiscardResponse> discard(RunResponse runResponse, long number, boolean flush) {
-		return this.boltConnection.discard(runResponse, number, flush);
-	}
-
-	final CompletionStage<CommitResponse> commit() {
-		return this.boltConnection.commit();
 	}
 
 	protected void assertIsOpen() throws SQLException {
@@ -445,6 +421,15 @@ class StatementImpl implements Statement {
 		}
 	}
 
+	private String processSQL(String sql) {
+		var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
+		var processedSQL = processor.apply(sql);
+		if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {
+			LOGGER.log(Level.FINEST, "Processed {0} into {1}", new Object[] { sql, processedSQL });
+		}
+		return processedSQL;
+	}
+
 	static boolean forceCypher(String sql) {
 		var matcher = PATTERN_ENFORCE_CYPHER.matcher(sql);
 		while (matcher.find()) {
@@ -454,54 +439,6 @@ class StatementImpl implements Statement {
 			return true;
 		}
 		return false;
-	}
-
-	private QueryResponses sendQuery(String sql, boolean pull) throws SQLException {
-		var transactionType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		var beginFuture = this.boltConnection
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false)
-			.toCompletableFuture();
-		var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
-
-		var processedSQL = processor.apply(sql);
-		if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {
-			LOGGER.log(Level.FINEST, "Processed {0} into {1}", new Object[] { sql, processedSQL });
-		}
-		var runFuture = this.boltConnection.run(processedSQL, parameters(), false).toCompletableFuture();
-		CompletableFuture<QueryResponses> joinedFuture;
-
-		if (pull) {
-			var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-			var pullFuture = this.boltConnection.pull(runFuture, fetchSize).toCompletableFuture();
-			joinedFuture = CompletableFuture.allOf(beginFuture, runFuture)
-				.thenCompose(ignored -> pullFuture)
-				.thenApply(pullResponse -> new QueryResponses(runFuture.join(), pullResponse, null));
-		}
-		else {
-			var discardFuture = this.boltConnection.discard(-1, false).toCompletableFuture();
-			var commitFuture = this.boltConnection.commit().toCompletableFuture();
-			joinedFuture = CompletableFuture.allOf(beginFuture, runFuture, discardFuture, commitFuture)
-				.thenApply(ignored -> new QueryResponses(runFuture.join(), null, discardFuture.join()));
-		}
-
-		try {
-			return (this.queryTimeout > 0) ? joinedFuture.get(this.queryTimeout, TimeUnit.SECONDS) : joinedFuture.get();
-		}
-		catch (InterruptedException | ExecutionException ex) {
-			this.boltConnection.reset(true).toCompletableFuture().join();
-			var cause = ex.getCause();
-			if (ex instanceof InterruptedException) {
-				Thread.currentThread().interrupt();
-			}
-			throw new SQLException("An error occured when running the query", (cause != null) ? cause : ex);
-		}
-		catch (TimeoutException ignored) {
-			this.boltConnection.reset(true).toCompletableFuture().join();
-			throw new SQLTimeoutException("Query timeout has been exceeded");
-		}
-	}
-
-	private record QueryResponses(RunResponse runResponse, PullResponse pullResponse, DiscardResponse discardResponse) {
 	}
 
 }

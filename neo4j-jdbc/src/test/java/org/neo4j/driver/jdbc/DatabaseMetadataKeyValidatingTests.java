@@ -22,17 +22,17 @@ import java.sql.SQLException;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class DatabaseMetadataKeyValidatingTests {
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		var boltConnection = Mockito.mock(BoltConnection.class);
+		var boltConnection = mock(BoltConnection.class);
 
-		return new DatabaseMetadataImpl(boltConnection, false);
+		return new DatabaseMetadataImpl(() -> mock(Neo4jTransaction.class), false);
 	}
 
 	@Test

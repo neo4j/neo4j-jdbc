@@ -49,12 +49,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.ValueException;
 import org.neo4j.driver.jdbc.values.Values;
 
-final class PreparedStatementImpl extends StatementImpl implements Neo4jPreparedStatement {
+sealed class PreparedStatementImpl extends StatementImpl
+		implements Neo4jPreparedStatement permits CallableStatementImpl {
 
 	private final String sql;
 
@@ -62,9 +62,9 @@ final class PreparedStatementImpl extends StatementImpl implements Neo4jPrepared
 
 	private final UnaryOperator<Integer> indexProcessor;
 
-	PreparedStatementImpl(Connection connection, BoltConnection boltConnection, boolean autoCommit,
+	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, String sql) {
-		super(connection, boltConnection, autoCommit, sqlProcessor);
+		super(connection, transactionSupplier, sqlProcessor);
 		this.indexProcessor = Objects.requireNonNullElseGet(indexProcessor, UnaryOperator::identity);
 		this.sql = sql;
 		this.poolable = true;

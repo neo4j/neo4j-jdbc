@@ -212,7 +212,7 @@ class DatabaseMetadataImplTests {
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
 		var boltConnection = Mockito.mock(BoltConnection.class);
-		return new DatabaseMetadataImpl(boltConnection, false);
+		return new DatabaseMetadataImpl(() -> mock(Neo4jTransaction.class), false);
 	}
 
 }

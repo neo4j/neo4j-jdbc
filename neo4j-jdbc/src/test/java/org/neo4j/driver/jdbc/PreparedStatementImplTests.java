@@ -57,16 +57,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
@@ -88,18 +84,16 @@ class PreparedStatementImplTests {
 	@Test
 	void shouldExecuteQuery() throws SQLException {
 		// given
-		var boltConnection = mock(BoltConnection.class);
 		var query = "query";
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
-				false))
-			.willReturn(CompletableFuture.completedStage(null));
+		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
+		var transaction = mock(Neo4jTransaction.class);
 		var runResponse = mock(RunResponse.class);
-		var runResponseFuture = CompletableFuture.completedFuture(runResponse);
-		given(boltConnection.run(query, Collections.emptyMap(), false)).willReturn(runResponseFuture);
 		var pullResponse = mock(PullResponse.class);
-		given(boltConnection.pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE))
-			.willReturn(CompletableFuture.completedStage(pullResponse));
-		this.statement = newStatement(mock(Connection.class), boltConnection, true, query);
+		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transaction.runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0))
+			.willReturn(new Neo4jTransaction.RunAndPullResponses(runResponse, pullResponse));
+		this.statement = newStatement(mock(Connection.class), transactionSupplier, query);
 
 		// when
 		var resultSet = this.statement.executeQuery();
@@ -108,75 +102,65 @@ class PreparedStatementImplTests {
 		// then
 		assertThat(resultSet).isNotNull();
 		assertThat(multipleResultsApiResultSet).isNull();
-		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
-		then(boltConnection).should().run(query, Collections.emptyMap(), false);
-		then(boltConnection).should().pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE);
-		then(boltConnection).shouldHaveNoMoreInteractions();
+		then(transactionSupplier).should().getTransaction();
+		then(transaction).should().runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0);
+		then(transaction).shouldHaveNoMoreInteractions();
 	}
 
-	private static PreparedStatementImpl newStatement(Connection connection, BoltConnection boltConnection,
-			boolean autoCommit, String query) {
-		return new PreparedStatementImpl(connection, boltConnection, autoCommit, null, null, query);
+	private static PreparedStatementImpl newStatement(Connection connection,
+			Neo4jTransactionSupplier transactionSupplier, String query) {
+		return new PreparedStatementImpl(connection, transactionSupplier, null, null, query);
 	}
 
 	@Test
 	void shouldExecuteUpdate() throws SQLException {
 		// given
-		var boltConnection = mock(BoltConnection.class);
 		var query = "query";
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
-				false))
-			.willReturn(CompletableFuture.completedStage(null));
-		var runResponse = mock(RunResponse.class);
-		var runResponseFuture = CompletableFuture.completedFuture(runResponse);
-		given(boltConnection.run(query, Collections.emptyMap(), false)).willReturn(runResponseFuture);
 		var discardResponse = mock(DiscardResponse.class);
-		given(boltConnection.discard(-1, false)).willReturn(CompletableFuture.completedStage(discardResponse));
+		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
+		var transaction = mock(Neo4jTransaction.class);
+		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transaction.isAutoCommit()).willReturn(true);
+		given(transaction.runAndDiscard(query, Collections.emptyMap(), 0, true)).willReturn(discardResponse);
 		var response = mock(ResultSummary.class);
 		given(discardResponse.resultSummary()).willReturn(Optional.of(response));
 		var counters = mock(SummaryCounters.class);
 		given(response.counters()).willReturn(counters);
 		var totalUpdates = 5;
 		given(counters.totalCount()).willReturn(totalUpdates);
-		given(boltConnection.commit()).willReturn(CompletableFuture.completedFuture(null));
-		this.statement = newStatement(mock(Connection.class), boltConnection, true, query);
+		this.statement = newStatement(mock(Connection.class), transactionSupplier, query);
 
 		// when
 		var updates = this.statement.executeUpdate();
 
 		// then
 		assertThat(updates).isEqualTo(totalUpdates);
-		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
-		then(boltConnection).should().run(query, Collections.emptyMap(), false);
-		then(boltConnection).should().discard(-1, false);
-		then(boltConnection).should().commit();
-		then(boltConnection).shouldHaveNoMoreInteractions();
+		then(transactionSupplier).should().getTransaction();
+		then(transaction).should().isAutoCommit();
+		then(transaction).should().runAndDiscard(query, Collections.emptyMap(), 0, true);
+		then(transaction).shouldHaveNoMoreInteractions();
 	}
 
 	@Test
 	void shouldExecuteQueryUsingMultipleResultsApi() throws SQLException {
 		// given
-		var boltConnection = mock(BoltConnection.class);
 		var query = "query";
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
-				false))
-			.willReturn(CompletableFuture.completedStage(null));
+		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
+		var transaction = mock(Neo4jTransaction.class);
+		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transaction.isAutoCommit()).willReturn(true);
 		var runResponse = mock(RunResponse.class);
-		var runResponseFuture = CompletableFuture.completedFuture(runResponse);
-		given(boltConnection.run(query, Collections.emptyMap(), false)).willReturn(runResponseFuture);
 		var pullResponse = mock(PullResponse.class);
+		given(transaction.runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0))
+			.willReturn(new Neo4jTransaction.RunAndPullResponses(runResponse, pullResponse));
+		given(transaction.isRunnable()).willReturn(true);
 		var resultSummary = mock(ResultSummary.class);
 		given(pullResponse.resultSummary()).willReturn(Optional.of(resultSummary));
 		var summaryCounters = mock(SummaryCounters.class);
 		given(resultSummary.counters()).willReturn(summaryCounters);
 		given(summaryCounters.totalCount()).willReturn(0);
 		given(pullResponse.records()).willReturn(Collections.emptyList());
-		given(boltConnection.pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE))
-			.willReturn(CompletableFuture.completedStage(pullResponse));
-		given(boltConnection.commit()).willReturn(CompletableFuture.completedFuture(null));
-		this.statement = newStatement(mock(Connection.class), boltConnection, true, query);
+		this.statement = newStatement(mock(Connection.class), transactionSupplier, query);
 
 		// when
 		var hasResultSet = this.statement.execute();
@@ -194,24 +178,24 @@ class PreparedStatementImplTests {
 		assertThat(nextResultSet).isNull();
 		assertThat(nextUpdates).isEqualTo(-1);
 		assertThat(resultSet.isClosed()).isTrue();
-		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
-		then(boltConnection).should().run(query, Collections.emptyMap(), false);
-		then(boltConnection).should().pull(runResponseFuture, StatementImpl.DEFAULT_FETCH_SIZE);
-		then(boltConnection).should().commit();
-		then(boltConnection).shouldHaveNoMoreInteractions();
+		then(transactionSupplier).should().getTransaction();
+		then(transaction).should().isAutoCommit();
+		then(transaction).should().runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0);
+		then(transaction).should().isRunnable();
+		then(transaction).should().commit();
+		then(transaction).shouldHaveNoMoreInteractions();
 	}
 
 	@Test
 	void shouldBePoolableByDefault() throws SQLException {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "");
 		assertThat(this.statement.isPoolable()).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("getShouldThrowWhenClosedArgs")
 	void shouldThrowWhenClosed(StatementMethodRunner consumer) throws SQLException {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 		this.statement.close();
 		assertThat(this.statement.isClosed()).isTrue();
 		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(SQLException.class);
@@ -288,7 +272,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldThrowUnsupportedArgs")
 	void shouldThrowUnsupported(StatementMethodRunner consumer, Class<? extends SQLException> exceptionType) {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(exceptionType);
 	}
 
@@ -362,7 +346,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldThrowOnExplicitlyProhibitedMethodsArgs")
 	void shouldThrowOnExplicitlyProhibitedMethods(StatementMethodRunner consumer) {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(SQLException.class);
 	}
 
@@ -390,7 +374,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldThrowOnInvalidParameterIndexArgs")
 	void shouldThrowOnInvalidParameterIndex(StatementMethodRunner consumer) {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(SQLException.class);
 	}
 
@@ -432,7 +416,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldSetParameterArgs")
 	void shouldSetParameter(StatementMethodRunner parameterSettingRunner, Value expectedValue) throws SQLException {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 
 		parameterSettingRunner.run(this.statement);
 
@@ -519,7 +503,7 @@ class PreparedStatementImplTests {
 	@ParameterizedTest
 	@MethodSource("getShouldSetObjectParameterArgs")
 	void shouldSetObjectParameter(Object object, Value expectedValue) throws SQLException {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 
 		this.statement.setObject(1, object);
 
@@ -541,7 +525,7 @@ class PreparedStatementImplTests {
 
 	@Test
 	void shouldClearParameters() throws SQLException {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 		this.statement.setBoolean(1, true);
 
 		this.statement.clearParameters();
@@ -551,7 +535,7 @@ class PreparedStatementImplTests {
 
 	@Test
 	void shouldReturnParameterMetaData() {
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 
 		var metaData = this.statement.getParameterMetaData();
 
@@ -562,7 +546,7 @@ class PreparedStatementImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 
 		// when & then
 		if (shouldUnwrap) {
@@ -578,7 +562,7 @@ class PreparedStatementImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) {
 		// given
-		this.statement = newStatement(mock(Connection.class), mock(BoltConnection.class), true, "query");
+		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 
 		// when
 		var wrapperFor = this.statement.isWrapperFor(cls);

@@ -28,15 +28,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
@@ -67,12 +64,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private static final Logger LOGGER = Logger.getLogger(DatabaseMetadataImpl.class.getCanonicalName());
 
-	private final BoltConnection boltConnection;
+	private final Neo4jTransactionSupplier transactionSupplier;
 
 	private final boolean automaticSqlTranslation;
 
-	DatabaseMetadataImpl(BoltConnection boltConnection, boolean automaticSqlTranslation) {
-		this.boltConnection = boltConnection;
+	DatabaseMetadataImpl(Neo4jTransactionSupplier transactionSupplier, boolean automaticSqlTranslation) {
+		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.automaticSqlTranslation = automaticSqlTranslation;
 	}
 
@@ -800,7 +797,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("SPECIFIC_NAME");
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), response, pullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pullResponse, -1,
+				-1, -1);
 	}
 
 	@Override
@@ -851,7 +849,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		};
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 	}
 
 	/***
@@ -866,7 +864,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var pull = createEmptyPullResponse();
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 
 	}
 
@@ -894,7 +892,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		};
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), response, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 	}
 
 	@Override
@@ -1003,7 +1001,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			}
 		};
 
-		return new ResultSetImpl(new LocalStatementImpl(), runResponse, staticPullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+				staticPullResponse, -1, -1, -1);
 	}
 
 	private static ArrayList<String> getKeysForGetColumns() {
@@ -1071,7 +1070,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var emptyPullResponse = createEmptyPullResponse();
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(), runResponse, emptyPullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+				emptyPullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -1111,7 +1111,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var emptyPullResponse = createEmptyPullResponse();
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(), runResponse, emptyPullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+				emptyPullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -1151,7 +1152,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var emptyPullResponse = createEmptyPullResponse();
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(), runResponse, emptyPullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+				emptyPullResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -1329,7 +1331,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(), runResponse, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse, pull, -1, -1,
+				-1);
 	}
 
 	@Override
@@ -1361,7 +1364,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("FUNCTION_TYPE");
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), response, pullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pullResponse, -1,
+				-1, -1);
 	}
 
 	@Override
@@ -1392,7 +1396,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("SPECIFIC_NAME");
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), response, pullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pullResponse, -1,
+				-1, -1);
 	}
 
 	@Override
@@ -1474,31 +1479,19 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	private ResultSet doQueryForResultSet(String query, Map<String, Object> args) throws SQLException {
 		var response = doQuery(query, args);
 
-		return new ResultSetImpl(new LocalStatementImpl(), response.runFuture.join(), response.pullResponse, -1, -1,
-				-1);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response.runFuture.join(),
+				response.pullResponse, -1, -1, -1);
 	}
 
 	private QueryAndRunResponse doQuery(String query, Map<String, Object> args) throws SQLException {
-		var beginFuture = this.boltConnection
-			.beginTransaction(Collections.emptySet(), AccessMode.READ, TransactionType.DEFAULT, false)
-			.toCompletableFuture();
-		var runFuture = this.boltConnection.run(query, args, false).toCompletableFuture();
-		var pullFuture = this.boltConnection.pull(runFuture, -1).toCompletableFuture();
-		var joinedFuture = CompletableFuture.allOf(beginFuture, runFuture).thenCompose(ignored -> pullFuture);
-
-		try {
-			var pullResponse = joinedFuture.get();
-			this.boltConnection.reset(true);
-			return new QueryAndRunResponse(pullResponse, runFuture);
+		var transaction = this.transactionSupplier.getTransaction();
+		var newTransaction = Neo4jTransaction.State.NEW.equals(transaction.getState());
+		var responses = transaction.runAndPull(query, args, -1, 0);
+		if (newTransaction) {
+			transaction.rollback();
 		}
-		catch (InterruptedException | ExecutionException ex) {
-			this.boltConnection.reset(true).toCompletableFuture().join();
-			var cause = ex.getCause();
-			if (ex instanceof InterruptedException) {
-				Thread.currentThread().interrupt();
-			}
-			throw new SQLException("An error occurred when running the query", (cause != null) ? cause : ex);
-		}
+		return new QueryAndRunResponse(responses.pullResponse(),
+				CompletableFuture.completedFuture(responses.runResponse()));
 	}
 
 	private record QueryAndRunResponse(PullResponse pullResponse, CompletableFuture<RunResponse> runFuture) {
