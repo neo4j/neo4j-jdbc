@@ -74,6 +74,17 @@ class Sql2CypherTests {
 	}
 
 	@Test
+	void outerSelectStarShouldBeRemoved() {
+
+		var translator = Sql2Cypher.defaultTranslator();
+		assertThat(translator
+			.translate("SELECT * FROM (SELECT * FROM \"Movie\") AS \"tempTable_5301953691072342668\" WHERE 1 = 0"))
+			.isEqualTo("""
+					MATCH (movie:Movie)
+					RETURN * LIMIT 1""");
+	}
+
+	@Test
 	void upsert() {
 
 		var translator = Sql2Cypher.with(Sql2CypherConfig.builder().withPrettyPrint(false).build());

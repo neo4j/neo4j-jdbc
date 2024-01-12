@@ -41,7 +41,7 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.util.ErrorUtil;
 
 public final class HandshakeHandler extends ReplayingDecoder<Void> {
 
-	private static final Logger log = Logger.getLogger(HandshakeHandler.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger(HandshakeHandler.class.getCanonicalName());
 
 	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
 
@@ -63,7 +63,7 @@ public final class HandshakeHandler extends ReplayingDecoder<Void> {
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) {
-		log.log(Level.FINE, "Channel is inactive");
+		LOGGER.log(Level.FINE, "Channel is inactive");
 
 		if (!this.failed) {
 			// channel became inactive while doing bolt handshake, not because of some
@@ -76,7 +76,7 @@ public final class HandshakeHandler extends ReplayingDecoder<Void> {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) {
 		if (this.failed) {
-			log.log(Level.FINE, "Another fatal error occurred in the pipeline", error);
+			LOGGER.log(Level.FINE, "Another fatal error occurred in the pipeline", error);
 		}
 		else {
 			this.failed = true;

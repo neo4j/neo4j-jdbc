@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.neo4j.driver.jdbc.internal.bolt.AccessMode;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
@@ -52,6 +54,18 @@ import org.neo4j.driver.jdbc.values.Values;
  * @since 1.0.0
  */
 final class DatabaseMetadataImpl implements DatabaseMetaData {
+
+	private static final List<String> NUMERIC_FUNCTIONS = List.of("abs", "ceil", "floor", "isNaN", "rand", "round",
+			"sign", "e", "exp", "log", "log10", "sqrt", "acos", "asin", "atan", "atan2", "cos", "cot", "degrees",
+			"haversin", "pi", "radians", "sin", "tan");
+
+	private static final List<String> STRING_FUNCTIONS = List.of("left", "ltrim", "replace", "reverse", "right",
+			"rtrim", "split", "substring", "toLower", "toString", "toStringOrNull", "toUpper", "trim");
+
+	private static final List<String> TIME_DATE_FUNCTIONS = List.of("date", "datetime", "localdatetime", "localtime",
+			"time", "duration");
+
+	private static final Logger LOGGER = Logger.getLogger(DatabaseMetadataImpl.class.getCanonicalName());
 
 	private final BoltConnection boltConnection;
 
@@ -231,69 +245,70 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public String getSQLKeywords() throws SQLException {
-		// Do we just list all the keywords here?
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public String getNumericFunctions() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public String getStringFunctions() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public String getSystemFunctions() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public String getTimeDateFunctions() throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public String getSearchStringEscape() throws SQLException {
-		return "'";
-	}
-
-	@Override
-	public String getExtraNameCharacters() throws SQLException {
+	public String getSQLKeywords() {
 		return "";
 	}
 
 	@Override
-	public boolean supportsAlterTableWithAddColumn() throws SQLException {
-		throw new UnsupportedOperationException();
+	public String getNumericFunctions() {
+		return String.join(",", NUMERIC_FUNCTIONS);
 	}
 
 	@Override
-	public boolean supportsAlterTableWithDropColumn() throws SQLException {
-		throw new UnsupportedOperationException();
+	public String getStringFunctions() {
+		return String.join(",", STRING_FUNCTIONS);
 	}
 
 	@Override
-	public boolean supportsColumnAliasing() throws SQLException {
-		throw new UnsupportedOperationException();
+	public String getSystemFunctions() {
+		return "";
 	}
 
 	@Override
-	public boolean nullPlusNonNullIsNull() throws SQLException {
+	public String getTimeDateFunctions() {
+		return String.join(",", TIME_DATE_FUNCTIONS);
+	}
+
+	@Override
+	public String getSearchStringEscape() {
+		return "'";
+	}
+
+	@Override
+	public String getExtraNameCharacters() {
+		return "";
+	}
+
+	@Override
+	public boolean supportsAlterTableWithAddColumn() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsAlterTableWithDropColumn() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsColumnAliasing() {
 		return true;
 	}
 
 	@Override
-	public boolean supportsConvert() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean nullPlusNonNullIsNull() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsConvert(int fromType, int toType) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsConvert() {
+		LOGGER.log(Level.FINE, "supportsConvert returns false for now, that might change in the future.");
+		return false;
+	}
+
+	@Override
+	public boolean supportsConvert(int fromType, int toType) {
+		LOGGER.log(Level.FINE, "supportsConvert returns false for now, that might change in the future.");
+		return false;
 	}
 
 	@Override
@@ -335,8 +350,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsLikeEscapeClause() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsLikeEscapeClause() {
+		return false;
 	}
 
 	@Override
@@ -345,63 +360,75 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsMultipleTransactions() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsMultipleTransactions() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsNonNullableColumns() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsNonNullableColumns() {
+		return true;
 	}
 
 	@Override
 	public boolean supportsMinimumSQLGrammar() throws SQLException {
-		throw new UnsupportedOperationException();
+		return this.automaticSqlTranslation;
 	}
 
 	@Override
-	public boolean supportsCoreSQLGrammar() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsCoreSQLGrammar() {
+		return this.automaticSqlTranslation;
 	}
 
 	@Override
-	public boolean supportsExtendedSQLGrammar() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsExtendedSQLGrammar() {
+		if (this.automaticSqlTranslation) {
+			LOGGER.log(Level.FINE,
+					"supportsExtendedSQLGrammar returns false for now despite automatic sql translation being on, that might change in the future.");
+		}
+		return false;
 	}
 
 	@Override
-	public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsANSI92EntryLevelSQL() {
+		return this.automaticSqlTranslation;
 	}
 
 	@Override
-	public boolean supportsANSI92IntermediateSQL() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsANSI92IntermediateSQL() {
+		if (this.automaticSqlTranslation) {
+			LOGGER.log(Level.FINE,
+					"supportsANSI92IntermediateSQL returns false for now despite automatic sql translation being on, that might change in the future.");
+		}
+		return false;
 	}
 
 	@Override
-	public boolean supportsANSI92FullSQL() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsANSI92FullSQL() {
+		if (this.automaticSqlTranslation) {
+			LOGGER.log(Level.FINE,
+					"supportsANSI92FullSQL returns false for now despite automatic sql translation being on, that might change in the future.");
+		}
+		return false;
 	}
 
 	@Override
-	public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsIntegrityEnhancementFacility() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsOuterJoins() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsOuterJoins() {
+		return this.automaticSqlTranslation;
 	}
 
 	@Override
-	public boolean supportsFullOuterJoins() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsFullOuterJoins() {
+		return this.automaticSqlTranslation;
 	}
 
 	@Override
-	public boolean supportsLimitedOuterJoins() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsLimitedOuterJoins() {
+		return false;
 	}
 
 	@Override
@@ -663,43 +690,45 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public int getMaxUserNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+	public int getMaxUserNameLength() {
+		// At least that's the max length for other names
+		// https://neo4j.com/docs/cypher-manual/current/syntax/naming
+		return 65535;
 	}
 
 	@Override
-	public int getDefaultTransactionIsolation() throws SQLException {
-		throw new UnsupportedOperationException();
+	public int getDefaultTransactionIsolation() {
+		return Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override
-	public boolean supportsTransactions() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsTransactions() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsTransactionIsolationLevel(int level) {
+		return level == Connection.TRANSACTION_NONE || level == Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override
-	public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsDataDefinitionAndDataManipulationTransactions() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsDataManipulationTransactionsOnly() {
+		return false;
 	}
 
 	@Override
-	public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean dataDefinitionCausesTransactionCommit() {
+		return false;
 	}
 
 	@Override
-	public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean dataDefinitionIgnoredInTransactions() {
+		return false;
 	}
 
 	/**

@@ -36,7 +36,7 @@ import org.neo4j.driver.jdbc.internal.bolt.internal.messaging.Message;
 
 public final class NetworkConnection implements Connection {
 
-	private static final Logger log = Logger.getLogger(NetworkConnection.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger(NetworkConnection.class.getCanonicalName());
 
 	private final Channel channel;
 
@@ -108,12 +108,12 @@ public final class NetworkConnection implements Connection {
 			this.connectionReadTimeoutHandler = new ConnectionReadTimeoutHandler(this.connectionReadTimeout,
 					TimeUnit.SECONDS);
 			channel.pipeline().addFirst(this.connectionReadTimeoutHandler);
-			log.log(Level.FINE, "Added ConnectionReadTimeoutHandler");
+			LOGGER.log(Level.FINE, "Added ConnectionReadTimeoutHandler");
 			this.messageDispatcher.setBeforeLastHandlerHook((messageType) -> {
 				channel.pipeline().remove(this.connectionReadTimeoutHandler);
 				this.connectionReadTimeoutHandler = null;
 				this.messageDispatcher.setBeforeLastHandlerHook(null);
-				log.log(Level.FINE, "Removed ConnectionReadTimeoutHandler");
+				LOGGER.log(Level.FINE, "Removed ConnectionReadTimeoutHandler");
 			});
 		}
 	}

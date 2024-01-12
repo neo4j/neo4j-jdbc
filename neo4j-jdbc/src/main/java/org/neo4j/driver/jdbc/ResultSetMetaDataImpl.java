@@ -20,6 +20,7 @@ package org.neo4j.driver.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 import org.neo4j.driver.jdbc.values.BooleanValue;
@@ -136,6 +137,9 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData {
 
 	@Override
 	public int getColumnType(int column) throws SQLException {
+		if (this.firstRecord == null) {
+			return Types.NULL;
+		}
 		int adjustedIndex = column - 1;
 		var recordType = this.firstRecord.get(adjustedIndex).type();
 		return Neo4jTypeToSqlTypeMapper.toSqlType(recordType);
@@ -143,6 +147,9 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData {
 
 	@Override
 	public String getColumnTypeName(int column) {
+		if (this.firstRecord == null) {
+			return "";
+		}
 		// Jdbc spec says the name of the type in the database so this is fine being named
 		// differently from above
 		int adjustedIndex = column - 1;

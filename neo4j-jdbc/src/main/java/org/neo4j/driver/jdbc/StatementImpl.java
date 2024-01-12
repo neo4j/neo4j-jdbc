@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
@@ -56,6 +58,8 @@ class StatementImpl implements Statement {
 	// configured for automatic translation.
 	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
 		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
+
+	private static final Logger LOGGER = Logger.getLogger(StatementImpl.class.getCanonicalName());
 
 	private final Connection connection;
 
@@ -458,7 +462,12 @@ class StatementImpl implements Statement {
 			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false)
 			.toCompletableFuture();
 		var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
-		var runFuture = this.boltConnection.run(processor.apply(sql), parameters(), false).toCompletableFuture();
+
+		var processedSQL = processor.apply(sql);
+		if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {
+			LOGGER.log(Level.FINEST, "Processed {0} into {1}", new Object[] { sql, processedSQL });
+		}
+		var runFuture = this.boltConnection.run(processedSQL, parameters(), false).toCompletableFuture();
 		CompletableFuture<QueryResponses> joinedFuture;
 
 		if (pull) {

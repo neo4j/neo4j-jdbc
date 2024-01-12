@@ -223,7 +223,19 @@ final class Sql2Cypher implements SqlTranslator {
 			return Cypher.match(e).detachDelete(e.asExpression()).build();
 		}
 
-		ResultStatement statement(Select<?> x) {
+		ResultStatement statement(Select<?> incoming) {
+
+			Select<?> x;
+			boolean addLimit = false;
+			// Assume it's a funny, wrapper checked query
+			if (incoming.$from().$first() instanceof TableAlias<?> tableAlias
+					&& tableAlias.$table() instanceof QOM.DerivedTable<?> d && incoming.$where() != null) {
+				addLimit = true;
+				x = d.$arg1();
+			}
+			else {
+				x = incoming;
+			}
 
 			// Done lazy as otherwise the property containers won't be resolved
 			Supplier<List<Expression>> resultColumnsSupplier = () -> x.$select()
@@ -245,7 +257,7 @@ final class Sql2Cypher implements SqlTranslator {
 
 			StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
 			if (!(x.$limit() instanceof Param<?> param)) {
-				buildableStatement = returning;
+				buildableStatement = addLimit ? returning.limit(1) : returning;
 			}
 			else {
 				buildableStatement = returning.limit(expression(param));
