@@ -121,7 +121,7 @@
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
 		<archunit.version>1.2.1</archunit.version>
 		<artifactsDir>${project.build.directory}</artifactsDir>
-		<asciidoctor-maven-plugin.version>2.2.4</asciidoctor-maven-plugin.version>
+		<asciidoctor-maven-plugin.version>2.2.5</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.10</asciidoctorj.pdf.version>
 		<asciidoctorj.version>2.5.11</asciidoctorj.version>
 		<assertj.version>3.25.1</assertj.version>
