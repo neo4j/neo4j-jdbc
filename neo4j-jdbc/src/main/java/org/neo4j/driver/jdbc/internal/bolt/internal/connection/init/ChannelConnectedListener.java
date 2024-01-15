@@ -55,7 +55,12 @@ public final class ChannelConnectedListener implements ChannelFutureListener {
 			var pipeline = channel.pipeline();
 			pipeline.addLast(new HandshakeHandler(this.pipelineBuilder, this.handshakeCompletedPromise));
 			boltLogger.log(Level.FINE, "C: [Bolt Handshake] {0}", BoltProtocolUtil.handshakeString());
-			channel.writeAndFlush(BoltProtocolUtil.handshakeBuf(), channel.voidPromise());
+			channel.writeAndFlush(BoltProtocolUtil.handshakeBuf()).addListener(f -> {
+				if (!f.isSuccess()) {
+					this.handshakeCompletedPromise.setFailure(
+							new BoltException(String.format("Unable to write to %s.", this.address), f.cause()));
+				}
+			});
 		}
 		else {
 			this.handshakeCompletedPromise.setFailure(databaseUnavailableError(this.address, future.cause()));
