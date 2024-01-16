@@ -36,6 +36,7 @@
 	<modules>
 		<module>neo4j-jdbc-it-cp</module>
 		<module>neo4j-jdbc-it-mp</module>
+		<module>spring-boot-smoke-tests</module>
 		<module>quarkus-smoke-tests</module>
 	</modules>
 
@@ -48,18 +49,6 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.neo4j.driver</groupId>
-			<artifactId>neo4j-jdbc</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.neo4j.driver</groupId>
-			<artifactId>neo4j-jdbc-translator-impl</artifactId>
-			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -29,7 +29,7 @@
 	</parent>
 	<artifactId>neo4j-jdbc-quarkus-smoke-tests</artifactId>
 
-	<name>Neo4j JDBC Driver (Quarkus smoke-tests)</name>
+	<name>Neo4j JDBC Driver (Quarkus Smoke tests)</name>
 
 	<properties>
 		<quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>

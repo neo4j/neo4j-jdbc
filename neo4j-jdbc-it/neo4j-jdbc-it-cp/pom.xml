@@ -43,6 +43,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.neo4j.driver</groupId>
+			<artifactId>neo4j-jdbc</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j.driver</groupId>
+			<artifactId>neo4j-jdbc-translator-impl</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<scope>test</scope>
