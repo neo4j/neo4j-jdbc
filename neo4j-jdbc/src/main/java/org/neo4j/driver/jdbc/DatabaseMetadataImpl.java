@@ -771,7 +771,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
-			String columnNamePattern) throws SQLException {
+			String columnNamePattern) {
 		var pullResponse = createEmptyPullResponse();
 
 		var keys = new ArrayList<String>();
@@ -869,7 +869,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getTableTypes() throws SQLException {
+	public ResultSet getTableTypes() {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_TYPE");
 

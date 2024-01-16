@@ -87,7 +87,7 @@ interface Neo4jTransaction {
 		 */
 		OPEN_FAILED,
 		/**
-		 * A failed transaction that is no longer managable.
+		 * A failed transaction that is no longer manageable.
 		 */
 		FAILED,
 		/**

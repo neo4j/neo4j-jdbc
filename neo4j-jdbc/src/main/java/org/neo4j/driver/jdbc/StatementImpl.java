@@ -395,7 +395,7 @@ class StatementImpl implements Statement {
 	/**
 	 * This extension method can be used for any derived statement implementations to
 	 * supply parameters to {@link Neo4jTransaction#runAndPull(String, Map, int, int)} and
-	 * {@link Neo4jTransaction#runAndDiscard(String, Map, int)}.
+	 * {@link Neo4jTransaction#runAndDiscard(String, Map, int, boolean)}.
 	 * @return parameters to this statement if any
 	 */
 	protected Map<String, Object> parameters() {

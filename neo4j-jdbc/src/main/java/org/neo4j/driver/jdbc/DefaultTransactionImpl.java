@@ -36,7 +36,7 @@ import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 
-class DefaultTransactionImpl implements Neo4jTransaction {
+final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private final BoltConnection boltConnection;
 

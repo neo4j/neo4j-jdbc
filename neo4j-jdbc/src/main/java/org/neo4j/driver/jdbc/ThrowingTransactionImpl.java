@@ -25,7 +25,7 @@ import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 
-class ThrowingTransactionImpl implements Neo4jTransaction {
+final class ThrowingTransactionImpl implements Neo4jTransaction {
 
 	@Override
 	public RunAndPullResponses runAndPull(String query, Map<String, Object> parameters, int fetchSize, int timeout)
