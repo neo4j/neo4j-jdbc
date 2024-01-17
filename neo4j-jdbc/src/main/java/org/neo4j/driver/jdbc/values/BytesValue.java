@@ -19,10 +19,13 @@
 package org.neo4j.driver.jdbc.values;
 
 import java.util.Arrays;
+import java.util.HexFormat;
 
 public final class BytesValue extends AbstractValue {
 
 	private final byte[] val;
+
+	private static final HexFormat FORMATTER = HexFormat.of().withUpperCase();
 
 	BytesValue(byte[] val) {
 		if (val == null) {
@@ -76,14 +79,7 @@ public final class BytesValue extends AbstractValue {
 
 	@Override
 	public String toString() {
-		var s = new StringBuilder("#");
-		for (var b : this.val) {
-			if (b < 0x10) {
-				s.append('0');
-			}
-			s.append(Integer.toHexString(b));
-		}
-		return s.toString();
+		return "X'" + FORMATTER.formatHex(this.val) + "'";
 	}
 
 }

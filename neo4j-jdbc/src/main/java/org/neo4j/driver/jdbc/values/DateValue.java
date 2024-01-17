@@ -19,8 +19,15 @@
 package org.neo4j.driver.jdbc.values;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 public final class DateValue extends AbstractObjectValue<LocalDate> {
+
+	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("DATE '")
+		.append(DateTimeFormatter.ISO_DATE)
+		.appendLiteral('\'')
+		.toFormatter();
 
 	DateValue(LocalDate date) {
 		super(date);
@@ -34,6 +41,11 @@ public final class DateValue extends AbstractObjectValue<LocalDate> {
 	@Override
 	public Type type() {
 		return Type.DATE;
+	}
+
+	@Override
+	public String toString() {
+		return FORMATTER.format(super.adapted);
 	}
 
 }

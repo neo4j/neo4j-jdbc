@@ -20,8 +20,15 @@ package org.neo4j.driver.jdbc.values;
 
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 public final class DateTimeValue extends AbstractObjectValue<ZonedDateTime> {
+
+	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("DATETIME '")
+		.append(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+		.appendLiteral('\'')
+		.toFormatter();
 
 	DateTimeValue(ZonedDateTime zonedDateTime) {
 		super(zonedDateTime);
@@ -40,6 +47,11 @@ public final class DateTimeValue extends AbstractObjectValue<ZonedDateTime> {
 	@Override
 	public Type type() {
 		return Type.DATE_TIME;
+	}
+
+	@Override
+	public String toString() {
+		return FORMATTER.format(super.adapted);
 	}
 
 }

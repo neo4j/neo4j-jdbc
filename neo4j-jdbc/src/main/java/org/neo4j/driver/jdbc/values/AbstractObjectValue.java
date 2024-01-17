@@ -22,7 +22,7 @@ import java.util.Objects;
 
 abstract class AbstractObjectValue<V> extends AbstractValue {
 
-	private final V adapted;
+	protected final V adapted;
 
 	protected AbstractObjectValue(V adapted) {
 		if (adapted == null) {

@@ -22,10 +22,12 @@ import java.time.Duration;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 final class IsoDurationImpl implements IsoDuration {
 
@@ -57,9 +59,10 @@ final class IsoDurationImpl implements IsoDuration {
 	IsoDurationImpl(long months, long days, Duration duration) {
 		this.months = months;
 		this.days = days;
-		this.seconds = duration.getSeconds(); // normalized value of seconds
-		this.nanoseconds = duration.getNano(); // normalized value of nanoseconds in [0,
-												// 999_999_999]
+		// normalized value of seconds
+		this.seconds = duration.getSeconds();
+		// normalized value of nanoseconds in [0, 999_999_999]
+		this.nanoseconds = duration.getNano();
 	}
 
 	@Override
@@ -158,8 +161,7 @@ final class IsoDurationImpl implements IsoDuration {
 		return Objects.hash(this.months, this.days, this.seconds, this.nanoseconds);
 	}
 
-	@Override
-	public String toString() {
+	private String defaultStringRepresentation() {
 		var sb = new StringBuilder();
 		sb.append('P');
 		sb.append(this.months).append('M');
@@ -190,6 +192,63 @@ final class IsoDurationImpl implements IsoDuration {
 		}
 		sb.append('S');
 		return sb.toString();
+	}
+
+	private static final int PERIOD_MASK = 0b11100;
+
+	private static final int DURATION_MASK = 0b00011;
+
+	private static final TemporalUnit[] ALL_SUPPORTED_UNITS = { ChronoUnit.YEARS, ChronoUnit.MONTHS, ChronoUnit.DAYS,
+			ChronoUnit.SECONDS, ChronoUnit.NANOS };
+
+	private static final short FIELD_YEAR = 0;
+
+	private static final short FIELD_MONTH = 1;
+
+	private static final short FIELD_DAY = 2;
+
+	private static final short FIELD_SECONDS = 3;
+
+	private static final short FIELD_NANOS = 4;
+
+	private static final BiFunction<TemporalAmount, TemporalUnit, Integer> TEMPORAL_UNIT_EXTRACTOR = (d, u) -> {
+		if (!d.getUnits().contains(u)) {
+			return 0;
+		}
+		return Math.toIntExact(d.get(u));
+	};
+
+	@Override
+	public String toString() {
+
+		int[] values = new int[ALL_SUPPORTED_UNITS.length];
+		int type = 0;
+		for (int i = 0; i < ALL_SUPPORTED_UNITS.length; ++i) {
+			values[i] = TEMPORAL_UNIT_EXTRACTOR.apply(this, ALL_SUPPORTED_UNITS[i]);
+			type |= (values[i] == 0) ? 0 : (0b10000 >> i);
+		}
+
+		boolean couldBePeriod = couldBePeriod(type);
+		boolean couldBeDuration = couldBeDuration(type);
+
+		if (couldBePeriod && !couldBeDuration) {
+			return Period.of(values[FIELD_YEAR], values[FIELD_MONTH], values[FIELD_DAY]).normalized().toString();
+		}
+		else if (couldBeDuration && !couldBePeriod) {
+			return "DURATION '" + Duration.ofSeconds(values[FIELD_SECONDS]).plusNanos(values[FIELD_NANOS]).toString()
+					+ "'";
+		}
+		else {
+			return defaultStringRepresentation();
+		}
+	}
+
+	private static boolean couldBePeriod(int type) {
+		return (PERIOD_MASK & type) > 0;
+	}
+
+	private static boolean couldBeDuration(int type) {
+		return (DURATION_MASK & type) > 0;
 	}
 
 }

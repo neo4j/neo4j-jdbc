@@ -19,8 +19,15 @@
 package org.neo4j.driver.jdbc.values;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 public final class LocalTimeValue extends AbstractObjectValue<LocalTime> {
+
+	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("TIME '")
+		.append(DateTimeFormatter.ISO_TIME)
+		.appendLiteral('\'')
+		.toFormatter();
 
 	LocalTimeValue(LocalTime time) {
 		super(time);
@@ -34,6 +41,11 @@ public final class LocalTimeValue extends AbstractObjectValue<LocalTime> {
 	@Override
 	public Type type() {
 		return Type.LOCAL_TIME;
+	}
+
+	@Override
+	public String toString() {
+		return FORMATTER.format(super.adapted);
 	}
 
 }

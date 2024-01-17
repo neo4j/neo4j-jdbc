@@ -19,8 +19,15 @@
 package org.neo4j.driver.jdbc.values;
 
 import java.time.OffsetTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 public final class TimeValue extends AbstractObjectValue<OffsetTime> {
+
+	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("TIME '")
+		.append(DateTimeFormatter.ISO_OFFSET_TIME)
+		.appendLiteral('\'')
+		.toFormatter();
 
 	TimeValue(OffsetTime time) {
 		super(time);
@@ -34,6 +41,11 @@ public final class TimeValue extends AbstractObjectValue<OffsetTime> {
 	@Override
 	public Type type() {
 		return Type.TIME;
+	}
+
+	@Override
+	public String toString() {
+		return FORMATTER.format(super.adapted);
 	}
 
 }
