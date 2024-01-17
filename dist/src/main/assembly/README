@@ -1,0 +1,6 @@
+Neo4j JDBC Driver
+
+For a full manual please look at `manual.pdf`.
+Issues and feedback can be given on [GitHub][1]
+
+[1]: https://github.com/neo4j/neo4j-jdbc/issues

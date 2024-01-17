@@ -108,6 +108,7 @@
 		<module>neo4j-jdbc-bundle</module>
 		<module>neo4j-jdbc-full-bundle</module>
 		<module>docs</module>
+		<module>dist</module>
 	</modules>
 
 	<scm>
@@ -138,6 +139,7 @@
 		<jaxb-api.version>4.0.1</jaxb-api.version>
 		<jdbi3.version>3.43.0</jdbi3.version>
 		<jooq.version>3.19.2</jooq.version>
+		<jreleaser-maven-plugin.version>1.10.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.10.1</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
@@ -279,6 +281,11 @@
 	<build>
 		<pluginManagement>
 			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>${maven-assembly-plugin.version}</version>
+				</plugin>
 				<plugin>
 					<groupId>com.mycila</groupId>
 					<artifactId>license-maven-plugin</artifactId>
@@ -578,6 +585,11 @@
 					<artifactId>git-commit-id-maven-plugin</artifactId>
 					<version>${git-commit-id-maven-plugin.version}</version>
 				</plugin>
+				<plugin>
+					<groupId>org.jreleaser</groupId>
+					<artifactId>jreleaser-maven-plugin</artifactId>
+					<version>${jreleaser-maven-plugin.version}</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -693,10 +705,52 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.jreleaser</groupId>
+				<artifactId>jreleaser-maven-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+					<jreleaser>
+						<project>
+							<name>${project.artifactId}</name>
+						</project>
+						<release>
+							<github>
+								<skipTag>true</skipTag>
+								<tagName>{{projectVersion}}</tagName>
+								<releaseName>{{projectVersion}}</releaseName>
+								<branch>main</branch>
+								<changelog>
+									<formatted>ALWAYS</formatted>
+									<contentTemplate>etc/jreleaser/changelog.md.tpl</contentTemplate>
+									<format>- {{commitShortHash}} {{commitTitle}}</format>
+									<preset>conventional-commits</preset>
+								</changelog>
+							</github>
+						</release>
+						<distributions>
+							<full-bundle>
+								<type>SINGLE_JAR</type>
+								<artifacts>
+									<artifact>
+										<path>dist/target/neo4j-jdbc-driver-{{projectVersion}}.zip</path>
+									</artifact>
+								</artifacts>
+							</full-bundle>
+						</distributions>
+					</jreleaser>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
 	<profiles>
+		<profile>
+			<id>jreleaser</id>
+			<build>
+				<plugins/>
+			</build>
+		</profile>
 		<profile>
 			<id>no-release</id>
 			<!--

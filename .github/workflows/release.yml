@@ -1,0 +1,35 @@
+name: release
+
+on:
+  workflow_dispatch:
+  create:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Set up JDK'
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: 'Prepare git'
+        run: git config --global core.autocrlf false
+
+      - name: 'Prepare branch name'
+        if: (github.event_name == 'create' && github.event.ref_type == 'tag')
+        run: >
+          echo "refName=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: 'Checkout relevant branch'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.refName }}
+
+      - name: 'Create release'
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_TOKEN }}
+        run: ./mvnw -Dfast --no-transfer-progress package jreleaser:full-release
