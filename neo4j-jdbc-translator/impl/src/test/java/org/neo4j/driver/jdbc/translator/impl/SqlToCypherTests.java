@@ -53,12 +53,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Michael J. Simons
  * @author Michael Hunger
  */
-class Sql2CypherTests {
+class SqlToCypherTests {
 
 	@Test
 	void namedParameterPrefixForParsingShouldBeConfigurable() {
-		var translator = Sql2Cypher
-			.with(Sql2CypherConfig.builder().withParseNamedParamPrefix("$").withPrettyPrint(false).build());
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withParseNamedParamPrefix("$").withPrettyPrint(false).build());
 		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($1)"))
 			.isEqualTo("CREATE (movie:`Movie` {title: $1})");
 	}
@@ -66,7 +66,7 @@ class Sql2CypherTests {
 	@Test
 	void simpleUpdateShouldWork() {
 
-		var translator = Sql2Cypher.defaultTranslator();
+		var translator = SqlToCypher.defaultTranslator();
 		assertThat(translator.translate("UPDATE Actor a SET name = 'Foo' WHERE id(a) = 4711")).isEqualTo("""
 				MATCH (a:Actor)
 				WHERE id(a) = 4711
@@ -76,7 +76,7 @@ class Sql2CypherTests {
 	@Test
 	void outerSelectStarShouldBeRemoved() {
 
-		var translator = Sql2Cypher.defaultTranslator();
+		var translator = SqlToCypher.defaultTranslator();
 		assertThat(translator
 			.translate("SELECT * FROM (SELECT * FROM \"Movie\") AS \"tempTable_5301953691072342668\" WHERE 1 = 0"))
 			.isEqualTo("""
@@ -87,7 +87,7 @@ class Sql2CypherTests {
 	@Test
 	void upsert() {
 
-		var translator = Sql2Cypher.with(Sql2CypherConfig.builder().withPrettyPrint(false).build());
+		var translator = SqlToCypher.with(SqlToCypherConfig.builder().withPrettyPrint(false).build());
 		assertThat(translator.translate("INSERT INTO Movie(title) VALUES(?) ON DUPLICATE KEY IGNORE"))
 			.isEqualTo("MERGE (movie:`Movie` {title: $0})");
 	}
@@ -100,7 +100,7 @@ class Sql2CypherTests {
 			""")
 	void parserShallNotFailOnUnknownFunctions(String in, String expected) {
 
-		var translator = Sql2Cypher.with(Sql2CypherConfig.builder().withPrettyPrint(false).build());
+		var translator = SqlToCypher.with(SqlToCypherConfig.builder().withPrettyPrint(false).build());
 		assertThat(translator.translate(in)).isEqualTo(expected);
 	}
 
@@ -145,8 +145,8 @@ class Sql2CypherTests {
 
 	void assertThatSqlIsTranslatedAsExpected(String sql, String expected, Map<String, String> tableMappings,
 			Map<String, String> join_columns_mappings, boolean prettyPrint) {
-		assertThat(Sql2Cypher
-			.with(Sql2CypherConfig.builder()
+		assertThat(SqlToCypher
+			.with(SqlToCypherConfig.builder()
 				.withPrettyPrint(prettyPrint)
 				.withTableToLabelMappings(tableMappings)
 				.withJoinColumnsToTypeMappings(join_columns_mappings)
@@ -174,13 +174,13 @@ class Sql2CypherTests {
 		if (alwaysEscapeNames != null) {
 			properties.put("s2c.alwaysEscapeNames", alwaysEscapeNames.toString());
 		}
-		var cfg = Sql2CypherConfig.of(properties);
-		var defaultCfg = Sql2CypherConfig.defaultConfig();
+		var cfg = SqlToCypherConfig.of(properties);
+		var defaultCfg = SqlToCypherConfig.defaultConfig();
 		assertThat(cfg.isPrettyPrint()).isEqualTo((prettyPrint != null) ? prettyPrint : defaultCfg.isPrettyPrint());
 		assertThat(cfg.isAlwaysEscapeNames())
 			.isEqualTo((alwaysEscapeNames != null) ? alwaysEscapeNames : !cfg.isPrettyPrint());
 		var sql = "Select * from movies";
-		var cypher = Sql2Cypher.with(cfg).translate(sql);
+		var cypher = SqlToCypher.with(cfg).translate(sql);
 		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));
 	}
 
@@ -209,10 +209,10 @@ class Sql2CypherTests {
 				Map<String, String> tableMappings = new HashMap<>();
 				Map<String, String> join_columns_mappings = new HashMap<>();
 				if (sqlBlock.getAttribute("table_mappings") != null) {
-					tableMappings = Sql2CypherConfig.buildMap((String) sqlBlock.getAttribute("table_mappings"));
+					tableMappings = SqlToCypherConfig.buildMap((String) sqlBlock.getAttribute("table_mappings"));
 				}
 				if (sqlBlock.getAttribute("join_column_mappings") != null) {
-					join_columns_mappings = Sql2CypherConfig
+					join_columns_mappings = SqlToCypherConfig
 						.buildMap((String) sqlBlock.getAttribute("join_column_mappings"));
 				}
 				boolean parseCypher = Boolean.parseBoolean(((String) cypherBlock.getAttribute("parseCypher", "true")));

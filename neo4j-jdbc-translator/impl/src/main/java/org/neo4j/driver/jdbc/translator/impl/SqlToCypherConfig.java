@@ -32,15 +32,15 @@ import org.jooq.conf.ParseNameCase;
 import org.jooq.conf.RenderNameCase;
 
 /**
- * Configuration for the {@link Sql2Cypher}, use this to configure parsing and rendering
+ * Configuration for the {@link SqlToCypher}, use this to configure parsing and rendering
  * settings as well as table to node mappings.
  *
  * @author Michael Hunger
  * @author Michael J. Simons
  */
-public final class Sql2CypherConfig {
+public final class SqlToCypherConfig {
 
-	private static final Sql2CypherConfig DEFAULT_CONFIG = Sql2CypherConfig.builder().build();
+	private static final SqlToCypherConfig DEFAULT_CONFIG = SqlToCypherConfig.builder().build();
 
 	/**
 	 * Derives a configuration for {@code Sql2Cypher} based from the properties given.
@@ -48,7 +48,7 @@ public final class Sql2CypherConfig {
 	 * @return a new configuration object or the default config if there are no matching
 	 * properties.
 	 */
-	public static Sql2CypherConfig of(Map<String, String> config) {
+	public static SqlToCypherConfig of(Map<String, String> config) {
 
 		if (config == null || config.isEmpty()) {
 			return defaultConfig();
@@ -77,7 +77,7 @@ public final class Sql2CypherConfig {
 				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(Boolean.parseBoolean(v));
 				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(v);
 				default -> {
-					Sql2Cypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
+					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;
 				}
 			};
@@ -100,7 +100,7 @@ public final class Sql2CypherConfig {
 	}
 
 	/**
-	 * A builder for creating new {@link Sql2CypherConfig configuration objects}.
+	 * A builder for creating new {@link SqlToCypherConfig configuration objects}.
 	 * @return a new builder for creating a new configuration from scratch.
 	 */
 	public static Builder builder() {
@@ -111,7 +111,7 @@ public final class Sql2CypherConfig {
 	 * Provides access to the default configuration.
 	 * @return the default configuration ready to use.
 	 */
-	public static Sql2CypherConfig defaultConfig() {
+	public static SqlToCypherConfig defaultConfig() {
 
 		return DEFAULT_CONFIG;
 	}
@@ -134,7 +134,7 @@ public final class Sql2CypherConfig {
 
 	private final String parseNamedParamPrefix;
 
-	private Sql2CypherConfig(Builder builder) {
+	private SqlToCypherConfig(Builder builder) {
 
 		this.parseNameCase = builder.parseNameCase;
 		this.renderNameCase = builder.renderNameCase;
@@ -192,7 +192,7 @@ public final class Sql2CypherConfig {
 	}
 
 	/**
-	 * A builder to create new instances of {@link Sql2CypherConfig configurations}.
+	 * A builder to create new instances of {@link SqlToCypherConfig configurations}.
 	 */
 	public static final class Builder {
 
@@ -219,7 +219,7 @@ public final class Sql2CypherConfig {
 					null);
 		}
 
-		private Builder(Sql2CypherConfig config) {
+		private Builder(SqlToCypherConfig config) {
 			this(config.parseNameCase, config.renderNameCase, config.jooqDiagnosticLogging, config.tableToLabelMappings,
 					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint, config.alwaysEscapeNames,
 					config.parseNamedParamPrefix);
@@ -335,8 +335,8 @@ public final class Sql2CypherConfig {
 		 * Finishes building a new configuration. The builder is safe to reuse afterward.
 		 * @return a new immutable configuration
 		 */
-		public Sql2CypherConfig build() {
-			return new Sql2CypherConfig(this);
+		public SqlToCypherConfig build() {
+			return new SqlToCypherConfig(this);
 		}
 
 		private boolean alwaysEscapeNames() {

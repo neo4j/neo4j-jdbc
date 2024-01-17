@@ -27,39 +27,39 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class Sql2CypherConfigTests {
+class SqlToCypherConfigTests {
 
 	@Test
 	void configFromNullPropertiesShouldUseDefault() {
 
-		var config = Sql2CypherConfig.of(null);
-		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
+		var config = SqlToCypherConfig.of(null);
+		assertThat(config).isSameAs(SqlToCypherConfig.defaultConfig());
 	}
 
 	@Test
 	void configFromEmptyPropertiesShouldUseDefault() {
 
-		var config = Sql2CypherConfig.of(Map.of());
-		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
+		var config = SqlToCypherConfig.of(Map.of());
+		assertThat(config).isSameAs(SqlToCypherConfig.defaultConfig());
 	}
 
 	@Test
 	void configFromNonMatchingPropertiesShouldUseDefault() {
 
-		var config = Sql2CypherConfig.of(Map.of("a", "b"));
-		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
+		var config = SqlToCypherConfig.of(Map.of("a", "b"));
+		assertThat(config).isSameAs(SqlToCypherConfig.defaultConfig());
 	}
 
 	@Test
 	void shouldIgnoreUnknowns() {
-		var config = Sql2CypherConfig.of(Map.of("s2c.foobar", "whatever"));
-		assertThat(config).isSameAs(Sql2CypherConfig.defaultConfig());
+		var config = SqlToCypherConfig.of(Map.of("s2c.foobar", "whatever"));
+		assertThat(config).isSameAs(SqlToCypherConfig.defaultConfig());
 	}
 
 	@Test
 	void shouldParseKnowns() {
 
-		var config = Sql2CypherConfig.of(Map.of("s2c.parse-name-case", ParseNameCase.LOWER_IF_UNQUOTED.name(),
+		var config = SqlToCypherConfig.of(Map.of("s2c.parse-name-case", ParseNameCase.LOWER_IF_UNQUOTED.name(),
 				"s2c.renderNameCase", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true",
 				"s2c.sql-dialect", SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix",
 				"foo", "s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",

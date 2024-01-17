@@ -30,11 +30,11 @@ import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
  * @author Michael J. Simons
  * @since 1.0.0
  */
-public final class Sql2CypherTranslatorFactory implements SqlTranslatorFactory {
+public final class SqlToCypherTranslatorFactory implements SqlTranslatorFactory {
 
 	@Override
 	public SqlTranslator create(Map<String, String> config) {
-		return Sql2Cypher.with(Sql2CypherConfig.of(config));
+		return SqlToCypher.with(SqlToCypherConfig.of(config));
 	}
 
 	@Override

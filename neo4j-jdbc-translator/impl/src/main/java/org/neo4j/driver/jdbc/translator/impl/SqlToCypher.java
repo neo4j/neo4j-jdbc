@@ -79,29 +79,30 @@ import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
 /**
- * Quick proof of concept of a jOOQ/Cypher-DSL based SQL to Cypher translator.
+ * A jOOQ/Cypher-DSL based SQL to Cypher translator and the default translator for the
+ * Neo4j JDBC driver when bundled.
  *
  * @author Lukas Eder
  * @author Michael J. Simons
  * @author Michael Hunger
  */
-final class Sql2Cypher implements SqlTranslator {
+final class SqlToCypher implements SqlTranslator {
 
-	static final Logger LOGGER = Logger.getLogger(Sql2Cypher.class.getName());
+	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
 
 	static SqlTranslator defaultTranslator() {
-		return new Sql2Cypher(Sql2CypherConfig.defaultConfig());
+		return new SqlToCypher(SqlToCypherConfig.defaultConfig());
 	}
 
-	static SqlTranslator with(Sql2CypherConfig config) {
-		return new Sql2Cypher(config);
+	static SqlTranslator with(SqlToCypherConfig config) {
+		return new SqlToCypher(config);
 	}
 
-	private final Sql2CypherConfig config;
+	private final SqlToCypherConfig config;
 
 	private final Configuration rendererConfig;
 
-	private Sql2Cypher(Sql2CypherConfig config) {
+	private SqlToCypher(SqlToCypherConfig config) {
 
 		this.config = config;
 		this.rendererConfig = Configuration.newConfig()
@@ -890,7 +891,7 @@ final class Sql2Cypher implements SqlTranslator {
 				return config.getOrDefault("label", t.getName());
 			}
 
-			return Sql2Cypher.this.config.getTableToLabelMappings()
+			return SqlToCypher.this.config.getTableToLabelMappings()
 				.entrySet()
 				.stream()
 				.filter(e -> e.getKey().equalsIgnoreCase(t.getName()))
@@ -903,7 +904,7 @@ final class Sql2Cypher implements SqlTranslator {
 			var t = (tableOrAlias instanceof TableAlias<?> ta) ? ta.$aliased() : tableOrAlias;
 			var key = t.getName() + "." + field.getName();
 
-			return Sql2Cypher.this.config.getJoinColumnsToTypeMappings()
+			return SqlToCypher.this.config.getJoinColumnsToTypeMappings()
 				.entrySet()
 				.stream()
 				.filter(e -> e.getKey().equalsIgnoreCase(key))
