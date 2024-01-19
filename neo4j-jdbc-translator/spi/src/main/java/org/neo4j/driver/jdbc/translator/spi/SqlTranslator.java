@@ -18,6 +18,8 @@
  */
 package org.neo4j.driver.jdbc.translator.spi;
 
+import java.sql.DatabaseMetaData;
+
 /**
  * This is an SPI interface to be implemented by tooling that is able to translate queries
  * written in SQL and their parameters to Neo4j's own query langauge Cypher.
@@ -36,7 +38,25 @@ public interface SqlTranslator {
 	 * @throws NullPointerException if {@code sql} is {@literal null}
 	 * @throws IllegalArgumentException if {@code sql} cannot be translated to a Neo4j
 	 * native statement by the implementor
+	 * @see #translate(String, DatabaseMetaData)
 	 */
-	String translate(String sql);
+	default String translate(String sql) {
+		return translate(sql, null);
+	}
+
+	/**
+	 * Translate the given SQL query into a Neo4j native query. This method might behave
+	 * different and more optimized when {@link DatabaseMetaData database meta-data} is
+	 * available.
+	 * @param sql the SQL query. Must not be {@literal null} and must be a valid
+	 * statement.
+	 * @param optionalDatabaseMetaData optional {@link DatabaseMetaData} that might be
+	 * used to further refine translations, can safely be left {@literal null}
+	 * @return a Neo4j native query
+	 * @throws NullPointerException if {@code sql} is {@literal null}
+	 * @throws IllegalArgumentException if {@code sql} cannot be translated to a Neo4j
+	 * native statement by the implementor
+	 */
+	String translate(String sql, DatabaseMetaData optionalDatabaseMetaData);
 
 }

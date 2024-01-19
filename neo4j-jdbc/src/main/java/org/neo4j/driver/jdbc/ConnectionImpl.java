@@ -103,8 +103,13 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.warning = warning;
 	}
 
-	UnaryOperator<String> getSqlProcessor() {
-		return this.automaticSqlTranslation ? this.sqlTranslator.resolve()::translate : null;
+	UnaryOperator<String> getSqlProcessor() throws SQLException {
+		if (!this.automaticSqlTranslation) {
+			return null;
+		}
+		var sqlTranslator = this.sqlTranslator.resolve();
+		var metaData = this.getMetaData();
+		return sql -> sqlTranslator.translate(sql, metaData);
 	}
 
 	UnaryOperator<Integer> getIndexProcessor() {

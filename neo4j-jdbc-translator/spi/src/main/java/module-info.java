@@ -19,4 +19,6 @@
 module neo4j.jdbc.translator.spi {
 
 	exports org.neo4j.driver.jdbc.translator.spi;
+
+	requires transitive java.sql;
 }

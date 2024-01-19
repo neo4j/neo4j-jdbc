@@ -902,20 +902,20 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var query = "call db.schema.nodeTypeProperties() yield nodeLabels, propertyName, propertyTypes %s";
+		var query = "CALL db.schema.nodeTypeProperties() YIELD nodeLabels, propertyName, propertyTypes";
 
 		Map<String, Object> queryParams = new HashMap<>();
-		String composedWhere = "";
+		String composedWhere = null;
 
 		if (tableNamePattern != null && !tableNamePattern.equals("%")) {
-			composedWhere = "WHERE TABLE_NAME=$name";
+			composedWhere = "WHERE $name IN nodeLabels";
 			queryParams.put("name", tableNamePattern);
 		}
 
 		if (columnNamePattern != null && !columnNamePattern.equals("%")) {
-			var columnNameWhereStatement = "COLUMN_NAME=$column_name";
+			var columnNameWhereStatement = "propertyName=$column_name";
 
-			if (composedWhere.isEmpty()) {
+			if (composedWhere == null) {
 				composedWhere = "WHERE %s".formatted(columnNameWhereStatement);
 			}
 			else {
@@ -924,7 +924,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			}
 		}
 
-		query = query.formatted(composedWhere);
+		if (composedWhere != null) {
+			query = query + " WITH * " + composedWhere + " RETURN *";
+		}
 
 		var pullResponse = doQueryForPullResponse(query, queryParams);
 		var records = pullResponse.records();

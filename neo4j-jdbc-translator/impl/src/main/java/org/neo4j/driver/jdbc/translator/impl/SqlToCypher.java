@@ -18,6 +18,8 @@
  */
 package org.neo4j.driver.jdbc.translator.impl;
 
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -64,6 +67,7 @@ import org.neo4j.cypherdsl.core.ExposesRelationships;
 import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.PatternElement;
+import org.neo4j.cypherdsl.core.PropertyContainer;
 import org.neo4j.cypherdsl.core.Relationship;
 import org.neo4j.cypherdsl.core.RelationshipChain;
 import org.neo4j.cypherdsl.core.ResultStatement;
@@ -113,12 +117,12 @@ final class SqlToCypher implements SqlTranslator {
 	}
 
 	@Override
-	public String translate(String sql) {
+	public String translate(String sql, DatabaseMetaData databaseMetaData) {
 		Query query = parse(sql);
 
 		ContextAwareStatementBuilder statementBuilder = new ContextAwareStatementBuilder();
 		if (query instanceof Select<?> s) {
-			return render(statementBuilder.statement(s));
+			return render(statementBuilder.statement(s, databaseMetaData));
 		}
 		else if (query instanceof QOM.Delete<?> d) {
 			return render(statementBuilder.statement(d));
@@ -185,7 +189,8 @@ final class SqlToCypher implements SqlTranslator {
 	}
 
 	private static IllegalArgumentException unsupported(QueryPart p) {
-		return new IllegalArgumentException("Unsupported SQL expression: " + p);
+		return new IllegalArgumentException(
+				"Unsupported SQL expression: " + p + " (Was of type " + p.getClass().getName() + ")");
 	}
 
 	private static Node nodeWithProperties(Node src, Map<String, Expression> properties) {
@@ -209,6 +214,12 @@ final class SqlToCypher implements SqlTranslator {
 		 */
 		private final Map<String, Expression> columnsAndValues = new LinkedHashMap<>();
 
+		/**
+		 * Key is the column name, value is the number of times a column with the name has
+		 * been returned. Used for generating unique names.
+		 */
+		private final Map<String, AtomicInteger> returnColumns = new HashMap<>();
+
 		Statement statement(QOM.Delete<?> d) {
 			Node e = (Node) resolveTableOrJoin(d.$from());
 
@@ -224,7 +235,7 @@ final class SqlToCypher implements SqlTranslator {
 			return Cypher.match(e).detachDelete(e.asExpression()).build();
 		}
 
-		ResultStatement statement(Select<?> incoming) {
+		ResultStatement statement(Select<?> incoming, DatabaseMetaData databaseMetaData) {
 
 			Select<?> x;
 			boolean addLimit = false;
@@ -241,7 +252,7 @@ final class SqlToCypher implements SqlTranslator {
 			// Done lazy as otherwise the property containers won't be resolved
 			Supplier<List<Expression>> resultColumnsSupplier = () -> x.$select()
 				.stream()
-				.map(this::expression)
+				.flatMap(selectFieldOrAsterisk -> expression(selectFieldOrAsterisk, x.$from(), databaseMetaData))
 				.toList();
 
 			if (x.$from().isEmpty()) {
@@ -249,7 +260,6 @@ final class SqlToCypher implements SqlTranslator {
 			}
 
 			OngoingReadingWithoutWhere m1 = Cypher.match(x.$from().stream().map(this::resolveTableOrJoin).toList());
-
 			OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
 					: (OngoingReadingWithWhere) m1;
 
@@ -374,6 +384,12 @@ final class SqlToCypher implements SqlTranslator {
 			}
 		}
 
+		private String uniqueColumnName(String s) {
+			var cnt = this.returnColumns.computeIfAbsent(s, k -> new AtomicInteger(0))
+				.getAndAccumulate(1, Integer::sum);
+			return s + ((cnt > 0) ? cnt : "");
+		}
+
 		Statement statement(QOM.Update<?> update) {
 			var table = update.$table();
 			var node = (Node) this.resolveTableOrJoin(table);
@@ -387,19 +403,102 @@ final class SqlToCypher implements SqlTranslator {
 			return Cypher.match(node).where(condition(update.$where())).set(updates).build();
 		}
 
-		private Expression expression(SelectFieldOrAsterisk t) {
+		private Stream<Expression> expression(SelectFieldOrAsterisk t, QOM.UnmodifiableList<? extends Table<?>> tables,
+				DatabaseMetaData databaseMetaData) {
+
 			if (t instanceof SelectField<?> s) {
-				return expression(s);
+				var theField = (s instanceof QOM.FieldAlias<?> fa) ? fa.$aliased() : s;
+				Expression col = null;
+				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
+					// This has optimization potential.
+					var allTables = unnestFromClause(tables);
+					if (allTables.size() == 1) {
+						var propertyContainer = (PropertyContainer) resolveTableOrJoin(allTables.get(0));
+						col = propertyContainer.getSymbolicName()
+							.filter(f -> !f.getValue().equals(tf.getName()))
+							.map(__ -> propertyContainer.property(tf.getName()))
+							.orElse(null);
+					}
+					if (col == null) {
+						col = Cypher.name(tf.getName());
+					}
+				}
+				else {
+					col = expression(s);
+				}
+
+				if (s instanceof QOM.FieldAlias<?> fa) {
+					col = col.as(fa.$alias().last());
+				}
+
+				return Stream.of(col);
 			}
 			else if (t instanceof Asterisk) {
-				return Cypher.asterisk();
+				var properties = projectAllColumns(unnestFromClause(tables), databaseMetaData);
+				if (properties.isEmpty()) {
+					properties.add(Cypher.asterisk());
+				}
+				return properties.stream();
 			}
 			else if (t instanceof QualifiedAsterisk q && resolveTableOrJoin(q.$table()) instanceof Node node) {
-				return node.getSymbolicName().orElseGet(() -> Cypher.name(q.$table().getName()));
+
+				var properties = new ArrayList<Expression>();
+				for (var table : unnestFromClause(tables)) {
+					if (table instanceof TableAlias<?> tableAlias
+							&& tableAlias.getName().equals(q.$table().getName())) {
+						properties.addAll(projectAllColumns(List.of(tableAlias), databaseMetaData));
+						break;
+					}
+				}
+				if (properties.isEmpty()) {
+					var symbolicName = node.getSymbolicName().orElseGet(() -> Cypher.name(q.$table().getName()));
+					properties.add(symbolicName.project(Cypher.asterisk()).as(symbolicName));
+				}
+				return properties.stream();
 			}
 			else {
 				throw unsupported(t);
 			}
+		}
+
+		private List<Expression> projectAllColumns(List<? extends Table<?>> allTables,
+				DatabaseMetaData databaseMetaData) {
+			List<Expression> properties = new ArrayList<>();
+			if (databaseMetaData == null) {
+				return properties;
+			}
+			for (Table<?> table : allTables) {
+				var pc = (PropertyContainer) resolveTableOrJoin(table);
+				var tableName = labelOrType(table);
+				try (var columns = databaseMetaData.getColumns(null, null, tableName, null)) {
+					properties.add(Cypher.call("elementId")
+						.withArgs(pc.asExpression())
+						.asFunction()
+						.as(uniqueColumnName(pc.getRequiredSymbolicName().getValue() + "_element_id")));
+					while (columns.next()) {
+						var columnName = columns.getString("COLUMN_NAME");
+						properties.add(pc.property(columnName).as(uniqueColumnName(columnName)));
+					}
+				}
+				catch (SQLException ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+			return properties;
+		}
+
+		List<? extends Table<?>> unnestFromClause(List<? extends Table<?>> tables) {
+			List<Table<?>> result = new ArrayList<>();
+			for (Table<?> table : tables) {
+				if (table instanceof QOM.JoinTable<?, ? extends Table<?>> join) {
+					result.addAll(unnestFromClause(List.of(join.$table1())));
+					result.addAll(unnestFromClause(List.of(join.$table2())));
+				}
+				else {
+					result.add(table);
+				}
+			}
+			return result;
 		}
 
 		private Expression expression(SelectField<?> s) {
@@ -820,7 +919,9 @@ final class SqlToCypher implements SqlTranslator {
 		}
 
 		private PatternElement resolveTableOrJoin(Table<?> t) {
-			if (t instanceof QOM.Join<?> join && join.$on() instanceof QOM.Eq<?> eq) {
+			if (t instanceof QOM.JoinTable<?, ? extends Table<?>> joinTable) {
+				QOM.Join<?> join = (joinTable instanceof QOM.Join<?> $join) ? $join : null;
+				QOM.Eq<?> eq = (join != null && join.$on() instanceof QOM.Eq<?> $eq) ? $eq : null;
 
 				String relType;
 				SymbolicName relSymbolicName = null;
@@ -828,26 +929,33 @@ final class SqlToCypher implements SqlTranslator {
 				PatternElement lhs;
 				PatternElement rhs;
 
-				Table<?> t1 = join.$table1();
-				if (t1 instanceof QOM.Join<?> lhsJoin) {
+				Table<?> t1 = joinTable.$table1();
+				if (t1 instanceof QOM.JoinTable<?, ? extends Table<?>> lhsJoin) {
 					lhs = resolveTableOrJoin(lhsJoin.$table1());
 					relType = labelOrType(lhsJoin.$table2());
 					if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
 						relSymbolicName = symbolicName(tableAlias.getName());
 					}
 				}
-				else {
+				else if (eq != null) {
 					lhs = resolveTableOrJoin(t1);
 					relType = type(t1, eq.$arg2());
 				}
+				else if (join != null && join.$using().isEmpty()) {
+					throw unsupported(joinTable);
+				}
+				else {
+					lhs = resolveTableOrJoin(t1);
+					relType = (join != null) ? type(t1, join.$using().get(0)) : null;
+				}
 
-				rhs = resolveTableOrJoin(join.$table2());
+				rhs = resolveTableOrJoin(joinTable.$table2());
 
 				if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
 
 					var direction = Relationship.Direction.LTR;
-					if (join.$table2() instanceof TableAlias<?> ta
-							&& ta.$alias().last().equals(eq.$arg2().getQualifiedName().first())) {
+					if (eq != null && joinTable.$table2() instanceof TableAlias<?> ta && !ta.$alias().empty()
+							&& Objects.equals(ta.$alias().last(), eq.$arg2().getQualifiedName().first())) {
 						direction = Relationship.Direction.RTL;
 					}
 
@@ -863,13 +971,14 @@ final class SqlToCypher implements SqlTranslator {
 					return relationship;
 				}
 				else {
-					throw unsupported(join);
+					throw unsupported(joinTable);
 				}
 			}
 
 			if (t instanceof TableAlias<?> ta) {
-				if (resolveTableOrJoin(ta.$aliased()) instanceof Node) {
-					return Cypher.node(labelOrType(ta.$aliased())).named(symbolicName(ta.$alias().last()));
+				if (resolveTableOrJoin(ta.$aliased()) instanceof Node && !ta.$alias().empty()) {
+					return Cypher.node(labelOrType(ta.$aliased()))
+						.named(symbolicName(Objects.requireNonNull(ta.$alias().last())));
 				}
 				else {
 					throw unsupported(ta);

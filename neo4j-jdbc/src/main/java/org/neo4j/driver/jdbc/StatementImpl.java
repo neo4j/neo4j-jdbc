@@ -96,8 +96,8 @@ class StatementImpl implements Statement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = false;
-		var transaction = this.transactionSupplier.getTransaction();
 		sql = processSQL(sql);
+		var transaction = this.transactionSupplier.getTransaction();
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
 		var runAndPull = transaction.runAndPull(sql, parameters(), fetchSize, this.queryTimeout);
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
@@ -111,8 +111,8 @@ class StatementImpl implements Statement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = false;
-		var transaction = this.transactionSupplier.getTransaction();
 		sql = processSQL(sql);
+		var transaction = this.transactionSupplier.getTransaction();
 		return transaction.runAndDiscard(sql, parameters(), this.queryTimeout, transaction.isAutoCommit())
 			.resultSummary()
 			.map(ResultSummary::counters)
@@ -206,8 +206,8 @@ class StatementImpl implements Statement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = true;
-		var transaction = this.transactionSupplier.getTransaction();
 		sql = processSQL(sql);
+		var transaction = this.transactionSupplier.getTransaction();
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
 		var runAndPull = transaction.runAndPull(sql, parameters(), fetchSize, this.queryTimeout);
 		var pullResponse = runAndPull.pullResponse();

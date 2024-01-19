@@ -36,8 +36,7 @@ public class MovieRepository {
 
 	@Transactional(readOnly = true)
 	public List<Movie> findAll() {
-		return this.jdbcTemplate.query("SELECT m.title AS title FROM Movie m",
-				(rs, rowNum) -> new Movie(rs.getString("title")));
+		return this.jdbcTemplate.query("SELECT * FROM Movie m", (rs, rowNum) -> new Movie(rs.getString("title")));
 	}
 
 	public int createOrUpdate(Movie movie) {

@@ -41,6 +41,15 @@ public sealed interface Neo4jPreparedStatement
 	 */
 	void setString(String parameterName, String string) throws SQLException;
 
+	/**
+	 * Named-parameter version of {@link #setInt(int, int)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setInt(int, int)
+	 */
+	void setInt(String parameterName, int value) throws SQLException;
+
 	// TODO remaining mutators
 
 }

@@ -11,6 +11,41 @@ We implemented some variants thereof, however we don't claim their absolute usef
 
 == 1:n joins
 
+=== Natural joins
+
+SQL `NATURAL` joins are the easiest way to denote relationship names without having todo any mapping.
+
+[source,sql,id=nj1,name=naturalJoin]
+----
+SELECT p, m FROM Person p
+NATURAL JOIN Movie m
+----
+
+A one-hope `NATURAL JOIN` will resolve to an anonymous, wildcard relationship:
+
+[source,cypher,id=nj1_expected]
+----
+MATCH (p:Person)-->(m:Movie) RETURN p, m
+----
+
+`NATURAL` joins can be chained like this, the connecting join table does not need to exist:
+
+[source,sql,id=nj2,name=naturalJoins,metaData=Movie:title|released]
+----
+SELECT p.name, r.role, m.* FROM Person p
+NATURAL JOIN ACTED_IN r
+NATURAL JOIN Movie m
+----
+
+It will be turned into a Neo4j relation:
+
+[source,cypher,id=nj2_expected]
+----
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
+RETURN p.name, r.role,
+       elementId(m) AS m_element_id, m.title AS title, m.released AS released
+----
+
 === Simple join
 
 We configured the translator use the following table mapping:

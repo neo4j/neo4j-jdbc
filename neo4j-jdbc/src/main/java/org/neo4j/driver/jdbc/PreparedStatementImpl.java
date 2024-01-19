@@ -181,10 +181,17 @@ sealed class PreparedStatementImpl extends StatementImpl
 	}
 
 	@Override
-	public void setInt(int parameterIndex, int x) throws SQLException {
+	public void setInt(String parameterName, int value) throws SQLException {
 		assertIsOpen();
+		Objects.requireNonNull(parameterName);
+		this.parameters.put(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setInt(int parameterIndex, int value) throws SQLException {
+
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setInt(computeParameterIndex(parameterIndex), value);
 	}
 
 	@Override

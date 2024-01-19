@@ -42,35 +42,254 @@ WHERE t.a = 1
 RETURN t.a, t.b
 ----
 
-We recommend using table aliases, but the translations works without them as well:
+We recommend using table aliases, but the translations works without them as well.
 
-[source,sql,id=t1_2]
+== Star-Selects
+
+A star- or `*` select comes in different forms:
+
+Unqualified::
+`SELECT * FROM table`
+Qualified::
+`SELECT t.* FROM table t`
+
+And a variant, selecting the relation itself: `SELECT t FROM table t`.
+
+We make use of this fact to give users a way to decide whether they want to return Neo4j nodes and relationships as entities, maps or flattened to individual columns.
+The latter however requires our translator to have access to the schema of the underlying Neo4j database.
+The following sections will describe the use-cases:
+
+=== Projecting individual properties
+
+Don't use a star-select but enumerate the properties:
+
+[source,sql,id=star_1]
 ----
-SELECT my_table.* FROM My_Table
+SELECT m.title FROM Movie m
 ----
 
-In that case we use the lower-cased table name as symbolic name:
+The table alias will be used as a symbolic name
 
-[source,cypher,id=t1_2_expected]
+[source,cypher,id=star_1_expected]
 ----
-MATCH (my_table:My_Table)
-RETURN my_table
-----
-
-In the example above we used de-referenced the whole table with the `*`, which was translated into the name for the table.
-If you use the asterisk without an alias, it will be used as is:
-
-[source,sql,id=t1_3]
-----
-SELECT * FROM My_Table
+MATCH (m:Movie)
+RETURN m.title;
 ----
 
-So that it returns all the names as well as properties if any:
+You can omit the table alias:
 
-[source,cypher,id=t1_3_expected]
+[source,sql,id=star_2]
 ----
-MATCH (my_table:My_Table)
-RETURN *
+SELECT title FROM Movie
+----
+
+The lower-cased table name will be the symbolic name:
+
+[source,cypher,id=star_2_expected]
+----
+MATCH (movie:Movie)
+RETURN movie.title;
+----
+
+If you access your JDBC columns by name, this might lead to code that is hard to maintain
+You might want to alias the column, then:
+
+[source,sql,id=star_3]
+----
+SELECT title AS title FROM Movie
+----
+
+So that it has a stable, well-known name:
+
+[source,cypher,id=star_3_expected]
+----
+MATCH (movie:Movie)
+RETURN movie.title AS title;
+----
+
+=== Projecting all properties
+
+If you run a
+
+[source,sql,id=star_5]
+----
+SELECT * FROM Movie m
+----
+
+you will get the following Cypher statement in case you run the translation offline:
+
+[source,cypher,id=star_5_expected]
+----
+MATCH (m:Movie) RETURN *
+----
+
+The above query will return one column ("m"), which is a Neo4j node.
+This is usually not what is expected in the relational world.
+If you run the translation online and Neo4j metadata can be retrieved,
+it will generate a statement that flattens the properties of each node and relationship plus their element ids:
+
+In case the `Person` node has properties `born` and `name`
+
+[source,sql,id=star_6,name=unqualifiedAsteriskSingleTable,metaData=Person:born|name]
+----
+SELECT * FROM Person p
+----
+
+you will get this Cypher statement
+
+[source,cypher,id=star_6_expected]
+----
+MATCH (p:Person)
+RETURN elementId(p) AS p_element_id,
+       p.born AS born, p.name AS name
+----
+
+This works well with multiple tables as well (`Movie` has properties `title` and `released`)
+
+[source,sql,id=star_7,name=unqualifiedAsteriskMultipleTables,metaData=Person:born|name;Movie:title|released]
+----
+SELECT * FROM Person p JOIN Movie m ON m.id = p.acted_in
+----
+
+Properties will be delivered as requested:
+
+[source,cypher,id=star_7_expected]
+----
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+RETURN elementId(p) AS p_element_id, p.born AS born, p.name AS name,
+       elementId(m) AS m_element_id, m.title AS title, m.released AS released
+----
+
+We add increasing numbers to column names if they clash (we duplicated the `name` property and added a `remark` to the metadata):
+
+[source,sql,id=star_8,name=unqualifiedAsteriskDuplicatedColumns,metaData=Person:born|name|remark;Movie:name|released|remark]
+----
+SELECT * FROM Person p JOIN Movie m ON m.id = p.acted_in
+----
+
+Note the increasing numbers per duplicate name:
+
+[source,cypher,id=star_8_expected]
+----
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+RETURN elementId(p) AS p_element_id,
+       p.born AS born, p.name AS name, p.remark AS remark,
+       elementId(m) AS m_element_id,
+       m.name AS name1, m.released AS released, m.remark AS remark1
+----
+
+The following example uses a join-table to access relationships (we explain this later in this manual), but the flattening of properties works there as well:
+
+[source,sql,id=star_9,name=unqualifiedAsteriskJoinTable, metaData=ACTED_IN:role;Person:born|name;Movie:title|released,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN]
+----
+SELECT *
+FROM people p
+JOIN movie_actors r ON r.person_id = p.id
+JOIN movies m ON m.id = r.person_id
+----
+
+[source,cypher,id=star_9_expected]
+----
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
+RETURN elementId(p) AS p_element_id,
+       p.born AS born, p.name AS name,
+       elementId(r) AS r_element_id, r.role AS role,
+       elementId(m) AS m_element_id,
+       m.title AS title, m.released AS released
+----
+
+A qualified alias can be used as well.
+In case without meta-data it will return a map of properties of the node or relationship in question:
+
+[source,sql,id=star_4,name=mapQualifiedAsteriskWithoutMetadata]
+----
+SELECT m.*, p.*
+FROM Person p
+JOIN Movie m ON m.id = p.acted_in
+----
+
+The corresponding columns must be downcast to a Map in JDBC:
+
+[source,cypher,id=star_4_expected]
+----
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+RETURN m{.*} AS m, p{.*} AS p
+----
+
+If we add meta-data (here `born` and `name` to `Person`), the qualified star will project all those:
+
+[source,sql,id=star_4a,name=mapQualifiedAsteriskWithMetadata,metaData=Person:born|name]
+----
+SELECT p.*, m.title AS title
+FROM Person p
+JOIN Movie m ON m.id = p.acted_in
+----
+
+Note how we also projected one single, known property from the `Movie` node:
+
+[source,cypher,id=star_4a_expected]
+----
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+RETURN elementId(p) AS p_element_id, p.born AS born, p.name AS name, m.title AS title
+----
+
+=== Returning nodes and relationships
+
+A statement that projects a table alias such as
+
+[source,sql,id=star_n,name=tableAlias]
+----
+SELECT m FROM Movie m
+----
+
+will result in a Cypher statement returning the matched node as node.
+
+[source,cypher,id=star_n_expected]
+----
+MATCH (m:Movie)
+RETURN m;
+----
+
+A node can be alias as well:
+
+[source,sql,id=star_n2]
+----
+SELECT m AS node FROM Movie m
+----
+
+will result in a Cypher statement returning the matched node as node.
+
+[source,cypher,id=star_n2_expected]
+----
+MATCH (m:Movie)
+RETURN m AS node;
+----
+
+Unaliased tables can be used as well:
+
+[source,sql,id=star_n3]
+----
+SELECT movie FROM Movie
+----
+
+[source,cypher,id=star_n3_expected]
+----
+MATCH (movie:Movie)
+RETURN movie;
+----
+
+And multiple entities are supported, too:
+
+[source,sql,id=star_10]
+----
+SELECT p, r, m FROM Person p
+JOIN ACTED_IN r ON r.person_id = p.id
+JOIN Movie m ON m.id = r.movie_id
+----
+
+[source,cypher,id=star_10_expected]
+----
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN p, r, m
 ----
 
 == Comparing SQL with Cypher examples
@@ -92,6 +311,23 @@ FROM products as p
 Similarly, in Cypher, you just *match* a simple pattern: all nodes with the *label* `:Product` and `RETURN` them.
 
 [source,cypher,id=t2_0_expected]
+----
+MATCH (p:Product)
+RETURN p{.*} AS p
+----
+
+The above query will project all properties of the matched node.
+If you want to select the node itself, just select it without using the asterisk:
+
+[source,sql,id=t2_0a,name=select_and_return_records,table_mappings=products:Product]
+----
+SELECT p
+FROM products as p
+----
+
+It will be translated into a query that returns nodes:
+
+[source,cypher,id=t2_0a_expected]
 ----
 MATCH (p:Product)
 RETURN p

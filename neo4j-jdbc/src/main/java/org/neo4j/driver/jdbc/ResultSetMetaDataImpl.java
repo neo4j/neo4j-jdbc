@@ -173,6 +173,10 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData {
 
 	@Override
 	public String getColumnClassName(int column) throws SQLException {
+		if (this.firstRecord == null) {
+			return Object.class.getName();
+		}
+
 		Type type = this.firstRecord.get(column - 1).type();
 
 		switch (type) {

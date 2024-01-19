@@ -54,6 +54,9 @@ public final class Neo4jTestResource implements QuarkusTestResourceLifecycleMana
 				{
 					"statements": [
 						{
+							"statement": "MATCH (n) DETACH DELETE n"
+						},
+						{
 							"statement": "MERGE (m:Movie {title: $title}) RETURN m",
 							"parameters": {
 								"title": "Der frühe Vogel fängt den Wurm"
