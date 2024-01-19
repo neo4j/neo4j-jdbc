@@ -13,93 +13,99 @@ Michael Simons <michael.simons@neo4j.com>
 
 [abstract]
 --
-This is another shot at implementing a JDBC driver for Neo4j.
-It does not wrap the https://github.com/neo4j/neo4j-java-driver[Neo4j-Java-Driver] but does implement the necessary pieces of the https://neo4j.com/docs/bolt/current/[Bolt protocol] itself.
-It won't flatten nodes and relationships and will use `java.sql.Struct` for structured types such as nodes and entities.
+// tag::abstract[]
+This is the manual for the official Neo4j JDBC Driver.
+
+WARNING: The Neo4j JDBC Driver is in Early Access Preview (EAP) and might break unexpectedly.
+Being in EAP means that you have the opportunity to provide feedback on the implementation of the driver.
+The functionality and behaviour released in the GA release may differ from those available in the EAP.
+
+This driver is officially supported and endorsed by Neo4j.
+It is a standalone driver, independent of and *not* built on top of the https://github.com/neo4j/neo4j-java-driver[common Neo4j Java Driver].
+While the latter provides a Neo4j-idiomatic way to access Neo4j from Java, the JDBC driver adheres to https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC 4.3].
+// end::abstract[]
 --
 
 image:https://github.com/neo4j/neo4j-jdbc/workflows/build/badge.svg[link=https://github.com/neo4j/neo4j-jdbc/actions]
 image:https://sonar.neo4j.ninja/api/project_badges/measure?project=neo4j-jdbc&token=sqb_6d14b417b6cd8c19820429dde7fd0dd34f0f5302&metric=coverage[link=https://sonar.neo4j.ninja/dashboard?id=neo4j-jdbc]
 image:https://sonar.neo4j.ninja/api/project_badges/measure?project=neo4j-jdbc&token=sqb_6d14b417b6cd8c19820429dde7fd0dd34f0f5302&metric=alert_status[link=https://sonar.neo4j.ninja/dashboard?id=neo4j-jdbc]
 
-== Desired features
+== Download
 
-- Full support for JDBC 4 automatic service discovery of JDBC driver (via service loader)
-- Full configurability via url
-- No wrapping of the Java driver
-- There must be a built-in abstraction for schema discovery. For the first iterations we will use the same or a similar algorithm to introspect the graph as suggested in the https://github.com/neo4j/graph-schema-introspector/blob/main/src/main/java/org/neo4j/graph_schema/introspector/GraphSchema.java#L160[graph-schema-introspector] which is a copy of https://github.com/neo4j/graphql/blob/d9fa063652ddbbd61d14b47debaf1d21be2805b9/packages/introspector/src/to-internal-struct.ts#L50[essentially]
-- Optionally translating SQL to Cypher
-- logging only via `java.util.logging`
+The Maven coordinates in the documentation and corresponding README are not yet live.
+In the meantime you can grab a packaged binary from the https://github.com/neo4j/neo4j-jdbc/releases/tag/early-access[early access release page], which will be actively updated.
+If you feel adventurous, grab the code and build the driver yourself.
+You find the instructions in our link:CONTRIBUTING.adoc[contribution documentation].
 
-== Metadata
+== Introduction
+// tag::introduction[]
+The JDBC acronym stands for "Java Database Connectivity" and as such is not bound exclusively to relational databases.
+Nevertheless, JDBC is highly influenced by the SQL standard and existing, relational databases, in regard to terms, definitions and behaviour defined.
+Neo4j is a graph database with quite a different paradigm than relational and a non-standardized behaviour in some areas.
+There might be some details that don't map 100% in each place, and we make sure to educate you about these in this documentation
 
-=== Catalog and schema
+NOTE: Inside this documentation we will refer to *this* driver as the _Neo4j JDBC Driver_ and to the idiomatic Neo4j driver as the _common Neo4j Java Driver_.
 
-All the methods on connection level dealing out metadata and information about the available content deal in terms that are defined in the SQL standard, including catalogs and schemas.
+The Neo4j JDBC Driver requires JDK 17 on the client side and a minimum version of Neo4j 5.5 on the server side.
+To use it against a Neo4j cluster, server-side routing must be enabled on the cluster.
 
-From the SQL 1992 standard (find an archived copy http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt[here]):
+=== Features
 
-> (4.12) Catalogs are named collections of schemas in an SQL-environment. An
-SQL-environment contains zero or more catalogs. A catalog con-
-tains one or more schemas, but always contains a schema named
-INFORMATION_SCHEMA that contains the views and domains of the
-Information Schema.
+* JDK 17 baseline
+* Fully supports the Java module system
+* Adheres to JDBC 4.3
+* Can run any Cypher statement
+* Implements `DatabaseMetaData` and `ResultSetMetaData` as fully as possible with a nearly schemaless database and general very flexible result sets, allowing for automatic metadata retrieval from ETL and ELT tools
+* Provides an https://en.wikipedia.org/wiki/Service_provider_interface[SPI] to hook in translators from SQL to Cypher
+* Provides an optional default implementation to translate many SQL statements into semantically similar Cypher statements
+* Can be safely used with JDBC connection pools as opposed to the common Neo4j Java Driver or any JDBC driver based on that, as it doesn't do internal connection pooling and transaction management otherwise than dictated by the JDBC Spec
 
-We decided in https://github.com/neo4j/neo4j-jdbc/discussions/55[55] to not support catalogs at the beginning, so any metadata result set will return literal `null` when asked for the catalog of a database object.
-No metadata method does support filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
-Future developments might use catalogs to describe composite databases, in essence listing the constituents of the composite database defined in the connection.
+The absence of any connection pooling and transaction management is actually an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
+It allows to pick and choose any database connection pooling system such as https://github.com/brettwooldridge/HikariCP[HikariCP] and transaction management such as https://jakarta.ee/specifications/transactions/[Jakarta Transactions].
 
-The same standard defines schemas as follows:
+NOTE: The default SQL to Cypher translation implementation is based on https://www.jooq.org[jOOQ] by https://www.datageekery.com[Datageekery].
+We are a long-time fans of how Lukas Eder—inventor of jOOQ—has bridged the gap between Java and database querying.
+It even inspired the https://github.com/neo4j-contrib/cypher-dsl[Cypher-DSL], providing the other half of our translation layer.
+We are grateful for kick-starting the original Sql2Cypher project together in early 2023, on which we can build now.
 
-> (4.11) An SQL-schema is a persistent descriptor that includes:
->
-> […] the descriptor of every component of the SQL-schema.
->
-> In this International Standard, the term "schema" is used only
-> in the sense of SQL-schema. Each component descriptor is either
-> a domain descriptor, a base table descriptor, a view descriptor,
-> an assertion descriptor, a privilege descriptor, a character set
-> descriptor, a collation descriptor, or a translation descriptor.
-> The persistent objects described by the descriptors are said to be
-> owned by or to have been created by the <authorization identifier>
-> of the schema.
+=== Limitations
 
-We report the literal name `public` as schema for any result component of a metadata result set.
-We support querying for objects in any schema, however only literal `null` or `public` will potentially produce a result.
+* The database metadata is retrieved on a best effort base, using existing schema methods of Neo4j, such as `db.labels`, `db.schema.nodeTypeProperties()`
+* While single label nodes map naturally to table names, Nodes with multiple labels don't
+* There is no reliable way to always determine the datatype for properties on nodes without reading all of them (which this driver does not do)
+* Some JDBC features are not yet supported (such as the `CallableStatement`), some feature won't ever be supported
+* The SQL to Cypher translator does only support a limited subset of clauses and SQL constructs that can be semantically equivalent translated to Cypher (See xref:s2c_supported_statements[xrefstyle=short])
+* There is no "right" way to map `JOIN` statements to relations, so your mileage may vary
 
-Labels will be reported as table objects with the `TABLE_TYPE` being literal `TABLE`.
+=== When to use the Neo4j JDBC Driver?
 
-==== Summary
+This driver has been developed with the following use-cases in mind:
 
-* Catalog: Always `null`, trying to filter on anything non-null does not yield results
-* Schema: Always `public`, filtering on `public` and literal will yield result, anything else won't.
-* Table descriptors: Reported as `TABLE` in the `TABLE_TYPE` column.
+* Integration with ETL and ELT tools that don't offer an integration based on the common Neo4j Java driver
+* An easier on-ramp towards Neo4j for teams that are familiar with JDBC and want to keep on using that API, but with Cypher and Neo4j
+* Integration for ecosystems like Jakarta EE whose transaction management will directly support any compliant JDBC driver
+* Integration with database migration tools such as Flyway
 
-=== Labels to tables
+There is *no need* to redesign an application that is build on the common Neo4j Java Driver to use this driver.
+If your ecosystem already provides a higher-level integration based on the common Neo4j Java Driver, such as https://github.com/spring-projects/spring-data-neo4j[Spring Data Neo4j (SDN)] for https://spring.io/projects/spring-boot/[Spring], there is no need to switch to something else.
+In case of https://quarkus.io[Quarkus] the Neo4j JDBC Driver is an option to consider: While we do provide an integration for the https://github.com/quarkiverse/quarkus-neo4j[common Neo4j Java Driver], this integration does not support Quarkus' transaction systems in contrast to this driver.
 
-The CLG and Langstar groups speak about https://docs.google.com/document/d/1WwQ7Y_YS8e2A9v1uM8JE7uQquFkwWBgs-xiFIWQ8KFY/edit?pli=1#heading=h.yeg3e4six5xr[Node type combinations] and gravitates towards "open node type semantics" in the GQL standard.
+While there is little incentive to use this driver with Hibernate (https://github.com/neo4j/neo4j-ogm[Neo4j-OGM] or SDN are the better alternatives for Neo4j), it might be worth giving https://spring.io/projects/spring-data-jdbc/[Spring Data JDBC] a try.
 
-An example for their proposal can be seen https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19[here].
+=== Differences to existing JDBC drivers for Neo4j
 
-We therefor compute node types in a similar way:
+Several other JDBC drivers exists for Neo4j, most notably the https://github.com/neo4j-contrib/neo4j-jdbc[one] developed by http://larus-ba.it/[Larus BA, Italy], commissioned by Neo4j and kind of the predecessor to this driver.
+Most—if not all of them—do wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.
+This comes with a bunch of problems:
 
-* Single label nodes will map naturally to a table name, the single label will become the table name
-** The label name will be taken as is and will be case-sensitive. So if you have three labels `Movie`, `movie`, `MOVIE` you will see three tables in the meta-data
-** This is in-line with the default SQL to Cypher translation
-* Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically, so that it is independent of the way Neo4j will return those
-* Property sets for these Node type combinations will then be computed
+* The common Neo4j Java Driver manages a connection pool; JDBC drivers on the other hand delegate this task to dedicated pooling solutions: If you take the above-mentioned driver into a standard container, you will eventually end up with a pool of pools
+* The transaction management of the common Neo4j Java Driver is not exactly aligned with the way JDBC thinks about transactions, it's usually hard to get this exactly right
+* Additionally, the original JDBC driver from Larus shades a couple of dependencies, such as Jackson as well as additional logging frameworks which takes a toll on the classpath and in case of logging, does actually lead to runtime problems
 
-== TODOs
+There are some drivers available that provide a SQL to Cypher translation layer as well.
+Those however are read-only and cannot be used for ETL use-cases aiming to ingest data into Neo4j.
 
-- [x] Define URL format (See https://github.com/neo4j/neo4j-jdbc/discussions/26[26])
-- [x] Implement service loader functionality
-- [x] Research what parts of the Bolt protocol stack from the Java driver needs to be ported / copied
-- [ ] Work along the JDBC interfaces to implement piece by piece
-- [ ] Define type mappings for structured types
-- [ ] Define custom useragent and required infra
-
-== Resources
-
-- https://download.oracle.com/otndocs/jcp/jdbc-4_3-mrel3-spec/index.html[JDBC 4.3 Spec]
-- https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC Spec for Java 17]
-- https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html[JDBC Basics] (JDK 8 based, still useful though)
+One feature that this driver does not provide is automatic reshaping or flattening of the result-sets, as the previous incarnation does:
+If you query for objects such as nodes, relationships, paths or maps you can and should use `getObject` on the result-sets and cast to the appropriate type (you find all of them inside the package `org.neo4j.driver.jdbc.values`).
+However, the default SQL to Cypher translator will—when connected to a database—figure out what properties labels have and turn the asterisk (`*`) into individual columns of nodes and relationships, just like what you would expect when running a `SELECT *` statement.
+// end::introduction[]

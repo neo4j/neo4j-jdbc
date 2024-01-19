@@ -1,4 +1,5 @@
 * xref:quickstart.adoc[]
 * xref:distribution.adoc[]
 * xref:configuration.adoc[]
+* xref:metadata.adoc[]
 * xref:sql2cypher.adoc[]
