@@ -241,8 +241,8 @@ final class SqlToCypher implements SqlTranslator {
 			boolean addLimit = false;
 			// Assume it's a funny, wrapper checked query
 			if (incoming.$from().$first() instanceof TableAlias<?> tableAlias
-					&& tableAlias.$table() instanceof QOM.DerivedTable<?> d && incoming.$where() != null) {
-				addLimit = true;
+					&& tableAlias.$table() instanceof QOM.DerivedTable<?> d) {
+				addLimit = incoming.$where() != null;
 				x = d.$arg1();
 			}
 			else {
@@ -474,7 +474,7 @@ final class SqlToCypher implements SqlTranslator {
 					properties.add(Cypher.call("elementId")
 						.withArgs(pc.asExpression())
 						.asFunction()
-						.as(uniqueColumnName(pc.getRequiredSymbolicName().getValue() + "_element_id")));
+						.as(uniqueColumnName("element_id")));
 					while (columns.next()) {
 						var columnName = columns.getString("COLUMN_NAME");
 						properties.add(pc.property(columnName).as(uniqueColumnName(columnName)));

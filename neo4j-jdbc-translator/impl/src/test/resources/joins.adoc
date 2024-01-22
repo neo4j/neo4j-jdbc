@@ -43,7 +43,7 @@ It will be turned into a Neo4j relation:
 ----
 MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
 RETURN p.name, r.role,
-       elementId(m) AS m_element_id, m.title AS title, m.released AS released
+       elementId(m) AS element_id, m.title AS title, m.released AS released
 ----
 
 === Simple join

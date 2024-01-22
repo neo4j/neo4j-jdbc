@@ -140,7 +140,7 @@ you will get this Cypher statement
 [source,cypher,id=star_6_expected]
 ----
 MATCH (p:Person)
-RETURN elementId(p) AS p_element_id,
+RETURN elementId(p) AS element_id,
        p.born AS born, p.name AS name
 ----
 
@@ -156,8 +156,8 @@ Properties will be delivered as requested:
 [source,cypher,id=star_7_expected]
 ----
 MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS p_element_id, p.born AS born, p.name AS name,
-       elementId(m) AS m_element_id, m.title AS title, m.released AS released
+RETURN elementId(p) AS element_id, p.born AS born, p.name AS name,
+       elementId(m) AS element_id1, m.title AS title, m.released AS released
 ----
 
 We add increasing numbers to column names if they clash (we duplicated the `name` property and added a `remark` to the metadata):
@@ -172,9 +172,9 @@ Note the increasing numbers per duplicate name:
 [source,cypher,id=star_8_expected]
 ----
 MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS p_element_id,
+RETURN elementId(p) AS element_id,
        p.born AS born, p.name AS name, p.remark AS remark,
-       elementId(m) AS m_element_id,
+       elementId(m) AS element_id1,
        m.name AS name1, m.released AS released, m.remark AS remark1
 ----
 
@@ -191,10 +191,10 @@ JOIN movies m ON m.id = r.person_id
 [source,cypher,id=star_9_expected]
 ----
 MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS p_element_id,
+RETURN elementId(p) AS element_id,
        p.born AS born, p.name AS name,
-       elementId(r) AS r_element_id, r.role AS role,
-       elementId(m) AS m_element_id,
+       elementId(r) AS element_id1, r.role AS role,
+       elementId(m) AS element_id2,
        m.title AS title, m.released AS released
 ----
 
@@ -230,7 +230,7 @@ Note how we also projected one single, known property from the `Movie` node:
 [source,cypher,id=star_4a_expected]
 ----
 MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS p_element_id, p.born AS born, p.name AS name, m.title AS title
+RETURN elementId(p) AS element_id, p.born AS born, p.name AS name, m.title AS title
 ----
 
 === Returning nodes and relationships
