@@ -19,6 +19,7 @@
 package org.neo4j.driver.it.cp;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,34 @@ import org.neo4j.driver.jdbc.Neo4jPreparedStatement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PreparedStatementIT extends IntegrationTestBase {
+
+	@Test
+	void simpleBatchShouldWork() throws SQLException {
+		try (var connection = getConnection(false, false);
+				var statement = connection.prepareStatement("CREATE (n:BatchTestSimple {idx: $1})")) {
+			for (int i = 0; i < 3; ++i) {
+				statement.setInt(1, i);
+				statement.addBatch();
+			}
+			var result = statement.executeBatch();
+			assertThat(result).hasSize(4);
+			assertThat(result).containsExactly(3, 3, 3, Statement.SUCCESS_NO_INFO);
+		}
+	}
+
+	@Test
+	void rewrittenBatchShouldWork() throws SQLException {
+		try (var connection = getConnection(false, true);
+				var statement = connection.prepareStatement("CREATE (n:BatchTestSimple {idx: $1})")) {
+			for (int i = 0; i < 3; ++i) {
+				statement.setInt(1, i);
+				statement.addBatch();
+			}
+			var result = statement.executeBatch();
+			assertThat(result).hasSize(1);
+			assertThat(result).containsExactly(9);
+		}
+	}
 
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
@@ -125,7 +154,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 	@Test
 	void executeShouldAutomaticallyTranslate() throws SQLException {
 
-		try (var connection = getConnection(true)) {
+		try (var connection = getConnection(true, false)) {
 
 			try (var ps = connection.prepareStatement("INSERT INTO Movie(name) VALUES (?)")) {
 				ps.setString(1, "Praxis Dr. Hasenbein");

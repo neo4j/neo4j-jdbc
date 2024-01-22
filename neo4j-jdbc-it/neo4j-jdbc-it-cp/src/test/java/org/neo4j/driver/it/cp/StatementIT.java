@@ -168,7 +168,7 @@ class StatementIT extends IntegrationTestBase {
 	@Test
 	void executeShouldAutomaticallyTranslate() throws SQLException {
 
-		try (var connection = getConnection(true); var statement = connection.createStatement()) {
+		try (var connection = getConnection(true, false); var statement = connection.createStatement()) {
 			var isUpdate = statement.execute("INSERT INTO Movie(name) VALUES ('Praxis Dr. Hasenbein')");
 			assertThat(isUpdate).isFalse();
 
@@ -195,7 +195,7 @@ class StatementIT extends IntegrationTestBase {
 	@Test
 	void orderOrGroupByUnrelated() throws SQLException {
 
-		try (var connection = getConnection(true)) {
+		try (var connection = getConnection(true, false)) {
 
 			record Movie(String title, int year) {
 			}

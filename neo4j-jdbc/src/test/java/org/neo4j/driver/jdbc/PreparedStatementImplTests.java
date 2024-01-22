@@ -109,7 +109,7 @@ class PreparedStatementImplTests {
 
 	private static PreparedStatementImpl newStatement(Connection connection,
 			Neo4jTransactionSupplier transactionSupplier, String query) {
-		return new PreparedStatementImpl(connection, transactionSupplier, null, null, query);
+		return new PreparedStatementImpl(connection, transactionSupplier, null, null, false, query);
 	}
 
 	@Test
@@ -281,8 +281,6 @@ class PreparedStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.setCursorName("name"),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.addBatch("query"), SQLException.class),
-				Arguments.of((StatementMethodRunner) Statement::clearBatch, SQLException.class),
-				Arguments.of((StatementMethodRunner) Statement::executeBatch, SQLException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
 						SQLFeatureNotSupportedException.class),
@@ -291,7 +289,6 @@ class PreparedStatementImplTests {
 				// not currently supported
 				Arguments.of((StatementMethodRunner) statement -> statement.setObject(1, null, Types.NULL),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) PreparedStatementImpl::addBatch, SQLException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRef(1, null),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(Blob.class)),
@@ -420,7 +417,7 @@ class PreparedStatementImplTests {
 
 		parameterSettingRunner.run(this.statement);
 
-		assertThat(this.statement.parameters()).isEqualTo(Map.of("1", expectedValue));
+		assertThat(this.statement.getCurrentBatch()).isEqualTo(Map.of("1", expectedValue));
 	}
 
 	static Stream<Arguments> getShouldSetParameterArgs() {
@@ -507,7 +504,7 @@ class PreparedStatementImplTests {
 
 		this.statement.setObject(1, object);
 
-		assertThat(this.statement.parameters()).isEqualTo(Map.of("1", expectedValue));
+		assertThat(this.statement.getCurrentBatch()).isEqualTo(Map.of("1", expectedValue));
 	}
 
 	static Stream<Arguments> getShouldSetObjectParameterArgs() {
@@ -530,7 +527,7 @@ class PreparedStatementImplTests {
 
 		this.statement.clearParameters();
 
-		assertThat(this.statement.parameters().isEmpty()).isTrue();
+		assertThat(this.statement.getCurrentBatch().isEmpty()).isTrue();
 	}
 
 	@Test

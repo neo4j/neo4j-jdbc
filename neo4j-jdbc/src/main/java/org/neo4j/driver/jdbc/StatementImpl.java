@@ -23,8 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
-import java.sql.Statement;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -36,9 +34,7 @@ import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.driver.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.driver.jdbc.internal.bolt.response.SummaryCounters;
 
-class StatementImpl implements Statement {
-
-	static final int DEFAULT_FETCH_SIZE = 1000;
+non-sealed class StatementImpl implements Neo4jStatement {
 
 	// Adding the comment /*+ NEO4J FORCE_CYPHER */ to your Cypher statement will make the
 	// JDBC driver opt-out from translating it to Cypher, even if the driver has been
@@ -46,7 +42,7 @@ class StatementImpl implements Statement {
 	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
 		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
-	private static final Logger LOGGER = Logger.getLogger(StatementImpl.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger(Neo4jStatement.class.getCanonicalName());
 
 	private final Connection connection;
 
@@ -92,14 +88,22 @@ class StatementImpl implements Statement {
 
 	@Override
 	public ResultSet executeQuery(String sql) throws SQLException {
+		return executeQuery0(sql, true, Map.of());
+	}
+
+	protected final ResultSet executeQuery0(String sql, boolean applyProcessor, Map<String, Object> parameters)
+			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = false;
-		sql = processSQL(sql);
+		if (applyProcessor) {
+			sql = processSQL(sql);
+		}
 		var transaction = this.transactionSupplier.getTransaction();
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(sql, parameters(), fetchSize, this.queryTimeout);
+		var runAndPull = transaction.runAndPull(sql, Objects.requireNonNullElseGet(parameters, Map::of), fetchSize,
+				this.queryTimeout);
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
 				this.fetchSize, this.maxRows, this.maxFieldSize);
 		return this.resultSet;
@@ -107,13 +111,22 @@ class StatementImpl implements Statement {
 
 	@Override
 	public int executeUpdate(String sql) throws SQLException {
+		return executeUpdate0(sql, true, Map.of());
+	}
+
+	protected final int executeUpdate0(String sql, boolean applyProcessor, Map<String, Object> parameters)
+			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = false;
-		sql = processSQL(sql);
+		if (applyProcessor) {
+			sql = processSQL(sql);
+		}
 		var transaction = this.transactionSupplier.getTransaction();
-		return transaction.runAndDiscard(sql, parameters(), this.queryTimeout, transaction.isAutoCommit())
+		return transaction
+			.runAndDiscard(sql, Objects.requireNonNullElseGet(parameters, Map::of), this.queryTimeout,
+					transaction.isAutoCommit())
 			.resultSummary()
 			.map(ResultSummary::counters)
 			.map(SummaryCounters::totalCount)
@@ -202,14 +215,22 @@ class StatementImpl implements Statement {
 
 	@Override
 	public boolean execute(String sql) throws SQLException {
+		return execute0(sql, true, Map.of());
+	}
+
+	protected final boolean execute0(String sql, boolean applyProcessor, Map<String, Object> parameters)
+			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = true;
-		sql = processSQL(sql);
+		if (applyProcessor) {
+			sql = processSQL(sql);
+		}
 		var transaction = this.transactionSupplier.getTransaction();
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(sql, parameters(), fetchSize, this.queryTimeout);
+		var runAndPull = transaction.runAndPull(sql, Objects.requireNonNullElseGet(parameters, Map::of), fetchSize,
+				this.queryTimeout);
 		var pullResponse = runAndPull.pullResponse();
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse, this.fetchSize,
 				this.maxRows, this.maxFieldSize);
@@ -392,16 +413,6 @@ class StatementImpl implements Statement {
 		return iface.isAssignableFrom(getClass());
 	}
 
-	/**
-	 * This extension method can be used for any derived statement implementations to
-	 * supply parameters to {@link Neo4jTransaction#runAndPull(String, Map, int, int)} and
-	 * {@link Neo4jTransaction#runAndDiscard(String, Map, int, boolean)}.
-	 * @return parameters to this statement if any
-	 */
-	protected Map<String, Object> parameters() {
-		return Collections.emptyMap();
-	}
-
 	@Override
 	public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
 		return SchemaNames.sanitize(identifier, alwaysQuote)
@@ -421,7 +432,7 @@ class StatementImpl implements Statement {
 		}
 	}
 
-	private String processSQL(String sql) {
+	protected final String processSQL(String sql) {
 		var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
 		var processedSQL = processor.apply(sql);
 		if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {

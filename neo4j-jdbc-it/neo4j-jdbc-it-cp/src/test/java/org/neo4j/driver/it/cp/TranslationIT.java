@@ -32,7 +32,7 @@ class TranslationIT extends IntegrationTestBase {
 
 		var title = "JDBC the Sequel";
 
-		try (var connection = getConnection(true)) {
+		try (var connection = getConnection(true, false)) {
 			try (var statement = ((Neo4jPreparedStatement) connection.prepareStatement(
 					"/*+ NEO4J FORCE_CYPHER */ CREATE (m:Movie {title:  $title, released: $released})"))) {
 				statement.setString("title", title);

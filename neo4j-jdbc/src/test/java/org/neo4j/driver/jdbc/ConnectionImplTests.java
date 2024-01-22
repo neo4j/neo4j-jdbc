@@ -106,7 +106,7 @@ class ConnectionImplTests {
 		var sql = "SQL";
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(sql)).willReturn(expectedNativeSql);
-		this.connection = new ConnectionImpl(mock(BoltConnection.class), () -> translator, false);
+		this.connection = new ConnectionImpl(mock(BoltConnection.class), () -> translator, false, false);
 
 		var nativeSQL = this.connection.nativeSQL(sql);
 

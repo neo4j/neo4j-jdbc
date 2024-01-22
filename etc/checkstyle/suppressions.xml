@@ -23,6 +23,7 @@
 		"-//Puppy Crawl//DTD Suppressions 1.1//EN"
 		"http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 <suppressions>
+	<suppress checks="InterfaceIsType" files="Neo4jStatement\.java"/>
 	<suppress checks="RegexpHeader" files="package-info\.java"/>
 	<suppress checks="[a-zA-Z0-9]*" files="[\\/]generated-test-sources[\\/]"/>
 	<suppress checks="JavadocVariable" files="org[\\/]neo4j[\\/]driver[\\/]jdbc[\\/]internal[\\/]bolt"/>

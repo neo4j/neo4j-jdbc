@@ -49,9 +49,7 @@ public class SmokeIT {
 		var url = "jdbc:neo4j://%s:%d?user=%s&password=%s".formatted(getHost(), getPort(), "neo4j", getPassword());
 		var connection = DriverManager.getConnection(url);
 		assertThat(connection).isNotNull();
-		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("""
-				MATCH (foobar:FooBar)
-				RETURN *""");
+		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("MATCH (foobar:FooBar) RETURN *");
 	}
 
 	static boolean boltPortIsReachable() {

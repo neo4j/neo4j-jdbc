@@ -128,7 +128,7 @@ class Neo4jDriverTests {
 
 		var config = Neo4jDriver.mergeConfig(urlParams, properties);
 		if (urlParams.length == 0 && properties.isEmpty()) {
-			assertThat(config).isEmpty();
+			assertThat(config).containsOnlyKeys("s2c.alwaysEscapeNames", "s2c.prettyPrint");
 		}
 		else {
 			assertThat(config).containsEntry("sql2cypher", Boolean.toString(expected));

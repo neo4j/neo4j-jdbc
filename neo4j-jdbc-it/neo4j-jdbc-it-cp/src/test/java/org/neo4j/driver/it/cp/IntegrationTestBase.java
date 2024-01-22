@@ -55,15 +55,16 @@ abstract class IntegrationTestBase {
 	}
 
 	final Connection getConnection() throws SQLException {
-		return getConnection(false);
+		return getConnection(false, false);
 	}
 
-	final Connection getConnection(boolean translate) throws SQLException {
+	final Connection getConnection(boolean translate, boolean rewriteBatchedStatements) throws SQLException {
 		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
 		var driver = DriverManager.getDriver(url);
 		var properties = new Properties();
 		properties.put("user", "neo4j");
 		properties.put("password", this.neo4j.getAdminPassword());
+		properties.put("rewriteBatchedStatements", Boolean.toString(rewriteBatchedStatements));
 		if (translate) {
 			properties.put("sql2cypher", "true");
 			properties.put("s2c.alwaysEscapeNames", "false");

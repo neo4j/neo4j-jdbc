@@ -82,9 +82,7 @@ public class Neo4jDriverIT {
 		var connection = DriverManager.getConnection(url);
 		assertThat(connection).isNotNull();
 		assertThat(validateConnection(connection)).isTrue();
-		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("""
-				MATCH (foobar:FooBar)
-				RETURN *""");
+		assertThat(connection.nativeSQL("SELECT * FROM FooBar")).isEqualTo("MATCH (foobar:FooBar) RETURN *");
 	}
 
 	private boolean validateConnection(Connection connection) throws SQLException {

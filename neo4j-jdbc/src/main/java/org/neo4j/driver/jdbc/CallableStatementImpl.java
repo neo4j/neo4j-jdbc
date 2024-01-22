@@ -42,8 +42,9 @@ import java.util.function.UnaryOperator;
 final class CallableStatementImpl extends PreparedStatementImpl implements CallableStatement, Neo4jPreparedStatement {
 
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, String sql) {
-		super(connection, transactionSupplier, sqlProcessor, indexProcessor, sql);
+			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
+			String sql) {
+		super(connection, transactionSupplier, sqlProcessor, indexProcessor, rewriteBatchedStatements, sql);
 	}
 
 	@Override

@@ -43,11 +43,20 @@ import java.sql.Timestamp;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.ValueException;
@@ -56,30 +65,43 @@ import org.neo4j.driver.jdbc.values.Values;
 sealed class PreparedStatementImpl extends StatementImpl
 		implements Neo4jPreparedStatement permits CallableStatementImpl {
 
-	private final String sql;
+	private static final Logger LOGGER = Logger.getLogger(Neo4jPreparedStatement.class.getCanonicalName());
 
-	private final Map<String, Object> parameters = new HashMap<>();
+	// We did not consider using concurrent datastructures as the `PreparedStatement` is
+	// usually not treated as thread-safe
+	private final Deque<Map<String, Object>> parameters = new ArrayDeque<>();
 
 	private final UnaryOperator<Integer> indexProcessor;
 
+	private final boolean rewriteBatchedStatements;
+
+	private final String sql;
+
 	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, String sql) {
+			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
+			String sql) {
 		super(connection, transactionSupplier, sqlProcessor);
 		this.indexProcessor = Objects.requireNonNullElseGet(indexProcessor, UnaryOperator::identity);
+		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.sql = sql;
 		this.poolable = true;
+		this.parameters.add(new HashMap<>());
 	}
 
 	@Override
 	public ResultSet executeQuery() throws SQLException {
 		assertIsOpen();
-		return super.executeQuery(this.sql);
+		return super.executeQuery0(this.sql, true, getCurrentBatch());
+	}
+
+	protected final Map<String, Object> getCurrentBatch() {
+		return this.parameters.getLast();
 	}
 
 	@Override
 	public int executeUpdate() throws SQLException {
 		assertIsOpen();
-		return super.executeUpdate(this.sql);
+		return super.executeUpdate0(this.sql, true, getCurrentBatch());
 	}
 
 	@Override
@@ -100,6 +122,78 @@ sealed class PreparedStatementImpl extends StatementImpl
 	@Override
 	public void addBatch(String sql) throws SQLException {
 		throw newIllegalMethodInvocation();
+	}
+
+	@Override
+	public final void addBatch() throws SQLException {
+		assertIsOpen();
+		this.parameters.addLast(new HashMap<>());
+	}
+
+	@Override
+	public void clearParameters() throws SQLException {
+		assertIsOpen();
+		getCurrentBatch().clear();
+	}
+
+	@Override
+	public int[] executeBatch() throws SQLException {
+
+		// Apply any SQL to Cypher transformation upfront and assume a simple
+		// CREATE statement provided and not something that already does an unwind.
+		// But even without rewriting the batch, it's fast as things don't have
+		// to be parsed twice.
+		var processedSql = processSQL(this.sql);
+		int[] result;
+		if (this.rewriteBatchedStatements) {
+			// No, can't use the comparator constructor here, as that one would be used
+			// to check then for equality as well
+			var keys = new HashSet<String>();
+			var validParameters = new ArrayList<Map<String, Object>>();
+			for (var parameter : this.parameters) {
+				if (parameter.isEmpty()) {
+					continue;
+				}
+				keys.addAll(parameter.keySet());
+				validParameters.add(parameter);
+			}
+			for (String key : keys.stream().sorted(Comparator.comparing(String::length).reversed()).toList()) {
+				// The boundary of the regex works only reliable with indexed parameters,
+				// for named we sorted them descending by length, to make sure the longest
+				// are replaced first.
+				processedSql = processedSql.replaceAll(Pattern.quote("$" + key) + "(?!\\d)",
+						"__parameter['" + key + "']");
+			}
+			processedSql = "UNWIND $__parameters AS __parameter " + processedSql;
+			LOGGER.log(Level.INFO, "Rewrite batch statements is in effect, statement {0} has been rewritten into {1}",
+					new Object[] { this.sql, processedSql });
+			result = new int[] { super.executeUpdate0(processedSql, false, Map.of("__parameters", validParameters)) };
+		}
+		else {
+			result = new int[this.parameters.size()];
+			Arrays.fill(result, SUCCESS_NO_INFO);
+			int i = 0;
+			for (var parameter : this.parameters) {
+				if (parameter.isEmpty()) {
+					continue;
+				}
+				result[i++] = super.executeUpdate0(processedSql, false, parameter);
+			}
+		}
+
+		this.clearBatch();
+		return result;
+	}
+
+	@Override
+	public void clearBatch() throws SQLException {
+		assertIsOpen();
+		this.parameters.clear();
+		this.parameters.add(new HashMap<>());
+	}
+
+	protected final void setParameter(String key, Object value) {
+		getCurrentBatch().put(key, value);
 	}
 
 	@Override
@@ -156,35 +250,35 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setNull(int parameterIndex, int ignored) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.NULL);
+		setParameter(computeParameterIndex(parameterIndex), Values.NULL);
 	}
 
 	@Override
 	public void setBoolean(int parameterIndex, boolean x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setByte(int parameterIndex, byte x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setShort(int parameterIndex, short x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setInt(String parameterName, int value) throws SQLException {
 		assertIsOpen();
 		Objects.requireNonNull(parameterName);
-		this.parameters.put(parameterName, Values.value(value));
+		setParameter(parameterName, Values.value(value));
 	}
 
 	@Override
@@ -198,21 +292,21 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setLong(int parameterIndex, long x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setFloat(int parameterIndex, float x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setDouble(int parameterIndex, double x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
 	}
 
 	@Override
@@ -225,7 +319,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		Objects.requireNonNull(parameterName);
 		Objects.requireNonNull(string);
-		this.parameters.put(parameterName, Values.value(string));
+		setParameter(parameterName, Values.value(string));
 	}
 
 	@Override
@@ -244,7 +338,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(bytes);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(bytes));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(bytes));
 	}
 
 	@Override
@@ -252,7 +346,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(date);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(date.toLocalDate()));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(date.toLocalDate()));
 	}
 
 	@Override
@@ -260,7 +354,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(time);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(time.toLocalTime()));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(time.toLocalTime()));
 	}
 
 	@Override
@@ -268,7 +362,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(timestamp);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(timestamp.toLocalDateTime()));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(timestamp.toLocalDateTime()));
 	}
 
 	@Override
@@ -283,8 +377,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		this.parameters.put(computeParameterIndex(parameterIndex),
-				Values.value(new String(bytes, StandardCharsets.US_ASCII)));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(new String(bytes, StandardCharsets.US_ASCII)));
 	}
 
 	@Override
@@ -305,13 +398,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(bytes));
-	}
-
-	@Override
-	public void clearParameters() throws SQLException {
-		assertIsOpen();
-		this.parameters.clear();
+		setParameter(computeParameterIndex(parameterIndex), Values.value(bytes));
 	}
 
 	@Override
@@ -340,18 +427,13 @@ sealed class PreparedStatementImpl extends StatementImpl
 			catch (ValueException ex) {
 				throw new SQLException(ex);
 			}
-			this.parameters.put(computeParameterIndex(parameterIndex), value);
+			setParameter(computeParameterIndex(parameterIndex), value);
 		}
 	}
 
 	@Override
 	public boolean execute() throws SQLException {
-		return super.execute(this.sql);
-	}
-
-	@Override
-	public void addBatch() throws SQLException {
-		throw new SQLException("Not supported");
+		return super.execute0(this.sql, true, getCurrentBatch());
 	}
 
 	@Override
@@ -367,7 +449,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(new String(charBuffer)));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(new String(charBuffer)));
 	}
 
 	@Override
@@ -405,7 +487,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		}
 		var localDate = date.toLocalDate();
 		var zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, cal.getTimeZone().toZoneId());
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(zonedDateTime));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(zonedDateTime));
 	}
 
 	@Override
@@ -420,7 +502,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		var offsetSeconds = offsetMillis / 1000;
 		var zoneOffset = ZoneOffset.ofTotalSeconds(offsetSeconds);
 		var offsetTime = time.toLocalTime().atOffset(zoneOffset);
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(offsetTime));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(offsetTime));
 	}
 
 	@Override
@@ -433,7 +515,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		}
 		var localDateTime = timestamp.toLocalDateTime();
 		var zonedDateTime = ZonedDateTime.of(localDateTime, cal.getTimeZone().toZoneId());
-		this.parameters.put(computeParameterIndex(parameterIndex), Values.value(zonedDateTime));
+		setParameter(computeParameterIndex(parameterIndex), Values.value(zonedDateTime));
 	}
 
 	@Override
@@ -565,11 +647,6 @@ sealed class PreparedStatementImpl extends StatementImpl
 	@Override
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
-	}
-
-	@Override
-	protected Map<String, Object> parameters() {
-		return this.parameters;
 	}
 
 	private static SQLException newIllegalMethodInvocation() throws SQLException {

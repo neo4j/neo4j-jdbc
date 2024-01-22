@@ -133,10 +133,11 @@ public final class Neo4jDriver implements Driver {
 			.join();
 
 		var automaticSqlTranslation = Boolean.parseBoolean(config.getOrDefault("sql2cypher", "false"));
+		var rewriteBatchedStatements = Boolean.parseBoolean(config.getOrDefault("rewriteBatchedStatements", "true"));
 
 		return new ConnectionImpl(boltConnection,
 				getSqlTranslatorSupplier(automaticSqlTranslation, config, this::getSqlTranslatorFactory),
-				automaticSqlTranslation);
+				automaticSqlTranslation, rewriteBatchedStatements);
 	}
 
 	static String getDefaultUserAgent() {
@@ -159,6 +160,9 @@ public final class Neo4jDriver implements Driver {
 				result.put(matcher.group("name"), matcher.group("value"));
 			}
 		}
+
+		result.putIfAbsent("s2c.prettyPrint", "false");
+		result.putIfAbsent("s2c.alwaysEscapeNames", "false");
 
 		return Map.copyOf(result);
 	}

@@ -72,6 +72,12 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final boolean automaticSqlTranslation;
 
+	/**
+	 * A flag if the {@link Neo4jPreparedStatement prepared statement} should rewrite
+	 * batches into UNWIND statements.
+	 */
+	private final boolean rewriteBatchedStatements;
+
 	private Neo4jTransaction transaction;
 
 	private boolean autoCommit = true;
@@ -87,14 +93,15 @@ final class ConnectionImpl implements Neo4jConnection {
 	ConnectionImpl(BoltConnection boltConnection) {
 		this(boltConnection, () -> {
 			throw new UnsupportedOperationException("No SQL translator available");
-		}, false);
+		}, false, true);
 	}
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator,
-			boolean automaticSqlTranslation) {
+			boolean automaticSqlTranslation, boolean rewriteBatchedStatements) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.sqlTranslator = Lazy.of(sqlTranslator);
 		this.automaticSqlTranslation = automaticSqlTranslation;
+		this.rewriteBatchedStatements = rewriteBatchedStatements;
 	}
 
 	// for testing only
@@ -125,13 +132,15 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
 		assertIsOpen();
-		return new PreparedStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(), sql);
+		return new PreparedStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
+				this.rewriteBatchedStatements, sql);
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql) throws SQLException {
 		assertIsOpen();
-		return new CallableStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(), sql);
+		return new CallableStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
+				this.rewriteBatchedStatements, sql);
 	}
 
 	@Override
