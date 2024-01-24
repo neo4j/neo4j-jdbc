@@ -259,17 +259,17 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 	}
 
 	@Override
-	public void setDate(String parameterName, Date x) throws SQLException {
+	public void setDate(String parameterName, Date value) throws SQLException {
 
 	}
 
 	@Override
-	public void setTime(String parameterName, Time x) throws SQLException {
+	public void setTime(String parameterName, Time value) throws SQLException {
 
 	}
 
 	@Override
-	public void setTimestamp(String parameterName, Timestamp x) throws SQLException {
+	public void setTimestamp(String parameterName, Timestamp value) throws SQLException {
 
 	}
 
@@ -294,7 +294,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 	}
 
 	@Override
-	public void setObject(String parameterName, Object x) throws SQLException {
+	public void setObject(String parameterName, Object value) throws SQLException {
 
 	}
 

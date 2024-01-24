@@ -58,7 +58,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import org.neo4j.driver.jdbc.values.Value;
 import org.neo4j.driver.jdbc.values.ValueException;
 import org.neo4j.driver.jdbc.values.Values;
 
@@ -250,28 +249,28 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setNull(int parameterIndex, int ignored) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.NULL);
+		setParameter(computeParameterName(parameterIndex), Values.NULL);
 	}
 
 	@Override
 	public void setBoolean(int parameterIndex, boolean x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterName(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setByte(int parameterIndex, byte x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterName(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setShort(int parameterIndex, short x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterName(parameterIndex), Values.value(x));
 	}
 
 	@Override
@@ -285,28 +284,28 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setInt(int parameterIndex, int value) throws SQLException {
 
 		assertValidParameterIndex(parameterIndex);
-		setInt(computeParameterIndex(parameterIndex), value);
+		setInt(computeParameterName(parameterIndex), value);
 	}
 
 	@Override
 	public void setLong(int parameterIndex, long x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterName(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setFloat(int parameterIndex, float x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterName(parameterIndex), Values.value(x));
 	}
 
 	@Override
 	public void setDouble(int parameterIndex, double x) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(x));
+		setParameter(computeParameterName(parameterIndex), Values.value(x));
 	}
 
 	@Override
@@ -326,11 +325,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setString(int parameterIndex, String string) throws SQLException {
 
 		assertValidParameterIndex(parameterIndex);
-		setString(computeParameterIndex(parameterIndex), string);
-	}
-
-	private String computeParameterIndex(int parameterIndex) {
-		return String.valueOf(this.indexProcessor.apply(parameterIndex));
+		setString(computeParameterName(parameterIndex), string);
 	}
 
 	@Override
@@ -338,31 +333,46 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(bytes);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(bytes));
+		setParameter(computeParameterName(parameterIndex), Values.value(bytes));
 	}
 
 	@Override
-	public void setDate(int parameterIndex, Date date) throws SQLException {
-		assertIsOpen();
+	public void setDate(int parameterIndex, Date value) throws SQLException {
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(date);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(date.toLocalDate()));
+		setDate(computeParameterName(parameterIndex), value);
 	}
 
 	@Override
-	public void setTime(int parameterIndex, Time time) throws SQLException {
+	public void setDate(String parameterName, Date value) throws SQLException {
 		assertIsOpen();
-		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(time);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(time.toLocalTime()));
+		Objects.requireNonNull(value);
+		setParameter(parameterName, Values.value(value.toLocalDate()));
 	}
 
 	@Override
-	public void setTimestamp(int parameterIndex, Timestamp timestamp) throws SQLException {
-		assertIsOpen();
+	public void setTime(int parameterIndex, Time value) throws SQLException {
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(timestamp);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(timestamp.toLocalDateTime()));
+		setTime(computeParameterName(parameterIndex), value);
+	}
+
+	@Override
+	public void setTime(String parameterName, Time value) throws SQLException {
+		assertIsOpen();
+		Objects.requireNonNull(value);
+		setParameter(parameterName, Values.value(value.toLocalTime()));
+	}
+
+	@Override
+	public void setTimestamp(int parameterIndex, Timestamp value) throws SQLException {
+		assertValidParameterIndex(parameterIndex);
+		setTimestamp(computeParameterName(parameterIndex), value);
+	}
+
+	@Override
+	public void setTimestamp(String parameterName, Timestamp value) throws SQLException {
+		assertIsOpen();
+		Objects.requireNonNull(value);
+		setParameter(parameterName, Values.value(value.toLocalDateTime()));
 	}
 
 	@Override
@@ -377,7 +387,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		setParameter(computeParameterIndex(parameterIndex), Values.value(new String(bytes, StandardCharsets.US_ASCII)));
+		setParameter(computeParameterName(parameterIndex), Values.value(new String(bytes, StandardCharsets.US_ASCII)));
 	}
 
 	@Override
@@ -398,36 +408,50 @@ sealed class PreparedStatementImpl extends StatementImpl
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		setParameter(computeParameterIndex(parameterIndex), Values.value(bytes));
+		setParameter(computeParameterName(parameterIndex), Values.value(bytes));
+	}
+
+	@Override
+	public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
 	}
+	/*
+	 * @Override public void setObject(String parameterName, Object value) throws
+	 * SQLException { assertIsOpen(); Objects.requireNonNull(parameterName);
+	 * Objects.requireNonNull(string); setParameter(parameterName, Values.value(string));
+	 * }
+	 */
 
 	@Override
-	public void setObject(int parameterIndex, Object object) throws SQLException {
-		assertIsOpen();
+	public void setObject(int parameterIndex, Object value) throws SQLException {
 		assertValidParameterIndex(parameterIndex);
-		if (object instanceof Date date) {
-			setDate(parameterIndex, date);
+		setObject(computeParameterName(parameterIndex), value);
+	}
+
+	@Override
+	public void setObject(String parameterName, Object value) throws SQLException {
+		assertIsOpen();
+		if (value instanceof Date date) {
+			setDate(parameterName, date);
 		}
-		else if (object instanceof Time time) {
-			setTime(parameterIndex, time);
+		else if (value instanceof Time time) {
+			setTime(parameterName, time);
 		}
-		else if (object instanceof Timestamp timestamp) {
-			setTimestamp(parameterIndex, timestamp);
+		else if (value instanceof Timestamp timestamp) {
+			setTimestamp(parameterName, timestamp);
 		}
 		else {
-			Value value;
 			try {
-				value = Values.value(object);
+				setParameter(parameterName, Values.value(value));
 			}
 			catch (ValueException ex) {
 				throw new SQLException(ex);
 			}
-			setParameter(computeParameterIndex(parameterIndex), value);
 		}
 	}
 
@@ -449,7 +473,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		setParameter(computeParameterIndex(parameterIndex), Values.value(new String(charBuffer)));
+		setParameter(computeParameterName(parameterIndex), Values.value(new String(charBuffer)));
 	}
 
 	@Override
@@ -487,7 +511,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		}
 		var localDate = date.toLocalDate();
 		var zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, cal.getTimeZone().toZoneId());
-		setParameter(computeParameterIndex(parameterIndex), Values.value(zonedDateTime));
+		setParameter(computeParameterName(parameterIndex), Values.value(zonedDateTime));
 	}
 
 	@Override
@@ -502,7 +526,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		var offsetSeconds = offsetMillis / 1000;
 		var zoneOffset = ZoneOffset.ofTotalSeconds(offsetSeconds);
 		var offsetTime = time.toLocalTime().atOffset(zoneOffset);
-		setParameter(computeParameterIndex(parameterIndex), Values.value(offsetTime));
+		setParameter(computeParameterName(parameterIndex), Values.value(offsetTime));
 	}
 
 	@Override
@@ -515,7 +539,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		}
 		var localDateTime = timestamp.toLocalDateTime();
 		var zonedDateTime = ZonedDateTime.of(localDateTime, cal.getTimeZone().toZoneId());
-		setParameter(computeParameterIndex(parameterIndex), Values.value(zonedDateTime));
+		setParameter(computeParameterName(parameterIndex), Values.value(zonedDateTime));
 	}
 
 	@Override
@@ -570,11 +594,6 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
-	}
-
-	@Override
-	public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
 	}
 
@@ -647,6 +666,10 @@ sealed class PreparedStatementImpl extends StatementImpl
 	@Override
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
+	}
+
+	private String computeParameterName(int parameterIndex) {
+		return String.valueOf(this.indexProcessor.apply(parameterIndex));
 	}
 
 	private static SQLException newIllegalMethodInvocation() throws SQLException {

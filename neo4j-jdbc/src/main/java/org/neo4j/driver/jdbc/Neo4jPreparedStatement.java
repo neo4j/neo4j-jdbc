@@ -18,8 +18,11 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 
 /**
  * A Neo4j specific extension of a {@link PreparedStatement}. It may be referred to for
@@ -49,6 +52,42 @@ public sealed interface Neo4jPreparedStatement
 	 * @see #setInt(int, int)
 	 */
 	void setInt(String parameterName, int value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setDate(int, Date)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setDate(int, Date)
+	 */
+	void setDate(String parameterName, Date value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setTime(int, Time)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setTime(int, Time)
+	 */
+	void setTime(String parameterName, Time value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setTimestamp(int, Timestamp)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setTimestamp(int, Timestamp)
+	 */
+	void setTimestamp(String parameterName, Timestamp value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setObject(int, Object)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setObject(int, Object)
+	 */
+	void setObject(String parameterName, Object value) throws SQLException;
 
 	// TODO remaining mutators
 
