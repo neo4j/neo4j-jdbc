@@ -58,7 +58,7 @@ public final class Neo4jDriver implements Driver {
 
 	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
 
-	private static final String URL_REGEX = "^jdbc:neo4j://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
+	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	private static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
 
@@ -105,7 +105,7 @@ public final class Neo4jDriver implements Driver {
 		}
 
 		var host = matcher.group("host");
-		var port = (matcher.group("port") != null) ? Integer.parseInt(matcher.group(2)) : 7687;
+		var port = (matcher.group("port") != null) ? Integer.parseInt(matcher.group("port")) : 7687;
 		var address = new BoltServerAddress(host, port);
 
 		var securityPlan = SecurityPlans.insecure();

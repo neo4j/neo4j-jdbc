@@ -63,7 +63,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@ParameterizedTest
 	@ValueSource(strings = { "jdbc:neo4j://host", "jdbc:neo4j://host:1000", "jdbc:neo4j://host:1000/database",
-			"jdbc:neo4j://host/database" })
+			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database" })
 	void driverMustAcceptValidUrl(String url) throws SQLException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		assertThat(driver.acceptsURL(url)).isTrue();
@@ -144,15 +144,15 @@ class Neo4jDriverUrlParsingTests {
 					anyInt());
 	}
 
-	@Test
-	void driverMustThrowIfInvalidUrlPassed() {
+	@ParameterizedTest
+	@ValueSource(strings = { "jdbc:neo4j:ThisIsWrong://host", "jdbc:neo4j+all-turns-to-crap://host" })
+	void driverMustThrowIfInvalidUrlPassed(String url) {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
 
-		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> driver.connect("jdbc:neo4j:ThisIsWrong://host", props));
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(url, props));
 	}
 
 	@Test
