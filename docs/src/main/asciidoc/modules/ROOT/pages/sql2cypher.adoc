@@ -1,5 +1,6 @@
 = SQL to Cypher translation
 
+[#s2c_introduction]
 == Introduction
 
 The translation from SQL queries to Cypher is an optional feature of this driver that consists of two parts:

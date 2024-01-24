@@ -44,6 +44,7 @@ RETURN t.a, t.b
 
 We recommend using table aliases, but the translations works without them as well.
 
+[#s2c_star_selects]
 == Star-Selects
 
 A star- or `*` select comes in different forms:

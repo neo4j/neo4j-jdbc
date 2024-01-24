@@ -6,6 +6,8 @@ The Neo4j JDBC Driver is `org.neo4j.driver.jdbc.Neo4jDriver`.
 In modern Java tools you should not have to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
 The class is public API.
 
+We also provide `org.neo4j.driver.jdbc.Neo4jDataSource` as `javax.sql.DataSource`.
+
 == URL and connection properties
 
 The canonical URL format for the Neo4j JDBC Driver is
@@ -21,6 +23,10 @@ The latter is sometimes defined by tooling for you.
 With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.
 
 TIP: There is no need to specify `bolt` or other additional prefixes in the URL, as a matter of fact: The driver does not support this.
+     It does however support adding details about the transport being used:
+     +
+     `neo4j+s` enables encryption and only accepts SSL certificates from the server that are signed by a known certificate authority.
+     `neo4j+ssc` enables encryption and accepts self-signed certificates (which must be added to the certificate store).
 
 The driver accepts the following configuration arguments, either properties or as URL query parameters:
 

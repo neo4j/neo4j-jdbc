@@ -54,4 +54,6 @@ include::configuration.adoc[leveloffset=+1]
 include::metadata.adoc[leveloffset=+1]
 
 include::sql2cypher.adoc[leveloffset=+1]
+
+include::migrating.adoc[leveloffset=+1]
 endif::[]
