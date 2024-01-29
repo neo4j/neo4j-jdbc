@@ -127,7 +127,7 @@
 		<asciidoctorj.version>2.5.11</asciidoctorj.version>
 		<assertj.version>3.25.2</assertj.version>
 		<byte-buddy.version>1.14.11</byte-buddy.version>
-		<checkstyle.version>10.9.2</checkstyle.version>
+		<checkstyle.version>10.13.0</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<docker-maven-plugin.version>0.43.4</docker-maven-plugin.version>

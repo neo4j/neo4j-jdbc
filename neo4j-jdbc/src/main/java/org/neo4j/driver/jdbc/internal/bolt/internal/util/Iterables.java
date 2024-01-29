@@ -120,7 +120,7 @@ public final class Iterables {
 		return (int) ((float) expectedSize / DEFAULT_HASH_MAP_LOAD_FACTOR + 1.0F);
 	}
 
-	private static class EmptyQueue<T> extends AbstractQueue<T> {
+	private static final class EmptyQueue<T> extends AbstractQueue<T> {
 
 		@Override
 		public Iterator<T> iterator() {
