@@ -20,15 +20,13 @@ package org.neo4j.driver.it.cp;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.neo4j.driver.jdbc.Neo4jDriver;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,30 +34,17 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class DatabaseMetadataIT {
+class DatabaseMetadataIT extends IntegrationTestBase {
 
 	private Connection connection;
 
-	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer("neo4j:5.13.0-enterprise");
-
-	@BeforeAll
-	void startNeo4j() throws SQLException {
-		this.neo4j.start();
-
+	DatabaseMetadataIT() {
+		super("neo4j:5.13.0-enterprise");
 	}
 
 	@BeforeAll
 	void startDriver() throws SQLException {
-		var driver = new Neo4jDriver();
-
-		var properties = new Properties();
-		properties.put("user", "neo4j");
-		properties.put("password", this.neo4j.getAdminPassword());
-
-		var url = "jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
-		this.connection = driver.connect(url, properties);
-		assertThat(this.connection).isNotNull();
+		this.connection = getConnection();
 	}
 
 	@Test
@@ -233,7 +218,7 @@ class DatabaseMetadataIT {
 			executeQueryWithoutResult("Create (:%s)".formatted(label));
 		}
 
-		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, null, null)) {
 			while (labelsRs.next()) {
 				var schema = labelsRs.getString(2);
 				assertThat(schema).isEqualTo("public");
@@ -311,6 +296,246 @@ class DatabaseMetadataIT {
 			assertThat(rsMetadata.getColumnName(6)).isEqualTo("reserved_3");
 			assertThat(rsMetadata.getColumnName(7)).isEqualTo("REMARKS");
 			assertThat(rsMetadata.getColumnName(8)).isEqualTo("SPECIFIC_NAME");
+		}
+	}
+
+	// GetColumns
+	@Test
+	void getColumnsTest() throws SQLException {
+		executeQueryWithoutResult("Create (:Test1 {name: 'column1'})");
+		executeQueryWithoutResult("Create (:Test2 {nameTwo: 'column2'})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, null, null)) {
+			var seenTable1 = false;
+			var seenTable2 = false;
+			while (rs.next()) {
+				assertThat(rs.getString("TABLE_NAME")).isNotNull();
+				assertThat(rs.getString("TABLE_NAME")).isNotBlank();
+
+				if (rs.getString("TABLE_NAME").equals("Test2")) {
+					var schema = rs.getString("TABLE_SCHEM");
+					assertThat(schema).isEqualTo("public");
+
+					var columnName = rs.getString("COLUMN_NAME");
+					assertThat(columnName).isEqualTo("nameTwo");
+
+					var columnType = rs.getString("TYPE_NAME");
+					assertThat(columnType).isEqualTo("STRING");
+					seenTable2 = true;
+				}
+				else if (rs.getString("TABLE_NAME").equals("Test1")) {
+					var schema2 = rs.getString("TABLE_SCHEM");
+					assertThat(schema2).isEqualTo("public");
+
+					var columnName2 = rs.getString("COLUMN_NAME");
+					assertThat(columnName2).isEqualTo("name");
+
+					var sqlType = rs.getInt("DATA_TYPE");
+					assertThat(sqlType).isEqualTo(Types.VARCHAR);
+
+					var columnType2 = rs.getString("TYPE_NAME");
+					assertThat(columnType2).isEqualTo("STRING");
+					seenTable1 = true;
+				}
+			}
+
+			assertThat(seenTable2).isTrue();
+			assertThat(seenTable1).isTrue();
+		}
+	}
+
+	@Test
+	void getColumnsForSingleTableTest() throws SQLException {
+		executeQueryWithoutResult("Create (:Test3 {nameToFind: 'test3'})");
+		executeQueryWithoutResult("Create (:Test4 {nameTwo: 'column2'})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test3", null)) {
+			assertThat(rs.next()).isTrue();
+
+			var schema = rs.getString("TABLE_SCHEM");
+			assertThat(schema).isEqualTo("public");
+
+			var columnName = rs.getString("COLUMN_NAME");
+			assertThat(columnName).isEqualTo("nameToFind");
+
+			var columnType = rs.getString("TYPE_NAME");
+			assertThat(columnType).isEqualTo("STRING");
+
+			var sqlType = rs.getInt("DATA_TYPE");
+			assertThat(sqlType).isEqualTo(Types.VARCHAR);
+
+			var tableName = rs.getString("TABLE_NAME");
+			assertThat(tableName).isEqualTo("Test3");
+
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnsWithInteger() throws SQLException {
+		executeQueryWithoutResult("Create (:Test {name: 3})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test", null)) {
+			assertThat(rs.next()).isTrue();
+
+			var schema = rs.getString("TABLE_SCHEM");
+			assertThat(schema).isEqualTo("public");
+
+			var columnName = rs.getString("COLUMN_NAME");
+			assertThat(columnName).isEqualTo("name");
+
+			var columnType = rs.getString("TYPE_NAME");
+			assertThat(columnType).isEqualTo("INTEGER");
+
+			var sqlType = rs.getInt("DATA_TYPE");
+			assertThat(sqlType).isEqualTo(Types.INTEGER);
+
+			var tableName = rs.getString("TABLE_NAME");
+			assertThat(tableName).isEqualTo("Test");
+
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnsWithFloat() throws SQLException {
+		executeQueryWithoutResult("Create (:Test {name: 3.3})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test", null)) {
+			assertThat(rs.next()).isTrue();
+
+			var schema = rs.getString("TABLE_SCHEM");
+			assertThat(schema).isEqualTo("public");
+
+			var columnName = rs.getString("COLUMN_NAME");
+			assertThat(columnName).isEqualTo("name");
+
+			var columnType = rs.getString("TYPE_NAME");
+			assertThat(columnType).isEqualTo("FLOAT");
+
+			var sqlType = rs.getInt("DATA_TYPE");
+			assertThat(sqlType).isEqualTo(Types.FLOAT);
+
+			var tableName = rs.getString("TABLE_NAME");
+			assertThat(tableName).isEqualTo("Test");
+
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnsWithMultipleTypesButOneIsAStringShouldReturnString() throws SQLException {
+		executeQueryWithoutResult("Create (:Test4 {nameToFind: 'test4'})");
+		executeQueryWithoutResult("Create (:Test4 {nameToFind: 3})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+			assertThat(rs.next()).isTrue();
+
+			var schema = rs.getString("TABLE_SCHEM");
+			assertThat(schema).isEqualTo("public");
+
+			var columnName = rs.getString("COLUMN_NAME");
+			assertThat(columnName).isEqualTo("nameToFind");
+
+			var columnType = rs.getString("TYPE_NAME");
+			assertThat(columnType).isEqualTo("STRING");
+
+			var sqlType = rs.getInt("DATA_TYPE");
+			assertThat(sqlType).isEqualTo(Types.VARCHAR);
+
+			var tableName = rs.getString("TABLE_NAME");
+			assertThat(tableName).isEqualTo("Test4");
+
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnsWithMultipleTypesShouldAny() throws SQLException {
+		executeQueryWithoutResult("Create (:Test4 {nameToFind: date(\"2019-06-01\")})");
+		executeQueryWithoutResult("Create (:Test4 {nameToFind: 3})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+			assertThat(rs.next()).isTrue();
+
+			var schema = rs.getString("TABLE_SCHEM");
+			assertThat(schema).isEqualTo("public");
+
+			var columnName = rs.getString("COLUMN_NAME");
+			assertThat(columnName).isEqualTo("nameToFind");
+
+			var columnType = rs.getString("TYPE_NAME");
+			assertThat(columnType).isEqualTo("ANY");
+
+			var sqlType = rs.getInt("DATA_TYPE");
+			assertThat(sqlType).isEqualTo(Types.OTHER);
+
+			var tableName = rs.getString("TABLE_NAME");
+			assertThat(tableName).isEqualTo("Test4");
+
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnsWithPoint() throws SQLException {
+		executeQueryWithoutResult("Create (:Test4 {nameToFind: point({srid:7203, x: 3.0, y: 0.0})})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+			assertThat(rs.next()).isTrue();
+
+			var schema = rs.getString("TABLE_SCHEM");
+			assertThat(schema).isEqualTo("public");
+
+			var columnName = rs.getString("COLUMN_NAME");
+			assertThat(columnName).isEqualTo("nameToFind");
+
+			var columnType = rs.getString("TYPE_NAME");
+			assertThat(columnType).isEqualTo("POINT");
+
+			var sqlType = rs.getInt("DATA_TYPE");
+			assertThat(sqlType).isEqualTo(Types.STRUCT);
+
+			var tableName = rs.getString("TABLE_NAME");
+			assertThat(tableName).isEqualTo("Test4");
+
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnsWithLists() throws SQLException {
+		executeQueryWithoutResult("Create (:Test4 {long: [1,2]})");
+		executeQueryWithoutResult("Create (:Test4 {double: [1.1,2.1]})");
+		executeQueryWithoutResult("Create (:Test4 {string: ['1','2']})");
+
+		var databaseMetadata = this.connection.getMetaData();
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+			for (int i = 0; i < 3; i++) {
+				assertThat(rs.next()).isTrue();
+
+				var schema = rs.getString("TABLE_SCHEM");
+				assertThat(schema).isEqualTo("public");
+
+				var columnName = rs.getString("COLUMN_NAME");
+				assertThat(columnName).isIn("long", "double", "string");
+
+				var columnType = rs.getString("TYPE_NAME");
+				assertThat(columnType).isEqualTo("LIST");
+
+				var sqlType = rs.getInt("DATA_TYPE");
+				assertThat(sqlType).isEqualTo(Types.ARRAY);
+
+				var tableName = rs.getString("TABLE_NAME");
+				assertThat(tableName).isEqualTo("Test4");
+			}
 		}
 	}
 

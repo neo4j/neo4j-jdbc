@@ -33,12 +33,19 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class IntegrationTestBase {
 
+	IntegrationTestBase() {
+		this.neo4j = TestUtils.getNeo4jContainer();
+	}
+
+	IntegrationTestBase(String neo4jContainerName) {
+		this.neo4j = TestUtils.getNeo4jContainer(neo4jContainerName);
+	}
+
 	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
+	protected final Neo4jContainer<?> neo4j;
 
 	@BeforeAll
 	void startNeo4j() {
-
 		this.neo4j.start();
 	}
 

@@ -941,39 +941,40 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			var propertyName = record.get(1);
 			var propertyTypes = record.get(2);
 
-			var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
-			if (propertyTypeList.size() > 1) {
-				// some kind of logging?
-			}
-			var propertyType = propertyTypeList.get(0);
+			if (!propertyName.isNull() && !propertyTypes.isNull()) {
+				var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
 
-			var nodeLabelList = nodeLabels.asList(label -> label);
-			for (Value nodeLabel : nodeLabelList) {
-				var values = new Value[22];
-				values[0] = Values.NULL; // TABLE_CAT
-				values[1] = Values.value("public"); // TABLE_SCHEM is always public
-				values[2] = nodeLabel; // TABLE_NAME
-				values[3] = propertyName; // COLUMN_NAME
-				values[4] = Values.value(Neo4jTypeToSqlTypeMapper.toSqlType(propertyType.type())); // DATA_TYPE
-				values[5] = propertyType; // TYPE_NAME
-				values[6] = Values.value(-1); // COLUMN_SIZE
-				values[7] = Values.NULL; // BUFFER_LENGTH
-				values[8] = Values.NULL; // DECIMAL_DIGITS
-				values[9] = Values.value(2); // NUM_PREC_RADIX
-				values[10] = Values.value(1); // NULLABLE = true
-				values[11] = Values.NULL; // REMARKS
-				values[12] = Values.NULL; // COLUMN_DEF
-				values[13] = Values.value(Neo4jTypeToSqlTypeMapper.toSqlType(propertyType.type())); // SQL_DATA_TYPE
-				values[14] = Values.NULL; // SQL_DATETIME_SUB
-				values[15] = Values.NULL; // CHAR_OCTET_LENGTH
-				values[16] = Values.value(nodeLabelList.indexOf(nodeLabel)); // ORDINAL_POSITION
-				values[17] = Values.value("YES"); // IS_NULLABLE
-				values[18] = Values.NULL; // SCOPE_CATALOG
-				values[19] = Values.NULL; // SCOPE_SCHEMA
-				values[20] = Values.NULL; // SCOPE_TABLE
-				values[21] = Values.NULL; // SOURCE_DATA_TYPE
+				var propertyType = getTypeFromList(propertyTypeList, propertyName.asString());
 
-				rows.add(values);
+				var nodeLabelList = nodeLabels.asList(label -> label);
+				for (Value nodeLabel : nodeLabelList) {
+					var values = new Value[22];
+					values[0] = Values.NULL; // TABLE_CAT
+					values[1] = Values.value("public"); // TABLE_SCHEM is always public
+					values[2] = nodeLabel; // TABLE_NAME
+					values[3] = propertyName; // COLUMN_NAME
+					values[4] = Values
+						.value(Neo4jTypeToSqlTypeMapper.toSqlTypeFromOldCypherType(propertyType.asString())); // DATA_TYPE
+					values[5] = Values.value(Neo4jTypeToSqlTypeMapper.oldCypherTypesToNew(propertyType.asString())); // TYPE_NAME
+					values[6] = Values.value(-1); // COLUMN_SIZE
+					values[7] = Values.NULL; // BUFFER_LENGTH
+					values[8] = Values.NULL; // DECIMAL_DIGITS
+					values[9] = Values.value(2); // NUM_PREC_RADIX
+					values[10] = Values.value(1); // NULLABLE = true
+					values[11] = Values.NULL; // REMARKS
+					values[12] = Values.NULL; // COLUMN_DEF
+					values[13] = Values.NULL; // SQL_DATA_TYPE - unused
+					values[14] = Values.NULL; // SQL_DATETIME_SUB
+					values[15] = Values.NULL; // CHAR_OCTET_LENGTH
+					values[16] = Values.value(nodeLabelList.indexOf(nodeLabel)); // ORDINAL_POSITION
+					values[17] = Values.value("YES"); // IS_NULLABLE
+					values[18] = Values.NULL; // SCOPE_CATALOG
+					values[19] = Values.NULL; // SCOPE_SCHEMA
+					values[20] = Values.NULL; // SCOPE_TABLE
+					values[21] = Values.NULL; // SOURCE_DATA_TYPE
+
+					rows.add(values);
+				}
 			}
 		}
 
@@ -1005,6 +1006,24 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
 				staticPullResponse, -1, -1, -1);
+	}
+
+	private static Value getTypeFromList(List<Value> types, String propertyName) {
+		if (types.size() > 1) {
+			LOGGER.log(Level.FINE,
+					"More than one property type found for property %s, api will still return first one found.",
+					propertyName);
+
+			for (var propertyType : types) {
+				if (propertyType.asString().equals("String")) {
+					return propertyType;
+				}
+			}
+
+			return Values.value("Any");
+		}
+
+		return types.get(0);
 	}
 
 	private static ArrayList<String> getKeysForGetColumns() {
