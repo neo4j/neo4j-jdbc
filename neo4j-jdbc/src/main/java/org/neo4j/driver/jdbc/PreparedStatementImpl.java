@@ -124,7 +124,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 	}
 
 	@Override
-	public final void addBatch() throws SQLException {
+	public void addBatch() throws SQLException {
 		assertIsOpen();
 		this.parameters.addLast(new HashMap<>());
 	}
@@ -137,7 +137,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public int[] executeBatch() throws SQLException {
-
+		assertIsOpen();
 		// Apply any SQL to Cypher transformation upfront and assume a simple
 		// CREATE statement provided and not something that already does an unwind.
 		// But even without rewriting the batch, it's fast as things don't have
@@ -282,9 +282,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setInt(int parameterIndex, int value) throws SQLException {
-
+		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setInt(computeParameterName(parameterIndex), value);
+		setParameter(computeParameterName(parameterIndex), Values.value(value));
 	}
 
 	@Override
@@ -323,9 +323,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setString(int parameterIndex, String string) throws SQLException {
-
+		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setString(computeParameterName(parameterIndex), string);
+		setParameter(computeParameterName(parameterIndex), Values.value(string));
 	}
 
 	@Override
@@ -338,8 +338,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setDate(int parameterIndex, Date value) throws SQLException {
+		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setDate(computeParameterName(parameterIndex), value);
+		setParameter(computeParameterName(parameterIndex), Values.value(value.toLocalDate()));
 	}
 
 	@Override
@@ -351,8 +352,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setTime(int parameterIndex, Time value) throws SQLException {
+		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setTime(computeParameterName(parameterIndex), value);
+		setParameter(computeParameterName(parameterIndex), Values.value(value.toLocalTime()));
 	}
 
 	@Override
@@ -364,8 +366,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp value) throws SQLException {
+		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setTimestamp(computeParameterName(parameterIndex), value);
+		setParameter(computeParameterName(parameterIndex), Values.value(value.toLocalDateTime()));
 	}
 
 	@Override
@@ -420,22 +423,21 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
 	}
-	/*
-	 * @Override public void setObject(String parameterName, Object value) throws
-	 * SQLException { assertIsOpen(); Objects.requireNonNull(parameterName);
-	 * Objects.requireNonNull(string); setParameter(parameterName, Values.value(string));
-	 * }
-	 */
 
 	@Override
 	public void setObject(int parameterIndex, Object value) throws SQLException {
+		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setObject(computeParameterName(parameterIndex), value);
+		setObjectParameter(computeParameterName(parameterIndex), value);
 	}
 
 	@Override
 	public void setObject(String parameterName, Object value) throws SQLException {
 		assertIsOpen();
+		setObjectParameter(parameterName, value);
+	}
+
+	private void setObjectParameter(String parameterName, Object value) throws SQLException {
 		if (value instanceof Date date) {
 			setDate(parameterName, date);
 		}
@@ -505,41 +507,21 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setDate(int parameterIndex, Date date, Calendar cal) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(date);
-		if (cal == null) {
-			cal = Calendar.getInstance();
-		}
-		var localDate = date.toLocalDate();
-		var zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, cal.getTimeZone().toZoneId());
-		setParameter(computeParameterName(parameterIndex), Values.value(zonedDateTime));
+		setDateParameter(computeParameterName(parameterIndex), date, cal);
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time time, Calendar cal) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(time);
-		if (cal == null) {
-			cal = Calendar.getInstance();
-		}
-		var offsetMillis = cal.getTimeZone().getRawOffset();
-		var offsetSeconds = offsetMillis / 1000;
-		var zoneOffset = ZoneOffset.ofTotalSeconds(offsetSeconds);
-		var offsetTime = time.toLocalTime().atOffset(zoneOffset);
-		setParameter(computeParameterName(parameterIndex), Values.value(offsetTime));
+		setTimeParameter(computeParameterName(parameterIndex), time, cal);
 	}
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp timestamp, Calendar cal) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(timestamp);
-		if (cal == null) {
-			cal = Calendar.getInstance();
-		}
-		var localDateTime = timestamp.toLocalDateTime();
-		var zonedDateTime = ZonedDateTime.of(localDateTime, cal.getTimeZone().toZoneId());
-		setParameter(computeParameterName(parameterIndex), Values.value(zonedDateTime));
+		setTimestampParameter(computeParameterName(parameterIndex), timestamp, cal);
 	}
 
 	@Override
@@ -666,6 +648,38 @@ sealed class PreparedStatementImpl extends StatementImpl
 	@Override
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
+	}
+
+	protected void setDateParameter(String parameterName, Date date, Calendar cal) throws SQLException {
+		Objects.requireNonNull(date);
+		if (cal == null) {
+			cal = Calendar.getInstance();
+		}
+		var localDate = date.toLocalDate();
+		var zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, cal.getTimeZone().toZoneId());
+		setParameter(parameterName, Values.value(zonedDateTime));
+	}
+
+	protected void setTimeParameter(String parameterName, Time time, Calendar cal) throws SQLException {
+		Objects.requireNonNull(time);
+		if (cal == null) {
+			cal = Calendar.getInstance();
+		}
+		var offsetMillis = cal.getTimeZone().getRawOffset();
+		var offsetSeconds = offsetMillis / 1000;
+		var zoneOffset = ZoneOffset.ofTotalSeconds(offsetSeconds);
+		var offsetTime = time.toLocalTime().atOffset(zoneOffset);
+		setParameter(parameterName, Values.value(offsetTime));
+	}
+
+	protected void setTimestampParameter(String parameterName, Timestamp timestamp, Calendar cal) throws SQLException {
+		Objects.requireNonNull(timestamp);
+		if (cal == null) {
+			cal = Calendar.getInstance();
+		}
+		var localDateTime = timestamp.toLocalDateTime();
+		var zonedDateTime = ZonedDateTime.of(localDateTime, cal.getTimeZone().toZoneId());
+		setParameter(parameterName, Values.value(zonedDateTime));
 	}
 
 	private String computeParameterName(int parameterIndex) {

@@ -32,8 +32,7 @@ import java.sql.Timestamp;
  * @author Conor Watson
  * @author Dmitriy Tverdiakov
  */
-public sealed interface Neo4jPreparedStatement
-		extends PreparedStatement permits PreparedStatementImpl, CallableStatementImpl {
+public sealed interface Neo4jPreparedStatement extends PreparedStatement permits PreparedStatementImpl {
 
 	/**
 	 * Named-parameter version of {@link #setString(int, String)}.
