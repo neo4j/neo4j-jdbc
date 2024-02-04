@@ -19,7 +19,6 @@
 package org.neo4j.driver.jdbc;
 
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
@@ -54,7 +53,7 @@ import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
  * @author Michael J. Simons
  * @since 1.0.0
  */
-public final class Neo4jDriver implements Driver {
+public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
 
