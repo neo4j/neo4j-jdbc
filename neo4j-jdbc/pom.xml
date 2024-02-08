@@ -53,11 +53,6 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.openpojo</groupId>
-			<artifactId>openpojo</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.tngtech.archunit</groupId>
 			<artifactId>archunit</artifactId>
 			<scope>test</scope>

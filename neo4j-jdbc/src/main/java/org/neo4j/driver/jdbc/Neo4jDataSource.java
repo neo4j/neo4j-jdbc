@@ -18,6 +18,16 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Predicate;
+import java.util.logging.Logger;
+
 import javax.sql.DataSource;
 
 /**
@@ -27,38 +37,189 @@ import javax.sql.DataSource;
  * @author Michael J. Simons
  * @since 1.0.0
  */
-public sealed interface Neo4jDataSource extends DataSource permits DataSourceImpl {
+public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 
-	String getDatabaseName();
+	/**
+	 * The name of a particular database on a server.
+	 */
+	private String databaseName;
 
-	void setDatabaseName(String databaseName);
+	/**
+	 * The network protocol used to communicate with the server. Valid options are all
+	 * valid sub-protocols that are supported by {@link Neo4jDriver#acceptsURL(String)}.
+	 * The main protocol {@literal neo4j} does not need to be configured, it is implied.
+	 */
+	private String transportProtocol;
 
-	String getDataSourceName();
+	/**
+	 * A database password.
+	 */
+	private char[] password;
 
-	void setDataSourceName(String dataSourceName);
+	/**
+	 * The port number where a server is listening for requests, defaults to the standard
+	 * bolt port {@literal 7687}.
+	 */
+	private int portNumber = 7687;
 
-	String getDescription();
+	/**
+	 * The fully qualified name of the cluster or single instance or an ip address.
+	 */
+	private String serverName;
 
-	void setDescription(String description);
+	/**
+	 * The user to be authenticated.
+	 */
+	private String user;
 
-	String getNetworkProtocol();
+	/**
+	 * Timeout in seconds.
+	 */
+	private int loginTimeout = 1;
 
-	void setNetworkProtocol(String networkProtocol);
+	/**
+	 * A log writer, which we currently don't use.
+	 */
+	private PrintWriter logWriter = new PrintWriter(System.out);
 
-	String getPassword();
+	private final Properties connectionProperties = new Properties();
 
-	void setPassword(String password);
+	public Neo4jDataSource() {
+	}
 
-	int getPortNumber();
+	@Override
+	public String getDatabaseName() {
+		return this.databaseName;
+	}
 
-	void setPortNumber(int portNumber);
+	@Override
+	public void setDatabaseName(String databaseName) {
+		this.databaseName = databaseName;
+	}
 
-	String getServerName();
+	@Override
+	public String getPassword() {
+		return (this.password == null) ? null : new String(this.password);
+	}
 
-	void setServerName(String serverName);
+	@Override
+	public void setPassword(String password) {
+		this.password = (password != null) ? password.toCharArray() : null;
+	}
 
-	String getUser();
+	@Override
+	public int getPortNumber() {
+		return this.portNumber;
+	}
 
-	void setUser(String user);
+	@Override
+	public void setPortNumber(int portNumber) {
+		this.portNumber = portNumber;
+	}
+
+	@Override
+	public String getServerName() {
+		return this.serverName;
+	}
+
+	@Override
+	public void setServerName(String serverName) {
+		this.serverName = serverName;
+	}
+
+	@Override
+	public String getUser() {
+		return this.user;
+	}
+
+	@Override
+	public void setUser(String user) {
+		this.user = user;
+	}
+
+	@Override
+	public String getTransportProtocol() {
+		return this.transportProtocol;
+	}
+
+	@Override
+	public void setTransportProtocol(String transportProtocol) {
+		this.transportProtocol = transportProtocol;
+	}
+
+	String getUrl() {
+		return "jdbc:neo4j%s://%s:%d/%s?timeout=%d".formatted(
+				Optional.ofNullable(this.transportProtocol)
+					.map(String::trim)
+					.filter(Predicate.not(String::isBlank))
+					.map(p -> "+" + p)
+					.orElse(""),
+				Objects.requireNonNull(this.serverName, "The server name must be specified on the data source"),
+				this.portNumber, Optional.ofNullable(this.databaseName).orElse("neo4j"), this.loginTimeout * 1000);
+	}
+
+	@Override
+	public Connection getConnection() throws SQLException {
+		return getConnection(this.user, this.getPassword());
+	}
+
+	@Override
+	public Connection getConnection(String username, String password) throws SQLException {
+		var newProperties = new Properties();
+		this.connectionProperties.stringPropertyNames()
+			.forEach(k -> newProperties.put(k, this.connectionProperties.getProperty(k)));
+
+		if (username != null && password != null) {
+			newProperties.setProperty("user", username);
+			newProperties.setProperty("password", password);
+		}
+
+		return DriverManager.getConnection(getUrl(), newProperties);
+	}
+
+	@Override
+	public PrintWriter getLogWriter() {
+		return this.logWriter;
+	}
+
+	@Override
+	public void setLogWriter(PrintWriter out) {
+		this.logWriter = Objects.requireNonNull(out, "Log writer must not be null");
+	}
+
+	@Override
+	public void setLoginTimeout(int seconds) {
+		this.loginTimeout = seconds;
+	}
+
+	@Override
+	public int getLoginTimeout() {
+		return this.loginTimeout;
+	}
+
+	@Override
+	public Logger getParentLogger() {
+		return Logger.getLogger(this.getClass().getPackageName());
+	}
+
+	@Override
+	public <T> T unwrap(Class<T> iface) throws SQLException {
+		if (iface.isAssignableFrom(getClass())) {
+			return iface.cast(this);
+		}
+		else {
+			throw new SQLException("This object does not implement the given interface.");
+		}
+	}
+
+	@Override
+	public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return iface.isAssignableFrom(getClass());
+	}
+
+	@Override
+	public void setConnectionProperty(String name, String value) {
+		this.connectionProperties.setProperty(name, value);
+	}
 
 }

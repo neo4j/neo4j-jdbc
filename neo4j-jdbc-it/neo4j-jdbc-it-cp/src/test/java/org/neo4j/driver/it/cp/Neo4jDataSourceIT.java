@@ -18,22 +18,20 @@
  */
 package org.neo4j.driver.it.cp;
 
-import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.neo4j.driver.jdbc.Neo4jDataSource;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Just making sure the driver can be loaded on the module path.
- */
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SmokeIT {
+class Neo4jDataSourceIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
 	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
@@ -44,10 +42,21 @@ public class SmokeIT {
 	}
 
 	@Test
-	void driverShouldBeLoaded() {
+	void datasourceShouldProvideConnections() throws SQLException {
 
-		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
-		assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
+		var ds = new Neo4jDataSource();
+		ds.setServerName(this.neo4j.getHost());
+		ds.setPortNumber(this.neo4j.getMappedPort(7687));
+		ds.setPassword(this.neo4j.getAdminPassword());
+		ds.setConnectionProperty("sql2cypher", "true");
+
+		try (var connection = ds.getConnection();
+				var stmt = connection.createStatement();
+				var result = stmt.executeQuery("SELECT 1")) {
+			assertThat(result.next()).isTrue();
+			assertThat(result.getInt(1)).isOne();
+
+		}
 	}
 
 }

@@ -165,7 +165,6 @@
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.15.0</neo4j.version>
 		<netty.version>4.1.106.Final</netty.version>
-		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<quarkus.platform.version>3.7.1</quarkus.platform.version>
@@ -209,11 +208,6 @@
 				<version>${testcontainers.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.openpojo</groupId>
-				<artifactId>openpojo</artifactId>
-				<version>${openpojo.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.tngtech.archunit</groupId>
