@@ -140,7 +140,7 @@
 		<jdbi3.version>3.44.0</jdbi3.version>
 		<jooq.version>3.19.3</jooq.version>
 		<jreleaser-maven-plugin.version>1.10.0</jreleaser-maven-plugin.version>
-		<junit-jupiter.version>5.10.1</junit-jupiter.version>
+		<junit-jupiter.version>5.10.2</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
