@@ -18,11 +18,23 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt.internal;
 
-import javax.net.ssl.SSLContext;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
-import org.neo4j.driver.jdbc.internal.bolt.RevocationCheckingStrategy;
-import org.neo4j.driver.jdbc.internal.bolt.SecurityPlan;
+import javax.net.ssl.X509TrustManager;
 
-public record SecurityPlanImpl(boolean requiresEncryption, SSLContext sslContext, boolean requiresHostnameVerification,
-		RevocationCheckingStrategy revocationCheckingStrategy) implements SecurityPlan {
+public class TrustAllTrustManager implements X509TrustManager {
+
+	public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+		throw new CertificateException("All client connections to this client are forbidden.");
+	}
+
+	public void checkServerTrusted(X509Certificate[] chain, String authType) {
+		// all fine, pass through
+	}
+
+	public X509Certificate[] getAcceptedIssuers() {
+		return new X509Certificate[0];
+	}
+
 }

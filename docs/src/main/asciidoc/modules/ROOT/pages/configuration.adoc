@@ -42,12 +42,22 @@ The driver accepts the following configuration arguments, either properties or a
 |`agent`
 |`String`
 |User agent
-|`neo4jd-jdbc`
+|`neo4j-jdbc`
 
 |`sql2cyper`
 |`Boolean`
 |Flag that enables automatic translation from SQL to Cypher (requires a translator on the classpath)
 |`false`
+
+|`ssl`
+|`Boolean`
+|An optional flag that is an alternative to `neo4j+s`. It can be used for example to programmatically enable the full SSL chain.
+|`null`
+
+|`sslMode`
+|`Enum<SSLMode>`
+|An optional configuration for fine-grained control over SSL configuration. Allowed values are `disable`, `require`, `verify-full`.
+|`null`
 
 |===
 
@@ -76,6 +86,54 @@ If you need access to an instance of the Neo4j driver itself, you can use the fo
 include::{examplesDir}/Configuration.java[tag=ddm]
 ----
 
-== Using a .dotenv file to configure the Driver
+== Securing your connection by using SSL
 
-This needs to be written. This paragraph is a to-do to add this information for Aura.
+The Neo4j JDBC Driver supports the same SSL option as the common Java driver does, with the same URL protocols, using `+s` or `+ssc` as additional indicators for the level of security that is required.
+
+The same configuration can also be achieved with a URL query parameter or an entry in the properties passed to the `DriverManager` or driver instance when asking for a connection.
+As long as you don't specify contradicting values, it's fine to combine both approaches.
+
+=== Understanding the SSL mode
+
+The possible settings are best explained using the available SSL modes.
+The following list is ordered by ascending security:
+
+* `disable` default, "I don’t care about security and don’t want to pay the overhead for encryption"
+* `require` "I want my data to be encrypted, and I accept the overhead. I trust that the network will make sure I always connect to the server I want." (Server must support encryption, no hostname / CA validation is done, this is only secure on private networks, without going through the "hassle" of proper certificates and should not really be used over public internet)
+* `verify-full` "I want my data encrypted, and I accept the overhead. I want to be sure that I connect to a server I trust, and that it’s the one I specify."
+
+NOTE: The Neo4j JDBC Driver does not include revocation checks.
+
+The most secure option can also be enabled by just using `ssl=true` either as query parameter or as property entry passed to the `DriverManager`.
+This option corresponds to `neo4j+s`.
+`require` on the other hand corresponds to `neo4j+ssc`.
+
+You might wonder why using the additional enum: We might support additional modes in the future, such as letting the service decide about SSL, or being able to express a preference towards SSL without requiring it.
+
+TIP: Neo4j cluster can offer both plain bolt connections and encrypted SSL connection or just one of them. So just because you can connect using `neo4j+s` does not mean that you cannot connect using just `neo4j` or vice versa. This is dependent on the setup of your database. Neo4js managed offering, https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j AuraDB], only supports encrypted connection, so you _must_ use `+s`, `ssl=true` or `sslMode=verify-full`.
+
+=== Valid URLs
+
+The following URLs are all valid
+
+`neo4j+s://xyz.databases.neo4j.io`:: Use full verification with the `xzy` instance at AuraDB
+`neo4j://xyz.databases.neo4j.io?ssl=true`:: The same, but using the shorthand URL parameter
+`neo4j://xyz.databases.neo4j.io?sslMode=verfiy-full`:: The same, but using the explicit mode
+`neo4j+s://xyz.databases.neo4j.io?ssl=true&sslMode=verify-full`:: Not more secure, but does not fail on you
+`neo4j+ssc://this.is.a.trustworthy.instance.for.sure.com`:: Trust whatever certificate and hostname there is, but do use SSL
+`neo4j://my-testing-instance.local`:: Use a plain connection.
+
+We only refuse contradicting values when you use several configuration mechanism:
+
+* `+s` with `ssl=false` or `sslMode` set to `disable`
+* `+ssc` with `ssl=false` or any `sslmode` not equal to `require`
+
+In essence, you cannot express to use SSL and not use it at the same time.
+The reason to offer several mechanism is that we want you to be able to use a fixed URL with dynamic query parameters or dynamic URLs or whatever way of configuring you prefer in a programmatic way.
+
+//
+// TODO
+//
+// == Using a .dotenv file to configure the Driver
+//
+// This needs to be written. This paragraph is a to-do to add this information for Aura.

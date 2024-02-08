@@ -18,14 +18,18 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -42,6 +46,7 @@ import org.neo4j.driver.jdbc.internal.bolt.BoltAgentUtil;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProvider;
 import org.neo4j.driver.jdbc.internal.bolt.BoltConnectionProviders;
 import org.neo4j.driver.jdbc.internal.bolt.BoltServerAddress;
+import org.neo4j.driver.jdbc.internal.bolt.SecurityPlan;
 import org.neo4j.driver.jdbc.internal.bolt.SecurityPlans;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
@@ -93,50 +98,33 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
-		if (url == null || info == null) {
-			throw new SQLException("url and info cannot be null.");
-		}
+		var driverConfig = parseConfig(url, info);
 
-		var matcher = URL_PATTERN.matcher(url);
+		var address = new BoltServerAddress(driverConfig.host, driverConfig.port);
 
-		if (!matcher.matches()) {
-			throw new SQLException("Invalid url.");
-		}
+		var securityPlan = parseSSLParams(driverConfig.sslProperties);
 
-		var host = matcher.group("host");
-		var port = (matcher.group("port") != null) ? Integer.parseInt(matcher.group("port")) : 7687;
-		var address = new BoltServerAddress(host, port);
+		var databaseName = driverConfig.database;
 
-		var securityPlan = SecurityPlans.insecure();
-
-		var databaseName = matcher.group("database");
-		if (databaseName == null) {
-			databaseName = info.getProperty("database", "neo4j");
-		}
-
-		var urlParams = splitUrlParams(matcher.group("urlParams"));
-		var config = mergeConfig(urlParams, info);
-
-		var user = config.getOrDefault("user", "neo4j");
-
-		var password = config.getOrDefault("password", "password");
+		var user = driverConfig.user;
+		var password = driverConfig.password;
 		var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
 
 		var boltAgent = BoltAgentUtil.boltAgent();
-		var userAgent = config.getOrDefault("agent", getDefaultUserAgent());
-		var connectTimeoutMillis = Integer.parseInt(config.getOrDefault("timeout", "1000"));
+		var userAgent = driverConfig.agent;
+		var connectTimeoutMillis = driverConfig.timeout;
 
 		var boltConnection = this.boltConnectionProvider
 			.connect(address, securityPlan, databaseName, authToken, boltAgent, userAgent, connectTimeoutMillis)
 			.toCompletableFuture()
 			.join();
 
-		var automaticSqlTranslation = Boolean.parseBoolean(config.getOrDefault("sql2cypher", "false"));
-		var rewriteBatchedStatements = Boolean.parseBoolean(config.getOrDefault("rewriteBatchedStatements", "true"));
+		var automaticSqlTranslation = driverConfig.automaticSqlTranslation;
+		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 
-		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(automaticSqlTranslation, config, this::getSqlTranslatorFactory),
-				automaticSqlTranslation, rewriteBatchedStatements);
+		return new ConnectionImpl(boltConnection, getSqlTranslatorSupplier(automaticSqlTranslation,
+				driverConfig.rawConfig(), this::getSqlTranslatorFactory), automaticSqlTranslation,
+				rewriteBatchedStatements);
 	}
 
 	static String getDefaultUserAgent() {
@@ -144,7 +132,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	static Map<String, String> mergeConfig(String[] urlParams, Properties jdbcProperties) {
-
 		var result = new HashMap<String, String>();
 		for (Object key : jdbcProperties.keySet()) {
 			if (key instanceof String name) {
@@ -179,7 +166,139 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		throw new UnsupportedOperationException();
+		DriverConfig parsedConfig = parseConfig(url, info);
+		var driverPropertyInfos = new DriverPropertyInfo[13];
+
+		var hostPropInfo = new DriverPropertyInfo(DriverConfig.HOST_PROP_NAME, parsedConfig.host);
+		hostPropInfo.description = "The host name";
+		hostPropInfo.required = true;
+		driverPropertyInfos[0] = hostPropInfo;
+
+		var portPropInfo = new DriverPropertyInfo(DriverConfig.PORT_PROP_NAME, String.valueOf(parsedConfig.port));
+		portPropInfo.description = "The port";
+		portPropInfo.required = true;
+		driverPropertyInfos[1] = portPropInfo;
+
+		var databaseNameInfo = new DriverPropertyInfo(DriverConfig.DATABASE_PROP_NAME, parsedConfig.database);
+		databaseNameInfo.description = "The database name to connect to. Will default to neo4j if left blank.";
+		databaseNameInfo.required = false;
+		driverPropertyInfos[2] = databaseNameInfo;
+
+		var userPropInfo = new DriverPropertyInfo(DriverConfig.USER_PROP_NAME, parsedConfig.user);
+		userPropInfo.description = "The user that will be used to connect. Will be defaulted to neo4j if left blank.";
+		userPropInfo.required = false;
+		driverPropertyInfos[3] = userPropInfo;
+
+		var passwordPropInfo = new DriverPropertyInfo(DriverConfig.PASSWORD_PROP_NAME, parsedConfig.password);
+		passwordPropInfo.description = "The password that is used to connect. Defaults to 'password'.";
+		passwordPropInfo.required = false;
+		driverPropertyInfos[4] = passwordPropInfo;
+
+		var userAgentPropInfo = new DriverPropertyInfo(DriverConfig.AGENT_PROP_NAME, parsedConfig.agent);
+		userAgentPropInfo.description = "user agent to send to server, can be found in logs later.";
+		userAgentPropInfo.required = false;
+		driverPropertyInfos[5] = userAgentPropInfo;
+
+		var connectionTimoutPropInfo = new DriverPropertyInfo(DriverConfig.TIMEOUT_PROP_NAME,
+				String.valueOf(parsedConfig.timeout));
+		connectionTimoutPropInfo.description = "Timeout for connection interactions. Defaults to 1000.";
+		connectionTimoutPropInfo.required = false;
+		driverPropertyInfos[6] = connectionTimoutPropInfo;
+
+		var sql2cypherPropInfo = new DriverPropertyInfo(DriverConfig.SQL_2_CYPHER_PROP_NAME,
+				String.valueOf(parsedConfig.automaticSqlTranslation));
+		sql2cypherPropInfo.description = "turns on or of sql to cypher translation. Defaults to false.";
+		sql2cypherPropInfo.required = false;
+		hostPropInfo.choices = new String[] { "true", "false" };
+		driverPropertyInfos[7] = sql2cypherPropInfo;
+
+		var rewriteBatchedStatementsPropInfo = new DriverPropertyInfo(DriverConfig.REWRITE_BATCHED_STATEMENTS,
+				String.valueOf(parsedConfig.rewriteBatchedStatements));
+		rewriteBatchedStatementsPropInfo.description = "turns on generation of more efficient cypher when batching statements. Defaults to true.";
+		rewriteBatchedStatementsPropInfo.required = false;
+		hostPropInfo.choices = new String[] { "true", "false" };
+		driverPropertyInfos[8] = rewriteBatchedStatementsPropInfo;
+
+		var sql2CypherPrttyPrintPropInfo = new DriverPropertyInfo(DriverConfig.SQL_2_CYPHER_PRETTY_PRINT,
+				String.valueOf(parsedConfig.s2cPrettyPrint));
+		sql2CypherPrttyPrintPropInfo.description = "Ensures when printing sql2cypher statements will be formatted nicely. Defaults to false.";
+		sql2CypherPrttyPrintPropInfo.required = false;
+		hostPropInfo.choices = new String[] { "true", "false" };
+		driverPropertyInfos[9] = sql2CypherPrttyPrintPropInfo;
+
+		var sql2CypherAlwaysEscapeNamesPropInfo = new DriverPropertyInfo(DriverConfig.SQL_2_CYPHER_ALWAYS_ESCAPE_NAMES,
+				String.valueOf(parsedConfig.s2cAlwaysEscapeNames));
+		sql2CypherAlwaysEscapeNamesPropInfo.description = "Ensures all names will be escaped. Defaults to false.";
+		sql2CypherAlwaysEscapeNamesPropInfo.required = false;
+		hostPropInfo.choices = new String[] { "true", "false" };
+		driverPropertyInfos[10] = sql2CypherAlwaysEscapeNamesPropInfo;
+
+		var sslPropInfo = new DriverPropertyInfo(SSLProperties.SSL_PROP_NAME,
+				String.valueOf(parsedConfig.sslProperties.ssl));
+		sslPropInfo.description = "SSL enabled";
+		portPropInfo.required = false;
+		hostPropInfo.choices = new String[] { "true", "false" };
+		driverPropertyInfos[11] = sslPropInfo;
+
+		var sslModePropInfo = new DriverPropertyInfo(SSLProperties.SSL_MODE_PROP_NAME,
+				parsedConfig.sslProperties().sslMode.getName());
+		sslModePropInfo.description = "The mode for ssl. Accepted values are: require, verify-full, disable.";
+		sslModePropInfo.required = false;
+		hostPropInfo.choices = Arrays.stream(SSLMode.values()).map(SSLMode::getName).toArray(String[]::new);
+		driverPropertyInfos[12] = sslModePropInfo;
+
+		return driverPropertyInfos;
+	}
+
+	private DriverConfig parseConfig(String url, Properties info) throws SQLException {
+		if (url == null || info == null) {
+			throw new SQLException("url and info cannot be null.");
+		}
+
+		var matcher = URL_PATTERN.matcher(url);
+
+		if (!matcher.matches()) {
+			throw new SQLException("Invalid url.");
+		}
+
+		var urlParams = splitUrlParams(matcher.group("urlParams"));
+		var config = mergeConfig(urlParams, info);
+
+		var host = matcher.group(DriverConfig.HOST_PROP_NAME);
+
+		var port = Integer
+			.parseInt((matcher.group(DriverConfig.PORT_PROP_NAME) != null) ? matcher.group("port") : "7687");
+
+		var databaseName = matcher.group(DriverConfig.DATABASE_PROP_NAME);
+		if (databaseName == null) {
+			databaseName = config.getOrDefault(DriverConfig.DATABASE_PROP_NAME, "neo4j");
+		}
+
+		var user = String.valueOf(config.getOrDefault(DriverConfig.USER_PROP_NAME, "neo4j"));
+
+		var password = String.valueOf(config.getOrDefault(DriverConfig.PASSWORD_PROP_NAME, "password"));
+
+		var userAgent = String.valueOf(config.getOrDefault(DriverConfig.AGENT_PROP_NAME, getDefaultUserAgent()));
+
+		var connectionTimeoutMillis = Integer.parseInt(config.getOrDefault(DriverConfig.TIMEOUT_PROP_NAME, "1000"));
+
+		var automaticSqlTranslation = Boolean
+			.parseBoolean(config.getOrDefault(DriverConfig.SQL_2_CYPHER_PROP_NAME, "false"));
+
+		var rewriteBatchedStatements = Boolean
+			.parseBoolean(config.getOrDefault(DriverConfig.REWRITE_BATCHED_STATEMENTS, "true"));
+
+		var sql2CypherPrettyPrint = Boolean
+			.parseBoolean(config.getOrDefault(DriverConfig.SQL_2_CYPHER_PRETTY_PRINT, "false"));
+
+		var sql2CypherAlwaysEscapeNames = Boolean
+			.parseBoolean(config.getOrDefault(DriverConfig.SQL_2_CYPHER_ALWAYS_ESCAPE_NAMES, "false"));
+
+		var sslProperties = parseSSLProperties(info, matcher.group("transport"));
+
+		return new DriverConfig(host, port, databaseName, user, password, userAgent, connectionTimeoutMillis,
+				automaticSqlTranslation, sql2CypherAlwaysEscapeNames, sql2CypherPrettyPrint, rewriteBatchedStatements,
+				sslProperties);
 	}
 
 	@Override
@@ -217,6 +336,134 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		return new String[0];
+	}
+
+	/**
+	 * Returns the security plan taking into account the transport setting and the two ssl
+	 * config options.
+	 * @param sslProperties the config that has been passed to the driver
+	 * @return a {@link SecurityPlan} that fulfills the requirements of the config
+	 * @throws IllegalArgumentException when the transport option and the config options
+	 * contradict
+	 */
+	private static SecurityPlan parseSSLParams(SSLProperties sslProperties) throws SQLException {
+		return switch (sslProperties.sslMode) {
+			case REQUIRE -> {
+				try {
+					yield SecurityPlans.forAllCertificates();
+				}
+				catch (GeneralSecurityException ex) {
+					throw new SQLException(ex);
+				}
+			}
+			case VERIFY_FULL -> {
+				try {
+					yield SecurityPlans.forSystemCASignedCertificates();
+				}
+				catch (GeneralSecurityException | IOException ex) {
+					throw new SQLException(ex);
+				}
+			}
+			case DISABLE -> SecurityPlans.insecure();
+		};
+	}
+
+	private static SSLMode sslMode(String text) throws IllegalArgumentException {
+		if (text == null) {
+			return null;
+		}
+
+		try {
+			return SSLMode.valueOf(text.toUpperCase(Locale.ROOT).replace("-", "_"));
+		}
+		catch (IllegalArgumentException ignored) {
+			throw new IllegalArgumentException(String.format("%s is not a valid option for SSLMode", text));
+		}
+	}
+
+	private static SSLProperties parseSSLProperties(Properties info, String transport) throws SQLException {
+		var sslMode = sslMode(info.getProperty("sslMode"));
+		Boolean ssl = null;
+
+		// Some Parsing with validation
+		var sslString = info.getProperty("ssl");
+		if (sslString != null) {
+			if (!sslString.equals("true") && !sslString.equals("false")) {
+				throw new SQLException("Invalid SSL option, accepts true or false");
+			}
+
+			ssl = Boolean.parseBoolean(sslString);
+		}
+
+		if (transport != null) {
+			if (transport.equals("s")) {
+				if (ssl != null && !ssl) {
+					throw new SQLException(
+							"Invalid transport option +s when ssl option set to false, accepted ssl option is true");
+				}
+
+				ssl = true;
+
+				if (sslMode == null) {
+					sslMode = SSLMode.VERIFY_FULL;
+				}
+				else {
+					if (sslMode == SSLMode.DISABLE) {
+						throw new SQLException(
+								"Invalid SSLMode %s for +s transport option, accepts verify-ca, verify-full, require");
+					}
+				}
+			}
+			else if (transport.equals("ssc")) {
+				if (ssl != null && !ssl) {
+					throw new SQLException(
+							"Invalid transport option +ssc when ssl option set to false, accepted ssl option is true");
+				}
+				ssl = true;
+
+				if (sslMode == null) {
+					sslMode = SSLMode.REQUIRE;
+				}
+				else if (sslMode != SSLMode.REQUIRE) {
+					throw new SQLException("Invalid SSLMode %s for +scc transport option, accepts 'require' only");
+				}
+			}
+			else if (!transport.isEmpty()) {
+				throw new SQLException("Invalid Transport section of the URL, accepts +s or +scc");
+			}
+		}
+
+		// implicit defaults
+		if (ssl == null && (sslMode == SSLMode.VERIFY_FULL || sslMode == SSLMode.REQUIRE)) {
+			ssl = true;
+		}
+		else if (ssl != null && sslMode == null && ssl) {
+			sslMode = SSLMode.REQUIRE;
+		}
+
+		if (sslMode == null) {
+			sslMode = SSLMode.DISABLE;
+		}
+		if (ssl == null) {
+			ssl = false;
+		}
+
+		// Validation
+		if (ssl) {
+			if (sslMode != SSLMode.VERIFY_FULL && sslMode != SSLMode.REQUIRE) {
+				throw new SQLException(
+						String.format("Invalid sslMode %s when ssl = true, accepts verify-full and require", sslMode));
+			}
+		}
+		else {
+			if (sslMode != SSLMode.DISABLE) {
+				throw new SQLException(String
+					.format("Invalid sslMode %s when ssl = false, accepts disable, allow and prefer", sslMode));
+
+			}
+		}
+
+		return new SSLProperties(sslMode, ssl);
 	}
 
 	/**
@@ -285,6 +532,86 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			// Copy the properties, so that they can't be changed until we need them
 			var localConfig = Map.copyOf(config);
 			return () -> sqlTranslatorFactorySupplier.get().create(localConfig);
+		}
+	}
+
+	enum SSLMode {
+
+		DISABLE("disable"), REQUIRE("require"), VERIFY_FULL("verify-full");
+
+		private final String name;
+
+		SSLMode(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+	}
+
+	/**
+	 * Internal record class to handle parsing SSLProperties.
+	 *
+	 * @param sslMode the current ssl mode
+	 * @param ssl boolean dictating if ssl is enabled
+	 */
+	private record SSLProperties(SSLMode sslMode, boolean ssl) {
+
+		static final String SSL_MODE_PROP_NAME = "sslMode";
+		static final String SSL_PROP_NAME = "ssl";
+
+	}
+
+	/**
+	 * Internal record class to handle parsing of driver config.
+	 *
+	 * @param host host name
+	 * @param port port
+	 * @param database database name
+	 * @param user user
+	 * @param password password for user
+	 * @param agent driver bolt agent to be used by clients to distinguish between
+	 * applications
+	 * @param timeout timeout for network interactions
+	 * @param automaticSqlTranslation turn on or off automatic cypher translation
+	 * @param s2cAlwaysEscapeNames escape names when using sql2cypher
+	 * @param s2cPrettyPrint pretty print when using s2c
+	 * @param rewriteBatchedStatements rewrite batched statements to be more efficient
+	 * @param sslProperties ssl properties
+	 */
+	private record DriverConfig(String host, int port, String database, String user, String password, String agent,
+			int timeout, boolean automaticSqlTranslation, boolean s2cAlwaysEscapeNames, boolean s2cPrettyPrint,
+			boolean rewriteBatchedStatements, SSLProperties sslProperties) {
+
+		static final String HOST_PROP_NAME = "host";
+		static final String PORT_PROP_NAME = "port";
+		static final String USER_PROP_NAME = "user";
+		static final String DATABASE_PROP_NAME = "database";
+		static final String AGENT_PROP_NAME = "agent";
+		static final String PASSWORD_PROP_NAME = "password";
+		static final String TIMEOUT_PROP_NAME = "timeout";
+		static final String SQL_2_CYPHER_PROP_NAME = "sql2cypher";
+		static final String SQL_2_CYPHER_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
+		static final String SQL_2_CYPHER_PRETTY_PRINT = "s2c.prettyPrint";
+		static final String REWRITE_BATCHED_STATEMENTS = "rewriteBatchedStatements";
+
+		Map<String, String> rawConfig() {
+			Map<String, String> props = new HashMap<>();
+			props.put(SQL_2_CYPHER_PROP_NAME, String.valueOf(this.automaticSqlTranslation));
+			props.put(SQL_2_CYPHER_ALWAYS_ESCAPE_NAMES, String.valueOf(this.s2cAlwaysEscapeNames));
+			props.put(SQL_2_CYPHER_PRETTY_PRINT, String.valueOf(this.s2cAlwaysEscapeNames));
+			props.put(HOST_PROP_NAME, this.host);
+			props.put(PORT_PROP_NAME, String.valueOf(this.port));
+			props.put(USER_PROP_NAME, this.user);
+			props.put(AGENT_PROP_NAME, this.agent);
+			props.put(PASSWORD_PROP_NAME, this.password);
+			props.put(TIMEOUT_PROP_NAME, String.valueOf(this.timeout));
+			props.put(REWRITE_BATCHED_STATEMENTS, String.valueOf(this.rewriteBatchedStatements));
+			props.put(DATABASE_PROP_NAME, this.database);
+
+			return props;
 		}
 	}
 

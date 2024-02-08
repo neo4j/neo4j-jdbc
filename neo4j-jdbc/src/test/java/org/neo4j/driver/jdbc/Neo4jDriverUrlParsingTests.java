@@ -264,6 +264,72 @@ class Neo4jDriverUrlParsingTests {
 					any(), any(), anyInt());
 	}
 
+	@Test
+	void testMinimalGetPropertyInfo() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+
+		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb", props);
+
+		for (var info : infos) {
+			assertThat(info.description).isNotNull();
+
+			switch (info.name) {
+				case "host" -> assertThat(info.value).isEqualTo("host");
+				case "port" -> assertThat(info.value).isEqualTo("1234");
+				case "database" -> assertThat(info.value).isEqualTo("customDb");
+				case "user" -> assertThat(info.value).isEqualTo("neo4j");
+				case "password" -> assertThat(info.value).isEqualTo("password");
+				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
+				case "timeout" -> assertThat(info.value).isEqualTo("1000");
+				case "sql2cypher", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
+					assertThat(info.value).isEqualTo("false");
+				case "rewriteBatchedStatements" -> assertThat(info.value).isEqualTo("true");
+				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
+				default -> assertThat(info.name).isIn("host", "port", "database", "user", "password", "agent",
+						"timeout", "sql2cypher", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"rewriteBatchedStatements", "sslMode");
+			}
+		}
+	}
+
+	@Test
+	void testGetPropertyInfoPropertyOverrides() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("user", "user1");
+		props.put("password", "user1Password");
+		props.put("database", "customDb");
+		props.put("timeout", "2000");
+		props.put("sql2cypher", "true");
+		props.put("rewriteBatchedStatements", "false");
+
+		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
+
+		for (var info : infos) {
+			assertThat(info.description).isNotNull();
+
+			switch (info.name) {
+				case "host" -> assertThat(info.value).isEqualTo("host");
+				case "port" -> assertThat(info.value).isEqualTo("1234");
+				case "database" -> assertThat(info.value).isEqualTo("customDb");
+				case "user" -> assertThat(info.value).isEqualTo("user1");
+				case "password" -> assertThat(info.value).isEqualTo("user1Password");
+				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
+				case "timeout" -> assertThat(info.value).isEqualTo("2000");
+				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
+					assertThat(info.value).isEqualTo("false");
+				case "sql2cypher" -> assertThat(info.value).isEqualTo("true");
+				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
+				default -> assertThat(info.name).isIn("host", "port", "database", "user", "password", "agent",
+						"timeout", "sql2cypher", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"rewriteBatchedStatements", "sslMode");
+			}
+		}
+	}
+
 	private static Stream<Arguments> jdbcURLProvider() {
 		return Stream.of(Arguments.of("jdbc:neo4j://host", "host", DEFAULT_BOLT_PORT),
 				Arguments.of("jdbc:neo4j://host/neo4j", "host", DEFAULT_BOLT_PORT),

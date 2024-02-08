@@ -49,14 +49,6 @@ class Neo4jDriverTests {
 	}
 
 	@Test
-	void driverMustReturnPropertyInfo() {
-
-		var driver = new Neo4jDriver();
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> driver.getPropertyInfo(null, null));
-	}
-
-	@Test
 	void getParentLoggerShouldWork() {
 
 		var driver = new Neo4jDriver();

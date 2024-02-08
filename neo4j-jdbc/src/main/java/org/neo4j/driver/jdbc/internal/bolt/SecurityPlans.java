@@ -18,21 +18,16 @@
  */
 package org.neo4j.driver.jdbc.internal.bolt;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Security;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.X509CertSelector;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -40,10 +35,13 @@ import java.util.List;
 import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import org.neo4j.driver.jdbc.internal.bolt.internal.CertificateTool;
 import org.neo4j.driver.jdbc.internal.bolt.internal.SecurityPlanImpl;
+import org.neo4j.driver.jdbc.internal.bolt.internal.TrustAllTrustManager;
 
 public final class SecurityPlans {
 
@@ -54,9 +52,25 @@ public final class SecurityPlans {
 		return new SecurityPlanImpl(false, null, false, RevocationCheckingStrategy.NO_CHECKS);
 	}
 
-	public static SecurityPlan forSystemCASignedCertificates(boolean requiresHostnameVerification,
+	public static SecurityPlan forSystemCASignedCertificates() throws GeneralSecurityException, IOException {
+		return forSystemCASignedCertificates(true, RevocationCheckingStrategy.NO_CHECKS);
+	}
+
+	public static SecurityPlan forAllCertificates() throws GeneralSecurityException {
+		return forAllCertificates(false, RevocationCheckingStrategy.NO_CHECKS);
+	}
+
+	private static SecurityPlan forSystemCASignedCertificates(boolean requiresHostnameVerification,
 			RevocationCheckingStrategy revocationCheckingStrategy) throws GeneralSecurityException, IOException {
 		var sslContext = configureSSLContext(Collections.emptyList(), revocationCheckingStrategy);
+		return new SecurityPlanImpl(true, sslContext, requiresHostnameVerification, revocationCheckingStrategy);
+	}
+
+	private static SecurityPlan forAllCertificates(boolean requiresHostnameVerification,
+			RevocationCheckingStrategy revocationCheckingStrategy) throws GeneralSecurityException {
+		var sslContext = SSLContext.getInstance("TLS");
+		sslContext.init(new KeyManager[0], new TrustManager[] { new TrustAllTrustManager() }, null);
+
 		return new SecurityPlanImpl(true, sslContext, requiresHostnameVerification, revocationCheckingStrategy);
 	}
 
@@ -68,7 +82,7 @@ public final class SecurityPlans {
 		if (!customCertFiles.isEmpty()) {
 			// Certificate files are specified, so we will load the certificates in the
 			// file
-			loadX509Cert(customCertFiles, trustedKeyStore);
+			CertificateTool.loadX509Cert(customCertFiles, trustedKeyStore);
 		}
 		else {
 			loadSystemCertificates(trustedKeyStore);
@@ -89,37 +103,6 @@ public final class SecurityPlans {
 		sslContext.init(new KeyManager[0], trustManagerFactory.getTrustManagers(), null);
 
 		return sslContext;
-	}
-
-	private static void loadSystemCertificates(KeyStore trustedKeyStore) throws GeneralSecurityException {
-		// To customize the PKIXParameters we need to get hold of the default KeyStore, no
-		// other elegant way available
-		var tempFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-		tempFactory.init((KeyStore) null);
-
-		// Get hold of the default trust manager
-		var x509TrustManager = (X509TrustManager) Arrays.stream(tempFactory.getTrustManagers())
-			.filter(X509TrustManager.class::isInstance)
-			.findFirst()
-			.orElse(null);
-
-		if (x509TrustManager == null) {
-			throw new CertificateException("No system certificates found");
-		}
-		else {
-			// load system default certificates into KeyStore
-			loadX509Cert(x509TrustManager.getAcceptedIssuers(), trustedKeyStore);
-		}
-	}
-
-	public static void loadX509Cert(X509Certificate[] certificates, KeyStore keyStore) throws GeneralSecurityException {
-		for (var i = 0; i < certificates.length; i++) {
-			loadX509Cert(certificates[i], "neo4j.javadriver.trustedcert." + i, keyStore);
-		}
-	}
-
-	public static void loadX509Cert(Certificate cert, String certAlias, KeyStore keyStore) throws KeyStoreException {
-		keyStore.setCertificateEntry(certAlias, cert);
 	}
 
 	private static PKIXBuilderParameters configurePKIXBuilderParameters(KeyStore trustedKeyStore,
@@ -146,32 +129,24 @@ public final class SecurityPlans {
 		return pkixBuilderParameters;
 	}
 
-	public static void loadX509Cert(List<File> certFiles, KeyStore keyStore)
-			throws GeneralSecurityException, IOException {
-		var certCount = 0; // The files might contain multiple certs
-		for (var certFile : certFiles) {
-			try (var inputStream = new BufferedInputStream(new FileInputStream(certFile))) {
-				var certFactory = CertificateFactory.getInstance("X.509");
+	private static void loadSystemCertificates(KeyStore trustedKeyStore) throws GeneralSecurityException {
+		// To customize the PKIXParameters we need to get hold of the default KeyStore, no
+		// other elegant way available
+		var tempFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+		tempFactory.init((KeyStore) null);
 
-				while (inputStream.available() > 0) {
-					try {
-						var cert = certFactory.generateCertificate(inputStream);
-						certCount++;
-						loadX509Cert(cert, "neo4j.javadriver.trustedcert." + certCount, keyStore);
-					}
-					catch (CertificateException ex) {
-						if (ex.getCause() != null && ex.getCause().getMessage().equals("Empty input")) {
-							// This happens if there is whitespace at the end of the
-							// certificate - we load one cert, and
-							// then try and load a
-							// second cert, at which point we fail
-							return;
-						}
-						throw new IOException("Failed to load certificate from `" + certFile.getAbsolutePath() + "`: "
-								+ certCount + " : " + ex.getMessage(), ex);
-					}
-				}
-			}
+		// Get hold of the default trust manager
+		var x509TrustManager = (X509TrustManager) Arrays.stream(tempFactory.getTrustManagers())
+			.filter(trustManager -> trustManager instanceof X509TrustManager)
+			.findFirst()
+			.orElse(null);
+
+		if (x509TrustManager == null) {
+			throw new CertificateException("No system certificates found");
+		}
+		else {
+			// load system default certificates into KeyStore
+			CertificateTool.loadX509Cert(x509TrustManager.getAcceptedIssuers(), trustedKeyStore);
 		}
 	}
 
