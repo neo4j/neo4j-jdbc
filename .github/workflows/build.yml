@@ -136,4 +136,4 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --maven-aggregate-project
+          args: --severity-threshold=high --all-projects --exclude=dist,docs,etc,neo4j-jdbc-bundle,neo4j-jdbc-full-bundle,neo4j-jdbc-it,neo4j-jdbc-test-results
