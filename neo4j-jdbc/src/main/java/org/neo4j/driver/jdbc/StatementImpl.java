@@ -54,7 +54,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private int maxFieldSize;
 
-	private ResultSet resultSet;
+	protected ResultSet resultSet;
 
 	private int updateCount = -1;
 

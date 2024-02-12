@@ -1196,13 +1196,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsResultSetType(int type) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsResultSetType(int type) {
+		return type == ResultSet.TYPE_FORWARD_ONLY;
 	}
 
 	@Override
-	public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsResultSetConcurrency(int type, int concurrency) {
+		return type == ResultSet.TYPE_FORWARD_ONLY && concurrency == ResultSet.CONCUR_READ_ONLY;
 	}
 
 	@Override
@@ -1271,6 +1271,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return false;
 	}
 
+	/**
+	 * The named parameter syntax in our {@link java.sql.CallableStatement} implementation
+	 * {@link Neo4jCallableStatement} supports both {@code $name} and {@code :name}
+	 * syntax. Named ordinalParameters cannot be mixed with parameter placeholders
+	 * ({@literal ?}).
+	 * @return always {@literal true}
+	 */
 	@Override
 	public boolean supportsNamedParameters() {
 		return true;

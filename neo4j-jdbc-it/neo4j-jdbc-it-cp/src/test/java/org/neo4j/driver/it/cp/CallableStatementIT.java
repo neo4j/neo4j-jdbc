@@ -22,16 +22,30 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
+import org.assertj.core.data.Percentage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class CallableStatementIT extends IntegrationTestBase {
+
+	@BeforeEach
+	void prepareSomeData() throws SQLException {
+		try (var stmt = this.getConnection().createStatement()) {
+			stmt.execute("""
+					CREATE (n:A {a: 'X', b: 123, c: date()})
+					""");
+		}
+	}
 
 	@Test
 	void shouldExecuteQueryWithOrdinalParameters() throws SQLException {
 		try (var connection = getConnection();
-				var statement = connection.prepareCall("CALL dbms.cluster.routing.getRoutingTable($1, $2)")) {
+				var statement = connection.prepareCall("CALL dbms.cluster.routing.getRoutingTable(?, ?)")) {
 			statement.setObject(1, Collections.emptyMap());
 			statement.setString(2, "neo4j");
 
@@ -44,11 +58,11 @@ class CallableStatementIT extends IntegrationTestBase {
 		}
 	}
 
-	@Test
-	void shouldExecuteQueryWithNamedParameters() throws SQLException {
-		try (var connection = getConnection();
-				var statement = connection
-					.prepareCall("CALL dbms.cluster.routing.getRoutingTable($context, $database)")) {
+	@ParameterizedTest
+	@ValueSource(strings = { "CALL dbms.cluster.routing.getRoutingTable($database, $context)",
+			"CALL dbms.cluster.routing.getRoutingTable($context, $database)" })
+	void shouldExecuteQueryWithNamedParameters(String sql) throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall(sql)) {
 			statement.setObject("context", Collections.emptyMap());
 			statement.setString("database", "neo4j");
 
@@ -58,6 +72,50 @@ class CallableStatementIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt(1)).isGreaterThan(0);
 			assertThat((List<?>) resultSet.getObject(2)).hasSize(3);
 			assertThat(resultSet.next()).isFalse();
+		}
+	}
+
+	@Test
+	void shouldCheckExistenceOfNamedParameter() throws SQLException {
+		try (var connection = getConnection()) {
+			assertThatExceptionOfType(SQLException.class)
+				.isThrownBy(() -> connection.prepareCall("CALL dbms.cluster.routing.getRoutingTable($database, $foo)"))
+				.withMessage("Procedure `dbms.cluster.routing.getRoutingTable` does not have a named parameter `foo`");
+		}
+	}
+
+	@Test
+	void outByIndexShouldWork() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall("{? = call db.info()}")) {
+
+			statement.execute();
+			var msg = statement.getString(2);
+			assertThat(msg).isEqualTo("neo4j");
+			assertThat(msg).isEqualTo(statement.getString(2));
+		}
+	}
+
+	@Test
+	void outByNameShouldWork() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall("{$name = call db.info()}")) {
+
+			statement.execute();
+			var msg = statement.getString("name");
+			assertThat(msg).isEqualTo("neo4j");
+			assertThat(msg).isEqualTo(statement.getString("name"));
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "{? = call sin(?)}", "RETURN sin(?)" })
+	void outByIndexOnFunctionShouldWork(String sql) throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall(sql)) {
+
+			statement.setDouble(1, Math.toRadians(150));
+			statement.execute();
+			var sin = statement.getDouble(1);
+			assertThat(sin).isCloseTo(0.5, Percentage.withPercentage(1));
+			assertThat(sin).isEqualTo(statement.getDouble(1));
 		}
 	}
 

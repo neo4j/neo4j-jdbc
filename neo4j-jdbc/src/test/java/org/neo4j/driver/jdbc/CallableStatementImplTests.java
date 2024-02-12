@@ -49,39 +49,47 @@ import java.sql.Types;
 import java.sql.Wrapper;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 class CallableStatementImplTests {
 
+	public static final String TEST_STATEMENT = "RETURN pi()";
+
 	private CallableStatementImpl statement;
 
 	@ParameterizedTest
-	@MethodSource("getShouldThrowWhenClosedArgs")
+	@MethodSource
 	void shouldThrowWhenClosed(StatementMethodRunner consumer) throws SQLException {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, "query");
+				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
 		this.statement.close();
 		assertThat(this.statement.isClosed()).isTrue();
 		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(SQLException.class);
 	}
 
-	static Stream<Arguments> getShouldThrowWhenClosedArgs() {
-		return Stream.of(Arguments.of((StatementMethodRunner) statement -> statement.executeQuery("query")),
-				Arguments.of((StatementMethodRunner) statement -> statement.executeUpdate("query")),
+	static Stream<Arguments> shouldThrowWhenClosed() {
+		return Stream.of(Arguments.of((StatementMethodRunner) statement -> statement.executeQuery(TEST_STATEMENT)),
+				Arguments.of((StatementMethodRunner) statement -> statement.executeUpdate(TEST_STATEMENT)),
 				Arguments.of((StatementMethodRunner) statement -> statement.setMaxFieldSize(1)),
 				Arguments.of((StatementMethodRunner) Statement::getMaxFieldSize),
 				Arguments.of((StatementMethodRunner) Statement::getMaxRows),
@@ -91,7 +99,7 @@ class CallableStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.setQueryTimeout(1)),
 				Arguments.of((StatementMethodRunner) Statement::getWarnings),
 				Arguments.of((StatementMethodRunner) Statement::clearWarnings),
-				Arguments.of((StatementMethodRunner) statement -> statement.execute("query")),
+				Arguments.of((StatementMethodRunner) statement -> statement.execute(TEST_STATEMENT)),
 				Arguments.of((StatementMethodRunner) Statement::getResultSet),
 				Arguments.of((StatementMethodRunner) Statement::getUpdateCount),
 				Arguments.of((StatementMethodRunner) Statement::getMoreResults),
@@ -168,19 +176,20 @@ class CallableStatementImplTests {
 	}
 
 	@ParameterizedTest
-	@MethodSource("getShouldThrowUnsupportedArgs")
+	@MethodSource
 	void shouldThrowUnsupported(StatementMethodRunner consumer, Class<? extends SQLException> exceptionType) {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, "query");
+				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(exceptionType);
 	}
 
 	@SuppressWarnings("deprecation")
-	static Stream<Arguments> getShouldThrowUnsupportedArgs() {
+	static Stream<Arguments> shouldThrowUnsupported() {
 		return Stream.of(Arguments.of((StatementMethodRunner) Statement::cancel, SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setCursorName("name"),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.addBatch("query"), SQLException.class),
+				Arguments.of((StatementMethodRunner) statement -> statement.addBatch(TEST_STATEMENT),
+						SQLException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
 						SQLFeatureNotSupportedException.class),
@@ -238,33 +247,6 @@ class CallableStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBigDecimal(1, BigDecimal.ONE),
 						SQLException.class),
-				// callable statement
-				Arguments.of((StatementMethodRunner) statement -> statement.registerOutParameter(1, Types.DECIMAL),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.registerOutParameter(1, Types.DECIMAL, 1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getBigDecimal(1, 1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getObject(1, Collections.emptyMap()),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getRef(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getBlob(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getClob(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getArray(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.registerOutParameter(1, Types.DECIMAL,
-						"typeName"), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.registerOutParameter("parameterName",
-						Types.DECIMAL), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.registerOutParameter("parameterName",
-						Types.DECIMAL, 1), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.registerOutParameter("parameterName",
-						Types.DECIMAL, "typeName"), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getURL(1),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.setBigDecimal("parameterName", BigDecimal.ONE),
 						SQLFeatureNotSupportedException.class),
@@ -274,58 +256,6 @@ class CallableStatementImplTests {
 						Types.DECIMAL), SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull("parameterName", Types.DECIMAL,
 						"typeName"), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getString("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getBoolean("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getByte("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getShort("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getInt("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getLong("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getFloat("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getDouble("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getBytes("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getDate("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getTime("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getTimestamp("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getObject("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getBigDecimal("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getObject("parameterName",
-						Collections.emptyMap()), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getRef("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getBlob("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getClob("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getArray("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of(
-						(StatementMethodRunner) statement -> statement.getDate("parameterName", Calendar.getInstance()),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of(
-						(StatementMethodRunner) statement -> statement.getTime("parameterName", Calendar.getInstance()),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getTimestamp("parameterName",
-						Calendar.getInstance()), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getURL("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getRowId(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getRowId("parameterName"),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.setRowId("parameterName", mock(RowId.class)),
 						SQLFeatureNotSupportedException.class),
@@ -342,26 +272,8 @@ class CallableStatementImplTests {
 						InputStream.nullInputStream(), 0L), SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNClob("parameterName",
 						Reader.nullReader(), 0L), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getNClob(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getNClob("parameterName"),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.setSQLXML("parameterName", mock(SQLXML.class)),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getSQLXML(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getSQLXML("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getNString(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getNString("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getNCharacterStream(1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getNCharacterStream("parameterName"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getCharacterStream("parameterName"),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob("parameterName", mock(Blob.class)),
 						SQLFeatureNotSupportedException.class),
@@ -388,8 +300,6 @@ class CallableStatementImplTests {
 						InputStream.nullInputStream()), SQLFeatureNotSupportedException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.setNClob("parameterName", Reader.nullReader()),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.getObject(1, String.class),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) CallableStatement::wasNull, SQLException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.getString(1), SQLException.class),
@@ -419,7 +329,7 @@ class CallableStatementImplTests {
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, "query");
+				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
 
 		// when & then
 		if (shouldUnwrap) {
@@ -436,7 +346,7 @@ class CallableStatementImplTests {
 	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) {
 		// given
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, "query");
+				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
 
 		// when
 		var wrapperFor = this.statement.isWrapperFor(cls);
@@ -458,7 +368,7 @@ class CallableStatementImplTests {
 	void shouldNotAllowMixingParameterTypes(StatementMethodRunner firstSetter, StatementMethodRunner secondSetter)
 			throws MalformedURLException, SQLException, IllegalAccessException {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, "query");
+				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
 
 		try {
 			firstSetter.run(this.statement);
@@ -551,6 +461,133 @@ class CallableStatementImplTests {
 	static Stream<Arguments> streamBothPermutations(Named<StatementMethodRunner> ordinalSetter,
 			Named<StatementMethodRunner> namedSetter) {
 		return Stream.of(Arguments.of(ordinalSetter, namedSetter), Arguments.of(namedSetter, ordinalSetter));
+	}
+
+	// Using <BLANK> as leading whitespace to make Checkstyle happier
+
+	@ParameterizedTest
+	@CsvSource(
+			textBlock = """
+					{call db.schema.nodeTypeProperties()}, db.schema.nodeTypeProperties, NONE, 0,,CALL db.schema.nodeTypeProperties
+					{call apoc.periodic.cancel()}, apoc.periodic.cancel, NONE, 0,,CALL apoc.periodic.cancel
+					{call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, NONE, 0,,CALL db.schema.nodeTypeProperties
+					{? = call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{$nodeType = call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, NAMED, 0,,CALL db.schema.nodeTypeProperties YIELD nodeType
+					{:nodeType = call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, NAMED, 0,,CALL db.schema.nodeTypeProperties YIELD nodeType
+					{?=call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{? =call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{?= call db.schema.nodeTypeProperties}, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{? = call db.schema.nodeTypeProperties()}, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{  ?  = call db.schema.nodeTypeProperties()  }, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					<BLANK>{  ?  =  call db.schema.nodeTypeProperties  (  )  } , db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{?=call db.schema.nodeTypeProperties()}, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					{ ? =CALL db.schema.nodeTypeProperties() }, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					'{? = call i.dont_Exists(?, ?)}', i.dont_Exists, ORDINAL, 2,,'CALL i.dont_Exists($1, $2) YIELD *'
+					'{ ? = call i.dont_Exists( ?,? )}', i.dont_Exists, ORDINAL, 2,,'CALL i.dont_Exists($1, $2) YIELD *'
+					'{ ? = call i.dont_Exists(?,?)}', i.dont_Exists, ORDINAL, 2,,'CALL i.dont_Exists($1, $2) YIELD *'
+					'{ ? = call i.dont_Exists(?)}', i.dont_Exists, ORDINAL, 1,,'CALL i.dont_Exists($1) YIELD *'
+					RETURN sin(?), sin, ORDINAL, 1,,RETURN sin($1)
+					RETURN trim(' ? '), trim, ORDINAL, 0,,RETURN trim(' ? ')
+					RETURN i.dont_Exists('test'), i.dont_Exists, ORDINAL, 0,,RETURN i.dont_Exists('test')
+					'{ ? = call blah(''test'', ?, ?, ")?", ''hallo, welt?'')}', blah, ORDINAL, 2,,'CALL blah(''test'', $1, $2, ")?", ''hallo, welt?'') YIELD *'
+					call db.schema.nodeTypeProperties yield *, db.schema.nodeTypeProperties, ORDINAL, 0,,CALL db.schema.nodeTypeProperties YIELD *
+					call db.schema.nodeTypeProperties() yield nodeType, db.schema.nodeTypeProperties, NAMED, 0,,CALL db.schema.nodeTypeProperties YIELD nodeType
+					'{? = call db.index.fulltext.queryNodes(?, ?)}', db.index.fulltext.queryNodes, ORDINAL, 2,,'CALL db.index.fulltext.queryNodes($1, $2) YIELD *'
+					'call db.index.fulltext.queryNodes(?, ?) yield *', db.index.fulltext.queryNodes, ORDINAL, 2,,'CALL db.index.fulltext.queryNodes($1, $2) YIELD *'
+					'{$node = call db.index.fulltext.queryNodes($indexName, $queryString)}', db.index.fulltext.queryNodes, NAMED, 0, 'node, indexName, queryString','CALL db.index.fulltext.queryNodes($indexName, $queryString) YIELD node'
+					'{:node = call db.index.fulltext.queryNodes(:indexName, :queryString)}', db.index.fulltext.queryNodes, NAMED, 0, 'node, indexName, queryString','CALL db.index.fulltext.queryNodes($indexName, $queryString) YIELD node'
+					'{:node=call db.index.fulltext.queryNodes(:indexName, :queryString)}', db.index.fulltext.queryNodes, NAMED, 0, 'node, indexName, queryString','CALL db.index.fulltext.queryNodes($indexName, $queryString) YIELD node'
+					'{:node =call db.index.fulltext.queryNodes(:indexName, :queryString)}', db.index.fulltext.queryNodes, NAMED, 0, 'node, indexName, queryString','CALL db.index.fulltext.queryNodes($indexName, $queryString) YIELD node'
+					'{:node= call db.index.fulltext.queryNodes(:indexName, :queryString)}', db.index.fulltext.queryNodes, NAMED, 0, 'node, indexName, queryString','CALL db.index.fulltext.queryNodes($indexName, $queryString) YIELD node'
+					'CALL dbms.cluster.routing.getRoutingTable(?, ?)', dbms.cluster.routing.getRoutingTable, NONE, 2,,'CALL dbms.cluster.routing.getRoutingTable($1, $2)'
+					'CALL dbms.cluster.routing.getRoutingTable($1, $2)', dbms.cluster.routing.getRoutingTable, NONE, 2,,'CALL dbms.cluster.routing.getRoutingTable($1, $2)'
+					'CALL dbms.cluster.routing.getRoutingTable(?, $2)', dbms.cluster.routing.getRoutingTable, NONE, 2,,'CALL dbms.cluster.routing.getRoutingTable($1, $2)'
+					'CALL dbms.cluster.routing.getRoutingTable($1, ?)', dbms.cluster.routing.getRoutingTable, NONE, 2,,'CALL dbms.cluster.routing.getRoutingTable($1, $2)'
+					'CALL dbms.cluster.routing.getRoutingTable(?, $1)', dbms.cluster.routing.getRoutingTable, NONE, 2,,'CALL dbms.cluster.routing.getRoutingTable($2, $1)'
+					'CALL dbms.cluster.routing.getRoutingTable($2, ?)', dbms.cluster.routing.getRoutingTable, NONE, 2,,'CALL dbms.cluster.routing.getRoutingTable($2, $1)'
+					'CALL f(?, ?, $2, ?, $3, $1)', f, NONE, 6,,'CALL f($4, $5, $2, $6, $3, $1)'
+					'CALL f($0)', f, NONE, 0,,'CALL f($0)'
+					'CALL f(?, ''blub'', $2, ?, $3, $1, ?, ''foo'')', f, NONE, 6,,'CALL f($4, ''blub'', $2, $5, $3, $1, $6, ''foo'')'
+					'CALL f(?, ''blub'', $2, ?, $3, $1, ''foo'', ?)', f, NONE, 6,,'CALL f($4, ''blub'', $2, $5, $3, $1, ''foo'', $6)'
+					""")
+	void shouldBeAbleToParseValidCallStatements(String statement, String expectedFqn,
+			CallableStatementImpl.ReturnType expectedReturnType, long expectedNumParameters, String names,
+			String cypher) {
+		var descriptor = CallableStatementImpl.parse(statement.replace("<BLANK>", " "));
+		assertThat(descriptor).isNotNull();
+		assertThat(descriptor.fqn()).isEqualTo(expectedFqn);
+		assertThat(descriptor.returnType()).isEqualTo(expectedReturnType);
+		if (names != null) {
+			var expectedNames = Arrays.stream(names.split(",")).map(String::trim).toList();
+			var parsedNames = new HashSet<>();
+			if (descriptor.yieldedValues() != null) {
+				parsedNames.addAll(descriptor.yieldedValues());
+			}
+			parsedNames.addAll(descriptor.parameterList().namedParameters().values());
+			assertThat(parsedNames).containsExactlyInAnyOrderElementsOf(expectedNames);
+
+		}
+		else {
+			assertThat(descriptor.parameterList().ordinalParameters()).hasSize((int) expectedNumParameters);
+		}
+		assertThat(descriptor.toCypher(Map.of())).isEqualTo(cypher);
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			'CALL f($b, $c, $a)', 'CALL f($a, $b, $c)', a;b;c
+			'CALL f($a)', 'CALL f($a)', a
+			'CALL f()', 'CALL f',
+			""")
+	void shouldApplyParameterOrder(String in, String expected, String order) {
+		var parameterOrder = new HashMap<String, Integer>();
+		if (order != null && !order.isBlank()) {
+			var hlp = order.split(";");
+			for (int i = 0; i < hlp.length; i++) {
+				parameterOrder.put(hlp[i].trim(), i);
+			}
+		}
+		assertThat(CallableStatementImpl.parse(in).toCypher(parameterOrder)).isEqualTo(expected);
+
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "{$node = call db.index.fulltext.queryNodes(?, ?)}",
+			"{? = call db.index.fulltext.queryNodes($x, ?)}", "{call db.index.fulltext.queryNodes($x, ?)}" })
+	void preventMixingOfIndexedAndNamedParameters(String statement) {
+		assertThatIllegalArgumentException().isThrownBy(() -> CallableStatementImpl.parse(statement))
+			.withMessage("Index- and named ordinalParameters cannot be mixed: `" + statement + "`");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "{? = call db.index.fulltext.queryNodes($x, 'foo')}",
+			"{call db.index.fulltext.queryNodes('foo', $x)}" })
+	void preventMixingOfConstantAndNamedParameters(String statement) {
+		assertThatIllegalArgumentException().isThrownBy(() -> CallableStatementImpl.parse(statement))
+			.withMessage("Named parameters cannot be used together with constant arguments: `" + statement + "`");
+	}
+
+	@Test
+	void returnTypeMustBeAlignedWithReturnParameterName() {
+		// This cannot happen with the regex, but the check is there for safety reasons
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> new CallableStatementImpl.Descriptor("a", CallableStatementImpl.ReturnType.ORDINAL,
+					List.of("whatever"),
+					new CallableStatementImpl.ParameterListDescriptor(Map.of(), Map.of(), Map.of()), false))
+			.withMessage("A name for the return parameter is only supported with named returns");
+	}
+
+	@Test
+	void nullStatementsAreNotAllowed() {
+		assertThatNullPointerException().isThrownBy(() -> CallableStatementImpl.parse(null))
+			.withMessage("Callable statements cannot be null");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "", " ", " \t " })
+	void blanksStatementsAreNotAllowed(String statement) {
+		assertThatIllegalArgumentException().isThrownBy(() -> CallableStatementImpl.parse(statement))
+			.withMessage("Callable statements cannot be blank");
 	}
 
 	@FunctionalInterface

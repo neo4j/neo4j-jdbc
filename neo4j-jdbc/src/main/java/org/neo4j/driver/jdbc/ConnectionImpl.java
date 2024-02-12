@@ -125,22 +125,20 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Statement createStatement() throws SQLException {
-		assertIsOpen();
-		return new StatementImpl(this, this::getTransaction, getSqlProcessor());
+		return this.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		assertIsOpen();
-		return new PreparedStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
-				this.rewriteBatchedStatements, sql);
+		return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql) throws SQLException {
-		assertIsOpen();
-		return new CallableStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
-				this.rewriteBatchedStatements, sql);
+		return prepareCall(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
+				ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override
@@ -291,25 +289,28 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return createStatement(resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
 			throws SQLException {
-		assertIsOpen();
+		return prepareStatement(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+	}
+
+	private static void assertValidResultSetTypeAndConcurrency(int resultSetType, int resultSetConcurrency)
+			throws SQLException {
 		if (resultSetType != ResultSet.TYPE_FORWARD_ONLY) {
 			throw new SQLException("Unsupported result set type: " + resultSetType);
 		}
 		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
 			throw new SQLException("Unsupported result set concurrency: " + resultSetConcurrency);
 		}
-		return prepareStatement(sql);
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return prepareCall(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Override
@@ -356,19 +357,38 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
+		assertValidResultSetHoldability(resultSetHoldability);
+		return new StatementImpl(this, this::getTransaction, getSqlProcessor());
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
 			int resultSetHoldability) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
+		assertValidResultSetHoldability(resultSetHoldability);
+		return new PreparedStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
+				this.rewriteBatchedStatements, sql);
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
 			int resultSetHoldability) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
+		assertValidResultSetHoldability(resultSetHoldability);
+		return CallableStatementImpl.prepareCall(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
+				this.rewriteBatchedStatements, sql);
+	}
+
+	private static void assertValidResultSetHoldability(int resultSetHoldability) throws SQLException {
+		if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT) {
+			throw new SQLException(
+					"Unsupported result set holdability, result sets will always be closed when the underlying transaction is closed: "
+							+ resultSetHoldability);
+		}
 	}
 
 	@Override

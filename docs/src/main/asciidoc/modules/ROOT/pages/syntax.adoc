@@ -1,0 +1,30 @@
+= Neo4j specific syntax for statements
+
+This section deals with conventions for indexing and naming parameters in all types of statements (standard statements, prepared statements and callable statements) and other Neo4j specific syntax.
+
+== Callable statements
+
+=== General syntax
+
+You can invoke stored procedures as follows
+
+Common JDBC syntax::
+    `{? = call db.index.fulltext.queryNodes(?, ?)}`
+Standard Neo4j syntax::
+    `call db.index.fulltext.queryNodes(?, ?) yield *`
+Enumerating yielded columns::
+    `{$propertyName = call db.schema.nodeTypeProperties()}`
+Return (only applicable for functions)::
+    `RETURN sin(?)`
+
+=== Named parameters
+
+Our callable statement implementation (`org.neo4j.driver.jdbc.Neo4jCallableStatement`) does support named parameters. As per JDBC spec those are not named placeholders in a query- or statement-string, but the actual, formal parameter for the stored procedures to be called.
+We support both the `$` and the colon syntax, that is you might use either `$name` or `:name`.
+
+The assigment `{? = call xxx()}` will be rewritten into `call xxx() yield *`, and `{$x = call xxx()}` will be rewritten as `call xxx() yield x`.
+
+=== Result sets of callable statements
+
+When you execute a callable statement via ´executeQuery`, you must use the result set returned.
+If you just use `execute`, we assume that the underlying procedure does only return one row and you use the getters on the statement itself.

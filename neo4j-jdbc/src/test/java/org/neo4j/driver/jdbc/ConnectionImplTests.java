@@ -95,7 +95,7 @@ class ConnectionImplTests {
 	void shouldPrepareCall() throws SQLException {
 		this.connection = new ConnectionImpl(mock(BoltConnection.class));
 
-		var statement = this.connection.prepareCall("sql");
+		var statement = this.connection.prepareCall("RETURN pi()");
 
 		assertThat(statement).isNotNull();
 	}
@@ -563,12 +563,9 @@ class ConnectionImplTests {
 	static Stream<Arguments> getUnsupportedMethodExecutors() {
 		return Stream.of(
 				Arguments.of((ConnectionMethodRunner) connection -> connection
-					.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of(
-						(ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
-								ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY),
-						SQLFeatureNotSupportedException.class),
+					.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
+				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("RETURN pi()",
+						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
 				Arguments.of((ConnectionMethodRunner) Connection::getTypeMap, SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setTypeMap(Collections.emptyMap()),
 						SQLFeatureNotSupportedException.class),
@@ -581,16 +578,27 @@ class ConnectionImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.releaseSavepoint(mock(Savepoint.class)),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of(
-						(ConnectionMethodRunner) connection -> connection.createStatement(ResultSet.TYPE_FORWARD_ONLY,
-								ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT),
-						SQLFeatureNotSupportedException.class),
+				Arguments
+					.of((ConnectionMethodRunner) connection -> connection.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+							ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT), SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT),
-						SQLFeatureNotSupportedException.class),
+						SQLException.class),
+				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
+						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
+						ResultSet.CLOSE_CURSORS_AT_COMMIT), SQLException.class),
+				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
+						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT),
+						SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT),
-						SQLFeatureNotSupportedException.class),
+						SQLException.class),
+				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
+						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
+						ResultSet.CLOSE_CURSORS_AT_COMMIT), SQLException.class),
+				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
+						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT),
+						SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
 						Statement.NO_GENERATED_KEYS), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored", new int[0]),

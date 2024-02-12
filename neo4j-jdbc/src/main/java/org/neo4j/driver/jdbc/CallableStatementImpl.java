@@ -34,22 +34,75 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
+import java.sql.ResultSet;
 import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.neo4j.driver.jdbc.values.Values;
 
-final class CallableStatementImpl extends PreparedStatementImpl implements CallableStatement {
+final class CallableStatementImpl extends PreparedStatementImpl implements Neo4jCallableStatement {
 
 	private ParameterType parameterType;
+
+	static CallableStatement prepareCall(Connection connection, Neo4jTransactionSupplier transactionSupplier,
+			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
+			String sql) throws SQLException {
+
+		// We should cache the descriptor if this gets widely used.
+
+		var descriptor = parse(sql);
+		var parameterOrder = new HashMap<String, Integer>();
+		var meta = connection.getMetaData();
+
+		// We might not be able to spot all the function calls
+		if (descriptor.isFunctionCall() == null) {
+			boolean isFunction;
+			try (var procedures = meta.getProcedures(null, null, descriptor.fqn())) {
+				isFunction = !procedures.next();
+			}
+			descriptor = new Descriptor(descriptor.fqn, descriptor.returnType, descriptor.yieldedValues,
+					descriptor.parameterList, isFunction);
+		}
+
+		if (descriptor.isUsingNamedParameters()) {
+			try (var columns = descriptor.isFunctionCall() ? meta.getFunctionColumns(null, null, descriptor.fqn(), null)
+					: meta.getProcedureColumns(null, null, descriptor.fqn(), null)) {
+				while (columns.next()) {
+					parameterOrder.put(columns.getString("COLUMN_NAME"), columns.getInt("ORDINAL_POSITION"));
+				}
+			}
+			for (String value : descriptor.parameterList.namedParameters().values()) {
+				if (!parameterOrder.containsKey(value)) {
+					throw new SQLException(
+							"Procedure `" + descriptor.fqn() + "` does not have a named parameter `" + value + "`");
+				}
+			}
+		}
+
+		// We can always store the descriptor with the statement to check for yielded /
+		// return values if wished / needed
+		return new CallableStatementImpl(connection, transactionSupplier, sqlProcessor, indexProcessor,
+				rewriteBatchedStatements, descriptor.toCypher(parameterOrder));
+	}
+
+	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
 
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
@@ -70,159 +123,187 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 	}
 
 	@Override
-	public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void registerOutParameter(int parameterIndex, int sqlType) {
 	}
 
 	@Override
-	public void registerOutParameter(int parameterIndex, int sqlType, int scale) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void registerOutParameter(int parameterIndex, int sqlType, int scale) {
 	}
 
+	ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
+		if (resultSet == null) {
+			throw new SQLException("CallableStatement#execute has not been called");
+		}
+		if (!this.cursorMoved.compareAndExchange(false, true)) {
+			this.resultSet.next();
+		}
+		return resultSet;
+	}
+
+	@SuppressWarnings("resource")
 	@Override
 	public boolean wasNull() throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().wasNull();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public String getString(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getString(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public boolean getBoolean(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getBoolean(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public byte getByte(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getByte(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public short getShort(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getShort(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public int getInt(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getInt(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public long getLong(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getLong(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public float getFloat(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getFloat(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public double getDouble(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getDouble(parameterIndex);
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "resource" })
 	public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getBigDecimal(parameterIndex, scale);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public byte[] getBytes(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getBytes(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Date getDate(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getDate(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Time getTime(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getTime(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Timestamp getTimestamp(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getTimestamp(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Object getObject(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getObject(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getBigDecimal(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Object getObject(int parameterIndex, Map<String, Class<?>> map) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getObject(parameterIndex, map);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Ref getRef(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getRef(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Blob getBlob(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getBlob(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Clob getClob(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getClob(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Array getArray(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getArray(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getDate(parameterIndex, cal);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getTime(parameterIndex, cal);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getTimestamp(parameterIndex, cal);
 	}
 
 	@Override
-	public void registerOutParameter(int parameterIndex, int sqlType, String typeName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void registerOutParameter(int parameterIndex, int sqlType, String typeName) {
 	}
 
 	@Override
-	public void registerOutParameter(String parameterName, int sqlType) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void registerOutParameter(String parameterName, int sqlType) {
 	}
 
 	@Override
-	public void registerOutParameter(String parameterName, int sqlType, int scale) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void registerOutParameter(String parameterName, int sqlType, int scale) {
 	}
 
 	@Override
-	public void registerOutParameter(String parameterName, int sqlType, String typeName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void registerOutParameter(String parameterName, int sqlType, String typeName) {
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public URL getURL(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getURL(parameterIndex);
 	}
 
 	@Override
@@ -380,129 +461,154 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public String getString(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getString(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public boolean getBoolean(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getBoolean(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public byte getByte(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getByte(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public short getShort(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getShort(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public int getInt(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getInt(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public long getLong(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getLong(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public float getFloat(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getFloat(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public double getDouble(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getDouble(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public byte[] getBytes(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getBytes(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Date getDate(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getDate(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Time getTime(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getTime(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Timestamp getTimestamp(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getTimestamp(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Object getObject(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getObject(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public BigDecimal getBigDecimal(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getBigDecimal(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Object getObject(String parameterName, Map<String, Class<?>> map) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getObject(parameterName, map);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Ref getRef(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getRef(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Blob getBlob(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getBlob(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Clob getClob(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getClob(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Array getArray(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getArray(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Date getDate(String parameterName, Calendar cal) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getDate(parameterName, cal);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Time getTime(String parameterName, Calendar cal) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getTime(parameterName, cal);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getTimestamp(parameterName, cal);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public URL getURL(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getURL(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public RowId getRowId(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getRowId(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public RowId getRowId(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getRowId(parameterName);
 	}
 
 	@Override
@@ -540,14 +646,16 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public NClob getNClob(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getNClob(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public NClob getNClob(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getNClob(parameterName);
 	}
 
 	@Override
@@ -555,44 +663,52 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public SQLXML getSQLXML(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getSQLXML(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public SQLXML getSQLXML(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getSQLXML(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public String getNString(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getNString(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public String getNString(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getNString(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Reader getNCharacterStream(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getNCharacterStream(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Reader getNCharacterStream(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getNCharacterStream(parameterName);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Reader getCharacterStream(int parameterIndex) throws SQLException {
-		throw newOutParametersNotSupported();
+		return assertCallAndPositionAtFirstRow().getCharacterStream(parameterIndex);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Reader getCharacterStream(String parameterName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getCharacterStream(parameterName);
 	}
 
 	@Override
@@ -655,17 +771,17 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getObject(parameterIndex, type);
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getObject(parameterName, type);
 	}
-
-	// ----- ordinal setter overrides begin -----
 
 	@Override
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
@@ -828,8 +944,6 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 		super.setCharacterStream(parameterIndex, reader, length);
 	}
 
-	// ----- ordinal setter overrides end -----
-
 	private void setNamedParameter(String name, Object value) throws SQLException {
 		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
@@ -848,14 +962,271 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Calla
 		}
 	}
 
-	private SQLException newOutParametersNotSupported() {
-		return new SQLException("Out parameters are not supported.");
+	@Override
+	public int executeUpdate() throws SQLException {
+		newIllegalMethodInvocation();
+		return 0;
+	}
+
+	@Override
+	public int[] executeBatch() throws SQLException {
+		newIllegalMethodInvocation();
+		return new int[0];
 	}
 
 	private enum ParameterType {
 
 		ORDINAL, NAMED
 
+	}
+
+	static ParameterListDescriptor parseParameterList(String parameterList) {
+
+		var ordinalParameters = new HashMap<Integer, Integer>();
+		var namedParameters = new HashMap<Integer, String>();
+		var constants = new HashMap<Integer, String>();
+
+		if (parameterList != null) {
+			int cnt = 0;
+			for (String s : PARAMETER_LIST_SPLITTER.split(parameterList.trim())) {
+				++cnt;
+				var possibleParameter = s.trim();
+				if (possibleParameter.isEmpty()) {
+					continue;
+				}
+				if ("?".equals(possibleParameter)) {
+					ordinalParameters.put(cnt, -1);
+				}
+				else if (IS_NUMBER.test(possibleParameter)) {
+					ordinalParameters.put(cnt, Integer.parseInt(possibleParameter.replace("$", "")));
+				}
+				else if (possibleParameter.startsWith("$") || possibleParameter.startsWith(":")) {
+					var v = possibleParameter.substring(1);
+					var matcher = VALID_IDENTIFIER.matcher(v);
+					if (matcher.matches() || "0".equals(v)) {
+						namedParameters.put(cnt, v);
+					}
+				}
+				else {
+					constants.put(cnt, possibleParameter);
+				}
+			}
+		}
+
+		if (!(ordinalParameters.isEmpty() || namedParameters.isEmpty())) {
+			throw new IllegalArgumentException("Index- and named ordinalParameters cannot be mixed");
+		}
+
+		if (!ordinalParameters.isEmpty()) {
+			var used = ordinalParameters.values().stream().filter(i -> i > 0).collect(Collectors.toSet());
+			int max = 1;
+			for (Map.Entry<Integer, Integer> entry : ordinalParameters.entrySet()) {
+				Integer key = entry.getKey();
+				Integer v = entry.getValue();
+				if (v < 0) {
+					while (used.contains(max)) {
+						++max;
+					}
+					v = max++;
+				}
+				ordinalParameters.put(key, v);
+			}
+		}
+		return new ParameterListDescriptor(ordinalParameters, namedParameters, constants);
+	}
+
+	/**
+	 * Parses a statement into a {@link Descriptor descriptor}. Supported formats are
+	 * <ul>
+	 * <li>The JDBC syntax <code>{call fqn(&lt;?, ...&gt;)}</code> or
+	 * <code>{? = call fqn(&lt;?, ...&gt;)}</code></li>
+	 * <li>The Cypher simplified variant <code>{CALL fqn(&lt;?, ...&gt;)</code></li>
+	 * <li>Cypher function calls <code>RETURN fqn(&lt;?, ...&gt;)</code>
+	 * </ul>
+	 * Other formats are not supported
+	 * @param statement the statement to be parsed
+	 * @return a descriptor to be used within this {@link CallableStatementImpl callable
+	 * statement implementation}
+	 * @throws IllegalArgumentException if the statement cannot be parsed
+	 */
+	static Descriptor parse(String statement) {
+
+		if (Objects.requireNonNull(statement, "Callable statements cannot be null").isBlank()) {
+			throw new IllegalArgumentException("Callable statements cannot be blank");
+		}
+
+		statement = statement.trim();
+		var matcher = JDBC_CALL.matcher(statement);
+		try {
+			if (matcher.matches()) {
+				var returnParameter = Optional.ofNullable(matcher.group("returnParameter"))
+					.map(String::trim)
+					.orElse("");
+				var returnType = ReturnType.NONE;
+				List<String> returnParameterName = new ArrayList<>();
+				if (!returnParameter.isBlank()) {
+					Optional.ofNullable(matcher.group("returnParameterName"))
+						.map(String::trim)
+						.map(s -> s.substring(1))
+						.ifPresent(returnParameterName::add);
+					returnType = returnParameterName.isEmpty() ? ReturnType.ORDINAL : ReturnType.NAMED;
+				}
+				var parameterList = parseParameterList(matcher.group("parameterList"));
+				return new Descriptor(matcher.group("fqn"), returnType, returnParameterName, parameterList, null);
+			}
+
+			matcher = CYPHER_RETURN_CALL.matcher(statement);
+			if (matcher.matches()) {
+				var parameterList = parseParameterList(matcher.group("parameterList"));
+				return new Descriptor(matcher.group("fqn"), ReturnType.ORDINAL, null, parameterList, true);
+			}
+
+			matcher = CYPHER_YIELD_CALL.matcher(statement);
+			if (matcher.matches()) {
+				var yieldedStuff = Optional.ofNullable(matcher.group("yieldedValues")).map(String::trim).orElse("");
+				List<String> returnParameterName = new ArrayList<>();
+				for (String s : PARAMETER_LIST_SPLITTER.split(yieldedStuff)) {
+					if (!s.isBlank()) {
+						returnParameterName.add(s.trim());
+					}
+				}
+
+				var returnType = returnParameterName.isEmpty() ? ReturnType.ORDINAL : ReturnType.NAMED;
+				var parameterList = parseParameterList(matcher.group("parameterList"));
+				return new Descriptor(matcher.group("fqn"), returnType, returnParameterName, parameterList, false);
+			}
+
+			matcher = CYPHER_SIDE_EFFECT_CALL.matcher(statement);
+			if (matcher.matches()) {
+				var parameterList = parseParameterList(matcher.group("parameterList"));
+				return new Descriptor(matcher.group("fqn"), ReturnType.NONE, null, parameterList, false);
+			}
+		}
+		catch (IllegalArgumentException ex) {
+			throw new IllegalArgumentException(ex.getMessage() + ": `" + statement + "`");
+		}
+
+		throw new IllegalArgumentException("Cannot create a callable statement from `" + statement + "`");
+	}
+
+	private static final Pattern PARAMETER_LIST_SPLITTER = Pattern
+		.compile(",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*\\Z)");
+
+	private static final String VALID_METHOD_NAME = "\\p{javaJavaIdentifierStart}[.\\p{javaJavaIdentifierPart}]*";
+
+	private static final Predicate<String> IS_NUMBER = Pattern.compile("\\$?[1-9]+").asMatchPredicate();
+
+	private static final Pattern VALID_IDENTIFIER = Pattern
+		.compile("\\p{javaJavaIdentifierStart}[.\\p{javaJavaIdentifierPart}]*");
+
+	private static final String WS = "\\s*+";
+
+	private static final String RETURN_PARAMETER = "(?<returnParameter>" + WS + "(?:\\?|(?<returnParameterName>[$:]"
+			+ VALID_IDENTIFIER.pattern() + "))" + WS + "=" + WS + ")?";
+
+	private static final String PARAMETER_LIST = "(?:\\((?<parameterList>.*)\\))?";
+
+	public static final String FQN_AND_PARAMETER_LIST = "(?<fqn>" + VALID_METHOD_NAME + ")" + WS + PARAMETER_LIST;
+
+	private static final Pattern JDBC_CALL = Pattern
+		.compile("(?i)" + WS + "\\{" + RETURN_PARAMETER + "call " + WS + FQN_AND_PARAMETER_LIST + WS + "}");
+
+	private static final Pattern CYPHER_RETURN_CALL = Pattern
+		.compile("(?i)" + WS + "RETURN " + WS + FQN_AND_PARAMETER_LIST);
+
+	private static final Pattern CYPHER_YIELD_CALL = Pattern
+		.compile("(?i)" + WS + "CALL " + WS + FQN_AND_PARAMETER_LIST + WS + "YIELD " + WS + "(\\*|(?<yieldedValues>"
+				+ VALID_IDENTIFIER.pattern() + "(?:," + WS + VALID_IDENTIFIER.pattern() + ")*))");
+
+	private static final Pattern CYPHER_SIDE_EFFECT_CALL = Pattern
+		.compile("(?i)" + WS + "CALL " + WS + FQN_AND_PARAMETER_LIST);
+
+	enum ReturnType {
+
+		NONE, ORDINAL, NAMED, YIELD
+
+	}
+
+	/**
+	 * Tuple needed for describing the parameter list.
+	 *
+	 * @param ordinalParameters all ordinal parameters
+	 * @param namedParameters all named parameters
+	 * @param constants all constant values
+	 */
+	record ParameterListDescriptor(Map<Integer, Integer> ordinalParameters, Map<Integer, String> namedParameters,
+			Map<Integer, String> constants) {
+
+		String toCypher(Map<String, Integer> parameterOrder) {
+
+			if (this.ordinalParameters.isEmpty() && this.namedParameters().isEmpty() && this.constants.isEmpty()) {
+				return "";
+			}
+
+			var all = new TreeMap<Integer, String>();
+			this.ordinalParameters.forEach((k, v) -> all.put(k, "$" + v));
+			this.namedParameters.forEach((k, v) -> {
+				var idx = parameterOrder.getOrDefault(v, k);
+				all.put(idx, "$" + v);
+			});
+			all.putAll(this.constants);
+			return all.values().stream().collect(Collectors.joining(", ", "(", ")"));
+		}
+	}
+
+	/**
+	 * A descriptor of a callable statement containing the fully qualified name of the
+	 * function or method to be called as well as the list of ordinalParameters and their
+	 * type (in, out, inout).
+	 *
+	 * @param fqn the fully qualified name of the function or procedure to call
+	 * @param returnType return type for the statement
+	 * @param yieldedValues optional name for the out (return parameter)
+	 * @param parameterList parameter list
+	 * @param isFunctionCall {@literal true} when the statement is represented as `RETURN
+	 * xyz()` function call
+	 */
+	record Descriptor(String fqn, ReturnType returnType, List<String> yieldedValues,
+			ParameterListDescriptor parameterList, Boolean isFunctionCall) {
+
+		Descriptor {
+			if (yieldedValues != null && !yieldedValues.isEmpty() && returnType != ReturnType.NAMED) {
+				throw new IllegalArgumentException(
+						"A name for the return parameter is only supported with named returns");
+			}
+			if (returnType == ReturnType.NAMED && !parameterList.ordinalParameters.isEmpty()
+					|| !(parameterList.ordinalParameters.isEmpty() || parameterList.namedParameters().isEmpty())) {
+				throw new IllegalArgumentException("Index- and named ordinalParameters cannot be mixed");
+			}
+			if (!(parameterList.namedParameters.isEmpty() || parameterList.constants.isEmpty())) {
+				throw new IllegalArgumentException("Named parameters cannot be used together with constant arguments");
+			}
+		}
+
+		boolean isUsingNamedParameters() {
+			return !this.parameterList.namedParameters.isEmpty();
+		}
+
+		String toCypher(Map<String, Integer> parameterOrder) {
+			var sb = new StringBuilder();
+			var isSafeFunctionCall = Boolean.TRUE.equals(this.isFunctionCall);
+			if (isSafeFunctionCall) {
+				sb.append("RETURN");
+			}
+			else {
+				sb.append("CALL");
+			}
+			sb.append(" ").append(this.fqn).append(this.parameterList.toCypher(parameterOrder));
+
+			if (this.returnType == ReturnType.ORDINAL && !isSafeFunctionCall) {
+				sb.append(" YIELD *");
+			}
+			else if (this.returnType == ReturnType.NAMED) {
+				sb.append(" YIELD ").append(String.join(", ", this.yieldedValues));
+			}
+
+			return sb.toString();
+		}
 	}
 
 }
