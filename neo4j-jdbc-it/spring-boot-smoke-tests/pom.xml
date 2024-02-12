@@ -98,7 +98,8 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>${spring-boot.version}</version>
 				<configuration>
-					<mainClass>ac.simons.neo4j.migrations.examples.sb.Application</mainClass>
+					<skip>false</skip>
+					<mainClass>org.neo4j.driver.it.sb.Application</mainClass>
 				</configuration>
 				<executions>
 					<execution>

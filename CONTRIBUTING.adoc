@@ -64,6 +64,55 @@ We took those "as is" and just disabled the lambda check (requiring even single 
 Public classes do require an author tag.
 Please add yourself as an `@author` to the `.java` files you added or that modified substantially (more than cosmetic changes).
 
+== Benchkit support
+
+Standalone runner (Java 17 required):
+
+[source,bash]
+----
+./mvnw -Dfast -am -pl benchkit clean package
+TEST_NEO4J_HOST=localhost TEST_NEO4J_PASS=verysecret java -jar benchkit/target/neo4j-jdbc-benchkit-1.0-SNAPSHOT.jar
+----
+
+Built a Benchkit compliant Docker as follows.
+
+[source,bash]
+----
+ docker build . -f benchkit/Dockerfile --tag neo4j/neo4j-jdbc-benchkit-backend
+ docker run --publish=9000:9000 \
+  -e TEST_NEO4J_HOST=host.docker.internal \
+  -e TEST_NEO4J_PASS=verysecret neo4j/neo4j-jdbc-benchkit-backend
+----
+
+Pick your poison, in both scenarios the following request should work (assuming you have a Neo4j running on your local machine with the given credentials):
+
+[source,bash]
+----
+curl -X PUT --location "http://localhost:9000/workload" \
+    -H "accept: */*" \
+    -H "Content-Type: application/json" \
+    -d '{
+          "method": "executeQuery",
+          "database": "",
+          "routing": "write",
+          "mode": "sequentialSessions",
+          "queries": [
+            {
+              "text": "UNWIND $titles AS title CREATE (n:Movie {title: title}) RETURN n",
+              "parameters": {
+                "titles": [
+                  "Terminator ",
+                  "Terminator 2"
+                ]
+              }
+            },
+            {
+              "text": "UNWIND range(1,10000) AS i CREATE (n:F {i: i}) RETURN n"
+            }
+          ]
+        }'
+----
+
 == Conventions
 
 === Code

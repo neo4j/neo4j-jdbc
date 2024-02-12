@@ -109,6 +109,7 @@
 		<module>neo4j-jdbc-full-bundle</module>
 		<module>docs</module>
 		<module>dist</module>
+		<module>benchkit</module>
 	</modules>
 
 	<scm>
@@ -134,6 +135,7 @@
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>7.0.0</git-commit-id-maven-plugin.version>
+		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.1</jaxb-api.version>
@@ -165,6 +167,8 @@
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.15.0</neo4j.version>
 		<netty.version>4.1.106.Final</netty.version>
+		<openapi-generator-maven-plugin.version>7.2.0</openapi-generator-maven-plugin.version>
+		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<quarkus.platform.version>3.7.2</quarkus.platform.version>
@@ -573,6 +577,14 @@
 							<version>${asciidoctorj.pdf.version}</version>
 						</dependency>
 					</dependencies>
+				</plugin>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<version>${spring-boot.version}</version>
+					<configuration>
+						<skip>true</skip>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>io.github.git-commit-id</groupId>
