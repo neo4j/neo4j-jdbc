@@ -176,7 +176,7 @@
 		<sortpom-maven-plugin.version>3.3.0</sortpom-maven-plugin.version>
 		<spring-boot.version>3.2.2</spring-boot.version>
 		<spring-javaformat.version>0.0.41</spring-javaformat.version>
-		<testcontainers.version>1.19.4</testcontainers.version>
+		<testcontainers.version>1.19.5</testcontainers.version>
 	</properties>
 
 	<dependencyManagement>
