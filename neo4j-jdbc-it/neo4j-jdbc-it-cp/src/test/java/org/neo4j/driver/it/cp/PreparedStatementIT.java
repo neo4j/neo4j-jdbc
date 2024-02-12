@@ -87,6 +87,31 @@ class PreparedStatementIT extends IntegrationTestBase {
 				var resultSet = statement.executeQuery();
 				resultSet.next();
 				assertThat(resultSet.getInt(1)).isEqualTo((commit) ? limit * 2 : 0);
+				resultSet.close();
+			}
+		}
+	}
+
+	@Test
+	void autocommitAndPreparedStatementShouldWork() throws SQLException {
+		var testId = UUID.randomUUID().toString();
+		try (var connection = getConnection(true, true)) {
+			for (int i = 0; i < 10; ++i) {
+				try (var statement = connection.prepareStatement("INSERT INTO TestWithAutoCommit(testId) VALUES(?)")) {
+					statement.setString(1, testId);
+					statement.execute();
+				}
+			}
+		}
+
+		try (var connection = getConnection()) {
+			try (var statement = connection
+				.prepareStatement("MATCH (n:TestWithAutoCommit {testId: $1}) RETURN count(n)")) {
+				statement.setString(1, testId);
+				var resultSet = statement.executeQuery();
+				resultSet.next();
+				assertThat(resultSet.getInt(1)).isEqualTo(10);
+				resultSet.close();
 			}
 		}
 	}
