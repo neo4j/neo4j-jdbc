@@ -19,10 +19,13 @@
 package org.neo4j.driver.it.cp;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -56,6 +59,22 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				assertThat(results.getString(3)).isNotNull();
 				assertThat(results.getString(1)).isNull(); // Catalog
 				assertThat(results.getString(2)).isEqualTo("public"); // Schema
+				assertThat(results.getInt("PROCEDURE_TYPE")).isEqualTo(DatabaseMetaData.procedureResultUnknown);
+			}
+			assertThat(resultCount).isGreaterThan(0);
+		}
+	}
+
+	@Test
+	void getAllFunctions() throws SQLException {
+		try (var results = this.connection.getMetaData().getFunctions(null, null, null)) {
+			var resultCount = 0;
+			while (results.next()) {
+				resultCount++;
+				assertThat(results.getString(3)).isNotNull();
+				assertThat(results.getString(1)).isNull(); // Catalog
+				assertThat(results.getString(2)).isEqualTo("public"); // Schema
+				assertThat(results.getInt("FUNCTION_TYPE")).isEqualTo(DatabaseMetaData.functionResultUnknown);
 			}
 			assertThat(resultCount).isGreaterThan(0);
 		}
@@ -191,6 +210,103 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void getProcedureColumnsShouldWorkForASingleProcedure() throws SQLException {
+
+		List<Map<Integer, String>> resultColumns = new ArrayList<>();
+		try (var rs = this.connection.getMetaData()
+			.getProcedureColumns(null, null, "db.index.fulltext.queryNodes", null)) {
+			while (rs.next()) {
+				assertThat(rs.getString("PROCEDURE_NAME")).isEqualTo("db.index.fulltext.queryNodes");
+				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo("db.index.fulltext.queryNodes");
+				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
+				assertThat(rs.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.procedureNullableUnknown);
+				assertThat(rs.getString("IS_NULLABLE")).isEmpty();
+				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+			}
+		}
+		assertThat(resultColumns).containsExactly(Map.of(1, "indexName"), Map.of(2, "queryString"),
+				Map.of(3, "options"));
+	}
+
+	@Test
+	void getFunctionColumnsShouldWorkForASingleFunction() throws SQLException {
+
+		List<Map<Integer, String>> resultColumns = new ArrayList<>();
+		try (var rs = this.connection.getMetaData().getFunctionColumns(null, null, "atan2", null)) {
+			while (rs.next()) {
+				assertThat(rs.getString("FUNCTION_NAME")).isEqualTo("atan2");
+				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo("atan2");
+				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
+				assertThat(rs.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.procedureNullableUnknown);
+				assertThat(rs.getString("IS_NULLABLE")).isEmpty();
+				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+			}
+		}
+		assertThat(resultColumns).containsExactly(Map.of(1, "y"), Map.of(2, "x"));
+	}
+
+	@Test
+	void getProcedureColumnsShouldWorkForASingleProcedureAndASingleCol() throws SQLException {
+
+		List<Map<Integer, String>> resultColumns = new ArrayList<>();
+		try (var rs = this.connection.getMetaData()
+			.getProcedureColumns(null, null, "db.index.fulltext.queryNodes", "options")) {
+			while (rs.next()) {
+				assertThat(rs.getString("PROCEDURE_NAME")).isEqualTo("db.index.fulltext.queryNodes");
+				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+			}
+		}
+		assertThat(resultColumns).containsExactly(Map.of(3, "options"));
+	}
+
+	@Test
+	void getFunctionColumnsShouldWorkForASingleProcedureAndASingleCol() throws SQLException {
+
+		List<Map<Integer, String>> resultColumns = new ArrayList<>();
+		try (var rs = this.connection.getMetaData().getFunctionColumns(null, null, "atan2", "x")) {
+			while (rs.next()) {
+				assertThat(rs.getString("FUNCTION_NAME")).isEqualTo("atan2");
+				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+			}
+		}
+		assertThat(resultColumns).containsExactly(Map.of(2, "x"));
+	}
+
+	@Test
+	void getProcedureColumnsShouldWork() throws SQLException {
+
+		try (var rs = this.connection.getMetaData().getProcedureColumns(null, null, null, null)) {
+			int cnt = 0;
+			while (rs.next()) {
+				assertThat(rs.getString("PROCEDURE_NAME")).isNotNull();
+				assertThat(rs.getString("COLUMN_NAME")).isNotNull();
+				assertThat(rs.getObject("ORDINAL_POSITION")).isNotNull();
+				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo(rs.getString("PROCEDURE_NAME"));
+				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
+				++cnt;
+			}
+			assertThat(cnt).isGreaterThan(0);
+		}
+	}
+
+	@Test
+	void getFunctionColumnsShouldWork() throws SQLException {
+
+		try (var rs = this.connection.getMetaData().getFunctionColumns(null, null, null, null)) {
+			int cnt = 0;
+			while (rs.next()) {
+				assertThat(rs.getString("FUNCTION_NAME")).isNotNull();
+				assertThat(rs.getString("COLUMN_NAME")).isNotNull();
+				assertThat(rs.getObject("ORDINAL_POSITION")).isNotNull();
+				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo(rs.getString("FUNCTION_NAME"));
+				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.functionColumnIn);
+				++cnt;
+			}
+			assertThat(cnt).isGreaterThan(0);
+		}
+	}
+
+	@Test
 	void getAllTablesShouldReturnEmptyForCatalogAndSchema() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
@@ -287,7 +403,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		var databaseMetadata = this.connection.getMetaData();
 		try (var expectedKeysRs = databaseMetadata.getProcedures(null, "public", "someProc")) {
 			var rsMetadata = expectedKeysRs.getMetaData();
-			assertThat(rsMetadata.getColumnCount()).isEqualTo(8);
+			assertThat(rsMetadata.getColumnCount()).isEqualTo(9);
 			assertThat(rsMetadata.getColumnName(1)).isEqualTo("PROCEDURE_CAT");
 			assertThat(rsMetadata.getColumnName(2)).isEqualTo("PROCEDURE_SCHEM");
 			assertThat(rsMetadata.getColumnName(3)).isEqualTo("PROCEDURE_NAME");
@@ -295,7 +411,52 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(rsMetadata.getColumnName(5)).isEqualTo("reserved_2");
 			assertThat(rsMetadata.getColumnName(6)).isEqualTo("reserved_3");
 			assertThat(rsMetadata.getColumnName(7)).isEqualTo("REMARKS");
-			assertThat(rsMetadata.getColumnName(8)).isEqualTo("SPECIFIC_NAME");
+			assertThat(rsMetadata.getColumnName(8)).isEqualTo("PROCEDURE_TYPE");
+			assertThat(rsMetadata.getColumnName(9)).isEqualTo("SPECIFIC_NAME");
+			assertThat(expectedKeysRs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getFunctionsShouldMatchTheSpec() throws SQLException {
+		var databaseMetadata = this.connection.getMetaData();
+		try (var expectedKeysRs = databaseMetadata.getFunctions(null, "public", "foo")) {
+			var rsMetadata = expectedKeysRs.getMetaData();
+			assertThat(rsMetadata.getColumnCount()).isEqualTo(6);
+			assertThat(rsMetadata.getColumnName(1)).isEqualTo("FUNCTION_CAT");
+			assertThat(rsMetadata.getColumnName(2)).isEqualTo("FUNCTION_SCHEM");
+			assertThat(rsMetadata.getColumnName(3)).isEqualTo("FUNCTION_NAME");
+			assertThat(rsMetadata.getColumnName(4)).isEqualTo("REMARKS");
+			assertThat(rsMetadata.getColumnName(5)).isEqualTo("FUNCTION_TYPE");
+			assertThat(rsMetadata.getColumnName(6)).isEqualTo("SPECIFIC_NAME");
+			assertThat(expectedKeysRs.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getFunctionColumnsShouldMatchTheSpec() throws SQLException, ExecutionException, InterruptedException {
+		var databaseMetadata = this.connection.getMetaData();
+		try (var expectedKeysRs = databaseMetadata.getFunctionColumns(null, "public", "someNameDoesNotMatter",
+				"SomeColumnNameDoesNotMatter")) {
+			var rsMetadata = expectedKeysRs.getMetaData();
+			assertThat(rsMetadata.getColumnCount()).isEqualTo(17);
+			assertThat(rsMetadata.getColumnName(1)).isEqualTo("FUNCTION_CAT");
+			assertThat(rsMetadata.getColumnName(2)).isEqualTo("FUNCTION_SCHEM");
+			assertThat(rsMetadata.getColumnName(3)).isEqualTo("FUNCTION_NAME");
+			assertThat(rsMetadata.getColumnName(4)).isEqualTo("COLUMN_NAME");
+			assertThat(rsMetadata.getColumnName(5)).isEqualTo("COLUMN_TYPE");
+			assertThat(rsMetadata.getColumnName(6)).isEqualTo("DATA_TYPE");
+			assertThat(rsMetadata.getColumnName(7)).isEqualTo("TYPE_NAME");
+			assertThat(rsMetadata.getColumnName(8)).isEqualTo("PRECISION");
+			assertThat(rsMetadata.getColumnName(9)).isEqualTo("LENGTH");
+			assertThat(rsMetadata.getColumnName(10)).isEqualTo("SCALE");
+			assertThat(rsMetadata.getColumnName(11)).isEqualTo("RADIX");
+			assertThat(rsMetadata.getColumnName(12)).isEqualTo("NULLABLE");
+			assertThat(rsMetadata.getColumnName(13)).isEqualTo("REMARKS");
+			assertThat(rsMetadata.getColumnName(14)).isEqualTo("CHAR_OCTET_LENGTH");
+			assertThat(rsMetadata.getColumnName(15)).isEqualTo("ORDINAL_POSITION");
+			assertThat(rsMetadata.getColumnName(16)).isEqualTo("IS_NULLABLE");
+			assertThat(rsMetadata.getColumnName(17)).isEqualTo("SPECIFIC_NAME");
 		}
 	}
 

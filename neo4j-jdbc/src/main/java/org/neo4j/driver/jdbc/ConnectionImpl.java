@@ -236,7 +236,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public DatabaseMetaData getMetaData() throws SQLException {
 		assertIsOpen();
-		return new DatabaseMetadataImpl(() -> getTransaction(false), this.automaticSqlTranslation);
+		return new DatabaseMetadataImpl(this, () -> getTransaction(false), this.automaticSqlTranslation);
 	}
 
 	@Override

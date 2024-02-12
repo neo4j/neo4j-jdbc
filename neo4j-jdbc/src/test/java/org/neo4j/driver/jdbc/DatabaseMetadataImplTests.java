@@ -18,6 +18,7 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -162,15 +163,6 @@ class DatabaseMetadataImplTests {
 	}
 
 	@Test
-	void getFunctionColumnsShouldReturnEmptyResultSet() throws SQLException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var tableTypes = databaseMetadata.getFunctionColumns(null, "public", "someNameDoesNotMatter",
-				"SomeColumnNameDoesNotMatter")) {
-			assertThat(tableTypes.next()).isFalse();
-		}
-	}
-
-	@Test
 	void getFunctionColumnsShouldErrorWhenNonPublicSchemaPassed() {
 		var databaseMetadata = newDatabaseMetadata();
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> databaseMetadata.getFunctionColumns(null,
@@ -211,8 +203,8 @@ class DatabaseMetadataImplTests {
 	}
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		var boltConnection = Mockito.mock(BoltConnection.class);
-		return new DatabaseMetadataImpl(() -> mock(Neo4jTransaction.class), false);
+		var connection = Mockito.mock(Connection.class);
+		return new DatabaseMetadataImpl(connection, () -> mock(Neo4jTransaction.class), false);
 	}
 
 }

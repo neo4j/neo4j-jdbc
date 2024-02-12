@@ -18,11 +18,11 @@
  */
 package org.neo4j.driver.jdbc;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.Test;
-import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -30,13 +30,11 @@ import static org.mockito.Mockito.mock;
 class DatabaseMetadataKeyValidatingTests {
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		var boltConnection = mock(BoltConnection.class);
-
-		return new DatabaseMetadataImpl(() -> mock(Neo4jTransaction.class), false);
+		return new DatabaseMetadataImpl(mock(Connection.class), () -> mock(Neo4jTransaction.class), false);
 	}
 
 	@Test
-	void getExportedKeysColumnsShouldMatchTheSpec() throws SQLException, ExecutionException, InterruptedException {
+	void getExportedKeysColumnsShouldMatchTheSpec() throws SQLException {
 		var databaseMetadata = newDatabaseMetadata();
 		try (var expectedKeysRs = databaseMetadata.getExportedKeys(null, "public", "someTableDoesNotMatter")) {
 			var rsMetadata = expectedKeysRs.getMetaData();
@@ -78,47 +76,6 @@ class DatabaseMetadataKeyValidatingTests {
 			assertThat(rsMetadata.getColumnName(12)).isEqualTo("FK_NAME");
 			assertThat(rsMetadata.getColumnName(13)).isEqualTo("PK_NAME");
 			assertThat(rsMetadata.getColumnName(14)).isEqualTo("DEFERRABILITY");
-		}
-	}
-
-	@Test
-	void getFunctionColumnsShouldMatchTheSpec() throws SQLException, ExecutionException, InterruptedException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var expectedKeysRs = databaseMetadata.getFunctionColumns(null, "public", "someNameDoesNotMatter",
-				"SomeColumnNameDoesNotMatter")) {
-			var rsMetadata = expectedKeysRs.getMetaData();
-			assertThat(rsMetadata.getColumnCount()).isEqualTo(17);
-			assertThat(rsMetadata.getColumnName(1)).isEqualTo("FUNCTION_CAT");
-			assertThat(rsMetadata.getColumnName(2)).isEqualTo("FUNCTION_SCHEM");
-			assertThat(rsMetadata.getColumnName(3)).isEqualTo("FUNCTION_NAME");
-			assertThat(rsMetadata.getColumnName(4)).isEqualTo("COLUMN_NAME");
-			assertThat(rsMetadata.getColumnName(5)).isEqualTo("COLUMN_TYPE");
-			assertThat(rsMetadata.getColumnName(6)).isEqualTo("DATA_TYPE");
-			assertThat(rsMetadata.getColumnName(7)).isEqualTo("TYPE_NAME");
-			assertThat(rsMetadata.getColumnName(8)).isEqualTo("PRECISION");
-			assertThat(rsMetadata.getColumnName(9)).isEqualTo("LENGTH");
-			assertThat(rsMetadata.getColumnName(10)).isEqualTo("SCALE");
-			assertThat(rsMetadata.getColumnName(11)).isEqualTo("RADIX");
-			assertThat(rsMetadata.getColumnName(12)).isEqualTo("NULLABLE");
-			assertThat(rsMetadata.getColumnName(13)).isEqualTo("REMARKS");
-			assertThat(rsMetadata.getColumnName(14)).isEqualTo("CHAR_OCTET_LENGTH");
-			assertThat(rsMetadata.getColumnName(15)).isEqualTo("ORDINAL_POSITION");
-			assertThat(rsMetadata.getColumnName(16)).isEqualTo("IS_NULLABLE");
-			assertThat(rsMetadata.getColumnName(17)).isEqualTo("SPECIFIC_NAME");
-		}
-	}
-
-	@Test
-	void getFunctionsShouldMatchTheSpec() throws SQLException, ExecutionException, InterruptedException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var expectedKeysRs = databaseMetadata.getFunctions(null, "public", "FunctionName")) {
-			var rsMetadata = expectedKeysRs.getMetaData();
-			assertThat(rsMetadata.getColumnCount()).isEqualTo(5);
-			assertThat(rsMetadata.getColumnName(1)).isEqualTo("FUNCTION_CAT");
-			assertThat(rsMetadata.getColumnName(2)).isEqualTo("FUNCTION_SCHEM");
-			assertThat(rsMetadata.getColumnName(3)).isEqualTo("FUNCTION_NAME");
-			assertThat(rsMetadata.getColumnName(4)).isEqualTo("REMARKS");
-			assertThat(rsMetadata.getColumnName(5)).isEqualTo("FUNCTION_TYPE");
 		}
 	}
 

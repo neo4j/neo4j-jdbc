@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,11 +65,15 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private static final Logger LOGGER = Logger.getLogger(DatabaseMetadataImpl.class.getCanonicalName());
 
+	private final Connection connection;
+
 	private final Neo4jTransactionSupplier transactionSupplier;
 
 	private final boolean automaticSqlTranslation;
 
-	DatabaseMetadataImpl(Neo4jTransactionSupplier transactionSupplier, boolean automaticSqlTranslation) {
+	DatabaseMetadataImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
+			boolean automaticSqlTranslation) {
+		this.connection = connection;
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.automaticSqlTranslation = automaticSqlTranslation;
 	}
@@ -748,57 +753,70 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 
 		var query = """
-				SHOW PROCEDURE YIELD name AS PROCEDURE_NAME, description AS REMARKS
-				%s
-				RETURN NULL AS PROCEDURE_CAT, "public" AS PROCEDURE_SCHEM, PROCEDURE_NAME,
-				NULL AS reserved_1, NULL AS reserved_2, NULL AS reserved_3, REMARKS, "" as SPECIFIC_NAME
+				SHOW PROCEDURES YIELD name AS PROCEDURE_NAME, description AS REMARKS
+				ORDER BY PROCEDURE_NAME
+				WHERE name = $name OR $name IS NULL
+				RETURN
+					NULL AS PROCEDURE_CAT,
+					"public" AS PROCEDURE_SCHEM,
+					PROCEDURE_NAME,
+					NULL AS reserved_1,
+					NULL AS reserved_2,
+					NULL AS reserved_3,
+					REMARKS,
+					$procedureType AS PROCEDURE_TYPE,
+					PROCEDURE_NAME as SPECIFIC_NAME
 				""";
 
-		Map<String, Object> procedureNameParams;
-
-		if (procedureNamePattern == null) {
-			query = query.formatted("");
-			procedureNameParams = Map.of();
-		}
-		else {
-			query = query.formatted("WHERE name = $name");
-			procedureNameParams = Map.of("name", procedureNamePattern);
-		}
-
-		return doQueryForResultSet(query, procedureNameParams);
-
+		var parameters = new HashMap<String, Object>();
+		parameters.put("name", procedureNamePattern);
+		parameters.put("procedureType", DatabaseMetaData.procedureResultUnknown);
+		return doQueryForResultSet(query, parameters);
 	}
 
 	@Override
 	public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
-			String columnNamePattern) {
-		var pullResponse = createEmptyPullResponse();
+			String columnNamePattern) throws SQLException {
 
-		var keys = new ArrayList<String>();
-		keys.add("PROCEDURE_CAT");
-		keys.add("PROCEDURE_SCHEM");
-		keys.add("PROCEDURE_NAME");
-		keys.add("COLUMN_NAME");
-		keys.add("COLUMN_TYPE");
-		keys.add("DATA_TYPE");
-		keys.add("TYPE_NAME");
-		keys.add("PRECISION");
-		keys.add("LENGTH");
-		keys.add("SCALE");
-		keys.add("RADIX");
-		keys.add("NULLABLE");
-		keys.add("REMARKS");
-		keys.add("COLUMN_DEF");
-		keys.add("SQL_DATA_TYPE");
-		keys.add("SQL_DATETIME_SUB");
-		keys.add("CHAR_OCTET_LENGTH");
-		keys.add("ORDINAL_POSITION");
-		keys.add("IS_NULLABLE");
-		keys.add("SPECIFIC_NAME");
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pullResponse, -1,
-				-1, -1);
+		var intermediateResults = getArgumentDescriptions("PROCEDURES", procedureNamePattern);
+
+		Map<String, Object> args = new HashMap<>();
+		args.put("results", intermediateResults);
+		args.put("columnNamePattern", columnNamePattern);
+		args.put("columnType", DatabaseMetaData.procedureColumnIn);
+		args.put("nullable", DatabaseMetaData.procedureNullableUnknown);
+		String query = """
+				UNWIND $results AS result
+				WITH result, range(0, size(result.argumentDescriptions) - 1) AS ordinal_positions
+				UNWIND ordinal_positions AS ORDINAL_POSITION
+				WITH result, ORDINAL_POSITION
+				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL
+				RETURN
+					NULL AS PROCEDURE_CAT,
+					"public" AS PROCEDURE_SCHEM,
+					result.name AS PROCEDURE_NAME,
+					result.argumentDescriptions[ORDINAL_POSITION].name AS COLUMN_NAME,
+					$columnType AS COLUMN_TYPE,
+					NULL AS DATA_TYPE,
+					NULL AS TYPE_NAME,
+					NULL AS PRECISION,
+					NULL AS LENGTH,
+					NULL AS SCALE,
+					NULL AS RADIX,
+					$nullable AS NULLABLE,
+					result.argumentDescriptions[ORDINAL_POSITION].description AS REMARKS,
+					NULL AS COLUMN_DEF,
+					NULL AS SQL_DATA_TYPE,
+					NULL AS SQL_DATETIME_SUB,
+					NULL AS CHAR_OCTET_LENGTH,
+					ORDINAL_POSITION + 1 AS ORDINAL_POSITION,
+					'' AS IS_NULLABLE,
+					result.name AS SPECIFIC_NAME
+				""";
+		return doQueryForResultSet(query, args);
 	}
 
 	@Override
@@ -1188,64 +1206,64 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean ownUpdatesAreVisible(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean ownUpdatesAreVisible(int type) {
+		return true;
 	}
 
 	@Override
-	public boolean ownDeletesAreVisible(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean ownDeletesAreVisible(int type) {
+		return true;
 	}
 
 	@Override
-	public boolean ownInsertsAreVisible(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean ownInsertsAreVisible(int type) {
+		return true;
 	}
 
 	@Override
-	public boolean othersUpdatesAreVisible(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean othersUpdatesAreVisible(int type) {
+		return true;
 	}
 
 	@Override
-	public boolean othersDeletesAreVisible(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean othersDeletesAreVisible(int type) {
+		return true;
 	}
 
 	@Override
-	public boolean othersInsertsAreVisible(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean othersInsertsAreVisible(int type) {
+		return true;
 	}
 
 	@Override
-	public boolean updatesAreDetected(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean updatesAreDetected(int type) {
+		return false;
 	}
 
 	@Override
-	public boolean deletesAreDetected(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean deletesAreDetected(int type) {
+		return false;
 	}
 
 	@Override
-	public boolean insertsAreDetected(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean insertsAreDetected(int type) {
+		return false;
 	}
 
 	@Override
-	public boolean supportsBatchUpdates() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsBatchUpdates() {
+		return true;
 	}
 
 	@Override
 	public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
-	public Connection getConnection() throws SQLException {
-		throw new UnsupportedOperationException();
+	public Connection getConnection() {
+		return this.connection;
 	}
 
 	@Override
@@ -1285,13 +1303,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsResultSetHoldability(int holdability) {
+		return holdability == ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override
-	public int getResultSetHoldability() throws SQLException {
-		throw new UnsupportedOperationException();
+	public int getResultSetHoldability() {
+		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override
@@ -1357,8 +1375,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
-		throw new UnsupportedOperationException();
+	public boolean supportsStoredFunctionsUsingCallSyntax() {
+		return true;
 	}
 
 	@Override
@@ -1374,51 +1392,91 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
 			throws SQLException {
-		// Do we have functions?
-		var pullResponse = createEmptyPullResponse();
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var keys = new ArrayList<String>();
-		keys.add("FUNCTION_CAT");
-		keys.add("FUNCTION_SCHEM");
-		keys.add("FUNCTION_NAME");
-		keys.add("REMARKS");
-		keys.add("FUNCTION_TYPE");
+		var query = """
+				SHOW FUNCTIONS YIELD name AS FUNCTION_NAME, description AS REMARKS
+				ORDER BY FUNCTION_NAME
+				WHERE name = $name OR $name IS NULL
+				RETURN NULL AS FUNCTION_CAT,
+				"public" AS FUNCTION_SCHEM,
+				FUNCTION_NAME,
+				REMARKS,
+				$functionType AS FUNCTION_TYPE,
+				FUNCTION_NAME AS SPECIFIC_NAME
+				""";
 
-		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pullResponse, -1,
-				-1, -1);
+		var parameters = new HashMap<String, Object>();
+		parameters.put("name", functionNamePattern);
+		parameters.put("functionType", DatabaseMetaData.functionResultUnknown);
+		return doQueryForResultSet(query, parameters);
 	}
 
 	@Override
 	public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern,
 			String columnNamePattern) throws SQLException {
+
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var pullResponse = createEmptyPullResponse();
+		var intermediateResults = getArgumentDescriptions("FUNCTIONS", functionNamePattern);
 
-		var keys = new ArrayList<String>();
-		keys.add("FUNCTION_CAT");
-		keys.add("FUNCTION_SCHEM");
-		keys.add("FUNCTION_NAME");
-		keys.add("COLUMN_NAME");
-		keys.add("COLUMN_TYPE");
-		keys.add("DATA_TYPE");
-		keys.add("TYPE_NAME");
-		keys.add("PRECISION");
-		keys.add("LENGTH");
-		keys.add("SCALE");
-		keys.add("RADIX");
-		keys.add("NULLABLE");
-		keys.add("REMARKS");
-		keys.add("CHAR_OCTET_LENGTH");
-		keys.add("ORDINAL_POSITION");
-		keys.add("IS_NULLABLE");
-		keys.add("SPECIFIC_NAME");
+		Map<String, Object> args = new HashMap<>();
+		args.put("results", intermediateResults);
+		args.put("columnNamePattern", columnNamePattern);
+		args.put("columnType", DatabaseMetaData.functionColumnIn);
+		args.put("nullable", DatabaseMetaData.functionNullableUnknown);
+		String query = """
+				UNWIND $results AS result
+				WITH result, range(0, size(result.argumentDescriptions) - 1) AS ordinal_positions
+				UNWIND ordinal_positions AS ORDINAL_POSITION
+				WITH result, ORDINAL_POSITION
+				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL
+				RETURN
+					NULL AS FUNCTION_CAT,
+					"public" AS FUNCTION_SCHEM,
+					result.name AS FUNCTION_NAME,
+					result.argumentDescriptions[ORDINAL_POSITION].name AS COLUMN_NAME,
+					$columnType AS COLUMN_TYPE,
+					NULL AS DATA_TYPE,
+					NULL AS TYPE_NAME,
+					NULL AS PRECISION,
+					NULL AS LENGTH,
+					NULL AS SCALE,
+					NULL AS RADIX,
+					$nullable AS NULLABLE,
+					result.argumentDescriptions[ORDINAL_POSITION].description AS REMARKS,
+					NULL AS CHAR_OCTET_LENGTH,
+					ORDINAL_POSITION + 1 AS ORDINAL_POSITION,
+					'' AS IS_NULLABLE,
+					result.name AS SPECIFIC_NAME
+				""";
+		return doQueryForResultSet(query, args);
+	}
 
-		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pullResponse, -1,
-				-1, -1);
+	private List<Map<String, Object>> getArgumentDescriptions(String category, String namePattern) throws SQLException {
+
+		// Tja.
+		// SHOW procedures and SHOW functions are massively not composable, and so they
+		// don't fly with UNWIND and WITH
+		// The second query is just more maintainable than having yet another dance for
+		// creating correct, fake pull responses
+
+		var query = """
+				SHOW %s YIELD name, description, argumentDescription
+				ORDER BY name
+				WHERE name = $name OR $name IS NULL
+				""".formatted(category);
+
+		List<Map<String, Object>> intermediateResults = new ArrayList<>();
+		try (var rs = doQueryForResultSet(query, Collections.singletonMap("name", namePattern))) {
+			while (rs.next()) {
+				intermediateResults.add(Map.of("name", rs.getString("name"), "description", rs.getString("description"),
+						"argumentDescriptions", rs.getObject("argumentDescription")));
+			}
+		}
+		return intermediateResults;
 	}
 
 	@Override
