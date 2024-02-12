@@ -104,12 +104,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean allTablesAreSelectable() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public String getURL() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -120,7 +120,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	// Wrt ordering see
@@ -450,62 +450,62 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean isCatalogAtStart() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public String getCatalogSeparator() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsSchemasInDataManipulation() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsSchemasInProcedureCalls() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsSchemasInTableDefinitions() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsCatalogsInDataManipulation() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -530,7 +530,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean supportsSubqueriesInComparisons() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -540,17 +540,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean supportsSubqueriesInIns() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsCorrelatedSubqueries() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -585,42 +585,42 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getMaxBinaryLiteralLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxCharLiteralLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxColumnNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxColumnsInGroupBy() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxColumnsInIndex() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxColumnsInOrderBy() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxColumnsInSelect() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxColumnsInTable() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -638,37 +638,37 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getMaxCursorNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxIndexLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxSchemaNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxProcedureNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxCatalogNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxRowSize() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -678,17 +678,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getMaxStatements() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxTableNameLength() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int getMaxTablesInSelect() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1073,24 +1073,24 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable)
 			throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
-	public ResultSet getVersionColumns(String catalog, String schema, String table) {
-		throw new UnsupportedOperationException();
+	public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1157,12 +1157,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable,
 			String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public ResultSet getTypeInfo() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1197,12 +1197,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean supportsResultSetType(int type) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1288,18 +1288,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
 			String attributeNamePattern) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1334,22 +1334,22 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getSQLStateType() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean locatorsUpdateCopy() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public boolean supportsStatementPooling() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public RowIdLifetime getRowIdLifetime() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1381,12 +1381,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public ResultSet getClientInfoProperties() throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -1482,7 +1482,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern,
 			String columnNamePattern) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override

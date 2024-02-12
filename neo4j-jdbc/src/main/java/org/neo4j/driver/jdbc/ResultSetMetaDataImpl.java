@@ -20,6 +20,7 @@ package org.neo4j.driver.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.List;
 
@@ -78,8 +79,8 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData {
 	}
 
 	@Override
-	public boolean isCurrency(int column) {
-		throw new UnsupportedOperationException("No Concept of currency in Neo4j");
+	public boolean isCurrency(int column) throws SQLException {
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override

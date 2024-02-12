@@ -31,7 +31,7 @@ class ProductVersionTests {
 	@Test
 	void getMajorVersion() {
 
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatIllegalArgumentException()
 			.isThrownBy(ProductVersion::getMajorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
@@ -39,7 +39,7 @@ class ProductVersionTests {
 	@Test
 	void getMinorVersion() {
 
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatIllegalArgumentException()
 			.isThrownBy(ProductVersion::getMinorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}

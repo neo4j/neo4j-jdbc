@@ -68,7 +68,7 @@ final class ProductVersion {
 
 		var value = getValue();
 		if ("unknown".equalsIgnoreCase(value)) {
-			throw new UnsupportedOperationException("Unsupported or unknown version '%s'".formatted(value));
+			throw new IllegalArgumentException("Unsupported or unknown version '%s'".formatted(value));
 		}
 		var part = value.split("\\.")[idx];
 		var indexOfDash = part.indexOf("-");

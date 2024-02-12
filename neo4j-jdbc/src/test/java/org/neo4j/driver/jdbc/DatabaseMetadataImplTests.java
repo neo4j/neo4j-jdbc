@@ -82,7 +82,7 @@ class DatabaseMetadataImplTests {
 	@Test
 	void getDriverMajorVersion() {
 		var databaseMetadata = newDatabaseMetadata();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatIllegalArgumentException()
 			.isThrownBy(databaseMetadata::getDriverMajorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
@@ -90,7 +90,7 @@ class DatabaseMetadataImplTests {
 	@Test
 	void getDriverMinorVersion() {
 		var databaseMetadata = newDatabaseMetadata();
-		Assertions.assertThatExceptionOfType(UnsupportedOperationException.class)
+		Assertions.assertThatIllegalArgumentException()
 			.isThrownBy(databaseMetadata::getDriverMinorVersion)
 			.withMessage("Unsupported or unknown version 'unknown'");
 	}
