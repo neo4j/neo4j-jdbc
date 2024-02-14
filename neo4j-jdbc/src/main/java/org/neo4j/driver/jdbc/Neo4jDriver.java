@@ -19,6 +19,7 @@
 package org.neo4j.driver.jdbc;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -39,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.neo4j.driver.jdbc.internal.bolt.AuthTokens;
@@ -153,6 +156,103 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private volatile SqlTranslatorFactory sqlTranslatorFactory;
 
+	/**
+	 * Creates a new {@link Connection} from the environment. The driver will first
+	 * evaluate the system environment followed by an optional {@literal .env} file in the
+	 * current working directory. If you want to use a different directory, use
+	 * {@link #fromEnv(Path)}, if you want to use a .env file with a different name, use
+	 * {@link #fromEnv(String)}. If you want to customize both, use
+	 * {@link #fromEnv(Path, String)}. The following environment variables are supported:
+	 * <ul>
+	 * <li><code>NEO4J_URI</code> The address or URI of the instance to connect to</li>
+	 * <li><code>NEO4J_USERNAME</code> Optional username</li>
+	 * <li><code>NEO4J_PASSWORD</code> Optional password</li>
+	 * <li><code>NEO4J_SQL_TRANSLATION_ENABLED</code> Optional flag to enable full SQL to
+	 * Cypher translation, defaults to {@literal false}</li>
+	 * </ul>
+	 * @return a connection when the environment contains at least a supported URL under
+	 * the key {@literal NEO4J_URI}.
+	 * @throws SQLException any error that might happen
+	 */
+	public static Optional<Connection> fromEnv() throws SQLException {
+		return fromEnv(null, null);
+	}
+
+	/**
+	 * Creates a new {@link Connection} from the environment, changing the search path for
+	 * .env files to the given directory. System environment variables have precedence.
+	 * @param directory an optional directory to look for .env files
+	 * @return a connection when the environment contains at least a supported URL under
+	 * the key {@literal NEO4J_URI}.
+	 * @throws SQLException any error that might happen
+	 * @see #fromEnv() for supported environment variables
+	 */
+	public static Optional<Connection> fromEnv(Path directory) throws SQLException {
+		return fromEnv(directory, null);
+	}
+
+	/**
+	 * Creates a new {@link Connection} from the environment, changing the filename of the
+	 * .env files to the given name. System environment variables have precedence.
+	 * @param filename an alternative filename for the .env file
+	 * @return a connection when the environment contains at least a supported URL under
+	 * the key {@literal NEO4J_URI}.
+	 * @throws SQLException any error that might happen
+	 * @see #fromEnv() for supported environment variables
+	 */
+	public static Optional<Connection> fromEnv(String filename) throws SQLException {
+
+		return fromEnv(null, filename);
+	}
+
+	/**
+	 * Creates a new {@link Connection} from the environment, changing the search path for
+	 * .env files to the given directory and the filename of the .env files to the given
+	 * name. System environment variables have precedence.
+	 * @param directory an optional directory to look for .env files
+	 * @param filename an alternative filename for the .env file
+	 * @return a connection when the environment contains at least a supported URL under
+	 * the key {@literal NEO4J_URI}.
+	 * @throws SQLException any error that might happen
+	 * @see #fromEnv() for supported environment variables
+	 */
+	public static Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
+
+		var builder = Dotenv.configure().ignoreIfMissing().ignoreIfMalformed();
+
+		if (directory != null) {
+			builder = builder.directory(directory.toAbsolutePath().toString());
+		}
+		if (filename != null && !filename.isBlank()) {
+			builder = builder.filename(filename);
+		}
+
+		var env = builder.load();
+
+		var address = env.get("NEO4J_URI");
+		if (address != null && !address.toLowerCase(Locale.ROOT).startsWith("jdbc:")) {
+			address = "jdbc:" + address;
+		}
+		if (address != null && Neo4jDriver.URL_PATTERN.matcher(address).matches()) {
+			var properties = new Properties();
+			var username = env.get("NEO4J_USERNAME");
+			if (username != null) {
+				properties.put(Neo4jDriver.PROPERTY_USER, username);
+			}
+			var password = env.get("NEO4J_PASSWORD");
+			if (password != null) {
+				properties.put(Neo4jDriver.PROPERTY_PASSWORD, password);
+			}
+			var sql2cypher = env.get("NEO4J_SQL_TRANSLATION_ENABLED");
+			if (Boolean.parseBoolean(sql2cypher)) {
+				properties.put(Neo4jDriver.PROPERTY_SQL_TRANSLATION_ENABLED, "true");
+			}
+			return Optional.of(new Neo4jDriver().connect(address, properties));
+		}
+
+		return Optional.empty();
+	}
+
 	public Neo4jDriver() {
 		// Having a public default constructor is not only fine here, but also required on
 		// the module path so that this public class can be properly exported.
@@ -175,7 +275,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		var user = driverConfig.user;
 		var password = driverConfig.password;
-		var authToken = (password != null) ? AuthTokens.basic(user, password) : AuthTokens.none();
+		var authToken = AuthTokens.none();
+		if (user != null && !user.isBlank() && password != null && !password.isBlank()) {
+			authToken = AuthTokens.basic(user, password);
+		}
 
 		var boltAgent = BoltAgentUtil.boltAgent();
 		var userAgent = driverConfig.agent;
@@ -226,9 +329,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			throw new SQLException("url cannot be null.");
 		}
 
-		var matcher = URL_PATTERN.matcher(url);
-
-		return matcher.matches();
+		return URL_PATTERN.matcher(url).matches();
 	}
 
 	@Override

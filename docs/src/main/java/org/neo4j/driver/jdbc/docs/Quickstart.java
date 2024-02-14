@@ -38,6 +38,7 @@ public final class Quickstart {
 	public static void main(String... args) {
 		queryWithCypher();
 		queryWithSQL();
+		connectFromEnv();
 	}
 
 	// tag::pt1[]
@@ -99,6 +100,34 @@ public final class Quickstart {
 		catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
+	}
+
+	static void connectFromEnv() {
+		var query = """
+				MATCH (m:Movie)<-[:ACTED_IN]-(p:Person)
+				RETURN m.title AS title, collect(p.name) AS actors
+				ORDER BY m.title
+				""";
+
+		// tag::pt3[]
+		try (var con = org.neo4j.driver.jdbc.Neo4jDriver.fromEnv().orElseThrow(); // <.>
+				var stmt = con.createStatement();
+				var result = stmt.executeQuery(query)) {
+
+			// Same loop as earlier
+			// end::pt3[]
+			while (result.next()) {
+				var movie = result.getString(1);
+				var actors = (List<String>) result.getObject("actors");
+				System.out.printf("%s%n", movie);
+				actors.forEach(actor -> System.out.printf("\t * %s%n", actor));
+			}
+			// tag::pt3[]
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException(ex);
+		}
+		// end::pt3[]
 	}
 
 	// tag::pt1[]

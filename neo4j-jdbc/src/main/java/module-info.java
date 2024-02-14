@@ -21,6 +21,7 @@ module neo4j.jdbc {
 	requires transitive java.sql;
 
 	// start::shaded-dependencies
+	requires io.github.cdimascio.dotenv.java;
 	requires io.netty.buffer;
 	requires io.netty.codec;
 	requires io.netty.common;

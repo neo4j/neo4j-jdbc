@@ -54,7 +54,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Named;
@@ -80,8 +79,8 @@ class CallableStatementImplTests {
 	@ParameterizedTest
 	@MethodSource
 	void shouldThrowWhenClosed(StatementMethodRunner consumer) throws SQLException {
-		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
+		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), false,
+				TEST_STATEMENT);
 		this.statement.close();
 		assertThat(this.statement.isClosed()).isTrue();
 		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(SQLException.class);
@@ -178,8 +177,8 @@ class CallableStatementImplTests {
 	@ParameterizedTest
 	@MethodSource
 	void shouldThrowUnsupported(StatementMethodRunner consumer, Class<? extends SQLException> exceptionType) {
-		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
+		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), false,
+				TEST_STATEMENT);
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(exceptionType);
 	}
 
@@ -328,8 +327,8 @@ class CallableStatementImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
+		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), false,
+				TEST_STATEMENT);
 
 		// when & then
 		if (shouldUnwrap) {
@@ -345,8 +344,8 @@ class CallableStatementImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) {
 		// given
-		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
+		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), false,
+				TEST_STATEMENT);
 
 		// when
 		var wrapperFor = this.statement.isWrapperFor(cls);
@@ -367,8 +366,8 @@ class CallableStatementImplTests {
 	@MethodSource("shouldNotAllowMixingParameterTypesArgs")
 	void shouldNotAllowMixingParameterTypes(StatementMethodRunner firstSetter, StatementMethodRunner secondSetter)
 			throws MalformedURLException, SQLException, IllegalAccessException {
-		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class),
-				UnaryOperator.identity(), UnaryOperator.identity(), false, TEST_STATEMENT);
+		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), false,
+				TEST_STATEMENT);
 
 		try {
 			firstSetter.run(this.statement);

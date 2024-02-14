@@ -66,3 +66,47 @@ This JDBC extension will let you use named parameters:
 ----
 include::{examplesDir}/NamedParameters.java[tag=index-np]
 ----
+
+== Getting a connection via environment variables
+
+If you are happy to depend on `org.neo4j.driver.jdbc.Neo4jDriver` directly and want to get a connection as easy as possible, you might want to use `fromEnv`:
+
+[source, java, tabsize=4, indent=0]
+.Get a connection from the environnment.
+----
+include::{examplesDir}/Quickstart.java[tag=pt3]
+----
+<.> Notice how we directly use the concrete driver class here and how the methods returns an optional: If we don't find the required properties, we can't create a connection.
+
+The `fromEnv` looks for a couple of specific system environment variables and it will be true to the principles of the https://12factor.net[12 factor app] while doing so:
+
+- It will look in the System environment first
+- It will then look for a file named `.env` in the current working directory
+
+There are overloads that let you configure the directory and the filename to look for.
+The properties we support are as follows:
+
+`NEO4J_URI`:: The address or URI of the instance to connect to</li>
+`NEO4J_USERNAME`:: Optional username
+`NEO4J_PASSWORD`:: Optional password
+`NEO4J_SQL_TRANSLATION_ENABLED`:: Optional flag to enable full SQL to Cypher translation, defaults to `false`
+
+NOTE: Information from both the System environment and the .env files are combined. If for example `NEO4J_SQL_TRANSLATION_ENABLED` is in the System environment but not in the .env file, it will still be picked up.
+
+This feature is especially useful with Neo4j AuraDB.
+When creating a new AuraDB instance you are required to download an `.env` file and you can directly use it with the Neo4j JDBC Driver like this:
+
+[source,java]
+.Using a .env file from AuraDB
+----
+try (
+    var con = Neo4jDriver.fromEnv("Neo4j-cb3d8b2d-Created-2024-02-14.txt")
+        .orElseThrow();
+    var stmt = con.createStatement();
+    var movies = stmt.executeQuery("MATCH (n:Movie) RETURN n.title AS title")
+) {
+    while (movies.next()) {
+        System.out.println(movies.getString("title"));
+    }
+}
+----

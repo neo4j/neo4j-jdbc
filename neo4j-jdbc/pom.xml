@@ -40,6 +40,10 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-handler</artifactId>
 		</dependency>
