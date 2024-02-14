@@ -134,7 +134,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		if (resultSet == null) {
 			throw new SQLException("CallableStatement#execute has not been called");
 		}
-		if (!this.cursorMoved.compareAndExchange(false, true)) {
+		if (this.cursorMoved.compareAndSet(false, true)) {
 			this.resultSet.next();
 		}
 		return resultSet;

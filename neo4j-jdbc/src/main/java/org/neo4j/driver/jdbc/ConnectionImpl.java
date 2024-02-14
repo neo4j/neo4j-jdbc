@@ -27,7 +27,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -125,20 +124,20 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Statement createStatement() throws SQLException {
-		return this.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return this.createStatement(ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
+				ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		return prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return prepareStatement(sql, ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
+				ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql) throws SQLException {
-		return prepareCall(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY,
-				ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return prepareCall(sql, ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
+				ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
 	@Override
@@ -289,28 +288,28 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-		return createStatement(resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return createStatement(resultSetType, resultSetConcurrency, ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
 			throws SQLException {
-		return prepareStatement(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return prepareStatement(sql, resultSetType, resultSetConcurrency, ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
 	private static void assertValidResultSetTypeAndConcurrency(int resultSetType, int resultSetConcurrency)
 			throws SQLException {
-		if (resultSetType != ResultSet.TYPE_FORWARD_ONLY) {
+		if (resultSetType != ResultSetImpl.SUPPORTED_TYPE) {
 			throw new SQLException("Unsupported result set type: " + resultSetType);
 		}
-		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
+		if (resultSetConcurrency != ResultSetImpl.SUPPORTED_CONCURRENCY) {
 			throw new SQLException("Unsupported result set concurrency: " + resultSetConcurrency);
 		}
 	}
 
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-		return prepareCall(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		return prepareCall(sql, resultSetType, resultSetConcurrency, ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
 	@Override
@@ -331,7 +330,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public int getHoldability() throws SQLException {
 		assertIsOpen();
-		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+		return ResultSetImpl.SUPPORTED_HOLDABILITY;
 	}
 
 	@Override
@@ -384,7 +383,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	private static void assertValidResultSetHoldability(int resultSetHoldability) throws SQLException {
-		if (resultSetHoldability != ResultSet.CLOSE_CURSORS_AT_COMMIT) {
+		if (resultSetHoldability != ResultSetImpl.SUPPORTED_HOLDABILITY) {
 			throw new SQLException(
 					"Unsupported result set holdability, result sets will always be closed when the underlying transaction is closed: "
 							+ resultSetHoldability);

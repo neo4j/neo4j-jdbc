@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StatementIT extends IntegrationTestBase {
@@ -240,6 +241,80 @@ class StatementIT extends IntegrationTestBase {
 					assertThat(cnt).isEqualTo(2);
 				}
 			}
+		}
+	}
+
+	@Test
+	void resultSetIt0Record() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery("WITH 1 AS i WHERE false RETURN i")) {
+
+			assertThat(rs.isBeforeFirst()).isTrue();
+
+			assertThat(rs.next()).isFalse();
+			assertThat(rs.isBeforeFirst()).isFalse();
+			assertThat(rs.isFirst()).isFalse();
+			assertThat(rs.isLast()).isFalse();
+			assertThat(rs.isAfterLast()).isTrue();
+		}
+	}
+
+	@Test
+	void resultSetIt1Record() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery("RETURN 1 as i")) {
+
+			assertThat(rs.isBeforeFirst()).isTrue();
+
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.isBeforeFirst()).isFalse();
+			assertThat(rs.isFirst()).isTrue();
+			assertThat(rs.getInt("i")).isOne();
+			assertThat(rs.isAfterLast()).isFalse();
+
+			assertThat(rs.isLast()).isTrue();
+			assertThat(rs.getInt("i")).isOne();
+			assertThat(rs.isAfterLast()).isFalse();
+
+			assertThat(rs.next()).isFalse();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getInt("i"))
+				.withMessage("Invalid cursor position");
+			assertThat(rs.isFirst()).isFalse();
+			assertThat(rs.isLast()).isFalse();
+			assertThat(rs.isAfterLast()).isTrue();
+		}
+	}
+
+	@Test
+	void resultSetItNRecords() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery("UNWIND range(1,10) AS i RETURN i")) {
+
+			assertThat(rs.isBeforeFirst()).isTrue();
+
+			int cnt = 1;
+			while (rs.next()) {
+				assertThat(rs.getInt("i")).isEqualTo(cnt);
+				if (cnt == 1) {
+					assertThat(rs.isFirst()).isTrue();
+				}
+				else if (cnt == 10) {
+					assertThat(rs.isLast()).isTrue();
+				}
+				else {
+					assertThat(rs.isFirst()).isFalse();
+					assertThat(rs.isLast()).isFalse();
+				}
+				++cnt;
+			}
+
+			assertThat(rs.next()).isFalse();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getInt("i"))
+				.withMessage("Invalid cursor position");
+			assertThat(rs.isAfterLast()).isTrue();
 		}
 	}
 

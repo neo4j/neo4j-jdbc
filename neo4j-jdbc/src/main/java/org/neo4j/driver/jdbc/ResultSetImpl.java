@@ -46,6 +46,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
@@ -54,6 +56,26 @@ import org.neo4j.driver.jdbc.values.Type;
 import org.neo4j.driver.jdbc.values.Value;
 
 final class ResultSetImpl implements ResultSet {
+
+	/**
+	 * A constant for the only holdability we support.
+	 */
+	static final int SUPPORTED_HOLDABILITY = ResultSet.CLOSE_CURSORS_AT_COMMIT;
+
+	/**
+	 * A constant for the only result type we support.
+	 */
+	static final int SUPPORTED_TYPE = ResultSet.TYPE_FORWARD_ONLY;
+
+	/**
+	 * A constant for the only concurrency we support.
+	 */
+	static final int SUPPORTED_CONCURRENCY = ResultSet.CONCUR_READ_ONLY;
+
+	/**
+	 * A constant for the only fetch direction we support.
+	 */
+	static final int SUPPORTED_FETCH_DIRECTION = ResultSet.FETCH_FORWARD;
 
 	private final StatementImpl statement;
 
@@ -81,6 +103,14 @@ final class ResultSetImpl implements ResultSet {
 
 	private boolean closed;
 
+	private final AtomicBoolean beforeFirst = new AtomicBoolean(true);
+
+	private final AtomicReference<Boolean> first = new AtomicReference<>();
+
+	private final AtomicBoolean last = new AtomicBoolean(false);
+
+	private final AtomicBoolean afterLast = new AtomicBoolean(false);
+
 	ResultSetImpl(StatementImpl statement, Neo4jTransaction transaction, RunResponse runResponse,
 			PullResponse batchPullResponse, int fetchSize, int maxRowLimit, int maxFieldSize) {
 		this.statement = Objects.requireNonNull(statement);
@@ -98,6 +128,23 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public boolean next() throws SQLException {
+		this.beforeFirst.compareAndSet(true, false);
+		var result = next0();
+		if (result) {
+			if (!this.first.compareAndSet(null, true)) {
+				this.first.compareAndSet(true, false);
+			}
+			this.last.compareAndSet(false, !(this.recordsBatchIterator.hasNext() || this.batchPullResponse.hasMore()));
+		}
+		else {
+			this.first.compareAndSet(true, false);
+			this.last.compareAndSet(true, false);
+			this.afterLast.compareAndSet(false, true);
+		}
+		return result;
+	}
+
+	private boolean next0() throws SQLException {
 		if (this.closed) {
 			throw new SQLException("This result set is closed.");
 		}
@@ -367,23 +414,23 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public boolean isBeforeFirst() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean isBeforeFirst() {
+		return this.beforeFirst.get();
 	}
 
 	@Override
-	public boolean isAfterLast() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean isAfterLast() {
+		return this.afterLast.get();
 	}
 
 	@Override
-	public boolean isFirst() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean isFirst() {
+		return Boolean.TRUE.equals(this.first.get());
 	}
 
 	@Override
-	public boolean isLast() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean isLast() {
+		return this.last.get();
 	}
 
 	@Override
@@ -427,13 +474,16 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public void setFetchDirection(int direction) {
-		// this hint is not supported
+	public void setFetchDirection(int direction) throws SQLException {
+		assertIsOpen();
+		if (direction != SUPPORTED_FETCH_DIRECTION) {
+			throw new SQLException("Only forward fetching is supported");
+		}
 	}
 
 	@Override
 	public int getFetchDirection() {
-		return FETCH_FORWARD;
+		return SUPPORTED_FETCH_DIRECTION;
 	}
 
 	@Override
@@ -448,12 +498,12 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public int getType() {
-		return TYPE_FORWARD_ONLY;
+		return SUPPORTED_TYPE;
 	}
 
 	@Override
 	public int getConcurrency() {
-		return CONCUR_READ_ONLY;
+		return SUPPORTED_CONCURRENCY;
 	}
 
 	@Override
@@ -853,7 +903,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public int getHoldability() {
-		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
+		return SUPPORTED_HOLDABILITY;
 	}
 
 	@Override
