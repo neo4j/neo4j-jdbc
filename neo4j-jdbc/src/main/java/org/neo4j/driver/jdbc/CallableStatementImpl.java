@@ -62,8 +62,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	private ParameterType parameterType;
 
 	static CallableStatement prepareCall(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
-			String sql) throws SQLException {
+			boolean rewriteBatchedStatements, String sql) throws SQLException {
 
 		// We should cache the descriptor if this gets widely used.
 
@@ -98,16 +97,16 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 		// We can always store the descriptor with the statement to check for yielded /
 		// return values if wished / needed
-		return new CallableStatementImpl(connection, transactionSupplier, sqlProcessor, indexProcessor,
-				rewriteBatchedStatements, descriptor.toCypher(parameterOrder));
+		return new CallableStatementImpl(connection, transactionSupplier, rewriteBatchedStatements,
+				descriptor.toCypher(parameterOrder));
 	}
 
 	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
 
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
-			String sql) {
-		super(connection, transactionSupplier, sqlProcessor, indexProcessor, rewriteBatchedStatements, sql);
+			boolean rewriteBatchedStatements, String sql) {
+		super(connection, transactionSupplier, UnaryOperator.identity(), UnaryOperator.identity(),
+				rewriteBatchedStatements, sql);
 	}
 
 	@Override

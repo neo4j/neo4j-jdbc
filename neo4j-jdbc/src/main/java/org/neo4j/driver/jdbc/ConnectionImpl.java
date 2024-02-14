@@ -378,8 +378,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		return CallableStatementImpl.prepareCall(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
-				this.rewriteBatchedStatements, sql);
+		return CallableStatementImpl.prepareCall(this, this::getTransaction, this.rewriteBatchedStatements, sql);
 	}
 
 	private static void assertValidResultSetHoldability(int resultSetHoldability) throws SQLException {
