@@ -26,6 +26,8 @@ import java.util.List;
 
 // end::pt1[]
 
+import org.neo4j.driver.jdbc.Neo4jDriver;
+
 @SuppressWarnings("unchecked")
 // tag::pt1[]
 public final class Quickstart {
@@ -110,7 +112,9 @@ public final class Quickstart {
 				""";
 
 		// tag::pt3[]
-		try (var con = org.neo4j.driver.jdbc.Neo4jDriver.fromEnv().orElseThrow(); // <.>
+		// import org.neo4j.driver.jdbc.Neo4jDriver;
+
+		try (var con = Neo4jDriver.fromEnv().orElseThrow(); // <.>
 				var stmt = con.createStatement();
 				var result = stmt.executeQuery(query)) {
 
