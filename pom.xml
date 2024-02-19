@@ -124,7 +124,7 @@
 		<archunit.version>1.2.1</archunit.version>
 		<artifactsDir>${project.build.directory}</artifactsDir>
 		<asciidoctor-maven-plugin.version>2.2.6</asciidoctor-maven-plugin.version>
-		<asciidoctorj.pdf.version>2.3.12</asciidoctorj.pdf.version>
+		<asciidoctorj.pdf.version>2.3.13</asciidoctorj.pdf.version>
 		<asciidoctorj.version>2.5.11</asciidoctorj.version>
 		<assertj.version>3.25.3</assertj.version>
 		<byte-buddy.version>1.14.11</byte-buddy.version>
