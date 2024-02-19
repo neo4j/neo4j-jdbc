@@ -156,7 +156,7 @@ Properties will be delivered as requested:
 
 [source,cypher,id=star_7_expected]
 ----
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
 RETURN elementId(p) AS element_id, p.born AS born, p.name AS name,
        elementId(m) AS element_id1, m.title AS title, m.released AS released
 ----
@@ -172,7 +172,7 @@ Note the increasing numbers per duplicate name:
 
 [source,cypher,id=star_8_expected]
 ----
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
 RETURN elementId(p) AS element_id,
        p.born AS born, p.name AS name, p.remark AS remark,
        elementId(m) AS element_id1,
@@ -199,6 +199,23 @@ RETURN elementId(p) AS element_id,
        m.title AS title, m.released AS released
 ----
 
+Ordering without specifying a table alias does work as expected:
+
+[source,sql,id=star_6b,name=unqualifiedAsteriskSingleTable,metaData=Person:born|name]
+----
+SELECT * FROM Person p ORDER BY name ASC
+----
+
+you will get this Cypher statement
+
+[source,cypher,id=star_6b_expected]
+----
+MATCH (p:Person)
+RETURN elementId(p) AS element_id,
+       p.born AS born, p.name AS name
+ORDER BY p.name
+----
+
 A qualified alias can be used as well.
 In case without meta-data it will return a map of properties of the node or relationship in question:
 
@@ -213,7 +230,7 @@ The corresponding columns must be downcast to a Map in JDBC:
 
 [source,cypher,id=star_4_expected]
 ----
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
 RETURN m{.*} AS m, p{.*} AS p
 ----
 
@@ -230,7 +247,7 @@ Note how we also projected one single, known property from the `Movie` node:
 
 [source,cypher,id=star_4a_expected]
 ----
-MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
 RETURN elementId(p) AS element_id, p.born AS born, p.name AS name, m.title AS title
 ----
 

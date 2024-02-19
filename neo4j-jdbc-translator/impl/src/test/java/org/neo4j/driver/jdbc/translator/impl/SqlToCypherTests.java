@@ -69,6 +69,10 @@ class SqlToCypherTests {
 
 	private static ResultSet makeColumns(String firstName, String... names) throws SQLException {
 		var personColumns = mock(ResultSet.class);
+		if (firstName == null) {
+			given(personColumns.next()).willReturn(false);
+			return personColumns;
+		}
 		Boolean[] results = new Boolean[names.length + 1];
 		for (int i = 0; i < results.length; i++) {
 			results[i] = i != results.length - 1;
@@ -76,6 +80,85 @@ class SqlToCypherTests {
 		given(personColumns.next()).willReturn(true, results);
 		given(personColumns.getString("COLUMN_NAME")).willReturn(firstName, names);
 		return personColumns;
+	}
+
+	@Test
+	void inClauseWithConstants() {
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("""
+				SELECT * FROM public.Genre
+				WHERE name IN ('action comedy film', 'romcom')
+				""")).isEqualTo("MATCH (genre:Genre) WHERE genre.name IN ['action comedy film', 'romcom'] RETURN *");
+	}
+
+	@Test
+	void inClauseWithConstantsJoin() {
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("""
+				SELECT * FROM Movie NATURAL JOIN HAS NATURAL JOIN Genre
+				WHERE genre.name IN ('action comedy film', 'romcom')
+				""")).isEqualTo(
+				"MATCH (movie:Movie)-[has:HAS]->(genre:Genre) WHERE genre.name IN ['action comedy film', 'romcom'] RETURN *");
+	}
+
+	@Test
+	void inClauseWithConstantsJoinWithmeta() throws SQLException {
+
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+		var resultSet = makeColumns("title");
+		given(databaseMetaData.getColumns(null, null, "Movie", null)).willReturn(resultSet);
+		resultSet = makeColumns("foobar");
+		given(databaseMetaData.getColumns(null, null, "HAS", null)).willReturn(resultSet);
+		resultSet = makeColumns("name");
+		given(databaseMetaData.getColumns(null, null, "Genre", null)).willReturn(resultSet);
+
+		var renderer = Renderer.getRenderer(Configuration.newConfig()
+			.withPrettyPrint(false)
+			.alwaysEscapeNames(false)
+			.withDialect(Dialect.NEO4J_5)
+			.build());
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("""
+				SELECT * FROM Movie NATURAL JOIN HAS NATURAL JOIN Genre
+				WHERE genre.name IN ('action comedy film', 'romcom')
+				""", databaseMetaData)).isEqualTo(renderer.render(CypherParser.parse("""
+				MATCH (movie:Movie)-[has:HAS]->(genre:Genre)
+				WHERE genre.name IN ['action comedy film', 'romcom']
+				RETURN elementId(movie) AS element_id, movie.title AS title,
+					elementId(has) AS element_id1, has.foobar AS foobar,
+					elementId(genre) AS element_id2, genre.name AS name
+				""")));
+	}
+
+	@Test
+	void plainColumnsEverywhere() throws SQLException {
+
+		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+		var resultSet1 = makeColumns("title", "released");
+		var resultSet2 = makeColumns("title", "released");
+		var resultSet3 = makeColumns("title", "released");
+		var resultSet4 = makeColumns("title", "released");
+		given(databaseMetaData.getColumns(null, null, "Movie", null)).willReturn(resultSet1)
+			.willReturn(resultSet2)
+			.willReturn(resultSet3)
+			.willReturn(resultSet4);
+		resultSet1 = makeColumns(null);
+		resultSet2 = makeColumns(null);
+		resultSet3 = makeColumns(null);
+		given(databaseMetaData.getColumns(null, null, "HAS", null)).willReturn(resultSet1)
+			.willReturn(resultSet2)
+			.willReturn(resultSet3);
+		resultSet1 = makeColumns("name");
+		resultSet2 = makeColumns("name");
+		resultSet3 = makeColumns("name");
+		given(databaseMetaData.getColumns(null, null, "Genre", null)).willReturn(resultSet1)
+			.willReturn(resultSet2)
+			.willReturn(resultSet3);
+
+		var sql = "SELECT title, released from Movie NATURAL JOIN HAS NATURAL JOIN Genre where name IN ('action film') order by title";
+		var expected = "MATCH (movie:Movie)-[has:HAS]->(genre:Genre) WHERE genre.name IN ['action film'] RETURN movie.title, movie.released ORDER BY movie.title";
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate(sql, databaseMetaData)).isEqualTo(expected);
 	}
 
 	@Test
@@ -93,7 +176,7 @@ class SqlToCypherTests {
 				JOIN Movie m USING (ACTED_IN)
 				""";
 		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate(in))
-			.isEqualTo("MATCH (p:Person)-[:ACTED_IN]->(m:Movie) RETURN p, m");
+			.isEqualTo("MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie) RETURN p, m");
 	}
 
 	@Test
@@ -107,7 +190,7 @@ class SqlToCypherTests {
 				NATURAL JOIN Cinema c
 				""";
 		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate(in))
-			.isEqualTo("MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)-[:PLAYED_IN]->(c:Cinema) RETURN p, c");
+			.isEqualTo("MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)-[played_in:PLAYED_IN]->(c:Cinema) RETURN p, c");
 	}
 
 	@Test

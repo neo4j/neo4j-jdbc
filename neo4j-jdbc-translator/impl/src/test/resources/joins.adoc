@@ -66,7 +66,7 @@ to
 
 [source,cypher,id=r1_1_expected]
 ----
-MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+MATCH (p:Person)-[directed:DIRECTED]->(m:Movie)
 RETURN p.name, m.title
 ----
 
@@ -85,7 +85,7 @@ to
 
 [source,cypher,id=r1_1b_expected]
 ----
-MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+MATCH (p:Person)-[directed:DIRECTED]->(m:Movie)
 RETURN p.name, m.title
 ----
 
@@ -104,7 +104,7 @@ The translation yields in the same result as before
 
 [source,cypher,id=r1_0_expected]
 ----
-MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+MATCH (p:Person)-[directed:DIRECTED]->(m:Movie)
 RETURN p.name, m.title
 ----
 

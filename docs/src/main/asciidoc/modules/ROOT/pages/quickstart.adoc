@@ -38,6 +38,8 @@ include::{examplesDir}/Quickstart.java[tag=pt2]
 ----
 <.> This SQL query will be translated into the same Cypher query shown before, the remainder of the method is identical to before.
 
+TIP: In case any tooling asks you for the name of the concrete driver class, it is: `org.neo4j.driver.jdbc.Neo4jDriver`.
+
 We will cover the SQL to Cypher translation in detail later in this manual.
 
 The JDBC Spec does not support named parameters, only index based parameters.

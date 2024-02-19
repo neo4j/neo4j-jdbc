@@ -38,6 +38,40 @@ WHERE person.id = 1
 DELETE person
 ----
 
+If you want to delete everything, but your tooling is complaining, just add a conditions that is always `true`:
+
+[source,sql,id=d0_1b,name=delete]
+----
+DELETE FROM person
+WHERE true
+----
+
+Your data is gone, either way:
+
+[source,cypher,id=d0_1b_expected]
+----
+MATCH (person:person)
+WHERE true
+DELETE person
+----
+
+This is safer, but also pointless:
+
+[source,sql,id=d0_1c,name=delete]
+----
+DELETE FROM person
+WHERE false
+----
+
+Your data is gone, either way:
+
+[source,cypher,id=d0_1c_expected]
+----
+MATCH (person:person)
+WHERE false
+DELETE person
+----
+
 Tables can be aliased
 
 [source,sql,id=d0_2,name=delete]

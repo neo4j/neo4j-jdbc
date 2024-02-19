@@ -118,27 +118,9 @@ final class SqlToCypher implements SqlTranslator {
 
 	@Override
 	public String translate(String sql, DatabaseMetaData databaseMetaData) {
-		Query query = parse(sql);
 
-		ContextAwareStatementBuilder statementBuilder = new ContextAwareStatementBuilder();
-		if (query instanceof Select<?> s) {
-			return render(statementBuilder.statement(s, databaseMetaData));
-		}
-		else if (query instanceof QOM.Delete<?> d) {
-			return render(statementBuilder.statement(d));
-		}
-		else if (query instanceof QOM.Truncate<?> t) {
-			return render(statementBuilder.statement(t));
-		}
-		else if (query instanceof QOM.Insert<?> t) {
-			return render(statementBuilder.statement(t));
-		}
-		else if (query instanceof QOM.Update<?> u) {
-			return render(statementBuilder.statement(u));
-		}
-		else {
-			throw unsupported(query);
-		}
+		var query = parse(sql);
+		return render(ContextAwareStatementBuilder.build(this.config, databaseMetaData, query));
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -207,7 +189,7 @@ final class SqlToCypher implements SqlTranslator {
 		return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
 	}
 
-	class ContextAwareStatementBuilder {
+	static class ContextAwareStatementBuilder {
 
 		/**
 		 * Column assignments known in this context.
@@ -220,23 +202,62 @@ final class SqlToCypher implements SqlTranslator {
 		 */
 		private final Map<String, AtomicInteger> returnColumns = new HashMap<>();
 
-		Statement statement(QOM.Delete<?> d) {
-			Node e = (Node) resolveTableOrJoin(d.$from());
+		private final SqlToCypherConfig config;
 
+		private final DatabaseMetaData databaseMetaData;
+
+		/**
+		 * Content of the {@literal FROM} clause, stored in the context to not have it
+		 * passed around everywhere. Might be empty and is mutable on purpose.
+		 */
+		private final List<Table<?>> tables = new ArrayList<>();
+
+		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query) {
+			if (query instanceof Select<?> s) {
+				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(s);
+			}
+			else if (query instanceof QOM.Delete<?> d) {
+				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(d);
+			}
+			else if (query instanceof QOM.Truncate<?> t) {
+				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
+			}
+			else if (query instanceof QOM.Insert<?> t) {
+				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
+			}
+			else if (query instanceof QOM.Update<?> u) {
+				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(u);
+			}
+			else {
+				throw unsupported(query);
+			}
+		}
+
+		ContextAwareStatementBuilder(SqlToCypherConfig config, DatabaseMetaData databaseMetaData) {
+			this.config = config;
+			this.databaseMetaData = databaseMetaData;
+		}
+
+		private Statement statement(QOM.Delete<?> d) {
+			this.tables.clear();
+			this.tables.add(d.$from());
+
+			Node e = (Node) resolveTableOrJoin(this.tables.get(0));
 			OngoingReadingWithoutWhere m1 = Cypher.match(e);
 			OngoingReadingWithWhere m2 = (d.$where() != null) ? m1.where(condition(d.$where()))
 					: (OngoingReadingWithWhere) m1;
 			return m2.delete(e.asExpression()).build();
 		}
 
-		Statement statement(QOM.Truncate<?> t) {
-			Node e = (Node) resolveTableOrJoin(t.$table());
+		private Statement statement(QOM.Truncate<?> t) {
+			this.tables.clear();
+			this.tables.addAll(t.$table());
 
+			Node e = (Node) resolveTableOrJoin(this.tables.get(0));
 			return Cypher.match(e).detachDelete(e.asExpression()).build();
 		}
 
-		ResultStatement statement(Select<?> incoming, DatabaseMetaData databaseMetaData) {
-
+		private ResultStatement statement(Select<?> incoming) {
 			Select<?> x;
 			boolean addLimit = false;
 			// Assume it's a funny, wrapper checked query
@@ -248,11 +269,13 @@ final class SqlToCypher implements SqlTranslator {
 			else {
 				x = incoming;
 			}
+			this.tables.clear();
+			this.tables.addAll(unnestFromClause(x.$from()));
 
 			// Done lazy as otherwise the property containers won't be resolved
 			Supplier<List<Expression>> resultColumnsSupplier = () -> x.$select()
 				.stream()
-				.flatMap(selectFieldOrAsterisk -> expression(selectFieldOrAsterisk, x.$from(), databaseMetaData))
+				.flatMap(this::expression)
 				.toList();
 
 			if (x.$from().isEmpty()) {
@@ -277,11 +300,11 @@ final class SqlToCypher implements SqlTranslator {
 			return buildableStatement.build();
 		}
 
-		Statement statement(QOM.Insert<?> insert) {
-			var table = insert.$into();
-			// TODO handle if this resolves to something unexpectedly different
-			var node = (Node) this.resolveTableOrJoin(table);
+		private Statement statement(QOM.Insert<?> insert) {
+			this.tables.clear();
+			this.tables.add(insert.$into());
 
+			var node = (Node) this.resolveTableOrJoin(this.tables.get(0));
 			var rows = insert.$values();
 			var columns = insert.$columns();
 			var hasMergeProperties = !insert.$onConflict().isEmpty();
@@ -390,10 +413,11 @@ final class SqlToCypher implements SqlTranslator {
 			return s + ((cnt > 0) ? cnt : "");
 		}
 
-		Statement statement(QOM.Update<?> update) {
-			var table = update.$table();
-			var node = (Node) this.resolveTableOrJoin(table);
+		private Statement statement(QOM.Update<?> update) {
+			this.tables.clear();
+			this.tables.add(update.$table());
 
+			var node = (Node) this.resolveTableOrJoin(this.tables.get(0));
 			var updates = new ArrayList<Expression>();
 			update.$set().forEach((c, v) -> {
 				updates.add(node.property(((Field<?>) c).getName()));
@@ -403,25 +427,13 @@ final class SqlToCypher implements SqlTranslator {
 			return Cypher.match(node).where(condition(update.$where())).set(updates).build();
 		}
 
-		private Stream<Expression> expression(SelectFieldOrAsterisk t, QOM.UnmodifiableList<? extends Table<?>> tables,
-				DatabaseMetaData databaseMetaData) {
+		private Stream<Expression> expression(SelectFieldOrAsterisk t) {
 
 			if (t instanceof SelectField<?> s) {
 				var theField = (s instanceof QOM.FieldAlias<?> fa) ? fa.$aliased() : s;
-				Expression col = null;
+				Expression col;
 				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
-					// This has optimization potential.
-					var allTables = unnestFromClause(tables);
-					if (allTables.size() == 1) {
-						var propertyContainer = (PropertyContainer) resolveTableOrJoin(allTables.get(0));
-						col = propertyContainer.getSymbolicName()
-							.filter(f -> !f.getValue().equals(tf.getName()))
-							.map(__ -> propertyContainer.property(tf.getName()))
-							.orElse(null);
-					}
-					if (col == null) {
-						col = Cypher.name(tf.getName());
-					}
+					col = findTableFieldInTables(tf);
 				}
 				else {
 					col = expression(s);
@@ -434,7 +446,7 @@ final class SqlToCypher implements SqlTranslator {
 				return Stream.of(col);
 			}
 			else if (t instanceof Asterisk) {
-				var properties = projectAllColumns(unnestFromClause(tables), databaseMetaData);
+				var properties = projectAllColumns();
 				if (properties.isEmpty()) {
 					properties.add(Cypher.asterisk());
 				}
@@ -443,10 +455,10 @@ final class SqlToCypher implements SqlTranslator {
 			else if (t instanceof QualifiedAsterisk q && resolveTableOrJoin(q.$table()) instanceof Node node) {
 
 				var properties = new ArrayList<Expression>();
-				for (var table : unnestFromClause(tables)) {
+				for (var table : this.tables) {
 					if (table instanceof TableAlias<?> tableAlias
 							&& tableAlias.getName().equals(q.$table().getName())) {
-						properties.addAll(projectAllColumns(List.of(tableAlias), databaseMetaData));
+						properties.addAll(projectAllColumns(List.of(tableAlias)));
 						break;
 					}
 				}
@@ -461,16 +473,19 @@ final class SqlToCypher implements SqlTranslator {
 			}
 		}
 
-		private List<Expression> projectAllColumns(List<? extends Table<?>> allTables,
-				DatabaseMetaData databaseMetaData) {
+		private List<Expression> projectAllColumns() {
+			return projectAllColumns(this.tables);
+		}
+
+		private List<Expression> projectAllColumns(List<Table<?>> from) {
 			List<Expression> properties = new ArrayList<>();
-			if (databaseMetaData == null) {
+			if (this.databaseMetaData == null) {
 				return properties;
 			}
-			for (Table<?> table : allTables) {
+			for (Table<?> table : from) {
 				var pc = (PropertyContainer) resolveTableOrJoin(table);
 				var tableName = labelOrType(table);
-				try (var columns = databaseMetaData.getColumns(null, null, tableName, null)) {
+				try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
 					properties.add(Cypher.call("elementId")
 						.withArgs(pc.asExpression())
 						.asFunction()
@@ -487,7 +502,7 @@ final class SqlToCypher implements SqlTranslator {
 			return properties;
 		}
 
-		List<? extends Table<?>> unnestFromClause(List<? extends Table<?>> tables) {
+		private static List<? extends Table<?>> unnestFromClause(List<? extends Table<?>> tables) {
 			List<Table<?>> result = new ArrayList<>();
 			for (Table<?> table : tables) {
 				if (table instanceof QOM.JoinTable<?, ? extends Table<?>> join) {
@@ -515,8 +530,67 @@ final class SqlToCypher implements SqlTranslator {
 
 		private SortItem expression(SortField<?> s) {
 			var direction = s.$sortOrder().name().toUpperCase(Locale.ROOT);
-			return Cypher.sort(expression(s.$field()),
+
+			Field<?> theField = s.$field();
+			Expression col = null;
+			try {
+				col = expression(theField);
+			}
+			catch (IllegalArgumentException ex) {
+				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
+					col = findTableFieldInTables(tf);
+				}
+				if (s instanceof QOM.FieldAlias<?> fa) {
+					col = col.as(fa.$alias().last());
+				}
+			}
+			return Cypher.sort(col,
 					"DEFAULT".equals(direction) ? SortItem.Direction.UNDEFINED : SortItem.Direction.valueOf(direction));
+		}
+
+		private Expression findTableFieldInTables(TableField<?, ?> tf) {
+			return findTableFieldInTables(tf, true);
+		}
+
+		/**
+		 * Looks for the table field {@code tf} in the list of {@code tables} for all
+		 * those cases in which the table field does not have an associated table with it.
+		 * @param tf the table field to reify
+		 * @param fallbackToFieldName set to {@literal true} to fall back to the plain
+		 * field name
+		 * @return the Cypher column that was determined
+		 */
+		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName) {
+			Expression col = null;
+			if (this.tables.size() == 1) {
+				var propertyContainer = (PropertyContainer) resolveTableOrJoin(this.tables.get(0));
+				col = propertyContainer.getSymbolicName()
+					.filter(f -> !f.getValue().equals(tf.getName()))
+					.map(__ -> propertyContainer.property(tf.getName()))
+					.orElse(null);
+			}
+			else if (this.databaseMetaData != null) {
+				for (Table<?> table : this.tables) {
+					var tableName = labelOrType(table);
+					try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
+						while (columns.next()) {
+							var columnName = columns.getString("COLUMN_NAME");
+							if (columnName.equals(tf.getName())) {
+								var pc = (PropertyContainer) resolveTableOrJoin(table);
+								col = pc.property(tf.getName());
+							}
+						}
+					}
+					catch (SQLException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+			}
+
+			if (col == null && fallbackToFieldName) {
+				col = Cypher.name(tf.getName());
+			}
+			return col;
 		}
 
 		private Expression expression(Field<?> f) {
@@ -524,6 +598,7 @@ final class SqlToCypher implements SqlTranslator {
 		}
 
 		private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
+
 			if (f instanceof Param<?> p) {
 				if (p.$inline()) {
 					return Cypher.literalOf(p.getValue());
@@ -535,17 +610,23 @@ final class SqlToCypher implements SqlTranslator {
 					return Cypher.anonParameter(p.getValue());
 				}
 			}
-			else if (f instanceof TableField<?, ?> tf && tf.getTable() != null) {
-				var pe = resolveTableOrJoin(tf.getTable());
-				if (pe instanceof Node node) {
-					return node.property(tf.getName());
+			else if (f instanceof TableField<?, ?> tf) {
+				if (tf.getTable() != null) {
+					var pe = resolveTableOrJoin(tf.getTable());
+					if (pe instanceof Node node) {
+						return node.property(tf.getName());
+					}
+					else if (pe instanceof Relationship rel) {
+						return rel.property(tf.getName());
+					}
 				}
-				else if (pe instanceof Relationship rel) {
-					return rel.property(tf.getName());
-				}
-				else {
+
+				var tableField = findTableFieldInTables(tf, turnUnknownIntoNames);
+				if (tableField == null) {
 					throw unsupported(tf);
 				}
+				return tableField;
+
 			}
 			else if (f instanceof QOM.Add<?> e) {
 				return expression(e.$arg1()).add(expression(e.$arg2()));
@@ -777,9 +858,6 @@ final class SqlToCypher implements SqlTranslator {
 					&& this.columnsAndValues.containsKey(excluded.$field().getName())) {
 				return this.columnsAndValues.get(excluded.$field().getName());
 			}
-			else if (turnUnknownIntoNames) {
-				return Cypher.name(f.getName());
-			}
 			else {
 				throw unsupported(f);
 			}
@@ -892,6 +970,13 @@ final class SqlToCypher implements SqlTranslator {
 				}
 				return expression(like.$arg1()).matches(rhs);
 			}
+			else if (c instanceof QOM.FieldCondition fc && fc.$field() instanceof Param<Boolean> param) {
+				return (Boolean.TRUE.equals(param.getValue()) ? Cypher.literalTrue() : Cypher.literalFalse())
+					.asCondition();
+			}
+			else if (c instanceof QOM.InList<?> il) {
+				return expression(il.$field()).in(Cypher.listOf(il.$list().stream().map(this::expression).toList()));
+			}
 			else {
 				throw unsupported(c);
 			}
@@ -909,13 +994,6 @@ final class SqlToCypher implements SqlTranslator {
 			}
 
 			return result;
-		}
-
-		private PatternElement resolveTableOrJoin(QOM.UnmodifiableList<? extends Table<?>> tables) {
-			if (tables.size() > 1) {
-				throw new UnsupportedOperationException();
-			}
-			return resolveTableOrJoin(tables.$first());
 		}
 
 		private PatternElement resolveTableOrJoin(Table<?> t) {
@@ -947,6 +1025,10 @@ final class SqlToCypher implements SqlTranslator {
 				else {
 					lhs = resolveTableOrJoin(t1);
 					relType = (join != null) ? type(t1, join.$using().get(0)) : null;
+				}
+
+				if (relSymbolicName == null && relType != null) {
+					relSymbolicName = symbolicName(relType);
 				}
 
 				rhs = resolveTableOrJoin(joinTable.$table2());
@@ -1000,7 +1082,7 @@ final class SqlToCypher implements SqlTranslator {
 				return config.getOrDefault("label", t.getName());
 			}
 
-			return SqlToCypher.this.config.getTableToLabelMappings()
+			return this.config.getTableToLabelMappings()
 				.entrySet()
 				.stream()
 				.filter(e -> e.getKey().equalsIgnoreCase(t.getName()))
@@ -1013,7 +1095,7 @@ final class SqlToCypher implements SqlTranslator {
 			var t = (tableOrAlias instanceof TableAlias<?> ta) ? ta.$aliased() : tableOrAlias;
 			var key = t.getName() + "." + field.getName();
 
-			return SqlToCypher.this.config.getJoinColumnsToTypeMappings()
+			return this.config.getJoinColumnsToTypeMappings()
 				.entrySet()
 				.stream()
 				.filter(e -> e.getKey().equalsIgnoreCase(key))
