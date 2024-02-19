@@ -85,7 +85,7 @@ public final class Quickstart {
 				ORDER BY m.title
 				"""; // <.>
 
-		var url = "jdbc:neo4j://localhost:7687?sql2cypher=true";
+		var url = "jdbc:neo4j://localhost:7687?enableSQLTranslation=true";
 
 		try (var con = DriverManager.getConnection(url, username, password);
 				var stmt = con.createStatement();

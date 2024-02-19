@@ -48,7 +48,7 @@ public final class NamedParameters {
 
 		// tag::index-sql[]
 		var sql = "INSERT INTO Movie (title) VALUES (?)";
-		try (var con = DriverManager.getConnection(url + "?sql2cypher=true", username, password);
+		try (var con = DriverManager.getConnection(url + "?enableSQLTranslation=true", username, password);
 				PreparedStatement stmt = con.prepareStatement(sql);) {
 			stmt.setString(1, "Test");
 			stmt.executeUpdate();

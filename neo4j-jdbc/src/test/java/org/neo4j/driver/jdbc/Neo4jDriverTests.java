@@ -102,10 +102,12 @@ class Neo4jDriverTests {
 
 	static Stream<Arguments> mergeOfUrlParamsAndPropertiesShouldWork() {
 		return Stream.of(Arguments.of(new String[0], properties(Map.of()), false),
-				Arguments.of(new String[0], properties(Map.of("sql2cypher", "true")), true),
-				Arguments.of(new String[] { "sql2cypher=false" }, properties(Map.of("sql2cypher", "true")), false),
-				Arguments.of(new String[] { "sql2cypher=true" }, properties(Map.of("sql2cypher", "false")), true),
-				Arguments.of(new String[] { "sql2cypher=true" }, properties(Map.of()), true));
+				Arguments.of(new String[0], properties(Map.of("enableSQLTranslation", "true")), true),
+				Arguments.of(new String[] { "enableSQLTranslation=false" },
+						properties(Map.of("enableSQLTranslation", "true")), false),
+				Arguments.of(new String[] { "enableSQLTranslation=true" },
+						properties(Map.of("enableSQLTranslation", "false")), true),
+				Arguments.of(new String[] { "enableSQLTranslation=true" }, properties(Map.of()), true));
 	}
 
 	static Properties properties(Map<String, String> src) {
@@ -123,7 +125,7 @@ class Neo4jDriverTests {
 			assertThat(config).containsOnlyKeys("s2c.alwaysEscapeNames", "s2c.prettyPrint");
 		}
 		else {
-			assertThat(config).containsEntry("sql2cypher", Boolean.toString(expected));
+			assertThat(config).containsEntry("enableSQLTranslation", Boolean.toString(expected));
 		}
 	}
 

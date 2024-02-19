@@ -76,6 +76,7 @@ public final class SqlToCypherConfig {
 				case "prettyPrint" -> builder.withPrettyPrint(Boolean.parseBoolean(v));
 				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(Boolean.parseBoolean(v));
 				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(v);
+				case "enableCache" -> builder.withCacheEnabled(Boolean.parseBoolean(v));
 				default -> {
 					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;
@@ -134,6 +135,8 @@ public final class SqlToCypherConfig {
 
 	private final String parseNamedParamPrefix;
 
+	private final boolean cacheEnabled;
+
 	private SqlToCypherConfig(Builder builder) {
 
 		this.parseNameCase = builder.parseNameCase;
@@ -145,6 +148,7 @@ public final class SqlToCypherConfig {
 		this.prettyPrint = builder.prettyPrint;
 		this.alwaysEscapeNames = builder.alwaysEscapeNames();
 		this.parseNamedParamPrefix = builder.parseNamedParamPrefix;
+		this.cacheEnabled = builder.enableCache;
 	}
 
 	/**
@@ -191,6 +195,10 @@ public final class SqlToCypherConfig {
 		return this.parseNamedParamPrefix;
 	}
 
+	public boolean isCacheEnabled() {
+		return this.cacheEnabled;
+	}
+
 	/**
 	 * A builder to create new instances of {@link SqlToCypherConfig configurations}.
 	 */
@@ -214,20 +222,23 @@ public final class SqlToCypherConfig {
 
 		private Boolean alwaysEscapeNames;
 
+		private boolean enableCache;
+
 		private Builder() {
 			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null,
-					null);
+					null, false);
 		}
 
 		private Builder(SqlToCypherConfig config) {
 			this(config.parseNameCase, config.renderNameCase, config.jooqDiagnosticLogging, config.tableToLabelMappings,
 					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint, config.alwaysEscapeNames,
-					config.parseNamedParamPrefix);
+					config.parseNamedParamPrefix, config.cacheEnabled);
 		}
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
-				SQLDialect sqlDialect, boolean prettyPrint, Boolean alwaysEscapeNames, String parseNamedParamPrefix) {
+				SQLDialect sqlDialect, boolean prettyPrint, Boolean alwaysEscapeNames, String parseNamedParamPrefix,
+				boolean enableCache) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
 			this.jooqDiagnosticLogging = jooqDiagnosticLogging;
@@ -237,6 +248,7 @@ public final class SqlToCypherConfig {
 			this.prettyPrint = prettyPrint;
 			this.alwaysEscapeNames = alwaysEscapeNames;
 			this.parseNamedParamPrefix = parseNamedParamPrefix;
+			this.enableCache = enableCache;
 		}
 
 		/**
@@ -328,6 +340,16 @@ public final class SqlToCypherConfig {
 		 */
 		public Builder withAlwaysEscapeNames(boolean alwaysEscapeNames) {
 			this.alwaysEscapeNames = alwaysEscapeNames;
+			return this;
+		}
+
+		/**
+		 * Enables caching.
+		 * @param cacheSetting use {@literal true} to enable caching
+		 * @return this builder
+		 */
+		public Builder withCacheEnabled(boolean cacheSetting) {
+			this.enableCache = cacheSetting;
 			return this;
 		}
 

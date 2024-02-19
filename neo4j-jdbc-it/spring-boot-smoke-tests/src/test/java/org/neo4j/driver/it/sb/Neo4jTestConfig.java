@@ -72,7 +72,7 @@ class Neo4jTestConfig {
 
 		@Override
 		public String getJdbcUrl() {
-			return "jdbc:neo4j://%s:%d?sql2cypher=true".formatted(this.getHost(), this.getMappedPort(7687));
+			return "jdbc:neo4j://%s:%d?enableSQLTranslation=true".formatted(this.getHost(), this.getMappedPort(7687));
 		}
 
 		@Override

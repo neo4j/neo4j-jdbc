@@ -48,9 +48,9 @@ class AutomaticTranslationBundleIT {
 	@Test
 	void sqlTranslationShouldWork() throws SQLException {
 
-		try (var connection = DriverManager.getConnection(
-				"jdbc:neo4j://%s:%d?sql2cypher=true".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687)),
-				"neo4j", this.neo4j.getAdminPassword()); var stmt = connection.createStatement();) {
+		try (var connection = DriverManager.getConnection("jdbc:neo4j://%s:%d?enableSQLTranslation=true"
+			.formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687)), "neo4j", this.neo4j.getAdminPassword());
+				var stmt = connection.createStatement();) {
 			var result = stmt.executeQuery("SELECT * FROM Movies m");
 			assertThatNoException().isThrownBy(result::close);
 		}

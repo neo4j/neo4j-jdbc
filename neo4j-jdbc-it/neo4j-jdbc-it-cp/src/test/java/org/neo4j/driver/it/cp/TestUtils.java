@@ -67,7 +67,7 @@ final class TestUtils {
 		properties.put("user", "neo4j");
 		properties.put("password", neo4j.getAdminPassword());
 		if (translate) {
-			properties.put("sql2cypher", "true");
+			properties.put("enableSQLTranslation", "true");
 			properties.put("s2c.alwaysEscapeNames", "false");
 			properties.put("s2c.prettyPrint", "false");
 		}

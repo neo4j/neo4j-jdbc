@@ -109,7 +109,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
 	 * enable automatic SQL to Cypher translation.
 	 */
-	public static final String PROPERTY_SQL_TRANSLATION_ENABLED = "sql2cypher";
+	public static final String PROPERTY_SQL_TRANSLATION_ENABLED = "enableSQLTranslation";
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
@@ -121,13 +121,15 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} that
 	 * makes the SQL to Cypher translation always escape all names.
 	 */
-	public static final String PROPERTY_SQL_TRANSLATION_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
+	private static final String PROPERTY_S2C_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} that
 	 * makes the SQL to Cypher generate pretty printed cypher.
 	 */
-	public static final String PROPERTY_SQL_TRANSLATION_PRETTY_PRINT_CYPHER = "s2c.prettyPrint";
+	private static final String PROPERTY_S2C_PRETTY_PRINT_CYPHER = "s2c.prettyPrint";
+
+	private static final String PROPERTY_S2C_ENABLE_CACHE = "s2c.enableCache";
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} that
@@ -255,14 +257,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.toCompletableFuture()
 			.join();
 
-		var automaticSqlTranslation = driverConfig.automaticSqlTranslation;
+		var automaticSqlTranslation = driverConfig.enableSQLTranslation;
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
-		var enableTranslationCaching = driverConfig.enableTranslationCaching();
 
-		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(automaticSqlTranslation, driverConfig.rawConfig(),
-						this::getSqlTranslatorFactory),
-				automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements);
+		return new ConnectionImpl(boltConnection, getSqlTranslatorSupplier(automaticSqlTranslation,
+				driverConfig.rawConfig(), this::getSqlTranslatorFactory), automaticSqlTranslation,
+				rewriteBatchedStatements);
 	}
 
 	static String getDefaultUserAgent() {
@@ -303,7 +303,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
 		DriverConfig parsedConfig = parseConfig(url, info);
-		var driverPropertyInfos = new DriverPropertyInfo[14];
+		var driverPropertyInfos = new DriverPropertyInfo[12];
 
 		int cnt = 0;
 		var hostPropInfo = new DriverPropertyInfo(PROPERTY_HOST, parsedConfig.host);
@@ -342,7 +342,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		driverPropertyInfos[cnt++] = connectionTimoutPropInfo;
 
 		var sql2cypherPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_ENABLED,
-				String.valueOf(parsedConfig.automaticSqlTranslation));
+				String.valueOf(parsedConfig.enableSQLTranslation));
 		sql2cypherPropInfo.description = "turns on or of sql to cypher translation. Defaults to false.";
 		sql2cypherPropInfo.required = false;
 		hostPropInfo.choices = new String[] { "true", "false" };
@@ -354,20 +354,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		rewriteBatchedStatementsPropInfo.required = false;
 		hostPropInfo.choices = new String[] { "true", "false" };
 		driverPropertyInfos[cnt++] = rewriteBatchedStatementsPropInfo;
-
-		var sql2CypherPrettyPrintPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_PRETTY_PRINT_CYPHER,
-				String.valueOf(parsedConfig.s2cPrettyPrint));
-		sql2CypherPrettyPrintPropInfo.description = "Ensures when printing sql2cypher statements will be formatted nicely. Defaults to false.";
-		sql2CypherPrettyPrintPropInfo.required = false;
-		hostPropInfo.choices = new String[] { "true", "false" };
-		driverPropertyInfos[cnt++] = sql2CypherPrettyPrintPropInfo;
-
-		var sql2CypherAlwaysEscapeNamesPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_ALWAYS_ESCAPE_NAMES,
-				String.valueOf(parsedConfig.s2cAlwaysEscapeNames));
-		sql2CypherAlwaysEscapeNamesPropInfo.description = "Ensures all names will be escaped. Defaults to false.";
-		sql2CypherAlwaysEscapeNamesPropInfo.required = false;
-		hostPropInfo.choices = new String[] { "true", "false" };
-		driverPropertyInfos[cnt++] = sql2CypherAlwaysEscapeNamesPropInfo;
 
 		var sql2CypherCachingsPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED,
 				String.valueOf(parsedConfig.enableTranslationCaching));
@@ -426,9 +412,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = Boolean
 			.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
 		var sql2CypherPrettyPrint = Boolean
-			.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_PRETTY_PRINT_CYPHER, "false"));
+			.parseBoolean(config.getOrDefault(PROPERTY_S2C_PRETTY_PRINT_CYPHER, "false"));
 		var sql2CypherAlwaysEscapeNames = Boolean
-			.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_ALWAYS_ESCAPE_NAMES, "false"));
+			.parseBoolean(config.getOrDefault(PROPERTY_S2C_ALWAYS_ESCAPE_NAMES, "false"));
 
 		var sslProperties = parseSSLProperties(info, matcher.group("transport"));
 
@@ -711,7 +697,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param agent driver bolt agent to be used by clients to distinguish between
 	 * applications
 	 * @param timeout timeout for network interactions
-	 * @param automaticSqlTranslation turn on or off automatic cypher translation
+	 * @param enableSQLTranslation turn on or off automatic cypher translation
 	 * @param s2cAlwaysEscapeNames escape names when using sql2cypher
 	 * @param s2cPrettyPrint pretty print when using s2c
 	 * @param enableTranslationCaching enable caching for translations
@@ -719,15 +705,17 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 */
 	private record DriverConfig(String host, int port, String database, String user, String password, String agent,
-			int timeout, boolean automaticSqlTranslation, boolean enableTranslationCaching,
-			boolean s2cAlwaysEscapeNames, boolean s2cPrettyPrint, boolean rewriteBatchedStatements,
-			SSLProperties sslProperties) {
+			int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching, boolean s2cAlwaysEscapeNames,
+			boolean s2cPrettyPrint, boolean rewriteBatchedStatements, SSLProperties sslProperties) {
 
 		Map<String, String> rawConfig() {
 			Map<String, String> props = new HashMap<>();
-			props.put(PROPERTY_SQL_TRANSLATION_ENABLED, String.valueOf(this.automaticSqlTranslation));
-			props.put(PROPERTY_SQL_TRANSLATION_ALWAYS_ESCAPE_NAMES, String.valueOf(this.s2cAlwaysEscapeNames));
-			props.put(PROPERTY_SQL_TRANSLATION_PRETTY_PRINT_CYPHER, String.valueOf(this.s2cAlwaysEscapeNames));
+			props.put(PROPERTY_SQL_TRANSLATION_ENABLED, String.valueOf(this.enableSQLTranslation));
+
+			props.put(PROPERTY_S2C_ENABLE_CACHE, String.valueOf(this.enableTranslationCaching));
+			props.put(PROPERTY_S2C_ALWAYS_ESCAPE_NAMES, String.valueOf(this.s2cAlwaysEscapeNames));
+			props.put(PROPERTY_S2C_PRETTY_PRINT_CYPHER, String.valueOf(this.s2cPrettyPrint));
+
 			props.put(PROPERTY_HOST, this.host);
 			props.put(PROPERTY_PORT, String.valueOf(this.port));
 			props.put(PROPERTY_USER, this.user);

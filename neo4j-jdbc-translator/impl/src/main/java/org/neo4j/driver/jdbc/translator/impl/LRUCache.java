@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.driver.jdbc;
+package org.neo4j.driver.jdbc.translator.impl;
 
 import java.io.Serial;
 import java.util.LinkedHashMap;
@@ -52,7 +52,7 @@ final class LRUCache<K, V> extends LinkedHashMap<K, V> {
 
 	@Override
 	protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-		return size() >= this.cacheSize;
+		return size() > this.cacheSize;
 	}
 
 }

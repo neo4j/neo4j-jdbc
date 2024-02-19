@@ -49,7 +49,7 @@ include::{examplesDir}/SQLTranslator.java[tag=pt1]
 
 === For all queries
 
-If you open the connection to your Neo4j instance using `sql2cypher=true` either as URL parameter or configuration property, all statements will be translated from SQL to Cypher on your behalf.
+If you open the connection to your Neo4j instance using `enableSQLTranslation=true` either as URL parameter or configuration property, all statements will be translated from SQL to Cypher on your behalf.
 If you configure the driver in that way, the translator will be eagerly loaded
 
 [source, java, tabsize=4, indent=0]

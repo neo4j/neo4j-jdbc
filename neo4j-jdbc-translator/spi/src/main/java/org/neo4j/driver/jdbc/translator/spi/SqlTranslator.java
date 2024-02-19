@@ -31,6 +31,12 @@ import java.sql.DatabaseMetaData;
 public interface SqlTranslator {
 
 	/**
+	 * This method can be overwritten if the translator supports caching.
+	 */
+	default void flushCache() {
+	}
+
+	/**
 	 * Translate the given SQL query into a Neo4j native query.
 	 * @param sql the SQL query. Must not be {@literal null} and must be a valid
 	 * statement.

@@ -48,7 +48,7 @@ class Neo4jDataSourceIT {
 		ds.setServerName(this.neo4j.getHost());
 		ds.setPortNumber(this.neo4j.getMappedPort(7687));
 		ds.setPassword(this.neo4j.getAdminPassword());
-		ds.setConnectionProperty("sql2cypher", "true");
+		ds.setConnectionProperty("enableSQLTranslation", "true");
 
 		try (var connection = ds.getConnection();
 				var stmt = connection.createStatement();

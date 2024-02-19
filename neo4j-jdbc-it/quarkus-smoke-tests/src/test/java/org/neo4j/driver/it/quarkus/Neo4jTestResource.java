@@ -84,7 +84,7 @@ public final class Neo4jTestResource implements QuarkusTestResourceLifecycleMana
 		}
 
 		return Map.of("quarkus.datasource.jdbc.url",
-				"jdbc:neo4j://%s:%d?sql2cypher=true".formatted("localhost", this.neo4j.getMappedPort(7687)),
+				"jdbc:neo4j://%s:%d?enableSQLTranslation=true".formatted("localhost", this.neo4j.getMappedPort(7687)),
 				"quarkus.datasource.username", "neo4j", "quarkus.datasource.password", this.neo4j.getAdminPassword());
 	}
 

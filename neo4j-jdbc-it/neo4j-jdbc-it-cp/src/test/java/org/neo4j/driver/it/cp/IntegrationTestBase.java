@@ -73,7 +73,7 @@ abstract class IntegrationTestBase {
 		properties.put("password", this.neo4j.getAdminPassword());
 		properties.put("rewriteBatchedStatements", Boolean.toString(rewriteBatchedStatements));
 		if (translate) {
-			properties.put("sql2cypher", "true");
+			properties.put("enableSQLTranslation", "true");
 			properties.put("s2c.alwaysEscapeNames", "false");
 			properties.put("s2c.prettyPrint", "false");
 		}

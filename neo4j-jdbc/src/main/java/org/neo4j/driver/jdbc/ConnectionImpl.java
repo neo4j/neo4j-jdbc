@@ -65,15 +65,11 @@ import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
  */
 final class ConnectionImpl implements Neo4jConnection {
 
-	private static final int TRANSLATION_CACHE_SIZE = 128;
-
 	private final BoltConnection boltConnection;
 
 	private final Lazy<SqlTranslator> sqlTranslator;
 
 	private final boolean automaticSqlTranslation;
-
-	private final boolean enableTranslationCaching;
 
 	/**
 	 * A flag if the {@link Neo4jPreparedStatement prepared statement} should rewrite
@@ -93,20 +89,17 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private boolean closed;
 
-	private final LRUCache<String, String> translationCache = new LRUCache<>(TRANSLATION_CACHE_SIZE);
-
 	ConnectionImpl(BoltConnection boltConnection) {
 		this(boltConnection, () -> {
 			throw new UnsupportedOperationException("No SQL translator available");
-		}, false, false, true);
+		}, false, true);
 	}
 
-	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator,
-			boolean automaticSqlTranslation, boolean enableTranslationCaching, boolean rewriteBatchedStatements) {
+	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator, boolean enableSQLTranslation,
+			boolean rewriteBatchedStatements) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.sqlTranslator = Lazy.of(sqlTranslator);
-		this.automaticSqlTranslation = automaticSqlTranslation;
-		this.enableTranslationCaching = enableTranslationCaching;
+		this.automaticSqlTranslation = enableSQLTranslation;
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 	}
 
@@ -127,13 +120,6 @@ final class ConnectionImpl implements Neo4jConnection {
 		var sqlTranslator = this.sqlTranslator.resolve();
 		var metaData = this.getMetaData();
 
-		if (this.enableTranslationCaching) {
-			return sql -> {
-				synchronized (ConnectionImpl.this) {
-					return this.translationCache.computeIfAbsent(sql, key -> sqlTranslator.translate(key, metaData));
-				}
-			};
-		}
 		return sql -> sqlTranslator.translate(sql, metaData);
 	}
 
@@ -649,7 +635,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public void flushTranslationCache() {
 		synchronized (this) {
-			this.translationCache.clear();
+			this.sqlTranslator.resolve().flushCache();
 		}
 	}
 

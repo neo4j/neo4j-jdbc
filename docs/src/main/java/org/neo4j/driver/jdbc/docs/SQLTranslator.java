@@ -65,7 +65,7 @@ public final class SQLTranslator {
 		var password = "verysecret";
 
 		// tag::pt2[]
-		var url = "jdbc:neo4j://localhost:7687?sql2cypher=true";
+		var url = "jdbc:neo4j://localhost:7687?enableSQLTranslation=true";
 		try (var connection = DriverManager.getConnection(url, username, password);
 				var stmnt = connection.createStatement();
 				var result = stmnt.executeQuery("SELECT n.title FROM Movie n")) {
@@ -82,7 +82,7 @@ public final class SQLTranslator {
 		var password = "verysecret";
 
 		// tag::force-cypher[]
-		var url = "jdbc:neo4j://localhost:7687?sql2cypher=true";
+		var url = "jdbc:neo4j://localhost:7687?enableSQLTranslation=true";
 		var query = """
 				/*+ NEO4J FORCE_CYPHER */
 				MATCH (:Station { name: 'Denmark Hill' })<-[:CALLS_AT]-(d:Stop)
@@ -107,7 +107,7 @@ public final class SQLTranslator {
 		var properties = new Properties();
 		properties.put("username", "neo4j");
 		properties.put("password", "verysecret");
-		properties.put("sql2cypher", "true");
+		properties.put("enableSQLTranslation", "true");
 		properties.put("s2c.prettyPrint", "false");
 		properties.put("s2c.alwaysEscapeNames", "false");
 		properties.put("s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN");
@@ -131,7 +131,7 @@ public final class SQLTranslator {
 		var properties = new Properties();
 		properties.put("username", "neo4j");
 		properties.put("password", "verysecret");
-		properties.put("sql2cypher", "true");
+		properties.put("enableSQLTranslation", "true");
 		properties.put("s2c.parseNameCase", "UPPER");
 
 		var url = "jdbc:neo4j://localhost:7687";
@@ -151,7 +151,7 @@ public final class SQLTranslator {
 		var properties = new Properties();
 		properties.put("username", "neo4j");
 		properties.put("password", "verysecret");
-		properties.put("sql2cypher", "true");
+		properties.put("enableSQLTranslation", "true");
 		properties.put("s2c.parseNamedParamPrefix", "$");
 		properties.put("s2c.joinColumnsToTypeMappings", "people.movie_id:DIRECTED");
 

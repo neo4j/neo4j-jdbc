@@ -94,6 +94,8 @@ final class SqlToCypher implements SqlTranslator {
 
 	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
 
+	private static final int STATEMENT_CACHE_SIZE = 128;
+
 	static SqlTranslator defaultTranslator() {
 		return new SqlToCypher(SqlToCypherConfig.defaultConfig());
 	}
@@ -105,6 +107,8 @@ final class SqlToCypher implements SqlTranslator {
 	private final SqlToCypherConfig config;
 
 	private final Configuration rendererConfig;
+
+	private final Map<Query, String> cache = new LRUCache<>(STATEMENT_CACHE_SIZE);
 
 	private SqlToCypher(SqlToCypherConfig config) {
 
@@ -120,6 +124,16 @@ final class SqlToCypher implements SqlTranslator {
 	public String translate(String sql, DatabaseMetaData databaseMetaData) {
 
 		var query = parse(sql);
+		if (this.config.isCacheEnabled()) {
+			synchronized (this) {
+				return this.cache.computeIfAbsent(query, key -> translate0(query, databaseMetaData));
+			}
+		}
+		return translate0(query, databaseMetaData);
+	}
+
+	private String translate0(Query query, DatabaseMetaData databaseMetaData) {
+
 		return render(ContextAwareStatementBuilder.build(this.config, databaseMetaData, query));
 	}
 
