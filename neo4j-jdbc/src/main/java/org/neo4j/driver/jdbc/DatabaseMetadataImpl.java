@@ -434,78 +434,78 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public String getSchemaTerm() throws SQLException {
+	public String getSchemaTerm() {
 		return "schema";
 	}
 
 	@Override
-	public String getProcedureTerm() throws SQLException {
+	public String getProcedureTerm() {
 		return "procedure";
 	}
 
 	@Override
-	public String getCatalogTerm() throws SQLException {
+	public String getCatalogTerm() {
 		return "catalog";
 	}
 
 	@Override
-	public boolean isCatalogAtStart() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean isCatalogAtStart() {
+		return true;
 	}
 
 	@Override
-	public String getCatalogSeparator() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public String getCatalogSeparator() {
+		return ".";
 	}
 
 	@Override
-	public boolean supportsSchemasInDataManipulation() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSchemasInDataManipulation() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsSchemasInProcedureCalls() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSchemasInProcedureCalls() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsSchemasInTableDefinitions() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSchemasInTableDefinitions() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSchemasInIndexDefinitions() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSchemasInPrivilegeDefinitions() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsCatalogsInDataManipulation() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsCatalogsInDataManipulation() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsCatalogsInProcedureCalls() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsCatalogsInTableDefinitions() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsCatalogsInIndexDefinitions() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsCatalogsInPrivilegeDefinitions() {
+		return false;
 	}
 
 	@Override
@@ -529,8 +529,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsSubqueriesInComparisons() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSubqueriesInComparisons() {
+		return false;
 	}
 
 	@Override
@@ -539,18 +539,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsSubqueriesInIns() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSubqueriesInIns() {
+		return true;
 	}
 
 	@Override
-	public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsSubqueriesInQuantifieds() {
+		return false;
 	}
 
 	@Override
-	public boolean supportsCorrelatedSubqueries() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean supportsCorrelatedSubqueries() {
+		return false;
 	}
 
 	@Override
@@ -966,32 +966,35 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 				var nodeLabelList = nodeLabels.asList(label -> label);
 				for (Value nodeLabel : nodeLabelList) {
-					var values = new Value[22];
-					values[0] = Values.NULL; // TABLE_CAT
-					values[1] = Values.value("public"); // TABLE_SCHEM is always public
-					values[2] = nodeLabel; // TABLE_NAME
-					values[3] = propertyName; // COLUMN_NAME
-					values[4] = Values
-						.value(Neo4jTypeToSqlTypeMapper.toSqlTypeFromOldCypherType(propertyType.asString())); // DATA_TYPE
-					values[5] = Values.value(Neo4jTypeToSqlTypeMapper.oldCypherTypesToNew(propertyType.asString())); // TYPE_NAME
-					values[6] = Values.value(-1); // COLUMN_SIZE
-					values[7] = Values.NULL; // BUFFER_LENGTH
-					values[8] = Values.NULL; // DECIMAL_DIGITS
-					values[9] = Values.value(2); // NUM_PREC_RADIX
-					values[10] = Values.value(1); // NULLABLE = true
-					values[11] = Values.NULL; // REMARKS
-					values[12] = Values.NULL; // COLUMN_DEF
-					values[13] = Values.NULL; // SQL_DATA_TYPE - unused
-					values[14] = Values.NULL; // SQL_DATETIME_SUB
-					values[15] = Values.NULL; // CHAR_OCTET_LENGTH
-					values[16] = Values.value(nodeLabelList.indexOf(nodeLabel)); // ORDINAL_POSITION
-					values[17] = Values.value("YES"); // IS_NULLABLE
-					values[18] = Values.NULL; // SCOPE_CATALOG
-					values[19] = Values.NULL; // SCOPE_SCHEMA
-					values[20] = Values.NULL; // SCOPE_TABLE
-					values[21] = Values.NULL; // SOURCE_DATA_TYPE
+					var values = new ArrayList<Value>();
+					values.add(Values.NULL); // TABLE_CAT
+					values.add(Values.value("public")); // TABLE_SCHEM is always public
+					values.add(nodeLabel); // TABLE_NAME
+					values.add(propertyName); // COLUMN_NAME
+					values.add(
+							Values.value(Neo4jTypeToSqlTypeMapper.toSqlTypeFromOldCypherType(propertyType.asString()))); // DATA_TYPE
+					values.add(Values.value(Neo4jTypeToSqlTypeMapper.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
+					values.add(Values.value(-1)); // COLUMN_SIZE
+					values.add(Values.NULL); // BUFFER_LENGTH
+					values.add(Values.NULL); // DECIMAL_DIGITS
+					values.add(Values.value(2)); // NUM_PREC_RADIX
+					values.add(Values.value(DatabaseMetaData.columnNullable)); // NULLABLE
+																				// = true
+					values.add(Values.NULL); // REMARKS
+					values.add(Values.NULL); // COLUMN_DEF
+					values.add(Values.NULL); // SQL_DATA_TYPE - unused
+					values.add(Values.NULL); // SQL_DATETIME_SUB
+					values.add(Values.NULL); // CHAR_OCTET_LENGTH
+					values.add(Values.value(nodeLabelList.indexOf(nodeLabel))); // ORDINAL_POSITION
+					values.add(Values.value("YES")); // IS_NULLABLE
+					values.add(Values.NULL); // SCOPE_CATALOG
+					values.add(Values.NULL); // SCOPE_SCHEMA
+					values.add(Values.NULL); // SCOPE_TABLE
+					values.add(Values.NULL); // SOURCE_DATA_TYPE
+					values.add(Values.value("")); // IS_AUTOINCREMENT
+					values.add(Values.value("NO")); // IS_GENERATEDCOLUMN
 
-					rows.add(values);
+					rows.add(values.toArray(Value[]::new));
 				}
 			}
 		}
@@ -1058,6 +1061,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("NUM_PREC_RADIX");
 		keys.add("NULLABLE");
 		keys.add("REMARKS");
+		keys.add("COLUMN_DEF");
 		keys.add("SQL_DATA_TYPE");
 		keys.add("SQL_DATETIME_SUB");
 		keys.add("CHAR_OCTET_LENGTH");
@@ -1067,6 +1071,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("SCOPE_SCHEMA");
 		keys.add("SCOPE_TABLE");
 		keys.add("SOURCE_DATA_TYPE");
+		keys.add("IS_AUTOINCREMENT");
+		keys.add("IS_GENERATEDCOLUMN");
 		return keys;
 	}
 
@@ -1326,7 +1332,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getDatabaseMinorVersion() throws SQLException {
-		return Integer.parseInt(getDatabaseProductVersion().split("\\.")[1]);
+		var val = getDatabaseProductVersion().split("\\.")[1];
+		var dash = val.indexOf("-");
+		return Integer.parseInt(val.substring(0, (dash < 0) ? val.length() : dash));
 	}
 
 	@Override
@@ -1340,8 +1348,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public int getSQLStateType() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getSQLStateType() {
+		return DatabaseMetaData.sqlStateSQL;
 	}
 
 	@Override
