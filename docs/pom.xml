@@ -44,6 +44,10 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.neo4j.driver</groupId>
 			<artifactId>neo4j-jdbc-full-bundle</artifactId>
 			<version>${project.version}</version>

@@ -27,7 +27,7 @@ import org.neo4j.driver.jdbc.Neo4jPreparedStatement;
 
 public final class NamedParameters {
 
-	private static final Logger LOGGER = Logger.getAnonymousLogger();
+	private static final Logger LOGGER = Logger.getLogger(NamedParameters.class.getPackageName());
 
 	private NamedParameters() {
 	}

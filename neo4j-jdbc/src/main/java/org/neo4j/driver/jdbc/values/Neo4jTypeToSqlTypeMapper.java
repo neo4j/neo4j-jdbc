@@ -31,47 +31,22 @@ public final class Neo4jTypeToSqlTypeMapper {
 	 * db.schema.nodeTypeProperties() procedure In 6 this will change so will need to add
 	 * another method to handle the new types returned here when working with 6
 	 */
-	public static int toSqlTypeFromOldCypherType(String neo4jType) throws SQLException {
-		switch (neo4jType) {
-			case "Any" -> {
-				return Types.OTHER;
-			}
-			case "Boolean" -> {
-				return Types.BOOLEAN;
-			}
-			case "Bytes" -> {
-				return Types.BLOB;
-			}
-			case "String" -> {
-				return Types.VARCHAR;
-			}
-			case "Integer", "Long" -> {
-				return Types.INTEGER;
-			}
-			case "Float", "Double" -> {
-				return Types.FLOAT;
-			}
-			case "StringArray", "DoubleArray", "LongArray" -> {
-				return Types.ARRAY;
-			}
-			case "Map", "Point", "Path", "Relationship", "Node" -> {
-				return Types.STRUCT;
-			}
-			case "Date", "DateTime" -> {
-				return Types.DATE;
-			}
-			case "Time", "LocalDateTime", "LocalTime" -> {
-				return Types.TIME;
-			}
-			case "Duration" -> {
-				return Types.TIMESTAMP;
-			}
-			case "Null" -> {
-				return Types.NULL;
-			}
-		}
-
-		throw new SQLException("Unknown type");
+	public static int toSqlTypeFromOldCypherType(String neo4jType) {
+		return switch (neo4jType) {
+			case "Any" -> Types.OTHER;
+			case "Boolean" -> Types.BOOLEAN;
+			case "Bytes" -> Types.BLOB;
+			case "String" -> Types.VARCHAR;
+			case "Integer", "Long" -> Types.INTEGER;
+			case "Float", "Double" -> Types.FLOAT;
+			case "StringArray", "DoubleArray", "LongArray" -> Types.ARRAY;
+			case "Map", "Point", "Path", "Relationship", "Node" -> Types.STRUCT;
+			case "Date", "DateTime" -> Types.DATE;
+			case "Time", "LocalDateTime", "LocalTime" -> Types.TIME;
+			case "Duration" -> Types.TIMESTAMP;
+			case "Null" -> Types.NULL;
+			default -> Types.OTHER;
+		};
 	}
 
 	/*
@@ -80,59 +55,30 @@ public final class Neo4jTypeToSqlTypeMapper {
 	 * another method to handle the new types returned here when working with 6
 	 */
 	public static String oldCypherTypesToNew(String neo4jType) throws SQLException {
-		switch (neo4jType) {
+		return switch (neo4jType) {
 			// Simple
-			case "Boolean" -> {
-				return "BOOLEAN";
-			}
-			case "Double" -> {
-				return "FLOAT";
-			}
-			case "Long" -> {
-				return "INTEGER";
-			}
-			case "String" -> {
-				return "STRING";
-			}
+			case "Boolean" -> "BOOLEAN";
+			case "Double" -> "FLOAT";
+			case "Long" -> "INTEGER";
+			case "String" -> "STRING";
 			// Structs
-			case "Point" -> {
-				return "POINT";
-			}
+			case "Point" -> "POINT";
 
 			// Lists no way to get better mapping so loose info here
-			case "StringArray", "DoubleArray", "LongArray" -> {
-				return "LIST";
-			}
+			case "StringArray", "DoubleArray", "LongArray" -> "LIST";
 			// Temporal
-			case "Date" -> {
-				return "DATE";
-			}
-			case "Duration" -> {
-				return "DURATION";
-			}
-			case "DateTime" -> {
-				return "ZONED DATETIME";
-			}
-			case "Time" -> {
-				return "ZONED TIME";
-			}
-			case "LocalDateTime" -> {
-				return "LOCAL DATETIME";
-			}
-			case "LocalTime" -> {
-				return "LOCAL TIME";
-			}
+			case "Date" -> "DATE";
+			case "Duration" -> "DURATION";
+			case "DateTime" -> "ZONED DATETIME";
+			case "Time" -> "ZONED TIME";
+			case "LocalDateTime" -> "LOCAL DATETIME";
+			case "LocalTime" -> "LOCAL TIME";
 			// Not really types but kinda are
-			case "Null" -> {
-				return "NULL";
-			}
-			case "Any" -> {
-				return "ANY"; // this is not a cypher type but needs to be represented for
-								// jdbc
-			}
-		}
-
-		throw new SQLException("Unknown type");
+			case "Null" -> "NULL";
+			// this is not a cypher type but needs to be represented for// jdbc
+			case "Any" -> "ANY";
+			default -> "OTHER";
+		};
 	}
 
 	public static int toSqlType(Type neo4jType) throws SQLException {

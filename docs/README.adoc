@@ -1,0 +1,24 @@
+= About
+
+The movie dataset that is part of this repository has been created from Wikidata in February 2024 with entries published in January 2024 using the following SPARQL query:
+
+[source,sparksql]
+----
+SELECT ?movie ?movieLabel ?year (GROUP_CONCAT(DISTINCT ?genreLabel; SEPARATOR = "/") AS ?genres) (GROUP_CONCAT(DISTINCT ?subjectDescription; SEPARATOR = "/") AS ?subjects) WHERE {
+  ?movie wdt:P31 wd:Q11424;
+    wdt:P577 ?pubdate;
+    wdt:P136 ?genre;
+    wdt:P921 ?subject.
+  BIND(YEAR(?pubdate) AS ?year)
+  FILTER((?pubdate >= "2014-01-01T00:00:00Z"^^xsd:dateTime) && (?pubdate < "2024-01-01T00:00:00Z"^^xsd:dateTime))
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en".
+    ?movie rdfs:label ?movieLabel.
+    ?genre rdfs:label ?genreLabel.
+    ?subject schema:description ?subjectDescription.
+  }
+}
+GROUP BY ?movie ?movieLabel ?year
+ORDER BY (?year) (?movieLabel)
+----
+

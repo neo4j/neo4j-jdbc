@@ -26,7 +26,7 @@ import org.neo4j.driver.jdbc.Neo4jDriver;
 
 public final class Neo4jExtensions {
 
-	private static final Logger LOGGER = Logger.getAnonymousLogger();
+	private static final Logger LOGGER = Logger.getLogger(Neo4jExtensions.class.getPackageName());
 
 	private Neo4jExtensions() {
 	}
