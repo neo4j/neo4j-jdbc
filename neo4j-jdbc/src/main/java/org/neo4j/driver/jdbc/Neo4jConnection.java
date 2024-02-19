@@ -29,4 +29,9 @@ import java.sql.Connection;
  */
 public sealed interface Neo4jConnection extends Connection permits ConnectionImpl {
 
+	/**
+	 * Flushes the SQL to Cypher translation cache.
+	 */
+	void flushTranslationCache();
+
 }

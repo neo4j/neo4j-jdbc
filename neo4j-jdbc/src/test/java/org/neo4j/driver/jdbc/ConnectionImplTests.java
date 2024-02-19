@@ -20,6 +20,7 @@ package org.neo4j.driver.jdbc;
 
 import java.sql.ClientInfoStatus;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
@@ -52,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -105,13 +107,14 @@ class ConnectionImplTests {
 		var translator = mock(SqlTranslator.class);
 		var sql = "SQL";
 		var expectedNativeSql = "nativeSQL";
-		given(translator.translate(sql)).willReturn(expectedNativeSql);
-		this.connection = new ConnectionImpl(mock(BoltConnection.class), () -> translator, false, false);
+		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
+		this.connection = new ConnectionImpl(mock(BoltConnection.class), () -> translator, false, true, false);
 
 		var nativeSQL = this.connection.nativeSQL(sql);
+		nativeSQL = this.connection.nativeSQL(sql);
 
 		assertThat(nativeSQL).isEqualTo(expectedNativeSql);
-		then(translator).should().translate(sql);
+		then(translator).should(times(1)).translate(eq(sql), any(DatabaseMetaData.class));
 	}
 
 	@Test
