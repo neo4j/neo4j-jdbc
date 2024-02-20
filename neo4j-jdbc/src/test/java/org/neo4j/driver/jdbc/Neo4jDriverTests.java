@@ -122,7 +122,7 @@ class Neo4jDriverTests {
 
 		var config = Neo4jDriver.mergeConfig(urlParams, properties);
 		if (urlParams.length == 0 && properties.isEmpty()) {
-			assertThat(config).containsOnlyKeys("s2c.alwaysEscapeNames", "s2c.prettyPrint");
+			assertThat(config).isEmpty();
 		}
 		else {
 			assertThat(config).containsEntry("enableSQLTranslation", Boolean.toString(expected));

@@ -289,9 +289,23 @@ class Neo4jDriverUrlParsingTests {
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "user", "password", "agent",
 						"timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
+						"s2c.enableCache", "rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
 			}
 		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void shouldUnifyProperties(boolean value) throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb?cacheSQLTranslations=%s".formatted(value),
+				props);
+
+		var expected = String.valueOf(value);
+		assertThat(infos).anyMatch(info -> "cacheSQLTranslations".equals(info.name) && expected.equals(info.value))
+			.noneMatch(info -> "s2c.enableCache".equals(info.name));
 	}
 
 	@Test
@@ -327,7 +341,7 @@ class Neo4jDriverUrlParsingTests {
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "user", "password", "agent",
 						"timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"rewriteBatchedStatements", "sslMode");
+						"s2c.enableCache", "rewriteBatchedStatements", "sslMode");
 			}
 		}
 	}

@@ -20,6 +20,10 @@ package org.neo4j.driver.jdbc.docs;
 
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.sql.CallableStatement;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,7 +73,7 @@ public final class AuraGenAIExample {
 			// The most simple statement class in JDBC that exists: java.sql.Statement.
 			// Can be used to execute arbitrary queries with results, or ddl such as index
 			// creation. It also can be reused.
-			try (var stmt = con.createStatement()) {
+			try (Statement stmt = con.createStatement()) {
 				for (var idx : indexes) {
 					stmt.execute(idx);
 				}
@@ -82,7 +86,8 @@ public final class AuraGenAIExample {
 			// Here we are using a java.sql.PreparedStatement that allows batching
 			// statements. Take note of the log, our sql will be rewritten into a proper
 			// unwind batched statement.
-			try (var stmt = con.prepareStatement("INSERT INTO Genre(name) VALUES (?) ON CONFLICT DO NOTHING")) {
+			try (PreparedStatement stmt = con
+				.prepareStatement("INSERT INTO Genre(name) VALUES (?) ON CONFLICT DO NOTHING")) {
 				for (var genre : genres) {
 					stmt.setString(1, genre);
 					stmt.addBatch();
@@ -106,7 +111,8 @@ public final class AuraGenAIExample {
 					MATCH (g:Genre {name: __genre})
 					MERGE (movie) -[:HAS]->(g)
 					""";
-			try (var stmt = con.prepareStatement(insertMovieStatement).unwrap(Neo4jPreparedStatement.class)) {
+			try (Neo4jPreparedStatement stmt = con.prepareStatement(insertMovieStatement)
+				.unwrap(Neo4jPreparedStatement.class)) {
 				// Complex parameters such as a list of nested maps are allowed too.
 				var parameters = movies.stream().map(Movie::asMap).toList();
 				stmt.setObject("parameters", parameters);
@@ -123,7 +129,7 @@ public final class AuraGenAIExample {
 					WHERE m.title LIKE 'A%'
 					ORDER BY m.title LIMIT 20
 					""";
-			try (var stmt = con.createStatement(); var result = stmt.executeQuery(selectMovies)) {
+			try (Statement stmt = con.createStatement(); ResultSet result = stmt.executeQuery(selectMovies)) {
 				while (result.next()) {
 					System.out.printf("%s %s%n", result.getString("title"), result.getObject("genres"));
 				}
@@ -138,7 +144,8 @@ public final class AuraGenAIExample {
 			// `genai.vector.encode(:resource, :provider, :configuration)`, but the
 			// callable statement allows proper named parameters, that is: The names
 			// specify the position, not only an arbitrary placeholder.
-			try (var stmt = con.prepareCall("{CALL genai.vector.encode(:provider, :resource, :configuration)}")) {
+			try (CallableStatement stmt = con
+				.prepareCall("{CALL genai.vector.encode(:provider, :resource, :configuration)}")) {
 				stmt.setString("resource", "Hello, Neo4j JDBC Driver");
 				stmt.setString("provider", "OpenAI");
 				stmt.setObject("configuration", Map.of("token", openAIToken));
@@ -160,7 +167,8 @@ public final class AuraGenAIExample {
 						CALL db.create.setNodeVectorProperty(nodes[index], "embedding", vector)
 					} IN TRANSACTIONS OF 10 ROWS
 					""";
-			try (var stmt = con.prepareStatement(createEmbeddingsStatement).unwrap(Neo4jPreparedStatement.class)) {
+			try (Neo4jPreparedStatement stmt = con.prepareStatement(createEmbeddingsStatement)
+				.unwrap(Neo4jPreparedStatement.class)) {
 				stmt.setString("provider", "OpenAI");
 				stmt.setObject("configuration", Map.of("token", openAIToken));
 				stmt.executeUpdate();
@@ -175,7 +183,7 @@ public final class AuraGenAIExample {
 					RETURN movie.title AS title, movie.released AS year, movie.description AS description, score
 					ORDER BY score DESC
 					""";
-			try (var stmt = con.prepareStatement(query).unwrap(Neo4jPreparedStatement.class)) {
+			try (Neo4jPreparedStatement stmt = con.prepareStatement(query).unwrap(Neo4jPreparedStatement.class)) {
 				stmt.setString("term", "A movie about love and positive emotions");
 				stmt.setString("provider", "OpenAI");
 				stmt.setObject("configuration", Map.of("token", openAIToken));

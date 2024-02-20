@@ -86,6 +86,45 @@ public class Neo4jDriverIT {
 			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS element_id");
 	}
 
+	@Test
+	void additionalURLParametersShouldBePreserved() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%s?user=%s&password=%s&s2c.tableToLabelMappings=genres:Genre"
+			.formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687), "neo4j", this.neo4j.getAdminPassword());
+
+		var connection = DriverManager.getConnection(url);
+		assertThat(connection).isNotNull();
+		assertThat(validateConnection(connection)).isTrue();
+		assertThat(connection.nativeSQL("SELECT * FROM genres"))
+			.isEqualTo("MATCH (genres:Genre) RETURN elementId(genres) AS element_id");
+
+		var driver = new Neo4jDriver();
+		var propertyInfo = driver.getPropertyInfo(url, new Properties());
+		assertThat(propertyInfo)
+			.anyMatch(pi -> "s2c.tableToLabelMappings".equals(pi.name) && "genres:Genre".equals(pi.value));
+	}
+
+	@Test
+	void additionalPropertiesParametersShouldBePreserved() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%s?user=%s&password=%s".formatted(this.neo4j.getHost(),
+				this.neo4j.getMappedPort(7687), "neo4j", this.neo4j.getAdminPassword());
+
+		var properties = new Properties();
+		properties.put("s2c.tableToLabelMappings", "genres:Genre");
+
+		var connection = DriverManager.getConnection(url, properties);
+		assertThat(connection).isNotNull();
+		assertThat(validateConnection(connection)).isTrue();
+		assertThat(connection.nativeSQL("SELECT * FROM genres"))
+			.isEqualTo("MATCH (genres:Genre) RETURN elementId(genres) AS element_id");
+
+		var driver = new Neo4jDriver();
+		var propertyInfo = driver.getPropertyInfo(url, properties);
+		assertThat(propertyInfo)
+			.anyMatch(pi -> "s2c.tableToLabelMappings".equals(pi.name) && "genres:Genre".equals(pi.value));
+	}
+
 	private boolean validateConnection(Connection connection) throws SQLException {
 		var resultSet = connection.createStatement().executeQuery("UNWIND 10 as x return x");
 		return resultSet.next();
