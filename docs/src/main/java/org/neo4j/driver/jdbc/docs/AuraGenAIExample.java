@@ -21,8 +21,10 @@ package org.neo4j.driver.jdbc.docs;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,35 +51,13 @@ public final class AuraGenAIExample {
 		}
 
 		// Getting a connection
-		try (var con = Neo4jDriver.withSQLTranslation().fromEnv().orElseThrow()) {
+		try (var con = Neo4jDriver.withSQLTranslation()
+			.withProperties(Map.of("s2c.tableToLabelMappings", "genres:Genre"))
+			.fromEnv()
+			.orElseThrow()) {
 
-			var indexes = new String[] { """
-					/*+ NEO4J FORCE_CYPHER */
-					CREATE CONSTRAINT `movie-link` IF NOT EXISTS
-					FOR (n:Movie) REQUIRE n.link IS UNIQUE
-					""", """
-					/*+ NEO4J FORCE_CYPHER */
-					CREATE CONSTRAINT `genre-name` IF NOT EXISTS
-					FOR (n:Genre) REQUIRE n.name IS UNIQUE
-					""", """
-					/*+ NEO4J FORCE_CYPHER */
-					CREATE VECTOR INDEX `movie-embeddings` IF NOT EXISTS
-					FOR (n:Movie) ON (n.embedding)
-					OPTIONS {indexConfig: {
-						`vector.dimensions`: 1536,
-						`vector.similarity_function`: 'cosine'
-					}}
-					""" };
-
-			System.out.printf("# Using a simple statement several times for creating indexes:%n%n");
-			// The most simple statement class in JDBC that exists: java.sql.Statement.
-			// Can be used to execute arbitrary queries with results, or ddl such as index
-			// creation. It also can be reused.
-			try (Statement stmt = con.createStatement()) {
-				for (var idx : indexes) {
-					stmt.execute(idx);
-				}
-			}
+			// This is boring, we look later
+			createIndexes(con);
 
 			var movies = readMovies();
 			var genres = movies.stream().flatMap(m -> m.genres.stream()).distinct().toList();
@@ -87,7 +67,7 @@ public final class AuraGenAIExample {
 			// statements. Take note of the log, our sql will be rewritten into a proper
 			// unwind batched statement.
 			try (PreparedStatement stmt = con
-				.prepareStatement("INSERT INTO Genre(name) VALUES (?) ON CONFLICT DO NOTHING")) {
+				.prepareStatement("INSERT INTO genres(name) VALUES (?) ON CONFLICT DO NOTHING")) {
 				for (var genre : genres) {
 					stmt.setString(1, genre);
 					stmt.addBatch();
@@ -197,7 +177,37 @@ public final class AuraGenAIExample {
 		}
 	}
 
-	static List<Movie> readMovies() throws Exception {
+	private static void createIndexes(Connection con) throws SQLException {
+		var indexes = new String[] { """
+				/*+ NEO4J FORCE_CYPHER */
+				CREATE CONSTRAINT `movie-link` IF NOT EXISTS
+				FOR (n:Movie) REQUIRE n.link IS UNIQUE
+				""", """
+				/*+ NEO4J FORCE_CYPHER */
+				CREATE CONSTRAINT `genre-name` IF NOT EXISTS
+				FOR (n:Genre) REQUIRE n.name IS UNIQUE
+				""", """
+				/*+ NEO4J FORCE_CYPHER */
+				CREATE VECTOR INDEX `movie-embeddings` IF NOT EXISTS
+				FOR (n:Movie) ON (n.embedding)
+				OPTIONS {indexConfig: {
+					`vector.dimensions`: 1536,
+					`vector.similarity_function`: 'cosine'
+				}}
+				""" };
+
+		System.out.printf("# Using a simple statement several times for creating indexes:%n%n");
+		// The most simple statement class in JDBC that exists: java.sql.Statement.
+		// Can be used to execute arbitrary queries with results, or ddl such as index
+		// creation. It also can be reused.
+		try (Statement stmt = con.createStatement()) {
+			for (var idx : indexes) {
+				stmt.execute(idx);
+			}
+		}
+	}
+
+	private static List<Movie> readMovies() throws Exception {
 
 		var result = new ArrayList<Movie>();
 

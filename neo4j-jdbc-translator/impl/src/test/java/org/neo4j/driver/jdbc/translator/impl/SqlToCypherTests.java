@@ -329,7 +329,7 @@ class SqlToCypherTests {
 			false,true,MATCH (movies:`movies`)$RETURN *
 			""")
 	void escapingShouldWork(Boolean prettyPrint, Boolean alwaysEscapeNames, String expected) {
-		var properties = new HashMap<String, String>();
+		var properties = new HashMap<String, Object>();
 		if (prettyPrint != null) {
 			properties.put("s2c.prettyPrint", prettyPrint.toString());
 		}

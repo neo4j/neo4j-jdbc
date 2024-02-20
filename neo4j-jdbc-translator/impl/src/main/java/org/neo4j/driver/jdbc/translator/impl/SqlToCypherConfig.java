@@ -48,7 +48,7 @@ public final class SqlToCypherConfig {
 	 * @return a new configuration object or the default config if there are no matching
 	 * properties.
 	 */
-	public static SqlToCypherConfig of(Map<String, String> config) {
+	public static SqlToCypherConfig of(Map<String, Object> config) {
 
 		if (config == null || config.isEmpty()) {
 			return defaultConfig();
@@ -67,16 +67,16 @@ public final class SqlToCypherConfig {
 			var v = config.get(m.group());
 			var k = dashWord.matcher(m.group(1)).replaceAll(mr -> mr.group(1).toUpperCase(Locale.ROOT));
 			customConfig = null != switch (k) {
-				case "parseNameCase" -> builder.withParseNameCase(ParseNameCase.fromValue(v));
-				case "renderNameCase" -> builder.withRenderNameCase(RenderNameCase.fromValue(v));
-				case "jooqDiagnosticLogging" -> builder.withJooqDiagnosticLogging(Boolean.parseBoolean(v));
-				case "tableToLabelMappings" -> builder.withTableToLabelMappings(buildMap(v));
-				case "joinColumnsToTypeMappings" -> builder.withJoinColumnsToTypeMappings(buildMap(v));
-				case "sqlDialect" -> builder.withSqlDialect(SQLDialect.valueOf(v));
-				case "prettyPrint" -> builder.withPrettyPrint(Boolean.parseBoolean(v));
-				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(Boolean.parseBoolean(v));
-				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(v);
-				case "enableCache" -> builder.withCacheEnabled(Boolean.parseBoolean(v));
+				case "parseNameCase" -> builder.withParseNameCase(toEnum(ParseNameCase.class, v));
+				case "renderNameCase" -> builder.withRenderNameCase(toEnum(RenderNameCase.class, v));
+				case "jooqDiagnosticLogging" -> builder.withJooqDiagnosticLogging(toBoolean(v));
+				case "tableToLabelMappings" -> builder.withTableToLabelMappings(toMap(v));
+				case "joinColumnsToTypeMappings" -> builder.withJoinColumnsToTypeMappings(toMap(v));
+				case "sqlDialect" -> builder.withSqlDialect(SQLDialect.valueOf(toString(v)));
+				case "prettyPrint" -> builder.withPrettyPrint(toBoolean(v));
+				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(toBoolean(v));
+				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(toString(v));
+				case "enableCache" -> builder.withCacheEnabled(toBoolean(v));
 				default -> {
 					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;
@@ -85,6 +85,51 @@ public final class SqlToCypherConfig {
 		}
 
 		return customConfig ? builder.build() : defaultConfig();
+	}
+
+	@SuppressWarnings("unchecked")
+	static Map<String, String> toMap(Object value) {
+		if (value instanceof Map<?, ?> map) {
+			return (Map<String, String>) map;
+		}
+		else if (value instanceof String source) {
+			return buildMap(source);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported Map<String, String> representation " + value.getClass());
+		}
+	}
+
+	static <T extends Enum<T>> T toEnum(Class<T> enumType, Object value) {
+		if (enumType.isInstance(value)) {
+			return enumType.cast(value);
+		}
+		else if (value instanceof String s) {
+			return Enum.valueOf(enumType, s);
+		}
+		else {
+			throw new IllegalArgumentException(
+					"Unsupported enum representation " + value.getClass() + " for " + enumType.getName());
+		}
+	}
+
+	static String toString(Object val) {
+		if (val instanceof String s) {
+			return s;
+		}
+		return (val != null) ? val.toString() : "";
+	}
+
+	static boolean toBoolean(Object val) {
+		if (val instanceof String s) {
+			return Boolean.parseBoolean(s);
+		}
+		else if (val instanceof Boolean b) {
+			return b;
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported boolean representation " + val.getClass());
+		}
 	}
 
 	/**

@@ -37,7 +37,7 @@ public interface SqlTranslatorFactory {
 	 * @param properties properties that will be used to configure the translator
 	 * @return a new or a cached translator instance
 	 */
-	SqlTranslator create(Map<String, String> properties);
+	SqlTranslator create(Map<String, Object> properties);
 
 	/**
 	 * Return a human-readable name of the translators that are produced by this factory.

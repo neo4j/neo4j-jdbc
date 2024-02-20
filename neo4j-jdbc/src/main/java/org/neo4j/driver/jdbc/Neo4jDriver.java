@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -160,9 +161,21 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
 	 * @return a builder that lets you create a driver from the environment.
+	 * @see SpecifyTranslationStep
 	 */
-	public static SpecifyEnvStep withSQLTranslation() {
-		return new BuilderImpl(true);
+	public static SpecifyAdditionalPropertiesStep withSQLTranslation() {
+		return new BuilderImpl(true, Map.of());
+	}
+
+	/**
+	 * Lets you configure the driver from the environment, with additional properties
+	 * being applied as well.
+	 * @param additionalProperties additional properties to be added to the configuration
+	 * @return a builder that lets you create a driver from the environment.
+	 * @see SpecifyAdditionalPropertiesStep
+	 */
+	public static SpecifyTranslationStep withProperties(Map<String, Object> additionalProperties) {
+		return new BuilderImpl(false, additionalProperties);
 	}
 
 	/**
@@ -210,7 +223,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @see SpecifyEnvStep#fromEnv(Path, String)
 	 */
 	public static Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
-		return new BuilderImpl(false).fromEnv(directory, filename);
+		return new BuilderImpl(false, Map.of()).fromEnv(directory, filename);
 	}
 
 	public Neo4jDriver() {
@@ -645,7 +658,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return result;
 	}
 
-	static Supplier<SqlTranslator> getSqlTranslatorSupplier(boolean automaticSqlTranslation, Map<String, String> config,
+	static Supplier<SqlTranslator> getSqlTranslatorSupplier(boolean automaticSqlTranslation, Map<String, Object> config,
 			Supplier<SqlTranslatorFactory> sqlTranslatorFactorySupplier) {
 
 		if (automaticSqlTranslation) {
@@ -714,8 +727,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
 			boolean rewriteBatchedStatements, SSLProperties sslProperties, Map<String, String> misc) {
 
-		Map<String, String> rawConfig() {
-			Map<String, String> props = new HashMap<>();
+		Map<String, Object> rawConfig() {
+			Map<String, Object> props = new HashMap<>();
 			props.put(PROPERTY_SQL_TRANSLATION_ENABLED, String.valueOf(this.enableSQLTranslation));
 
 			props.put(PROPERTY_HOST, this.host);
@@ -802,12 +815,48 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	private static final class BuilderImpl implements SpecifyEnvStep {
+	/**
+	 * Responsible for configuring the optional SQL to Cypher translation.
+	 */
+	public interface SpecifyTranslationStep extends SpecifyEnvStep {
+
+		/**
+		 * Call to enable SQL to Cypher translation.
+		 * @return final step to retrieve a driver from the environment
+		 */
+		SpecifyEnvStep withSQLTranslation();
+
+	}
+
+	/**
+	 * Responsible for adding additional properties that should be used in addition to the
+	 * environment when creating the driver. They won't override any username, password or
+	 * host settings from the driver, but merely used in addition for everything not taken
+	 * from the environment.
+	 */
+	public interface SpecifyAdditionalPropertiesStep extends SpecifyEnvStep {
+
+		/**
+		 * Call this to specify any additional properties. The environment has precedence.
+		 * Especially username, password and host will always be taken from the
+		 * environment.
+		 * @param additionalProperties any additional properties.
+		 * @return final step to retrieve a driver from the environment
+		 */
+		SpecifyEnvStep withProperties(Map<String, Object> additionalProperties);
+
+	}
+
+	private static final class BuilderImpl
+			implements SpecifyEnvStep, SpecifyAdditionalPropertiesStep, SpecifyTranslationStep {
 
 		private boolean forceSqlTranslation;
 
-		private BuilderImpl(boolean forceSqlTranslation) {
+		private Map<String, Object> additionalProperties;
+
+		BuilderImpl(boolean forceSqlTranslation, Map<String, Object> additionalProperties) {
 			this.forceSqlTranslation = forceSqlTranslation;
+			this.additionalProperties = additionalProperties;
 		}
 
 		@Override
@@ -830,6 +879,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			}
 			if (address != null && Neo4jDriver.URL_PATTERN.matcher(address).matches()) {
 				var properties = new Properties();
+				properties.putAll(this.additionalProperties);
+
 				var username = env.get("NEO4J_USERNAME");
 				if (username != null) {
 					properties.put(Neo4jDriver.PROPERTY_USER, username);
@@ -846,6 +897,18 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			}
 
 			return Optional.empty();
+		}
+
+		@Override
+		public SpecifyEnvStep withProperties(Map<String, Object> additionalProperties) {
+			this.additionalProperties = Objects.requireNonNullElseGet(additionalProperties, Map::of);
+			return this;
+		}
+
+		@Override
+		public SpecifyEnvStep withSQLTranslation() {
+			this.forceSqlTranslation = true;
+			return this;
 		}
 
 	}

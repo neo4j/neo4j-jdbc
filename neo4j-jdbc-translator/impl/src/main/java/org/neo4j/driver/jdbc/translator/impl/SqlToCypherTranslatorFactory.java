@@ -33,7 +33,7 @@ import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
 public final class SqlToCypherTranslatorFactory implements SqlTranslatorFactory {
 
 	@Override
-	public SqlTranslator create(Map<String, String> config) {
+	public SqlTranslator create(Map<String, Object> config) {
 		return SqlToCypher.with(SqlToCypherConfig.of(config));
 	}
 

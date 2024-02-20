@@ -19,15 +19,43 @@
 package org.neo4j.driver.jdbc.translator.impl;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.jooq.SQLDialect;
 import org.jooq.conf.ParseNameCase;
 import org.jooq.conf.RenderNameCase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SqlToCypherConfigTests {
+
+	static Stream<Arguments> shouldParseEnums() {
+		return Stream.of(Arguments.of(ParseNameCase.LOWER_IF_UNQUOTED, ParseNameCase.LOWER_IF_UNQUOTED),
+				Arguments.of("LOWER_IF_UNQUOTED", ParseNameCase.LOWER_IF_UNQUOTED));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldParseEnums(Object in, Object expected) {
+		var result = SqlToCypherConfig.toEnum(ParseNameCase.class, in);
+		assertThat(result).isEqualTo(expected);
+	}
+
+	static Stream<Arguments> shouldParseBooleans() {
+		return Stream.of(Arguments.of(Boolean.FALSE, false), Arguments.of("true", true), Arguments.of(true, true),
+				Arguments.of("TRUE", true));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldParseBooleans(Object in, boolean expected) {
+		var result = SqlToCypherConfig.toBoolean(in);
+		assertThat(result).isEqualTo(expected);
+	}
 
 	@Test
 	void configFromNullPropertiesShouldUseDefault() {
