@@ -31,7 +31,7 @@ class LRUCacheTests {
 		for (int i = 0; i < 4; ++i) {
 			cache.put(i, Integer.toString(i));
 		}
-		Assertions.assertThat(cache).containsExactlyEntriesOf(Map.of(2, "2", 3, "3"));
+		Assertions.assertThat(cache).containsExactlyInAnyOrderEntriesOf(Map.of(2, "2", 3, "3"));
 	}
 
 }
