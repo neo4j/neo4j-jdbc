@@ -522,12 +522,16 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(LocalTime.now()),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalDateTime.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(ZonedDateTime.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(Values.value(LocalDateTime.of(LocalDate.of(2022, 12, 4), LocalTime.of(21, 21))),
+						Named.<VerificationLogic<Date>>of("verify returns Date",
+								supplier -> assertThat(supplier.get())
+									.isEqualTo(Date.valueOf(LocalDate.of(2022, 12, 4))))),
+				Arguments.of(
+						Values.value(ZonedDateTime.of(LocalDate.of(2022, 12, 4), LocalTime.of(21, 21),
+								ZoneId.of("Europe/Berlin"))),
+						Named.<VerificationLogic<Date>>of("verify returns Date",
+								supplier -> assertThat(supplier.get())
+									.isEqualTo(Date.valueOf(LocalDate.of(2022, 12, 4))))),
 				Arguments.of(Values.value(new byte[] {}),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
@@ -568,15 +572,15 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(Period.ZERO),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalDate.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(Values.value(LocalDate.of(2024, 2, 21)),
+						Named.<VerificationLogic<Date>>of("verify returns Date",
+								supplier -> assertThat(supplier.get()).isEqualTo(Date.valueOf("2024-02-21")))),
 				Arguments.of(Values.value(LocalTime.now()),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalDateTime.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(Values.value(LocalDateTime.of(2024, 2, 29, 17, 56, 23)),
+						Named.<VerificationLogic<Date>>of("verify returns Date",
+								supplier -> assertThat(supplier.get()).isEqualTo(Date.valueOf("2024-02-29")))),
 				Arguments.of(Values.value(new byte[] {}),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
@@ -619,12 +623,12 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(LocalDate.now()),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalDateTime.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(ZonedDateTime.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(Values.value(LocalDateTime.of(2023, 4, 15, 1, 1)),
+						Named.<VerificationLogic<Time>>of("verify returns Time",
+								supplier -> assertThat(supplier.get()).isEqualTo(Time.valueOf(LocalTime.of(1, 1))))),
+				Arguments.of(Values.value(ZonedDateTime.of(2023, 9, 21, 1, 1, 0, 0, ZoneId.of("America/New_York"))),
+						Named.<VerificationLogic<Time>>of("verify returns Time",
+								supplier -> assertThat(supplier.get()).isEqualTo(Time.valueOf(LocalTime.of(1, 1))))),
 				Arguments.of(Values.value(new byte[] {}),
 						Named.<VerificationLogic<Time>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
@@ -652,7 +656,7 @@ class ResultSetImplTests {
 		var zonedDateTime = ZonedDateTime.of(2023, 1, 1, 1, 1, 1, 1, ZoneId.systemDefault());
 		return Stream.of(
 				// date handling
-				Arguments.of(Values.value(zonedDateTime), Named.<VerificationLogic<Time>>of("verify returns Date",
+				Arguments.of(Values.value(zonedDateTime), Named.<VerificationLogic<Time>>of("verify returns Time",
 						supplier -> assertThat(supplier.get()).isEqualTo(Time.valueOf(zonedDateTime.toLocalTime())))),
 				// null handling
 				Arguments.of(Values.NULL,
@@ -668,12 +672,13 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(LocalDate.now()),
 						Named.<VerificationLogic<Time>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalTime.now()),
-						Named.<VerificationLogic<Time>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalDateTime.now()),
-						Named.<VerificationLogic<Time>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(Values.value(LocalTime.of(17, 54, 23)),
+						Named.<VerificationLogic<Time>>of("verify returns Time",
+								supplier -> assertThat(supplier.get()).isEqualTo(Time.valueOf("17:54:23")))),
+				Arguments.of(Values.value(LocalDateTime.of(2023, 1, 1, 1, 1, 1)),
+						Named.<VerificationLogic<Time>>of("verify returns Time",
+								supplier -> assertThat(supplier.get())
+									.isEqualTo(Time.valueOf(zonedDateTime.toLocalTime())))),
 				Arguments.of(Values.value(new byte[] {}),
 						Named.<VerificationLogic<Time>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
@@ -701,7 +706,7 @@ class ResultSetImplTests {
 		return Stream.of(
 				// date handling
 				Arguments.of(Values.value(LocalDateTime.of(2023, 1, 1, 1, 1)),
-						Named.<VerificationLogic<Timestamp>>of("verify returns Date",
+						Named.<VerificationLogic<Timestamp>>of("verify returns Timestamp",
 								supplier -> assertThat(supplier.get())
 									.isEqualTo(Timestamp.valueOf(LocalDateTime.of(2023, 1, 1, 1, 1))))),
 				// null handling
@@ -721,9 +726,12 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(LocalTime.now()),
 						Named.<VerificationLogic<Date>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(ZonedDateTime.now()),
-						Named.<VerificationLogic<Date>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(
+						Values.value(ZonedDateTime.of(LocalDate.of(2022, 12, 4), LocalTime.of(21, 21),
+								ZoneId.of("Europe/Berlin"))),
+						Named.<VerificationLogic<Timestamp>>of("verify returns Timestamp",
+								supplier -> assertThat(supplier.get())
+									.isEqualTo(Timestamp.valueOf(LocalDateTime.of(2022, 12, 4, 21, 21))))),
 				Arguments.of(Values.value(new byte[] {}),
 						Named.<VerificationLogic<Timestamp>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
@@ -752,7 +760,7 @@ class ResultSetImplTests {
 		return Stream.of(
 				// date handling
 				Arguments.of(Values.value(zonedDateTime),
-						Named.<VerificationLogic<Timestamp>>of("verify returns Date",
+						Named.<VerificationLogic<Timestamp>>of("verify returns Timestamp",
 								supplier -> assertThat(supplier.get())
 									.isEqualTo(Timestamp.valueOf(zonedDateTime.toLocalDateTime())))),
 				// null handling
@@ -772,9 +780,10 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(LocalTime.now()),
 						Named.<VerificationLogic<Timestamp>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
-				Arguments.of(Values.value(LocalDateTime.now()),
-						Named.<VerificationLogic<Timestamp>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+				Arguments.of(Values.value(LocalDateTime.of(2023, 1, 2, 3, 4)),
+						Named.<VerificationLogic<Timestamp>>of("verify returns Timestamp",
+								supplier -> assertThat(supplier.get())
+									.isEqualTo(Timestamp.valueOf(LocalDateTime.of(2023, 1, 2, 3, 4))))),
 				Arguments.of(Values.value(new byte[] {}),
 						Named.<VerificationLogic<Timestamp>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),

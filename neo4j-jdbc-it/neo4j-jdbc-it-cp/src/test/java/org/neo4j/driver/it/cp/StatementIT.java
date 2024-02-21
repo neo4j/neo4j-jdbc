@@ -19,6 +19,16 @@
 package org.neo4j.driver.it.cp;
 
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -315,6 +325,132 @@ class StatementIT extends IntegrationTestBase {
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getInt("i"))
 				.withMessage("Invalid cursor position");
 			assertThat(rs.isAfterLast()).isTrue();
+		}
+	}
+
+	static Stream<Arguments> dateMappingShouldWork() {
+		var cal = Calendar.getInstance();
+		cal.clear();
+		cal.set(2024, 1, 29, 0, 0, 0);
+		var expectedDate = cal.getTime();
+		return Stream.of(Arguments.of("DATE", expectedDate, null, "RETURN date({year: 2024, month: 2, day: 29}) AS v"),
+				Arguments.of("ZONED TIME (not supported)", expectedDate, SQLException.class,
+						"RETURN time() AS v, 'TIME value can not be mapped to java.sql.Date.' AS m"),
+				Arguments.of("LOCAL TIME (not supported)", expectedDate, SQLException.class,
+						"RETURN localtime() AS v, 'LOCAL_TIME value can not be mapped to java.sql.Date.' AS m"),
+				Arguments.of("ZONED DATETIME", expectedDate, null,
+						"RETURN datetime({year: 2024, month: 2, day: 29}) AS v"),
+				Arguments.of("ZONED DATETIME", expectedDate, null,
+						"RETURN datetime({year: 2024, month: 2, day: 29, hour: 22, timezone: 'America/New_York'}) AS v"),
+				Arguments.of("LOCAL DATETIME", expectedDate, null,
+						"RETURN localdatetime({year: 2024, month: 2, day: 29}) AS v"));
+	}
+
+	@ParameterizedTest(name = "Mapping of {0} to java.sql.Date")
+	@MethodSource
+	void dateMappingShouldWork(@SuppressWarnings("unused") String description, Date expected,
+			Class<SQLException> exceptionClass, String query) throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery(query)) {
+			assertThat(rs.next()).isTrue();
+
+			if (exceptionClass != null) {
+				var msg = rs.getString("m");
+				assertThatExceptionOfType(exceptionClass).isThrownBy(() -> rs.getDate("v")).withMessage(msg);
+			}
+			else {
+				var date = rs.getDate("v");
+				assertThat(date).isEqualTo(expected);
+				var referenceCalendar = GregorianCalendar.from(ZonedDateTime.of(LocalDate.of(2023, 9, 21),
+						LocalTime.of(21, 21, 21), TimeZone.getTimeZone("Atlantic/Canary").toZoneId()));
+				referenceCalendar.set(Calendar.MILLISECOND, 42);
+				date = rs.getDate("v", referenceCalendar);
+				assertThat(date).isEqualTo(expected);
+			}
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	static Stream<Arguments> timeMappingShouldWork() {
+		var expectedTime = new Time(23, 59, 59);
+		return Stream.of(Arguments.of("DATE (not supported)", expectedTime, SQLException.class,
+				"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value can not be mapped to java.sql.Time.' AS m"),
+				Arguments.of("ZONED TIME", expectedTime, null, "RETURN time({hour: 23, minute: 59, second: 59}) AS v"),
+				Arguments.of("ZONED TIME", expectedTime, null,
+						"RETURN time({hour: 23, minute: 59, second: 59, timezone: 'America/New_York'}) AS v"),
+				Arguments.of("LOCAL TIME", expectedTime, null,
+						"RETURN localtime({hour: 23, minute: 59, second: 59}) AS v"),
+				Arguments.of("ZONED DATETIME", expectedTime, null,
+						"RETURN datetime({year: 2024, month: 1, day: 29, hour: 23, minute: 59, second: 59}) AS v"),
+				Arguments.of("ZONED DATETIME", expectedTime, null,
+						"RETURN datetime({year: 2024, month: 1, day: 29, hour: 23, minute: 59, second: 59, timezone: 'America/New_York'}) AS v"),
+				Arguments.of("LOCAL DATETIME", expectedTime, null,
+						"RETURN localdatetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"));
+	}
+
+	@ParameterizedTest(name = "Mapping of {0} to java.sql.Time")
+	@MethodSource
+	void timeMappingShouldWork(@SuppressWarnings("unused") String description, Time expected,
+			Class<SQLException> exceptionClass, String query) throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery(query)) {
+			assertThat(rs.next()).isTrue();
+
+			if (exceptionClass != null) {
+				var msg = rs.getString("m");
+				assertThatExceptionOfType(exceptionClass).isThrownBy(() -> rs.getTime("v")).withMessage(msg);
+			}
+			else {
+				var date = rs.getTime("v");
+				assertThat(date).isEqualTo(expected);
+				var referenceCalendar = GregorianCalendar.from(ZonedDateTime.of(LocalDate.of(2023, 9, 21),
+						LocalTime.of(21, 21, 21), TimeZone.getTimeZone("Atlantic/Canary").toZoneId()));
+				date = rs.getTime("v", referenceCalendar);
+				assertThat(date).isEqualTo(expected);
+			}
+		}
+	}
+
+	static Stream<Arguments> timestampMappingShouldWork() {
+		var defaultExpectation = LocalDateTime.of(2024, 2, 29, 23, 59, 59);
+		var expectedTime = Timestamp.valueOf(defaultExpectation);
+		return Stream.of(Arguments.of("DATE (not supported)", null, SQLException.class,
+				"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value can not be mapped to java.sql.Timestamp.' AS m"),
+				Arguments.of("ZONED TIME (not supported)", expectedTime, SQLException.class,
+						"RETURN time({hour: 23, minute: 59, second: 59}) AS v, 'TIME value can not be mapped to java.sql.Timestamp.' AS m"),
+				Arguments.of("LOCAL TIME  (not supported)", expectedTime, SQLException.class,
+						"RETURN localtime({hour: 23, minute: 59, second: 59}) AS v, 'LOCAL_TIME value can not be mapped to java.sql.Timestamp.' AS m"),
+				Arguments.of("ZONED DATETIME", expectedTime, null,
+						"RETURN datetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"),
+				Arguments.of("ZONED DATETIME", expectedTime, null,
+						"RETURN datetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59, timezone: 'America/New_York'}) AS v"),
+				Arguments.of("LOCAL DATETIME", expectedTime, null,
+						"RETURN localdatetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"));
+	}
+
+	@ParameterizedTest(name = "Mapping of {0} to java.sql.Timestamp")
+	@MethodSource
+	void timestampMappingShouldWork(@SuppressWarnings("unused") String description, Timestamp expected,
+			Class<SQLException> exceptionClass, String query) throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery(query)) {
+			assertThat(rs.next()).isTrue();
+
+			if (exceptionClass != null) {
+				var msg = rs.getString("m");
+				assertThatExceptionOfType(exceptionClass).isThrownBy(() -> rs.getTimestamp("v")).withMessage(msg);
+			}
+			else {
+				Timestamp date = rs.getTimestamp("v");
+				assertThat(date).isEqualTo(expected);
+				var referenceCalendar = GregorianCalendar.from(ZonedDateTime.of(LocalDate.of(2023, 9, 21),
+						LocalTime.of(21, 21, 21), TimeZone.getTimeZone("Atlantic/Canary").toZoneId()));
+				date = rs.getTimestamp("v", referenceCalendar);
+				assertThat(date).isEqualTo(expected);
+			}
 		}
 	}
 

@@ -41,6 +41,9 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -1332,60 +1335,117 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.DATE.isTypeOf(value)) {
 			return Date.valueOf(value.asLocalDate());
 		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to date.", value.type()));
-	}
-
-	private static Date mapToDate(Value value, Calendar calendar) throws SQLException {
 		if (Type.DATE_TIME.isTypeOf(value)) {
 			return Date.valueOf(value.asZonedDateTime().toLocalDate());
 		}
+		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
+			return Date.valueOf(value.asLocalDateTime().toLocalDate());
+		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to zoned date.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to java.sql.Date.", value.type()));
+	}
+
+	private static Date mapToDate(Value value, Calendar calendar) throws SQLException {
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+
+		ZonedDateTime hlp;
+		var reference = calendar.toInstant().atZone(calendar.getTimeZone().toZoneId());
+		if (Type.DATE.isTypeOf(value)) {
+			hlp = reference.with(TemporalAdjusters.ofDateAdjuster(ignored -> value.asLocalDate()));
+		}
+		else if (Type.DATE_TIME.isTypeOf(value)) {
+			hlp = reference.with(TemporalAdjusters.ofDateAdjuster(ignored -> value.asZonedDateTime().toLocalDate()));
+		}
+		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
+			hlp = reference.with(TemporalAdjusters.ofDateAdjuster(ignored -> value.asLocalDateTime().toLocalDate()));
+		}
+		else {
+			throw new SQLException(String.format("%s value can not be mapped to zoned java.sql.Date.", value.type()));
+		}
+
+		return Date.valueOf(hlp.withZoneSameLocal(ZoneId.systemDefault()).toLocalDate());
 	}
 
 	private static Time mapToTime(Value value) throws SQLException {
+		if (Type.TIME.isTypeOf(value)) {
+			return Time.valueOf(value.asOffsetTime().toLocalTime());
+		}
 		if (Type.LOCAL_TIME.isTypeOf(value)) {
 			return Time.valueOf(value.asLocalTime());
 		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to time.", value.type()));
-	}
-
-	private static Time mapToTime(Value value, Calendar calendar) throws SQLException {
 		if (Type.DATE_TIME.isTypeOf(value)) {
 			return Time.valueOf(value.asZonedDateTime().toLocalTime());
 		}
+		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
+			return Time.valueOf(value.asLocalDateTime().toLocalTime());
+		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to zoned time.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
+	}
+
+	private static Time mapToTime(Value value, Calendar calendar) throws SQLException {
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+
+		ZonedDateTime hlp;
+		var reference = calendar.toInstant().atZone(calendar.getTimeZone().toZoneId());
+		if (Type.TIME.isTypeOf(value)) {
+			hlp = reference.with(temporal -> temporal.with(value.asOffsetTime()));
+		}
+		else if (Type.LOCAL_TIME.isTypeOf(value)) {
+			hlp = reference.with(temporal -> temporal.with(value.asLocalTime()));
+		}
+		else if (Type.DATE_TIME.isTypeOf(value)) {
+			hlp = reference.with(temporal -> temporal.with(value.asZonedDateTime().toLocalTime()));
+		}
+		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
+			hlp = reference.with(temporal -> temporal.with(value.asLocalDateTime()));
+		}
+		else {
+			throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
+		}
+
+		return Time.valueOf(hlp.withZoneSameLocal(ZoneId.systemDefault()).toLocalTime());
 	}
 
 	private static Timestamp mapToTimestamp(Value value) throws SQLException {
+		if (Type.DATE_TIME.isTypeOf(value)) {
+			return Timestamp.valueOf(value.asZonedDateTime().toLocalDateTime());
+		}
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Timestamp.valueOf(value.asLocalDateTime());
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to timestamp.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to java.sql.Timestamp.", value.type()));
 	}
 
 	private static Timestamp mapToTimestamp(Value value, Calendar calendar) throws SQLException {
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Timestamp.valueOf(value.asZonedDateTime().toLocalDateTime());
-		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
+
+		ZonedDateTime hlp;
+		var reference = calendar.toInstant().atZone(calendar.getTimeZone().toZoneId());
+		if (Type.DATE_TIME.isTypeOf(value)) {
+			hlp = reference.with(temporal -> temporal.with(value.asZonedDateTime().toLocalDateTime()));
+		}
+		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
+			hlp = reference.with(temporal -> temporal.with(value.asLocalDateTime()));
+		}
+		else {
+			throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
+		}
+
+		return Timestamp.valueOf(hlp.toLocalDateTime());
 	}
 
 	private static Reader mapToReader(Value value, int maxFieldSize) throws SQLException {
