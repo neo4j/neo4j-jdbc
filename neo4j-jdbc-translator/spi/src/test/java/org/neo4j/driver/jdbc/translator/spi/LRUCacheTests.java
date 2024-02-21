@@ -16,12 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.driver.jdbc.translator.impl;
+package org.neo4j.driver.jdbc.translator.spi;
 
 import java.util.Map;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class LRUCacheTests {
 
@@ -31,7 +32,16 @@ class LRUCacheTests {
 		for (int i = 0; i < 4; ++i) {
 			cache.put(i, Integer.toString(i));
 		}
-		Assertions.assertThat(cache).containsExactlyInAnyOrderEntriesOf(Map.of(2, "2", 3, "3"));
+		assertThat(cache).containsExactlyInAnyOrderEntriesOf(Map.of(2, "2", 3, "3"));
+	}
+
+	@Test
+	void shouldFlush() {
+		var cache = new LRUCache<Integer, String>(2);
+		cache.put(1, "eins");
+		assertThat(cache).containsEntry(1, "eins");
+		cache.flush();
+		assertThat(cache).isEmpty();
 	}
 
 }

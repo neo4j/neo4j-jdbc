@@ -262,12 +262,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.toCompletableFuture()
 			.join();
 
-		var automaticSqlTranslation = driverConfig.enableSQLTranslation;
+		var enableSqlTranslation = driverConfig.enableSQLTranslation;
+		var enableTranslationCaching = driverConfig.enableTranslationCaching;
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 
-		return new ConnectionImpl(boltConnection, getSqlTranslatorSupplier(automaticSqlTranslation,
-				driverConfig.rawConfig(), this::getSqlTranslatorFactory), automaticSqlTranslation,
-				rewriteBatchedStatements);
+		return new ConnectionImpl(boltConnection,
+				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), this::getSqlTranslatorFactory),
+				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements);
 	}
 
 	static String getDefaultUserAgent() {

@@ -80,6 +80,7 @@ import org.neo4j.cypherdsl.core.SymbolicName;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
+import org.neo4j.driver.jdbc.translator.spi.Cache;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
 /**
@@ -94,7 +95,7 @@ final class SqlToCypher implements SqlTranslator {
 
 	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
 
-	private static final int STATEMENT_CACHE_SIZE = 128;
+	private static final int STATEMENT_CACHE_SIZE = 64;
 
 	static SqlTranslator defaultTranslator() {
 		return new SqlToCypher(SqlToCypherConfig.defaultConfig());
@@ -108,7 +109,7 @@ final class SqlToCypher implements SqlTranslator {
 
 	private final Configuration rendererConfig;
 
-	private final Map<Query, String> cache = new LRUCache<>(STATEMENT_CACHE_SIZE);
+	private final Cache<Query, String> cache = Cache.getInstance(STATEMENT_CACHE_SIZE);
 
 	private SqlToCypher(SqlToCypherConfig config) {
 
@@ -118,6 +119,11 @@ final class SqlToCypher implements SqlTranslator {
 			.alwaysEscapeNames(this.config.isAlwaysEscapeNames())
 			.withDialect(Dialect.NEO4J_5)
 			.build();
+	}
+
+	@Override
+	public void flushCache() {
+		this.cache.flush();
 	}
 
 	@Override

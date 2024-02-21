@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.driver.jdbc.translator.impl;
+package org.neo4j.driver.jdbc.translator.spi;
 
 import java.io.Serial;
 import java.util.LinkedHashMap;
@@ -30,7 +30,7 @@ import java.util.Map;
  * @param <V> type of the values
  * @author Michael J. Simons
  */
-final class LRUCache<K, V> extends LinkedHashMap<K, V> {
+final class LRUCache<K, V> extends LinkedHashMap<K, V> implements Cache<K, V> {
 
 	@Serial
 	private static final long serialVersionUID = 1413351305126601678L;
@@ -53,6 +53,11 @@ final class LRUCache<K, V> extends LinkedHashMap<K, V> {
 	@Override
 	protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
 		return size() > this.cacheSize;
+	}
+
+	@Override
+	public void flush() {
+		this.clear();
 	}
 
 }

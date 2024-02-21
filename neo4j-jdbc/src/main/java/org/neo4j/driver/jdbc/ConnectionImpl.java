@@ -53,6 +53,7 @@ import org.neo4j.driver.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.driver.jdbc.internal.bolt.TransactionType;
 import org.neo4j.driver.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.driver.jdbc.internal.bolt.exception.Neo4jException;
+import org.neo4j.driver.jdbc.translator.spi.Cache;
 import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
 
 /**
@@ -65,11 +66,15 @@ import org.neo4j.driver.jdbc.translator.spi.SqlTranslator;
  */
 final class ConnectionImpl implements Neo4jConnection {
 
+	private static final int TRANSLATION_CACHE_SIZE = 128;
+
 	private final BoltConnection boltConnection;
 
 	private final Lazy<SqlTranslator> sqlTranslator;
 
-	private final boolean automaticSqlTranslation;
+	private final boolean enableSqlTranslation;
+
+	private final boolean enableTranslationCaching;
 
 	/**
 	 * A flag if the {@link Neo4jPreparedStatement prepared statement} should rewrite
@@ -89,17 +94,20 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private boolean closed;
 
+	private final Cache<String, String> l2cache = Cache.getInstance(TRANSLATION_CACHE_SIZE);
+
 	ConnectionImpl(BoltConnection boltConnection) {
 		this(boltConnection, () -> {
 			throw new UnsupportedOperationException("No SQL translator available");
-		}, false, true);
+		}, false, false, true);
 	}
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator, boolean enableSQLTranslation,
-			boolean rewriteBatchedStatements) {
+			boolean enableTranslationCaching, boolean rewriteBatchedStatements) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.sqlTranslator = Lazy.of(sqlTranslator);
-		this.automaticSqlTranslation = enableSQLTranslation;
+		this.enableSqlTranslation = enableSQLTranslation;
+		this.enableTranslationCaching = enableTranslationCaching;
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 	}
 
@@ -114,17 +122,31 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	UnaryOperator<String> getSqlProcessor(boolean force) throws SQLException {
-		if (!(this.automaticSqlTranslation || force)) {
+		if (!(this.enableSqlTranslation || force)) {
 			return null;
 		}
 		var sqlTranslator = this.sqlTranslator.resolve();
 		var metaData = this.getMetaData();
 
+		if (this.enableTranslationCaching) {
+			return sql -> {
+				synchronized (ConnectionImpl.this) {
+					if (this.l2cache.containsKey(sql)) {
+						return this.l2cache.get(sql);
+					}
+					else {
+						var translation = sqlTranslator.translate(sql, metaData);
+						this.l2cache.put(sql, translation);
+						return translation;
+					}
+				}
+			};
+		}
 		return sql -> sqlTranslator.translate(sql, metaData);
 	}
 
 	UnaryOperator<Integer> getIndexProcessor() {
-		return this.automaticSqlTranslation ? idx -> idx - 1 : null;
+		return this.enableSqlTranslation ? idx -> idx - 1 : null;
 	}
 
 	@Override
@@ -238,7 +260,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public DatabaseMetaData getMetaData() throws SQLException {
 		assertIsOpen();
-		return new DatabaseMetadataImpl(this, () -> getTransaction(false), this.automaticSqlTranslation);
+		return new DatabaseMetadataImpl(this, () -> getTransaction(false), this.enableSqlTranslation);
 	}
 
 	@Override
@@ -635,6 +657,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public void flushTranslationCache() {
 		synchronized (this) {
+			this.l2cache.flush();
 			this.sqlTranslator.resolve().flushCache();
 		}
 	}
