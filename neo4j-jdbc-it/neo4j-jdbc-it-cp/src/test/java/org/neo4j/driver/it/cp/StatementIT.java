@@ -28,6 +28,7 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -458,6 +459,30 @@ class StatementIT extends IntegrationTestBase {
 		return Stream.of(Arguments.of(5, 15, 15), Arguments.of(5, 13, 13), Arguments.of(100, 100, 100),
 				Arguments.of(100, 0, 1000), Arguments.of(1000, 0, 1000), Arguments.of(1000, 1000, 1000),
 				Arguments.of(1000, 5000, 1000), Arguments.of(0, 0, 1000));
+	}
+
+	// GH-412
+	@SuppressWarnings("unchecked")
+	@Test
+	void mappingOfTimestampsMustBeConsistent() throws SQLException {
+		var query = """
+				WITH datetime('2015-06-24T12:50:35.556+0100') AS zonedDateTime
+				RETURN
+					zonedDateTime,
+					[zonedDateTime] AS zonedDateTimeList,
+					{zonedDateTime: zonedDateTime} AS zonedDateTimeDictionary""";
+		try (var connection = getConnection(); var results = connection.createStatement().executeQuery(query)) {
+
+			while (results.next()) {
+				var theDateTime = results.getObject("zonedDateTime");
+				assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
+				theDateTime = ((Iterable<Object>) results.getObject("zonedDateTimeList")).iterator().next();
+				assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
+				theDateTime = ((Map<String, Object>) results.getObject("zonedDateTimeDictionary")).get("zonedDateTime");
+				assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
+			}
+
+		}
 	}
 
 }
