@@ -66,6 +66,8 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	private static final Logger LOGGER = Logger.getLogger(Neo4jPreparedStatement.class.getCanonicalName());
 
+	private static final Pattern SQL_PLACEHOLDER_PATTERN = Pattern.compile("\\?(?=[^\"]*(?:\"[^\"]*\"[^\"]*)*$)");
+
 	// We did not consider using concurrent datastructures as the `PreparedStatement` is
 	// usually not treated as thread-safe
 	private final Deque<Map<String, Object>> parameters = new ArrayDeque<>();
@@ -75,6 +77,19 @@ sealed class PreparedStatementImpl extends StatementImpl
 	private final boolean rewriteBatchedStatements;
 
 	private final String sql;
+
+	static String rewritePlaceholders(String raw) {
+		int index = 1;
+
+		var matcher = SQL_PLACEHOLDER_PATTERN.matcher(raw);
+
+		var sb = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(sb, "\\$" + index++);
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
 
 	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,

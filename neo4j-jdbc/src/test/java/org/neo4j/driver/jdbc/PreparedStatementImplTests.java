@@ -62,6 +62,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.driver.jdbc.internal.bolt.response.DiscardResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
@@ -80,6 +81,22 @@ import static org.mockito.Mockito.mock;
 class PreparedStatementImplTests {
 
 	private PreparedStatementImpl statement;
+
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|",
+			textBlock = """
+					MATCH statement RETURN same WHERE thereAreNoPlaceholders|MATCH statement RETURN same WHERE thereAreNoPlaceholders
+					MATCH statement RETURN same WHERE thereIsAPlaceholder = ?|MATCH statement RETURN same WHERE thereIsAPlaceholder = $1
+					MATCH statement RETURN same WHERE thereIsAPlaceholder = ? AND another = ?|MATCH statement RETURN same WHERE thereIsAPlaceholder = $1 AND another = $2
+					MATCH statement RETURN same WHERE thisIs = "a string ?" AND thereIsAPlaceholder = ? AND another = ? AND notInString = "shall I replace this?"|MATCH statement RETURN same WHERE thisIs = "a string ?" AND thereIsAPlaceholder = $1 AND another = $2 AND notInString = "shall I replace this?"
+					MATCH statement RETURN same WHERE thereIsAPlaceholder = ? <NL>AND newLinePar = ?|MATCH statement RETURN same WHERE thereIsAPlaceholder = $1 <NL>AND newLinePar = $2
+					MATCH statement RETURN same WHERE thisIs = "a string ?"<NL>AND thereIsAPlaceholder = ?<NL>AND another = ?|MATCH statement RETURN same WHERE thisIs = "a string ?"<NL>AND thereIsAPlaceholder = $1<NL>AND another = $2
+					""")
+	void placeHolderReplacementShouldWork(String in, String expected) {
+
+		var out = PreparedStatementImpl.rewritePlaceholders(in.replace("<NL>", "\n"));
+		assertThat(out).isEqualTo(expected.replace("<NL>", "\n"));
+	}
 
 	@Test
 	void shouldExecuteQuery() throws SQLException {

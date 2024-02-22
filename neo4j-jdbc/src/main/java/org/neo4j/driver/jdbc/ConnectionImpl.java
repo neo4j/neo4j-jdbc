@@ -82,6 +82,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final boolean rewriteBatchedStatements;
 
+	private final boolean rewritePlaceholders;
+
 	private Neo4jTransaction transaction;
 
 	private boolean autoCommit = true;
@@ -99,16 +101,17 @@ final class ConnectionImpl implements Neo4jConnection {
 	ConnectionImpl(BoltConnection boltConnection) {
 		this(boltConnection, () -> {
 			throw new UnsupportedOperationException("No SQL translator available");
-		}, false, false, true);
+		}, false, false, true, false);
 	}
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator, boolean enableSQLTranslation,
-			boolean enableTranslationCaching, boolean rewriteBatchedStatements) {
+			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.sqlTranslator = Lazy.of(sqlTranslator);
 		this.enableSqlTranslation = enableSQLTranslation;
 		this.enableTranslationCaching = enableTranslationCaching;
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
+		this.rewritePlaceholders = rewritePlaceholders;
 	}
 
 	// for testing only
@@ -395,7 +398,17 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		return new PreparedStatementImpl(this, this::getTransaction, getSqlProcessor(), getIndexProcessor(),
+		var sqlProcessor = getSqlProcessor();
+		UnaryOperator<String> decoratedProcessor;
+		if (this.rewritePlaceholders) {
+			decoratedProcessor = (sqlProcessor != null)
+					? s -> PreparedStatementImpl.rewritePlaceholders(sqlProcessor.apply(s))
+					: PreparedStatementImpl::rewritePlaceholders;
+		}
+		else {
+			decoratedProcessor = sqlProcessor;
+		}
+		return new PreparedStatementImpl(this, this::getTransaction, decoratedProcessor, getIndexProcessor(),
 				this.rewriteBatchedStatements, sql);
 	}
 

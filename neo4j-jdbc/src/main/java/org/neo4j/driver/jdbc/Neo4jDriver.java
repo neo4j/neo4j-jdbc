@@ -113,6 +113,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_SQL_TRANSLATION_ENABLED = "enableSQLTranslation";
 
 	/**
+	 * This property can be used when you want to use Cypher with quotation marks
+	 * ({@literal ?}) as placeholders. This can happen when you actually want to pass
+	 * Cypher to the driver but the Cypher gets preprocessed by another tooling down the
+	 * line. If this property is set to {@literal true}, replacement will happen after all
+	 * translators have been applied. However, it usually does not make sense to enable it
+	 * in that case.
+	 */
+	public static final String PROPERTY_REWRITE_PLACEHOLDERS = "rewritePlaceholders";
+
+	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
 	 * enable automatic translation caching.
 	 */
@@ -265,10 +275,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var enableSqlTranslation = driverConfig.enableSQLTranslation;
 		var enableTranslationCaching = driverConfig.enableTranslationCaching;
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
+		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 
 		return new ConnectionImpl(boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), this::getSqlTranslatorFactory),
-				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements);
+				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders);
 	}
 
 	static String getDefaultUserAgent() {
@@ -305,8 +316,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		DriverConfig parsedConfig = parseConfig(url, info);
+
+		var parsedConfig = parseConfig(url, info);
 		var driverPropertyInfos = new ArrayList<DriverPropertyInfo>();
+		var trueFalseChoices = new String[] { "true", "false" };
 
 		var hostPropInfo = new DriverPropertyInfo(PROPERTY_HOST, parsedConfig.host);
 		hostPropInfo.description = "The host name";
@@ -347,35 +360,42 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				String.valueOf(parsedConfig.enableSQLTranslation));
 		sql2cypherPropInfo.description = "turns on or of sql to cypher translation. Defaults to false.";
 		sql2cypherPropInfo.required = false;
-		hostPropInfo.choices = new String[] { "true", "false" };
+		sql2cypherPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(sql2cypherPropInfo);
 
 		var rewriteBatchedStatementsPropInfo = new DriverPropertyInfo(PROPERTY_REWRITE_BATCHED_STATEMENTS,
 				String.valueOf(parsedConfig.rewriteBatchedStatements));
 		rewriteBatchedStatementsPropInfo.description = "turns on generation of more efficient cypher when batching statements. Defaults to true.";
 		rewriteBatchedStatementsPropInfo.required = false;
-		hostPropInfo.choices = new String[] { "true", "false" };
+		rewriteBatchedStatementsPropInfo.choices = trueFalseChoices;
+		driverPropertyInfos.add(rewriteBatchedStatementsPropInfo);
+
+		var rewritePlaceholdersPropInfo = new DriverPropertyInfo(PROPERTY_REWRITE_PLACEHOLDERS,
+				String.valueOf(parsedConfig.rewritePlaceholders));
+		rewritePlaceholdersPropInfo.description = "Rewrites SQL placeholders (?) into $0,$1..$n. Defaults to false.";
+		rewritePlaceholdersPropInfo.required = false;
+		rewritePlaceholdersPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(rewriteBatchedStatementsPropInfo);
 
 		var sql2CypherCachingsPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED,
 				String.valueOf(parsedConfig.enableTranslationCaching));
 		sql2CypherCachingsPropInfo.description = "Enable caching of translations.";
 		sql2CypherCachingsPropInfo.required = false;
-		hostPropInfo.choices = new String[] { "true", "false" };
+		sql2CypherCachingsPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(sql2CypherCachingsPropInfo);
 
 		var sslPropInfo = new DriverPropertyInfo(SSLProperties.SSL_PROP_NAME,
 				String.valueOf(parsedConfig.sslProperties.ssl));
 		sslPropInfo.description = "SSL enabled";
-		portPropInfo.required = false;
-		hostPropInfo.choices = new String[] { "true", "false" };
+		sslPropInfo.required = false;
+		sslPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(sslPropInfo);
 
 		var sslModePropInfo = new DriverPropertyInfo(SSLProperties.SSL_MODE_PROP_NAME,
 				parsedConfig.sslProperties().sslMode.getName());
 		sslModePropInfo.description = "The mode for ssl. Accepted values are: require, verify-full, disable.";
 		sslModePropInfo.required = false;
-		hostPropInfo.choices = Arrays.stream(SSLMode.values()).map(SSLMode::getName).toArray(String[]::new);
+		sslModePropInfo.choices = Arrays.stream(SSLMode.values()).map(SSLMode::getName).toArray(String[]::new);
 		driverPropertyInfos.add(sslModePropInfo);
 
 		parsedConfig.misc().forEach((k, v) -> {
@@ -434,14 +454,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = Boolean
 			.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
 		misc.remove(PROPERTY_REWRITE_BATCHED_STATEMENTS);
+		var rewritePlaceholders = Boolean.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, "false"));
+		misc.remove(PROPERTY_REWRITE_PLACEHOLDERS);
 
 		misc.putIfAbsent(PROPERTY_S2C_PRETTY_PRINT_CYPHER, "false");
 		misc.putIfAbsent(PROPERTY_S2C_ALWAYS_ESCAPE_NAMES, "false");
 		misc.putIfAbsent(PROPERTY_S2C_ENABLE_CACHE, String.valueOf(enableTranslationCaching));
 
 		return new DriverConfig(host, port, databaseName, user, password, userAgent, connectionTimeoutMillis,
-				automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, sslProperties,
-				Map.copyOf(misc));
+				automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
+				sslProperties, Map.copyOf(misc));
 	}
 
 	@Override
@@ -721,12 +743,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param enableSQLTranslation turn on or off automatic cypher translation
 	 * @param enableTranslationCaching enable caching for translations
 	 * @param rewriteBatchedStatements rewrite batched statements to be more efficient
+	 * @param rewritePlaceholders rewrite ? to $0 .. $n
 	 * @param sslProperties ssl properties
 	 * @param misc Unparsed properties
 	 */
 	private record DriverConfig(String host, int port, String database, String user, String password, String agent,
 			int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
-			boolean rewriteBatchedStatements, SSLProperties sslProperties, Map<String, String> misc) {
+			boolean rewriteBatchedStatements, boolean rewritePlaceholders, SSLProperties sslProperties,
+			Map<String, String> misc) {
 
 		Map<String, Object> rawConfig() {
 			Map<String, Object> props = new HashMap<>();
@@ -739,6 +763,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			props.put(PROPERTY_PASSWORD, this.password);
 			props.put(PROPERTY_TIMEOUT, String.valueOf(this.timeout));
 			props.put(PROPERTY_REWRITE_BATCHED_STATEMENTS, String.valueOf(this.rewriteBatchedStatements));
+			props.put(PROPERTY_REWRITE_PLACEHOLDERS, String.valueOf(this.rewritePlaceholders));
 			props.put(PROPERTY_DATABASE, this.database);
 
 			props.putAll(this.misc);
