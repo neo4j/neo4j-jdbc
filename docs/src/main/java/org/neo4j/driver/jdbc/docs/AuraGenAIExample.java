@@ -187,6 +187,9 @@ public final class AuraGenAIExample {
 				CREATE CONSTRAINT `genre-name` IF NOT EXISTS
 				FOR (n:Genre) REQUIRE n.name IS UNIQUE
 				""", """
+				CREATE CONSTRAINT `genre-name-nn` IF NOT EXISTS
+				FOR (n:Genre) REQUIRE n.name IS NOT NULL
+				""", """
 				/*+ NEO4J FORCE_CYPHER */
 				CREATE VECTOR INDEX `movie-embeddings` IF NOT EXISTS
 				FOR (n:Movie) ON (n.embedding)

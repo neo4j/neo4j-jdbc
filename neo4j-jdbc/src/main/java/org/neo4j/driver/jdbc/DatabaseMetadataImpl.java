@@ -963,7 +963,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				try (var result = doQueryForResultSet(queryForNullability,
 						Map.of("nodeLabels", nodeLabels, "propertyName", propertyName))) {
 					result.next();
-					if (!result.getBoolean(1)) {
+					if (result.getBoolean(1)) {
 						NULLABLE = DatabaseMetaData.columnNoNulls;
 						IS_NULLABLE = "NO";
 					}
