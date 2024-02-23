@@ -20,16 +20,22 @@ package org.neo4j.driver.it.cp;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +54,52 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	@BeforeAll
 	void startDriver() throws SQLException {
 		this.connection = getConnection();
+	}
+
+	static Stream<Arguments> indexInfo() {
+		return Stream.of(
+				Arguments.of("Book", true, List.of(new IndexInfo("Book", false, "book_isbn", 3, 1, "isbn", "A"))),
+				Arguments.of("Book", false,
+						List.of(new IndexInfo("Book", false, "book_isbn", 3, 1, "isbn", "A"),
+								new IndexInfo("Book", true, "bookTitles", 3, 1, "title", "A"))),
+				Arguments.of(null, true,
+						List.of(new IndexInfo("Book", false, "book_isbn", 3, 1, "isbn", "A"),
+								new IndexInfo("Actor", false, "actor_fullname", 3, 1, "firstname", "A"),
+								new IndexInfo("Actor", false, "actor_fullname", 3, 2, "surname", "A"))),
+				Arguments.of(null, false,
+						List.of(new IndexInfo("Book", false, "book_isbn", 3, 1, "isbn", "A"),
+								new IndexInfo("Book", true, "bookTitles", 3, 1, "title", "A"),
+								new IndexInfo("Actor", false, "actor_fullname", 3, 1, "firstname", "A"),
+								new IndexInfo("Actor", false, "actor_fullname", 3, 2, "surname", "A"),
+								new IndexInfo("Person", true, "node_text_index_nickname", 3, 1, "nickname", "A"))));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void indexInfo(String table, boolean unique, List<IndexInfo> expected) throws SQLException {
+		try (var stmt = this.connection.createStatement()) {
+			stmt.execute("CREATE CONSTRAINT book_isbn IF NOT EXISTS FOR (book:Book) REQUIRE book.isbn IS UNIQUE");
+			stmt.execute("CREATE FULLTEXT INDEX bookTitles IF NOT EXISTS FOR (n:Book) ON EACH [n.title]");
+			stmt.execute(
+					"CREATE CONSTRAINT actor_fullname  IF NOT EXISTS FOR (actor:Actor) REQUIRE (actor.firstname, actor.surname) IS NODE KEY");
+			stmt.execute(
+					"CREATE CONSTRAINT movie_title  IF NOT EXISTS FOR (movie:Movie) REQUIRE movie.title IS :: STRING");
+			stmt.execute(
+					"CREATE CONSTRAINT part_of  IF NOT EXISTS FOR ()-[part:PART_OF]-() REQUIRE part.order IS :: INTEGER");
+			stmt.execute(
+					"CREATE CONSTRAINT wrote_year  IF NOT EXISTS FOR ()-[wrote:WROTE]-() REQUIRE wrote.year IS NOT NULL\n");
+			stmt.execute(
+					"CREATE FULLTEXT INDEX namesAndTeams   IF NOT EXISTS FOR (n:Employee|Manager) ON EACH [n.name, n.team]");
+			stmt.execute("CREATE TEXT INDEX node_text_index_nickname IF NOT EXISTS  FOR (n:Person) ON (n.nickname)");
+			stmt.execute("CREATE TEXT INDEX rel_text_index_name IF NOT EXISTS  FOR ()-[r:KNOWS]-() ON (r.interest)");
+		}
+		var result = new HashSet<IndexInfo>();
+		try (var resultset = this.connection.getMetaData().getIndexInfo(null, null, table, unique, false)) {
+			while (resultset.next()) {
+				result.add(new IndexInfo(resultset));
+			}
+		}
+		assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
 	}
 
 	@Test
@@ -272,10 +324,16 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		assertThat(resultColumns).containsExactly(Map.of(2, "x"));
 	}
 
-	@Test
-	void getProcedureColumnsShouldWork() throws SQLException {
+	static Stream<Arguments> getProcedureColumnsShouldWork() {
+		return Stream.of(Arguments.of(null, null), Arguments.of("%", "%"), Arguments.of("%", null),
+				Arguments.of(null, "%"));
+	}
 
-		try (var rs = this.connection.getMetaData().getProcedureColumns(null, null, null, null)) {
+	@ParameterizedTest
+	@MethodSource
+	void getProcedureColumnsShouldWork(String procedurePattern, String columnPattern) throws SQLException {
+
+		try (var rs = this.connection.getMetaData().getProcedureColumns(null, null, procedurePattern, columnPattern)) {
 			int cnt = 0;
 			while (rs.next()) {
 				assertThat(rs.getString("PROCEDURE_NAME")).isNotNull();
@@ -697,6 +755,15 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				var tableName = rs.getString("TABLE_NAME");
 				assertThat(tableName).isEqualTo("Test4");
 			}
+		}
+	}
+
+	record IndexInfo(String tableName, boolean nonUnique, String indexName, int type, int ordinalPosition,
+			String columnName, String ascOrDesc) {
+		IndexInfo(ResultSet resultset) throws SQLException {
+			this(resultset.getString("TABLE_NAME"), resultset.getBoolean("NON_UNIQUE"),
+					resultset.getString("INDEX_NAME"), resultset.getInt("TYPE"), resultset.getInt("ORDINAL_POSITION"),
+					resultset.getString("COLUMN_NAME"), resultset.getString("ASC_OR_DESC"));
 		}
 	}
 

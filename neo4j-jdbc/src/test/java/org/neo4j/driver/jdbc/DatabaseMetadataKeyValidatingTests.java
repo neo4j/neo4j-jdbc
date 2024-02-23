@@ -99,28 +99,4 @@ class DatabaseMetadataKeyValidatingTests {
 		}
 	}
 
-	@Test
-	void getIndexInfoShouldMatchTheSpec() throws SQLException, ExecutionException, InterruptedException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var expectedKeysRs = databaseMetadata.getIndexInfo(null, "public", "table", false, false)) {
-			var rsMetadata = expectedKeysRs.getMetaData();
-			assertThat(rsMetadata.getColumnCount()).isEqualTo(15);
-			assertThat(rsMetadata.getColumnName(1)).isEqualTo("TABLE_CAT");
-			assertThat(rsMetadata.getColumnName(2)).isEqualTo("TABLE_SCHEM");
-			assertThat(rsMetadata.getColumnName(3)).isEqualTo("TABLE_NAME");
-			assertThat(rsMetadata.getColumnName(4)).isEqualTo("PKCOLUMN_NAME");
-			assertThat(rsMetadata.getColumnName(5)).isEqualTo("NON_UNIQUE");
-			assertThat(rsMetadata.getColumnName(6)).isEqualTo("INDEX_QUALIFIER");
-			assertThat(rsMetadata.getColumnName(7)).isEqualTo("INDEX_NAME");
-			assertThat(rsMetadata.getColumnName(8)).isEqualTo("FKCOLUMN_NAME");
-			assertThat(rsMetadata.getColumnName(9)).isEqualTo("TYPE");
-			assertThat(rsMetadata.getColumnName(10)).isEqualTo("ORDINAL_POSITION");
-			assertThat(rsMetadata.getColumnName(11)).isEqualTo("COLUMN_NAME");
-			assertThat(rsMetadata.getColumnName(12)).isEqualTo("ASC_OR_DESC");
-			assertThat(rsMetadata.getColumnName(13)).isEqualTo("CARDINALITY");
-			assertThat(rsMetadata.getColumnName(14)).isEqualTo("PAGES");
-			assertThat(rsMetadata.getColumnName(15)).isEqualTo("FILTER_CONDITION");
-		}
-	}
-
 }

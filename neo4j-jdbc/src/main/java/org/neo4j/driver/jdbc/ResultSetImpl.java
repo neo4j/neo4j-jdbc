@@ -56,6 +56,7 @@ import org.neo4j.driver.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.driver.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.driver.jdbc.values.Record;
 import org.neo4j.driver.jdbc.values.Type;
+import org.neo4j.driver.jdbc.values.UncoercibleException;
 import org.neo4j.driver.jdbc.values.Value;
 
 final class ResultSetImpl implements ResultSet {
@@ -1126,12 +1127,26 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return getValueByColumnIndex(columnIndex, valueMapperFor(type));
+	}
+
+	private <T> ValueMapper<T> valueMapperFor(Class<T> type) {
+		return value -> {
+			if (type.isInstance(value)) {
+				return type.cast(value);
+			}
+			var obj = mapToObject(value, this.maxFieldSize);
+			if (type.isInstance(obj)) {
+				return type.cast(obj);
+			}
+			throw new SQLException(new UncoercibleException(obj.getClass().getName(), type.getName()));
+		};
 	}
 
 	@Override
 	public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		return getValueByColumnLabel(columnLabel, valueMapperFor(type));
 	}
 
 	@Override

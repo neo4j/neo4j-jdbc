@@ -793,7 +793,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				WITH result, range(0, size(result.argumentDescriptions) - 1) AS ordinal_positions
 				UNWIND ordinal_positions AS ORDINAL_POSITION
 				WITH result, ORDINAL_POSITION
-				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL
+				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL OR $columnNamePattern = '%'
 				RETURN
 					NULL AS PROCEDURE_CAT,
 					"public" AS PROCEDURE_SCHEM,
@@ -920,31 +920,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var query = "CALL db.schema.nodeTypeProperties() YIELD nodeLabels, propertyName, propertyTypes";
+		var query = """
+				CALL db.schema.nodeTypeProperties()
+				YIELD nodeLabels, propertyName, propertyTypes
+				WITH *
+				WHERE ($name IS NULL OR $name = '%' OR $name IN nodeLabels)
+				AND ($column_name IS NULL OR $column_name = '%' OR propertyName = $column_name)
+				RETURN *
+				""";
 
-		Map<String, Object> queryParams = new HashMap<>();
-		String composedWhere = null;
-
-		if (tableNamePattern != null && !tableNamePattern.equals("%")) {
-			composedWhere = "WHERE $name IN nodeLabels";
-			queryParams.put("name", tableNamePattern);
-		}
-
-		if (columnNamePattern != null && !columnNamePattern.equals("%")) {
-			var columnNameWhereStatement = "propertyName=$column_name";
-
-			if (composedWhere == null) {
-				composedWhere = "WHERE %s".formatted(columnNameWhereStatement);
-			}
-			else {
-				composedWhere += " AND " + columnNameWhereStatement;
-				queryParams.put("column_name", columnNamePattern);
-			}
-		}
-
-		if (composedWhere != null) {
-			query = query + " WITH * " + composedWhere + " RETURN *";
-		}
+		var queryParams = new HashMap<String, Object>();
+		queryParams.put("name", tableNamePattern);
+		queryParams.put("column_name", columnNamePattern);
 
 		var pullResponse = doQueryForPullResponse(query, queryParams);
 		var records = pullResponse.records();
@@ -954,6 +941,14 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		// now we need to flatten the table arrays and the type arrays then put it back
 		// into a resultSet.
 
+		var queryForNullability = """
+				SHOW CONSTRAINTS YIELD *
+				WHERE type IN ['NODE_KEY', 'NODE_PROPERTY_EXISTENCE']
+				AND $propertyName IN properties
+				AND ANY (x IN $nodeLabels WHERE x IN labelsOrTypes)
+				RETURN count(*) > 0;
+				""";
+
 		for (Record record : records) {
 			var nodeLabels = record.get(0);
 			var propertyName = record.get(1);
@@ -961,8 +956,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 			if (!propertyName.isNull() && !propertyTypes.isNull()) {
 				var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
-
 				var propertyType = getTypeFromList(propertyTypeList, propertyName.asString());
+
+				var NULLABLE = DatabaseMetaData.columnNullable;
+				var IS_NULLABLE = "YES";
+				try (var result = doQueryForResultSet(queryForNullability,
+						Map.of("nodeLabels", nodeLabels, "propertyName", propertyName))) {
+					result.next();
+					if (!result.getBoolean(1)) {
+						NULLABLE = DatabaseMetaData.columnNoNulls;
+						IS_NULLABLE = "NO";
+					}
+				}
 
 				var nodeLabelList = nodeLabels.asList(label -> label);
 				for (Value nodeLabel : nodeLabelList) {
@@ -978,20 +983,19 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 					values.add(Values.NULL); // BUFFER_LENGTH
 					values.add(Values.NULL); // DECIMAL_DIGITS
 					values.add(Values.value(2)); // NUM_PREC_RADIX
-					values.add(Values.value(DatabaseMetaData.columnNullable)); // NULLABLE
-																				// = true
+					values.add(Values.value(NULLABLE));
 					values.add(Values.NULL); // REMARKS
 					values.add(Values.NULL); // COLUMN_DEF
 					values.add(Values.NULL); // SQL_DATA_TYPE - unused
 					values.add(Values.NULL); // SQL_DATETIME_SUB
 					values.add(Values.NULL); // CHAR_OCTET_LENGTH
 					values.add(Values.value(nodeLabelList.indexOf(nodeLabel))); // ORDINAL_POSITION
-					values.add(Values.value("YES")); // IS_NULLABLE
+					values.add(Values.value(IS_NULLABLE));
 					values.add(Values.NULL); // SCOPE_CATALOG
 					values.add(Values.NULL); // SCOPE_SCHEMA
 					values.add(Values.NULL); // SCOPE_TABLE
 					values.add(Values.NULL); // SOURCE_DATA_TYPE
-					values.add(Values.value("")); // IS_AUTOINCREMENT
+					values.add(Values.value("NO")); // IS_AUTOINCREMENT
 					values.add(Values.value("NO")); // IS_GENERATEDCOLUMN
 
 					rows.add(values.toArray(Value[]::new));
@@ -1177,28 +1181,49 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schema);
 
-		var keys = new ArrayList<String>();
-		keys.add("TABLE_CAT");
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_NAME");
-		keys.add("PKCOLUMN_NAME");
-		keys.add("NON_UNIQUE");
-		keys.add("INDEX_QUALIFIER");
-		keys.add("INDEX_NAME");
-		keys.add("FKCOLUMN_NAME");
-		keys.add("TYPE");
-		keys.add("ORDINAL_POSITION");
-		keys.add("COLUMN_NAME");
-		keys.add("ASC_OR_DESC");
-		keys.add("CARDINALITY");
-		keys.add("PAGES");
-		keys.add("FILTER_CONDITION");
+		var intermediateResults = new ArrayList<>();
+		var query = """
+				SHOW INDEXES YIELD name, type, labelsOrTypes, properties, owningConstraint, entityType
+				ORDER BY name
+				WHERE ($name IS NULL OR $name = '%' OR $name IN labelsOrTypes)
+				AND size(labelsOrTypes) = 1
+				AND entityType = 'NODE'
+				AND type <> 'LOOKUP'
+				AND (NOT $unique OR owningConstraint IS NOT NULL)
+				""";
+		var parameter = new HashMap<String, Object>();
+		parameter.put("name", table);
+		parameter.put("unique", unique);
+		try (var rs = doQueryForResultSet(query, parameter)) {
+			while (rs.next()) {
+				intermediateResults.add(Map.of("name", rs.getString("name"), "tableName",
+						rs.getObject("labelsOrTypes", Value.class).asList().get(0), "properties",
+						rs.getObject("properties"), "owningConstraint", rs.getObject("owningConstraint", Value.class)));
+			}
+		}
 
-		var emptyPullResponse = createEmptyPullResponse();
-		var runResponse = createRunResponseForStaticKeys(keys);
-
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
-				emptyPullResponse, -1, -1, -1);
+		query = """
+				UNWIND $results AS result
+				WITH result, range(0, size(result.properties) - 1) AS ordinal_positions
+				UNWIND ordinal_positions AS ORDINAL_POSITION
+				WITH result, ORDINAL_POSITION
+				RETURN
+					NULL AS TABLE_CAT,
+					"public" AS TABLE_SCHEM,
+					result.tableName AS TABLE_NAME,
+					result.owningConstraint IS NULL AS NON_UNIQUE,
+					NULL AS INDEX_QUALIFIER,
+					result.name AS INDEX_NAME,
+					$type AS TYPE,
+					CASE WHEN result.properties[ORDINAL_POSITION] IS NULL THEN NULL ELSE ORDINAL_POSITION + 1 END AS ORDINAL_POSITION,
+					result.properties[ORDINAL_POSITION] AS COLUMN_NAME,
+					'A' AS ASC_OR_DESC,
+					NULL AS CARDINALITY,
+					NULL AS PAGES,
+					NULL AS FILTER_CONDITION
+				""";
+		return doQueryForResultSet(query,
+				Map.of("results", intermediateResults, "type", DatabaseMetaData.tableIndexOther));
 	}
 
 	@Override
@@ -1447,7 +1472,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				WITH result, range(0, size(result.argumentDescriptions) - 1) AS ordinal_positions
 				UNWIND ordinal_positions AS ORDINAL_POSITION
 				WITH result, ORDINAL_POSITION
-				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL
+				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL OR $columnNamePattern = '%'
 				RETURN
 					NULL AS FUNCTION_CAT,
 					"public" AS FUNCTION_SCHEM,
@@ -1481,7 +1506,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var query = """
 				SHOW %s YIELD name, description, argumentDescription
 				ORDER BY name
-				WHERE name = $name OR $name IS NULL
+				WHERE (name = $name OR $name IS NULL OR $name = '%%')
 				""".formatted(category);
 
 		List<Map<String, Object>> intermediateResults = new ArrayList<>();
