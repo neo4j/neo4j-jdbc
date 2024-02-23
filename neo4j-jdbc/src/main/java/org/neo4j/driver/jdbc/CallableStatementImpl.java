@@ -105,8 +105,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			boolean rewriteBatchedStatements, String sql) {
-		super(connection, transactionSupplier, UnaryOperator.identity(), UnaryOperator.identity(),
-				rewriteBatchedStatements, sql);
+		super(connection, transactionSupplier, UnaryOperator.identity(), rewriteBatchedStatements, sql);
 	}
 
 	@Override

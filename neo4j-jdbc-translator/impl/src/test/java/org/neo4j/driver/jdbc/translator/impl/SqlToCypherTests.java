@@ -221,8 +221,8 @@ class SqlToCypherTests {
 	void namedParameterPrefixForParsingShouldBeConfigurable() {
 		var translator = SqlToCypher
 			.with(SqlToCypherConfig.builder().withParseNamedParamPrefix("$").withPrettyPrint(false).build());
-		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($1)"))
-			.isEqualTo("CREATE (movie:`Movie` {title: $1})");
+		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($a)"))
+			.isEqualTo("CREATE (movie:`Movie` {title: $a})");
 	}
 
 	@Test
@@ -251,14 +251,14 @@ class SqlToCypherTests {
 
 		assertThat(
 				NON_PRETTY_PRINTING_TRANSLATOR.translate("INSERT INTO Movie(title) VALUES(?) ON DUPLICATE KEY IGNORE"))
-			.isEqualTo("MERGE (movie:Movie {title: $0})");
+			.isEqualTo("MERGE (movie:Movie {title: $1})");
 	}
 
 	@ParameterizedTest
 	@CsvSource(delimiterString = "|", textBlock = """
 			SELECT id(n) FROM Movies n|MATCH (n:`Movies`) RETURN id(n)
 			SELECT elementId(n) FROM Movies n|MATCH (n:`Movies`) RETURN elementId(n)
-			SELECT foobar('const', bazbar(:1))|RETURN foobar('const', bazbar($1))
+			SELECT foobar('const', bazbar(:a))|RETURN foobar('const', bazbar($a))
 			""")
 	void parserShallNotFailOnUnknownFunctions(String in, String expected) {
 

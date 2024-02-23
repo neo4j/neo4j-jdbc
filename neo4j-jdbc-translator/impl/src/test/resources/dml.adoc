@@ -147,7 +147,7 @@ Parameters will be named from 0 on upwards in Cypher:
 
 [source,cypher,id=d1_1_expected]
 ----
-CREATE (people:`Person` {first_name: $0, last_name: $1, born: $2})
+CREATE (people:`Person` {first_name: $1, last_name: $2, born: $3})
 ----
 
 If you omit the columns names on the insertion target, we generate names:
@@ -205,7 +205,7 @@ will be translated to:
 
 [source,cypher,id=upsert1_expected]
 ----
-MERGE (movie:`Movie` {title: $0, released: $1})
+MERGE (movie:`Movie` {title: $1, released: $2})
 ----
 
 The same goes for `ON CONFLICT DO NOTHING`.
@@ -220,7 +220,7 @@ will be translated to:
 
 [source,cypher,id=upsert2_expected]
 ----
-MERGE (actors:`Actor` {name: $0, firstname: $1})
+MERGE (actors:`Actor` {name: $1, firstname: $2})
 ----
 
 If you want to define an action, you must use `ON CONFLICT` specifying the key you want to merge on.
@@ -256,8 +256,8 @@ Same result, but referring to the parameter:
 [source,cypher,id=upsert4_expected]
 ----
 MERGE (tbl:`tbl` {i: 1})
-ON CREATE SET tbl.j = 2, tbl.k = $0
-ON MATCH SET tbl.j = $0
+ON CREATE SET tbl.j = 2, tbl.k = $1
+ON MATCH SET tbl.j = $1
 ----
 
 If you just want to specify a concrete merge column instead of merging on all columns, this possible too:

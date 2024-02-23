@@ -54,6 +54,7 @@ import org.jooq.SelectFieldOrAsterisk;
 import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.conf.ParamType;
 import org.jooq.conf.ParseUnknownFunctions;
 import org.jooq.conf.ParseWithMetaLookups;
 import org.jooq.impl.DSL;
@@ -191,8 +192,8 @@ final class SqlToCypher implements SqlTranslator {
 	}
 
 	private static IllegalArgumentException unsupported(QueryPart p) {
-		return new IllegalArgumentException(
-				"Unsupported SQL expression: " + p + " (Was of type " + p.getClass().getName() + ")");
+		var typeMsg = (p != null) ? " (Was of type " + p.getClass().getName() + ")" : "";
+		return new IllegalArgumentException("Unsupported SQL expression: " + p + typeMsg);
 	}
 
 	private static Node nodeWithProperties(Node src, Map<String, Expression> properties) {
@@ -225,6 +226,8 @@ final class SqlToCypher implements SqlTranslator {
 		private final SqlToCypherConfig config;
 
 		private final DatabaseMetaData databaseMetaData;
+
+		private final ParameterNameGenerator parameterNameGenerator = new ParameterNameGenerator();
 
 		/**
 		 * Content of the {@literal FROM} clause, stored in the context to not have it
@@ -444,7 +447,14 @@ final class SqlToCypher implements SqlTranslator {
 				updates.add(expression((Field<?>) v));
 			});
 
-			return Cypher.match(node).where(condition(update.$where())).set(updates).build();
+			StatementBuilder.ExposesSet exposesSet;
+			if (update.$where() != null) {
+				exposesSet = Cypher.match(node).where(condition(update.$where()));
+			}
+			else {
+				exposesSet = Cypher.match(node);
+			}
+			return exposesSet.set(updates).build();
 		}
 
 		private Stream<Expression> expression(SelectFieldOrAsterisk t) {
@@ -623,11 +633,17 @@ final class SqlToCypher implements SqlTranslator {
 				if (p.$inline()) {
 					return Cypher.literalOf(p.getValue());
 				}
-				else if (p.getParamName() != null) {
-					return Cypher.parameter(p.getParamName(), p.getValue());
-				}
 				else {
-					return Cypher.anonParameter(p.getValue());
+					String parameterName;
+					if (p.getParamType() == ParamType.INDEXED || p.getParamType() == ParamType.FORCE_INDEXED) {
+						parameterName = this.parameterNameGenerator.newIndex();
+					}
+					else {
+						parameterName = this.parameterNameGenerator.newIndex(p.getParamName());
+					}
+
+					return (parameterName != null) ? Cypher.parameter(parameterName, p.getValue())
+							: Cypher.anonParameter(p.getValue());
 				}
 			}
 			else if (f instanceof TableField<?, ?> tf) {

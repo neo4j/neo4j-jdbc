@@ -72,8 +72,6 @@ sealed class PreparedStatementImpl extends StatementImpl
 	// usually not treated as thread-safe
 	private final Deque<Map<String, Object>> parameters = new ArrayDeque<>();
 
-	private final UnaryOperator<Integer> indexProcessor;
-
 	private final boolean rewriteBatchedStatements;
 
 	private final String sql;
@@ -83,7 +81,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 		var matcher = SQL_PLACEHOLDER_PATTERN.matcher(raw);
 
-		var sb = new StringBuffer();
+		var sb = new StringBuilder();
 		while (matcher.find()) {
 			matcher.appendReplacement(sb, "\\$" + index++);
 		}
@@ -92,10 +90,8 @@ sealed class PreparedStatementImpl extends StatementImpl
 	}
 
 	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, UnaryOperator<Integer> indexProcessor, boolean rewriteBatchedStatements,
-			String sql) {
+			UnaryOperator<String> sqlProcessor, boolean rewriteBatchedStatements, String sql) {
 		super(connection, transactionSupplier, sqlProcessor);
-		this.indexProcessor = Objects.requireNonNullElseGet(indexProcessor, UnaryOperator::identity);
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.sql = sql;
 		this.poolable = true;
@@ -699,7 +695,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 	}
 
 	private String computeParameterName(int parameterIndex) {
-		return String.valueOf(this.indexProcessor.apply(parameterIndex));
+		return String.valueOf(parameterIndex);
 	}
 
 	static SQLException newIllegalMethodInvocation() throws SQLException {

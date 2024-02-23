@@ -148,10 +148,6 @@ final class ConnectionImpl implements Neo4jConnection {
 		return sql -> sqlTranslator.translate(sql, metaData);
 	}
 
-	UnaryOperator<Integer> getIndexProcessor() {
-		return this.enableSqlTranslation ? idx -> idx - 1 : null;
-	}
-
 	@Override
 	public Statement createStatement() throws SQLException {
 		return this.createStatement(ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
@@ -408,8 +404,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		else {
 			decoratedProcessor = sqlProcessor;
 		}
-		return new PreparedStatementImpl(this, this::getTransaction, decoratedProcessor, getIndexProcessor(),
-				this.rewriteBatchedStatements, sql);
+		return new PreparedStatementImpl(this, this::getTransaction, decoratedProcessor, this.rewriteBatchedStatements,
+				sql);
 	}
 
 	@Override

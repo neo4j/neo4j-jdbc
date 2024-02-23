@@ -372,7 +372,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		var rewritePlaceholdersPropInfo = new DriverPropertyInfo(PROPERTY_REWRITE_PLACEHOLDERS,
 				String.valueOf(parsedConfig.rewritePlaceholders));
-		rewritePlaceholdersPropInfo.description = "Rewrites SQL placeholders (?) into $0,$1..$n. Defaults to false.";
+		rewritePlaceholdersPropInfo.description = "Rewrites SQL placeholders (?) into $1, $2 .. $n. Defaults to true when SQL translation is not enabled.";
 		rewritePlaceholdersPropInfo.required = false;
 		rewritePlaceholdersPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(rewriteBatchedStatementsPropInfo);
@@ -454,7 +454,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = Boolean
 			.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
 		misc.remove(PROPERTY_REWRITE_BATCHED_STATEMENTS);
-		var rewritePlaceholders = Boolean.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, "false"));
+		var rewritePlaceholders = Boolean.parseBoolean(
+				config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, Boolean.toString(!automaticSqlTranslation)));
 		misc.remove(PROPERTY_REWRITE_PLACEHOLDERS);
 
 		misc.putIfAbsent(PROPERTY_S2C_PRETTY_PRINT_CYPHER, "false");
