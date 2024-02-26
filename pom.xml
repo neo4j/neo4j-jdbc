@@ -141,7 +141,7 @@
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.1</jaxb-api.version>
 		<jdbi3.version>3.45.0</jdbi3.version>
-		<jooq.version>3.19.3</jooq.version>
+		<jooq.version>3.19.4</jooq.version>
 		<jreleaser-maven-plugin.version>1.10.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.10.2</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
