@@ -18,7 +18,6 @@
  */
 package org.neo4j.driver.jdbc.values;
 
-import java.sql.SQLException;
 import java.sql.Types;
 
 public final class Neo4jTypeToSqlTypeMapper {
@@ -32,21 +31,7 @@ public final class Neo4jTypeToSqlTypeMapper {
 	 * another method to handle the new types returned here when working with 6
 	 */
 	public static int toSqlTypeFromOldCypherType(String neo4jType) {
-		return switch (neo4jType) {
-			case "Any" -> Types.OTHER;
-			case "Boolean" -> Types.BOOLEAN;
-			case "Bytes" -> Types.BLOB;
-			case "String" -> Types.VARCHAR;
-			case "Integer", "Long" -> Types.INTEGER;
-			case "Float", "Double" -> Types.FLOAT;
-			case "StringArray", "DoubleArray", "LongArray" -> Types.ARRAY;
-			case "Map", "Point", "Path", "Relationship", "Node" -> Types.STRUCT;
-			case "Date", "DateTime" -> Types.DATE;
-			case "Time", "LocalDateTime", "LocalTime" -> Types.TIME;
-			case "Duration" -> Types.TIMESTAMP;
-			case "Null" -> Types.NULL;
-			default -> Types.OTHER;
-		};
+		return toSqlType(Type.valueOfV5Name(neo4jType));
 	}
 
 	/*
@@ -54,7 +39,7 @@ public final class Neo4jTypeToSqlTypeMapper {
 	 * db.schema.nodeTypeProperties() procedure In 6 this will change so will need to add
 	 * another method to handle the new types returned here when working with 6
 	 */
-	public static String oldCypherTypesToNew(String neo4jType) throws SQLException {
+	public static String oldCypherTypesToNew(String neo4jType) {
 		return switch (neo4jType) {
 			// Simple
 			case "Boolean" -> "BOOLEAN";
@@ -81,50 +66,22 @@ public final class Neo4jTypeToSqlTypeMapper {
 		};
 	}
 
-	public static int toSqlType(Type neo4jType) throws SQLException {
-		switch (neo4jType) {
-			case ANY -> {
-				return Types.OTHER;
-			}
-			case BOOLEAN -> {
-				return Types.BOOLEAN;
-			}
-			case BYTES -> {
-				return Types.BLOB;
-			}
-			case STRING -> {
-				return Types.VARCHAR;
-			}
-			case NUMBER -> {
-				return Types.BIGINT;
-			}
-			case INTEGER -> {
-				return Types.INTEGER;
-			}
-			case FLOAT -> {
-				return Types.FLOAT;
-			}
-			case LIST -> {
-				return Types.ARRAY;
-			}
-			case MAP, POINT, PATH, RELATIONSHIP, NODE -> {
-				return Types.STRUCT;
-			}
-			case DATE, DATE_TIME -> {
-				return Types.DATE;
-			}
-			case TIME, LOCAL_DATE_TIME, LOCAL_TIME -> {
-				return Types.TIME;
-			}
-			case DURATION -> {
-				return Types.TIMESTAMP;
-			}
-			case NULL -> {
-				return Types.NULL;
-			}
-		}
-
-		throw new SQLException("Unknown type");
+	public static int toSqlType(Type neo4jType) {
+		return switch (neo4jType) {
+			case ANY, DURATION -> Types.OTHER;
+			case BOOLEAN -> Types.BOOLEAN;
+			case BYTES -> Types.BLOB;
+			case STRING -> Types.VARCHAR;
+			case NUMBER -> Types.BIGINT;
+			case INTEGER -> Types.INTEGER;
+			case FLOAT -> Types.FLOAT;
+			case LIST -> Types.ARRAY;
+			case MAP, POINT, PATH, RELATIONSHIP, NODE -> Types.STRUCT;
+			case DATE -> Types.DATE;
+			case TIME -> Types.TIME;
+			case DATE_TIME, LOCAL_DATE_TIME, LOCAL_TIME -> Types.TIMESTAMP;
+			case NULL -> Types.NULL;
+		};
 	}
 
 }
