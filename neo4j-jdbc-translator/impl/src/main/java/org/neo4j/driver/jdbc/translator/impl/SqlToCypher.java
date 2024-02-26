@@ -34,6 +34,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -111,6 +112,11 @@ final class SqlToCypher implements SqlTranslator {
 	private final Configuration rendererConfig;
 
 	private final Cache<Query, String> cache = Cache.getInstance(STATEMENT_CACHE_SIZE);
+
+	private static final Logger JOOQ_LOGGER = Logger.getLogger("org.jooq.Constants");
+	static {
+		JOOQ_LOGGER.setLevel(Level.WARNING);
+	}
 
 	private SqlToCypher(SqlToCypherConfig config) {
 
@@ -893,6 +899,21 @@ final class SqlToCypher implements SqlTranslator {
 			else if (f instanceof QOM.Excluded<?> excluded
 					&& this.columnsAndValues.containsKey(excluded.$field().getName())) {
 				return this.columnsAndValues.get(excluded.$field().getName());
+			}
+			else if (f instanceof QOM.Count c) {
+				var field = c.$field();
+				Expression exp = null;
+				// See https://github.com/jOOQ/jOOQ/issues/16344
+				if (field instanceof Asterisk || "*".equals(field.toString())) {
+					exp = Cypher.asterisk();
+				}
+				else {
+					exp = expression(field);
+				}
+				return c.$distinct() ? Cypher.countDistinct(exp) : Cypher.count(exp);
+			}
+			else if (f instanceof Asterisk) {
+				return Cypher.asterisk();
 			}
 			else {
 				throw unsupported(f);

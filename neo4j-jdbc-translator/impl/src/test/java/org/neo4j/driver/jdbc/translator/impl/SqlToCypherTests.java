@@ -83,6 +83,18 @@ class SqlToCypherTests {
 	}
 
 	@Test
+	void countStar() {
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT count(*) FROM test_write__c"))
+			.isEqualTo("MATCH (test_write__c:test_write__c) RETURN count(*)");
+	}
+
+	@Test
+	void countDistinctStar() {
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT count(DISTINCT t.n) FROM test_write__c t"))
+			.isEqualTo("MATCH (t:test_write__c) RETURN count(DISTINCT t.n)");
+	}
+
+	@Test
 	void inClauseWithConstants() {
 
 		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("""
