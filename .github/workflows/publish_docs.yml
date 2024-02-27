@@ -1,0 +1,52 @@
+name: publish_docs
+
+on:
+  push:
+    branches:
+      - main
+  create:
+    tags:
+      - '*'
+
+jobs:
+  publish_docs:
+    if: github.event_name == 'push' || (github.event_name == 'create' && github.event.ref_type == 'tag')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare branch name
+        run: >
+          echo "refName=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Checkout relevant branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.refName }}
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: target/gh-pages
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+      - name: Run docs generation
+        run: >
+          ./mvnw clean resources:copy-resources@prepare-asciidoc resources:copy-resources@copy-classes  asciidoctor:process-asciidoc@generate-html-docs -pl docs &&
+          mv docs/target/generated-docs/index.html target/gh-pages/${refName}/
+      - name: Update index
+        if: (github.event_name == 'create' && github.event.ref_type == 'tag')
+        run: sed -e "s/\${current}/${refName}/g" ./etc/index.tpl > ./target/gh-pages/index.html
+      - name: Commit to gh-pages
+        working-directory: ./target/gh-pages
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Update GH-Pages."
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          directory: target/gh-pages
+          branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}

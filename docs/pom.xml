@@ -188,7 +188,7 @@
 						<phase>prepare-package</phase>
 						<configuration>
 							<attributes>
-								<toc/>
+								<toc>left</toc>
 							</attributes>
 						</configuration>
 					</execution>
