@@ -262,8 +262,14 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public String getSystemFunctions() {
-		return "";
+	public String getSystemFunctions() throws SQLException {
+		var functions = new ArrayList<String>();
+		try (var rs = getFunctions(null, null, null)) {
+			while (rs.next()) {
+				functions.add(rs.getString("FUNCTION_NAME"));
+			}
+		}
+		return String.join(",", functions);
 	}
 
 	@Override
@@ -826,20 +832,23 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 		assertCatalogIsNullOrEmpty(catalog);
 
-		if (tableNamePattern != null && !tableNamePattern.equals("%")) {
-			return doQueryForResultSet("""
-					CALL db.labels() YIELD label AS TABLE_NAME WHERE TABLE_NAME=$name RETURN "" as TABLE_CAT,
-					"public" AS TABLE_SCHEM, TABLE_NAME, "LABEL" as TABLE_TYPE, "" as REMARKS,
-					"" AS TYPE_CAT, "" AS TYPE_SCHEM, "" AS TYPE_NAME, "" AS SELF_REFERENCES_COL_NAME,
-					"" AS REF_GENERATION""", Map.of("name", tableNamePattern));
-		}
-		else {
-			return doQueryForResultSet("""
-					CALL db.labels() YIELD label AS TABLE_NAME RETURN "" as TABLE_CAT,
-					"public" AS TABLE_SCHEM, TABLE_NAME, "TABLE" as TABLE_TYPE, NULL as REMARKS,
-					NULL AS TYPE_CAT, NULL AS TYPE_SCHEM, NULL AS TYPE_NAME, NULL AS SELF_REFERENCES_COL_NAME,
-					NULL AS REF_GENERATION""", Map.of());
-		}
+		Map<String, Object> args = new HashMap<>();
+		args.put("name", (tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null);
+		return doQueryForResultSet("""
+				CALL db.labels() YIELD label AS TABLE_NAME
+				WHERE ($name IS NULL OR TABLE_NAME =~ $name) AND EXISTS {MATCH (n) WHERE TABLE_NAME IN labels(n)}
+				RETURN
+				"" as TABLE_CAT,
+				"public" AS TABLE_SCHEM,
+				TABLE_NAME,
+				"TABLE" as TABLE_TYPE,
+				NULL as REMARKS,
+				NULL AS TYPE_CAT,
+				NULL AS TYPE_SCHEM,
+				NULL AS TYPE_NAME,
+				NULL AS SELF_REFERENCES_COL_NAME,
+				NULL AS REF_GENERATION
+				""", args);
 	}
 
 	@Override
@@ -924,14 +933,15 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				CALL db.schema.nodeTypeProperties()
 				YIELD nodeLabels, propertyName, propertyTypes
 				WITH *
-				WHERE ($name IS NULL OR $name = '%' OR $name IN nodeLabels)
-				AND ($column_name IS NULL OR $column_name = '%' OR propertyName = $column_name)
+				WHERE ($name IS NULL OR $name = '%' OR ANY (label IN nodeLabels WHERE label =~ $name))
+				AND ($column_name IS NULL OR propertyName =~ $column_name)
 				RETURN *
 				""";
 
 		var queryParams = new HashMap<String, Object>();
-		queryParams.put("name", tableNamePattern);
-		queryParams.put("column_name", columnNamePattern);
+		queryParams.put("name", (tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern);
+		queryParams.put("column_name",
+				(columnNamePattern != null) ? columnNamePattern.replace("%", ".*") : columnNamePattern);
 
 		var pullResponse = doQueryForPullResponse(query, queryParams);
 		var records = pullResponse.records();
@@ -1212,7 +1222,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 					"public" AS TABLE_SCHEM,
 					result.tableName AS TABLE_NAME,
 					result.owningConstraint IS NULL AS NON_UNIQUE,
-					NULL AS INDEX_QUALIFIER,
+					result.name AS INDEX_QUALIFIER,
 					result.name AS INDEX_NAME,
 					$type AS TYPE,
 					CASE WHEN result.properties[ORDINAL_POSITION] IS NULL THEN NULL ELSE ORDINAL_POSITION + 1 END AS ORDINAL_POSITION,

@@ -22,8 +22,10 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -754,6 +757,288 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 
 				var tableName = rs.getString("TABLE_NAME");
 				assertThat(tableName).isEqualTo("Test4");
+			}
+		}
+	}
+
+	@Test
+	void getDatabaseVersionShouldBeOK() throws SQLException {
+
+		assertThat(this.connection.getMetaData().getDatabaseProductVersion()).isNotNull();
+		assertThat(this.connection.getMetaData().getDatabaseMajorVersion()).isGreaterThanOrEqualTo(5);
+		assertThat(this.connection.getMetaData().getDatabaseMajorVersion()).isGreaterThanOrEqualTo(0);
+		assertThat(this.connection.getMetaData().getUserName()).isEqualTo("neo4j");
+	}
+
+	@Test
+	void getTablesWithNull() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("MATCH (n) DETACH DELETE n");
+			statement.execute("CREATE (a:A {one:1, two:2})");
+			statement.execute("CREATE (b:B {three:3, four:4})");
+		}
+
+		ResultSet labels = this.connection.getMetaData().getTables(null, null, null, null);
+
+		assertThat(labels).isNotNull();
+		assertThat(labels.next()).isTrue();
+		assertThat(labels.getString("TABLE_NAME")).isEqualTo("A");
+		assertThat(labels.next()).isTrue();
+		assertThat(labels.getString("TABLE_NAME")).isEqualTo("B");
+		assertThat(labels.next()).isFalse();
+	}
+
+	@Test
+	void getTablesWithStrictPattern() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Testa {three:3, four:4})");
+		}
+
+		ResultSet labels = this.connection.getMetaData().getTables(null, null, "Test", null);
+
+		assertThat(labels).isNotNull();
+		List<String> tableNames = new ArrayList<>();
+
+		while (labels.next()) {
+			tableNames.add(labels.getString("TABLE_NAME"));
+		}
+
+		assertThat(tableNames).containsExactly("Test");
+	}
+
+	@Test
+	void getTablesWithPattern() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Testa {three:3, four:4})");
+		}
+
+		ResultSet labels = this.connection.getMetaData().getTables(null, null, "Test%", null);
+
+		assertThat(labels).isNotNull();
+		List<String> tableNames = new ArrayList<>();
+
+		while (labels.next()) {
+			tableNames.add(labels.getString("TABLE_NAME"));
+		}
+
+		assertThat(tableNames).containsExactlyInAnyOrder("Test", "Testa");
+	}
+
+	@Test
+	void getTablesWithWildcard() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Foo {one:1, two:2})");
+			statement.execute("create (b:Bar {three:3, four:4})");
+		}
+
+		ResultSet labels = this.connection.getMetaData().getTables(null, null, "%", null);
+
+		assertThat(labels).isNotNull();
+		List<String> tableNames = new ArrayList<>();
+
+		while (labels.next()) {
+			tableNames.add(labels.getString("TABLE_NAME"));
+		}
+
+		assertThat(tableNames).containsExactlyInAnyOrder("Foo", "Bar");
+	}
+
+	@Test
+	void getColumnWithNull() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:A {one:1, two:2})");
+			statement.execute("create (b:B {three:3, four:4})");
+		}
+
+		ResultSet columns = this.connection.getMetaData().getColumns(null, null, null, null);
+
+		assertThat(columns).isNotNull();
+		List<String> columnNames = new ArrayList<>();
+
+		while (columns.next()) {
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertThat(columnNames).containsExactlyInAnyOrder("one", "two", "three", "four");
+	}
+
+	@Test
+	void getColumnWithTablePattern() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Test2 {three:3, four:4})");
+		}
+
+		ResultSet columns = this.connection.getMetaData().getColumns(null, null, "Test", null);
+
+		assertThat(columns).isNotNull();
+		List<String> columnNames = new ArrayList<>();
+
+		while (columns.next()) {
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertThat(columnNames).containsExactlyInAnyOrder("one", "two");
+	}
+
+	@Test
+	void getColumnWithColumnPattern() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Test2 {three:3, four:4})");
+		}
+
+		ResultSet columns = this.connection.getMetaData().getColumns(null, null, "Test", "t%");
+
+		assertThat(columns).isNotNull();
+		List<String> columnNames = new ArrayList<>();
+
+		while (columns.next()) {
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertThat(columnNames).containsExactly("two");
+	}
+
+	@Test
+	void classShouldWorkIfTransactionIsAlreadyOpened() throws SQLException {
+		try (var localConnection = getConnection()) {
+			localConnection.setAutoCommit(false);
+			assertThatNoException().isThrownBy(localConnection::getMetaData);
+		}
+	}
+
+	@Test
+	void getSystemFunctions() throws SQLException {
+		String systemFunctions = this.connection.getMetaData().getSystemFunctions();
+
+		assertThat(systemFunctions).isNotNull();
+		String[] split = systemFunctions.split(",");
+		List<String> functionsList = Arrays.asList(split);
+
+		assertThat(functionsList)
+			.containsAll(List.of("date", "date.truncate", "time", "time.truncate", "duration", "duration.between"));
+	}
+
+	@Test
+	void getIndexInfoWithConstraint() throws Exception {
+		String constrName = "bar_uuid";
+
+		try (var statement = this.connection.createStatement()) {
+			statement
+				.execute("CREATE CONSTRAINT " + constrName + " IF NOT EXISTS FOR (f:Bar) REQUIRE (f.uuid) IS UNIQUE");
+		}
+
+		try (ResultSet resultSet = this.connection.getMetaData().getIndexInfo(null, null, "Bar", true, false)) {
+
+			assertThat(resultSet.next()).isTrue();
+			assertThat(resultSet.getString("TABLE_NAME")).isEqualTo("Bar");
+			assertThat(resultSet.getBoolean("NON_UNIQUE")).isFalse();
+			assertThat(resultSet.getString("INDEX_NAME")).isEqualTo(constrName);
+			assertThat(resultSet.getString("INDEX_QUALIFIER")).isEqualTo(constrName);
+			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
+			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
+			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
+			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
+			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
+			assertThat(resultSet.getObject("CARDINALITY")).isNull();
+			assertThat(resultSet.getObject("PAGES")).isNull();
+			assertThat(resultSet.getObject("FILTER_CONDITION")).isNull();
+			assertThat(resultSet.next()).isFalse();
+		}
+		finally {
+			try (var statement = this.connection.createStatement()) {
+				statement.execute("DROP CONSTRAINT " + constrName + " IF EXISTS");
+			}
+		}
+	}
+
+	@Test
+	void getIndexInfoWithBacktickLabels() throws Exception {
+		String constrName = "barExt_uuid";
+		try (var statement = this.connection.createStatement()) {
+			statement.execute("CREATE CONSTRAINT " + constrName + " FOR (f:`Bar Ext`) REQUIRE (f.uuid) IS UNIQUE");
+		}
+
+		try (ResultSet resultSet = this.connection.getMetaData().getIndexInfo(null, null, "Bar Ext", true, false)) {
+
+			assertThat(resultSet.next()).isTrue();
+			assertThat(resultSet.getString("TABLE_NAME")).isEqualTo("Bar Ext");
+			assertThat(resultSet.getBoolean("NON_UNIQUE")).isFalse();
+			assertThat(resultSet.getString("INDEX_NAME")).isEqualTo(constrName);
+			assertThat(resultSet.getString("INDEX_QUALIFIER")).isEqualTo(constrName);
+			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
+			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
+			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
+			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
+			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
+			assertThat(resultSet.getObject("CARDINALITY")).isNull();
+			assertThat(resultSet.getObject("PAGES")).isNull();
+			assertThat(resultSet.getObject("FILTER_CONDITION")).isNull();
+			assertThat(resultSet.next()).isFalse();
+		}
+		finally {
+			try (var statement = this.connection.createStatement()) {
+				statement.execute("DROP CONSTRAINT " + constrName + " IF EXISTS");
+			}
+		}
+	}
+
+	@Test
+	void getIndexInfoWithConstraintWrongLabel() throws Exception {
+		try (var statement = this.connection.createStatement()) {
+			statement.execute("CREATE CONSTRAINT bar_uuid IF NOT EXISTS FOR (f:Bar) REQUIRE (f.uuid) IS UNIQUE");
+		}
+
+		try (ResultSet resultSet = this.connection.getMetaData().getIndexInfo(null, null, "Foo", true, false)) {
+			assertThat(resultSet.next()).isFalse();
+		}
+		finally {
+			try (var statement = this.connection.createStatement()) {
+				statement.execute("DROP CONSTRAINT bar_uuid IF EXISTS");
+			}
+		}
+	}
+
+	@Test
+	void getIndexInfoWithIndex() throws Exception {
+		String indexName = "bar_uuid";
+		try (var statement = this.connection.createStatement()) {
+			statement.execute("CREATE INDEX " + indexName + " IF NOT EXISTS FOR (b:Bar) ON (b.uuid)");
+		}
+
+		try (ResultSet resultSet = this.connection.getMetaData().getIndexInfo(null, null, "Bar", false, false)) {
+
+			assertThat(resultSet.next()).isTrue();
+			assertThat(resultSet.getString("TABLE_NAME")).isEqualTo("Bar");
+			assertThat(resultSet.getBoolean("NON_UNIQUE")).isTrue();
+			assertThat(resultSet.getString("INDEX_NAME")).isEqualTo(indexName);
+			assertThat(resultSet.getString("INDEX_QUALIFIER")).isEqualTo(indexName);
+			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
+			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
+			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
+			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
+			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
+			assertThat(resultSet.getObject("CARDINALITY")).isNull();
+			assertThat(resultSet.getObject("PAGES")).isNull();
+			assertThat(resultSet.getObject("FILTER_CONDITION")).isNull();
+			assertThat(resultSet.next()).isFalse();
+		}
+		finally {
+			try (var statement = this.connection.createStatement()) {
+				statement.execute("DROP INDEX " + indexName + " IF EXISTS");
 			}
 		}
 	}
