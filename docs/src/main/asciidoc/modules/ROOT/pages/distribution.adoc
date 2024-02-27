@@ -31,7 +31,8 @@ In case you are interested in the actual dependencies of the driver, those are t
 .Dependency tree of the core driver.
 [source,text]
 ----
-org.neo4j.driver:neo4j-jdbc
+org.neo4j:neo4j-jdbc
++- io.github.cdimascio:dotenv-java
 +- io.netty:netty-handler
 |  +- io.netty:netty-common
 |  +- io.netty:netty-resolver
@@ -40,7 +41,7 @@ org.neo4j.driver:neo4j-jdbc
 |  +- io.netty:netty-transport-native-unix-common
 |  \- io.netty:netty-codec
 +- org.neo4j:neo4j-cypher-dsl-schema-name-support
-+- org.neo4j.driver:neo4j-jdbc-translator-spi
++- org.neo4j:neo4j-jdbc-translator-spi
 ----
 
 

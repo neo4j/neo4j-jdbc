@@ -23,9 +23,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.neo4j.driver</groupId>
+		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-it</artifactId>
-		<version>1.0-SNAPSHOT</version>
+		<version>6.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>neo4j-jdbc-it-cp</artifactId>
 
@@ -43,13 +43,13 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.neo4j.driver</groupId>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.neo4j.driver</groupId>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-translator-impl</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>

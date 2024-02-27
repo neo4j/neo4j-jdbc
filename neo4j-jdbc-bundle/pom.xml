@@ -23,9 +23,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.neo4j.driver</groupId>
+		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-parent</artifactId>
-		<version>1.0-SNAPSHOT</version>
+		<version>6.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>neo4j-jdbc-bundle</artifactId>
@@ -40,7 +40,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.neo4j.driver</groupId>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -91,8 +91,8 @@
 						<configuration>
 							<artifactSet>
 								<includes>
-									<include>org.neo4j.driver:neo4j-jdbc:*</include>
-									<include>org.neo4j.driver:neo4j-jdbc-translator-spi:*</include>
+									<include>org.neo4j:neo4j-jdbc:*</include>
+									<include>org.neo4j:neo4j-jdbc-translator-spi:*</include>
 									<include>org.neo4j:neo4j-cypher-dsl-schema-name-support</include>
 									<include>io.github.cdimascio:dotenv-java</include>
 									<include>io.netty:*</include>
@@ -101,15 +101,15 @@
 							<relocations>
 								<relocation>
 									<pattern>org.neo4j.cypherdsl.support.schema_name</pattern>
-									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.schema_name</shadedPattern>
+									<shadedPattern>org.neo4j.jdbc.internal.shaded.schema_name</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>io.github.cdimascio.dotenv</pattern>
-									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.dotenv</shadedPattern>
+									<shadedPattern>org.neo4j.jdbc.internal.shaded.dotenv</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>io.netty</pattern>
-									<shadedPattern>org.neo4j.driver.jdbc.internal.shaded.io.netty</shadedPattern>
+									<shadedPattern>org.neo4j.jdbc.internal.shaded.io.netty</shadedPattern>
 								</relocation>
 							</relocations>
 							<transformers>
@@ -133,14 +133,14 @@
 									</excludes>
 								</filter>
 								<filter>
-									<artifact>org.neo4j.driver:neo4j-jdbc</artifact>
+									<artifact>org.neo4j:neo4j-jdbc</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
 										<exclude>module-info.class</exclude>
 									</excludes>
 								</filter>
 								<filter>
-									<artifact>org.neo4j.driver:neo4j-jdbc-translator-spi</artifact>
+									<artifact>org.neo4j:neo4j-jdbc-translator-spi</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
 										<exclude>module-info.class</exclude>

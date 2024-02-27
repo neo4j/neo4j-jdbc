@@ -27,5 +27,5 @@
 	<suppress checks="InterfaceIsType" files="Neo4jStatement\.java"/>
 	<suppress checks="RegexpHeader" files="package-info\.java"/>
 	<suppress checks="[a-zA-Z0-9]*" files="[\\/]generated-test-sources[\\/]"/>
-	<suppress checks="JavadocVariable" files="org[\\/]neo4j[\\/]driver[\\/]jdbc[\\/]internal[\\/]bolt"/>
+	<suppress checks="JavadocVariable" files="org[\\/]neo4j[\\/]jdbc[\\/]internal[\\/]bolt"/>
 </suppressions>

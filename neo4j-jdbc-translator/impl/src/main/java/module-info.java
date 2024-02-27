@@ -16,13 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.neo4j.driver.jdbc.translator.impl.SqlToCypherTranslatorFactory;
-import org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
+import org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
+import org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
 
-module neo4j.jdbc.translator.impl {
+module org.neo4j.jdbc.translator.impl {
 	provides SqlTranslatorFactory with SqlToCypherTranslatorFactory;
 
-	requires neo4j.jdbc.translator.spi;
+	requires org.neo4j.jdbc.translator.spi;
 	requires org.jooq;
 	requires org.neo4j.cypherdsl.core;
 }

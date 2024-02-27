@@ -1,1 +1,1 @@
-org.neo4j.driver.jdbc.Neo4jDriver
+org.neo4j.jdbc.Neo4jDriver

@@ -23,9 +23,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.neo4j.driver</groupId>
+		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-parent</artifactId>
-		<version>1.0-SNAPSHOT</version>
+		<version>6.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>neo4j-jdbc-benchkit</artifactId>
 
@@ -33,7 +33,7 @@
 	<description>Implemention of the Benchkit backend</description>
 
 	<properties>
-		<base-package>org.neo4j.benchkit.jdbc</base-package>
+		<base-package>org.neo4j.jdbc.benchkit</base-package>
 	</properties>
 
 	<dependencyManagement>
@@ -50,7 +50,7 @@
 	</dependencyManagement>
 	<dependencies>
 		<dependency>
-			<groupId>org.neo4j.driver</groupId>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -86,8 +86,8 @@
 						<configuration>
 							<inputSpec>${project.basedir}/src/main/resources/benchkit-spec.yml</inputSpec>
 							<generatorName>spring</generatorName>
-							<apiPackage>org.neo4j.benchkit.jdbc.api</apiPackage>
-							<modelPackage>org.neo4j.benchkit.jdbc.model</modelPackage>
+							<apiPackage>org.neo4j.jdbc.benchkit.api</apiPackage>
+							<modelPackage>org.neo4j.jdbc.benchkit.model</modelPackage>
 							<generateApiTests>false</generateApiTests>
 							<generateModelTests>false</generateModelTests>
 							<generateSupportingFiles>false</generateSupportingFiles>
@@ -110,7 +110,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<skip>false</skip>
-					<mainClass>org.neo4j.benchkit.jdbc.Application</mainClass>
+					<mainClass>org.neo4j.jdbc.benchkit.Application</mainClass>
 					<imageName>neo4j/neo4j-jdbc-benchkit-backend</imageName>
 				</configuration>
 				<executions>

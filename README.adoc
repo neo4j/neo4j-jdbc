@@ -6,7 +6,7 @@ Michael Simons <michael.simons@neo4j.com>
 :source-highlighter: coderay
 :icons: font
 // tag::properties[]
-:groupId: org.neo4j.drivers
+:groupId: org.neo4j
 :artifactIdCore: neo4j-jdbc
 :branch: main
 // end::properties[]
@@ -92,20 +92,21 @@ In case of https://quarkus.io[Quarkus] the Neo4j JDBC Driver is an option to con
 
 While there is little incentive to use this driver with Hibernate (https://github.com/neo4j/neo4j-ogm[Neo4j-OGM] or SDN are the better alternatives for Neo4j), it might be worth giving https://spring.io/projects/spring-data-jdbc/[Spring Data JDBC] a try.
 
-=== Differences to existing JDBC drivers for Neo4j
+=== Differences to the previous versionsof this driver and other JDBC drivers for Neo4j
 
-Several other JDBC drivers exists for Neo4j, most notably the https://github.com/neo4j-contrib/neo4j-jdbc[one] developed by http://larus-ba.it/[Larus BA, Italy], commissioned by Neo4j and kind of the predecessor to this driver.
+Several other JDBC drivers exists for Neo4j, most notably the previous versions 4 and 5 of this driver, originally developed by http://larus-ba.it/[Larus BA, Italy] for Neo4j.
 Most—if not all of them—do wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.
 This comes with a bunch of problems:
 
 * The common Neo4j Java Driver manages a connection pool; JDBC drivers on the other hand delegate this task to dedicated pooling solutions: If you take the above-mentioned driver into a standard container, you will eventually end up with a pool of pools
 * The transaction management of the common Neo4j Java Driver is not exactly aligned with the way JDBC thinks about transactions, it's usually hard to get this exactly right
 * Additionally, the original JDBC driver from Larus shades a couple of dependencies, such as Jackson as well as additional logging frameworks which takes a toll on the classpath and in case of logging, does actually lead to runtime problems
+* Existing drivers with a SQL to Cypher translation layer are "read-only" and don't support write statements
 
 There are some drivers available that provide a SQL to Cypher translation layer as well.
 Those however are read-only and cannot be used for ETL use-cases aiming to ingest data into Neo4j.
 
 One feature that this driver does not provide is automatic reshaping or flattening of the result-sets, as the previous incarnation does:
-If you query for objects such as nodes, relationships, paths or maps you can and should use `getObject` on the result-sets and cast to the appropriate type (you find all of them inside the package `org.neo4j.driver.jdbc.values`).
+If you query for objects such as nodes, relationships, paths or maps you can and should use `getObject` on the result-sets and cast to the appropriate type (you find all of them inside the package `org.neo4j.jdbc.values`).
 However, the default SQL to Cypher translator will—when connected to a database—figure out what properties labels have and turn the asterisk (`*`) into individual columns of nodes and relationships, just like what you would expect when running a `SELECT *` statement.
 // end::introduction[]

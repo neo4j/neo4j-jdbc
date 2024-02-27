@@ -19,7 +19,7 @@ Return (only applicable for functions)::
 
 === Named parameters
 
-Our callable statement implementation (`org.neo4j.driver.jdbc.Neo4jCallableStatement`) does support named parameters. As per JDBC spec those are not named placeholders in a query- or statement-string, but the actual, formal parameter for the stored procedures to be called.
+Our callable statement implementation (`org.neo4j.jdbc.Neo4jCallableStatement`) does support named parameters. As per JDBC spec those are not named placeholders in a query- or statement-string, but the actual, formal parameter for the stored procedures to be called.
 We support both the `$` and the colon syntax, that is you might use either `$name` or `:name`.
 
 The assigment `{? = call xxx()}` will be rewritten into `call xxx() yield *`, and `{$x = call xxx()}` will be rewritten as `call xxx() yield x`.

@@ -2,11 +2,11 @@
 
 == Driver class name
 
-The Neo4j JDBC Driver is `org.neo4j.driver.jdbc.Neo4jDriver`.
+The Neo4j JDBC Driver is `org.neo4j.jdbc.Neo4jDriver`.
 In modern Java tools you should not have to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
 The class is public API.
 
-We also provide `org.neo4j.driver.jdbc.Neo4jDataSource` as `javax.sql.DataSource`.
+We also provide `org.neo4j.jdbc.Neo4jDataSource` as `javax.sql.DataSource`.
 
 == URL and connection properties
 
@@ -44,10 +44,20 @@ The driver accepts the following configuration arguments, either properties or a
 |User agent
 |`neo4j-jdbc`
 
-|`sql2cyper`
+|`enableSQLTranslation`
 |`Boolean`
 |Flag that enables automatic translation from SQL to Cypher (requires a translator on the classpath)
 |`false`
+
+|`cacheSQLTranslations`
+|`Boolean`
+|Flag that enables caching of translations. SQL translations are not "free", parsing of SQL costs a bit of time, and so does Cypher rendering. In addition, we might up look up metadata to be able to project individual properties. If this takes to long, any translation might be cached.
+|`false`
+
+|`rewritePlaceholders`
+|`Boolean`
+|Flag that allows you to use `?` as placeholders in *Cypher* statements (as required by JDBC). These will automatically be rewritten into `$1`, `$2` … `$n`, starting at 1, so that the numbering matches the 1-based JDBC index.
+|Defaults to `true` when `enableSQLTranslation` is `false`, `false` otherwise
 
 |`ssl`
 |`Boolean`
@@ -131,9 +141,8 @@ We only refuse contradicting values when you use several configuration mechanism
 In essence, you cannot express to use SSL and not use it at the same time.
 The reason to offer several mechanism is that we want you to be able to use a fixed URL with dynamic query parameters or dynamic URLs or whatever way of configuring you prefer in a programmatic way.
 
-//
-// TODO
-//
-// == Using a .dotenv file to configure the Driver
-//
-// This needs to be written. This paragraph is a to-do to add this information for Aura.
+=== Using .dotenv files
+
+When you sign up for https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j AuraDB] and create a database, you will be asked to download a text-file named similar to `Neo4j-9df57663-Created-2023-06-12.txt`. This is essentially a https://www.dotenv.org[.dotenv] file containing all necessary information required to connect to an aura Database.
+
+These files can be directly used via `Neo4jDriver.fromEnv()`. This method exists in several overloads, which let you configure both filename and directory. Additionally, the builder behind it let's you configure options that are not usually contained in the files from AuraDB.

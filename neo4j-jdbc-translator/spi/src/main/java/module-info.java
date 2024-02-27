@@ -16,9 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module neo4j.jdbc.translator.spi {
+module org.neo4j.jdbc.translator.spi {
 
-	exports org.neo4j.driver.jdbc.translator.spi;
+	exports org.neo4j.jdbc.translator.spi;
 
 	requires transitive java.sql;
 }

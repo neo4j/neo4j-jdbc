@@ -1,16 +1,18 @@
-= Migrating from other JDBC drivers for Neo4j
+= Migrating from older versions or other JDBC drivers for Neo4j
 
 There are some other JDBC drivers for Neo4j, under various licenses and with varying features and capabilities.
 In the following we outline possible migration processes.
 The basic usage patterns for all JDBC drivers for Neo4j are very similar, in the end it's "just" using a JDBC compliant driver, and you would use it as described in the original https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html[Java tutorial about JDBC].
 
-== Coming from the previous (unofficial) JDBC Driver for Neo4j
+== Migrating from version 4 or 5 of this driver
 
-This https://github.com/neo4j-contrib/neo4j-jdbc[neo4j-jdbc] driver was mainly developed by http://larus-ba.it/[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j. Thank you so much for all your work.
+Version 5 and 4 of the Neo4j JDBC Driver have been mainly developed by http://larus-ba.it/[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j. Thank you so much for all your work.
+
+WARNING: The most important change that you need to make is removing the dependency on `org.neo4j:neo4j-jdbc-bolt`. You need to replace it with `{group-id}:{artifact-id}` or one of the bundles we provide, see xref:distribution.adoc#available_bundles[available bundles].
 
 === URL format, parameters and main driver class
 
-The unofficial driver mapped the URLs from the common Java driver onto `jdbc:`, i.e. using `jdbc:neo4j:neo4j+s://foobar.io:7687/` for connecting against a database running on host `foobar.io` on port 7687.
+The previous version mapped the URLs from the common Java driver onto `jdbc:`, i.e. using `jdbc:neo4j:neo4j+s://foobar.io:7687/` for connecting against a database running on host `foobar.io` on port 7687.
 
 The following URLs (direct bolt connection) are not supported:
 
@@ -55,8 +57,8 @@ The following properties can be achieved using a different URL:
 
 * `database` is now part of the URL, instead of specifying `jdbc:neo4j:neo4j+s://foobar.io:7687?database=abc` you would use the database name as path segment in the url, such as: `jdbc:neo4j+s://foobar.io:7687/abc`
 
-In case your tooling requires to use a concrete driver class: This JDBC driver has only `org.neo4j.driver.jdbc.Neo4jDriver`.
-If you depend on a `javax.sql.DataSource`, we provide `org.neo4j.driver.jdbc.Neo4jDataSource`.
+In case your tooling requires to use a concrete driver class: This JDBC driver has only `org.neo4j.jdbc.Neo4jDriver`.
+If you depend on a `javax.sql.DataSource`, we provide `org.neo4j.jdbc.Neo4jDataSource`.
 
 === Flattening
 

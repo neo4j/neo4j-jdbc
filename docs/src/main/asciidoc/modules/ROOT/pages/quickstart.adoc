@@ -38,7 +38,7 @@ include::{examplesDir}/Quickstart.java[tag=pt2]
 ----
 <.> This SQL query will be translated into the same Cypher query shown before, the remainder of the method is identical to before.
 
-TIP: In case any tooling asks you for the name of the concrete driver class, it is: `org.neo4j.driver.jdbc.Neo4jDriver`.
+TIP: In case any tooling asks you for the name of the concrete driver class, it is: `org.neo4j.jdbc.Neo4jDriver`.
 
 We will cover the SQL to Cypher translation in detail later in this manual.
 
@@ -71,10 +71,10 @@ include::{examplesDir}/NamedParameters.java[tag=index-np]
 
 == Getting a connection via environment variables
 
-If you are happy to depend on `org.neo4j.driver.jdbc.Neo4jDriver` directly and want to get a connection as easy as possible, you might want to use `fromEnv`:
+If you are happy to depend directly on `org.neo4j.jdbc.Neo4jDriver` and want to get a connection as easy as possible, you might want to use `fromEnv`:
 
 [source, java, tabsize=4, indent=0]
-.Get a connection from the environnment.
+.Get a connection from the environment.
 ----
 include::{examplesDir}/Quickstart.java[tag=pt3]
 ----

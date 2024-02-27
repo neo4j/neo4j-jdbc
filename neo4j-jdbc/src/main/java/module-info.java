@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 @SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
-module neo4j.jdbc {
+module org.neo4j.jdbc {
 	requires transitive java.sql;
 
 	// start::shaded-dependencies
@@ -28,19 +28,17 @@ module neo4j.jdbc {
 	requires io.netty.handler;
 	requires io.netty.resolver;
 	requires io.netty.transport;
-	requires neo4j.jdbc.translator.spi;
+	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies
 
 	// requires jdk.unsupported;
 
-	exports org.neo4j.driver.jdbc;
-	exports org.neo4j.driver.jdbc.values;
-	exports org.neo4j.driver.jdbc.internal.bolt.value;
+	exports org.neo4j.jdbc;
+	exports org.neo4j.jdbc.values;
 
-	provides java.sql.Driver with
-		org.neo4j.driver.jdbc.Neo4jDriver;
-	// provides org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory with org.neo4j.driver.jdbc.translator.impl.SqlToCypherTranslatorFactory;
+	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;
+	// provides org.neo4j.jdbc.translator.spi.SqlTranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
 
-	uses org.neo4j.driver.jdbc.translator.spi.SqlTranslatorFactory;
+	uses org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
 }

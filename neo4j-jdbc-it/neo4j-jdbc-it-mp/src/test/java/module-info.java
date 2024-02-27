@@ -16,14 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module neo4j.jdbc.it.mp {
+module org.neo4j.jdbc.it.mp {
 	requires java.sql;
-	requires neo4j.jdbc;
+	requires org.neo4j.jdbc;
 	requires org.junit.jupiter.api;
 	requires org.junit.jupiter.engine;
 	requires org.assertj.core;
 
 	uses java.sql.Driver;
 
-	opens org.neo4j.driver.it.mp;
+	opens org.neo4j.jdbc.it.mp;
 }
