@@ -29,6 +29,7 @@
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver</name>
 	<description>A JDBC 4.3 compliant JDBC driver for Neo4j.</description>
+	<url>https://github.com/neo4j/neo4j-jdbc</url>
 
 	<inceptionYear>2023</inceptionYear>
 	<organization>
@@ -529,6 +530,19 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>${maven-javadoc-plugin.version}</version>
+					<configuration>
+						<quiet>true</quiet>
+						<detectOfflineLinks>false</detectOfflineLinks>
+						<detectJavaApiLink>true</detectJavaApiLink>
+						<release>${java.version}</release>
+						<tags>
+							<tag>
+								<name>soundtrack</name>
+								<placement>a</placement>
+								<head>Soundtrack</head>
+							</tag>
+						</tags>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -735,6 +749,18 @@
 						<id>attach-sources</id>
 						<goals>
 							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
 						</goals>
 					</execution>
 				</executions>
