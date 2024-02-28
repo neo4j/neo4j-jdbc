@@ -750,7 +750,7 @@
 					<releaseProfiles>release</releaseProfiles>
 					<tagNameFormat>@{project.version}</tagNameFormat>
 					<goals>deploy</goals>
-					<arguments>-Drelease -Dgpg.skip=${skipSigning} -DskipTests=${skipTestsDuringRelease} -DisDryRun=${dryRun}</arguments>
+					<arguments>-Drelease -Dgpg.skip=${skipSigning} -DskipTests=${skipTestsDuringRelease} -DisDryRun=${dryRun} -Dsort.skip</arguments>
 					<preparationGoals>clean exec:exec@prepare-release verify</preparationGoals>
 					<pushChanges>false</pushChanges>
 					<localCheckout>true</localCheckout>
