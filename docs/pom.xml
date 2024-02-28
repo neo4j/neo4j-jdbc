@@ -201,7 +201,7 @@
 						<configuration>
 							<backend>pdf</backend>
 							<attributes>
-								<toc/>
+								<toc />
 							</attributes>
 						</configuration>
 					</execution>

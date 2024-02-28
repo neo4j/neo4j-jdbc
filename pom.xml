@@ -342,6 +342,7 @@
 						<expandEmptyElements>false</expandEmptyElements>
 						<verifyFail>stop</verifyFail>
 						<verifyFailOn>strict</verifyFailOn>
+						<spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
 					</configuration>
 				</plugin>
 				<plugin>
