@@ -63,7 +63,7 @@ public class SmokeIT {
 	}
 
 	private static String getHost() {
-		return "localhost";
+		return System.getProperty("it-database-host", "localhost");
 	}
 
 	private static String getPassword() {

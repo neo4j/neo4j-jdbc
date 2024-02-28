@@ -70,7 +70,7 @@
 									<time>20000</time>
 								</wait>
 								<ports>
-									<port>it-database-port:7687</port>
+									<port>+neo4j-ip:it-database-port:7687</port>
 								</ports>
 							</run>
 						</image>
@@ -83,6 +83,9 @@
 							<goal>start</goal>
 						</goals>
 						<phase>pre-integration-test</phase>
+						<configuration>
+							<skip>${skipTests}</skip>
+						</configuration>
 					</execution>
 					<execution>
 						<id>remove-it-database</id>
@@ -90,6 +93,9 @@
 							<goal>stop</goal>
 						</goals>
 						<phase>post-integration-test</phase>
+						<configuration>
+							<skip>${skipTests}</skip>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
@@ -99,6 +105,7 @@
 				<version>${maven-failsafe-plugin.version}</version>
 				<configuration combine.self="append">
 					<systemPropertyVariables>
+						<it-database-host>${neo4j-ip}</it-database-host>
 						<it-database-port>${it-database-port}</it-database-port>
 						<it-database-password>${neo4j.password}</it-database-password>
 					</systemPropertyVariables>

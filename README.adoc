@@ -8,6 +8,7 @@ Michael Simons <michael.simons@neo4j.com>
 // tag::properties[]
 :groupId: org.neo4j
 :artifactIdCore: neo4j-jdbc
+:latest_version: 6.0.0-SNAPSHOT
 :branch: main
 // end::properties[]
 
@@ -32,8 +33,28 @@ image:https://sonar.neo4j.ninja/api/project_badges/measure?project=neo4j-jdbc&to
 
 == Download
 
-The Maven coordinates in the documentation and corresponding README are not yet live.
-In the meantime you can grab a packaged binary from the https://github.com/neo4j/neo4j-jdbc/releases/tag/early-access[early access release page], which will be actively updated.
+=== Include in a Maven build
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>{groupId}</groupId>
+    <artifactId>{artifactIdCore}-full-bundle</artifactId>
+    <version>{latest_version}</version>
+</dependency>
+----
+
+=== Include in a Gradle build
+
+[source,groovy,subs="verbatim,attributes"]
+----
+dependencies {
+    implementation '{groupId}:{artifactIdCore}-full-bundle:{latest_version}'
+}
+----
+
+All https://github.com/neo4j/neo4j-jdbc/releases/[releases] from 6.0 onwards contain a zipped version of the driver, including a PDF version of the manual.
+We offer several distributions, please have a look http://neo4j.github.io/neo4j-jdbc/${latest_version}/#_distribution[here] for more details.
 If you feel adventurous, grab the code and build the driver yourself.
 You find the instructions in our link:CONTRIBUTING.adoc[contribution documentation].
 
@@ -92,7 +113,7 @@ In case of https://quarkus.io[Quarkus] the Neo4j JDBC Driver is an option to con
 
 While there is little incentive to use this driver with Hibernate (https://github.com/neo4j/neo4j-ogm[Neo4j-OGM] or SDN are the better alternatives for Neo4j), it might be worth giving https://spring.io/projects/spring-data-jdbc/[Spring Data JDBC] a try.
 
-=== Differences to the previous versionsof this driver and other JDBC drivers for Neo4j
+=== Differences to the previous versions of this driver and other JDBC drivers for Neo4j
 
 Several other JDBC drivers exists for Neo4j, most notably the previous versions 4 and 5 of this driver, originally developed by http://larus-ba.it/[Larus BA, Italy] for Neo4j.
 Most—if not all of them—do wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.

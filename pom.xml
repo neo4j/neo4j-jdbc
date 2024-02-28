@@ -155,6 +155,7 @@
 		<maven-install-plugin.version>3.1.1</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
 		<maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+		<maven-release-plugin.version>3.0.1</maven-release-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
 		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>
@@ -567,6 +568,22 @@
 					<configuration>
 						<skip>true</skip>
 					</configuration>
+					<executions>
+						<execution>
+							<id>prepare-release</id>
+							<goals>
+								<goal>exec</goal>
+							</goals>
+							<configuration>
+								<executable>bin/prepare-release.sh</executable>
+								<arguments>
+									<argument>${project.version}</argument>
+									<argument>${isDryRun}</argument>
+								</arguments>
+								<skip>true</skip>
+							</configuration>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.moditect</groupId>
@@ -757,6 +774,22 @@
 							</full-bundle>
 						</distributions>
 					</jreleaser>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>${maven-release-plugin.version}</version>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<useReleaseProfile>false</useReleaseProfile>
+					<releaseProfiles>release</releaseProfiles>
+					<tagNameFormat>@{project.version}</tagNameFormat>
+					<goals>deploy</goals>
+					<arguments>-Drelease -Dgpg.skip=${skipSigning} -DskipTests=${skipTestsDuringRelease} -DisDryRun=${dryRun}</arguments>
+					<preparationGoals>clean exec:exec@prepare-release verify</preparationGoals>
+					<pushChanges>false</pushChanges>
+					<localCheckout>true</localCheckout>
 				</configuration>
 			</plugin>
 		</plugins>
