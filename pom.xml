@@ -580,7 +580,6 @@
 									<argument>${project.version}</argument>
 									<argument>${isDryRun}</argument>
 								</arguments>
-								<skip>true</skip>
 							</configuration>
 						</execution>
 					</executions>
@@ -737,6 +736,22 @@
 						<goals>
 							<goal>jar-no-fork</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<inherited>false</inherited>
+				<executions>
+					<execution>
+						<id>prepare-release</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration combine.self="append">
+							<skip>false</skip>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
