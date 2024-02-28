@@ -240,6 +240,29 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>${build-helper-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>attach</id>
+						<goals>
+							<goal>attach-artifact</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<artifacts>
+								<artifact>
+									<file>../neo4j-jdbc/target/neo4j-jdbc-${project.version}-javadoc.jar</file>
+									<type>jar</type>
+									<classifier>javadoc</classifier>
+								</artifact>
+							</artifacts>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<executions>

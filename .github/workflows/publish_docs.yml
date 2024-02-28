@@ -33,6 +33,7 @@ jobs:
       - name: Run docs generation
         run: >
           ./mvnw --no-transfer-progress clean git-commit-id:revision@get-the-git-infos resources:copy-resources@prepare-asciidoc resources:copy-resources@copy-classes  asciidoctor:process-asciidoc@generate-html-docs -pl docs &&
+          mkdir -p target/gh-pages/${refName}/ &&
           mv docs/target/generated-docs/index.html target/gh-pages/${refName}/
       - name: Update index
         if: (github.event_name == 'create' && github.event.ref_type == 'tag')
