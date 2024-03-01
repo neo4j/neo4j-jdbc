@@ -39,6 +39,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -201,6 +202,20 @@ class StatementIT extends IntegrationTestBase {
 
 			assertThat(cnt.next()).isTrue();
 			assertThat(cnt.getInt(1)).isGreaterThan(0);
+		}
+	}
+
+	// GH-398
+	@SuppressWarnings("deprecation")
+	@Test
+	void elementIdAndIdShouldBeSupported() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var result = stmt.executeQuery("CREATE (n:Test) RETURN n")) {
+			assertThat(result.next()).isTrue();
+			var node = result.getObject(1, Value.class).asNode();
+			assertThat(node.elementId()).isNotNull();
+			assertThat(node.id()).isNotNull();
 		}
 	}
 
