@@ -520,4 +520,35 @@ class StatementIT extends IntegrationTestBase {
 		}
 	}
 
+	// GH-81
+	@Test
+	void nullPropertiesShallNotFailWhenBeAccessed() throws SQLException {
+		try (var connection = getConnection(); var stmt = connection.createStatement();) {
+			connection.setAutoCommit(false);
+			stmt.executeUpdate("CREATE (n:mynode {order_prop:1, aninteger: 42})");
+			stmt.executeUpdate("CREATE (n:mynode {order_prop:2})");
+			connection.commit();
+		}
+		try (var connection = getConnection(); var stmt = connection.createStatement();) {
+			try (var result = stmt.executeQuery("MATCH (n:mynode) RETURN n ORDER BY n.order_prop ASC")) {
+				assertThat(result.next()).isTrue();
+				assertThat(result.getObject("n", Value.class).get("aninteger").asInt()).isEqualTo(42);
+				assertThat(result.next()).isTrue();
+				assertThat(result.getObject("n", Value.class).get("aninteger").isNull()).isTrue();
+				assertThat(result.next()).isFalse();
+			}
+
+			try (var result = stmt.executeQuery("MATCH (n:mynode) RETURN n.aninteger ORDER BY n.order_prop ASC")) {
+				assertThat(result.next()).isTrue();
+				assertThat(result.getInt(1)).isEqualTo(42);
+				assertThat(result.next()).isTrue();
+				assertThat(result.getInt(1)).isZero();
+				assertThat(result.wasNull()).isTrue();
+				assertThat(result.next()).isFalse();
+			}
+
+		}
+
+	}
+
 }
