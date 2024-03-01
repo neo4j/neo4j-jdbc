@@ -28,6 +28,7 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -497,6 +498,25 @@ class StatementIT extends IntegrationTestBase {
 				assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
 			}
 
+		}
+	}
+
+	// GH-397
+	@Test
+	void noPropertyNamesShouldBeSpecial() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var result = stmt.executeQuery(
+						"CREATE (n:Test {name: 'A', _id: 'id1', _labels: ['L1', 'L2']}) -[r:RELATES_TO {name: 'R', _id: 'id2', _startId: 4711, _endId: 23, _type: 'Trololo'}] -> (m:AnotherTest {name: 'B', _id: 'id3'}) RETURN *")) {
+			assertThat(result.next()).isTrue();
+			var nodeA = result.getObject("n", Value.class).asNode();
+			var rel = result.getObject("r", Value.class).asRelationship();
+			var nodeB = result.getObject("m", Value.class).asNode();
+			assertThat(nodeA.asMap())
+				.containsExactlyInAnyOrderEntriesOf(Map.of("name", "A", "_id", "id1", "_labels", List.of("L1", "L2")));
+			assertThat(rel.asMap()).containsExactlyInAnyOrderEntriesOf(
+					Map.of("name", "R", "_id", "id2", "_startId", 4711L, "_endId", 23L, "_type", "Trololo"));
+			assertThat(nodeB.asMap()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "B", "_id", "id3"));
 		}
 	}
 
