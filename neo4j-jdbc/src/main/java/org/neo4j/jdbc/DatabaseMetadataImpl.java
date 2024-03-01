@@ -26,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -880,6 +881,20 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 	}
 
+	static int getMaxPrecision(int type) {
+		if (type == Types.INTEGER) {
+			// 64bit;
+			return 19;
+		}
+		if (type == Types.FLOAT) {
+			// 64bit double,
+			// https://stackoverflow.com/questions/322749/retain-precision-with-double-in-java
+			// Neo4j has no fixed point arithmetic, so it's kinda guess work.
+			return 15;
+		}
+		return 0;
+	}
+
 	@Override
 	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
 			throws SQLException {
@@ -923,10 +938,11 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 					values.add(Values.value("public")); // TABLE_SCHEM is always public
 					values.add(nodeLabel); // TABLE_NAME
 					values.add(propertyName); // COLUMN_NAME
-					values.add(
-							Values.value(Neo4jTypeToSqlTypeMapper.toSqlTypeFromOldCypherType(propertyType.asString()))); // DATA_TYPE
+					var columnType = Neo4jTypeToSqlTypeMapper.toSqlTypeFromOldCypherType(propertyType.asString());
+					values.add(Values.value(columnType)); // DATA_TYPE
 					values.add(Values.value(Neo4jTypeToSqlTypeMapper.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
-					values.add(Values.value(-1)); // COLUMN_SIZE
+					var maxPrecision = getMaxPrecision(columnType);
+					values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
 					values.add(Values.NULL); // BUFFER_LENGTH
 					values.add(Values.NULL); // DECIMAL_DIGITS
 					values.add(Values.value(2)); // NUM_PREC_RADIX

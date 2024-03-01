@@ -1012,6 +1012,27 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void precisionShallBeAvailableForSomeNumericProperties() throws SQLException {
+		try (var statement = this.connection.createStatement()) {
+			statement.execute("CREATE (n:Wurstsalat {d: 42.23, i: 21, s: 'asd'})");
+			var meta = this.connection.getMetaData().getColumns(null, null, "Wurstsalat", null);
+			while (meta.next()) {
+				var columnName = meta.getString("COLUMN_NAME");
+				var precision = meta.getInt("COLUMN_SIZE");
+				if ("d".equals(columnName)) {
+					assertThat(precision).isEqualTo(15);
+				}
+				else if ("i".equals(columnName)) {
+					assertThat(precision).isEqualTo(19);
+				}
+				else {
+					assertThat(precision).isZero();
+				}
+			}
+		}
+	}
+
+	@Test
 	void getIndexInfoWithIndex() throws Exception {
 		String indexName = "bar_uuid";
 		try (var statement = this.connection.createStatement()) {

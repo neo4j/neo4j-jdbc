@@ -21,6 +21,7 @@ package org.neo4j.jdbc.it.cp;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -517,6 +518,31 @@ class StatementIT extends IntegrationTestBase {
 			assertThat(rel.asMap()).containsExactlyInAnyOrderEntriesOf(
 					Map.of("name", "R", "_id", "id2", "_startId", 4711L, "_endId", 23L, "_type", "Trololo"));
 			assertThat(nodeB.asMap()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "B", "_id", "id3"));
+		}
+	}
+
+	// GH-254
+	@Test
+	void getObjectMustReturnTheSmallestTypePossibleForInteger() throws SQLException {
+		// Avro is very specific about this, otherwise you'll end up with something like
+		// Caused by: org.apache.avro.UnresolvedUnionException: Not in union
+		// ["null","long"]
+		// It determines the final type based on the precision, and would downvote a long
+		// to an int, much as we do, if the precision is unset
+		// because it expects an integer, but gets a long (it uses getObject)
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery("RETURN 1 AS i, 2147483648 AS l")) {
+			assertThat(rs.next()).isTrue();
+			var meta = rs.getMetaData();
+			assertThat(meta.getColumnType(1)).isEqualTo(Types.INTEGER);
+			assertThat(meta.getPrecision(1)).isEqualTo(String.valueOf(Long.MAX_VALUE).length());
+			assertThat(meta.getColumnType(2)).isEqualTo(Types.INTEGER);
+			assertThat(meta.getPrecision(2)).isEqualTo(String.valueOf(Long.MAX_VALUE).length());
+			var o = rs.getObject(1);
+			assertThat(o).isInstanceOf(Long.class).isEqualTo(1L);
+			o = rs.getObject(2);
+			assertThat(o).isInstanceOf(Long.class).isEqualTo(2147483648L);
 		}
 	}
 
