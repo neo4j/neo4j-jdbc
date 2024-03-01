@@ -489,7 +489,7 @@ class StatementIT extends IntegrationTestBase {
 
 	// GH-397
 	@Test
-	void elementIdAndIdShouldBeSupported() throws SQLException {
+	void noPropertyNamesShouldBeSpecial() throws SQLException {
 		try (var connection = getConnection();
 				var stmt = connection.createStatement();
 				var result = stmt.executeQuery(
