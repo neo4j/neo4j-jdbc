@@ -488,7 +488,6 @@ class StatementIT extends IntegrationTestBase {
 	}
 
 	// GH-397
-	@SuppressWarnings("deprecation")
 	@Test
 	void elementIdAndIdShouldBeSupported() throws SQLException {
 		try (var connection = getConnection();
