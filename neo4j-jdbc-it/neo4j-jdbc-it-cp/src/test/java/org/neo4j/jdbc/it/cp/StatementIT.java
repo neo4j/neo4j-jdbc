@@ -557,8 +557,8 @@ class StatementIT extends IntegrationTestBase {
 		// Caused by: org.apache.avro.UnresolvedUnionException: Not in union
 		// ["null","long"]
 		// It determines the final type based on the precision, and would downvote a long
-		// to an int, much as we do, if the precision is unset
-		// because it expects an integer, but gets a long (it uses getObject)
+		// to an int if the precision is unset (being equal to 0).
+		// From the datatype however it will expect a long, and now ends up with an integer.
 		try (var connection = getConnection();
 				var stmt = connection.createStatement();
 				var rs = stmt.executeQuery("RETURN 1 AS i, 2147483648 AS l")) {
