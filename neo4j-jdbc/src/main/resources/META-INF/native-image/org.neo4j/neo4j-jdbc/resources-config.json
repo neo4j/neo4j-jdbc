@@ -2,6 +2,9 @@
   "resources": [
     {
       "pattern": "META-INF/MANIFEST\\.MF"
+    },
+    {
+      "pattern": "queries/.*\\.properties"
     }
   ]
 }

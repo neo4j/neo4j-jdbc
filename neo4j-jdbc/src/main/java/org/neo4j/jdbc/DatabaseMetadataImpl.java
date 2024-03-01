@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +55,19 @@ import org.neo4j.jdbc.values.Values;
  * @since 1.0.0
  */
 final class DatabaseMetadataImpl implements DatabaseMetaData {
+
+	private static final Properties QUERIES;
+
+	static {
+		QUERIES = new Properties();
+		try {
+			QUERIES.load(Objects.requireNonNull(
+					DatabaseMetadataImpl.class.getResourceAsStream("/queries/DatabaseMetadata.properties")));
+		}
+		catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
+	}
 
 	private static final List<String> NUMERIC_FUNCTIONS = List.of("abs", "ceil", "floor", "isNaN", "rand", "round",
 			"sign", "e", "exp", "log", "log10", "sqrt", "acos", "asin", "atan", "atan2", "cos", "cot", "degrees",
@@ -78,10 +94,19 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		this.automaticSqlTranslation = automaticSqlTranslation;
 	}
 
+	static Request getRequest(String queryName, Object... keyAndValues) {
+		Map<String, Object> args = new HashMap<>();
+
+		// Yolo in all ways possible, internally called only anyway
+		for (int i = 0; i < keyAndValues.length; i += 2) {
+			args.put((String) keyAndValues[i], keyAndValues[i + 1]);
+		}
+		return new Request(QUERIES.getProperty(queryName), args);
+	}
+
 	@Override
 	public boolean allProceduresAreCallable() throws SQLException {
-		var query = "SHOW PROCEDURE EXECUTABLE YIELD name AS PROCEDURE_NAME";
-		var response = doQueryForPullResponse(query, Map.of());
+		var response = doQueryForPullResponse(getRequest("allProceduresAreCallable"));
 
 		List<String> executableProcedures = new ArrayList<>();
 		for (Record record : response.records()) {
@@ -114,7 +139,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getUserName() throws SQLException {
-		var response = doQueryForPullResponse("SHOW CURRENT USER YIELD user", Map.of());
+		var response = doQueryForPullResponse(getRequest("getUserName"));
 		return response.records().get(0).get(0).asString();
 	}
 
@@ -147,9 +172,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getDatabaseProductName() throws SQLException {
-		var response = doQueryForPullResponse("""
-				CALL dbms.components() YIELD name, versions, edition
-				UNWIND versions AS version RETURN name, edition, version""", Map.of());
+		var response = doQueryForPullResponse(getRequest("getDatabaseProductName"));
 
 		var record = response.records().get(0);
 		return "%s-%s-%s".formatted(record.get(0).asString(), record.get(1).asString(), record.get(2).asString());
@@ -157,9 +180,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
-		var response = doQueryForPullResponse("""
-				CALL dbms.components() YIELD versions
-				UNWIND versions AS version RETURN version""", Map.of());
+		var response = doQueryForPullResponse(getRequest("getDatabaseProductVersion"));
 
 		return response.records().get(0).get(0).asString();
 	}
@@ -631,9 +652,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public int getMaxConnections() throws SQLException {
-		var response = doQueryForPullResponse(
-				"SHOW SETTINGS YIELD * WHERE name =~ 'server.bolt.thread_pool_max_size' RETURN toInteger(value)",
-				Map.of());
+		var response = doQueryForPullResponse(getRequest("getMaxConnections"));
 
 		if (response.records().isEmpty()) {
 			return 0;
@@ -758,26 +777,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var query = """
-				SHOW PROCEDURES YIELD name AS PROCEDURE_NAME, description AS REMARKS
-				ORDER BY PROCEDURE_NAME
-				WHERE name = $name OR $name IS NULL
-				RETURN
-					NULL AS PROCEDURE_CAT,
-					"public" AS PROCEDURE_SCHEM,
-					PROCEDURE_NAME,
-					NULL AS reserved_1,
-					NULL AS reserved_2,
-					NULL AS reserved_3,
-					REMARKS,
-					$procedureType AS PROCEDURE_TYPE,
-					PROCEDURE_NAME as SPECIFIC_NAME
-				""";
-
-		var parameters = new HashMap<String, Object>();
-		parameters.put("name", procedureNamePattern);
-		parameters.put("procedureType", DatabaseMetaData.procedureResultUnknown);
-		return doQueryForResultSet(query, parameters);
+		var request = getRequest("getProcedures", "name", procedureNamePattern, "procedureType",
+				DatabaseMetaData.procedureResultUnknown);
+		return doQueryForResultSet(request);
 	}
 
 	@Override
@@ -789,40 +791,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var intermediateResults = getArgumentDescriptions("PROCEDURES", procedureNamePattern);
 
-		Map<String, Object> args = new HashMap<>();
-		args.put("results", intermediateResults);
-		args.put("columnNamePattern", columnNamePattern);
-		args.put("columnType", DatabaseMetaData.procedureColumnIn);
-		args.put("nullable", DatabaseMetaData.procedureNullableUnknown);
-		String query = """
-				UNWIND $results AS result
-				WITH result, range(0, size(result.argumentDescriptions) - 1) AS ordinal_positions
-				UNWIND ordinal_positions AS ORDINAL_POSITION
-				WITH result, ORDINAL_POSITION
-				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL OR $columnNamePattern = '%'
-				RETURN
-					NULL AS PROCEDURE_CAT,
-					"public" AS PROCEDURE_SCHEM,
-					result.name AS PROCEDURE_NAME,
-					result.argumentDescriptions[ORDINAL_POSITION].name AS COLUMN_NAME,
-					$columnType AS COLUMN_TYPE,
-					NULL AS DATA_TYPE,
-					NULL AS TYPE_NAME,
-					NULL AS PRECISION,
-					NULL AS LENGTH,
-					NULL AS SCALE,
-					NULL AS RADIX,
-					$nullable AS NULLABLE,
-					result.argumentDescriptions[ORDINAL_POSITION].description AS REMARKS,
-					NULL AS COLUMN_DEF,
-					NULL AS SQL_DATA_TYPE,
-					NULL AS SQL_DATETIME_SUB,
-					NULL AS CHAR_OCTET_LENGTH,
-					ORDINAL_POSITION + 1 AS ORDINAL_POSITION,
-					'' AS IS_NULLABLE,
-					result.name AS SPECIFIC_NAME
-				""";
-		return doQueryForResultSet(query, args);
+		var request = getRequest("getProcedureColumns", "results", intermediateResults, "columnNamePattern",
+				columnNamePattern, "columnType", DatabaseMetaData.procedureColumnIn, "nullable",
+				DatabaseMetaData.procedureNullableUnknown);
+		return doQueryForResultSet(request);
 	}
 
 	@Override
@@ -832,23 +804,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 		assertCatalogIsNullOrEmpty(catalog);
 
-		Map<String, Object> args = new HashMap<>();
-		args.put("name", (tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null);
-		return doQueryForResultSet("""
-				CALL db.labels() YIELD label AS TABLE_NAME
-				WHERE ($name IS NULL OR TABLE_NAME =~ $name) AND EXISTS {MATCH (n) WHERE TABLE_NAME IN labels(n)}
-				RETURN
-				"" as TABLE_CAT,
-				"public" AS TABLE_SCHEM,
-				TABLE_NAME,
-				"TABLE" as TABLE_TYPE,
-				NULL as REMARKS,
-				NULL AS TYPE_CAT,
-				NULL AS TYPE_SCHEM,
-				NULL AS TYPE_NAME,
-				NULL AS SELF_REFERENCES_COL_NAME,
-				NULL AS REF_GENERATION
-				""", args);
+		var request = getRequest("getTables", "name",
+				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null);
+		return doQueryForResultSet(request);
 	}
 
 	@Override
@@ -929,35 +887,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var query = """
-				CALL db.schema.nodeTypeProperties()
-				YIELD nodeLabels, propertyName, propertyTypes
-				WITH *
-				WHERE ($name IS NULL OR $name = '%' OR ANY (label IN nodeLabels WHERE label =~ $name))
-				AND ($column_name IS NULL OR propertyName =~ $column_name)
-				RETURN *
-				""";
-
-		var queryParams = new HashMap<String, Object>();
-		queryParams.put("name", (tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern);
-		queryParams.put("column_name",
+		var request = getRequest("getColumns", "name",
+				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern, "column_name",
 				(columnNamePattern != null) ? columnNamePattern.replace("%", ".*") : columnNamePattern);
-
-		var pullResponse = doQueryForPullResponse(query, queryParams);
+		var pullResponse = doQueryForPullResponse(request);
 		var records = pullResponse.records();
 
 		var rows = new ArrayList<Value[]>();
-
-		// now we need to flatten the table arrays and the type arrays then put it back
-		// into a resultSet.
-
-		var queryForNullability = """
-				SHOW CONSTRAINTS YIELD *
-				WHERE type IN ['NODE_KEY', 'NODE_PROPERTY_EXISTENCE']
-				AND $propertyName IN properties
-				AND ANY (x IN $nodeLabels WHERE x IN labelsOrTypes)
-				RETURN count(*) > 0;
-				""";
 
 		for (Record record : records) {
 			var nodeLabels = record.get(0);
@@ -970,8 +906,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 				var NULLABLE = DatabaseMetaData.columnNullable;
 				var IS_NULLABLE = "YES";
-				try (var result = doQueryForResultSet(queryForNullability,
-						Map.of("nodeLabels", nodeLabels, "propertyName", propertyName))) {
+				var innerRequest = getRequest("getColumns.nullability", "nodeLabels", nodeLabels, "propertyName",
+						propertyName);
+				try (var result = doQueryForResultSet(innerRequest)) {
 					result.next();
 					if (result.getBoolean(1)) {
 						NULLABLE = DatabaseMetaData.columnNoNulls;
@@ -1192,48 +1129,16 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schema);
 
 		var intermediateResults = new ArrayList<>();
-		var query = """
-				SHOW INDEXES YIELD name, type, labelsOrTypes, properties, owningConstraint, entityType
-				ORDER BY name
-				WHERE ($name IS NULL OR $name = '%' OR $name IN labelsOrTypes)
-				AND size(labelsOrTypes) = 1
-				AND entityType = 'NODE'
-				AND type <> 'LOOKUP'
-				AND (NOT $unique OR owningConstraint IS NOT NULL)
-				""";
-		var parameter = new HashMap<String, Object>();
-		parameter.put("name", table);
-		parameter.put("unique", unique);
-		try (var rs = doQueryForResultSet(query, parameter)) {
+		var request = getRequest("getIndexInfo", "name", table, "unique", unique);
+		try (var rs = doQueryForResultSet(request)) {
 			while (rs.next()) {
 				intermediateResults.add(Map.of("name", rs.getString("name"), "tableName",
 						rs.getObject("labelsOrTypes", Value.class).asList().get(0), "properties",
 						rs.getObject("properties"), "owningConstraint", rs.getObject("owningConstraint", Value.class)));
 			}
 		}
-
-		query = """
-				UNWIND $results AS result
-				WITH result, range(0, size(result.properties) - 1) AS ordinal_positions
-				UNWIND ordinal_positions AS ORDINAL_POSITION
-				WITH result, ORDINAL_POSITION
-				RETURN
-					NULL AS TABLE_CAT,
-					"public" AS TABLE_SCHEM,
-					result.tableName AS TABLE_NAME,
-					result.owningConstraint IS NULL AS NON_UNIQUE,
-					result.name AS INDEX_QUALIFIER,
-					result.name AS INDEX_NAME,
-					$type AS TYPE,
-					CASE WHEN result.properties[ORDINAL_POSITION] IS NULL THEN NULL ELSE ORDINAL_POSITION + 1 END AS ORDINAL_POSITION,
-					result.properties[ORDINAL_POSITION] AS COLUMN_NAME,
-					'A' AS ASC_OR_DESC,
-					NULL AS CARDINALITY,
-					NULL AS PAGES,
-					NULL AS FILTER_CONDITION
-				""";
-		return doQueryForResultSet(query,
-				Map.of("results", intermediateResults, "type", DatabaseMetaData.tableIndexOther));
+		return doQueryForResultSet(getRequest("getIndexInfo.flattening", "results", intermediateResults, "type",
+				DatabaseMetaData.tableIndexOther));
 	}
 
 	@Override
@@ -1445,22 +1350,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var query = """
-				SHOW FUNCTIONS YIELD name AS FUNCTION_NAME, description AS REMARKS
-				ORDER BY FUNCTION_NAME
-				WHERE name = $name OR $name IS NULL
-				RETURN NULL AS FUNCTION_CAT,
-				"public" AS FUNCTION_SCHEM,
-				FUNCTION_NAME,
-				REMARKS,
-				$functionType AS FUNCTION_TYPE,
-				FUNCTION_NAME AS SPECIFIC_NAME
-				""";
-
-		var parameters = new HashMap<String, Object>();
-		parameters.put("name", functionNamePattern);
-		parameters.put("functionType", DatabaseMetaData.functionResultUnknown);
-		return doQueryForResultSet(query, parameters);
+		return doQueryForResultSet(getRequest("getFunctions", "name", functionNamePattern, "functionType",
+				DatabaseMetaData.functionResultUnknown));
 	}
 
 	@Override
@@ -1471,38 +1362,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 
 		var intermediateResults = getArgumentDescriptions("FUNCTIONS", functionNamePattern);
-
-		Map<String, Object> args = new HashMap<>();
-		args.put("results", intermediateResults);
-		args.put("columnNamePattern", columnNamePattern);
-		args.put("columnType", DatabaseMetaData.functionColumnIn);
-		args.put("nullable", DatabaseMetaData.functionNullableUnknown);
-		String query = """
-				UNWIND $results AS result
-				WITH result, range(0, size(result.argumentDescriptions) - 1) AS ordinal_positions
-				UNWIND ordinal_positions AS ORDINAL_POSITION
-				WITH result, ORDINAL_POSITION
-				WHERE result.argumentDescriptions[ORDINAL_POSITION].name = $columnNamePattern OR $columnNamePattern IS NULL OR $columnNamePattern = '%'
-				RETURN
-					NULL AS FUNCTION_CAT,
-					"public" AS FUNCTION_SCHEM,
-					result.name AS FUNCTION_NAME,
-					result.argumentDescriptions[ORDINAL_POSITION].name AS COLUMN_NAME,
-					$columnType AS COLUMN_TYPE,
-					NULL AS DATA_TYPE,
-					NULL AS TYPE_NAME,
-					NULL AS PRECISION,
-					NULL AS LENGTH,
-					NULL AS SCALE,
-					NULL AS RADIX,
-					$nullable AS NULLABLE,
-					result.argumentDescriptions[ORDINAL_POSITION].description AS REMARKS,
-					NULL AS CHAR_OCTET_LENGTH,
-					ORDINAL_POSITION + 1 AS ORDINAL_POSITION,
-					'' AS IS_NULLABLE,
-					result.name AS SPECIFIC_NAME
-				""";
-		return doQueryForResultSet(query, args);
+		return doQueryForResultSet(getRequest("getFunctionColumns", "results", intermediateResults, "columnNamePattern",
+				columnNamePattern, "columnType", DatabaseMetaData.functionColumnIn, "nullable",
+				DatabaseMetaData.functionNullableUnknown));
 	}
 
 	private List<Map<String, Object>> getArgumentDescriptions(String category, String namePattern) throws SQLException {
@@ -1513,14 +1375,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		// The second query is just more maintainable than having yet another dance for
 		// creating correct, fake pull responses
 
-		var query = """
-				SHOW %s YIELD name, description, argumentDescription
-				ORDER BY name
-				WHERE (name = $name OR $name IS NULL OR $name = '%%')
-				""".formatted(category);
-
 		List<Map<String, Object>> intermediateResults = new ArrayList<>();
-		try (var rs = doQueryForResultSet(query, Collections.singletonMap("name", namePattern))) {
+		var request = getRequest("getArgumentDescriptions", "name", namePattern);
+		request = new Request(request.query.formatted(category), request.args);
+		try (var rs = doQueryForResultSet(request)) {
 			while (rs.next()) {
 				intermediateResults.add(Map.of("name", rs.getString("name"), "description", rs.getString("description"),
 						"argumentDescriptions", rs.getObject("argumentDescription")));
@@ -1600,27 +1458,31 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		}
 	}
 
-	private PullResponse doQueryForPullResponse(String query, Map<String, Object> args) throws SQLException {
-		var response = doQuery(query, args);
+	private PullResponse doQueryForPullResponse(Request request) throws SQLException {
+		var response = doQuery(request);
 		return response.pullResponse;
 	}
 
-	private ResultSet doQueryForResultSet(String query, Map<String, Object> args) throws SQLException {
-		var response = doQuery(query, args);
+	private ResultSet doQueryForResultSet(Request request) throws SQLException {
+		var response = doQuery(request);
 
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response.runFuture.join(),
 				response.pullResponse, -1, -1, -1);
 	}
 
-	private QueryAndRunResponse doQuery(String query, Map<String, Object> args) throws SQLException {
+	private QueryAndRunResponse doQuery(Request request) throws SQLException {
 		var transaction = this.transactionSupplier.getTransaction();
 		var newTransaction = Neo4jTransaction.State.NEW.equals(transaction.getState());
-		var responses = transaction.runAndPull(query, args, -1, 0);
+		var responses = transaction.runAndPull(request.query, request.args, -1, 0);
 		if (newTransaction) {
 			transaction.rollback();
 		}
 		return new QueryAndRunResponse(responses.pullResponse(),
 				CompletableFuture.completedFuture(responses.runResponse()));
+	}
+
+	private record Request(String query, Map<String, Object> args) {
+
 	}
 
 	private record QueryAndRunResponse(PullResponse pullResponse, CompletableFuture<RunResponse> runFuture) {
