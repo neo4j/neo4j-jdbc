@@ -117,8 +117,8 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData {
 	}
 
 	@Override
-	public int getPrecision(int column) {
-		return 0;
+	public int getPrecision(int column) throws SQLException {
+		return DatabaseMetadataImpl.getMaxPrecision(this.getColumnType(column));
 	}
 
 	@Override
