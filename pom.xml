@@ -130,7 +130,7 @@
 		<assertj.version>3.25.3</assertj.version>
 		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
 		<byte-buddy.version>1.14.12</byte-buddy.version>
-		<checkstyle.version>10.13.0</checkstyle.version>
+		<checkstyle.version>10.14.0</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
