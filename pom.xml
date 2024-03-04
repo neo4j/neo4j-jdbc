@@ -176,7 +176,7 @@
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.7.4</quarkus.platform.version>
+		<quarkus.platform.version>3.8.1</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
