@@ -129,7 +129,6 @@
 		<asciidoctorj.version>2.5.11</asciidoctorj.version>
 		<assertj.version>3.25.3</assertj.version>
 		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-		<byte-buddy.version>1.14.12</byte-buddy.version>
 		<checkstyle.version>10.14.0</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
@@ -205,6 +204,13 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-bom</artifactId>
+				<version>${mockito.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-bom</artifactId>
 				<version>${slf4j.version}</version>
@@ -239,16 +245,6 @@
 				<version>${jaxb-api.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>net.bytebuddy</groupId>
-				<artifactId>byte-buddy</artifactId>
-				<version>${byte-buddy.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>net.bytebuddy</groupId>
-				<artifactId>byte-buddy-agent</artifactId>
-				<version>${byte-buddy.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.asciidoctor</groupId>
 				<artifactId>asciidoctorj</artifactId>
 				<version>${asciidoctorj.version}</version>
@@ -262,11 +258,6 @@
 				<groupId>org.jooq</groupId>
 				<artifactId>jooq</artifactId>
 				<version>${jooq.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.mockito</groupId>
-				<artifactId>mockito-core</artifactId>
-				<version>${mockito.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.neo4j</groupId>
@@ -358,6 +349,7 @@
 							<requireMavenVersion>
 								<version>${maven.version}</version>
 							</requireMavenVersion>
+							<DependencyConvergence />
 						</rules>
 					</configuration>
 				</plugin>
