@@ -29,10 +29,9 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -40,7 +39,6 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
@@ -52,8 +50,8 @@ import org.neo4j.jdbc.internal.bolt.BoltConnectionProviders;
 import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.jdbc.internal.bolt.SecurityPlan;
 import org.neo4j.jdbc.internal.bolt.SecurityPlans;
-import org.neo4j.jdbc.translator.spi.SqlTranslator;
-import org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
+import org.neo4j.jdbc.translator.spi.Translator;
+import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
 /**
  * The main entry point for the Neo4j JDBC driver. There is usually little need to use
@@ -165,7 +163,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final BoltConnectionProvider boltConnectionProvider;
 
-	private volatile SqlTranslatorFactory sqlTranslatorFactory;
+	private volatile List<TranslatorFactory> sqlTranslatorFactories;
 
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
@@ -278,7 +276,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 
 		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), this::getSqlTranslatorFactory),
+				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(),
+						this::getSqlTranslatorFactories),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders);
 	}
 
@@ -633,72 +632,62 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	/**
-	 * Returns the first element of the iterator or null, when the iterator is empty.
-	 * Throws an {@link IllegalArgumentException} if the iterator contains more than one
-	 * element.
-	 * @param source the SQL translators found via a {@link ServiceLoader} or any other
-	 * machinery
-	 * @return a unique SQL translator or {@literal null} if no SQL translator was found
-	 * @throws IllegalArgumentException when more than one translator is found
-	 * @throws NoSuchElementException when no translator is found
+	 * Tries to load all available {@link TranslatorFactory SqlTranslator factories} via
+	 * the {@link ServiceLoader} machinery. Throws an exception if there is no
+	 * implementation on the class- or module-path.
+	 * @return a collection containing at least one {@link TranslatorFactory}
 	 */
-	static SqlTranslatorFactory uniqueOrThrow(Iterator<SqlTranslatorFactory> source) {
-		if (!source.hasNext()) {
-			throw new NoSuchElementException("No SQL translators available");
-		}
-		var result = source.next();
-		if (source.hasNext()) {
-			var implementations = new ArrayList<String>();
-			implementations.add(result.getName());
-			do {
-				implementations.add(source.next().getName());
-			}
-			while (source.hasNext());
-			throw new IllegalArgumentException("More than one SQL translator found: "
-					+ implementations.stream().collect(Collectors.joining(", ", "[", "]")));
-		}
-		return result;
-	}
+	private List<TranslatorFactory> getSqlTranslatorFactories() {
 
-	/**
-	 * Tries to load a unique {@link SqlTranslator} via the {@link ServiceLoader}
-	 * machinery. Throws an exception if there is more than one implementation on the
-	 * class- or module-path.
-	 * @return an instance of a SQL translator.
-	 */
-	private SqlTranslatorFactory getSqlTranslatorFactory() {
-
-		SqlTranslatorFactory result = this.sqlTranslatorFactory;
+		List<TranslatorFactory> result = this.sqlTranslatorFactories;
 		if (result == null) {
 			synchronized (this) {
-				result = this.sqlTranslatorFactory;
+				result = this.sqlTranslatorFactories;
 				if (result == null) {
-					this.sqlTranslatorFactory = uniqueOrThrow(
-							ServiceLoader.load(SqlTranslatorFactory.class).iterator());
-					result = this.sqlTranslatorFactory;
+					this.sqlTranslatorFactories = ServiceLoader.load(TranslatorFactory.class)
+						.stream()
+						.map(ServiceLoader.Provider::get)
+						.toList();
+					result = this.sqlTranslatorFactories;
 				}
 			}
 		}
 		return result;
 	}
 
-	static Supplier<SqlTranslator> getSqlTranslatorSupplier(boolean automaticSqlTranslation, Map<String, Object> config,
-			Supplier<SqlTranslatorFactory> sqlTranslatorFactorySupplier) {
+	static Supplier<List<Translator>> getSqlTranslatorSupplier(boolean automaticSqlTranslation,
+			Map<String, Object> config, Supplier<List<TranslatorFactory>> sqlTranslatorFactoriesSupplier)
+			throws SQLException {
 
 		if (automaticSqlTranslation) {
 			// If the driver should translate all queries into cypher, we can make sure
 			// this is possible by resolving
 			// the factory right now and configure the translator from the given
 			// connection properties, too
-			var sqlTranslator = sqlTranslatorFactorySupplier.get().create(config);
-			return () -> sqlTranslator;
+			var factories = sqlTranslatorFactoriesSupplier.get();
+			if (factories.isEmpty()) {
+				throw noTranslatorsAvailableException();
+			}
+			return () -> sortedListOfTranslators(config, factories);
 		}
 		else {
 			// we delay this until we are explicitly asked for
 			// Copy the properties, so that they can't be changed until we need them
 			var localConfig = Map.copyOf(config);
-			return () -> sqlTranslatorFactorySupplier.get().create(localConfig);
+			return () -> sortedListOfTranslators(localConfig, sqlTranslatorFactoriesSupplier.get());
 		}
+	}
+
+	static SQLException noTranslatorsAvailableException() {
+		return new SQLException("No translators available");
+	}
+
+	private static List<Translator> sortedListOfTranslators(Map<String, Object> config,
+			List<TranslatorFactory> factories) {
+		if (factories.size() == 1) {
+			return List.of(factories.get(0).create(config));
+		}
+		return factories.stream().map(factory -> factory.create(config)).sorted(TranslatorComparator.INSTANCE).toList();
 	}
 
 	enum SSLMode {

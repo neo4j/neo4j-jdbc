@@ -25,6 +25,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,11 +71,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final UnaryOperator<String> sqlProcessor;
 
+	private final Warnings warnings;
+
 	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor) {
+			UnaryOperator<String> sqlProcessor, Warnings localWarnings) {
 		this.connection = Objects.requireNonNull(connection);
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.sqlProcessor = Objects.requireNonNullElseGet(sqlProcessor, UnaryOperator::identity);
+		this.warnings = Objects.requireNonNullElseGet(localWarnings, Warnings::new);
 	}
 
 	/**
@@ -84,6 +88,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		this.connection = null;
 		this.transactionSupplier = null;
 		this.sqlProcessor = UnaryOperator.identity();
+		this.warnings = new Warnings();
 	}
 
 	@Override
@@ -200,12 +205,13 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
 		assertIsOpen();
-		return null;
+		return this.warnings.get();
 	}
 
 	@Override
 	public void clearWarnings() throws SQLException {
 		assertIsOpen();
+		this.warnings.clear();
 	}
 
 	@Override
@@ -432,13 +438,18 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		}
 	}
 
-	protected final String processSQL(String sql) {
-		var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
-		var processedSQL = processor.apply(sql);
-		if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {
-			LOGGER.log(Level.FINEST, "Processed {0} into {1}", new Object[] { sql, processedSQL });
+	protected final String processSQL(String sql) throws SQLException {
+		try {
+			var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
+			var processedSQL = processor.apply(sql);
+			if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {
+				LOGGER.log(Level.FINEST, "Processed {0} into {1}", new Object[] { sql, processedSQL });
+			}
+			return processedSQL;
 		}
-		return processedSQL;
+		catch (IllegalArgumentException | IllegalStateException ex) {
+			throw new SQLException(Optional.ofNullable(ex.getCause()).orElse(ex));
+		}
 	}
 
 	static boolean forceCypher(String sql) {

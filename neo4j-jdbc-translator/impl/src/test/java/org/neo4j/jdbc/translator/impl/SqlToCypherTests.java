@@ -52,7 +52,7 @@ import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.cypherdsl.parser.CypherParser;
-import org.neo4j.jdbc.translator.spi.SqlTranslator;
+import org.neo4j.jdbc.translator.spi.Translator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -64,7 +64,7 @@ import static org.mockito.BDDMockito.mock;
  */
 class SqlToCypherTests {
 
-	private static final SqlTranslator NON_PRETTY_PRINTING_TRANSLATOR = SqlToCypher
+	private static final Translator NON_PRETTY_PRINTING_TRANSLATOR = SqlToCypher
 		.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
 
 	private static ResultSet makeColumns(String firstName, String... names) throws SQLException {

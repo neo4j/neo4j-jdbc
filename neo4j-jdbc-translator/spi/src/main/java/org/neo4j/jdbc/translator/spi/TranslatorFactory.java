@@ -21,31 +21,22 @@ package org.neo4j.jdbc.translator.spi;
 import java.util.Map;
 
 /**
- * Factories that produce {@link SqlTranslator SQL translators}. Any implementation is
- * free to use cached instances for translators produced for configurations considered
- * equal as long as the translators themselves are thread safe.
+ * Factories that produce {@link Translator translators}. Any implementation is free to
+ * use cached instances for translators produced for configurations considered equal as
+ * long as the translators themselves are thread safe.
  *
  * @author Michael J. Simons
  * @since 6.0.0
  */
-public interface SqlTranslatorFactory {
+public interface TranslatorFactory {
 
 	/**
-	 * Creates a new {@link SqlTranslator} or in case of an identical configuration,
-	 * returns a possible cached or shared instance. In that case, the translator must be
-	 * thread safe.
+	 * Creates a new {@link Translator} or in case of an identical configuration, returns
+	 * a possible cached or shared instance. In that case, the translator must be thread
+	 * safe.
 	 * @param properties properties that will be used to configure the translator
 	 * @return a new or a cached translator instance
 	 */
-	SqlTranslator create(Map<String, Object> properties);
-
-	/**
-	 * Return a human-readable name of the translators that are produced by this factory.
-	 * Defaults to the simple name of the factory class.
-	 * @return the name of this translator
-	 */
-	default String getName() {
-		return this.getClass().getSimpleName();
-	}
+	Translator create(Map<String, Object> properties);
 
 }

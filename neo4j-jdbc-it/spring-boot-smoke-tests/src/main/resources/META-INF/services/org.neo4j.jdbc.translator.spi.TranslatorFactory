@@ -1,0 +1,2 @@
+org.neo4j.jdbc.it.sb.StaticTranslatorFactory
+org.neo4j.jdbc.it.sb.ProfilingTranslatorFactory

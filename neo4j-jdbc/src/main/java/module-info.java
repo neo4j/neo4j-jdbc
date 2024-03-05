@@ -38,7 +38,7 @@ module org.neo4j.jdbc {
 	exports org.neo4j.jdbc.values;
 
 	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;
-	// provides org.neo4j.jdbc.translator.spi.SqlTranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
+	// provides org.neo4j.jdbc.translator.spi.TranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
 
-	uses org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
+	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
 }

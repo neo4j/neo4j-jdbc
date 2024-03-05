@@ -60,6 +60,7 @@ import org.jooq.conf.ParseUnknownFunctions;
 import org.jooq.conf.ParseWithMetaLookups;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultConfiguration;
+import org.jooq.impl.ParserException;
 import org.jooq.impl.QOM;
 import org.jooq.impl.QOM.TableAlias;
 import org.neo4j.cypherdsl.core.Case;
@@ -84,7 +85,7 @@ import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.jdbc.translator.spi.Cache;
-import org.neo4j.jdbc.translator.spi.SqlTranslator;
+import org.neo4j.jdbc.translator.spi.Translator;
 
 /**
  * A jOOQ/Cypher-DSL based SQL to Cypher translator and the default translator for the
@@ -94,17 +95,17 @@ import org.neo4j.jdbc.translator.spi.SqlTranslator;
  * @author Michael J. Simons
  * @author Michael Hunger
  */
-final class SqlToCypher implements SqlTranslator {
+final class SqlToCypher implements Translator {
 
 	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
 
 	private static final int STATEMENT_CACHE_SIZE = 64;
 
-	static SqlTranslator defaultTranslator() {
+	static Translator defaultTranslator() {
 		return new SqlToCypher(SqlToCypherConfig.defaultConfig());
 	}
 
-	static SqlTranslator with(SqlToCypherConfig config) {
+	static Translator with(SqlToCypherConfig config) {
 		return new SqlToCypher(config);
 	}
 
@@ -135,15 +136,29 @@ final class SqlToCypher implements SqlTranslator {
 	}
 
 	@Override
-	public String translate(String sql, DatabaseMetaData databaseMetaData) {
+	public int getOrder() {
+		return Optional.ofNullable(this.config.getPrecedence()).orElseGet(Translator.super::getOrder);
+	}
 
-		var query = parse(sql);
+	@Override
+	public String translate(String sql, DatabaseMetaData optionalDatabaseMetaData) {
+
+		Query query;
+		try {
+			DSLContext dsl = createDSLContext();
+			Parser parser = dsl.parser();
+			query = parser.parseQuery(sql);
+		}
+		catch (ParserException pe) {
+			throw new IllegalArgumentException(pe);
+		}
+
 		if (this.config.isCacheEnabled()) {
 			synchronized (this) {
-				return this.cache.computeIfAbsent(query, key -> translate0(query, databaseMetaData));
+				return this.cache.computeIfAbsent(query, key -> translate0(query, optionalDatabaseMetaData));
 			}
 		}
-		return translate0(query, databaseMetaData);
+		return translate0(query, optionalDatabaseMetaData);
 	}
 
 	private String translate0(Query query, DatabaseMetaData databaseMetaData) {
@@ -186,12 +201,6 @@ final class SqlToCypher implements SqlTranslator {
 			return context.meta(tables.values().toArray(Query[]::new));
 		});
 		return context;
-	}
-
-	private Query parse(String sql) {
-		DSLContext dsl = createDSLContext();
-		Parser parser = dsl.parser();
-		return parser.parseQuery(sql);
 	}
 
 	private String render(Statement statement) {
@@ -596,7 +605,7 @@ final class SqlToCypher implements SqlTranslator {
 				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
 					col = findTableFieldInTables(tf);
 				}
-				if (s instanceof QOM.FieldAlias<?> fa) {
+				if (s instanceof QOM.FieldAlias<?> fa && col != null) {
 					col = col.as(fa.$alias().last());
 				}
 			}
@@ -922,7 +931,7 @@ final class SqlToCypher implements SqlTranslator {
 			}
 			else if (f instanceof QOM.Count c) {
 				var field = c.$field();
-				Expression exp = null;
+				Expression exp;
 				// See https://github.com/jOOQ/jOOQ/issues/16344
 				if (field instanceof Asterisk || "*".equals(field.toString())) {
 					exp = Cypher.asterisk();

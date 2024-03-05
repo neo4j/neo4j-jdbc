@@ -16,25 +16,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.translator.impl;
+package org.neo4j.jdbc.it.sb;
 
+import java.sql.DatabaseMetaData;
 import java.util.Map;
 
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
 /**
- * Factory implementation for the jOOQ X Cypher-DSL based implementation of a
- * {@link Translator}.
+ * Provides only the static translator, without any config option.
  *
  * @author Michael J. Simons
- * @since 6.0.0
  */
-public final class SqlToCypherTranslatorFactory implements TranslatorFactory {
+public final class StaticTranslatorFactory implements TranslatorFactory {
 
 	@Override
-	public Translator create(Map<String, Object> config) {
-		return SqlToCypher.with(SqlToCypherConfig.of(config));
+	public Translator create(Map<String, Object> properties) {
+
+		return new Translator() {
+
+			@Override
+			public String translate(String statement, DatabaseMetaData optionalDatabaseMetaData) {
+				if ("People, gather!".equals(statement)) {
+					return "MATCH (n:Person) RETURN n ORDER BY n.name";
+				}
+				else if ("Come here, ?".equals(statement)) {
+					return "SELECT n FROM Person n WHERE n.name = ?";
+				}
+				throw new IllegalArgumentException("I'm sorry Dave, I'm afraid I can't do that");
+			}
+
+			@Override
+			public int getOrder() {
+				return 10;
+			}
+		};
 	}
 
 }
