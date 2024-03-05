@@ -139,6 +139,7 @@
 		<git-commit-id-maven-plugin.version>7.0.0</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
+		<japicmp-maven-plugin.version>0.19.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.1</jaxb-api.version>
 		<jdbi3.version>3.45.0</jdbi3.version>
@@ -167,6 +168,7 @@
 		<moditect-maven-plugin.version>1.1.0</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.10.1</native-maven-plugin.version>
 		<neo4j-cypher-dsl.version>2023.9.4</neo4j-cypher-dsl.version>
+		<neo4j-jdbc.previous.version>5.0.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.15.0</neo4j.version>
 		<netty.version>4.1.107.Final</netty.version>
@@ -590,6 +592,15 @@
 								</arguments>
 							</configuration>
 						</execution>
+						<execution>
+							<id>release-prepared</id>
+							<goals>
+								<goal>exec</goal>
+							</goals>
+							<configuration>
+								<executable>bin/update-previous-version.sh</executable>
+							</configuration>
+						</execution>
 					</executions>
 				</plugin>
 				<plugin>
@@ -626,11 +637,56 @@
 					<groupId>io.github.git-commit-id</groupId>
 					<artifactId>git-commit-id-maven-plugin</artifactId>
 					<version>${git-commit-id-maven-plugin.version}</version>
+					<configuration>
+						<generateGitPropertiesFile>false</generateGitPropertiesFile>
+						<commitIdGenerationMode>full</commitIdGenerationMode>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.jreleaser</groupId>
 					<artifactId>jreleaser-maven-plugin</artifactId>
 					<version>${jreleaser-maven-plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>com.github.siom79.japicmp</groupId>
+					<artifactId>japicmp-maven-plugin</artifactId>
+					<version>${japicmp-maven-plugin.version}</version>
+					<configuration>
+						<oldVersion>
+							<dependency>
+								<groupId>${project.groupId}</groupId>
+								<artifactId>${project.artifactId}</artifactId>
+								<version>${neo4j-jdbc.previous.version}</version>
+								<type>jar</type>
+							</dependency>
+						</oldVersion>
+						<newVersion>
+							<file>
+								<path>${project.build.directory}/${project.artifactId}-${project.version}.${project.packaging}</path>
+							</file>
+						</newVersion>
+						<parameter>
+							<ignoreMissingOldVersion>true</ignoreMissingOldVersion>
+							<breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
+							<overrideCompatibilityChangeParameters>
+								<overrideCompatibilityChangeParameter>
+									<!-- See https://github.com/siom79/japicmp/issues/201 -->
+									<compatibilityChange>METHOD_NEW_DEFAULT</compatibilityChange>
+									<binaryCompatible>true</binaryCompatible>
+									<sourceCompatible>true</sourceCompatible>
+									<semanticVersionLevel>MINOR</semanticVersionLevel>
+								</overrideCompatibilityChangeParameter>
+							</overrideCompatibilityChangeParameters>
+						</parameter>
+					</configuration>
+					<executions>
+						<execution>
+							<goals>
+								<goal>cmp</goal>
+							</goals>
+							<phase>package</phase>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -639,10 +695,6 @@
 			<plugin>
 				<groupId>io.github.git-commit-id</groupId>
 				<artifactId>git-commit-id-maven-plugin</artifactId>
-				<configuration>
-					<generateGitPropertiesFile>false</generateGitPropertiesFile>
-					<commitIdGenerationMode>full</commitIdGenerationMode>
-				</configuration>
 				<executions>
 					<execution>
 						<id>get-the-git-infos</id>
@@ -773,6 +825,15 @@
 							<skip>false</skip>
 						</configuration>
 					</execution>
+					<execution>
+						<id>release-prepared</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration combine.self="append">
+							<skip>false</skip>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
@@ -787,6 +848,7 @@
 					<goals>deploy</goals>
 					<arguments>-Drelease -Dgpg.skip=${skipSigning} -DskipTests=${skipTestsDuringRelease} -DisDryRun=${dryRun} -Dsort.skip</arguments>
 					<preparationGoals>clean exec:exec@prepare-release verify</preparationGoals>
+					<completionGoals>compile exec:exec@release-prepared</completionGoals>
 					<pushChanges>false</pushChanges>
 					<localCheckout>true</localCheckout>
 				</configuration>
@@ -997,6 +1059,7 @@
 				<maven.javadoc.skip>true</maven.javadoc.skip>
 				<pmd.skip>true</pmd.skip>
 				<skipTests>true</skipTests>
+				<sort.skip>true</sort.skip>
 			</properties>
 		</profile>
 	</profiles>
