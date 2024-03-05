@@ -17,6 +17,15 @@ Translating arbitrary SQL queries to Cypher is an opinionated task as there is n
 We made some assumptions that we find to match various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.
 
+=== Supported SQL dialects
+
+Our default translator uses the OSS parser from https://www.jooq.org[jOOQ], which supports a broad spectrum of SQL dialects already.
+We picked the generic, default dialect of jOOQ as our default dialect, but you can overwrite this in the SQL to Cypher configuration using the parameter `s2c.sqlDialect` with one of the supported dialects listed in <<s2c_configuration, configuration below>>.
+`POSTGRES` might be a good choice for several integrations.
+
+Bear in mind though that any shortcomings in the translation are probably not due to the lack of parser support, but due to the lack of an obvious, semantically equivalent Cypher construct.
+That means we might be able to parse a certain piece of SQL, but are unable to translate in into something meaningful that Neo4j can understand without additional, contextual information.
+
 == Translating SQL to Cypher
 
 There's only one requirement to enable SQL to Cypher translation:
@@ -74,6 +83,7 @@ A `NoSuchElementException` with a message of `No SQL translators available` will
 An `IllegalArgumentException` indicating that more than one SQL translator was found will be thrown when there is more than one implementation on the class path.
 The mechanics of when this exception is thrown are the same as above.
 
+[#s2c_configuration]
 === Configuration
 
 The default implementation provides a number of configuration settings.
@@ -101,6 +111,10 @@ They must be prefixed with `s2c` in the URL or config options:
 |`alwaysEscapeNames`
 |Whether to always escape names
 |Unless explicitly configured `false` when pretty printing is on, otherwise true
+
+|`sqlDialect`
+|Which dialect to use when parsing, supported values are `POSTGRES`, `SQLITE`, `MYSQL`, `H2`, `HSQLDB`, `DERBY` and `DEFAULT`
+|`DEFAULT`
 |===
 
 Here are a couple of examples (Note that we are using the `properties` config to avoid terrible long URLs in this documentation, however, all the attributes can be specified via URL, too):
