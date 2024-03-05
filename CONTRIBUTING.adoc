@@ -71,7 +71,7 @@ Standalone runner (Java 17 required):
 [source,bash]
 ----
 ./mvnw -Dfast -am -pl benchkit clean package
-TEST_NEO4J_HOST=localhost TEST_NEO4J_PASS=verysecret java -jar benchkit/target/neo4j-jdbc-benchkit-1.0-SNAPSHOT.jar
+TEST_NEO4J_HOST=localhost TEST_NEO4J_PASS=verysecret java -jar benchkit/target/neo4j-jdbc-benchkit-6.0.0-SNAPSHOT.jar
 ----
 
 Built a Benchkit compliant Docker as follows.

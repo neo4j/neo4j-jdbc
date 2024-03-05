@@ -35,7 +35,7 @@ import javax.sql.DataSource;
  * {@link #unwrap(Class)} to access specific Neo4j functionality.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 

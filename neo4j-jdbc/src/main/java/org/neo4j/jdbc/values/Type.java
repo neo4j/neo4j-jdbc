@@ -24,14 +24,14 @@ import java.util.Locale;
  * The type of {@link Value} as defined by the Cypher language.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public enum Type {
 
 	/**
 	 * Any type except {@link #NULL}.
 	 *
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	ANY {
 		@Override
@@ -41,22 +41,22 @@ public enum Type {
 	},
 	/**
 	 * Boolean type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	BOOLEAN,
 	/**
 	 * Bytes type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	BYTES,
 	/**
 	 * String type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	STRING,
 	/**
 	 * Number type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	NUMBER {
 		@Override
@@ -67,17 +67,17 @@ public enum Type {
 	},
 	/**
 	 * Integer type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	INTEGER,
 	/**
 	 * Float type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	FLOAT,
 	/**
 	 * List type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	LIST {
 		@Override
@@ -87,7 +87,7 @@ public enum Type {
 	},
 	/**
 	 * Map type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	MAP {
 		@Override
@@ -98,57 +98,57 @@ public enum Type {
 	},
 	/**
 	 * Node type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	NODE,
 	/**
 	 * Relationship type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	RELATIONSHIP,
 	/**
 	 * Path type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	PATH,
 	/**
 	 * Point type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	POINT,
 	/**
 	 * Date type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	DATE,
 	/**
 	 * Time type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	TIME,
 	/**
 	 * Local time type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	LOCAL_TIME,
 	/**
 	 * Local date time type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	LOCAL_DATE_TIME,
 	/**
 	 * Date time type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	DATE_TIME,
 	/**
 	 * Duration type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	DURATION,
 	/**
 	 * Null type.
-	 * @since 1.0.0
+	 * @since 6.0.0
 	 */
 	NULL;
 

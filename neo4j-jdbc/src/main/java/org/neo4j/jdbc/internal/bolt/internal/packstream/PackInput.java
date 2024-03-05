@@ -25,7 +25,7 @@ import java.io.IOException;
  * source of your choice to deserialize the stream with {@link PackStream}.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface PackInput {
 

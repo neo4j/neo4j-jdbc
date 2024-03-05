@@ -24,7 +24,7 @@ import java.sql.Driver;
  * Neo4j specific extensions to a {@link Driver}.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 public sealed interface Neo4jDriverExtensions extends Driver permits Neo4jDriver {
 

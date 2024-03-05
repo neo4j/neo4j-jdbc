@@ -23,7 +23,7 @@ package org.neo4j.jdbc.values;
  * Neo4j graph.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface Node extends Entity {
 

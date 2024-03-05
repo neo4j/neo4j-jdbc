@@ -53,7 +53,7 @@ import org.neo4j.jdbc.values.Values;
  *
  * @author Michael J. Simons
  * @author Conor Watson
- * @since 1.0.0
+ * @since 6.0.0
  */
 final class DatabaseMetadataImpl implements DatabaseMetaData {
 

@@ -22,7 +22,7 @@ package org.neo4j.jdbc.internal.bolt;
  * Defines strategy for revocation checks.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public enum RevocationCheckingStrategy {
 

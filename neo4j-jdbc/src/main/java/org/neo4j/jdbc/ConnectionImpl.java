@@ -62,7 +62,7 @@ import org.neo4j.jdbc.translator.spi.SqlTranslator;
  * At present, this implementation is not expected to be thread-safe.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 final class ConnectionImpl implements Neo4jConnection {
 

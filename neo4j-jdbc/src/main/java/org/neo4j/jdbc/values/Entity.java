@@ -22,7 +22,7 @@ package org.neo4j.jdbc.values;
  * A uniquely identifiable property container that can form part of a Neo4j graph.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface Entity extends AsValue, MapAccessor {
 

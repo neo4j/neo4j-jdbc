@@ -22,7 +22,7 @@ package org.neo4j.jdbc.internal.bolt.response;
  * Contains counters for various operations that a query triggered.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface SummaryCounters {
 

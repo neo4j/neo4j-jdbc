@@ -32,7 +32,7 @@ import org.neo4j.jdbc.values.Values;
  * The scheme used must be supported by the Neo4j Instance you are connecting to.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public final class AuthTokens {
 

@@ -25,7 +25,7 @@ import java.sql.Connection;
  * {@link #unwrap(Class)} to access specific Neo4j functionality.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 public sealed interface Neo4jConnection extends Connection permits ConnectionImpl {
 

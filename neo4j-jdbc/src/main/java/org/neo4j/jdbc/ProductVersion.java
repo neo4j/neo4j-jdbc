@@ -31,7 +31,7 @@ import java.util.jar.Manifest;
  * product-version.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 final class ProductVersion {
 

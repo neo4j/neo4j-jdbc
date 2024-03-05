@@ -47,7 +47,7 @@ import java.util.stream.Stream;
  * {@link Record#asMap(Function)} and so on.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public final class Values {
 

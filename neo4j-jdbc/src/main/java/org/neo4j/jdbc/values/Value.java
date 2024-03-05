@@ -95,7 +95,7 @@ import java.util.function.Function;
  * </pre>
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface Value extends MapAccessor, MapAccessorWithDefaultValue {
 

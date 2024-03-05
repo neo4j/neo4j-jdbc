@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  *
  * @param <T> the type of things to be resolved
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 final class Lazy<T> {
 

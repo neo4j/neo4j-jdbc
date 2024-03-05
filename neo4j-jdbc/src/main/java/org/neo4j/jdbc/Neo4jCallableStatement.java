@@ -25,7 +25,7 @@ import java.sql.CallableStatement;
  * to for use with {@link #unwrap(Class)} to access specific Neo4j functionality.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public sealed interface Neo4jCallableStatement extends CallableStatement permits CallableStatementImpl {
 
