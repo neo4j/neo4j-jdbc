@@ -178,7 +178,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			else {
 				fail(new SQLException("The connection is no longer valid."), true);
 			}
-			throw new SQLException("An error occured while handling request.", ex);
+			throw new SQLException("An error occurred while handling request.", ex);
 		}
 	}
 

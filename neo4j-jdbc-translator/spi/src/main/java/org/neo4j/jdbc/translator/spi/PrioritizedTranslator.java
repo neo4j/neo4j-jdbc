@@ -16,13 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.neo4j.jdbc.translator.spi;
 
 /**
- * Defines the public surface of the translator SPI when run on the module path.
+ * An interface to mark any translator as prioritized. A prioritized translator will
+ * always have a higher precedence than a standard {@link Translator}. When compared to
+ * another prioritized translator, the outcome of {@link #getOrder()} will decide.
+ *
+ * @author Michael J. Simons
+ * @since 6.0.0
  */
-module org.neo4j.jdbc.translator.spi {
+public interface PrioritizedTranslator extends Translator {
 
-	exports org.neo4j.jdbc.translator.spi;
-
-	requires transitive java.sql;
 }

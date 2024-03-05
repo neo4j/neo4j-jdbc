@@ -29,27 +29,35 @@ import java.sql.SQLWarning;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Wrapper;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
+import org.neo4j.jdbc.ConnectionImpl.TranslatorChain;
 import org.neo4j.jdbc.internal.bolt.AccessMode;
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.jdbc.internal.bolt.TransactionType;
 import org.neo4j.jdbc.internal.bolt.exception.BoltException;
-import org.neo4j.jdbc.translator.spi.SqlTranslator;
+import org.neo4j.jdbc.translator.spi.Translator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -59,15 +67,22 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
+@SuppressWarnings("resource")
 class ConnectionImplTests {
 
-	ConnectionImpl connection;
+	@Test
+	void noChainingShouldBeAttemptedWithoutAnyTranslators1() {
+
+		var connection = makeConnection(mock(BoltConnection.class));
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> connection.nativeSQL("M"))
+			.withMessage("No translators available");
+	}
 
 	@Test
 	void getMetaData() throws SQLException {
 		var boltConnection = Mockito.mock(BoltConnection.class);
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
-		try (var c = new ConnectionImpl(boltConnection)) {
+		try (var c = makeConnection(boltConnection)) {
 			Assertions.assertThat(c.getMetaData()).isNotNull();
 		}
 		catch (UnsupportedOperationException ex) {
@@ -77,41 +92,42 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldCreateStatement() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		var statement = this.connection.createStatement();
+		var statement = connection.createStatement();
 
 		assertThat(statement).isNotNull();
 	}
 
 	@Test
 	void shouldPrepareStatement() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		var statement = this.connection.prepareStatement("sql");
+		var statement = connection.prepareStatement("sql");
 
 		assertThat(statement).isNotNull();
 	}
 
 	@Test
 	void shouldPrepareCall() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		var statement = this.connection.prepareCall("RETURN pi()");
+		var statement = connection.prepareCall("RETURN pi()");
 
 		assertThat(statement).isNotNull();
 	}
 
 	@Test
 	void shouldCallTranslator() throws SQLException {
-		var translator = mock(SqlTranslator.class);
+		var translator = mock(Translator.class);
 		var sql = "SQL";
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
-		this.connection = new ConnectionImpl(mock(BoltConnection.class), () -> translator, false, true, false, false);
+		var connection = new ConnectionImpl(mock(BoltConnection.class), () -> List.of(translator), false, true, false,
+				false);
 
-		var nativeSQL = this.connection.nativeSQL(sql);
-		nativeSQL = this.connection.nativeSQL(sql);
+		var nativeSQL = connection.nativeSQL(sql);
+		nativeSQL = connection.nativeSQL(sql);
 
 		assertThat(nativeSQL).isEqualTo(expectedNativeSql);
 		then(translator).should(times(1)).translate(eq(sql), any(DatabaseMetaData.class));
@@ -119,34 +135,34 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldBeAutoCommitByDefault() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getAutoCommit()).isTrue();
+		assertThat(connection.getAutoCommit()).isTrue();
 	}
 
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldSetAutoCommit(boolean autoCommit) throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		this.connection.setAutoCommit(autoCommit);
+		connection.setAutoCommit(autoCommit);
 
-		assertThat(this.connection.getAutoCommit()).isEqualTo(autoCommit);
+		assertThat(connection.getAutoCommit()).isEqualTo(autoCommit);
 	}
 
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldCommitTransactionOnAutoCommitUpdate(boolean autoCommit) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		this.connection = new ConnectionImpl(boltConnection);
-		this.connection.setAutoCommit(!autoCommit);
-		var transactionType = this.connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
+		var connection = makeConnection(boltConnection);
+		connection.setAutoCommit(!autoCommit);
+		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false))
 			.willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.commit()).willReturn(CompletableFuture.completedStage(null));
-		var transaction = this.connection.getTransaction();
+		var transaction = connection.getTransaction();
 
-		this.connection.setAutoCommit(autoCommit);
+		connection.setAutoCommit(autoCommit);
 
 		assertThat(Neo4jTransaction.State.COMMITTED.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
@@ -159,14 +175,14 @@ class ConnectionImplTests {
 	@ValueSource(booleans = { true, false })
 	void shouldNotCommitTransactionOnSameAutoCommit(boolean autoCommit) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		this.connection = new ConnectionImpl(boltConnection);
-		this.connection.setAutoCommit(autoCommit);
-		var transactionType = this.connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
+		var connection = makeConnection(boltConnection);
+		connection.setAutoCommit(autoCommit);
+		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false))
 			.willReturn(CompletableFuture.completedStage(null));
-		var transaction = this.connection.getTransaction();
+		var transaction = connection.getTransaction();
 
-		this.connection.setAutoCommit(autoCommit);
+		connection.setAutoCommit(autoCommit);
 
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
@@ -178,15 +194,15 @@ class ConnectionImplTests {
 	@ValueSource(booleans = { true, false })
 	void shouldThrowOnManagingAutoCommitTransaction(boolean rollback) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		this.connection = new ConnectionImpl(boltConnection);
+		var connection = makeConnection(boltConnection);
 		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
 				false))
 			.willReturn(CompletableFuture.completedStage(null));
-		var transaction = this.connection.getTransaction();
+		var transaction = connection.getTransaction();
 
 		ConnectionMethodRunner methodRunner = rollback ? Connection::rollback : Connection::commit;
 
-		assertThatThrownBy(() -> methodRunner.run(this.connection)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> methodRunner.run(connection)).isExactlyInstanceOf(SQLException.class);
 
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
@@ -198,8 +214,8 @@ class ConnectionImplTests {
 	@ValueSource(booleans = { true, false })
 	void shouldManageTransaction(boolean rollback) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		this.connection = new ConnectionImpl(boltConnection);
-		this.connection.setAutoCommit(false);
+		var connection = makeConnection(boltConnection);
+		connection.setAutoCommit(false);
 		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.DEFAULT, false))
 			.willReturn(CompletableFuture.completedStage(null));
 		if (rollback) {
@@ -208,13 +224,13 @@ class ConnectionImplTests {
 		else {
 			given(boltConnection.commit()).willReturn(CompletableFuture.completedStage(null));
 		}
-		var transaction = this.connection.getTransaction();
+		var transaction = connection.getTransaction();
 
 		if (rollback) {
-			this.connection.rollback();
+			connection.rollback();
 		}
 		else {
-			this.connection.commit();
+			connection.commit();
 		}
 
 		assertThat(transaction.getState()
@@ -229,20 +245,20 @@ class ConnectionImplTests {
 	@Test
 	void shouldNotBeClosedByDefault() throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		this.connection = new ConnectionImpl(boltConnection);
+		var connection = makeConnection(boltConnection);
 
-		assertThat(this.connection.isClosed()).isFalse();
+		assertThat(connection.isClosed()).isFalse();
 	}
 
 	@Test
 	void shouldClose() throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
-		this.connection = new ConnectionImpl(boltConnection);
+		var connection = makeConnection(boltConnection);
 
-		this.connection.close();
+		connection.close();
 
-		assertThat(this.connection.isClosed()).isTrue();
+		assertThat(connection.isClosed()).isTrue();
 		then(boltConnection).should().close();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
@@ -255,12 +271,12 @@ class ConnectionImplTests {
 			.willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.rollback()).willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
-		this.connection = new ConnectionImpl(boltConnection);
-		var transaction = this.connection.getTransaction();
+		var connection = makeConnection(boltConnection);
+		var transaction = connection.getTransaction();
 
-		this.connection.close();
+		connection.close();
 
-		assertThat(this.connection.isClosed()).isTrue();
+		assertThat(connection.isClosed()).isTrue();
 		assertThat(Neo4jTransaction.State.ROLLEDBACK.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
 			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
@@ -271,18 +287,18 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldHaveNonReadOnlyByDefault() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.isReadOnly()).isFalse();
+		assertThat(connection.isReadOnly()).isFalse();
 	}
 
 	@Test
 	void shouldUpdateReadOnly() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		this.connection.setReadOnly(true);
+		connection.setReadOnly(true);
 
-		assertThat(this.connection.isReadOnly()).isTrue();
+		assertThat(connection.isReadOnly()).isTrue();
 	}
 
 	@Test
@@ -291,57 +307,58 @@ class ConnectionImplTests {
 		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
 				false))
 			.willReturn(CompletableFuture.completedStage(null));
-		this.connection = new ConnectionImpl(boltConnection);
-		var transaction = this.connection.getTransaction();
+		var connection = makeConnection(boltConnection);
+		var transaction = connection.getTransaction();
 
-		assertThatThrownBy(() -> this.connection.setReadOnly(true)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> connection.setReadOnly(true)).isExactlyInstanceOf(SQLException.class);
 	}
 
 	@Test
 	void shouldNotHaveCatalogByDefault() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getCatalog()).isNull();
+		assertThat(connection.getCatalog()).isNull();
 	}
 
 	@Test
 	void shouldIgnoreUpdatingCatalog() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		this.connection.setCatalog("ignored");
+		connection.setCatalog("ignored");
 
-		assertThat(this.connection.getCatalog()).isNull();
+		assertThat(connection.getCatalog()).isNull();
 	}
 
 	@Test
 	void shouldHaveTransactionIsolationByDefault() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getTransactionIsolation()).isEqualTo(Connection.TRANSACTION_READ_COMMITTED);
+		assertThat(connection.getTransactionIsolation()).isEqualTo(Connection.TRANSACTION_READ_COMMITTED);
 	}
 
 	@Test
 	void shouldNotHaveWarningsByDefault() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat((Object) this.connection.getWarnings()).isNull();
+		assertThat((Object) connection.getWarnings()).isNull();
 	}
 
 	@Test
 	void shouldClearWarnings() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class), new SQLWarning());
+		var connection = makeConnection(mock(BoltConnection.class));
+		connection.setClientInfo("a", "b");
+		assertThat((Object) connection.getWarnings()).isNotNull();
 
-		this.connection.clearWarnings();
+		connection.clearWarnings();
 
-		assertThat((Object) this.connection.getWarnings()).isNull();
+		assertThat((Object) connection.getWarnings()).isNull();
 	}
 
 	@Test
 	void shouldPrepareStatementWithResultSetTypeAndConcurrency() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		var statement = this.connection.prepareStatement("sql", ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY);
+		var statement = connection.prepareStatement("sql", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
 		assertThat(statement).isNotNull();
 	}
@@ -349,33 +366,33 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@ValueSource(ints = { ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.TYPE_SCROLL_SENSITIVE })
 	void shouldThrowOnPreparingStatementWithUnsupportedResultSetType(int type) {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThatThrownBy(() -> this.connection.prepareStatement("sql", type, ResultSet.CONCUR_READ_ONLY))
+		assertThatThrownBy(() -> connection.prepareStatement("sql", type, ResultSet.CONCUR_READ_ONLY))
 			.isExactlyInstanceOf(SQLException.class);
 	}
 
 	@Test
 	void shouldThrowOnPreparingStatementWithUnsupportedResultSetConcurrency() {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
 		assertThatThrownBy(
-				() -> this.connection.prepareStatement("sql", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE))
+				() -> connection.prepareStatement("sql", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE))
 			.isExactlyInstanceOf(SQLException.class);
 	}
 
 	@Test
 	void shouldHaveDefaultHoldability() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getHoldability()).isEqualTo(ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		assertThat(connection.getHoldability()).isEqualTo(ResultSet.CLOSE_CURSORS_AT_COMMIT);
 	}
 
 	@Test
 	void shouldThrowOnValidatingWithNegativeTimeout() {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThatThrownBy(() -> this.connection.isValid(-1)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> connection.isValid(-1)).isExactlyInstanceOf(SQLException.class);
 	}
 
 	@ParameterizedTest
@@ -383,19 +400,19 @@ class ConnectionImplTests {
 	void shouldSendResetOnValidatingWithoutActiveTransaction(boolean setupClosedTransaction, boolean expectedValid)
 			throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		this.connection = new ConnectionImpl(boltConnection);
+		var connection = makeConnection(boltConnection);
 		if (setupClosedTransaction) {
 			given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE,
 					TransactionType.UNCONSTRAINED, false))
 				.willReturn(CompletableFuture.completedStage(null));
 			given(boltConnection.commit()).willReturn(CompletableFuture.completedStage(null));
-			var transaction = this.connection.getTransaction();
+			var transaction = connection.getTransaction();
 			transaction.commit();
 		}
 		given(boltConnection.reset(true)).willReturn(expectedValid ? CompletableFuture.completedStage(null)
 				: CompletableFuture.failedFuture(new BoltException("ignored")));
 
-		var valid = this.connection.isValid(0);
+		var valid = connection.isValid(0);
 
 		assertThat(valid).isEqualTo(expectedValid);
 		then(boltConnection).should().reset(true);
@@ -406,16 +423,21 @@ class ConnectionImplTests {
 				Arguments.of(false, false));
 	}
 
+	@SuppressWarnings("unchecked")
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
-	void shouldAddWarningOnUnknownClientInfoProperty(boolean setupExistingWarging) throws SQLException {
-		var existingWarning = setupExistingWarging ? new SQLWarning() : null;
-		this.connection = new ConnectionImpl(mock(BoltConnection.class), existingWarning);
+	void shouldAddWarningOnUnknownClientInfoProperty(boolean setupExistingWarning) throws Exception {
+		var connection = makeConnection(mock(BoltConnection.class));
+		if (setupExistingWarning) {
+			var field = ConnectionImpl.class.getDeclaredField("warnings");
+			field.setAccessible(true);
+			((Consumer<SQLWarning>) field.get(connection)).accept(new SQLWarning());
+		}
 		var name = "something";
 
-		this.connection.setClientInfo(name, null);
-		var warning = this.connection.getWarnings();
-		if (setupExistingWarging) {
+		connection.setClientInfo(name, null);
+		var warning = connection.getWarnings();
+		if (setupExistingWarning) {
 			warning = warning.getNextWarning();
 		}
 
@@ -426,18 +448,23 @@ class ConnectionImplTests {
 		assertThat(infoException.getFailedProperties().get(name)).isEqualTo(ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
 	}
 
+	@SuppressWarnings("unchecked")
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
-	void shouldAddWarningOnUnknownClientInfoProperties(boolean setupExistingWarging) throws SQLException {
-		var existingWarning = setupExistingWarging ? new SQLWarning() : null;
-		this.connection = new ConnectionImpl(mock(BoltConnection.class), existingWarning);
+	void shouldAddWarningOnUnknownClientInfoProperties(boolean setupExistingWarning) throws Exception {
+		var connection = makeConnection(mock(BoltConnection.class));
+		if (setupExistingWarning) {
+			var field = ConnectionImpl.class.getDeclaredField("warnings");
+			field.setAccessible(true);
+			((Consumer<SQLWarning>) field.get(connection)).accept(new SQLWarning());
+		}
 		var properties = new Properties();
 		properties.put("property1", "value1");
 		properties.put("property2", "value2");
 
-		this.connection.setClientInfo(properties);
-		var warning = this.connection.getWarnings();
-		if (setupExistingWarging) {
+		connection.setClientInfo(properties);
+		var warning = connection.getWarnings();
+		if (setupExistingWarning) {
 			warning = warning.getNextWarning();
 		}
 
@@ -454,32 +481,32 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldReturnNullClientInfo() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getClientInfo("name")).isNull();
+		assertThat(connection.getClientInfo("name")).isNull();
 	}
 
 	@Test
 	void shouldReturnEmptyClientInfoProperties() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getClientInfo().isEmpty()).isTrue();
+		assertThat(connection.getClientInfo().isEmpty()).isTrue();
 	}
 
 	@Test
 	void shouldHaveSchemaByDefault() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThat(this.connection.getSchema()).isEqualTo("public");
+		assertThat(connection.getSchema()).isEqualTo("public");
 	}
 
 	@Test
 	void shouldIgnoreUpdatingScheme() throws SQLException {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
-		this.connection.setSchema("name");
+		connection.setSchema("name");
 
-		assertThat(this.connection.getSchema()).isEqualTo("public");
+		assertThat(connection.getSchema()).isEqualTo("public");
 	}
 
 	@ParameterizedTest
@@ -487,17 +514,17 @@ class ConnectionImplTests {
 	void shouldCloseOnAbort(boolean transactionPresent) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
-		this.connection = new ConnectionImpl(boltConnection);
+		var connection = makeConnection(boltConnection);
 		Neo4jTransaction transaction = null;
 		if (transactionPresent) {
 			given(boltConnection.beginTransaction(any(), any(), any(), anyBoolean()))
 				.willReturn(CompletableFuture.completedStage(null));
-			transaction = this.connection.getTransaction();
+			transaction = connection.getTransaction();
 		}
 
-		this.connection.abort(Executors.newSingleThreadExecutor());
+		connection.abort(Executors.newSingleThreadExecutor());
 
-		assertThat(this.connection.isClosed()).isTrue();
+		assertThat(connection.isClosed()).isTrue();
 		if (transactionPresent) {
 			assertThat(transaction).isNotNull();
 			assertThat(transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
@@ -513,10 +540,10 @@ class ConnectionImplTests {
 			throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
-		this.connection = new ConnectionImpl(boltConnection);
-		this.connection.close();
-		assertThat(this.connection.isClosed()).isTrue();
-		assertThatThrownBy(() -> consumer.run(this.connection)).isExactlyInstanceOf(exceptionType);
+		var connection = makeConnection(boltConnection);
+		connection.close();
+		assertThat(connection.isClosed()).isTrue();
+		assertThatThrownBy(() -> consumer.run(connection)).isExactlyInstanceOf(exceptionType);
 	}
 
 	static Stream<Arguments> getThrowingMethodExecutorsWhenClosed() {
@@ -559,8 +586,8 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@MethodSource("getUnsupportedMethodExecutors")
 	void shouldThrowUnsupported(ConnectionMethodRunner consumer, Class<? extends SQLException> exceptionType) {
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
-		assertThatThrownBy(() -> consumer.run(this.connection)).isExactlyInstanceOf(exceptionType);
+		var connection = makeConnection(mock(BoltConnection.class));
+		assertThatThrownBy(() -> consumer.run(connection)).isExactlyInstanceOf(exceptionType);
 	}
 
 	static Stream<Arguments> getUnsupportedMethodExecutors() {
@@ -639,15 +666,15 @@ class ConnectionImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
 		// when & then
 		if (shouldUnwrap) {
-			var unwrapped = this.connection.unwrap(cls);
+			var unwrapped = connection.unwrap(cls);
 			assertThat(unwrapped).isInstanceOf(cls);
 		}
 		else {
-			assertThatThrownBy(() -> this.connection.unwrap(cls)).isInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> connection.unwrap(cls)).isInstanceOf(SQLException.class);
 		}
 	}
 
@@ -655,13 +682,18 @@ class ConnectionImplTests {
 	@MethodSource("getUnwrapArgs")
 	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
-		this.connection = new ConnectionImpl(mock(BoltConnection.class));
+		var connection = makeConnection(mock(BoltConnection.class));
 
 		// when
-		var wrapperFor = this.connection.isWrapperFor(cls);
+		var wrapperFor = connection.isWrapperFor(cls);
 
 		// then
 		assertThat(wrapperFor).isEqualTo(shouldUnwrap);
+	}
+
+	ConnectionImpl makeConnection(BoltConnection boltConnection) {
+		return new ConnectionImpl(boltConnection, List::of, false, false, true, false);
+
 	}
 
 	private static Stream<Arguments> getUnwrapArgs() {
@@ -675,6 +707,124 @@ class ConnectionImplTests {
 	private interface ConnectionMethodRunner {
 
 		void run(Connection connection) throws SQLException;
+
+	}
+
+	static class StaticTranslator implements Translator {
+
+		private final String expected;
+
+		StaticTranslator(String expected) {
+			this.expected = expected;
+		}
+
+		@Override
+		public String translate(String statement, DatabaseMetaData optionalDatabaseMetaData) {
+			if (this.expected.equals(statement)) {
+				return statement + "_translated";
+			}
+			throw new IllegalArgumentException(statement + " != " + this.expected);
+		}
+
+	}
+
+	@Nested
+	class TranslatorChains {
+
+		@Test
+		void singleTranslatorShouldBeCalled() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(List.of(new StaticTranslator("s1")), null, warnings::add);
+			assertThat(translatorChain.apply("s1")).isEqualTo("s1_translated");
+			assertThat(warnings).isEmpty();
+		}
+
+		@Test
+		void singleTranslatorExceptionShouldBeRethrown() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(List.of(new StaticTranslator("s1")), null, warnings::add);
+			assertThatIllegalArgumentException().isThrownBy(() -> translatorChain.apply("x")).withMessage("x != s1");
+			assertThat(warnings).isEmpty();
+		}
+
+		@Test
+		void firstFailsNextDoesNot() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(
+					List.of(new StaticTranslator("whatever"), new StaticTranslator("s2")), null, warnings::add);
+			assertThat(translatorChain.apply("s2")).isEqualTo("s2_translated");
+			assertThat(warnings).hasSize(1)
+				.extracting(SQLWarning::getMessage)
+				.first()
+				.isEqualTo("Translator org.neo4j.jdbc.ConnectionImplTests$StaticTranslator failed to translate `s2`");
+		}
+
+		@Test
+		void resultsMustBePassedOnFailureInMiddle() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(List.of(new StaticTranslator("s1"),
+					new StaticTranslator("whatever"), new StaticTranslator("s1_translated")), null, warnings::add);
+			assertThat(translatorChain.apply("s1")).isEqualTo("s1_translated_translated");
+			assertThat(warnings).hasSize(1)
+				.extracting(SQLWarning::getMessage)
+				.first()
+				.isEqualTo(
+						"Translator org.neo4j.jdbc.ConnectionImplTests$StaticTranslator failed to translate `s1_translated`");
+		}
+
+		@Test
+		void resultsMustBePassedOn() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(List.of(new StaticTranslator("s1"),
+					new StaticTranslator("s1_translated"), new StaticTranslator("s1_translated_translated")), null,
+					warnings::add);
+			assertThat(translatorChain.apply("s1")).isEqualTo("s1_translated_translated_translated");
+			assertThat(warnings).isEmpty();
+		}
+
+		@Test
+		void allTranslatorsFail() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(
+					List.of(new StaticTranslator("a"), new StaticTranslator("b"), new StaticTranslator("c")), null,
+					warnings::add);
+			assertThatIllegalStateException().isThrownBy(() -> translatorChain.apply("x"))
+				.withMessage("No suitable translator for input `x`");
+			assertThat(warnings).hasSize(3);
+		}
+
+		@Test
+		void lastTranslatorFails() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(List.of(new StaticTranslator("s1"),
+					new StaticTranslator("s1_translated"), new StaticTranslator("c")), null, warnings::add);
+			var translated = translatorChain.apply("s1");
+			assertThat(translated).isEqualTo("s1_translated_translated");
+			assertThat(warnings).hasSize(1)
+				.extracting(SQLWarning::getMessage)
+				.first()
+				.isEqualTo(
+						"Translator org.neo4j.jdbc.ConnectionImplTests$StaticTranslator failed to translate `s1_translated_translated`");
+		}
+
+		@Test
+		void lastTranslatorDoesNotFinish() {
+
+			var warnings = new ArrayList<SQLWarning>();
+			var translatorChain = new TranslatorChain(List.of(new StaticTranslator("s1"),
+					new StaticTranslator("s1_translated"), new StaticTranslator("s1_translated_translated")), null,
+					warnings::add);
+			var translated = translatorChain.apply("s1");
+			assertThat(translated).isEqualTo("s1_translated_translated_translated");
+			assertThat(warnings).isEmpty();
+		}
 
 	}
 

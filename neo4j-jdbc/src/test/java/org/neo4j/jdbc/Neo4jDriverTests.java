@@ -18,11 +18,10 @@
  */
 package org.neo4j.jdbc;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -32,14 +31,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
+import org.neo4j.jdbc.translator.spi.Translator;
+import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
-import static org.mockito.BDDMockito.verify;
 
 class Neo4jDriverTests {
 
@@ -58,46 +56,42 @@ class Neo4jDriverTests {
 	@Test
 	void noSqlTranslatorsShouldWork() {
 
-		var sqlTranslators = new Iterator<SqlTranslatorFactory>() {
-			@Override
-			public boolean hasNext() {
-				return false;
-			}
-
-			@Override
-			public SqlTranslatorFactory next() {
-				return null;
-			}
-		};
-		assertThatExceptionOfType(NoSuchElementException.class)
-			.isThrownBy(() -> Neo4jDriver.uniqueOrThrow(sqlTranslators))
-			.withMessage("No SQL translators available");
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> Neo4jDriver.getSqlTranslatorSupplier(true, Map.of(), List::of))
+			.withMessage("No translators available");
 	}
 
 	@Test
-	void oneSqlTranslatorShouldWork() {
+	void oneSqlTranslatorShouldWork() throws SQLException {
 
-		var sqlTranslators = List.of((SqlTranslatorFactory) (config) -> null);
-		assertThat(Neo4jDriver.uniqueOrThrow(sqlTranslators.iterator())).isEqualTo(sqlTranslators.get(0));
+		var translator = new Translator() {
+
+			@Override
+			public String translate(String statement, DatabaseMetaData optionalDatabaseMetaData) {
+				return null;
+			}
+		};
+		var sqlTranslators = List.<TranslatorFactory>of(properties -> translator);
+		assertThat(Neo4jDriver.getSqlTranslatorSupplier(true, Map.of(), () -> sqlTranslators).get())
+			.containsExactly(translator);
 	}
 
 	@ParameterizedTest
-	@ValueSource(ints = { 2, 3 })
-	void severalSqlTranslatorsMustFail(int numTranslators) {
+	@ValueSource(booleans = { true, false })
+	void shouldSortSqlTranslators(boolean eager) throws SQLException {
+		var t1 = mock(Translator.class);
+		given(t1.getOrder()).willReturn(Translator.HIGHEST_PRECEDENCE);
+		var t2 = mock(Translator.class);
+		given(t2.getOrder()).willReturn(Translator.HIGHEST_PRECEDENCE + 10);
+		var t3 = mock(Translator.class);
+		given(t3.getOrder()).willReturn(Translator.HIGHEST_PRECEDENCE + 20);
 
-		var sqlTranslators = new ArrayList<SqlTranslatorFactory>();
-		for (int i = 0; i < numTranslators; ++i) {
-			var mock = mock(SqlTranslatorFactory.class);
+		var translators = Neo4jDriver
+			.getSqlTranslatorSupplier(eager, Map.of(),
+					() -> List.of(properties -> t3, properties -> t1, properties -> t2))
+			.get();
 
-			given(mock.getName()).willReturn("Translator " + i);
-			sqlTranslators.add(mock);
-		}
-
-		var it = sqlTranslators.iterator();
-		assertThatIllegalArgumentException().isThrownBy(() -> Neo4jDriver.uniqueOrThrow(it))
-			.withMessageMatching("More than one SQL translator found: \\[(?: ?Translator \\d,?){1,3}]");
-
-		sqlTranslators.forEach(t -> verify(t).getName());
+		assertThat(translators).containsExactly(t1, t2, t3);
 	}
 
 	static Stream<Arguments> mergeOfUrlParamsAndPropertiesShouldWork() {
@@ -130,7 +124,7 @@ class Neo4jDriverTests {
 	}
 
 	@Test
-	void sqlTranslatorShouldBeLazilyLoadedWithoutAutomaticTranslation() {
+	void sqlTranslatorShouldBeLazilyLoadedWithoutAutomaticTranslation() throws SQLException {
 
 		var sqlTranslatorSupplier = Neo4jDriver.getSqlTranslatorSupplier(false, Map.of(), () -> {
 			throw new UnsupportedOperationException("later");
@@ -142,7 +136,7 @@ class Neo4jDriverTests {
 	@Test
 	void sqlTranslatorShouldBeLoadedImmediateWithAutomaticTranslation() {
 
-		Supplier<SqlTranslatorFactory> throwingSupplier = () -> {
+		Supplier<List<TranslatorFactory>> throwingSupplier = () -> {
 			throw new UnsupportedOperationException("now");
 		};
 		assertThatExceptionOfType(UnsupportedOperationException.class)

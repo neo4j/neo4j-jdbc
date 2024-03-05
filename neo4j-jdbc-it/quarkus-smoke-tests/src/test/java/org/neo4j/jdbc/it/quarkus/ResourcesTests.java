@@ -16,13 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.neo4j.jdbc.it.quarkus;
 
-/**
- * Defines the public surface of the translator SPI when run on the module path.
- */
-module org.neo4j.jdbc.translator.spi {
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
 
-	exports org.neo4j.jdbc.translator.spi;
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 
-	requires transitive java.sql;
+@QuarkusTest
+@QuarkusTestResource(value = Neo4jTestResource.class, restrictToAnnotatedClass = true)
+class ResourcesTests {
+
+	@Test
+	void testMoviesEndpoint() {
+		var movies = given().when().get("/movies").then().statusCode(200).extract().as(Movie[].class);
+		assertThat(movies).hasSize(1);
+		assertThat(movies[0].title()).isEqualTo("Der frühe Vogel fängt den Wurm");
+	}
+
 }

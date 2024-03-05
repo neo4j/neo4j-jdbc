@@ -17,10 +17,13 @@
  * limitations under the License.
  */
 import org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
-import org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
+import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
+/**
+ * The default Sql translator shipped with the JDK 17 version of the driver.
+ */
 module org.neo4j.jdbc.translator.impl {
-	provides SqlTranslatorFactory with SqlToCypherTranslatorFactory;
+	provides TranslatorFactory with SqlToCypherTranslatorFactory;
 
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.jooq;

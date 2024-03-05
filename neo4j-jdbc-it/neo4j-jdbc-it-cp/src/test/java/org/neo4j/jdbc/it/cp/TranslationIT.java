@@ -20,10 +20,12 @@ package org.neo4j.jdbc.it.cp;
 
 import java.sql.SQLException;
 
+import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.Test;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class TranslationIT extends IntegrationTestBase {
 
@@ -47,6 +49,19 @@ class TranslationIT extends IntegrationTestBase {
 				assertThat(rs.getString("title")).isEqualTo(title);
 				assertThat(rs.getInt("released")).isEqualTo(2024);
 			}
+		}
+
+	}
+
+	@Test
+	void shouldUnwrapCauseOfTranslationException() throws SQLException {
+
+		try (var connection = getConnection(true, false);
+				var stmt = connection.prepareStatement("CREATE (m:Movie {title:  $title, released: $released})")) {
+			assertThatExceptionOfType(SQLException.class).isThrownBy(stmt::execute)
+				.withCauseInstanceOf(ParserException.class)
+				.withMessageStartingWith(
+						"org.jooq.impl.ParserException: FUNCTION, GENERATOR, GLOBAL TEMPORARY TABLE, INDEX, OR ALTER, OR REPLACE, PROCEDURE, SCHEMA, SEQUENCE, TABLE, TEMPORARY TABLE, TRIGGER, TYPE, UNIQUE INDEX, or VIEW expected");
 		}
 
 	}

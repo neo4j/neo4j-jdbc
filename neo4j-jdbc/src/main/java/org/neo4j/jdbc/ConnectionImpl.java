@@ -37,6 +37,7 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -45,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -54,7 +56,7 @@ import org.neo4j.jdbc.internal.bolt.TransactionType;
 import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.translator.spi.Cache;
-import org.neo4j.jdbc.translator.spi.SqlTranslator;
+import org.neo4j.jdbc.translator.spi.Translator;
 
 /**
  * A Neo4j specific implementation of {@link Connection}.
@@ -70,7 +72,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final BoltConnection boltConnection;
 
-	private final Lazy<SqlTranslator> sqlTranslator;
+	private final Lazy<List<Translator>> translators;
 
 	private final boolean enableSqlTranslation;
 
@@ -90,7 +92,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private boolean readOnly;
 
-	private SQLWarning warning;
+	private final Warnings warnings = new Warnings();
 
 	private SQLException fatalException;
 
@@ -98,38 +100,32 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final Cache<String, String> l2cache = Cache.getInstance(TRANSLATION_CACHE_SIZE);
 
-	ConnectionImpl(BoltConnection boltConnection) {
-		this(boltConnection, () -> {
-			throw new UnsupportedOperationException("No SQL translator available");
-		}, false, false, true, false);
-	}
-
-	ConnectionImpl(BoltConnection boltConnection, Supplier<SqlTranslator> sqlTranslator, boolean enableSQLTranslation,
+	ConnectionImpl(BoltConnection boltConnection, Supplier<List<Translator>> translators, boolean enableSQLTranslation,
 			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
-		this.sqlTranslator = Lazy.of(sqlTranslator);
+		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
 		this.enableTranslationCaching = enableTranslationCaching;
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.rewritePlaceholders = rewritePlaceholders;
 	}
 
-	// for testing only
-	ConnectionImpl(BoltConnection boltConnection, SQLWarning warning) {
-		this(boltConnection);
-		this.warning = warning;
+	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
+		return getTranslator(false, warningConsumer);
 	}
 
-	UnaryOperator<String> getSqlProcessor() throws SQLException {
-		return getSqlProcessor(false);
-	}
-
-	UnaryOperator<String> getSqlProcessor(boolean force) throws SQLException {
+	UnaryOperator<String> getTranslator(boolean force, Consumer<SQLWarning> warningConsumer) throws SQLException {
 		if (!(this.enableSqlTranslation || force)) {
-			return null;
+			return UnaryOperator.identity();
 		}
-		var sqlTranslator = this.sqlTranslator.resolve();
+
+		var translators = this.translators.resolve();
+		if (translators.isEmpty()) {
+			throw Neo4jDriver.noTranslatorsAvailableException();
+		}
+
 		var metaData = this.getMetaData();
+		var sqlTranslator = new TranslatorChain(translators, metaData, warningConsumer);
 
 		if (this.enableTranslationCaching) {
 			return sql -> {
@@ -138,14 +134,14 @@ final class ConnectionImpl implements Neo4jConnection {
 						return this.l2cache.get(sql);
 					}
 					else {
-						var translation = sqlTranslator.translate(sql, metaData);
+						var translation = sqlTranslator.apply(sql);
 						this.l2cache.put(sql, translation);
 						return translation;
 					}
 				}
 			};
 		}
-		return sql -> sqlTranslator.translate(sql, metaData);
+		return sqlTranslator;
 	}
 
 	@Override
@@ -169,7 +165,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public String nativeSQL(String sql) throws SQLException {
 		assertIsOpen();
-		return getSqlProcessor(true).apply(sql);
+		return getTranslator(true, this.warnings).apply(sql);
 	}
 
 	@Override
@@ -303,13 +299,13 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
 		assertIsOpen();
-		return this.warning;
+		return this.warnings.get();
 	}
 
 	@Override
 	public void clearWarnings() throws SQLException {
 		assertIsOpen();
-		this.warning = null;
+		this.warnings.clear();
 	}
 
 	@Override
@@ -385,7 +381,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		return new StatementImpl(this, this::getTransaction, getSqlProcessor());
+		var localWarnings = new Warnings();
+		return new StatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings);
 	}
 
 	@Override
@@ -394,18 +391,19 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		var sqlProcessor = getSqlProcessor();
-		UnaryOperator<String> decoratedProcessor;
+		var localWarnings = new Warnings();
+		var translator = getTranslator(localWarnings);
+		UnaryOperator<String> decoratedTranslator;
 		if (this.rewritePlaceholders) {
-			decoratedProcessor = (sqlProcessor != null)
-					? s -> PreparedStatementImpl.rewritePlaceholders(sqlProcessor.apply(s))
+			decoratedTranslator = (translator != null)
+					? s -> PreparedStatementImpl.rewritePlaceholders(translator.apply(s))
 					: PreparedStatementImpl::rewritePlaceholders;
 		}
 		else {
-			decoratedProcessor = sqlProcessor;
+			decoratedTranslator = translator;
 		}
-		return new PreparedStatementImpl(this, this::getTransaction, decoratedProcessor, this.rewriteBatchedStatements,
-				sql);
+		return new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator, localWarnings,
+				this.rewriteBatchedStatements, sql);
 	}
 
 	@Override
@@ -514,13 +512,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		Objects.requireNonNull(name);
 		var reason = "Client info property is not supported.";
 		var throwable = new SQLClientInfoException(Map.of(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY));
-		var warning = new SQLWarning(reason, throwable);
-		if (this.warning == null) {
-			this.warning = warning;
-		}
-		else {
-			this.warning.setNextWarning(warning);
-		}
+		this.warnings.accept(new SQLWarning(reason, throwable));
 	}
 
 	@Override
@@ -539,13 +531,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		if (!failedProperties.isEmpty()) {
 			var reason = "Client info properties are not supported.";
 			var throwable = new SQLClientInfoException(Collections.unmodifiableMap(failedProperties));
-			var warning = new SQLWarning(reason, throwable);
-			if (this.warning == null) {
-				this.warning = warning;
-			}
-			else {
-				this.warning.setNextWarning(warning);
-			}
+			this.warnings.accept(new SQLWarning(reason, throwable));
 		}
 	}
 
@@ -667,8 +653,50 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void flushTranslationCache() {
 		synchronized (this) {
 			this.l2cache.flush();
-			this.sqlTranslator.resolve().flushCache();
+			this.translators.resolve().forEach(Translator::flushCache);
 		}
+	}
+
+	static class TranslatorChain implements UnaryOperator<String> {
+
+		private final List<Translator> translators;
+
+		private final DatabaseMetaData metaData;
+
+		private final Consumer<SQLWarning> warningSink;
+
+		TranslatorChain(List<Translator> translators, DatabaseMetaData metaData, Consumer<SQLWarning> warningSink) {
+			this.translators = translators;
+			this.metaData = metaData;
+			this.warningSink = warningSink;
+		}
+
+		@Override
+		public String apply(String statement) {
+
+			if (this.translators.size() == 1) {
+				return this.translators.get(0).translate(statement, this.metaData);
+			}
+			String result = null;
+			for (var translator : this.translators) {
+				var in = (result != null) ? result : statement;
+				try {
+					result = translator.translate(in, this.metaData);
+				}
+				catch (IllegalArgumentException ex) {
+					this.warningSink.accept(new SQLWarning(
+							"Translator %s failed to translate `%s`".formatted(translator.getClass().getName(), in),
+							ex));
+				}
+			}
+
+			if (result == null) {
+				throw new IllegalStateException("No suitable translator for input `%s`".formatted(statement));
+			}
+
+			return result;
+		}
+
 	}
 
 }

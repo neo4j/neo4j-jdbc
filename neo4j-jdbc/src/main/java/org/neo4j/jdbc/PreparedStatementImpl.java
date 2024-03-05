@@ -90,8 +90,8 @@ sealed class PreparedStatementImpl extends StatementImpl
 	}
 
 	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, boolean rewriteBatchedStatements, String sql) {
-		super(connection, transactionSupplier, sqlProcessor);
+			UnaryOperator<String> translator, Warnings localWarnings, boolean rewriteBatchedStatements, String sql) {
+		super(connection, transactionSupplier, translator, localWarnings);
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.sql = sql;
 		this.poolable = true;

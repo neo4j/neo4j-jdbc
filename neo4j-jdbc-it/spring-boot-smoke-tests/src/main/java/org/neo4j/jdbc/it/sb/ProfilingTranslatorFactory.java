@@ -16,13 +16,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.neo4j.jdbc.it.sb;
 
-/**
- * Defines the public surface of the translator SPI when run on the module path.
- */
-module org.neo4j.jdbc.translator.spi {
+import java.sql.DatabaseMetaData;
+import java.util.Map;
 
-	exports org.neo4j.jdbc.translator.spi;
+import org.neo4j.jdbc.translator.spi.Translator;
+import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
-	requires transitive java.sql;
+public class ProfilingTranslatorFactory implements TranslatorFactory {
+
+	@Override
+	public Translator create(Map<String, Object> properties) {
+		return new Translator() {
+			@Override
+			public String translate(String statement, DatabaseMetaData optionalDatabaseMetaData) {
+				return "PROFILE " + statement;
+			}
+
+			@Override
+			public int getOrder() {
+				return 30;
+			}
+		};
+	}
+
 }

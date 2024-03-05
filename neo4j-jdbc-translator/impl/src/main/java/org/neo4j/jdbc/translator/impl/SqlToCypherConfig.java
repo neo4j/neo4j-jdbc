@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.jooq.SQLDialect;
 import org.jooq.conf.ParseNameCase;
 import org.jooq.conf.RenderNameCase;
+import org.neo4j.jdbc.translator.spi.Translator;
 
 /**
  * Configuration for the {@link SqlToCypher}, use this to configure parsing and rendering
@@ -77,6 +78,7 @@ public final class SqlToCypherConfig {
 				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(toBoolean(v));
 				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(toString(v));
 				case "enableCache" -> builder.withCacheEnabled(toBoolean(v));
+				case "priority" -> builder.withPrecedence(toInteger(v));
 				default -> {
 					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;
@@ -132,6 +134,18 @@ public final class SqlToCypherConfig {
 		}
 	}
 
+	static Integer toInteger(Object val) {
+		if (val instanceof Integer integer) {
+			return integer;
+		}
+		else if (val instanceof String s) {
+			return Integer.parseInt(s);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported Integer representation " + val.getClass());
+		}
+	}
+
 	/**
 	 * Builds a map from a string. String must be in {@code k1:v1;k2:v2} format.
 	 * @param source the source of the map
@@ -182,6 +196,8 @@ public final class SqlToCypherConfig {
 
 	private final boolean cacheEnabled;
 
+	private final Integer precedence;
+
 	private SqlToCypherConfig(Builder builder) {
 
 		this.parseNameCase = builder.parseNameCase;
@@ -194,6 +210,7 @@ public final class SqlToCypherConfig {
 		this.alwaysEscapeNames = builder.alwaysEscapeNames();
 		this.parseNamedParamPrefix = builder.parseNamedParamPrefix;
 		this.cacheEnabled = builder.enableCache;
+		this.precedence = builder.precedence;
 	}
 
 	/**
@@ -204,44 +221,92 @@ public final class SqlToCypherConfig {
 		return new Builder(this);
 	}
 
+	/**
+	 * Returns the case in which names are parsed.
+	 * @return the case in which names are parsed
+	 */
 	public ParseNameCase getParseNameCase() {
 		return this.parseNameCase;
 	}
 
+	/**
+	 * Returns the case in which names are rendered.
+	 * @return the case in which names are rendered
+	 */
 	public RenderNameCase getRenderNameCase() {
 		return this.renderNameCase;
 	}
 
+	/**
+	 * Returns whether jOOQ diagnostic logging is enabled.
+	 * @return whether jOOQ diagnostic logging is enabled
+	 */
 	public boolean isJooqDiagnosticLogging() {
 		return this.jooqDiagnosticLogging;
 	}
 
+	/**
+	 * Returns the mapping from table names to labels.
+	 * @return the mapping from table names to labels
+	 */
 	public Map<String, String> getTableToLabelMappings() {
 		return this.tableToLabelMappings;
 	}
 
+	/**
+	 * Returns the mapping from join columns to relationship types.
+	 * @return the mapping from join columns to relationship types
+	 */
 	public Map<String, String> getJoinColumnsToTypeMappings() {
 		return this.joinColumnsToTypeMappings;
 	}
 
+	/**
+	 * Returns the configured SQL dialect for parsing.
+	 * @return the configured SQL dialect for parsing
+	 */
 	public SQLDialect getSqlDialect() {
 		return this.sqlDialect;
 	}
 
+	/**
+	 * Returns whether pretty printing of Cypher statements is enabled or not.
+	 * @return whether pretty printing of Cypher statements is enabled or not
+	 */
 	public boolean isPrettyPrint() {
 		return this.prettyPrint;
 	}
 
+	/**
+	 * Returns whether Cypher names are always escapd or not.
+	 * @return whether Cypher names are always escapd or not
+	 */
 	public boolean isAlwaysEscapeNames() {
 		return this.alwaysEscapeNames;
 	}
 
+	/**
+	 * Returns the prefixed that is recognized when parsing named parameters.
+	 * @return the prefixed that is recognized when parsing named parameters
+	 */
 	public String getParseNamedParamPrefix() {
 		return this.parseNamedParamPrefix;
 	}
 
+	/**
+	 * Returns whether the internal cache is enabled or not.
+	 * @return whether the internal cache is enabled or not
+	 */
 	public boolean isCacheEnabled() {
 		return this.cacheEnabled;
+	}
+
+	/**
+	 * Returns the precedence of the translator.
+	 * @return the precedence of the translator
+	 */
+	public Integer getPrecedence() {
+		return this.precedence;
 	}
 
 	/**
@@ -269,21 +334,23 @@ public final class SqlToCypherConfig {
 
 		private boolean enableCache;
 
+		private Integer precedence;
+
 		private Builder() {
 			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null,
-					null, false);
+					null, false, Translator.LOWEST_PRECEDENCE);
 		}
 
 		private Builder(SqlToCypherConfig config) {
 			this(config.parseNameCase, config.renderNameCase, config.jooqDiagnosticLogging, config.tableToLabelMappings,
 					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint, config.alwaysEscapeNames,
-					config.parseNamedParamPrefix, config.cacheEnabled);
+					config.parseNamedParamPrefix, config.cacheEnabled, config.precedence);
 		}
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
 				SQLDialect sqlDialect, boolean prettyPrint, Boolean alwaysEscapeNames, String parseNamedParamPrefix,
-				boolean enableCache) {
+				boolean enableCache, Integer precedence) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
 			this.jooqDiagnosticLogging = jooqDiagnosticLogging;
@@ -408,6 +475,17 @@ public final class SqlToCypherConfig {
 
 		private boolean alwaysEscapeNames() {
 			return (this.alwaysEscapeNames != null) ? this.alwaysEscapeNames : !this.prettyPrint;
+		}
+
+		/**
+		 * Configures the precedence for the {@link SqlToCypher instance} to be
+		 * configured. Lower values means higher precedence.
+		 * @param newPrecedence the precedence to be configured.
+		 * @return this builder
+		 */
+		public Builder withPrecedence(Integer newPrecedence) {
+			this.precedence = newPrecedence;
+			return this;
 		}
 
 	}

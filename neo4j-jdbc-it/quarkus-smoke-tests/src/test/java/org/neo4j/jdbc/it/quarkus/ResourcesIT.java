@@ -18,22 +18,11 @@
  */
 package org.neo4j.jdbc.it.quarkus;
 
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusTest;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 
-import static io.restassured.RestAssured.given;
+@QuarkusIntegrationTest
+class ResourcesIT extends ResourcesTests {
 
-@QuarkusTest
-@QuarkusTestResource(value = Neo4jTestResource.class, restrictToAnnotatedClass = true)
-class GreetingResourceTests {
-
-	@Test
-	void testHelloEndpoint() {
-		var movies = given().when().get("/movies").then().statusCode(200).extract().as(Movie[].class);
-		Assertions.assertThat(movies).hasSize(1);
-		Assertions.assertThat(movies[0].title()).isEqualTo("Der frühe Vogel fängt den Wurm");
-	}
+	// Execute the same tests but in packaged mode.
 
 }
