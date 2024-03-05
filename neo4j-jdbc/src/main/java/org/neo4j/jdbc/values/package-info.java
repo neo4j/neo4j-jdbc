@@ -16,4 +16,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * This package contains the Neo4j value systems and is public API.
+ */
 package org.neo4j.jdbc.values;

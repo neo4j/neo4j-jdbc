@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.internal.bolt.value;
+package org.neo4j.jdbc.values;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,12 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.neo4j.jdbc.values.AbstractMapAccessorWithDefaultValue;
-import org.neo4j.jdbc.values.Record;
-import org.neo4j.jdbc.values.Value;
-import org.neo4j.jdbc.values.Values;
-
-public final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
+final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
 
 	private final List<String> keys;
 
@@ -38,7 +33,7 @@ public final class RecordImpl extends AbstractMapAccessorWithDefaultValue implem
 
 	private int hashCode = 0;
 
-	public RecordImpl(List<String> keys, Value[] values) {
+	RecordImpl(List<String> keys, Value[] values) {
 		this.keys = keys;
 		this.values = values;
 	}

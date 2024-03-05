@@ -18,10 +18,7 @@
  */
 package org.neo4j.jdbc.values;
 
-public abstract class AbstractNumberValue<V extends Number> extends AbstractValue {
-
-	public AbstractNumberValue() {
-	}
+abstract class AbstractNumberValue<V extends Number> extends AbstractValue {
 
 	@Override
 	public final V asObject() {

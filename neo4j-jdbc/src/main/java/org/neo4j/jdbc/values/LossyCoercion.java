@@ -20,6 +20,13 @@ package org.neo4j.jdbc.values;
 
 import java.io.Serial;
 
+/**
+ * An exception thrown when the coercion of a Cypher {@code FLOAT} value to a Java
+ * {@link Float} would be a lossy one.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class LossyCoercion extends ValueException {
 
 	@Serial

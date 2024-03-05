@@ -20,6 +20,13 @@ package org.neo4j.jdbc.values;
 
 import java.io.Serial;
 
+/**
+ * This exception will be thrown when the coercion {@link Value} into another type is not
+ * possible.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class UncoercibleException extends ValueException {
 
 	@Serial

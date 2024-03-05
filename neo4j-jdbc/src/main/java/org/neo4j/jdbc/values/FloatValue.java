@@ -18,6 +18,12 @@
  */
 package org.neo4j.jdbc.values;
 
+/**
+ * The Cypher type {@code FLOAT} maps to a Java {@link Double}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class FloatValue extends AbstractNumberValue<Double> {
 
 	private final double val;

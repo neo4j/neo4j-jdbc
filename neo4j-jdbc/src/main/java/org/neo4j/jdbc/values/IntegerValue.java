@@ -18,6 +18,12 @@
  */
 package org.neo4j.jdbc.values;
 
+/**
+ * The Cypher type {@code INTEGER} maps to a Java {@link Long}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class IntegerValue extends AbstractNumberValue<Long> {
 
 	private final long val;

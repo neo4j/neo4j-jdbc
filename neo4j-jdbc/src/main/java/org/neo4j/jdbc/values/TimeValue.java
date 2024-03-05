@@ -22,6 +22,12 @@ import java.time.OffsetTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 
+/**
+ * The Cypher type {@code TIME} maps to a Java {@link OffsetTime}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class TimeValue extends AbstractObjectValue<OffsetTime> {
 
 	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("TIME '")

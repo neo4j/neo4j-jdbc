@@ -16,15 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.internal.bolt.value;
+package org.neo4j.jdbc.values;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
-
-import org.neo4j.jdbc.values.Record;
-import org.neo4j.jdbc.values.Value;
 
 final class ValueUtils {
 

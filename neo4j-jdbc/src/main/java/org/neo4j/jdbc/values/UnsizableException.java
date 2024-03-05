@@ -20,6 +20,13 @@ package org.neo4j.jdbc.values;
 
 import java.io.Serial;
 
+/**
+ * This exception will be thrown when a {@link Value} that does not have a size is asks
+ * for it via {@link Value#size()}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class UnsizableException extends ValueException {
 
 	@Serial

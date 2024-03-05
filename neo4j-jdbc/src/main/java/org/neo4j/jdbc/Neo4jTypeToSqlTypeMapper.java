@@ -16,11 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.values;
+package org.neo4j.jdbc;
 
 import java.sql.Types;
+import java.util.Locale;
 
-public final class Neo4jTypeToSqlTypeMapper {
+import org.neo4j.jdbc.values.Type;
+
+final class Neo4jTypeToSqlTypeMapper {
 
 	private Neo4jTypeToSqlTypeMapper() {
 	}
@@ -30,8 +33,8 @@ public final class Neo4jTypeToSqlTypeMapper {
 	 * db.schema.nodeTypeProperties() procedure In 6 this will change so will need to add
 	 * another method to handle the new types returned here when working with 6
 	 */
-	public static int toSqlTypeFromOldCypherType(String neo4jType) {
-		return toSqlType(Type.valueOfV5Name(neo4jType));
+	static int toSqlTypeFromOldCypherType(String neo4jType) {
+		return toSqlType(valueOfV5Name(neo4jType));
 	}
 
 	/*
@@ -39,7 +42,7 @@ public final class Neo4jTypeToSqlTypeMapper {
 	 * db.schema.nodeTypeProperties() procedure In 6 this will change so will need to add
 	 * another method to handle the new types returned here when working with 6
 	 */
-	public static String oldCypherTypesToNew(String neo4jType) {
+	static String oldCypherTypesToNew(String neo4jType) {
 		return switch (neo4jType) {
 			// Simple
 			case "Boolean" -> "BOOLEAN";
@@ -66,7 +69,7 @@ public final class Neo4jTypeToSqlTypeMapper {
 		};
 	}
 
-	public static int toSqlType(Type neo4jType) {
+	static int toSqlType(Type neo4jType) {
 		return switch (neo4jType) {
 			case ANY, DURATION -> Types.OTHER;
 			case BOOLEAN -> Types.BOOLEAN;
@@ -82,6 +85,19 @@ public final class Neo4jTypeToSqlTypeMapper {
 			case DATE_TIME, LOCAL_DATE_TIME, LOCAL_TIME -> Types.TIMESTAMP;
 			case NULL -> Types.NULL;
 		};
+	}
+
+	static Type valueOfV5Name(String in) {
+
+		var value = in.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")
+			.replaceAll("([a-z])([A-Z])", "$1_$2")
+			.toUpperCase(Locale.ROOT);
+		value = switch (value) {
+			case "LONG" -> Type.INTEGER.name();
+			case "DOUBLE" -> Type.FLOAT.name();
+			default -> value.endsWith("ARRAY") ? Type.LIST.name() : value;
+		};
+		return Type.valueOf(value);
 	}
 
 }

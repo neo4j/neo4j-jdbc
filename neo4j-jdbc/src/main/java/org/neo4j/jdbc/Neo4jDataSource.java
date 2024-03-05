@@ -84,6 +84,11 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 
 	private final Properties connectionProperties = new Properties();
 
+	/**
+	 * Creates a new {@link DataSource} which is not yet usable without further
+	 * configuration. This constructor is mainly used for tooling that loads data sources
+	 * via reflection.
+	 */
 	public Neo4jDataSource() {
 	}
 

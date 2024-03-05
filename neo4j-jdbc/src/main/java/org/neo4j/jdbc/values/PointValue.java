@@ -18,9 +18,15 @@
  */
 package org.neo4j.jdbc.values;
 
+/**
+ * Representation of the Cypher {@code POINT} type.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class PointValue extends AbstractObjectValue<Point> {
 
-	public PointValue(Point point) {
+	PointValue(Point point) {
 		super(point);
 	}
 

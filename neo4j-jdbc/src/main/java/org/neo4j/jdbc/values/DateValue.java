@@ -22,6 +22,12 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 
+/**
+ * The Cypher type {@code DATE} maps to a Java {@link LocalDate}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class DateValue extends AbstractObjectValue<LocalDate> {
 
 	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("DATE '")

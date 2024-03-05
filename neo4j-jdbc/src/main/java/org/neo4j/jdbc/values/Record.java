@@ -29,6 +29,16 @@ import java.util.List;
 public interface Record extends MapAccessorWithDefaultValue {
 
 	/**
+	 * Creates a new record for the given list of keys and values.
+	 * @param keys the available keys on the record
+	 * @param values the list of values
+	 * @return a new record
+	 */
+	static Record of(List<String> keys, Value[] values) {
+		return new RecordImpl(keys, values);
+	}
+
+	/**
 	 * Retrieve the keys of the underlying map.
 	 * @return all field keys in order
 	 */
@@ -51,6 +61,12 @@ public interface Record extends MapAccessorWithDefaultValue {
 	 */
 	int index(String key);
 
+	/**
+	 * Retrieves the value at the given {@code index}.
+	 * @param index the index for which to retrieve the value
+	 * @return the value at the given index or {@link Values#NULL} if the index is out of
+	 * bounds
+	 */
 	Value get(int index);
 
 }

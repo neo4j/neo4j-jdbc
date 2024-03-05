@@ -23,10 +23,24 @@ import java.time.DateTimeException;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 
+/**
+ * This value will be returned for date time properties that are stored in a time zone
+ * that is available on the Neo4j host system but not on the client system in which the
+ * driver is used.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class UnsupportedDateTimeValue extends AbstractValue {
 
 	final DateTimeException exception;
 
+	/**
+	 * Constructs a new value based on the exception the driver caught when reading the
+	 * corresponding message from the Neo4j host system.
+	 * @param exception the original exception caught when trying to deserialize a date
+	 * time value.
+	 */
 	public UnsupportedDateTimeValue(DateTimeException exception) {
 		this.exception = exception;
 	}

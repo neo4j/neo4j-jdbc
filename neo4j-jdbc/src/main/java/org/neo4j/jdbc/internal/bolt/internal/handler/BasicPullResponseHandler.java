@@ -30,7 +30,6 @@ import org.neo4j.jdbc.internal.bolt.internal.util.MetadataExtractor;
 import org.neo4j.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.jdbc.internal.bolt.value.RecordImpl;
 import org.neo4j.jdbc.values.BooleanValue;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Value;
@@ -63,8 +62,7 @@ public final class BasicPullResponseHandler implements ResponseHandler {
 	@Override
 	public void onRecord(Value[] fields) {
 		var runResponse = this.runStage.toCompletableFuture().join();
-		var record = new RecordImpl(runResponse.keys(), fields);
-		this.records.add(record);
+		this.records.add(Record.of(runResponse.keys(), fields));
 	}
 
 	private record InternalPullResponse(List<Record> records, ResultSummary summary) implements PullResponse {

@@ -23,6 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Representation of a Cypher map.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class MapValue extends AbstractValue {
 
 	private final Map<String, Value> val;

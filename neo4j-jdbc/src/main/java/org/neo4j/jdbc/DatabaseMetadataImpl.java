@@ -42,8 +42,6 @@ import java.util.logging.Logger;
 import org.neo4j.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.jdbc.internal.bolt.value.RecordImpl;
-import org.neo4j.jdbc.values.Neo4jTypeToSqlTypeMapper;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
@@ -820,7 +818,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			@Override
 			public List<Record> records() {
 				var values = new Value[] { Values.value("public"), Values.value("") };
-				return Collections.singletonList(new RecordImpl(keys, values));
+				return Collections.singletonList(Record.of(keys, values));
 			}
 
 			@Override
@@ -863,7 +861,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			@Override
 			public List<Record> records() {
 				var values = new Value[] { Values.value("TABLE") };
-				return Collections.singletonList(new RecordImpl(keys, values));
+				return Collections.singletonList(Record.of(keys, values));
 			}
 
 			@Override
@@ -975,7 +973,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				var records = new ArrayList<Record>(rows.size());
 
 				for (Value[] values : rows) {
-					records.add(new RecordImpl(keys, values));
+					records.add(Record.of(keys, values));
 				}
 
 				return records;

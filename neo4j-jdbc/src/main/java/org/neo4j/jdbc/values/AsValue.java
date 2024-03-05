@@ -18,6 +18,12 @@
  */
 package org.neo4j.jdbc.values;
 
+/**
+ * Represents an object that might be usable as a {@link Value}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public interface AsValue {
 
 	/**

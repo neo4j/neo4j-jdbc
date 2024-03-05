@@ -20,18 +20,28 @@ package org.neo4j.jdbc.values;
 
 import java.io.Serial;
 
+/**
+ * The base type for several exception that might occur within the Neo4j value system,
+ * such as a lossy coercion, that might occur when trying to downcast a Cypher
+ * {@code INTEGER} (which is a 64bit integer), into a Java int (which is only 32bit).
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public sealed class ValueException extends
 		RuntimeException permits LossyCoercion, NotMultiValuedException, UncoercibleException, UnsizableException {
 
 	@Serial
 	private static final long serialVersionUID = 7850167285895596482L;
 
+	/**
+	 * Constructs a new exception with the specified detail message. The cause is not
+	 * initialized, and may subsequently be initialized by a call to {@link #initCause}.
+	 * @param message the detail message. The detail message is saved for later retrieval
+	 * by the {@link #getMessage()} method.
+	 */
 	public ValueException(String message) {
 		super(message);
-	}
-
-	public ValueException(String message, Throwable cause) {
-		super(message, cause);
 	}
 
 }
