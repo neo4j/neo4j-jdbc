@@ -530,8 +530,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 4b996b8,</span>
-<span id="revdate">2024-03-04T09:33:43Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT a9ad923,</span>
+<span id="revdate">2024-03-05T10:59:03Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -1722,6 +1722,18 @@ The former is provided for two reasons: It allows us to distribute the driver wi
 <p>We made some assumptions that we find to match various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.</p>
 </div>
+<div class="sect3">
+<h4 id="_supported_sql_dialects">7.1.1. Supported SQL dialects</h4>
+<div class="paragraph">
+<p>Our default translator uses the OSS parser from <a href="https://www.jooq.org">jOOQ</a>, which supports a broad spectrum of SQL dialects already.
+We picked the generic, default dialect of jOOQ as our default dialect, but you can overwrite this in the SQL to Cypher configuration using the parameter <code>s2c.sqlDialect</code> with one of the supported dialects listed in <a href="#s2c_configuration">configuration below</a>.
+<code>POSTGRES</code> might be a good choice for several integrations.</p>
+</div>
+<div class="paragraph">
+<p>Bear in mind though that any shortcomings in the translation are probably not due to the lack of parser support, but due to the lack of an obvious, semantically equivalent Cypher construct.
+That means we might be able to parse a certain piece of SQL, but are unable to translate in into something meaningful that Neo4j can understand without additional, contextual information.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_translating_sql_to_cypher">7.2. Translating SQL to Cypher</h3>
@@ -1822,7 +1834,7 @@ The mechanics of when this exception is thrown are the same as above.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_configuration_2">7.2.4. Configuration</h4>
+<h4 id="s2c_configuration">7.2.4. Configuration</h4>
 <div class="paragraph">
 <p>The default implementation provides a number of configuration settings.
 They must be prefixed with <code>s2c</code> in the URL or config options:</p>
@@ -1865,6 +1877,11 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>alwaysEscapeNames</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Whether to always escape names</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Unless explicitly configured <code>false</code> when pretty printing is on, otherwise true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sqlDialect</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Which dialect to use when parsing, supported values are <code>POSTGRES</code>, <code>SQLITE</code>, <code>MYSQL</code>, <code>H2</code>, <code>HSQLDB</code>, <code>DERBY</code> and <code>DEFAULT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>DEFAULT</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -3750,8 +3767,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 4b996b8<br>
-Last updated 2024-03-04 09:33:50 UTC
+Version 6.0.0-SNAPSHOT a9ad923<br>
+Last updated 2024-03-05 10:59:07 UTC
 </div>
 </div>
 </body>
