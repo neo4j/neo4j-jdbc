@@ -28,7 +28,7 @@ import java.util.function.Function;
  * for changing the underlying map.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface MapAccessor {
 

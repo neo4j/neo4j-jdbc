@@ -26,7 +26,7 @@ import org.neo4j.jdbc.internal.bolt.internal.InternalAuthToken;
  * with a Neo4j instance.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  * @see AuthTokens
  */
 public sealed interface AuthToken permits InternalAuthToken {

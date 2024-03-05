@@ -60,7 +60,7 @@ import org.neo4j.jdbc.translator.spi.SqlTranslatorFactory;
  * this class directly, it registers automatically with the {@link DriverManager}.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 public final class Neo4jDriver implements Neo4jDriverExtensions {
 

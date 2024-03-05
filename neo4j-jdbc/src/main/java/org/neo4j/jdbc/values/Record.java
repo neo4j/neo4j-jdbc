@@ -24,7 +24,7 @@ import java.util.List;
  * Container for Cypher result values.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface Record extends MapAccessorWithDefaultValue {
 

@@ -37,7 +37,7 @@ package org.neo4j.jdbc.values;
  * </pre>
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface Path extends AsValue, Iterable<Path.Segment> {
 

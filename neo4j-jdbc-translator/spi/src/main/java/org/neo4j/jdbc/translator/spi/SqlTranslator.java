@@ -25,7 +25,7 @@ import java.sql.DatabaseMetaData;
  * written in SQL and their parameters to Neo4j's own query langauge Cypher.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 @FunctionalInterface
 public interface SqlTranslator {

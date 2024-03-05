@@ -28,7 +28,7 @@ import java.time.temporal.TemporalAmount;
  * {@link Values#isoDuration(long, long, long, int)} method.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface IsoDuration extends TemporalAmount {
 

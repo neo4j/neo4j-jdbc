@@ -23,10 +23,10 @@ import java.util.Map;
 /**
  * Factories that produce {@link SqlTranslator SQL translators}. Any implementation is
  * free to use cached instances for translators produced for configurations considered
- * equal as long as the translators themselves are threadsafe.
+ * equal as long as the translators themselves are thread safe.
  *
  * @author Michael J. Simons
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface SqlTranslatorFactory {
 

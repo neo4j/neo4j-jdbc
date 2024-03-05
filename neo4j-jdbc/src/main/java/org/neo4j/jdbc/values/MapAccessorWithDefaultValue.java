@@ -31,7 +31,7 @@ import java.util.function.Function;
  * automatically. Note: Error might arise if the cast from A to B is not possible.
  *
  * @author Neo4j Drivers Team
- * @since 1.0.0
+ * @since 6.0.0
  */
 public interface MapAccessorWithDefaultValue extends MapAccessor {
 
