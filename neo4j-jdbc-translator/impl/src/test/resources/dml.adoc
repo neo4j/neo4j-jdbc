@@ -186,6 +186,20 @@ CREATE (people:`Person`)
 SET people = properties
 ----
 
+A returning clause is supported as well, so that
+
+[source,sql,id=d1_4,name=insert,table_mappings=people:Person]
+----
+INSERT INTO People p (name) VALUES (?) RETURNING elementId(p)
+----
+
+is translated into
+
+[source,cypher,id=d1_4_expected]
+----
+CREATE (p:Person {name: $1}) RETURN elementId(p)
+----
+
 == Upserts
 
 We support a restricted range of "upserts" via the non-standard but pretty common `ON DUPLICATE` and `ON CONFLICT` SQL clauses.
