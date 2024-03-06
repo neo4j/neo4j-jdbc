@@ -66,6 +66,7 @@ import org.neo4j.cypherdsl.core.Case;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.ExposesRelationships;
+import org.neo4j.cypherdsl.core.ExposesReturning;
 import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.PatternElement;
@@ -254,6 +255,10 @@ final class SqlToCypher implements SqlTranslator {
 			else if (query instanceof QOM.Insert<?> t) {
 				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
 			}
+			else if (query instanceof QOM.InsertReturning<?> t) {
+				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t.$insert(),
+						t.$returning());
+			}
 			else if (query instanceof QOM.Update<?> u) {
 				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(u);
 			}
@@ -330,6 +335,10 @@ final class SqlToCypher implements SqlTranslator {
 		}
 
 		private Statement statement(QOM.Insert<?> insert) {
+			return statement(insert, List.of());
+		}
+
+		private Statement statement(QOM.Insert<?> insert, List<? extends SelectFieldOrAsterisk> returning) {
 			this.tables.clear();
 			this.tables.add(insert.$into());
 
@@ -376,9 +385,10 @@ final class SqlToCypher implements SqlTranslator {
 						});
 						merge = ((StatementBuilder.ExposesMergeAction) merge).onMatch().set(updates);
 					}
-					return merge.build();
+					return addOptionalReturnAndBuild((ExposesReturning & StatementBuilder.BuildableStatement<?>) merge,
+							returning);
 				}
-				return Cypher.create(nodeWithProperties(node, nodeProperties)).build();
+				return addOptionalReturnAndBuild(Cypher.create(nodeWithProperties(node, nodeProperties)), returning);
 			}
 			else {
 				if (useMerge && !hasMergeProperties) {
@@ -422,18 +432,28 @@ final class SqlToCypher implements SqlTranslator {
 						}
 					}
 
-					return Cypher.unwind(props)
+					return addOptionalReturnAndBuild(Cypher.unwind(props)
 						.as("properties")
 						.merge(nodeWithProperties(node, mergeProperties))
 						.onCreate()
 						.set(properties)
 						.onMatch()
-						.set(updates)
-						.build();
+						.set(updates), returning);
 				}
 
-				return Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")).build();
+				return addOptionalReturnAndBuild(
+						Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")),
+						returning);
 			}
+		}
+
+		private <T extends ExposesReturning & StatementBuilder.BuildableStatement<?>> Statement addOptionalReturnAndBuild(
+				T exposesReturning, List<? extends SelectFieldOrAsterisk> returning) {
+			if (returning == null || returning.isEmpty()) {
+				return exposesReturning.build();
+			}
+
+			return exposesReturning.returning(returning.stream().flatMap(this::expression).toList()).build();
 		}
 
 		private String uniqueColumnName(String s) {
