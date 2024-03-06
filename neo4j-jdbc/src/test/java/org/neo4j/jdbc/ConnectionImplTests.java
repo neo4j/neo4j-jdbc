@@ -301,6 +301,26 @@ class ConnectionImplTests {
 		assertThat(connection.isReadOnly()).isTrue();
 	}
 
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void shouldPassAccessModeToBoltConnection(boolean readOnly) throws SQLException {
+		// given
+		var boltConnection = mock(BoltConnection.class);
+		var accessMode = readOnly ? AccessMode.READ : AccessMode.WRITE;
+		given(boltConnection.beginTransaction(Collections.emptySet(), accessMode, TransactionType.UNCONSTRAINED, false))
+			.willReturn(CompletableFuture.completedStage(null));
+		var connection = makeConnection(boltConnection);
+		connection.setReadOnly(readOnly);
+
+		// when
+		var transaction = connection.getTransaction();
+
+		// then
+		assertThat(transaction).isNotNull();
+		then(boltConnection).should()
+			.beginTransaction(Collections.emptySet(), accessMode, TransactionType.UNCONSTRAINED, false);
+	}
+
 	@Test
 	void shouldThrowOnUpdatingReadOnlyDuringTransaction() throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
