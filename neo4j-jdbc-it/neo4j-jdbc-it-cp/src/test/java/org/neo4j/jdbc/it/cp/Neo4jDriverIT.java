@@ -84,6 +84,12 @@ public class Neo4jDriverIT {
 		assertThat(validateConnection(connection)).isTrue();
 		assertThat(connection.nativeSQL("SELECT * FROM FooBar"))
 			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS element_id");
+
+		try (var stmt = connection.createStatement();
+				var rs = stmt.executeQuery(connection.nativeSQL("SELECT count(*) FROM Whatever"))) {
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getInt(1)).isZero();
+		}
 	}
 
 	@Test
@@ -126,8 +132,9 @@ public class Neo4jDriverIT {
 	}
 
 	private boolean validateConnection(Connection connection) throws SQLException {
-		var resultSet = connection.createStatement().executeQuery("UNWIND 10 as x return x");
-		return resultSet.next();
+		try (var resultSet = connection.createStatement().executeQuery("UNWIND 10 as x return x")) {
+			return resultSet.next();
+		}
 	}
 
 }
