@@ -97,6 +97,13 @@ import org.neo4j.jdbc.translator.spi.Translator;
  */
 final class SqlToCypher implements Translator {
 
+	static {
+		Logger.getLogger("org.jooq.Constants").setLevel(Level.WARNING);
+		Logger.getLogger("org.neo4j.jdbc.internal.shaded.jooq.Constants").setLevel(Level.WARNING);
+		System.setProperty("org.jooq.no-logo", "true");
+		System.setProperty("org.jooq.no-tips", "true");
+	}
+
 	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
 
 	private static final int STATEMENT_CACHE_SIZE = 64;
@@ -114,11 +121,6 @@ final class SqlToCypher implements Translator {
 	private final Configuration rendererConfig;
 
 	private final Cache<Query, String> cache = Cache.getInstance(STATEMENT_CACHE_SIZE);
-
-	private static final Logger JOOQ_LOGGER = Logger.getLogger("org.jooq.Constants");
-	static {
-		JOOQ_LOGGER.setLevel(Level.WARNING);
-	}
 
 	private SqlToCypher(SqlToCypherConfig config) {
 
