@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.InputStream;
+import java.io.Reader;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -88,6 +90,22 @@ public sealed interface Neo4jPreparedStatement extends PreparedStatement permits
 	 */
 	void setObject(String parameterName, Object value) throws SQLException;
 
-	// TODO remaining mutators
+	/**
+	 * Named-parameter version of {@link #setCharacterStream(int, Reader)}.
+	 * @param parameterName the parameter name
+	 * @param reader the reader to read from
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setCharacterStream(int, Reader)
+	 */
+	void setCharacterStream(String parameterName, Reader reader) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setAsciiStream(int, InputStream)}.
+	 * @param parameterName the parameter name
+	 * @param stream the steam to read from
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setAsciiStream(int, InputStream)
+	 */
+	void setAsciiStream(String parameterName, InputStream stream) throws SQLException;
 
 }

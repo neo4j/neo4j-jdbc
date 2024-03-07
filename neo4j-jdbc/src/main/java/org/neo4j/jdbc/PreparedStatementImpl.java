@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -394,21 +395,27 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setAsciiStream(int parameterIndex, InputStream inputStream, int length) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(inputStream);
+		if (length < 0) {
+			throw new SQLException("Invalid length " + length + " for character stream at index " + parameterIndex);
+		}
+		setAsciiStream0(computeParameterName(parameterIndex), inputStream, length);
+	}
+
+	final void setAsciiStream0(String parameterName, InputStream inputStream, int length) throws SQLException {
 		byte[] bytes;
-		try (inputStream) {
-			bytes = inputStream.readNBytes(length);
+		try (var in = Objects.requireNonNull(inputStream)) {
+			bytes = in.readNBytes(length);
 		}
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		setParameter(computeParameterName(parameterIndex), Values.value(new String(bytes, StandardCharsets.US_ASCII)));
+		setParameter(parameterName, Values.value(new String(bytes, DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM)));
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		setCharacterStream(parameterIndex, new InputStreamReader(x, StandardCharsets.UTF_8), length);
 	}
 
 	@Override
@@ -449,6 +456,18 @@ sealed class PreparedStatementImpl extends StatementImpl
 		setObjectParameter(parameterName, value);
 	}
 
+	@Override
+	public void setCharacterStream(String parameterName, Reader reader) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, reader);
+	}
+
+	@Override
+	public void setAsciiStream(String parameterName, InputStream stream) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, new InputStreamReader(stream, DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM));
+	}
+
 	private void setObjectParameter(String parameterName, Object value) throws SQLException {
 		if (value instanceof Date date) {
 			setDate(parameterName, date);
@@ -475,19 +494,25 @@ sealed class PreparedStatementImpl extends StatementImpl
 	}
 
 	@Override
-	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(reader);
+		if (length < 0) {
+			throw new SQLException("Invalid length " + length + " for character stream at index " + parameterIndex);
+		}
+		setCharacterStream0(computeParameterName(parameterIndex), reader, length);
+	}
+
+	final void setCharacterStream0(String parameterName, Reader reader, int length) throws SQLException {
 		var charBuffer = new char[length];
-		try (reader) {
-			reader.read(charBuffer, 0, length);
+		int lengthRead;
+		try (var in = Objects.requireNonNull(reader)) {
+			lengthRead = in.read(charBuffer, 0, length);
 		}
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		setParameter(computeParameterName(parameterIndex), Values.value(new String(charBuffer)));
+		setParameter(parameterName, Values.value((lengthRead != -1) ? new String(charBuffer, 0, lengthRead) : ""));
 	}
 
 	@Override
@@ -556,14 +581,35 @@ sealed class PreparedStatementImpl extends StatementImpl
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	/**
+	 * <strong>Note</strong> In the Neo4j JDBC driver there is no special treatment for a
+	 * national character string.
+	 * @param parameterIndex of the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @throws SQLException if parameterIndex does not correspond to a parameter marker in
+	 * the SQL statement; if the driver can detect that a data conversion error could
+	 * occur; if a database access error occurs; or this method is called on a closed
+	 * {@code PreparedStatement}
+	 */
 	@Override
 	public void setNString(int parameterIndex, String value) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		setString(1, value);
 	}
 
+	/**
+	 * <strong>Note</strong> In the Neo4j JDBC driver there is no special treatment for a
+	 * national character stream.
+	 * @param parameterIndex of the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @param length the number of characters in the parameter data.
+	 * @throws SQLException if parameterIndex does not correspond to a parameter marker in
+	 * the SQL statement; if the driver can detect that a data conversion error could
+	 * occur; if a database access error occurs; or this method is called on a closed
+	 * {@code PreparedStatement}
+	 */
 	@Override
 	public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		setCharacterStream(parameterIndex, value, length);
 	}
 
 	@Override
@@ -596,11 +642,15 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(inputStream);
+		setAsciiStream(parameterIndex, inputStream, getLengthAsInt(length));
+	}
+
+	static int getLengthAsInt(long length) throws SQLException {
 		var lengthAsInt = (int) length;
 		if (lengthAsInt != length) {
 			throw new SQLException("length larger than integer max value is not supported");
 		}
-		setAsciiStream(parameterIndex, inputStream, lengthAsInt);
+		return lengthAsInt;
 	}
 
 	@Override
@@ -608,11 +658,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(inputStream);
-		var lengthAsInt = (int) length;
-		if (lengthAsInt != length) {
-			throw new SQLException("length larger than integer max value is not supported");
-		}
-		setBinaryStream(parameterIndex, inputStream, lengthAsInt);
+		setBinaryStream(parameterIndex, inputStream, getLengthAsInt(length));
 	}
 
 	@Override
@@ -620,16 +666,15 @@ sealed class PreparedStatementImpl extends StatementImpl
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
 		Objects.requireNonNull(reader);
-		var lengthAsInt = (int) length;
-		if (lengthAsInt != length) {
-			throw new SQLException("length larger than integer max value is not supported");
-		}
-		setCharacterStream(parameterIndex, reader, lengthAsInt);
+		setCharacterStream(parameterIndex, reader, getLengthAsInt(length));
 	}
 
 	@Override
-	public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void setAsciiStream(int parameterIndex, InputStream stream) throws SQLException {
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setParameter(computeParameterName(parameterIndex),
+				new InputStreamReader(stream, DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM));
 	}
 
 	@Override
@@ -639,12 +684,24 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setParameter(computeParameterName(parameterIndex), reader);
 	}
 
+	/**
+	 * <strong>Note</strong> In the Neo4j JDBC driver there is no special treatment for a
+	 * national character stream.
+	 * @param parameterIndex of the first parameter is 1, the second is 2, ...
+	 * @param value the parameter value
+	 * @throws SQLException if parameterIndex does not correspond to a parameter marker in
+	 * the SQL statement; if the driver can detect that a data conversion error could
+	 * occur; if a database access error occurs; or this method is called on a closed
+	 * {@code PreparedStatement}
+	 */
 	@Override
 	public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		setCharacterStream(parameterIndex, value);
 	}
 
 	@Override

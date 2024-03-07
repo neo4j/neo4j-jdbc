@@ -18,14 +18,11 @@
  */
 package org.neo4j.jdbc;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -389,9 +386,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	public void setAsciiStream(String parameterName, InputStream inputStream, int length) throws SQLException {
 		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
-		var value = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.US_ASCII)).lines()
-			.collect(Collectors.joining("\n"));
-		setParameter(parameterName, value);
+		super.setAsciiStream0(parameterName, inputStream, length);
 	}
 
 	@Override
@@ -429,8 +424,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	public void setCharacterStream(String parameterName, Reader reader, int length) throws SQLException {
 		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
-		var value = new BufferedReader(reader).lines().collect(Collectors.joining("\n"));
-		setParameter(parameterName, value);
+		super.setCharacterStream0(parameterName, reader, length);
 	}
 
 	@Override
@@ -616,7 +610,8 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setNString(String parameterName, String value) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertParameterType(ParameterType.NAMED);
+		super.setString(parameterName, value);
 	}
 
 	@Override
@@ -721,7 +716,9 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertParameterType(ParameterType.NAMED);
+		setAsciiStream0(parameterName, x, getLengthAsInt(length));
 	}
 
 	@Override
@@ -731,12 +728,21 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setCharacterStream(String parameterName, Reader reader, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertParameterType(ParameterType.NAMED);
+		setCharacterStream0(parameterName, reader, getLengthAsInt(length));
+	}
+
+	@Override
+	public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
+		assertParameterType(ParameterType.ORDINAL);
+		super.setAsciiStream(parameterIndex, x);
 	}
 
 	@Override
 	public void setAsciiStream(String parameterName, InputStream x) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertParameterType(ParameterType.NAMED);
+		super.setAsciiStream(parameterName, x);
 	}
 
 	@Override
@@ -745,13 +751,21 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	}
 
 	@Override
-	public void setCharacterStream(String parameterName, Reader reader) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+		assertParameterType(ParameterType.ORDINAL);
+		super.setCharacterStream(parameterIndex, reader);
 	}
 
 	@Override
-	public void setNCharacterStream(String parameterName, Reader value) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void setCharacterStream(String parameterName, Reader reader) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setCharacterStream(parameterName, reader);
+	}
+
+	@Override
+	public void setNCharacterStream(String parameterName, Reader reader) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setCharacterStream(parameterName, reader);
 	}
 
 	@Override
