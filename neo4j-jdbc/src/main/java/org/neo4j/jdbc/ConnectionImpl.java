@@ -640,13 +640,17 @@ final class ConnectionImpl implements Neo4jConnection {
 					&& Neo4jTransaction.State.FAILED.equals(this.transaction.getState()))
 							? this.boltConnection.reset(false) : CompletableFuture.completedStage(null);
 			var transactionType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-			var beginStage = this.boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE,
+			var beginStage = this.boltConnection.beginTransaction(Collections.emptySet(), getAccessMode(),
 					transactionType, false);
 			this.transaction = new DefaultTransactionImpl(this.boltConnection,
 					exception -> this.fatalException = exception, resetStage.thenCompose(ignored -> beginStage),
 					this.autoCommit);
 		}
 		return this.transaction;
+	}
+
+	private AccessMode getAccessMode() {
+		return this.readOnly ? AccessMode.READ : AccessMode.WRITE;
 	}
 
 	@Override
