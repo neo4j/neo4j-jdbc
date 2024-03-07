@@ -22,7 +22,7 @@ package org.neo4j.jdbc.values;
  * The Neo4j duration is different than both Java's {@link java.time.Duration}
  * <strong>and</strong> {@link java.time.Period}. In Java, those are different concepts,
  * in which a duration is always time based and exact for the supported units while a
- * period is calendar based and therefor does not always have the same number of dates.
+ * period is calendar based and therefore does not always have the same number of dates.
  * The Neo4j {@link IsoDuration} reassembles what Neo4j does, but blurs the lines between
  * a duration and a period.
  *
