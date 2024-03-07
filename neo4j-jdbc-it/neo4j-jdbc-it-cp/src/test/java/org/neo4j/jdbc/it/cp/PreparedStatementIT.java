@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -215,6 +216,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 	}
 
 	@Nested
+	@DisabledInNativeImage // Due to Spying on things
 	class Streams {
 
 		static String readAsString(URL resource) throws IOException {
