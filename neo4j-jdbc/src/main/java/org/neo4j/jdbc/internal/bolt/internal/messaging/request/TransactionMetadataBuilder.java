@@ -51,10 +51,12 @@ public final class TransactionMetadataBuilder {
 
 	public static Map<String, Value> buildMetadata(String databaseName, AccessMode mode,
 			TransactionType transactionType, Set<String> bookmarks) {
+		var databaseNamePresent = databaseName != null;
 		var bookmarksPresent = !bookmarks.isEmpty();
 		var accessModePresent = mode == AccessMode.READ;
 
-		if (!bookmarksPresent && !accessModePresent && transactionType == TransactionType.DEFAULT) {
+		if (!databaseNamePresent && !bookmarksPresent && !accessModePresent
+				&& transactionType == TransactionType.DEFAULT) {
 			return Collections.emptyMap();
 		}
 

@@ -34,6 +34,7 @@ import org.neo4j.jdbc.internal.bolt.AuthToken;
 import org.neo4j.jdbc.internal.bolt.BoltAgent;
 import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
 import org.neo4j.jdbc.internal.bolt.SecurityPlan;
+import org.neo4j.jdbc.internal.bolt.internal.connection.ChannelAttributes;
 import org.neo4j.jdbc.internal.bolt.internal.connection.HandshakeCompletedListener;
 import org.neo4j.jdbc.internal.bolt.internal.connection.NettyChannelInitializer;
 import org.neo4j.jdbc.internal.bolt.internal.connection.inbound.ConnectTimeoutHandler;
@@ -78,7 +79,8 @@ public final class NettyConnectionProvider implements ConnectionProvider {
 				future.completeExceptionally(throwable);
 			}
 			else {
-				var connection = new NetworkConnection(channel, this.clock, databaseName);
+				var readTimeout = ChannelAttributes.connectionReadTimeout(channel);
+				var connection = new NetworkConnection(channel, this.clock, databaseName, readTimeout.orElse(null));
 				future.complete(connection);
 			}
 		});

@@ -78,7 +78,7 @@ public final class ChannelAttributes {
 	}
 
 	public static void setConnectionReadTimeout(Channel channel, Long connectionReadTimeout) {
-		setOnce(channel, CONNECTION_READ_TIMEOUT, connectionReadTimeout);
+		set(channel, CONNECTION_READ_TIMEOUT, connectionReadTimeout);
 	}
 
 	public static String connectionId(Channel channel) {

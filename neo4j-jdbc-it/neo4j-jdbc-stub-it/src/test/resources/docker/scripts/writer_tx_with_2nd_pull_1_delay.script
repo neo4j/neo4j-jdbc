@@ -1,0 +1,14 @@
+!: BOLT 5.1
+
+A: HELLO {"{}": "*"}
+A: LOGON {"scheme": "basic", "principal": "neo4j", "credentials": "password"}
+C: BEGIN {"db": "neo4j", "tx_type": "IMPLICIT", "[bookmarks]": "*", "[tx_metadata]": "*"}
+   RUN "RETURN 1 as n" {} {}
+   PULL {"n": 1}
+S: SUCCESS {}
+   SUCCESS {"fields": ["n"]}
+   RECORD [1]
+   SUCCESS {"has_more": true}
+C: PULL {"n": 1}
+S: <SLEEP> 1
+?: GOODBYE

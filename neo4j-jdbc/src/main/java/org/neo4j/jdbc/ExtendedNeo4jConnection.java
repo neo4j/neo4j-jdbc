@@ -16,26 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.internal.bolt.internal;
+package org.neo4j.jdbc;
 
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+/**
+ * Non public extension of {@link Neo4jConnection} used for internal purposes.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
+non-sealed interface ExtendedNeo4jConnection extends Neo4jConnection {
 
-import org.neo4j.jdbc.internal.bolt.internal.handler.ResponseHandler;
-import org.neo4j.jdbc.internal.bolt.internal.messaging.Message;
-
-public interface Connection {
-
-	void write(Message message, ResponseHandler handler, boolean flush);
-
-	BoltProtocol protocol();
-
-	String databaseName();
-
-	Optional<Long> defaultReadTimeoutMillis();
-
-	void setReadTimeoutMillis(Long timeout);
-
-	CompletionStage<Void> close();
+	/**
+	 * A callback that is used by the linked {@link AutoCloseable} objects.
+	 * @param autoCloseable the object that has been closed
+	 */
+	void onClose(AutoCloseable autoCloseable);
 
 }

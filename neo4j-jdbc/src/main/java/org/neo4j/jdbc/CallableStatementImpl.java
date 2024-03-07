@@ -26,7 +26,6 @@ import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
@@ -53,8 +52,9 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	private ParameterType parameterType;
 
-	static CallableStatement prepareCall(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			boolean rewriteBatchedStatements, String sql) throws SQLException {
+	static CallableStatement prepareCall(ExtendedNeo4jConnection connection,
+			Neo4jTransactionSupplier transactionSupplier, boolean rewriteBatchedStatements, String sql)
+			throws SQLException {
 
 		// We should cache the descriptor if this gets widely used.
 
@@ -93,7 +93,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 				descriptor.toCypher(parameterOrder));
 	}
 
-	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
+	CallableStatementImpl(ExtendedNeo4jConnection connection, Neo4jTransactionSupplier transactionSupplier,
 			boolean rewriteBatchedStatements, String sql) {
 		super(connection, transactionSupplier, UnaryOperator.identity(), null, rewriteBatchedStatements, sql);
 	}

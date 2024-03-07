@@ -16,26 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.internal.bolt.internal;
+package org.neo4j.jdbc.stub.it.server;
 
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.neo4j.jdbc.internal.bolt.internal.handler.ResponseHandler;
-import org.neo4j.jdbc.internal.bolt.internal.messaging.Message;
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface StubScript {
 
-public interface Connection {
-
-	void write(Message message, ResponseHandler handler, boolean flush);
-
-	BoltProtocol protocol();
-
-	String databaseName();
-
-	Optional<Long> defaultReadTimeoutMillis();
-
-	void setReadTimeoutMillis(Long timeout);
-
-	CompletionStage<Void> close();
+	String path();
 
 }

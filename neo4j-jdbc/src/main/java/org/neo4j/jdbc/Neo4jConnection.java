@@ -19,6 +19,8 @@
 package org.neo4j.jdbc;
 
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.Executor;
 
 /**
  * A Neo4j specific extension of {@link Connection}. It may be referred to for use with
@@ -27,7 +29,52 @@ import java.sql.Connection;
  * @author Michael J. Simons
  * @since 6.0.0
  */
-public sealed interface Neo4jConnection extends Connection permits ConnectionImpl {
+public sealed interface Neo4jConnection extends Connection permits ExtendedNeo4jConnection {
+
+	/**
+	 * Sets the timeout for which a connection may remain idle following a request.
+	 * <p>
+	 * The timeout value applies to individual server responses, not the JDBC API calls.
+	 * Any response from the server, including the {@literal NOOP} chunk, interrupts the
+	 * idle period.
+	 * <p>
+	 * When initializing a new Bolt connection, the Neo4j server may supply a
+	 * {@literal connection.recv_timeout_seconds} connection hint that defines the amount
+	 * of time for which a the connection may remain idle (see the linked documentation
+	 * for more details). When the network timeout value is set to {@literal 0} and the
+	 * hint value is available, the latter is used as a default.
+	 * <p>
+	 * For method full description, see the
+	 * {@link Connection#setNetworkTimeout(Executor, int)} documentation.
+	 * @param executor this parameter is not used by this implementation and may be
+	 * {@literal null}.
+	 * @param milliseconds the timeout value in milliseconds. If the value is
+	 * {@literal 0}, the connection hint value is used providing it was supplied by the
+	 * server or the timeout is turned off.
+	 * @throws SQLException if a database access error occurs, this method is called on a
+	 * closed connection or the value specified for seconds is less than 0.
+	 * @see <a href=
+	 * "https://neo4j.com/docs/bolt/current/appendix/connection-hints/#hint-recv-timeout-seconds">connection.recv_timeout_seconds
+	 * connection hint</a>
+	 */
+	@Override
+	void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException;
+
+	/**
+	 * Returns the network timeout value.
+	 * <p>
+	 * For method full description, see the {@link Connection#getNetworkTimeout()}
+	 * documentation.
+	 * @return the timeout value. The value {@literal 0} means the server supplied timeout
+	 * is used when available or the timeout is off.
+	 * @throws SQLException if a database access error occurs or this method is called on
+	 * a closed connection.
+	 * @see <a href=
+	 * "https://neo4j.com/docs/bolt/current/appendix/connection-hints/#hint-recv-timeout-seconds">connection.recv_timeout_seconds
+	 * connection hint</a>
+	 */
+	@Override
+	int getNetworkTimeout() throws SQLException;
 
 	/**
 	 * Flushes the SQL to Cypher translation cache.

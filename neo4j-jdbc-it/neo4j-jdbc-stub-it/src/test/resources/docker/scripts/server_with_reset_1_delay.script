@@ -1,0 +1,8 @@
+!: BOLT 5.1
+
+A: HELLO {"{}": "*"}
+A: LOGON {"scheme": "basic", "principal": "neo4j", "credentials": "password"}
+C: RESET
+S: <SLEEP> 1
+   SUCCESS {}
+?: GOODBYE

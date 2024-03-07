@@ -27,7 +27,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
@@ -40,7 +39,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private final BoltConnection boltConnection;
 
-	private final Consumer<SQLException> fatalConnectionExceptionConsumer;
+	private final FatalExceptionHandler fatalExceptionHandler;
 
 	private final CompletionStage<Void> beginStage;
 
@@ -50,15 +49,15 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private SQLException exception;
 
-	DefaultTransactionImpl(BoltConnection boltConnection, Consumer<SQLException> fatalConnectionExceptionConsumer,
+	DefaultTransactionImpl(BoltConnection boltConnection, FatalExceptionHandler fatalExceptionHandler,
 			CompletionStage<Void> beginStage, boolean autoCommit) {
-		this(boltConnection, fatalConnectionExceptionConsumer, beginStage, autoCommit, State.NEW);
+		this(boltConnection, fatalExceptionHandler, beginStage, autoCommit, State.NEW);
 	}
 
-	DefaultTransactionImpl(BoltConnection boltConnection, Consumer<SQLException> fatalConnectionExceptionConsumer,
+	DefaultTransactionImpl(BoltConnection boltConnection, FatalExceptionHandler fatalExceptionHandler,
 			CompletionStage<Void> beginStage, boolean autoCommit, State state) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
-		this.fatalConnectionExceptionConsumer = Objects.requireNonNull(fatalConnectionExceptionConsumer);
+		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
 		this.beginStage = Objects.requireNonNull(beginStage);
 		this.autoCommit = autoCommit;
 		this.state = state;
@@ -147,15 +146,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	@Override
 	public void fail(SQLException exception) throws SQLException {
 		assertRunnableState();
-		fail(exception, false);
-	}
-
-	private void fail(SQLException exception, boolean notifyUpstream) {
 		this.exception = exception;
 		this.state = this.autoCommit ? State.FAILED : State.OPEN_FAILED;
-		if (notifyUpstream) {
-			this.fatalConnectionExceptionConsumer.accept(exception);
-		}
 	}
 
 	private <T> T execute(CompletableFuture<T> future, int timeout) throws SQLException {
@@ -172,13 +164,18 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 		catch (ExecutionException ex) {
 			var cause = ex.getCause();
+			if (cause == null) {
+				cause = ex;
+			}
+			var sqlException = new SQLException("An error occurred while handling request.", cause);
 			if (cause instanceof Neo4jException || cause instanceof MessageIgnoredException) {
 				fail(new SQLException("The transaction is no longer valid."));
 			}
 			else {
-				fail(new SQLException("The connection is no longer valid."), true);
+				fail(new SQLException("The connection is no longer valid."));
+				this.fatalExceptionHandler.handle(this.exception, sqlException);
 			}
-			throw new SQLException("An error occurred while handling request.", ex);
+			throw sqlException;
 		}
 	}
 
@@ -196,6 +193,18 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	}
 
 	private record QueryResponses(RunResponse runResponse, PullResponse pullResponse, DiscardResponse discardResponse) {
+	}
+
+	@FunctionalInterface
+	interface FatalExceptionHandler {
+
+		/**
+		 * Handles a fatal connection exception.
+		 * @param fatalSqlException the fatal SQL connection exception.
+		 * @param sqlException the SQL exception with the original cause.
+		 */
+		void handle(SQLException fatalSqlException, SQLException sqlException);
+
 	}
 
 }
