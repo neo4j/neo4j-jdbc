@@ -530,8 +530,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT a9ad923,</span>
-<span id="revdate">2024-03-05T10:59:03Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 6caa1e6,</span>
+<span id="revdate">2024-03-07T10:05:34Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -576,7 +576,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <ul class="sectlevel2">
 <li><a href="#s2c_introduction">7.1. Introduction</a></li>
 <li><a href="#_translating_sql_to_cypher">7.2. Translating SQL to Cypher</a></li>
-<li><a href="#s2c_supported_statements">7.3. Supported statements</a></li>
+<li><a href="#s2c">7.3. Using the default translator</a></li>
 </ul>
 </li>
 <li><a href="#_neo4j_specific_syntax_for_statements">Appendix A: Neo4j specific syntax for statements</a>
@@ -719,7 +719,7 @@ We are grateful for kick-starting the original Sql2Cypher project together in ea
 <p>Some JDBC features are not yet supported (such as the <code>CallableStatement</code>), some feature won&#8217;t ever be supported</p>
 </li>
 <li>
-<p>The SQL to Cypher translator does only support a limited subset of clauses and SQL constructs that can be semantically equivalent translated to Cypher (See <a href="#s2c_supported_statements">Section 7.3</a>)</p>
+<p>The SQL to Cypher translator does only support a limited subset of clauses and SQL constructs that can be semantically equivalent translated to Cypher (See <a href="#s2c_supported_statements">Section 7.3.3</a>)</p>
 </li>
 <li>
 <p>There is no "right" way to map <code>JOIN</code> statements to relations, so your mileage may vary</p>
@@ -1712,8 +1712,13 @@ It consists of two interfaces, <code>SqlTranslatorFactory</code> and the actual 
 </ul>
 </div>
 <div class="paragraph">
-<p>The latter is bundled in the "full bundle" as described in <a href="#available_bundles">Section 4.2</a>.
+<p>The latter is covered in "<a href="#s2c">Using the default translator</a>" and bundled as the "full bundle", described in <a href="#available_bundles">Section 4.2</a>.
 The former is provided for two reasons: It allows us to distribute the driver with and without the bundled, default translator and can be an option for you to run your custom translator.</p>
+</div>
+<div class="paragraph">
+<p>Translators can be chained, and you can have as many translators on the classpath as you want.
+They will be ordered by a configurable precedence with our default implementation having the lowest precedence.
+Thus you can have for example a custom translator that takes care of a fixed set of queries, and if it cannot translate another, it will just be passed down to our implementation.</p>
 </div>
 <div class="paragraph">
 <p>Translating arbitrary SQL queries to Cypher is an opinionated task as there is no right way to map table names to objects in the graph: A table name can be used as is as a label, you might want to transform it to a singular form etc. And then we haven&#8217;t even started how to map relationships: Do you want to have relationship types derived from a join table, a join column (in that case, which one?) or the name of a foreign key?</p>
@@ -1721,18 +1726,6 @@ The former is provided for two reasons: It allows us to distribute the driver wi
 <div class="paragraph">
 <p>We made some assumptions that we find to match various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.</p>
-</div>
-<div class="sect3">
-<h4 id="_supported_sql_dialects">7.1.1. Supported SQL dialects</h4>
-<div class="paragraph">
-<p>Our default translator uses the OSS parser from <a href="https://www.jooq.org">jOOQ</a>, which supports a broad spectrum of SQL dialects already.
-We picked the generic, default dialect of jOOQ as our default dialect, but you can overwrite this in the SQL to Cypher configuration using the parameter <code>s2c.sqlDialect</code> with one of the supported dialects listed in <a href="#s2c_configuration">configuration below</a>.
-<code>POSTGRES</code> might be a good choice for several integrations.</p>
-</div>
-<div class="paragraph">
-<p>Bear in mind though that any shortcomings in the translation are probably not due to the lack of parser support, but due to the lack of an obvious, semantically equivalent Cypher construct.
-That means we might be able to parse a certain piece of SQL, but are unable to translate in into something meaningful that Neo4j can understand without additional, contextual information.</p>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -1828,13 +1821,24 @@ Use it like this:</p>
 <div class="paragraph">
 <p>A <code>NoSuchElementException</code> with a message of <code>No SQL translators available</code> will be thrown when there is no implementation of the SQL to Cypher translator available, and you either use <code>java.sql.Connection.nativeSQL</code> or enable automatic translation. The exception will be thrown when you access the method or eagerly on opening a connection in the latter case.</p>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="s2c">7.3. Using the default translator</h3>
+<div class="sect3">
+<h4 id="_supported_sql_dialects">7.3.1. Supported SQL dialects</h4>
 <div class="paragraph">
-<p>An <code>IllegalArgumentException</code> indicating that more than one SQL translator was found will be thrown when there is more than one implementation on the class path.
-The mechanics of when this exception is thrown are the same as above.</p>
+<p>Our default translator uses the OSS parser from <a href="https://www.jooq.org">jOOQ</a>, which supports a broad spectrum of SQL dialects already.
+We picked the generic, default dialect of jOOQ as our default dialect, but you can overwrite this in the SQL to Cypher configuration using the parameter <code>s2c.sqlDialect</code> with one of the supported dialects listed in <a href="#s2c_configuration">configuration below</a>.
+<code>POSTGRES</code> might be a good choice for several integrations.</p>
+</div>
+<div class="paragraph">
+<p>Bear in mind though that any shortcomings in the translation are probably not due to the lack of parser support, but due to the lack of an obvious, semantically equivalent Cypher construct.
+That means we might be able to parse a certain piece of SQL, but are unable to translate in into something meaningful that Neo4j can understand without additional, contextual information.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="s2c_configuration">7.2.4. Configuration</h4>
+<h4 id="s2c_configuration">7.3.2. Configuration</h4>
 <div class="paragraph">
 <p>The default implementation provides a number of configuration settings.
 They must be prefixed with <code>s2c</code> in the URL or config options:</p>
@@ -1963,16 +1967,15 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 </div>
-</div>
-<div class="sect2">
-<h3 id="s2c_supported_statements">7.3. Supported statements</h3>
+<div class="sect3">
+<h4 id="s2c_supported_statements">7.3.3. Supported statements</h4>
 <div class="paragraph">
 <p>The following statements are all under tests and describe what you can expect from the default translation layer:</p>
 </div>
-<div class="sect3">
-<h4 id="_translation_concepts">7.3.1. Translation concepts</h4>
 <div class="sect4">
-<h5 id="_table_names_to_labels">Table names to labels</h5>
+<h5 id="_translation_concepts">Translation concepts</h5>
+<div class="sect5">
+<h6 id="_table_names_to_labels">Table names to labels</h6>
 <div class="paragraph">
 <p>The most simple select statement to translate is a statement without the <code>FROM</code> clause, such as:</p>
 </div>
@@ -2040,8 +2043,8 @@ RETURN t.a, t.b</code></pre>
 <p>We recommend using table aliases, but the translations works without them as well.</p>
 </div>
 </div>
-<div class="sect4">
-<h5 id="s2c_star_selects">Star-Selects</h5>
+<div class="sect5">
+<h6 id="s2c_star_selects">Star-Selects</h6>
 <div class="paragraph">
 <p>A star- or <code>*</code> select comes in different forms:</p>
 </div>
@@ -2065,8 +2068,8 @@ RETURN t.a, t.b</code></pre>
 The latter however requires our translator to have access to the schema of the underlying Neo4j database.
 The following sections will describe the use-cases:</p>
 </div>
-<div class="sect5">
-<h6 id="_projecting_individual_properties">Projecting individual properties</h6>
+<div class="sect6">
+<h7 id="_projecting_individual_properties">Projecting individual properties</h7>
 <div class="paragraph">
 <p>Don&#8217;t use a star-select but enumerate the properties:</p>
 </div>
@@ -2120,8 +2123,8 @@ RETURN movie.title AS title;</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_projecting_all_properties">Projecting all properties</h6>
+<div class="sect6">
+<h7 id="_projecting_all_properties">Projecting all properties</h7>
 <div class="paragraph">
 <p>If you run a</p>
 </div>
@@ -2280,8 +2283,8 @@ RETURN elementId(p) AS element_id, p.born AS born, p.name AS name, m.title AS ti
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_returning_nodes_and_relationships">Returning nodes and relationships</h6>
+<div class="sect6">
+<h7 id="_returning_nodes_and_relationships">Returning nodes and relationships</h7>
 <div class="paragraph">
 <p>A statement that projects a table alias such as</p>
 </div>
@@ -2347,17 +2350,17 @@ RETURN movie;</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_comparing_sql_with_cypher_examples">Comparing SQL with Cypher examples</h5>
+<div class="sect5">
+<h6 id="_comparing_sql_with_cypher_examples">Comparing SQL with Cypher examples</h6>
 <div class="paragraph">
 <p>Sources of the following examples are from <a href="https://neo4j.com/developer/cypher/guide-sql-to-cypher/">Comparing SQL with Cypher</a>.</p>
 </div>
-<div class="sect5">
-<h6 id="_find_all_products">Find all Products</h6>
+<div class="sect6">
+<h7 id="_find_all_products">Find all Products</h7>
 
 </div>
-<div class="sect5">
-<h6 id="_select_and_return_records">Select and Return Records</h6>
+<div class="sect6">
+<h7 id="_select_and_return_records">Select and Return Records</h7>
 <div class="paragraph">
 <p>Easy in SQL, just select everything from the <code>products</code> table.</p>
 </div>
@@ -2396,8 +2399,8 @@ RETURN p</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_field_access_ordering_and_paging">Field Access, Ordering and Paging</h6>
+<div class="sect6">
+<h7 id="_field_access_ordering_and_paging">Field Access, Ordering and Paging</h7>
 <div class="paragraph">
 <p><strong>More efficient is to return only a subset of attributes</strong>, like <code>ProductName</code> and <code>UnitPrice</code>.
 And while we&#8217;re on it, let&#8217;s also order by price and only return the 10 most expensive items.</p>
@@ -2437,13 +2440,13 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_expressions">7.3.2. Expressions</h4>
+<div class="sect4">
+<h5 id="_expressions">Expressions</h5>
 <div class="paragraph">
 <p>Most SQL expressions will have a corresponding Cypher expression and can be translated straigt forward:</p>
 </div>
-<div class="sect4">
-<h5 id="_literal_values">Literal Values</h5>
+<div class="sect5">
+<h6 id="_literal_values">Literal Values</h6>
 <div class="paragraph">
 <p>Literal values are usually 1:1 translations:</p>
 </div>
@@ -2462,8 +2465,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_arithmetic_expressions">Arithmetic expressions</h5>
+<div class="sect5">
+<h6 id="_arithmetic_expressions">Arithmetic expressions</h6>
 <div class="paragraph">
 <p>So are the arithmetic expressions:</p>
 </div>
@@ -2491,10 +2494,10 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_functions">Functions</h5>
 <div class="sect5">
-<h6 id="_numeric_functions">Numeric functions</h6>
+<h6 id="_functions">Functions</h6>
+<div class="sect6">
+<h7 id="_numeric_functions">Numeric functions</h7>
 <div class="paragraph">
 <p>We can translate all numeric functions that are supported by Neo4j&#8217;s Cypher implementation: <a href="https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/">Mathematical functions - numeric</a>:</p>
 </div>
@@ -2524,8 +2527,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_logarithmic_functions">Logarithmic functions</h6>
+<div class="sect6">
+<h7 id="_logarithmic_functions">Logarithmic functions</h7>
 <div class="paragraph">
 <p>Neo4j supports a brought range of <a href="https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/">logarithmic functions</a> and the input</p>
 </div>
@@ -2553,8 +2556,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_trigonometric_functions">Trigonometric functions</h6>
+<div class="sect6">
+<h7 id="_trigonometric_functions">Trigonometric functions</h7>
 <div class="paragraph">
 <p>Calls to trigonometric functions</p>
 </div>
@@ -2594,8 +2597,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_string_functions">String functions</h6>
+<div class="sect6">
+<h7 id="_string_functions">String functions</h7>
 <div class="paragraph">
 <p>The following string manipulations are guaranteed to work:</p>
 </div>
@@ -2641,8 +2644,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_scalar_functions">Scalar functions</h6>
+<div class="sect6">
+<h7 id="_scalar_functions">Scalar functions</h7>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2683,13 +2686,13 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_query_expressions">Query expressions</h5>
+<div class="sect5">
+<h6 id="_query_expressions">Query expressions</h6>
 <div class="paragraph">
 <p>Several advanced SQL expressions are supported as well, such as</p>
 </div>
-<div class="sect5">
-<h6 id="_case_simple"><code>CASE</code> simple</h6>
+<div class="sect6">
+<h7 id="_case_simple"><code>CASE</code> simple</h7>
 <div class="paragraph">
 <p>The simple <code>CASE</code> expressions</p>
 </div>
@@ -2711,8 +2714,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_case_advanced"><code>CASE</code> advanced</h6>
+<div class="sect6">
+<h7 id="_case_advanced"><code>CASE</code> advanced</h7>
 <div class="paragraph">
 <p>And <code>CASE</code> statement using a search (See <a href="https://neo4j.com/docs/cypher-manual/current/syntax/expressions">expressions</a> for more information):</p>
 </div>
@@ -2738,8 +2741,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_case_abbreviations_which_arent_coalesce_or_nvl"><code>CASE</code> abbreviations (which aren&#8217;t <code>COALESCE</code> or <code>NVL</code>)</h6>
+<div class="sect6">
+<h7 id="_case_abbreviations_which_arent_coalesce_or_nvl"><code>CASE</code> abbreviations (which aren&#8217;t <code>COALESCE</code> or <code>NVL</code>)</h7>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2763,13 +2766,13 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_predicates">7.3.3. Predicates</h4>
+<div class="sect4">
+<h5 id="_predicates">Predicates</h5>
 <div class="paragraph">
 <p>As with expressions a lot of logical SQL expressions and conditions used as predicates can be translated into straight forward into Cypher predicates.</p>
 </div>
-<div class="sect4">
-<h5 id="_conjunctions_and_disjunctions">Conjunctions and disjunctions.</h5>
+<div class="sect5">
+<h6 id="_conjunctions_and_disjunctions">Conjunctions and disjunctions.</h6>
 <div class="paragraph">
 <p>Logical conjunctions and disjunctions are all supported:</p>
 </div>
@@ -2810,10 +2813,10 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_operators">Operators</h5>
 <div class="sect5">
-<h6 id="_arithmetic_operators">Arithmetic operators</h6>
+<h6 id="_operators">Operators</h6>
+<div class="sect6">
+<h7 id="_arithmetic_operators">Arithmetic operators</h7>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2838,8 +2841,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_between">Between</h6>
+<div class="sect6">
+<h7 id="_between">Between</h7>
 <div class="paragraph">
 <p>Between in SQL is inclusive</p>
 </div>
@@ -2878,8 +2881,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_logical_row_value_expressions">Logical row value expressions</h5>
+<div class="sect5">
+<h6 id="_logical_row_value_expressions">Logical row value expressions</h6>
 <div class="paragraph">
 <p>The above examples are based on scalar expressions.
 Row value expressions will be translated as well:</p>
@@ -2912,10 +2915,10 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_null_handling">Null Handling</h5>
 <div class="sect5">
-<h6 id="_for_scalar_expressions">For scalar expressions</h6>
+<h6 id="_null_handling">Null Handling</h6>
+<div class="sect6">
+<h7 id="_for_scalar_expressions">For scalar expressions</h7>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2936,8 +2939,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_for_row_value_expressions">For row value expressions</h6>
+<div class="sect6">
+<h7 id="_for_row_value_expressions">For row value expressions</h7>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2960,8 +2963,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_like_operator"><code>LIKE</code> operator</h5>
+<div class="sect5">
+<h6 id="_like_operator"><code>LIKE</code> operator</h6>
 <div class="paragraph">
 <p>The <code>LIKE</code> operator</p>
 </div>
@@ -2981,8 +2984,8 @@ RETURN *</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_using_joins_to_map_relationships">7.3.4. Using joins to map relationships</h4>
+<div class="sect4">
+<h5 id="_using_joins_to_map_relationships">Using joins to map relationships</h5>
 <div class="paragraph">
 <p>On the surface joins are relationships materialized in SQL (Foreign keys are not).
 Sadly, it&#8217;s not as straight forward to map.
@@ -3001,10 +3004,10 @@ There are several options and possibilities to handle things:</p>
 <div class="paragraph">
 <p>We implemented some variants thereof, however we don&#8217;t claim their absolute usefulness in all cases</p>
 </div>
-<div class="sect4">
-<h5 id="_1n_joins">1:n joins</h5>
 <div class="sect5">
-<h6 id="_natural_joins">Natural joins</h6>
+<h6 id="_1n_joins">1:n joins</h6>
+<div class="sect6">
+<h7 id="_natural_joins">Natural joins</h7>
 <div class="paragraph">
 <p>SQL <code>NATURAL</code> joins are the easiest way to denote relationship names without having todo any mapping.</p>
 </div>
@@ -3043,8 +3046,8 @@ RETURN p.name, r.role,
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_simple_join">Simple join</h6>
+<div class="sect6">
+<h7 id="_simple_join">Simple join</h7>
 <div class="paragraph">
 <p>We configured the translator use the following table mapping:</p>
 </div>
@@ -3100,8 +3103,8 @@ RETURN p.name, m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_using_the_on_clause">Using the <code>ON</code> clause</h6>
+<div class="sect6">
+<h7 id="_using_the_on_clause">Using the <code>ON</code> clause</h7>
 <div class="paragraph">
 <p>We used backticks here for the table- and column names and no mapping.</p>
 </div>
@@ -3123,8 +3126,8 @@ RETURN p.name, m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_mn_joins">m:n joins</h5>
+<div class="sect5">
+<h6 id="_mn_joins">m:n joins</h6>
 <div class="paragraph">
 <p>An intersection table is a table that contains references to two other tables in the form of at least two columns—hopefully with foreign keys and therefor indexes defined on them.
 This construct is usually required in the relational model to create an m:n relationship.
@@ -3209,14 +3212,14 @@ RETURN p.name AS actor, d.name AS director, m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_dml_statements">7.3.5. DML statements</h4>
+<div class="sect4">
+<h5 id="_dml_statements">DML statements</h5>
 <div class="paragraph">
 <p>In this section we list the supported Data-Manipulation-Language (DML) statements.
 While a <code>SELECT</code> statement is technically DML as well, as it is used to project existing relations into new relations, it has been covered previously.</p>
 </div>
-<div class="sect4">
-<h5 id="_deleting_nodes">Deleting nodes</h5>
+<div class="sect5">
+<h6 id="_deleting_nodes">Deleting nodes</h6>
 <div class="paragraph">
 <p>Nodes can be deleted via the SQL <code>DELETE</code> statement.
 This can happen unconditionally:</p>
@@ -3328,8 +3331,8 @@ DELETE p</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_deleting_nodes_and_their_related_nodes">Deleting nodes and their related nodes</h5>
+<div class="sect5">
+<h6 id="_deleting_nodes_and_their_related_nodes">Deleting nodes and their related nodes</h6>
 <div class="paragraph">
 <p>You can use SQL <code>TRUNCATE</code> to detach delete nodes.</p>
 </div>
@@ -3348,8 +3351,8 @@ DETACH DELETE people</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_inserting_data">Inserting data</h5>
+<div class="sect5">
+<h6 id="_inserting_data">Inserting data</h6>
 <div class="paragraph">
 <p>A single list of values with explicit columns and constant values can be inserted with a simple <code>INSERT</code> statement:</p>
 </div>
@@ -3422,9 +3425,25 @@ CREATE (people:`Person`)
 SET people = properties</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>A returning clause is supported as well, so that</p>
 </div>
-<div class="sect4">
-<h5 id="_upserts">Upserts</h5>
+<div id="d1_4" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> People p (name) <span class="keyword">VALUES</span> (<span class="error">?</span>) RETURNING elementId(p)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is translated into</p>
+</div>
+<div id="d1_4_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">CREATE (p:Person {name: $1}) RETURN elementId(p)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_upserts">Upserts</h6>
 <div class="paragraph">
 <p>We support a restricted range of "upserts" via the non-standard but pretty common <code>ON DUPLICATE</code> and <code>ON CONFLICT</code> SQL clauses.
 Upserts will generally be translated to <code>MERGE</code> statements.
@@ -3543,6 +3562,7 @@ ON CREATE SET
   people.first_name = properties.first_name,
   people.born = properties.born
 ON MATCH SET people.born = properties['born']</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -3754,7 +3774,7 @@ If you depend on a <code>javax.sql.DataSource</code>, we provide <code>org.neo4j
 <code>flatten</code> did unnest returned nodes and relationships by providing all their properties as individual columns.</p>
 </div>
 <div class="paragraph">
-<p>If you enable automatic SQL to Cypher translation (See <a href="#s2c_introduction">Section 7.1</a>), any <code>*</code>-select will inspect whether it affects nodes or relationship and will unnest their properties, so that a <code>SELECT * FROM Movie m</code> will effectively become <code>MATCH (m:Movie) RETURN m.title AS title, m.released AS released</code>. Read more about this topic in <a href="#s2c_star_selects">Section 7.3.1.2</a>).</p>
+<p>If you enable automatic SQL to Cypher translation (See <a href="#s2c_introduction">Section 7.1</a>), any <code>*</code>-select will inspect whether it affects nodes or relationship and will unnest their properties, so that a <code>SELECT * FROM Movie m</code> will effectively become <code>MATCH (m:Movie) RETURN m.title AS title, m.released AS released</code>. Read more about this topic in <a href="#s2c_star_selects">Section 7.3.3.1.2</a>).</p>
 </div>
 <div class="paragraph">
 <p>In case you want to access the actual node, return the whole table alias or just use Cypher.
@@ -3767,8 +3787,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT a9ad923<br>
-Last updated 2024-03-05 10:59:07 UTC
+Version 6.0.0-SNAPSHOT 6caa1e6<br>
+Last updated 2024-03-07 10:05:39 UTC
 </div>
 </div>
 </body>
