@@ -119,6 +119,7 @@ paths:
       summary: Executes the given workload.
       description: |-
         Drivers should load all the records to memory and then discard.
+      operationId: executeWorkload
       responses:
         '204':
           description: Workload executed.

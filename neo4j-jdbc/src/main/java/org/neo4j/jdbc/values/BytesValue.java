@@ -21,6 +21,13 @@ package org.neo4j.jdbc.values;
 import java.util.Arrays;
 import java.util.HexFormat;
 
+/**
+ * Representing a byte-array. Note that in Cypher byte arrays cannot be directly used.
+ * They are however natively storable in Neo4j.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class BytesValue extends AbstractValue {
 
 	private final byte[] val;

@@ -234,9 +234,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new BuilderImpl(false, Map.of()).fromEnv(directory, filename);
 	}
 
+	/**
+	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is
+	 * able to provide connections. The public constructor is provided mainly for tooling
+	 * that directly accesses vendor specific classes and circumvents the service loader
+	 * machinery for JDBC.
+	 */
 	public Neo4jDriver() {
-		// Having a public default constructor is not only fine here, but also required on
-		// the module path so that this public class can be properly exported.
 		this(BoltConnectionProviders.netty(eventLoopGroup, Clock.systemUTC()));
 	}
 
@@ -762,6 +766,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
+	/**
+	 * Configuration step for creating new {@link Neo4jDriver driver instances} in a
+	 * fluent way.
+	 */
 	public interface SpecifyEnvStep {
 
 		/**

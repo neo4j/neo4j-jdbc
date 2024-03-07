@@ -23,6 +23,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 
+/**
+ * The Cypher type {@code ZONED DATETIME} maps to a Java {@link ZonedDateTime}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class DateTimeValue extends AbstractObjectValue<ZonedDateTime> {
 
 	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("DATETIME '")

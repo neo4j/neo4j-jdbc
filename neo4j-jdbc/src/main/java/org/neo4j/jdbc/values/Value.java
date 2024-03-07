@@ -56,7 +56,7 @@ import java.util.function.Function;
  * set of methods perform coercions to Java types (wherever possible). For example, a
  * common String value should be tested for using <code>isString</code> and extracted
  * using <code>stringValue</code>.
- * <p>
+ *
  * <h2>Navigating a tree structure</h2>
  * <p>
  * Because Neo4j often handles dynamic structures, this interface is designed to help you

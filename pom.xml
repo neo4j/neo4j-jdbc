@@ -309,10 +309,13 @@
 								<excludes>
 									<exclude>**/*.adoc</exclude>
 									<exclude>**/*.conf</exclude>
+									<exclude>**/*.csv</exclude>
 									<exclude>**/*.cypher</exclude>
 									<exclude>**/*.tpl</exclude>
+									<exclude>**/.env</exclude>
 									<exclude>**/org.mockito.plugins.MockMaker</exclude>
 									<exclude>LICENSE.txt</exclude>
+									<exclude>**/README</exclude>
 								</excludes>
 							</licenseSet>
 						</licenseSets>

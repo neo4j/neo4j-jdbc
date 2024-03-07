@@ -35,7 +35,6 @@ import org.neo4j.jdbc.values.ListValue;
 import org.neo4j.jdbc.values.LocalDateTimeValue;
 import org.neo4j.jdbc.values.LocalTimeValue;
 import org.neo4j.jdbc.values.MapValue;
-import org.neo4j.jdbc.values.Neo4jTypeToSqlTypeMapper;
 import org.neo4j.jdbc.values.NodeValue;
 import org.neo4j.jdbc.values.NullValue;
 import org.neo4j.jdbc.values.PathValue;
@@ -47,7 +46,7 @@ import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 
-public class ResultSetMetaDataImpl implements ResultSetMetaData {
+final class ResultSetMetaDataImpl implements ResultSetMetaData {
 
 	private final List<String> keys;
 

@@ -25,6 +25,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+/**
+ * A Cypher LIST&lt;ANY&gt;.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class ListValue extends AbstractValue {
 
 	private final Value[] values;

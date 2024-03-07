@@ -18,8 +18,6 @@
  */
 package org.neo4j.jdbc.values;
 
-import java.util.Locale;
-
 /**
  * The type of {@link Value} as defined by the Cypher language.
  *
@@ -152,29 +150,16 @@ public enum Type {
 	 */
 	NULL;
 
-	public static Type valueOfV5Name(String in) {
-
-		var value = in.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")
-			.replaceAll("([a-z])([A-Z])", "$1_$2")
-			.toUpperCase(Locale.ROOT);
-		value = switch (value) {
-			case "LONG" -> Type.INTEGER.name();
-			case "DOUBLE" -> Type.FLOAT.name();
-			default -> value.endsWith("ARRAY") ? Type.LIST.name() : value;
-		};
-		return Type.valueOf(value);
-	}
-
 	/**
 	 * Test if the given value has this type.
 	 * @param value the value
 	 * @return {@code true} if the value is a value of this type otherwise {@code false}
 	 */
-	public boolean isTypeOf(Value value) {
+	public final boolean isTypeOf(Value value) {
 		return this.covers(value);
 	}
 
-	protected boolean covers(Value value) {
+	boolean covers(Value value) {
 		return this == value.type();
 	}
 

@@ -20,6 +20,13 @@ package org.neo4j.jdbc.values;
 
 import java.io.Serial;
 
+/**
+ * Exception that is thrown when any {@link Value} object that is not composed by keys and
+ * values or indexes and values is accessed as a map or a collection item.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class NotMultiValuedException extends ValueException {
 
 	@Serial

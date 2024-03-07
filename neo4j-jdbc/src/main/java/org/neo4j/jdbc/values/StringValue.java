@@ -20,6 +20,12 @@ package org.neo4j.jdbc.values;
 
 import java.util.Objects;
 
+/**
+ * The Cypher type {@code STRING} maps directly to a Java {@link String}.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class StringValue extends AbstractValue {
 
 	private final String val;

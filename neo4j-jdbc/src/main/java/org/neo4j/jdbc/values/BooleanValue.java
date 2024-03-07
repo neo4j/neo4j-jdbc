@@ -20,6 +20,12 @@ package org.neo4j.jdbc.values;
 
 import java.util.Objects;
 
+/**
+ * Representation of a boolean value inside the Neo4j type system.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public abstract sealed class BooleanValue extends AbstractValue {
 
 	private BooleanValue() {
@@ -35,10 +41,6 @@ public abstract sealed class BooleanValue extends AbstractValue {
 	 * A {@link BooleanValue} representing false value.
 	 */
 	public static final BooleanValue FALSE = new FalseValue();
-
-	public static BooleanValue fromBoolean(boolean value) {
-		return value ? TRUE : FALSE;
-	}
 
 	@Override
 	public abstract Boolean asObject();

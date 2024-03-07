@@ -409,7 +409,7 @@ public final class Values {
 	 * @return the value
 	 */
 	public static Value value(final boolean val) {
-		return BooleanValue.fromBoolean(val);
+		return val ? BooleanValue.TRUE : BooleanValue.FALSE;
 	}
 
 	/**

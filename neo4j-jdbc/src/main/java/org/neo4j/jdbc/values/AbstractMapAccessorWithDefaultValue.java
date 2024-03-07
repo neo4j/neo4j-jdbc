@@ -22,12 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDefaultValue {
-
-	public AbstractMapAccessorWithDefaultValue() {
-	}
-
-	public abstract Value get(String key);
+abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDefaultValue {
 
 	@Override
 	public Value get(String key, Value defaultValue) {
@@ -267,10 +262,16 @@ public abstract class AbstractMapAccessorWithDefaultValue implements MapAccessor
 		}
 	}
 
-	// formats map using ':' as key-value separator instead of default '='
-	protected static <V> String formatPairs(Map<String, V> entries) {
-		var iterator = entries.entrySet().iterator();
-		switch (entries.size()) {
+	/**
+	 * Formats the content of a bolt map into a string reassembling the shape of a Cypher
+	 * map, i.e. using {@code :} instead of {@code =} as the key-value separator.
+	 * @param map the map to format
+	 * @param <V> the type of the maps values.
+	 * @return a string representation of the map
+	 */
+	protected static <V> String formatPairs(Map<String, V> map) {
+		var iterator = map.entrySet().iterator();
+		switch (map.size()) {
 			case 0 -> {
 				return "{}";
 			}

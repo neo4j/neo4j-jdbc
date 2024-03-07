@@ -18,6 +18,12 @@
  */
 package org.neo4j.jdbc.values;
 
+/**
+ * Representation of a Neo4j relationship.
+ *
+ * @author Neo4j Drivers Team
+ * @since 6.0.0
+ */
 public final class PathValue extends AbstractObjectValue<Path> {
 
 	PathValue(Path adapted) {

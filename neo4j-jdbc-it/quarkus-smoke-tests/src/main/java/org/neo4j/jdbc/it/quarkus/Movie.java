@@ -20,5 +20,11 @@ package org.neo4j.jdbc.it.quarkus;
 
 import org.jdbi.v3.core.mapper.reflect.ColumnName;
 
+/**
+ * A movie with a title.
+ *
+ * @param title a title
+ * @author Michael J. Simons
+ */
 public record Movie(@ColumnName("title") String title) {
 }

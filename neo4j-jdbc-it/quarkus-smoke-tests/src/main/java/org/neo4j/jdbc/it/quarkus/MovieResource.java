@@ -26,15 +26,28 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.jdbi.v3.core.Jdbi;
 
+/**
+ * Produces a list of movies.
+ *
+ * @author Michael J. Simons
+ */
 @Path("/movies")
 public class MovieResource {
 
 	private final Jdbi db;
 
+	/**
+	 * Creates a new resource.
+	 * @param db required for database access
+	 */
 	public MovieResource(Jdbi db) {
 		this.db = db;
 	}
 
+	/**
+	 * Mapped as GET method.
+	 * @return a list of movies, empty but never null
+	 */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<Movie> get() {

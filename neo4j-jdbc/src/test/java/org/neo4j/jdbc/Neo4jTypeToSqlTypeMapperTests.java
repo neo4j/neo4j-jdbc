@@ -16,17 +16,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.values;
+package org.neo4j.jdbc;
 
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.neo4j.jdbc.values.Type;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TypeTests {
+class Neo4jTypeToSqlTypeMapperTests {
 
 	static Stream<Arguments> shouldParseNames() {
 		return Stream.of(Arguments.of("Any", Type.ANY), Arguments.of("Boolean", Type.BOOLEAN),
@@ -45,7 +46,7 @@ class TypeTests {
 	@ParameterizedTest
 	@MethodSource
 	void shouldParseNames(String in, Type expected) {
-		var type = Type.valueOfV5Name(in);
+		var type = Neo4jTypeToSqlTypeMapper.valueOfV5Name(in);
 		assertThat(type).isEqualTo(expected);
 	}
 
