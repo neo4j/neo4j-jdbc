@@ -18,7 +18,10 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -258,11 +261,20 @@ non-sealed class StatementImpl implements Neo4jStatement {
 				try (reader) {
 					StringBuilder buf = new StringBuilder();
 					char[] buffer = new char[DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS];
-					int len = -1;
+					int len;
 					while ((len = reader.read(buffer)) != -1) {
 						buf.append(buffer, 0, len);
 					}
 					entry.setValue(Values.value(buf.toString()));
+				}
+				catch (IOException ex) {
+					throw new SQLException(ex);
+				}
+			}
+			else if (entry.getValue() instanceof InputStream inputStream) {
+				try (var in = new BufferedInputStream(inputStream); var out = new ByteArrayOutputStream()) {
+					in.transferTo(out);
+					entry.setValue(Values.value(out.toByteArray()));
 				}
 				catch (IOException ex) {
 					throw new SQLException(ex);

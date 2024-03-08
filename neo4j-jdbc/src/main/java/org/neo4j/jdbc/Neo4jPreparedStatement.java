@@ -33,6 +33,7 @@ import java.sql.Timestamp;
  * @author Michael J. Simons
  * @author Conor Watson
  * @author Dmitriy Tverdiakov
+ * @since 6.0.0
  */
 public sealed interface Neo4jPreparedStatement extends PreparedStatement permits PreparedStatementImpl {
 
@@ -102,10 +103,19 @@ public sealed interface Neo4jPreparedStatement extends PreparedStatement permits
 	/**
 	 * Named-parameter version of {@link #setAsciiStream(int, InputStream)}.
 	 * @param parameterName the parameter name
-	 * @param stream the steam to read from
+	 * @param stream the stream to read from
 	 * @throws SQLException when a connection or database error occurs
 	 * @see #setAsciiStream(int, InputStream)
 	 */
 	void setAsciiStream(String parameterName, InputStream stream) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setBinaryStream(int, InputStream)}.
+	 * @param parameterName the parameter name
+	 * @param stream the stream to read from
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setBinaryStream(int, InputStream)
+	 */
+	void setBinaryStream(String parameterName, InputStream stream) throws SQLException;
 
 }

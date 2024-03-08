@@ -25,6 +25,8 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
@@ -43,6 +45,7 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -220,12 +223,11 @@ class PreparedStatementIT extends IntegrationTestBase {
 	class Streams {
 
 		static String readAsString(URL resource) throws IOException {
-			StringWriter writer = new StringWriter();
-
+			StringWriter target = new StringWriter();
 			try (var in = new BufferedReader(new InputStreamReader(resource.openStream()))) {
-				in.transferTo(writer);
+				in.transferTo(target);
 			}
-			return writer.toString();
+			return target.toString();
 		}
 
 		static Stream<Arguments> characterStream() {
@@ -479,6 +481,95 @@ class PreparedStatementIT extends IntegrationTestBase {
 						var actual = result.getString(1);
 						assertThat(actual).isEqualTo(originalContent.substring(0,
 								Math.toIntExact(Math.min(lengthUsed, originalContent.length()))));
+					}
+				}
+			}
+		}
+
+		static Stream<Arguments> binaryStream() {
+			return Stream.of(Arguments.of(false, null, null), Arguments.of(true, null, null),
+					Arguments.of(false, -1, null), Arguments.of(false, 0, null), Arguments.of(false, 23, null),
+					Arguments.of(false, 31408, null), Arguments.of(false, 32768, null), Arguments.of(false, null, -1L),
+					Arguments.of(false, null, 0L), Arguments.of(false, null, 23L), Arguments.of(false, null, 31408L),
+					Arguments.of(false, null, 32768L));
+		}
+
+		@ParameterizedTest
+		@MethodSource
+		void binaryStream(boolean named, Integer lengthI, Long lengthL)
+				throws SQLException, IOException, NoSuchAlgorithmException {
+
+			var type = "setBinaryStream";
+			var lengthUsed = Optional.ofNullable(lengthL)
+				.map(Long::intValue)
+				.or(() -> Optional.ofNullable(lengthI))
+				.orElse(null);
+
+			var oss = Objects.requireNonNull(PreparedStatementIT.class.getResource("/opensourcerer.png"));
+
+			if (lengthUsed != null && lengthUsed < 0) {
+				try (var connection = getConnection();
+						var ps = connection.prepareStatement("RETURN $1");
+						var s = new ByteArrayInputStream(new byte[0])) {
+					ThrowableAssert.ThrowingCallable callable;
+					if (lengthI != null) {
+						callable = () -> ps.setBinaryStream(1, s, lengthI);
+					}
+					else {
+						callable = () -> ps.setBinaryStream(1, s, lengthL);
+					}
+
+					assertThatExceptionOfType(SQLException.class).isThrownBy(callable)
+						.withMessage("Invalid length -1 for binary stream at index 1");
+
+				}
+				return;
+			}
+
+			var md5 = MessageDigest.getInstance("MD5");
+			try (var connection = getConnection()) {
+				try (var in = Mockito.spy(oss.openStream());
+						var ps = connection.prepareStatement("CREATE (m:CSTest {type: $1, content: $2})")) {
+					ps.setString(1, type);
+					if (lengthI != null) {
+						ps.setBinaryStream(2, in, lengthI);
+					}
+					else if (lengthL != null) {
+						ps.setBinaryStream(2, in, lengthL);
+					}
+					else if (named) {
+						ps.unwrap(Neo4jPreparedStatement.class).setBinaryStream("2", in);
+					}
+					else {
+						ps.setBinaryStream(2, in);
+					}
+					var cnt = ps.executeUpdate();
+					assertThat(cnt).isEqualTo(4);
+					Mockito.verify(in).close();
+				}
+
+				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+					ps.setString(1, type);
+					try (var result = ps.executeQuery()) {
+						assertThat(result.next()).isTrue();
+						var actual = result.getObject(1, Value.class).asByteArray();
+						if (lengthUsed != null) {
+							if (lengthUsed == 0) {
+								assertThat(actual).isEmpty();
+							}
+							else {
+								var expectedHash = switch (lengthUsed) {
+									case 23 -> "32E29FC162072EB1265CED9226AE74A0";
+									case 31408, 32768 -> "DA4AF72F62E96D5A00CF20FEA8766D1C";
+									default -> throw new RuntimeException();
+								};
+								assertThat(md5.digest(actual)).asHexString().isEqualTo(expectedHash);
+							}
+
+						}
+						else {
+							assertThat(md5.digest(actual)).asHexString().isEqualTo("DA4AF72F62E96D5A00CF20FEA8766D1C");
+						}
 					}
 				}
 			}

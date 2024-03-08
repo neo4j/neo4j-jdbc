@@ -395,10 +395,15 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setAsciiStream(int parameterIndex, InputStream inputStream, int length) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		if (length < 0) {
-			throw new SQLException("Invalid length " + length + " for character stream at index " + parameterIndex);
-		}
+		assertValidStreamLength("character", parameterIndex, length);
 		setAsciiStream0(computeParameterName(parameterIndex), inputStream, length);
+	}
+
+	private static void assertValidStreamLength(String name, int parameterIndex, int length) throws SQLException {
+		if (length < 0) {
+			throw new SQLException(
+					"Invalid length %d for %s stream at index %d".formatted(length, name, parameterIndex));
+		}
 	}
 
 	final void setAsciiStream0(String parameterName, InputStream inputStream, int length) throws SQLException {
@@ -422,15 +427,19 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setBinaryStream(int parameterIndex, InputStream inputStream, int length) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(inputStream);
+		assertValidStreamLength("binary", parameterIndex, length);
+		setBinaryStream0(computeParameterName(parameterIndex), inputStream, length);
+	}
+
+	final void setBinaryStream0(String parameterName, InputStream inputStream, int length) throws SQLException {
 		byte[] bytes;
-		try (inputStream) {
-			bytes = inputStream.readNBytes(length);
+		try (var in = Objects.requireNonNull(inputStream)) {
+			bytes = in.readNBytes(length);
 		}
 		catch (IOException ex) {
 			throw new SQLException(ex);
 		}
-		setParameter(computeParameterName(parameterIndex), Values.value(bytes));
+		setParameter(parameterName, Values.value(bytes));
 	}
 
 	@Override
@@ -468,6 +477,12 @@ sealed class PreparedStatementImpl extends StatementImpl
 		setParameter(parameterName, new InputStreamReader(stream, DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM));
 	}
 
+	@Override
+	public void setBinaryStream(String parameterName, InputStream stream) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, stream);
+	}
+
 	private void setObjectParameter(String parameterName, Object value) throws SQLException {
 		if (value instanceof Date date) {
 			setDate(parameterName, date);
@@ -497,9 +512,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		if (length < 0) {
-			throw new SQLException("Invalid length " + length + " for character stream at index " + parameterIndex);
-		}
+		assertValidStreamLength("character", parameterIndex, length);
 		setCharacterStream0(computeParameterName(parameterIndex), reader, length);
 	}
 
@@ -639,9 +652,6 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setAsciiStream(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-		assertIsOpen();
-		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(inputStream);
 		setAsciiStream(parameterIndex, inputStream, getLengthAsInt(length));
 	}
 
@@ -655,17 +665,11 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setBinaryStream(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-		assertIsOpen();
-		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(inputStream);
 		setBinaryStream(parameterIndex, inputStream, getLengthAsInt(length));
 	}
 
 	@Override
 	public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
-		assertIsOpen();
-		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(reader);
 		setCharacterStream(parameterIndex, reader, getLengthAsInt(length));
 	}
 
@@ -679,7 +683,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setParameter(computeParameterName(parameterIndex), x);
 	}
 
 	@Override
@@ -719,7 +725,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		throw new SQLFeatureNotSupportedException();
 	}
 
-	protected void setDateParameter(String parameterName, Date date, Calendar cal) throws SQLException {
+	protected void setDateParameter(String parameterName, Date date, Calendar cal) {
 		Objects.requireNonNull(date);
 		if (cal == null) {
 			cal = Calendar.getInstance();
@@ -729,7 +735,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		setParameter(parameterName, Values.value(zonedDateTime));
 	}
 
-	protected void setTimeParameter(String parameterName, Time time, Calendar cal) throws SQLException {
+	protected void setTimeParameter(String parameterName, Time time, Calendar cal) {
 		Objects.requireNonNull(time);
 		if (cal == null) {
 			cal = Calendar.getInstance();
@@ -741,7 +747,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		setParameter(parameterName, Values.value(offsetTime));
 	}
 
-	protected void setTimestampParameter(String parameterName, Timestamp timestamp, Calendar cal) throws SQLException {
+	protected void setTimestampParameter(String parameterName, Timestamp timestamp, Calendar cal) {
 		Objects.requireNonNull(timestamp);
 		if (cal == null) {
 			cal = Calendar.getInstance();
@@ -755,8 +761,8 @@ sealed class PreparedStatementImpl extends StatementImpl
 		return String.valueOf(parameterIndex);
 	}
 
-	static SQLException newIllegalMethodInvocation() throws SQLException {
-		throw new SQLException("This method must not be called on PreparedStatement");
+	static SQLException newIllegalMethodInvocation() {
+		return new SQLException("This method must not be called on PreparedStatement");
 	}
 
 	private static void assertValidParameterIndex(int index) throws SQLException {

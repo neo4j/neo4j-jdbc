@@ -334,8 +334,6 @@ class PreparedStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setObject(1, null, Types.NULL, 0),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setBinaryStream(1, mock(InputStream.class)),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setClob(1, mock(Reader.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(InputStream.class)),

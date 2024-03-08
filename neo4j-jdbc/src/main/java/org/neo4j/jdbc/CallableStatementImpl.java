@@ -18,7 +18,6 @@
  */
 package org.neo4j.jdbc;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -363,44 +362,32 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setDate(String parameterName, Date date) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setDate(parameterName, date);
 	}
 
 	@Override
 	public void setTime(String parameterName, Time time) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setTime(parameterName, time);
 	}
 
 	@Override
 	public void setTimestamp(String parameterName, Timestamp timestamp) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setTimestamp(parameterName, timestamp);
 	}
 
 	@Override
 	public void setAsciiStream(String parameterName, InputStream inputStream, int length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setAsciiStream0(parameterName, inputStream, length);
 	}
 
 	@Override
 	public void setBinaryStream(String parameterName, InputStream inputStream, int length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
-		byte[] value;
-		try {
-			value = inputStream.readAllBytes();
-		}
-		catch (IOException ex) {
-			throw new SQLException("Failed to read bytes.", ex);
-		}
-		setParameter(parameterName, value);
+		super.setBinaryStream0(parameterName, inputStream, length);
 	}
 
 	@Override
@@ -415,35 +402,30 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setObject(String parameterName, Object object) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setObject(parameterName, object);
 	}
 
 	@Override
 	public void setCharacterStream(String parameterName, Reader reader, int length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setCharacterStream0(parameterName, reader, length);
 	}
 
 	@Override
 	public void setDate(String parameterName, Date date, Calendar calendar) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setDateParameter(parameterName, date, calendar);
 	}
 
 	@Override
 	public void setTime(String parameterName, Time time, Calendar calendar) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setTimeParameter(parameterName, time, calendar);
 	}
 
 	@Override
 	public void setTimestamp(String parameterName, Timestamp timestamp, Calendar calendar) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
 		super.setTimestampParameter(parameterName, timestamp, calendar);
 	}
@@ -716,21 +698,17 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException {
-		assertIsOpen();
-		assertParameterType(ParameterType.NAMED);
-		setAsciiStream0(parameterName, x, getLengthAsInt(length));
+		setAsciiStream(parameterName, x, getLengthAsInt(length));
 	}
 
 	@Override
 	public void setBinaryStream(String parameterName, InputStream x, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		setBinaryStream(parameterName, x, getLengthAsInt(length));
 	}
 
 	@Override
 	public void setCharacterStream(String parameterName, Reader reader, long length) throws SQLException {
-		assertIsOpen();
-		assertParameterType(ParameterType.NAMED);
-		setCharacterStream0(parameterName, reader, getLengthAsInt(length));
+		setCharacterStream(parameterName, reader, getLengthAsInt(length));
 	}
 
 	@Override
@@ -746,8 +724,15 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	}
 
 	@Override
+	public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
+		assertParameterType(ParameterType.ORDINAL);
+		super.setBinaryStream(parameterIndex, x);
+	}
+
+	@Override
 	public void setBinaryStream(String parameterName, InputStream x) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertParameterType(ParameterType.NAMED);
+		super.setBinaryStream(parameterName, x);
 	}
 
 	@Override
@@ -797,169 +782,145 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setNull(parameterIndex, sqlType);
 	}
 
 	@Override
 	public void setBoolean(int parameterIndex, boolean value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setBoolean(parameterIndex, value);
 	}
 
 	@Override
 	public void setByte(int parameterIndex, byte value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setByte(parameterIndex, value);
 	}
 
 	@Override
 	public void setShort(int parameterIndex, short value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setShort(parameterIndex, value);
 	}
 
 	@Override
 	public void setInt(int parameterIndex, int value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setInt(parameterIndex, value);
 	}
 
 	@Override
 	public void setLong(int parameterIndex, long value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setLong(parameterIndex, value);
 	}
 
 	@Override
 	public void setFloat(int parameterIndex, float value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setFloat(parameterIndex, value);
 	}
 
 	@Override
 	public void setDouble(int parameterIndex, double value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setDouble(parameterIndex, value);
 	}
 
 	@Override
 	public void setString(int parameterIndex, String value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setString(parameterIndex, value);
 	}
 
 	@Override
 	public void setBytes(int parameterIndex, byte[] bytes) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setBytes(parameterIndex, bytes);
 	}
 
 	@Override
 	public void setDate(int parameterIndex, Date date) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setDate(parameterIndex, date);
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time time) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setTime(parameterIndex, time);
 	}
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp timestamp) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setTimestamp(parameterIndex, timestamp);
 	}
 
 	@Override
 	public void setAsciiStream(int parameterIndex, InputStream inputStream, int length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setAsciiStream(parameterIndex, inputStream, length);
 	}
 
 	@Override
 	public void setBinaryStream(int parameterIndex, InputStream inputStream, int length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setBinaryStream(parameterIndex, inputStream, length);
 	}
 
 	@Override
 	public void setObject(int parameterIndex, Object object) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setObject(parameterIndex, object);
 	}
 
 	@Override
 	public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setCharacterStream(parameterIndex, reader, length);
 	}
 
 	@Override
 	public void setDate(int parameterIndex, Date date, Calendar calendar) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setDate(parameterIndex, date, calendar);
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time time, Calendar calendar) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setTime(parameterIndex, time, calendar);
 	}
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp timestamp, Calendar calendar) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setTimestamp(parameterIndex, timestamp, calendar);
 	}
 
 	@Override
 	public void setAsciiStream(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setAsciiStream(parameterIndex, inputStream, length);
 	}
 
 	@Override
 	public void setBinaryStream(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setBinaryStream(parameterIndex, inputStream, length);
 	}
 
 	@Override
 	public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.ORDINAL);
 		super.setCharacterStream(parameterIndex, reader, length);
 	}
 
 	private void setNamedParameter(String name, Object value) throws SQLException {
-		assertIsOpen();
 		assertParameterType(ParameterType.NAMED);
-		setParameter(name, value);
+		super.setParameter(name, value);
 	}
 
 	private void assertParameterType(ParameterType parameterType) throws SQLException {
@@ -976,14 +937,12 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public int executeUpdate() throws SQLException {
-		newIllegalMethodInvocation();
-		return 0;
+		throw newIllegalMethodInvocation();
 	}
 
 	@Override
 	public int[] executeBatch() throws SQLException {
-		newIllegalMethodInvocation();
-		return new int[0];
+		throw newIllegalMethodInvocation();
 	}
 
 	private enum ParameterType {
