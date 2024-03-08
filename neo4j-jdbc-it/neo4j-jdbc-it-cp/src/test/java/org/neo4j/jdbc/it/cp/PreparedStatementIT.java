@@ -18,16 +18,37 @@
  */
 package org.neo4j.jdbc.it.cp;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
+import org.assertj.core.api.ThrowableAssert;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class PreparedStatementIT extends IntegrationTestBase {
 
@@ -195,6 +216,365 @@ class PreparedStatementIT extends IntegrationTestBase {
 				}
 			}
 		}
+	}
+
+	@Nested
+	@DisabledInNativeImage // Due to Spying on things
+	class Streams {
+
+		static String readAsString(URL resource) throws IOException {
+			StringWriter target = new StringWriter();
+			try (var in = new BufferedReader(new InputStreamReader(resource.openStream()))) {
+				in.transferTo(target);
+			}
+			return target.toString();
+		}
+
+		static Stream<Arguments> characterStream() {
+			return Stream.of(Arguments.of(false, null, null), Arguments.of(true, null, null),
+					Arguments.of(false, -1, null), Arguments.of(false, 0, null), Arguments.of(false, 23, null),
+					Arguments.of(false, 3888, null), Arguments.of(false, 5000, null), Arguments.of(false, null, -1L),
+					Arguments.of(false, null, 0L), Arguments.of(false, null, 23L), Arguments.of(false, null, 3888L),
+					Arguments.of(false, null, 5000L));
+		}
+
+		@ParameterizedTest
+		@MethodSource
+		void characterStream(boolean named, Integer lengthI, Long lengthL) throws SQLException, IOException {
+			var type = "setCharacterStream";
+			var lengthUsed = Optional.ofNullable(lengthL)
+				.map(Long::intValue)
+				.or(() -> Optional.ofNullable(lengthI))
+				.orElse(null);
+
+			var resource = Objects.requireNonNull(PreparedStatementIT.class.getResource("/cc/docker-compose.yml"));
+
+			if (lengthUsed != null && lengthUsed < 0) {
+				try (var connection = getConnection();
+						var ps = connection.prepareStatement("RETURN $1");
+						var r = new StringReader("")) {
+					ThrowableAssert.ThrowingCallable callable;
+					if (lengthI != null) {
+						callable = () -> ps.setCharacterStream(1, r, lengthI);
+					}
+					else {
+						callable = () -> ps.setCharacterStream(1, r, lengthL);
+					}
+
+					assertThatExceptionOfType(SQLException.class).isThrownBy(callable)
+						.withMessage("Invalid length -1 for character stream at index 1");
+
+				}
+				return;
+			}
+
+			var originalContent = readAsString(resource);
+
+			try (var connection = getConnection()) {
+				try (var in = Mockito.spy(new InputStreamReader(resource.openStream()));
+						var ps = connection.prepareStatement("CREATE (m:CSTest {type: $1, content: $2})")) {
+					ps.setString(1, type);
+					if (lengthI != null) {
+						ps.setCharacterStream(2, in, lengthI);
+					}
+					else if (lengthL != null) {
+						ps.setCharacterStream(2, in, lengthL);
+					}
+					else if (named) {
+						ps.unwrap(Neo4jPreparedStatement.class).setCharacterStream("2", in);
+					}
+					else {
+						ps.setCharacterStream(2, in);
+					}
+					var cnt = ps.executeUpdate();
+					assertThat(cnt).isEqualTo(4);
+					Mockito.verify(in).close();
+				}
+
+				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+					ps.setString(1, type);
+					try (var result = ps.executeQuery()) {
+						assertThat(result.next()).isTrue();
+						var actual = result.getString(1);
+						if (lengthUsed != null) {
+							assertThat(actual).isEqualTo(
+									originalContent.substring(0, Math.min(lengthUsed, originalContent.length())));
+						}
+						else {
+							assertThat(actual).isEqualTo(originalContent);
+						}
+					}
+				}
+			}
+		}
+
+		static Stream<Arguments> asciiStream() {
+			return Stream.of(Arguments.of(false, null, null), Arguments.of(true, null, null),
+					Arguments.of(false, -1, null), Arguments.of(false, 0, null), Arguments.of(false, 23, null),
+					Arguments.of(false, 3888, null), Arguments.of(false, 5000, null), Arguments.of(false, null, -1L),
+					Arguments.of(false, null, 0L), Arguments.of(false, null, 23L), Arguments.of(false, null, 3888L),
+					Arguments.of(false, null, 5000L));
+		}
+
+		@ParameterizedTest
+		@MethodSource
+		void asciiStream(boolean named, Integer lengthI, Long lengthL) throws SQLException, IOException {
+			var type = "setAsciiStream";
+			var lengthUsed = Optional.ofNullable(lengthL)
+				.map(Long::intValue)
+				.or(() -> Optional.ofNullable(lengthI))
+				.orElse(null);
+
+			var resource = Objects.requireNonNull(PreparedStatementIT.class.getResource("/cc/docker-compose.yml"));
+
+			if (lengthUsed != null && lengthUsed < 0) {
+				try (var connection = getConnection();
+						var ps = connection.prepareStatement("RETURN $1");
+						var s = new ByteArrayInputStream(new byte[0])) {
+					ThrowableAssert.ThrowingCallable callable;
+					if (lengthI != null) {
+						callable = () -> ps.setAsciiStream(1, s, lengthI);
+					}
+					else {
+						callable = () -> ps.setAsciiStream(1, s, lengthL);
+					}
+
+					assertThatExceptionOfType(SQLException.class).isThrownBy(callable)
+						.withMessage("Invalid length -1 for character stream at index 1");
+
+				}
+				return;
+			}
+
+			var originalContent = readAsString(resource);
+
+			try (var connection = getConnection()) {
+				try (var in = Mockito.spy(resource.openStream());
+						var ps = connection.prepareStatement("CREATE (m:CSTest {type: $1, content: $2})")) {
+					ps.setString(1, type);
+					if (lengthI != null) {
+						ps.setAsciiStream(2, in, lengthI);
+					}
+					else if (lengthL != null) {
+						ps.setAsciiStream(2, in, lengthL);
+					}
+					else if (named) {
+						ps.unwrap(Neo4jPreparedStatement.class).setAsciiStream("2", in);
+					}
+					else {
+						ps.setAsciiStream(2, in);
+					}
+					var cnt = ps.executeUpdate();
+					assertThat(cnt).isEqualTo(4);
+					Mockito.verify(in).close();
+				}
+
+				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+					ps.setString(1, type);
+					try (var result = ps.executeQuery()) {
+						assertThat(result.next()).isTrue();
+						var actual = result.getString(1);
+						if (lengthUsed != null) {
+							assertThat(actual).isEqualTo(
+									originalContent.substring(0, Math.min(lengthUsed, originalContent.length())));
+						}
+						else {
+							assertThat(actual).isEqualTo(originalContent);
+						}
+					}
+				}
+			}
+		}
+
+		@ParameterizedTest
+		@NullSource
+		@ValueSource(longs = { -1, 0, 23, 3888, 5000 })
+		void nCharacterStream(Long lengthUsed) throws SQLException, IOException {
+			var type = "setNCharacterStream";
+			var resource = Objects.requireNonNull(PreparedStatementIT.class.getResource("/cc/docker-compose.yml"));
+
+			if (lengthUsed != null && lengthUsed < 0) {
+				try (var connection = getConnection();
+						var ps = connection.prepareStatement("RETURN $1");
+						var r = new StringReader("")) {
+
+					assertThatExceptionOfType(SQLException.class)
+						.isThrownBy(() -> ps.setNCharacterStream(1, r, lengthUsed))
+						.withMessage("Invalid length -1 for character stream at index 1");
+
+				}
+				return;
+			}
+
+			var originalContent = readAsString(resource);
+
+			try (var connection = getConnection()) {
+
+				try (var in = Mockito.spy(new InputStreamReader(resource.openStream()));
+						var ps = connection.prepareStatement("CREATE (m:CSTest {type: $1, content: $2})")) {
+					ps.setString(1, type);
+					if (lengthUsed != null) {
+						ps.setNCharacterStream(2, in, lengthUsed);
+					}
+					else {
+						ps.setNCharacterStream(2, in);
+					}
+					var cnt = ps.executeUpdate();
+					assertThat(cnt).isEqualTo(4);
+					Mockito.verify(in).close();
+				}
+
+				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+					ps.setString(1, type);
+					try (var result = ps.executeQuery()) {
+						assertThat(result.next()).isTrue();
+						var actual = result.getString(1);
+						if (lengthUsed != null) {
+							assertThat(actual).isEqualTo(originalContent.substring(0,
+									Math.toIntExact(Math.min(lengthUsed, originalContent.length()))));
+						}
+						else {
+							assertThat(actual).isEqualTo(originalContent);
+						}
+					}
+				}
+			}
+		}
+
+		@SuppressWarnings("deprecation")
+		@ParameterizedTest
+		@ValueSource(ints = { -1, 0, 23, 3888, 5000 })
+		void setUnicodeStream(int lengthUsed) throws SQLException, IOException {
+			var type = "setUnicodeStream";
+			var resource = Objects.requireNonNull(PreparedStatementIT.class.getResource("/cc/docker-compose.yml"));
+
+			if (lengthUsed < 0) {
+				try (var connection = getConnection();
+						var ps = connection.prepareStatement("RETURN $1");
+						var r = new ByteArrayInputStream(new byte[0])) {
+
+					assertThatExceptionOfType(SQLException.class)
+						.isThrownBy(() -> ps.setUnicodeStream(1, r, lengthUsed))
+						.withMessage("Invalid length -1 for character stream at index 1");
+
+				}
+				return;
+			}
+
+			var originalContent = readAsString(resource);
+
+			try (var connection = getConnection()) {
+
+				try (var in = Mockito.spy(resource.openStream());
+						var ps = connection.prepareStatement("CREATE (m:CSTest {type: $1, content: $2})")) {
+					ps.setString(1, type);
+					ps.setUnicodeStream(2, in, lengthUsed);
+					var cnt = ps.executeUpdate();
+					assertThat(cnt).isEqualTo(4);
+					Mockito.verify(in).close();
+				}
+
+				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+					ps.setString(1, type);
+					try (var result = ps.executeQuery()) {
+						assertThat(result.next()).isTrue();
+						var actual = result.getString(1);
+						assertThat(actual).isEqualTo(originalContent.substring(0,
+								Math.toIntExact(Math.min(lengthUsed, originalContent.length()))));
+					}
+				}
+			}
+		}
+
+		static Stream<Arguments> binaryStream() {
+			return Stream.of(Arguments.of(false, null, null), Arguments.of(true, null, null),
+					Arguments.of(false, -1, null), Arguments.of(false, 0, null), Arguments.of(false, 23, null),
+					Arguments.of(false, 31408, null), Arguments.of(false, 32768, null), Arguments.of(false, null, -1L),
+					Arguments.of(false, null, 0L), Arguments.of(false, null, 23L), Arguments.of(false, null, 31408L),
+					Arguments.of(false, null, 32768L));
+		}
+
+		@ParameterizedTest
+		@MethodSource
+		void binaryStream(boolean named, Integer lengthI, Long lengthL)
+				throws SQLException, IOException, NoSuchAlgorithmException {
+
+			var type = "setBinaryStream";
+			var lengthUsed = Optional.ofNullable(lengthL)
+				.map(Long::intValue)
+				.or(() -> Optional.ofNullable(lengthI))
+				.orElse(null);
+
+			var oss = Objects.requireNonNull(PreparedStatementIT.class.getResource("/opensourcerer.png"));
+
+			if (lengthUsed != null && lengthUsed < 0) {
+				try (var connection = getConnection();
+						var ps = connection.prepareStatement("RETURN $1");
+						var s = new ByteArrayInputStream(new byte[0])) {
+					ThrowableAssert.ThrowingCallable callable;
+					if (lengthI != null) {
+						callable = () -> ps.setBinaryStream(1, s, lengthI);
+					}
+					else {
+						callable = () -> ps.setBinaryStream(1, s, lengthL);
+					}
+
+					assertThatExceptionOfType(SQLException.class).isThrownBy(callable)
+						.withMessage("Invalid length -1 for binary stream at index 1");
+
+				}
+				return;
+			}
+
+			var md5 = MessageDigest.getInstance("MD5");
+			try (var connection = getConnection()) {
+				try (var in = Mockito.spy(oss.openStream());
+						var ps = connection.prepareStatement("CREATE (m:CSTest {type: $1, content: $2})")) {
+					ps.setString(1, type);
+					if (lengthI != null) {
+						ps.setBinaryStream(2, in, lengthI);
+					}
+					else if (lengthL != null) {
+						ps.setBinaryStream(2, in, lengthL);
+					}
+					else if (named) {
+						ps.unwrap(Neo4jPreparedStatement.class).setBinaryStream("2", in);
+					}
+					else {
+						ps.setBinaryStream(2, in);
+					}
+					var cnt = ps.executeUpdate();
+					assertThat(cnt).isEqualTo(4);
+					Mockito.verify(in).close();
+				}
+
+				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+					ps.setString(1, type);
+					try (var result = ps.executeQuery()) {
+						assertThat(result.next()).isTrue();
+						var actual = result.getObject(1, Value.class).asByteArray();
+						if (lengthUsed != null) {
+							if (lengthUsed == 0) {
+								assertThat(actual).isEmpty();
+							}
+							else {
+								var expectedHash = switch (lengthUsed) {
+									case 23 -> "32E29FC162072EB1265CED9226AE74A0";
+									case 31408, 32768 -> "DA4AF72F62E96D5A00CF20FEA8766D1C";
+									default -> throw new RuntimeException();
+								};
+								assertThat(md5.digest(actual)).asHexString().isEqualTo(expectedHash);
+							}
+
+						}
+						else {
+							assertThat(md5.digest(actual)).asHexString().isEqualTo("DA4AF72F62E96D5A00CF20FEA8766D1C");
+						}
+					}
+				}
+			}
+		}
+
 	}
 
 }

@@ -18,6 +18,13 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,6 +41,7 @@ import java.util.regex.Pattern;
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.jdbc.internal.bolt.response.SummaryCounters;
+import org.neo4j.jdbc.values.Values;
 
 non-sealed class StatementImpl implements Neo4jStatement {
 
@@ -44,6 +52,9 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
 	private static final Logger LOGGER = Logger.getLogger(Neo4jStatement.class.getCanonicalName());
+
+	static final int DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS = 4096;
+	static final Charset DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM = StandardCharsets.ISO_8859_1;
 
 	private final Connection connection;
 
@@ -107,8 +118,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		}
 		var transaction = this.transactionSupplier.getTransaction();
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(sql, Objects.requireNonNullElseGet(parameters, Map::of), fetchSize,
-				this.queryTimeout);
+		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
 				this.fetchSize, this.maxRows, this.maxFieldSize);
 		return this.resultSet;
@@ -129,9 +139,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			sql = processSQL(sql);
 		}
 		var transaction = this.transactionSupplier.getTransaction();
-		return transaction
-			.runAndDiscard(sql, Objects.requireNonNullElseGet(parameters, Map::of), this.queryTimeout,
-					transaction.isAutoCommit())
+		return transaction.runAndDiscard(sql, getParameters(parameters), this.queryTimeout, transaction.isAutoCommit())
 			.resultSummary()
 			.map(ResultSummary::counters)
 			.map(SummaryCounters::totalCount)
@@ -235,8 +243,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		}
 		var transaction = this.transactionSupplier.getTransaction();
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(sql, Objects.requireNonNullElseGet(parameters, Map::of), fetchSize,
-				this.queryTimeout);
+		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
 		var pullResponse = runAndPull.pullResponse();
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse, this.fetchSize,
 				this.maxRows, this.maxFieldSize);
@@ -245,6 +252,36 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			.filter(count -> count > 0)
 			.orElse(-1);
 		return this.updateCount == -1;
+	}
+
+	private static Map<String, Object> getParameters(Map<String, Object> parameters) throws SQLException {
+		var result = Objects.requireNonNullElseGet(parameters, Map::<String, Object>of);
+		for (Map.Entry<String, Object> entry : result.entrySet()) {
+			if (entry.getValue() instanceof Reader reader) {
+				try (reader) {
+					StringBuilder buf = new StringBuilder();
+					char[] buffer = new char[DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS];
+					int len;
+					while ((len = reader.read(buffer)) != -1) {
+						buf.append(buffer, 0, len);
+					}
+					entry.setValue(Values.value(buf.toString()));
+				}
+				catch (IOException ex) {
+					throw new SQLException(ex);
+				}
+			}
+			else if (entry.getValue() instanceof InputStream inputStream) {
+				try (var in = new BufferedInputStream(inputStream); var out = new ByteArrayOutputStream()) {
+					in.transferTo(out);
+					entry.setValue(Values.value(out.toByteArray()));
+				}
+				catch (IOException ex) {
+					throw new SQLException(ex);
+				}
+			}
+		}
+		return result;
 	}
 
 	@Override

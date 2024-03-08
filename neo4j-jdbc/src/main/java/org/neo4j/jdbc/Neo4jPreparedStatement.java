@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.InputStream;
+import java.io.Reader;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -31,6 +33,7 @@ import java.sql.Timestamp;
  * @author Michael J. Simons
  * @author Conor Watson
  * @author Dmitriy Tverdiakov
+ * @since 6.0.0
  */
 public sealed interface Neo4jPreparedStatement extends PreparedStatement permits PreparedStatementImpl {
 
@@ -88,6 +91,31 @@ public sealed interface Neo4jPreparedStatement extends PreparedStatement permits
 	 */
 	void setObject(String parameterName, Object value) throws SQLException;
 
-	// TODO remaining mutators
+	/**
+	 * Named-parameter version of {@link #setCharacterStream(int, Reader)}.
+	 * @param parameterName the parameter name
+	 * @param reader the reader to read from
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setCharacterStream(int, Reader)
+	 */
+	void setCharacterStream(String parameterName, Reader reader) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setAsciiStream(int, InputStream)}.
+	 * @param parameterName the parameter name
+	 * @param stream the stream to read from
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setAsciiStream(int, InputStream)
+	 */
+	void setAsciiStream(String parameterName, InputStream stream) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setBinaryStream(int, InputStream)}.
+	 * @param parameterName the parameter name
+	 * @param stream the stream to read from
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setBinaryStream(int, InputStream)
+	 */
+	void setBinaryStream(String parameterName, InputStream stream) throws SQLException;
 
 }
