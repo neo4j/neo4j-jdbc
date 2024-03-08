@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -117,5 +118,86 @@ public sealed interface Neo4jPreparedStatement extends PreparedStatement permits
 	 * @see #setBinaryStream(int, InputStream)
 	 */
 	void setBinaryStream(String parameterName, InputStream stream) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setNull(int, int)}.
+	 * @param parameterName the parameter name
+	 * @param sqlType the SQL type
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setNull(int, int)
+	 */
+	void setNull(String parameterName, int sqlType) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setBoolean(int, boolean)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setBoolean(int, boolean)
+	 */
+	void setBoolean(String parameterName, boolean value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setByte(int, byte)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setByte(int, byte)
+	 */
+	void setByte(String parameterName, byte value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setShort(int, short)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setShort(int, short)
+	 */
+	void setShort(String parameterName, short value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setLong(int, long)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setLong(int, long)
+	 */
+	void setLong(String parameterName, long value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setFloat(int, float)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setFloat(int, float)
+	 */
+	void setFloat(String parameterName, float value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setDouble(int, double)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setDouble(int, double)
+	 */
+	void setDouble(String parameterName, double value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setBigDecimal(int, BigDecimal)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setBigDecimal(int, BigDecimal)
+	 */
+	void setBigDecimal(String parameterName, BigDecimal value) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setBytes(int, byte[])}.
+	 * @param parameterName the parameter name
+	 * @param bytes the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @see #setBytes(int, byte[])
+	 */
+	void setBytes(String parameterName, byte[] bytes) throws SQLException;
 
 }

@@ -22,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -314,8 +313,6 @@ class PreparedStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setArray(1, mock(Array.class)),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) PreparedStatementImpl::getMetaData,
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL, "name"),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, mock(URL.class)),
@@ -339,9 +336,7 @@ class PreparedStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(InputStream.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNClob(1, mock(Reader.class)),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setBigDecimal(1, BigDecimal.ONE),
-						SQLException.class));
+						SQLFeatureNotSupportedException.class));
 	}
 
 	@ParameterizedTest

@@ -24,13 +24,26 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -45,7 +58,9 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
+import org.neo4j.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -219,7 +234,294 @@ class PreparedStatementIT extends IntegrationTestBase {
 	}
 
 	@Nested
-	@DisabledInNativeImage // Due to Spying on things
+	class SymmetricTypeConversionInPreparedStatementAndResultSet {
+
+		static Stream<Arguments> dateMappingShouldWork() {
+			var cal = Calendar.getInstance();
+			cal.clear();
+			cal.set(2024, Calendar.FEBRUARY, 29);
+			var expectedDate = cal.getTime();
+			return Stream.of(
+					Arguments.of("DATE", expectedDate, null, "RETURN date({year: 2024, month: 2, day: 29}) AS v"),
+					Arguments.of("ZONED TIME (not supported)", expectedDate, SQLException.class,
+							"RETURN time() AS v, 'TIME value can not be mapped to java.sql.Date.' AS m"),
+					Arguments.of("LOCAL TIME (not supported)", expectedDate, SQLException.class,
+							"RETURN localtime() AS v, 'LOCAL_TIME value can not be mapped to java.sql.Date.' AS m"),
+					Arguments.of("ZONED DATETIME", expectedDate, null,
+							"RETURN datetime({year: 2024, month: 2, day: 29}) AS v"),
+					Arguments.of("ZONED DATETIME", expectedDate, null,
+							"RETURN datetime({year: 2024, month: 2, day: 29, hour: 22, timezone: 'America/New_York'}) AS v"),
+					Arguments.of("LOCAL DATETIME", expectedDate, null,
+							"RETURN localdatetime({year: 2024, month: 2, day: 29}) AS v"));
+		}
+
+		@ParameterizedTest(name = "Mapping of {0} to java.sql.Date")
+		@MethodSource
+		void dateMappingShouldWork(@SuppressWarnings("unused") String description, java.util.Date expected,
+				Class<SQLException> exceptionClass, String query) throws SQLException {
+			try (var connection = getConnection();
+					var stmt = connection.createStatement();
+					var rs = stmt.executeQuery(query)) {
+				assertThat(rs.next()).isTrue();
+
+				if (exceptionClass != null) {
+					var msg = rs.getString("m");
+					assertThatExceptionOfType(exceptionClass).isThrownBy(() -> rs.getDate("v")).withMessage(msg);
+				}
+				else {
+					var date = rs.getDate("v");
+					assertThat(date).isEqualTo(expected);
+
+					var refZone = TimeZone.getTimeZone("Atlantic/Canary").toZoneId();
+					var refCal = GregorianCalendar
+						.from(ZonedDateTime.of(LocalDate.of(2023, 9, 21), LocalTime.of(21, 21, 21), refZone));
+					refCal.set(Calendar.MILLISECOND, 42);
+					var hlp = rs.getObject("v", Value.class);
+					if (Type.DATE_TIME.isTypeOf(hlp)) {
+						var cal = Calendar.getInstance();
+						cal.clear();
+						var ld = hlp.asZonedDateTime().withZoneSameInstant(refZone).toLocalDate();
+						// noinspection MagicConstant
+						cal.set(ld.getYear(), ld.getMonthValue() - 1, ld.getDayOfMonth());
+						expected = cal.getTime();
+					}
+					date = rs.getDate("v", refCal);
+					assertThat(date).isEqualTo(expected);
+				}
+			}
+		}
+
+		@SuppressWarnings("deprecation")
+		static Stream<Arguments> timeMappingShouldWork() {
+			var expectedTime = new Time(23, 59, 59);
+			return Stream.of(Arguments.of("DATE (not supported)", expectedTime, SQLException.class,
+					"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value can not be mapped to java.sql.Time.' AS m"),
+					Arguments.of("ZONED TIME", expectedTime, null,
+							"RETURN time({hour: 23, minute: 59, second: 59}) AS v"),
+					Arguments.of("ZONED TIME", expectedTime, null,
+							"RETURN time({hour: 23, minute: 59, second: 59, timezone: 'America/New_York'}) AS v"),
+					Arguments.of("LOCAL TIME", expectedTime, null,
+							"RETURN localtime({hour: 23, minute: 59, second: 59}) AS v"),
+					Arguments.of("ZONED DATETIME", expectedTime, null,
+							"RETURN datetime({year: 2024, month: 1, day: 29, hour: 23, minute: 59, second: 59}) AS v"),
+					Arguments.of("ZONED DATETIME", expectedTime, null,
+							"RETURN datetime({year: 2024, month: 1, day: 29, hour: 23, minute: 59, second: 59, timezone: 'America/New_York'}) AS v"),
+					Arguments.of("LOCAL DATETIME", expectedTime, null,
+							"RETURN localdatetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"));
+		}
+
+		@ParameterizedTest(name = "Mapping of {0} to java.sql.Time")
+		@MethodSource
+		void timeMappingShouldWork(@SuppressWarnings("unused") String description, Time expected,
+				Class<SQLException> exceptionClass, String query) throws SQLException {
+			try (var connection = getConnection();
+					var stmt = connection.createStatement();
+					var rs = stmt.executeQuery(query)) {
+				assertThat(rs.next()).isTrue();
+
+				if (exceptionClass != null) {
+					var msg = rs.getString("m");
+					assertThatExceptionOfType(exceptionClass).isThrownBy(() -> rs.getTime("v")).withMessage(msg);
+				}
+				else {
+					var date = rs.getTime("v");
+					assertThat(date).isEqualTo(expected);
+
+					var refZone = TimeZone.getTimeZone("Atlantic/Canary").toZoneId();
+					var referenceCalendar = GregorianCalendar
+						.from(ZonedDateTime.of(LocalDate.of(2023, 9, 21), LocalTime.of(21, 21, 21), refZone));
+					var hlp = rs.getObject("v", Value.class);
+					if (Type.DATE_TIME.isTypeOf(hlp)) {
+						var lt = hlp.asZonedDateTime()
+							.toOffsetDateTime()
+							.toOffsetTime()
+							.withOffsetSameInstant(refZone.getRules().getOffset(referenceCalendar.toInstant()));
+						expected = Time.valueOf(lt.toLocalTime());
+					}
+					else if (Type.TIME.isTypeOf(hlp)) {
+						var lt = hlp.asOffsetTime()
+							.withOffsetSameInstant(refZone.getRules().getOffset(referenceCalendar.toInstant()));
+						expected = Time.valueOf(lt.toLocalTime());
+					}
+					date = rs.getTime("v", referenceCalendar);
+					assertThat(date).isEqualTo(expected);
+				}
+			}
+		}
+
+		static Stream<Arguments> timestampMappingShouldWork() {
+			var defaultExpectation = LocalDateTime.of(2024, 2, 29, 23, 59, 59);
+			var expectedTime = Timestamp.valueOf(defaultExpectation);
+			return Stream.of(Arguments.of("DATE (not supported)", null, SQLException.class,
+					"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value can not be mapped to java.sql.Timestamp.' AS m"),
+					Arguments.of("ZONED TIME (not supported)", expectedTime, SQLException.class,
+							"RETURN time({hour: 23, minute: 59, second: 59}) AS v, 'TIME value can not be mapped to java.sql.Timestamp.' AS m"),
+					Arguments.of("LOCAL TIME  (not supported)", expectedTime, SQLException.class,
+							"RETURN localtime({hour: 23, minute: 59, second: 59}) AS v, 'LOCAL_TIME value can not be mapped to java.sql.Timestamp.' AS m"),
+					Arguments.of("ZONED DATETIME", expectedTime, null,
+							"RETURN datetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"),
+					Arguments.of("ZONED DATETIME", expectedTime, null,
+							"RETURN datetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59, timezone: 'America/New_York'}) AS v"),
+					Arguments.of("LOCAL DATETIME", expectedTime, null,
+							"RETURN localdatetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"));
+		}
+
+		@ParameterizedTest(name = "Mapping of {0} to java.sql.Timestamp")
+		@MethodSource
+		void timestampMappingShouldWork(@SuppressWarnings("unused") String description, Timestamp expected,
+				Class<SQLException> exceptionClass, String query) throws SQLException {
+			try (var connection = getConnection();
+					var stmt = connection.createStatement();
+					var rs = stmt.executeQuery(query)) {
+				assertThat(rs.next()).isTrue();
+
+				if (exceptionClass != null) {
+					var msg = rs.getString("m");
+					assertThatExceptionOfType(exceptionClass).isThrownBy(() -> rs.getTimestamp("v")).withMessage(msg);
+				}
+				else {
+					Timestamp date = rs.getTimestamp("v");
+					assertThat(date).isEqualTo(expected);
+
+					var refZone = TimeZone.getTimeZone("Atlantic/Canary").toZoneId();
+					var referenceCalendar = GregorianCalendar
+						.from(ZonedDateTime.of(LocalDate.of(2023, 9, 21), LocalTime.of(21, 21, 21), refZone));
+					var hlp = rs.getObject("v", Value.class);
+					if (Type.DATE_TIME.isTypeOf(hlp)) {
+						var ldt = hlp.asZonedDateTime().withZoneSameInstant(refZone).toLocalDateTime();
+						expected = Timestamp.valueOf(ldt);
+					}
+					date = rs.getTimestamp("v", referenceCalendar);
+					assertThat(date).isEqualTo(expected);
+				}
+			}
+		}
+
+		// GH-412
+		@SuppressWarnings("unchecked")
+		@Test
+		void mappingOfTimestampsMustBeConsistent() throws SQLException {
+			var query = """
+					WITH datetime('2015-06-24T12:50:35.556+0100') AS zonedDateTime
+					RETURN
+						zonedDateTime,
+						[zonedDateTime] AS zonedDateTimeList,
+						{zonedDateTime: zonedDateTime} AS zonedDateTimeDictionary""";
+			try (var connection = getConnection(); var results = connection.createStatement().executeQuery(query)) {
+
+				while (results.next()) {
+					var theDateTime = results.getObject("zonedDateTime");
+					assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
+					theDateTime = ((Iterable<Object>) results.getObject("zonedDateTimeList")).iterator().next();
+					assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
+					theDateTime = ((Map<String, Object>) results.getObject("zonedDateTimeDictionary"))
+						.get("zonedDateTime");
+					assertThat(theDateTime).isInstanceOf(ZonedDateTime.class);
+				}
+
+			}
+		}
+
+		@SuppressWarnings("deprecation")
+		@Test
+		void symmetrie() throws SQLException {
+
+			var berlin = TimeZone.getTimeZone("Europe/Berlin");
+			var berlinZoneId = berlin.toZoneId();
+			var berlinOffset = berlinZoneId.getRules().getOffset(LocalDateTime.now());
+			var newYork = TimeZone.getTimeZone("America/New_York");
+
+			var cal = Calendar.getInstance(berlin);
+			var ld = LocalDate.of(2024, 3, 7);
+			var lt = LocalTime.of(1, 23, 42);
+			var date = Date.valueOf(ld);
+			var time = Time.valueOf(lt);
+			var timestamp = Timestamp.valueOf(LocalDateTime.of(ld, lt));
+			var zdt = LocalDateTime.of(ld, lt).atZone(berlinZoneId);
+			var bd = BigDecimal.ONE.divide(new BigDecimal("3"), 10, RoundingMode.HALF_EVEN);
+
+			try (var connection = getConnection(false, false); var statement = connection.prepareStatement("""
+					RETURN $1 AS d1, $2 AS t1, $3 AS ts1,
+						$4 AS d2, $5 AS t2, $6 AS ts2,
+						$7 AS x,
+						$8 AS bd, "2.3333333" AS bd2, 1.0 AS bd3
+					""")) {
+
+				statement.setDate(1, date, cal);
+				statement.setTime(2, time, cal);
+				statement.setTimestamp(3, timestamp, cal);
+
+				statement.setDate(4, date);
+				statement.setTime(5, time);
+				statement.setTimestamp(6, timestamp);
+
+				statement.setObject(7, Values.value(zdt));
+				statement.setBigDecimal(8, bd);
+
+				var result = statement.executeQuery();
+				assertThat(result.next()).isTrue();
+
+				for (var refCal : new Calendar[] { cal, Calendar.getInstance(newYork) }) {
+					var refZone = refCal.getTimeZone().toZoneId();
+					var refOffset = refZone.getRules().getOffset(refCal.toInstant());
+
+					// Those had an offset when writing and have been converted into
+					// target
+					assertThat(Type.DATE_TIME.isTypeOf(result.getObject(1, Value.class))).isTrue();
+					assertThat(result.getDate(1)).isEqualTo(date);
+					assertThat(result.getDate(1, refCal)).isEqualTo(Date.valueOf(
+							date.toLocalDate().atStartOfDay(berlinZoneId).withZoneSameInstant(refZone).toLocalDate()));
+
+					assertThat(Type.TIME.isTypeOf(result.getObject(2, Value.class))).isTrue();
+					assertThat(result.getTime(2)).isEqualTo(time);
+					assertThat(result.getTime(2, refCal)).isEqualTo(Time.valueOf(
+							time.toLocalTime().atOffset(berlinOffset).withOffsetSameInstant(refOffset).toLocalTime()));
+
+					assertThat(Type.DATE_TIME.isTypeOf(result.getObject(3, Value.class))).isTrue();
+					assertThat(result.getTimestamp(3)).isEqualTo(timestamp);
+					assertThat(result.getTimestamp(3, refCal)).isEqualTo(Timestamp.valueOf(timestamp.toLocalDateTime()
+						.atZone(berlinZoneId)
+						.withZoneSameInstant(refZone)
+						.toLocalDateTime()));
+
+					// Those did not have an offset and are stored without
+					assertThat(Type.DATE.isTypeOf(result.getObject(4, Value.class))).isTrue();
+					assertThat(result.getDate(4)).isEqualTo(date);
+					assertThat(result.getDate(4, refCal)).isEqualTo(date);
+
+					assertThat(Type.LOCAL_TIME.isTypeOf(result.getObject(5, Value.class))).isTrue();
+					assertThat(result.getTime(5)).isEqualTo(time);
+					assertThat(result.getTime(5, refCal)).isEqualTo(time);
+
+					assertThat(Type.LOCAL_DATE_TIME.isTypeOf(result.getObject(6, Value.class))).isTrue();
+					assertThat(result.getTimestamp(6)).isEqualTo(timestamp);
+					assertThat(result.getTimestamp(6, refCal)).isEqualTo(timestamp);
+
+					assertThat(result.getDate(7)).isEqualTo(Date.valueOf("2024-03-07"));
+					assertThat(result.getDate(7, refCal))
+						.isEqualTo(Date.valueOf(zdt.withZoneSameInstant(refZone).toLocalDate()));
+					assertThat(result.getTime(7)).isEqualTo(Time.valueOf("01:23:42"));
+					assertThat(result.getTime(7, refCal))
+						.isEqualTo(Time.valueOf(zdt.withZoneSameInstant(refZone).toLocalTime()));
+					assertThat(result.getTimestamp(7)).isEqualTo(Timestamp.valueOf("2024-03-07 01:23:42"));
+					assertThat(result.getTimestamp(7, refCal))
+						.isEqualTo(Timestamp.valueOf(zdt.withZoneSameInstant(refZone).toLocalDateTime()));
+					assertThat(result.getObject(7, Value.class).asZonedDateTime()).isEqualTo(zdt);
+				}
+				assertThat(result.getBigDecimal(8)).isEqualTo(bd);
+				assertThat(result.getBigDecimal(8, 2)).isEqualTo(bd.setScale(2, RoundingMode.HALF_EVEN));
+
+				assertThat(result.getBigDecimal(9)).isEqualTo(new BigDecimal("2.3333333"));
+				assertThat(result.getBigDecimal(10)).isEqualTo(new BigDecimal("1.0"));
+
+				result.close();
+			}
+		}
+
+	}
+
+	@Nested
+	@DisabledInNativeImage // Due to spying on things
 	class Streams {
 
 		static String readAsString(URL resource) throws IOException {

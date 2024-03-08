@@ -18,5 +18,9 @@
  */
 package org.neo4j.jdbc.it.mybatis;
 
-public record Movie(String title) {
+import java.math.BigDecimal;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+public record Movie(String title, @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal length) {
 }

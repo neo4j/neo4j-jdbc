@@ -41,9 +41,6 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,11 +51,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.ValueException;
 import org.neo4j.jdbc.values.Values;
 
@@ -76,6 +75,8 @@ sealed class PreparedStatementImpl extends StatementImpl
 	private final boolean rewriteBatchedStatements;
 
 	private final String sql;
+
+	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
 
 	static String rewritePlaceholders(String raw) {
 		int index = 1;
@@ -204,8 +205,8 @@ sealed class PreparedStatementImpl extends StatementImpl
 		this.parameters.add(new HashMap<>());
 	}
 
-	protected final void setParameter(String key, Object value) {
-		getCurrentBatch().put(key, value);
+	final void setParameter(String key, Object value) {
+		getCurrentBatch().put(Objects.requireNonNull(key), value);
 	}
 
 	@Override
@@ -323,7 +324,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
-		throw new SQLException("BigDecimal is not supported");
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setParameter(computeParameterName(parameterIndex), (x != null) ? Values.value(x.toString()) : Values.NULL);
 	}
 
 	@Override
@@ -345,8 +348,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 	public void setBytes(int parameterIndex, byte[] bytes) throws SQLException {
 		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		Objects.requireNonNull(bytes);
-		setParameter(computeParameterName(parameterIndex), Values.value(bytes));
+		setParameter(computeParameterName(parameterIndex), Values.value(Objects.requireNonNull(bytes)));
 	}
 
 	@Override
@@ -387,8 +389,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 	@Override
 	public void setTimestamp(String parameterName, Timestamp value) throws SQLException {
 		assertIsOpen();
-		Objects.requireNonNull(value);
-		setParameter(parameterName, Values.value(value.toLocalDateTime()));
+		setParameter(parameterName, Values.value(Objects.requireNonNull(value).toLocalDateTime()));
 	}
 
 	@Override
@@ -483,6 +484,60 @@ sealed class PreparedStatementImpl extends StatementImpl
 		setParameter(parameterName, stream);
 	}
 
+	@Override
+	public void setNull(String parameterName, int sqlType) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.NULL);
+	}
+
+	@Override
+	public void setBoolean(String parameterName, boolean value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setByte(String parameterName, byte value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setShort(String parameterName, short value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setLong(String parameterName, long value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setFloat(String parameterName, float value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setDouble(String parameterName, double value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(value));
+	}
+
+	@Override
+	public void setBigDecimal(String parameterName, BigDecimal value) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, (value != null) ? Values.value(value.toString()) : Values.NULL);
+	}
+
+	@Override
+	public void setBytes(String parameterName, byte[] bytes) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(Objects.requireNonNull(bytes)));
+	}
+
 	private void setObjectParameter(String parameterName, Object value) throws SQLException {
 		if (value instanceof Date date) {
 			setDate(parameterName, date);
@@ -492,6 +547,9 @@ sealed class PreparedStatementImpl extends StatementImpl
 		}
 		else if (value instanceof Timestamp timestamp) {
 			setTimestamp(parameterName, timestamp);
+		}
+		else if (value instanceof Value neo4jValue) {
+			setParameter(parameterName, neo4jValue);
 		}
 		else {
 			try {
@@ -548,9 +606,11 @@ sealed class PreparedStatementImpl extends StatementImpl
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public ResultSetMetaData getMetaData() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertCallAndPositionAtFirstRow();
+		return super.resultSet.getMetaData();
 	}
 
 	@Override
@@ -725,36 +785,37 @@ sealed class PreparedStatementImpl extends StatementImpl
 		throw new SQLFeatureNotSupportedException();
 	}
 
-	protected void setDateParameter(String parameterName, Date date, Calendar cal) {
+	protected final void setDateParameter(String parameterName, Date date, Calendar cal) {
 		Objects.requireNonNull(date);
 		if (cal == null) {
 			cal = Calendar.getInstance();
 		}
-		var localDate = date.toLocalDate();
-		var zonedDateTime = ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, cal.getTimeZone().toZoneId());
+		var zonedDateTime = date.toLocalDate().atStartOfDay(cal.getTimeZone().toZoneId());
 		setParameter(parameterName, Values.value(zonedDateTime));
 	}
 
-	protected void setTimeParameter(String parameterName, Time time, Calendar cal) {
-		Objects.requireNonNull(time);
-		if (cal == null) {
-			cal = Calendar.getInstance();
-		}
-		var offsetMillis = cal.getTimeZone().getRawOffset();
-		var offsetSeconds = offsetMillis / 1000;
-		var zoneOffset = ZoneOffset.ofTotalSeconds(offsetSeconds);
-		var offsetTime = time.toLocalTime().atOffset(zoneOffset);
+	protected final void setTimeParameter(String parameterName, Time time, Calendar cal) {
+		cal = Objects.requireNonNullElseGet(cal, Calendar::getInstance);
+		var offsetTime = Objects.requireNonNull(time)
+			.toLocalTime()
+			.atOffset(cal.getTimeZone().toZoneId().getRules().getOffset(cal.toInstant()));
 		setParameter(parameterName, Values.value(offsetTime));
 	}
 
-	protected void setTimestampParameter(String parameterName, Timestamp timestamp, Calendar cal) {
-		Objects.requireNonNull(timestamp);
-		if (cal == null) {
-			cal = Calendar.getInstance();
-		}
-		var localDateTime = timestamp.toLocalDateTime();
-		var zonedDateTime = ZonedDateTime.of(localDateTime, cal.getTimeZone().toZoneId());
+	protected final void setTimestampParameter(String parameterName, Timestamp timestamp, Calendar cal) {
+		cal = Objects.requireNonNullElseGet(cal, Calendar::getInstance);
+		var zonedDateTime = Objects.requireNonNull(timestamp).toLocalDateTime().atZone(cal.getTimeZone().toZoneId());
 		setParameter(parameterName, Values.value(zonedDateTime));
+	}
+
+	protected final ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
+		if (resultSet == null) {
+			throw new SQLException("#execute has not been called");
+		}
+		if (this.cursorMoved.compareAndSet(false, true)) {
+			this.resultSet.next();
+		}
+		return resultSet;
 	}
 
 	private String computeParameterName(int parameterIndex) {

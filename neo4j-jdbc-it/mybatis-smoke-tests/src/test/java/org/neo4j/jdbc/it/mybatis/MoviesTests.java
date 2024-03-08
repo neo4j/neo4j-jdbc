@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc.it.mybatis;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -42,28 +44,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(Neo4jTestConfig.class)
 class MoviesTests {
 
+	private static final BigDecimal EXPECTED_LENGTH = new BigDecimal("180").add(new BigDecimal("114"))
+		.divide(new BigDecimal(2), RoundingMode.HALF_EVEN);
+
 	@BeforeAll
 	static void createData(@Autowired Neo4jHttpClient httpClient) {
 		httpClient.executeQuery("MATCH (n) DETACH DELETE n", Map.of());
-		httpClient.executeQuery("MERGE (m:Movie {title: $title}) RETURN m", Map.of("title", "Barbieheimer"));
+		httpClient.executeQuery("MERGE (m:Movie {title: $title, length: $length}) RETURN m",
+				Map.of("title", "Barbieheimer", "length", EXPECTED_LENGTH.toString()));
 	}
 
 	@Test
 	void repositoryIsConnectedAndUsable(@Autowired MovieRepository movieRepository) {
 		assertThat(movieRepository.findAll()).hasSizeGreaterThanOrEqualTo(1)
-			.anyMatch(movie -> movie.title().equals("Barbieheimer"));
+			.anyMatch(movie -> movie.title().equals("Barbieheimer") && movie.length().equals(EXPECTED_LENGTH));
 	}
 
 	@Test
 	void shouldCreateNewMovie(@Autowired MovieRepository movieRepository) {
-		// 3 for node, label and property
-		assertThat(movieRepository.createOrUpdate(new Movie(UUID.randomUUID().toString()))).isEqualTo(3);
+		// 3 for node, label and two properties
+		assertThat(movieRepository.createOrUpdate(new Movie(UUID.randomUUID().toString(), BigDecimal.TEN)))
+			.isEqualTo(4);
 	}
 
 	@Test
 	void shouldNotFailOnMerge(@Autowired MovieRepository movieRepository) {
-		assertThat(movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter"))).isEqualTo(3);
-		assertThat(movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter"))).isEqualTo(-1);
+		assertThat(
+				movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter", new BigDecimal("90"))))
+			.isEqualTo(4);
+		assertThat(
+				movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter", new BigDecimal("90"))))
+			.isEqualTo(-1);
 	}
 
 	@SuppressWarnings("unchecked")
