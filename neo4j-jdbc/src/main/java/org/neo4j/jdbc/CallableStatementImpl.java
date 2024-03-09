@@ -415,19 +415,19 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	@Override
 	public void setDate(String parameterName, Date date, Calendar calendar) throws SQLException {
 		assertParameterType(ParameterType.NAMED);
-		super.setDateParameter(parameterName, date, calendar);
+		super.setDate0(parameterName, date, calendar);
 	}
 
 	@Override
 	public void setTime(String parameterName, Time time, Calendar calendar) throws SQLException {
 		assertParameterType(ParameterType.NAMED);
-		super.setTimeParameter(parameterName, time, calendar);
+		super.setTime0(parameterName, time, calendar);
 	}
 
 	@Override
 	public void setTimestamp(String parameterName, Timestamp timestamp, Calendar calendar) throws SQLException {
 		assertParameterType(ParameterType.NAMED);
-		super.setTimestampParameter(parameterName, timestamp, calendar);
+		super.setTimestamp0(parameterName, timestamp, calendar);
 	}
 
 	@Override

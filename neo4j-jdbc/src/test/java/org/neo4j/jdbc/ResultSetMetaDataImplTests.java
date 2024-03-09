@@ -87,8 +87,7 @@ class ResultSetMetaDataImplTests {
 	void testResultSetMetadataGetInteger() throws SQLException {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.value(2)))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1))
-				.isEqualTo(Neo4jTypeToSqlTypeMapper.toSqlType(Type.INTEGER));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.INTEGER));
 		}
 	}
 
@@ -96,8 +95,7 @@ class ResultSetMetaDataImplTests {
 	void testResultSetMetadataGetString() throws SQLException {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.value("String")))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1))
-				.isEqualTo(Neo4jTypeToSqlTypeMapper.toSqlType(Type.STRING));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.STRING));
 		}
 	}
 
@@ -105,7 +103,7 @@ class ResultSetMetaDataImplTests {
 	void testResultSetMetadataGetNull() throws SQLException {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.NULL))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jTypeToSqlTypeMapper.toSqlType(Type.NULL));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.NULL));
 		}
 	}
 
@@ -125,7 +123,7 @@ class ResultSetMetaDataImplTests {
 
 		try (var resultSet = setupWithValues(List.of(Values.NULL, Values.value("String")))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jTypeToSqlTypeMapper.toSqlType(Type.NULL));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.NULL));
 		}
 	}
 
@@ -137,8 +135,7 @@ class ResultSetMetaDataImplTests {
 
 		try (var resultSet = setupWithValues(List.of(Values.value(1), Values.value("String")))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1))
-				.isEqualTo(Neo4jTypeToSqlTypeMapper.toSqlType(Type.INTEGER));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.INTEGER));
 		}
 	}
 

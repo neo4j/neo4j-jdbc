@@ -27,7 +27,7 @@ import org.neo4j.jdbc.values.Type;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class Neo4jTypeToSqlTypeMapperTests {
+class Neo4jConversionsTests {
 
 	static Stream<Arguments> shouldParseNames() {
 		return Stream.of(Arguments.of("Any", Type.ANY), Arguments.of("Boolean", Type.BOOLEAN),
@@ -46,7 +46,7 @@ class Neo4jTypeToSqlTypeMapperTests {
 	@ParameterizedTest
 	@MethodSource
 	void shouldParseNames(String in, Type expected) {
-		var type = Neo4jTypeToSqlTypeMapper.valueOfV5Name(in);
+		var type = Neo4jConversions.valueOfV5Name(in);
 		assertThat(type).isEqualTo(expected);
 	}
 

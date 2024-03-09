@@ -142,7 +142,7 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 		}
 		int adjustedIndex = column - 1;
 		var recordType = this.firstRecord.get(adjustedIndex).type();
-		return Neo4jTypeToSqlTypeMapper.toSqlType(recordType);
+		return Neo4jConversions.toSqlType(recordType);
 	}
 
 	@Override

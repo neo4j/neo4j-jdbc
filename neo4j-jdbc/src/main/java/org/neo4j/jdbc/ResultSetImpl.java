@@ -41,8 +41,6 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.OffsetTime;
-import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -244,17 +242,17 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToDate);
+		return getValueByColumnIndex(columnIndex, Neo4jConversions::asDate);
 	}
 
 	@Override
 	public Time getTime(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToTime);
+		return getValueByColumnIndex(columnIndex, Neo4jConversions::asTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToTimestamp);
+		return getValueByColumnIndex(columnIndex, Neo4jConversions::asTimestamp);
 	}
 
 	@Override
@@ -326,17 +324,17 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToDate);
+		return getValueByColumnLabel(columnLabel, Neo4jConversions::asDate);
 	}
 
 	@Override
 	public Time getTime(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToTime);
+		return getValueByColumnLabel(columnLabel, Neo4jConversions::asTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToTimestamp);
+		return getValueByColumnLabel(columnLabel, Neo4jConversions::asTimestamp);
 	}
 
 	@Override
@@ -806,32 +804,32 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> mapToDate(value, cal));
+		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asDate(value, cal));
 	}
 
 	@Override
 	public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> mapToDate(value, cal));
+		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asDate(value, cal));
 	}
 
 	@Override
 	public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> mapToTime(value, cal));
+		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asTime(value, cal));
 	}
 
 	@Override
 	public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> mapToTime(value, cal));
+		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asTime(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> mapToTimestamp(value, cal));
+		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asTimestamp(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> mapToTimestamp(value, cal));
+		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asTimestamp(value, cal));
 	}
 
 	@Override
@@ -1343,123 +1341,6 @@ final class ResultSetImpl implements ResultSet {
 			return truncate(value.asByteArray(), maxFieldSize);
 		}
 		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
-	}
-
-	private static Date mapToDate(Value value) throws SQLException {
-		if (Type.DATE.isTypeOf(value)) {
-			return Date.valueOf(value.asLocalDate());
-		}
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Date.valueOf(value.asZonedDateTime().toLocalDate());
-		}
-		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			return Date.valueOf(value.asLocalDateTime().toLocalDate());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Date.", value.type()));
-	}
-
-	private static Date mapToDate(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-
-		ZonedDateTime zonedDateTime;
-		var targetZone = calendar.getTimeZone().toZoneId();
-		if (Type.DATE.isTypeOf(value)) {
-			zonedDateTime = value.asLocalDate().atStartOfDay(targetZone);
-		}
-		else if (Type.DATE_TIME.isTypeOf(value)) {
-			zonedDateTime = value.asZonedDateTime().withZoneSameInstant(targetZone);
-		}
-		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			zonedDateTime = value.asLocalDateTime().atZone(targetZone);
-		}
-		else {
-			throw new SQLException(String.format("%s value can not be mapped to zoned java.sql.Date.", value.type()));
-		}
-
-		return Date.valueOf(zonedDateTime.toLocalDate());
-	}
-
-	private static Time mapToTime(Value value) throws SQLException {
-		if (Type.TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asOffsetTime().toLocalTime());
-		}
-		if (Type.LOCAL_TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asLocalTime());
-		}
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asZonedDateTime().toLocalTime());
-		}
-		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asLocalDateTime().toLocalTime());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
-	}
-
-	private static Time mapToTime(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-
-		OffsetTime offsetTime;
-		var targetOffset = calendar.getTimeZone().toZoneId().getRules().getOffset(calendar.toInstant());
-		if (Type.TIME.isTypeOf(value)) {
-			offsetTime = value.asOffsetTime().withOffsetSameInstant(targetOffset);
-		}
-		else if (Type.LOCAL_TIME.isTypeOf(value)) {
-			offsetTime = value.asLocalTime().atOffset(targetOffset);
-		}
-		else if (Type.DATE_TIME.isTypeOf(value)) {
-			offsetTime = value.asZonedDateTime().toOffsetDateTime().withOffsetSameInstant(targetOffset).toOffsetTime();
-		}
-		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			offsetTime = value.asLocalDateTime().toLocalTime().atOffset(targetOffset);
-		}
-		else {
-			throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
-		}
-
-		return Time.valueOf(offsetTime.toLocalTime());
-	}
-
-	private static Timestamp mapToTimestamp(Value value) throws SQLException {
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Timestamp.valueOf(value.asZonedDateTime().toLocalDateTime());
-		}
-		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			return Timestamp.valueOf(value.asLocalDateTime());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Timestamp.", value.type()));
-	}
-
-	private static Timestamp mapToTimestamp(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-
-		ZonedDateTime hlp;
-		var zonedDateTime = calendar.getTimeZone().toZoneId();
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			hlp = value.asZonedDateTime().withZoneSameInstant(zonedDateTime);
-		}
-		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			hlp = value.asLocalDateTime().atZone(zonedDateTime);
-		}
-		else {
-			throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
-		}
-
-		return Timestamp.valueOf(hlp.toLocalDateTime());
 	}
 
 	private static Reader mapToReader(Value value, int maxFieldSize) throws SQLException {

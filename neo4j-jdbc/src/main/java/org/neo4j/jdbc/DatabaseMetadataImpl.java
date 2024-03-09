@@ -936,9 +936,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 					values.add(Values.value("public")); // TABLE_SCHEM is always public
 					values.add(nodeLabel); // TABLE_NAME
 					values.add(propertyName); // COLUMN_NAME
-					var columnType = Neo4jTypeToSqlTypeMapper.toSqlTypeFromOldCypherType(propertyType.asString());
+					var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
 					values.add(Values.value(columnType)); // DATA_TYPE
-					values.add(Values.value(Neo4jTypeToSqlTypeMapper.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
+					values.add(Values.value(Neo4jConversions.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
 					var maxPrecision = getMaxPrecision(columnType);
 					values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
 					values.add(Values.NULL); // BUFFER_LENGTH

@@ -615,23 +615,35 @@ sealed class PreparedStatementImpl extends StatementImpl
 
 	@Override
 	public void setDate(int parameterIndex, Date date, Calendar cal) throws SQLException {
-		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setDateParameter(computeParameterName(parameterIndex), date, cal);
+		setDate0(computeParameterName(parameterIndex), date, cal);
+	}
+
+	protected final void setDate0(String parameterName, Date date, Calendar cal) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Values.value(Neo4jConversions.asValue(date, cal)));
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time time, Calendar cal) throws SQLException {
-		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setTimeParameter(computeParameterName(parameterIndex), time, cal);
+		setTime0(computeParameterName(parameterIndex), time, cal);
+	}
+
+	protected final void setTime0(String parameterName, Time time, Calendar cal) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Neo4jConversions.asValue(time, cal));
 	}
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp timestamp, Calendar cal) throws SQLException {
-		assertIsOpen();
 		assertValidParameterIndex(parameterIndex);
-		setTimestampParameter(computeParameterName(parameterIndex), timestamp, cal);
+		setTimestamp0(computeParameterName(parameterIndex), timestamp, cal);
+	}
+
+	protected final void setTimestamp0(String parameterName, Timestamp timestamp, Calendar cal) throws SQLException {
+		assertIsOpen();
+		setParameter(parameterName, Neo4jConversions.asValue(timestamp, cal));
 	}
 
 	@Override
@@ -783,29 +795,6 @@ sealed class PreparedStatementImpl extends StatementImpl
 	@Override
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
-	}
-
-	protected final void setDateParameter(String parameterName, Date date, Calendar cal) {
-		Objects.requireNonNull(date);
-		if (cal == null) {
-			cal = Calendar.getInstance();
-		}
-		var zonedDateTime = date.toLocalDate().atStartOfDay(cal.getTimeZone().toZoneId());
-		setParameter(parameterName, Values.value(zonedDateTime));
-	}
-
-	protected final void setTimeParameter(String parameterName, Time time, Calendar cal) {
-		cal = Objects.requireNonNullElseGet(cal, Calendar::getInstance);
-		var offsetTime = Objects.requireNonNull(time)
-			.toLocalTime()
-			.atOffset(cal.getTimeZone().toZoneId().getRules().getOffset(cal.toInstant()));
-		setParameter(parameterName, Values.value(offsetTime));
-	}
-
-	protected final void setTimestampParameter(String parameterName, Timestamp timestamp, Calendar cal) {
-		cal = Objects.requireNonNullElseGet(cal, Calendar::getInstance);
-		var zonedDateTime = Objects.requireNonNull(timestamp).toLocalDateTime().atZone(cal.getTimeZone().toZoneId());
-		setParameter(parameterName, Values.value(zonedDateTime));
 	}
 
 	protected final ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
