@@ -118,7 +118,7 @@ final class Neo4jConversions {
 		return Type.valueOf(value);
 	}
 
-	static ZoneOffset getZoneOffsetFrom(Calendar cal) {
+	private static ZoneOffset getZoneOffsetFrom(Calendar cal) {
 		return Objects.requireNonNullElseGet(cal, Calendar::getInstance)
 			.getTimeZone()
 			.toZoneId()
@@ -127,11 +127,19 @@ final class Neo4jConversions {
 	}
 
 	static Value asValue(Time time, Calendar calendar) {
-		var offsetTime = Objects.requireNonNull(time).toLocalTime().atOffset(getZoneOffsetFrom(calendar));
+		if (time == null) {
+			return Values.NULL;
+		}
+
+		var offsetTime = time.toLocalTime().atOffset(getZoneOffsetFrom(calendar));
 		return Values.value(offsetTime);
 	}
 
 	static Time asTime(Value value) throws SQLException {
+		if (value == null || Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+
 		if (Type.TIME.isTypeOf(value)) {
 			return Time.valueOf(value.asOffsetTime().toLocalTime());
 		}
@@ -144,14 +152,11 @@ final class Neo4jConversions {
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Time.valueOf(value.asLocalDateTime().toLocalTime());
 		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
+		throw new SQLException(String.format("%s value cannot be mapped to java.sql.Time", value.type()));
 	}
 
 	static Time asTime(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
+		if (value == null || Type.NULL.isTypeOf(value)) {
 			return null;
 		}
 
@@ -170,35 +175,37 @@ final class Neo4jConversions {
 			offsetTime = value.asLocalDateTime().toLocalTime().atOffset(targetOffset);
 		}
 		else {
-			throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
+			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Time", value.type()));
 		}
-
 		return Time.valueOf(offsetTime.toLocalTime());
 	}
 
 	static Value asValue(Timestamp timestamp, Calendar calendar) {
+		if (timestamp == null) {
+			return Values.NULL;
+		}
+
 		calendar = Objects.requireNonNullElseGet(calendar, Calendar::getInstance);
-		var zonedDateTime = Objects.requireNonNull(timestamp)
-			.toLocalDateTime()
-			.atZone(calendar.getTimeZone().toZoneId());
+		var zonedDateTime = timestamp.toLocalDateTime().atZone(calendar.getTimeZone().toZoneId());
 		return Values.value(zonedDateTime);
 	}
 
 	static Timestamp asTimestamp(Value value) throws SQLException {
+		if (value == null || Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+
 		if (Type.DATE_TIME.isTypeOf(value)) {
 			return Timestamp.valueOf(value.asZonedDateTime().toLocalDateTime());
 		}
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Timestamp.valueOf(value.asLocalDateTime());
 		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Timestamp.", value.type()));
+		throw new SQLException(String.format("%s value cannot be mapped to java.sql.Timestamp", value.type()));
 	}
 
 	static Timestamp asTimestamp(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
+		if (value == null || Type.NULL.isTypeOf(value)) {
 			return null;
 		}
 
@@ -211,19 +218,26 @@ final class Neo4jConversions {
 			hlp = value.asLocalDateTime().atZone(zonedDateTime);
 		}
 		else {
-			throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
+			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Timestamp", value.type()));
 		}
-
 		return Timestamp.valueOf(hlp.toLocalDateTime());
 	}
 
 	static Value asValue(Date date, Calendar calendar) {
+		if (date == null) {
+			return Values.NULL;
+		}
+
 		calendar = Objects.requireNonNullElseGet(calendar, Calendar::getInstance);
-		var zonedDateTime = Objects.requireNonNull(date).toLocalDate().atStartOfDay(calendar.getTimeZone().toZoneId());
+		var zonedDateTime = date.toLocalDate().atStartOfDay(calendar.getTimeZone().toZoneId());
 		return Values.value(zonedDateTime);
 	}
 
 	static Date asDate(Value value) throws SQLException {
+		if (value == null || Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+
 		if (Type.DATE.isTypeOf(value)) {
 			return Date.valueOf(value.asLocalDate());
 		}
@@ -233,14 +247,11 @@ final class Neo4jConversions {
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Date.valueOf(value.asLocalDateTime().toLocalDate());
 		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Date.", value.type()));
+		throw new SQLException(String.format("%s value cannot be mapped to java.sql.Date", value.type()));
 	}
 
 	static Date asDate(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
+		if (value == null || Type.NULL.isTypeOf(value)) {
 			return null;
 		}
 
@@ -256,9 +267,8 @@ final class Neo4jConversions {
 			zonedDateTime = value.asLocalDateTime().atZone(targetZone);
 		}
 		else {
-			throw new SQLException(String.format("%s value can not be mapped to zoned java.sql.Date.", value.type()));
+			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Date", value.type()));
 		}
-
 		return Date.valueOf(zonedDateTime.toLocalDate());
 	}
 

@@ -1365,7 +1365,12 @@ final class ResultSetImpl implements ResultSet {
 		};
 
 		if (result != null && scale != null) {
-			return result.setScale(scale);
+			try {
+				return result.setScale(scale);
+			}
+			catch (ArithmeticException ae) {
+				throw new SQLException(ae);
+			}
 		}
 		return result;
 	}

@@ -244,9 +244,9 @@ class PreparedStatementIT extends IntegrationTestBase {
 			return Stream.of(
 					Arguments.of("DATE", expectedDate, null, "RETURN date({year: 2024, month: 2, day: 29}) AS v"),
 					Arguments.of("ZONED TIME (not supported)", expectedDate, SQLException.class,
-							"RETURN time() AS v, 'TIME value can not be mapped to java.sql.Date.' AS m"),
+							"RETURN time() AS v, 'TIME value cannot be mapped to java.sql.Date' AS m"),
 					Arguments.of("LOCAL TIME (not supported)", expectedDate, SQLException.class,
-							"RETURN localtime() AS v, 'LOCAL_TIME value can not be mapped to java.sql.Date.' AS m"),
+							"RETURN localtime() AS v, 'LOCAL_TIME value cannot be mapped to java.sql.Date' AS m"),
 					Arguments.of("ZONED DATETIME", expectedDate, null,
 							"RETURN datetime({year: 2024, month: 2, day: 29}) AS v"),
 					Arguments.of("ZONED DATETIME", expectedDate, null,
@@ -295,7 +295,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 		static Stream<Arguments> timeMappingShouldWork() {
 			var expectedTime = new Time(23, 59, 59);
 			return Stream.of(Arguments.of("DATE (not supported)", expectedTime, SQLException.class,
-					"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value can not be mapped to java.sql.Time.' AS m"),
+					"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value cannot be mapped to java.sql.Time' AS m"),
 					Arguments.of("ZONED TIME", expectedTime, null,
 							"RETURN time({hour: 23, minute: 59, second: 59}) AS v"),
 					Arguments.of("ZONED TIME", expectedTime, null,
@@ -353,11 +353,11 @@ class PreparedStatementIT extends IntegrationTestBase {
 			var defaultExpectation = LocalDateTime.of(2024, 2, 29, 23, 59, 59);
 			var expectedTime = Timestamp.valueOf(defaultExpectation);
 			return Stream.of(Arguments.of("DATE (not supported)", null, SQLException.class,
-					"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value can not be mapped to java.sql.Timestamp.' AS m"),
+					"RETURN date({year: 2024, month: 2, day: 29}) AS v, 'DATE value cannot be mapped to java.sql.Timestamp' AS m"),
 					Arguments.of("ZONED TIME (not supported)", expectedTime, SQLException.class,
-							"RETURN time({hour: 23, minute: 59, second: 59}) AS v, 'TIME value can not be mapped to java.sql.Timestamp.' AS m"),
+							"RETURN time({hour: 23, minute: 59, second: 59}) AS v, 'TIME value cannot be mapped to java.sql.Timestamp' AS m"),
 					Arguments.of("LOCAL TIME  (not supported)", expectedTime, SQLException.class,
-							"RETURN localtime({hour: 23, minute: 59, second: 59}) AS v, 'LOCAL_TIME value can not be mapped to java.sql.Timestamp.' AS m"),
+							"RETURN localtime({hour: 23, minute: 59, second: 59}) AS v, 'LOCAL_TIME value cannot be mapped to java.sql.Timestamp' AS m"),
 					Arguments.of("ZONED DATETIME", expectedTime, null,
 							"RETURN datetime({year: 2024, month: 2, day: 29, hour: 23, minute: 59, second: 59}) AS v"),
 					Arguments.of("ZONED DATETIME", expectedTime, null,
@@ -438,13 +438,13 @@ class PreparedStatementIT extends IntegrationTestBase {
 			var time = Time.valueOf(lt);
 			var timestamp = Timestamp.valueOf(LocalDateTime.of(ld, lt));
 			var zdt = LocalDateTime.of(ld, lt).atZone(berlinZoneId);
-			var bd = BigDecimal.ONE.divide(new BigDecimal("3"), 10, RoundingMode.HALF_EVEN);
+			var bd = BigDecimal.ONE.divide(new BigDecimal("2"), 2, RoundingMode.HALF_EVEN);
 
 			try (var connection = getConnection(false, false); var statement = connection.prepareStatement("""
 					RETURN $1 AS d1, $2 AS t1, $3 AS ts1,
 						$4 AS d2, $5 AS t2, $6 AS ts2,
 						$7 AS x,
-						$8 AS bd, "2.3333333" AS bd2, 1.0 AS bd3
+						$8 AS bd, "2.124" AS bd2, 1.0 AS bd3
 					""")) {
 
 				statement.setDate(1, date, cal);
@@ -511,7 +511,9 @@ class PreparedStatementIT extends IntegrationTestBase {
 				assertThat(result.getBigDecimal(8)).isEqualTo(bd);
 				assertThat(result.getBigDecimal(8, 2)).isEqualTo(bd.setScale(2, RoundingMode.HALF_EVEN));
 
-				assertThat(result.getBigDecimal(9)).isEqualTo(new BigDecimal("2.3333333"));
+				assertThat(result.getBigDecimal(9)).isEqualTo(new BigDecimal("2.124"));
+				assertThatExceptionOfType(SQLException.class).isThrownBy(() -> result.getBigDecimal(9, 1))
+					.withCauseInstanceOf(ArithmeticException.class);
 				assertThat(result.getBigDecimal(10)).isEqualTo(new BigDecimal("1.0"));
 
 				result.close();
