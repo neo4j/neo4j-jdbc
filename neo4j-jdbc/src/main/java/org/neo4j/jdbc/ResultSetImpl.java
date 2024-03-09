@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -1473,6 +1472,7 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to Reader.", value.type()));
 	}
 
+	@SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
 	private static BigDecimal mapToBigDecimal(Value value, Integer scale) throws SQLException {
 
 		var result = switch (value.type()) {
@@ -1484,7 +1484,7 @@ final class ResultSetImpl implements ResultSet {
 		};
 
 		if (result != null && scale != null) {
-			return result.setScale(scale, RoundingMode.HALF_EVEN);
+			return result.setScale(scale);
 		}
 		return result;
 	}
