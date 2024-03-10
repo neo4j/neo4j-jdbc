@@ -461,7 +461,11 @@ class PreparedStatementIT extends IntegrationTestBase {
 				var result = statement.executeQuery();
 				assertThat(result.next()).isTrue();
 
-				for (var refCal : new Calendar[] { cal, Calendar.getInstance(newYork) }) {
+				var cal3 = Calendar.getInstance(newYork);
+				cal3.set(2024, 2, 10, 11, 0, 0);
+				var cal4 = Calendar.getInstance(newYork);
+				cal4.set(2024, 2, 10, 13, 0, 0);
+				for (var refCal : new Calendar[] { cal, Calendar.getInstance(newYork), cal3, cal4 }) {
 					var refZone = refCal.getTimeZone().toZoneId();
 					var refOffset = refZone.getRules().getOffset(refCal.toInstant());
 
