@@ -1,7 +1,7 @@
 = Neo4j specific conversions
 
 Neo4j does not offer all types used in the relational world.
-For some of them we offer conversions that used to be helpful in Frameworks such as https://github.com/spring-projects/spring-data-neo4j[Spring Data Neo4j (SDN)] and we implement here in the exact same way, so you could use both SDN and this driver interchangeable.
+For some of them we offer conversions that used to be helpful in frameworks such as https://github.com/spring-projects/spring-data-neo4j[Spring Data Neo4j (SDN)] and we implement here in the exact same way, so you could use both SDN and this driver interchangeable.
 
 == Data types for Fixed-point arithmetic
 
