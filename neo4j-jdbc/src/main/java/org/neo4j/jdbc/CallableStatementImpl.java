@@ -918,7 +918,6 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		super.setCharacterStream(parameterIndex, reader, length);
 	}
 
-	// assertParameterType(ParameterType.NAMED);
 	private void assertParameterType(ParameterType parameterType) throws SQLException {
 		if (this.parameterType == null) {
 			this.parameterType = parameterType;

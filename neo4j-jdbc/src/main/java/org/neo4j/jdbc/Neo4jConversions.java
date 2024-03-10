@@ -48,8 +48,9 @@ final class Neo4jConversions {
 
 	/*
 	 * This is required because of a bug in Neo4j 5 where java types are returned from the
-	 * db.schema.nodeTypeProperties() procedure in Neo4j 6 this will change so will need to add
-	 * another method to handle the new types returned here when working with Neo4j 6
+	 * db.schema.nodeTypeProperties() procedure in Neo4j 6 this will change so will need
+	 * to add another method to handle the new types returned here when working with Neo4j
+	 * 6
 	 */
 	static int toSqlTypeFromOldCypherType(String neo4jType) {
 		return toSqlType(valueOfV5Name(neo4jType));
@@ -57,8 +58,9 @@ final class Neo4jConversions {
 
 	/*
 	 * This is required because of a bug in Neo4j 5 where java types are returned from the
-	 * db.schema.nodeTypeProperties() procedure in Neo4j 6 this will change so will need to add
-	 * another method to handle the new types returned here when working with Neo4j 6
+	 * db.schema.nodeTypeProperties() procedure in Neo4j 6 this will change so will need
+	 * to add another method to handle the new types returned here when working with Neo4j
+	 * 6
 	 */
 	static String oldCypherTypesToNew(String neo4jType) {
 		return switch (neo4jType) {
