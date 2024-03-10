@@ -501,9 +501,9 @@ class PreparedStatementIT extends IntegrationTestBase {
 					assertThat(result.getDate(7, refCal))
 						.isEqualTo(Date.valueOf(zdt.withZoneSameInstant(refZone).toLocalDate()));
 					assertThat(result.getTime(7)).isEqualTo(Time.valueOf("01:23:42"));
-					assertThat(result.getTime(7, refCal))
-						.isEqualTo(Time.valueOf(zdt.withZoneSameInstant(refZone).toLocalTime()));
 					assertThat(result.getTimestamp(7)).isEqualTo(Timestamp.valueOf("2024-03-07 01:23:42"));
+					assertThat(result.getTime(7, refCal))
+						.isEqualTo(Time.valueOf(zdt.toOffsetDateTime().withOffsetSameInstant(refOffset).toLocalTime()));
 					assertThat(result.getTimestamp(7, refCal))
 						.isEqualTo(Timestamp.valueOf(zdt.withZoneSameInstant(refZone).toLocalDateTime()));
 					assertThat(result.getObject(7, Value.class).asZonedDateTime()).isEqualTo(zdt);
