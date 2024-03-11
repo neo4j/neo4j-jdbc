@@ -19,6 +19,7 @@
 package org.neo4j.jdbc;
 
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Map;
 
 import org.neo4j.jdbc.internal.bolt.response.DiscardResponse;
@@ -30,28 +31,28 @@ final class ThrowingTransactionImpl implements Neo4jTransaction {
 	@Override
 	public RunAndPullResponses runAndPull(String query, Map<String, Object> parameters, int fetchSize, int timeout)
 			throws SQLException {
-		throw new SQLException("Unsupported operation.");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public DiscardResponse runAndDiscard(String query, Map<String, Object> parameters, int timeout, boolean commit)
 			throws SQLException {
-		throw new SQLException("Unsupported operation.");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public PullResponse pull(RunResponse runResponse, long request) throws SQLException {
-		throw new SQLException("Unsupported operation.");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void commit() throws SQLException {
-		throw new SQLException("Unsupported operation.");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void rollback() throws SQLException {
-		throw new SQLException("Unsupported operation.");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override

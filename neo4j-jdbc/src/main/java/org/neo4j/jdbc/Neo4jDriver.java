@@ -311,7 +311,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public boolean acceptsURL(String url) throws SQLException {
 		if (url == null) {
-			throw new SQLException("url cannot be null.");
+			throw new SQLException("url cannot be null");
 		}
 
 		return URL_PATTERN.matcher(url).matches();
@@ -417,13 +417,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private static DriverConfig parseConfig(String url, Properties info) throws SQLException {
 		if (url == null || info == null) {
-			throw new SQLException("url and info cannot be null.");
+			throw new SQLException("url and info cannot be null");
 		}
 
 		var matcher = URL_PATTERN.matcher(url);
 
 		if (!matcher.matches()) {
-			throw new SQLException("Invalid url.");
+			throw new SQLException("Invalid url");
 		}
 
 		var urlParams = splitUrlParams(matcher.group("urlParams"));

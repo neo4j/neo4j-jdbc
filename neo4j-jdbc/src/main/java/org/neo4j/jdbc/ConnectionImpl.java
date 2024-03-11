@@ -177,7 +177,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 		if (this.transaction != null) {
 			if (Neo4jTransaction.State.OPEN_FAILED == this.transaction.getState()) {
-				throw new SQLException("The existing transaction must be rolled back explicitly.");
+				throw new SQLException("The existing transaction must be rolled back explicitly");
 			}
 			if (this.transaction.isRunnable()) {
 				this.transaction.commit();
@@ -197,10 +197,10 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void commit() throws SQLException {
 		assertIsOpen();
 		if (this.transaction == null) {
-			throw new SQLException("There is no transaction to commit.");
+			throw new SQLException("There is no transaction to commit");
 		}
 		if (this.transaction.isAutoCommit()) {
-			throw new SQLException("Auto commit transaction may not be managed explicitly.");
+			throw new SQLException("Auto commit transaction may not be managed explicitly");
 		}
 		this.transaction.commit();
 	}
@@ -209,10 +209,10 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void rollback() throws SQLException {
 		assertIsOpen();
 		if (this.transaction == null) {
-			throw new SQLException("There is no transaction to rollback.");
+			throw new SQLException("There is no transaction to rollback");
 		}
 		if (this.transaction.isAutoCommit()) {
-			throw new SQLException("Auto commit transaction may not be managed explicitly.");
+			throw new SQLException("Auto commit transaction may not be managed explicitly");
 		}
 		this.transaction.rollback();
 	}
@@ -262,7 +262,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void setReadOnly(boolean readOnly) throws SQLException {
 		assertIsOpen();
 		if (this.transaction != null && this.transaction.isOpen()) {
-			throw new SQLException("Updating read only setting during an unfinished transaction is not permitted.");
+			throw new SQLException("Updating read only setting during an unfinished transaction is not permitted");
 		}
 		this.readOnly = readOnly;
 	}
@@ -287,7 +287,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setTransactionIsolation(int level) throws SQLException {
-		throw new SQLException("Setting transaction isolation level is not supported.");
+		throw new SQLException("Setting transaction isolation level is not supported");
 	}
 
 	@Override
@@ -461,7 +461,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public boolean isValid(int timeout) throws SQLException {
 		if (timeout < 0) {
-			throw new SQLException("Negative timeout is not supported.");
+			throw new SQLException("Negative timeout is not supported");
 		}
 		if (this.closed) {
 			return false;
@@ -606,7 +606,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface.");
+			throw new SQLException("This object does not implement the given interface");
 		}
 	}
 
@@ -617,7 +617,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private void assertIsOpen() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("The connection is closed.");
+			throw new SQLException("The connection is closed");
 		}
 	}
 
@@ -632,7 +632,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		if (this.transaction != null && this.transaction.isOpen()) {
 			if (autoCommitCheck && this.transaction.isAutoCommit()) {
-				throw new SQLException("Only a single autocommit transaction is supported.");
+				throw new SQLException("Only a single autocommit transaction is supported");
 			}
 		}
 		else {

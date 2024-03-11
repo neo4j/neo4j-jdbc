@@ -147,7 +147,7 @@ final class ResultSetImpl implements ResultSet {
 
 	private boolean next0() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("This result set is closed.");
+			throw new SQLException("This result set is closed");
 		}
 		if (this.remainingRowAllowance == 0) {
 			return false;
@@ -184,7 +184,7 @@ final class ResultSetImpl implements ResultSet {
 	public boolean wasNull() throws SQLException {
 		assertIsOpen();
 		if (this.value == null) {
-			throw new SQLException("No column has been read prior to this call.");
+			throw new SQLException("No column has been read prior to this call");
 		}
 		return Type.NULL.isTypeOf(this.value);
 	}
@@ -389,7 +389,7 @@ final class ResultSetImpl implements ResultSet {
 		assertIsOpen();
 		var index = this.keys.indexOf(columnLabel);
 		if (index == -1) {
-			throw new SQLException("No such column is present.");
+			throw new SQLException("No such column is present");
 		}
 		return ++index;
 	}
@@ -1152,7 +1152,7 @@ final class ResultSetImpl implements ResultSet {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface.");
+			throw new SQLException("This object does not implement the given interface");
 		}
 	}
 
@@ -1219,7 +1219,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to String.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to String", value.type()));
 	}
 
 	private static boolean mapToBoolean(Value value) throws SQLException {
@@ -1238,7 +1238,7 @@ final class ResultSetImpl implements ResultSet {
 				return true;
 			}
 			else {
-				throw new SQLException("Number values can not be mapped to boolean aside from 0 and 1 values.");
+				throw new SQLException("Number values can not be mapped to boolean aside from 0 and 1 values");
 			}
 		}
 		if (Type.STRING.isTypeOf(value)) {
@@ -1250,10 +1250,10 @@ final class ResultSetImpl implements ResultSet {
 				return true;
 			}
 			else {
-				throw new SQLException("String values can not be mapped to boolean aside from '0' and '1' values.");
+				throw new SQLException("String values can not be mapped to boolean aside from '0' and '1' values");
 			}
 		}
-		throw new SQLException(String.format("%s value can not be mapped to boolean.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to boolean", value.type()));
 	}
 
 	private static Byte mapToByte(Value value) throws SQLException {
@@ -1262,12 +1262,12 @@ final class ResultSetImpl implements ResultSet {
 			if (longValue >= Byte.MIN_VALUE && longValue <= Byte.MAX_VALUE) {
 				return (byte) longValue;
 			}
-			throw new SQLException("The number is out of byte range.");
+			throw new SQLException("The number is out of byte range");
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return (byte) 0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to byte.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to byte", value.type()));
 	}
 
 	private static Short mapToShort(Value value) throws SQLException {
@@ -1276,12 +1276,12 @@ final class ResultSetImpl implements ResultSet {
 			if (longValue >= Short.MIN_VALUE && longValue <= Short.MAX_VALUE) {
 				return (short) longValue;
 			}
-			throw new SQLException("The number is out of short range.");
+			throw new SQLException("The number is out of short range");
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return (short) 0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to short.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to short", value.type()));
 	}
 
 	private static int mapToInteger(Value value) throws SQLException {
@@ -1290,12 +1290,12 @@ final class ResultSetImpl implements ResultSet {
 			if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
 				return (int) longValue;
 			}
-			throw new SQLException("The number is out of int range.");
+			throw new SQLException("The number is out of int range");
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return 0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to int.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to int", value.type()));
 	}
 
 	private static long mapToLong(Value value) throws SQLException {
@@ -1305,7 +1305,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return 0L;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to long.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to long", value.type()));
 	}
 
 	private static float mapToFloat(Value value) throws SQLException {
@@ -1315,12 +1315,12 @@ final class ResultSetImpl implements ResultSet {
 			if (Double.compare(doubleValue, floatValue) == 0) {
 				return floatValue;
 			}
-			throw new SQLException("The number is out of float range.");
+			throw new SQLException("The number is out of float range");
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return 0.0f;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to float.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to float", value.type()));
 	}
 
 	private static double mapToDouble(Value value) throws SQLException {
@@ -1330,7 +1330,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return 0.0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to double.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to double", value.type()));
 	}
 
 	private static byte[] mapToBytes(Value value, int maxFieldSize) throws SQLException {
@@ -1340,7 +1340,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.BYTES.isTypeOf(value)) {
 			return truncate(value.asByteArray(), maxFieldSize);
 		}
-		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to byte array", value.type()));
 	}
 
 	private static Reader mapToReader(Value value, int maxFieldSize) throws SQLException {
@@ -1350,7 +1350,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to Reader.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to Reader", value.type()));
 	}
 
 	@SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
@@ -1361,7 +1361,8 @@ final class ResultSetImpl implements ResultSet {
 			case INTEGER -> BigDecimal.valueOf(value.asLong());
 			case FLOAT -> BigDecimal.valueOf(value.asDouble());
 			case NULL -> null;
-			default -> throw new SQLException(String.format("%s value can not be mapped to BigDecimal.", value.type()));
+			default -> throw new SQLException(
+					String.format("%s value can not be mapped to java.math.BigDecimal", value.type()));
 		};
 
 		if (result != null && scale != null) {
@@ -1383,7 +1384,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to InputStream.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to java.io.InputStream", value.type()));
 	}
 
 	private static InputStream mapToBinaryStream(Value value, int maxFieldSize) throws SQLException {
@@ -1393,7 +1394,7 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to InputStream.", value.type()));
+		throw new SQLException(String.format("%s value can not be mapped to java.io.InputStream", value.type()));
 	}
 
 	private static Object mapToObject(Value value, int maxFieldSize) {

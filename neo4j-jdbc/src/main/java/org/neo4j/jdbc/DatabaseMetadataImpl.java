@@ -1418,7 +1418,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface.");
+			throw new SQLException("This object does not implement the given interface");
 		}
 	}
 
@@ -1462,13 +1462,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private static void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
 		if (schemaPattern != null && !"public".equals(schemaPattern)) {
-			throw new SQLException("Schema must be public or null.");
+			throw new SQLException("Schema must be public or null");
 		}
 	}
 
 	private static void assertCatalogIsNullOrEmpty(String catalog) throws SQLException {
 		if (catalog != null && !catalog.isEmpty()) {
-			throw new SQLException("Catalog is not applicable to Neo4j please leave null.");
+			throw new SQLException("Catalog is not applicable to Neo4j please leave null");
 		}
 	}
 
