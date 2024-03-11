@@ -213,7 +213,7 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface.");
+			throw new SQLException("This object does not implement the given interface");
 		}
 	}
 

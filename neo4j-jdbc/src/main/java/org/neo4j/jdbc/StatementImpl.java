@@ -169,7 +169,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	public void setMaxFieldSize(int max) throws SQLException {
 		assertIsOpen();
 		if (max < 0) {
-			throw new SQLException("Max field size can not be negative.");
+			throw new SQLException("Max field size can not be negative");
 		}
 		this.maxFieldSize = max;
 	}
@@ -184,7 +184,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	public void setMaxRows(int max) throws SQLException {
 		assertIsOpen();
 		if (max < 0) {
-			throw new SQLException("Max rows can not be negative.");
+			throw new SQLException("Max rows can not be negative");
 		}
 		this.maxRows = max;
 	}
@@ -204,7 +204,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	public void setQueryTimeout(int seconds) throws SQLException {
 		assertIsOpen();
 		if (seconds < 0) {
-			throw new SQLException("Query timeout can not be negative.");
+			throw new SQLException("Query timeout can not be negative");
 		}
 		this.queryTimeout = seconds;
 	}
@@ -329,7 +329,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	public void setFetchSize(int rows) throws SQLException {
 		assertIsOpen();
 		if (rows < 0) {
-			throw new SQLException("Fetch size can not be negative.");
+			throw new SQLException("Fetch size can not be negative");
 		}
 		this.fetchSize = (rows > 0) ? rows : DEFAULT_FETCH_SIZE;
 	}
@@ -454,7 +454,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface.");
+			throw new SQLException("This object does not implement the given interface");
 		}
 	}
 

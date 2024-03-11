@@ -75,7 +75,7 @@ class ParameterMetaDataImpl implements ParameterMetaData {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface.");
+			throw new SQLException("This object does not implement the given interface");
 		}
 	}
 

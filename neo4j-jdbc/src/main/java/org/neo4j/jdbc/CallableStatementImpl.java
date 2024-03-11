@@ -924,7 +924,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		}
 		else {
 			if (this.parameterType != parameterType) {
-				throw new SQLException(String.format("%s parameter can not be mixed with %s parameter(s).",
+				throw new SQLException(String.format("%s parameter can not be mixed with %s parameter(s)",
 						parameterType, this.parameterType));
 			}
 		}
