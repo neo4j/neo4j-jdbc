@@ -57,7 +57,7 @@ Depending on your use-case or your environment you pick one or the other bundle,
 
 Pick this distribution if you have an application that uses dependencies management in which you don't have to care about dealing with binary artifacts yourself.
 
-IMPORTANT: We do offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are `{group-id}:neo4j-jdbc-bom`.
+IMPORTANT: We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are `{group-id}:neo4j-jdbc-bom`.
 
 For Maven you will want to use this dependency declaration:
 
