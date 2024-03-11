@@ -416,4 +416,21 @@ class StatementIT extends IntegrationTestBase {
 		}
 	}
 
+	// GH-401
+	@Test
+	void noSurpriseGetString() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var result = stmt.executeQuery("RETURN {a: '1', b: '2'} AS m, [1,2,3] AS l")) {
+
+			assertThat(result.next()).isTrue();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> result.getString("m"))
+				.withMessage("MAP value can not be mapped to String");
+			assertThat(result.getObject("m")).isInstanceOf(Map.class);
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> result.getString("l"))
+				.withMessage("LIST OF ANY? value can not be mapped to String");
+			assertThat(result.getObject("l")).isInstanceOf(List.class);
+		}
+	}
+
 }
