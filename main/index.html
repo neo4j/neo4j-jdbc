@@ -530,8 +530,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT a38f66a,</span>
-<span id="revdate">2024-03-11T09:58:36Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT cce2a30,</span>
+<span id="revdate">2024-03-11T14:57:07Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -1188,6 +1188,18 @@ Depending on your use-case or your environment you pick one or the other bundle,
 <h4 id="_individual_components">4.2.1. Individual components</h4>
 <div class="paragraph">
 <p>Pick this distribution if you have an application that uses dependencies management in which you don&#8217;t have to care about dealing with binary artifacts yourself.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are <code>org.neo4j:neo4j-jdbc-bom</code>.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>For Maven you will want to use this dependency declaration:</p>
@@ -3835,8 +3847,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT a38f66a<br>
-Last updated 2024-03-11 09:58:40 UTC
+Version 6.0.0-SNAPSHOT cce2a30<br>
+Last updated 2024-03-11 14:57:11 UTC
 </div>
 </div>
 </body>
