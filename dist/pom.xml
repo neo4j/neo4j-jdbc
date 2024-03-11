@@ -34,6 +34,18 @@
 	<name>Neo4j JDBC Driver (Distribution)</name>
 	<description>Zipped distribution containing the full bundle plus manual</description>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-jdbc-bom</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.neo4j</groupId>
@@ -43,7 +55,6 @@
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-full-bundle</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -121,5 +132,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

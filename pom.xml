@@ -103,6 +103,7 @@
 	</developers>
 
 	<modules>
+		<module>neo4j-jdbc-bom</module>
 		<module>neo4j-jdbc-translator</module>
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-it</module>
@@ -119,6 +120,11 @@
 		<tag>HEAD</tag>
 		<url>https://github.com/neo4j/neo4j-jdbc</url>
 	</scm>
+
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/neo4j/neo4j-jdbc/issues</url>
+	</issueManagement>
 
 	<properties>
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>

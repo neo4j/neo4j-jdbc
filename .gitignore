@@ -34,3 +34,4 @@ dependency-reduced-pom.xml
 \.*.swp
 .env
 Neo4j-*-Created-*-*-*.txt
+.flattened-pom.xml
