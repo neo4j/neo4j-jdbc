@@ -34,6 +34,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -230,6 +232,33 @@ class PreparedStatementIT extends IntegrationTestBase {
 					assertThat(result.getString("id")).matches("\\d+:.+:\\d+");
 				}
 			}
+		}
+	}
+
+	// GH-419
+	@Test
+	void resultSetMustNotThrowWhenEmpty() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.prepareStatement("MATCH(p:Person) WHERE p.date >= ? AND p.date  < ? RETURN p")) {
+
+			var ts = Timestamp.from(Instant.now());
+			stmt.setTimestamp(1, ts);
+			stmt.setTimestamp(2, ts);
+			stmt.execute();
+			var resultSet = stmt.getResultSet();
+			var resultSetMetaData = resultSet.getMetaData();
+			int columnCount = resultSetMetaData.getColumnCount();
+			assertThat(columnCount).isOne();
+			for (int c = 1; c < columnCount + 1; c++) {
+				var label = resultSetMetaData.getColumnLabel(c);
+				assertThat(label).isEqualTo("p");
+				var type = resultSetMetaData.getColumnType(c);
+				assertThat(type).isEqualTo(Types.NULL);
+				var typeName = resultSetMetaData.getColumnTypeName(c);
+				assertThat(typeName).isEmpty();
+			}
+			resultSet.close();
+
 		}
 	}
 
