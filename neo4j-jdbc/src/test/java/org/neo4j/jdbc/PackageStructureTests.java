@@ -34,6 +34,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPac
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackages;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.theClass;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PackageStructureTests {
@@ -65,6 +66,15 @@ class PackageStructureTests {
 			.resideInAPackage("..jdbc.internal..")
 			.should()
 			.dependOnClassesThat(this.jdbcModuleClasses);
+		rule.check(this.allClasses);
+	}
+
+	@Test
+	void callableStatementMustNotDoAnyParameterConversion() {
+
+		var rule = theClass(CallableStatementImpl.class).should()
+			.onlyDependOnClassesThat()
+			.resideOutsideOfPackages("..jdbc.values..");
 		rule.check(this.allClasses);
 	}
 

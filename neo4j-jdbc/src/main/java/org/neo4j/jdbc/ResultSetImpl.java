@@ -41,9 +41,6 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.TemporalAdjusters;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -235,7 +232,7 @@ final class ResultSetImpl implements ResultSet {
 	@Override
 	@SuppressWarnings("deprecation")
 	public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return getValueByColumnIndex(columnIndex, v -> mapToBigDecimal(v, scale));
 	}
 
 	@Override
@@ -245,17 +242,17 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToDate);
+		return getValueByColumnIndex(columnIndex, Neo4jConversions::asDate);
 	}
 
 	@Override
 	public Time getTime(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToTime);
+		return getValueByColumnIndex(columnIndex, Neo4jConversions::asTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToTimestamp);
+		return getValueByColumnIndex(columnIndex, Neo4jConversions::asTimestamp);
 	}
 
 	@Override
@@ -317,7 +314,7 @@ final class ResultSetImpl implements ResultSet {
 	@Override
 	@SuppressWarnings("deprecation")
 	public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return getValueByColumnLabel(columnLabel, v -> mapToBigDecimal(v, scale));
 	}
 
 	@Override
@@ -327,17 +324,17 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToDate);
+		return getValueByColumnLabel(columnLabel, Neo4jConversions::asDate);
 	}
 
 	@Override
 	public Time getTime(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToTime);
+		return getValueByColumnLabel(columnLabel, Neo4jConversions::asTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToTimestamp);
+		return getValueByColumnLabel(columnLabel, Neo4jConversions::asTimestamp);
 	}
 
 	@Override
@@ -409,12 +406,12 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBigDecimal);
+		return getValueByColumnIndex(columnIndex, v -> mapToBigDecimal(v, null));
 	}
 
 	@Override
 	public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBigDecimal);
+		return getValueByColumnLabel(columnLabel, v -> mapToBigDecimal(v, null));
 	}
 
 	@Override
@@ -807,32 +804,32 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> mapToDate(value, cal));
+		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asDate(value, cal));
 	}
 
 	@Override
 	public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> mapToDate(value, cal));
+		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asDate(value, cal));
 	}
 
 	@Override
 	public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> mapToTime(value, cal));
+		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asTime(value, cal));
 	}
 
 	@Override
 	public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> mapToTime(value, cal));
+		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asTime(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-		return getValueByColumnIndex(columnIndex, value -> mapToTimestamp(value, cal));
+		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asTimestamp(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-		return getValueByColumnLabel(columnLabel, value -> mapToTimestamp(value, cal));
+		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asTimestamp(value, cal));
 	}
 
 	@Override
@@ -1346,123 +1343,6 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to byte array.", value.type()));
 	}
 
-	private static Date mapToDate(Value value) throws SQLException {
-		if (Type.DATE.isTypeOf(value)) {
-			return Date.valueOf(value.asLocalDate());
-		}
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Date.valueOf(value.asZonedDateTime().toLocalDate());
-		}
-		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			return Date.valueOf(value.asLocalDateTime().toLocalDate());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Date.", value.type()));
-	}
-
-	private static Date mapToDate(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-
-		ZonedDateTime hlp;
-		var reference = calendar.toInstant().atZone(calendar.getTimeZone().toZoneId());
-		if (Type.DATE.isTypeOf(value)) {
-			hlp = reference.with(TemporalAdjusters.ofDateAdjuster(ignored -> value.asLocalDate()));
-		}
-		else if (Type.DATE_TIME.isTypeOf(value)) {
-			hlp = reference.with(TemporalAdjusters.ofDateAdjuster(ignored -> value.asZonedDateTime().toLocalDate()));
-		}
-		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			hlp = reference.with(TemporalAdjusters.ofDateAdjuster(ignored -> value.asLocalDateTime().toLocalDate()));
-		}
-		else {
-			throw new SQLException(String.format("%s value can not be mapped to zoned java.sql.Date.", value.type()));
-		}
-
-		return Date.valueOf(hlp.withZoneSameLocal(ZoneId.systemDefault()).toLocalDate());
-	}
-
-	private static Time mapToTime(Value value) throws SQLException {
-		if (Type.TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asOffsetTime().toLocalTime());
-		}
-		if (Type.LOCAL_TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asLocalTime());
-		}
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asZonedDateTime().toLocalTime());
-		}
-		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			return Time.valueOf(value.asLocalDateTime().toLocalTime());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
-	}
-
-	private static Time mapToTime(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-
-		ZonedDateTime hlp;
-		var reference = calendar.toInstant().atZone(calendar.getTimeZone().toZoneId());
-		if (Type.TIME.isTypeOf(value)) {
-			hlp = reference.with(temporal -> temporal.with(value.asOffsetTime()));
-		}
-		else if (Type.LOCAL_TIME.isTypeOf(value)) {
-			hlp = reference.with(temporal -> temporal.with(value.asLocalTime()));
-		}
-		else if (Type.DATE_TIME.isTypeOf(value)) {
-			hlp = reference.with(temporal -> temporal.with(value.asZonedDateTime().toLocalTime()));
-		}
-		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			hlp = reference.with(temporal -> temporal.with(value.asLocalDateTime()));
-		}
-		else {
-			throw new SQLException(String.format("%s value can not be mapped to java.sql.Time.", value.type()));
-		}
-
-		return Time.valueOf(hlp.withZoneSameLocal(ZoneId.systemDefault()).toLocalTime());
-	}
-
-	private static Timestamp mapToTimestamp(Value value) throws SQLException {
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			return Timestamp.valueOf(value.asZonedDateTime().toLocalDateTime());
-		}
-		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			return Timestamp.valueOf(value.asLocalDateTime());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to java.sql.Timestamp.", value.type()));
-	}
-
-	private static Timestamp mapToTimestamp(Value value, Calendar calendar) throws SQLException {
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-
-		ZonedDateTime hlp;
-		var reference = calendar.toInstant().atZone(calendar.getTimeZone().toZoneId());
-		if (Type.DATE_TIME.isTypeOf(value)) {
-			hlp = reference.with(temporal -> temporal.with(value.asZonedDateTime().toLocalDateTime()));
-		}
-		else if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
-			hlp = reference.with(temporal -> temporal.with(value.asLocalDateTime()));
-		}
-		else {
-			throw new SQLException(String.format("%s value can not be mapped to zoned timestamp.", value.type()));
-		}
-
-		return Timestamp.valueOf(hlp.toLocalDateTime());
-	}
-
 	private static Reader mapToReader(Value value, int maxFieldSize) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
 			return new StringReader(truncate(value.asString(), maxFieldSize));
@@ -1473,17 +1353,26 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to Reader.", value.type()));
 	}
 
-	private static BigDecimal mapToBigDecimal(Value value) throws SQLException {
-		if (Type.INTEGER.isTypeOf(value)) {
-			return BigDecimal.valueOf(value.asLong());
+	@SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
+	private static BigDecimal mapToBigDecimal(Value value, Integer scale) throws SQLException {
+
+		var result = switch (value.type()) {
+			case STRING -> new BigDecimal(value.asString());
+			case INTEGER -> BigDecimal.valueOf(value.asLong());
+			case FLOAT -> BigDecimal.valueOf(value.asDouble());
+			case NULL -> null;
+			default -> throw new SQLException(String.format("%s value can not be mapped to BigDecimal.", value.type()));
+		};
+
+		if (result != null && scale != null) {
+			try {
+				return result.setScale(scale);
+			}
+			catch (ArithmeticException ae) {
+				throw new SQLException(ae);
+			}
 		}
-		if (Type.FLOAT.isTypeOf(value)) {
-			return BigDecimal.valueOf(value.asDouble());
-		}
-		if (Type.NULL.isTypeOf(value)) {
-			return null;
-		}
-		throw new SQLException(String.format("%s value can not be mapped to BigDecimal.", value.type()));
+		return result;
 	}
 
 	private static InputStream mapToAsciiStream(Value value, int maxFieldSize) throws SQLException {

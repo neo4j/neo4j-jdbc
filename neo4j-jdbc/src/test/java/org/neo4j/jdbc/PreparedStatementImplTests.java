@@ -22,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -43,6 +42,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.sql.Wrapper;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -50,7 +50,6 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Collections;
@@ -314,8 +313,6 @@ class PreparedStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setArray(1, mock(Array.class)),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) PreparedStatementImpl::getMetaData,
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL, "name"),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, mock(URL.class)),
@@ -339,9 +336,7 @@ class PreparedStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(InputStream.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNClob(1, mock(Reader.class)),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setBigDecimal(1, BigDecimal.ONE),
-						SQLException.class));
+						SQLFeatureNotSupportedException.class));
 	}
 
 	@ParameterizedTest
@@ -425,6 +420,10 @@ class PreparedStatementImplTests {
 	}
 
 	static Stream<Arguments> getShouldSetParameterArgs() {
+
+		var zoneId = ZoneId.of("America/Los_Angeles");
+		var offset = zoneId.getRules().getOffset(Instant.now());
+
 		return Stream.of(
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL), Values.NULL),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean(1, true), Values.value(true)),
@@ -467,10 +466,10 @@ class PreparedStatementImplTests {
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.setTime(1, Time.valueOf(LocalTime.of(1, 1, 1)),
 								Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"))),
-						Values.value(OffsetTime.of(LocalTime.of(1, 1, 1), ZoneOffset.of("-08:00")))),
-				Arguments.of((StatementMethodRunner) statement -> statement
-					.setTimestamp(1, Timestamp.valueOf(LocalDateTime.of(2000, 1, 1, 1, 1, 1)),
-							Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"))),
+						Values.value(OffsetTime.of(LocalTime.of(1, 1, 1), offset))),
+				Arguments.of((StatementMethodRunner) statement -> statement.setTimestamp(1,
+						Timestamp.valueOf(LocalDateTime.of(2000, 1, 1, 1, 1, 1)),
+						Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"))),
 						Values.value(ZonedDateTime.of(LocalDateTime.of(2000, 1, 1, 1, 1, 1),
 								ZoneId.of("America/Los_Angeles")))),
 				Arguments.of(

@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.it.mybatis;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class MovieController {
 
 	@PostMapping
 	public ResponseEntity<Movie> createMovie(@RequestBody String title) {
-		var movie = new Movie(title);
+		var movie = new Movie(title, new BigDecimal("123.5"));
 		var result = this.movieRepository.createOrUpdate(movie);
 		return new ResponseEntity<>(movie, (result < 0) ? HttpStatus.OK : HttpStatus.CREATED);
 	}

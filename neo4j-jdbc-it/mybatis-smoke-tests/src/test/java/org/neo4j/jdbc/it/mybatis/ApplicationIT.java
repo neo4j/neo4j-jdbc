@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.it.mybatis;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +68,7 @@ public class ApplicationIT {
 
 		moviesResponse = restTemplate.exchange(RequestEntity.get("/movies").build(), listOfMoviesType);
 		assertThat(moviesResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(moviesResponse.getBody()).containsExactly(new Movie(title));
+		assertThat(moviesResponse.getBody()).containsExactly(new Movie(title, new BigDecimal("123.5")));
 	}
 
 }

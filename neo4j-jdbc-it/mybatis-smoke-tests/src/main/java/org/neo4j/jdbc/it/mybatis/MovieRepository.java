@@ -31,10 +31,10 @@ import org.springframework.stereotype.Repository;
 @Mapper
 public interface MovieRepository {
 
-	@Select("MATCH (n:Movie) RETURN n.title ORDER BY n.title")
+	@Select("MATCH (n:Movie) RETURN n.title, n.length ORDER BY n.title")
 	List<Movie> findAll();
 
-	@Insert("MERGE (n:Movie {title: #{title}})")
+	@Insert("MERGE (n:Movie {title: #{title}, length: #{length}})")
 	@Options(useCache = false)
 	int createOrUpdate(Movie movie);
 

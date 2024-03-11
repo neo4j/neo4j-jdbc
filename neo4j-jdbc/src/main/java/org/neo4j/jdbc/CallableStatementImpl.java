@@ -30,7 +30,6 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
-import java.sql.ResultSet;
 import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -45,13 +44,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.neo4j.jdbc.values.Values;
 
 final class CallableStatementImpl extends PreparedStatementImpl implements Neo4jCallableStatement {
 
@@ -97,8 +93,6 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 				descriptor.toCypher(parameterOrder));
 	}
 
-	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
-
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			boolean rewriteBatchedStatements, String sql) {
 		super(connection, transactionSupplier, UnaryOperator.identity(), null, rewriteBatchedStatements, sql);
@@ -122,16 +116,6 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void registerOutParameter(int parameterIndex, int sqlType, int scale) {
-	}
-
-	ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
-		if (resultSet == null) {
-			throw new SQLException("CallableStatement#execute has not been called");
-		}
-		if (this.cursorMoved.compareAndSet(false, true)) {
-			this.resultSet.next();
-		}
-		return resultSet;
 	}
 
 	@SuppressWarnings("resource")
@@ -294,70 +278,86 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	public void registerOutParameter(String parameterName, int sqlType, String typeName) {
 	}
 
-	@SuppressWarnings("resource")
 	@Override
 	public URL getURL(int parameterIndex) throws SQLException {
-		return assertCallAndPositionAtFirstRow().getURL(parameterIndex);
-	}
-
-	@Override
-	public void setURL(String parameterName, URL value) throws SQLException {
-		setNamedParameter(parameterName, value.toString());
-	}
-
-	@Override
-	public void setNull(String parameterName, int sqlType) throws SQLException {
-		setNamedParameter(parameterName, Values.NULL);
-	}
-
-	@Override
-	public void setBoolean(String parameterName, boolean value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setByte(String parameterName, byte value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setShort(String parameterName, short value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setInt(String parameterName, int value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setLong(String parameterName, long value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setFloat(String parameterName, float value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setDouble(String parameterName, double value) throws SQLException {
-		setNamedParameter(parameterName, value);
-	}
-
-	@Override
-	public void setBigDecimal(String parameterName, BigDecimal value) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
+	public void setURL(String parameterName, URL value) throws SQLException {
+		throw new SQLFeatureNotSupportedException();
+	}
+
+	@Override
+	public void setNull(String parameterName, int sqlType) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setNull(parameterName, sqlType);
+	}
+
+	@Override
+	public void setBoolean(String parameterName, boolean value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setBoolean(parameterName, value);
+	}
+
+	@Override
+	public void setByte(String parameterName, byte value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setByte(parameterName, value);
+	}
+
+	@Override
+	public void setShort(String parameterName, short value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setShort(parameterName, value);
+	}
+
+	@Override
+	public void setInt(String parameterName, int value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setInt(parameterName, value);
+	}
+
+	@Override
+	public void setLong(String parameterName, long value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setLong(parameterName, value);
+	}
+
+	@Override
+	public void setFloat(String parameterName, float value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setFloat(parameterName, value);
+	}
+
+	@Override
+	public void setDouble(String parameterName, double value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setDouble(parameterName, value);
+	}
+
+	@Override
+	public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
+		assertParameterType(ParameterType.ORDINAL);
+		super.setBigDecimal(parameterIndex, x);
+	}
+
+	@Override
+	public void setBigDecimal(String parameterName, BigDecimal value) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setBigDecimal(parameterName, value);
+	}
+
+	@Override
 	public void setString(String parameterName, String value) throws SQLException {
-		setNamedParameter(parameterName, value);
+		assertParameterType(ParameterType.NAMED);
+		super.setString(parameterName, value);
 	}
 
 	@Override
 	public void setBytes(String parameterName, byte[] bytes) throws SQLException {
-		setNamedParameter(parameterName, bytes);
+		assertParameterType(ParameterType.NAMED);
+		super.setBytes(parameterName, bytes);
 	}
 
 	@Override
@@ -415,19 +415,19 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	@Override
 	public void setDate(String parameterName, Date date, Calendar calendar) throws SQLException {
 		assertParameterType(ParameterType.NAMED);
-		super.setDateParameter(parameterName, date, calendar);
+		super.setDate0(parameterName, date, calendar);
 	}
 
 	@Override
 	public void setTime(String parameterName, Time time, Calendar calendar) throws SQLException {
 		assertParameterType(ParameterType.NAMED);
-		super.setTimeParameter(parameterName, time, calendar);
+		super.setTime0(parameterName, time, calendar);
 	}
 
 	@Override
 	public void setTimestamp(String parameterName, Timestamp timestamp, Calendar calendar) throws SQLException {
 		assertParameterType(ParameterType.NAMED);
-		super.setTimestampParameter(parameterName, timestamp, calendar);
+		super.setTimestamp0(parameterName, timestamp, calendar);
 	}
 
 	@Override
@@ -916,11 +916,6 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
 		assertParameterType(ParameterType.ORDINAL);
 		super.setCharacterStream(parameterIndex, reader, length);
-	}
-
-	private void setNamedParameter(String name, Object value) throws SQLException {
-		assertParameterType(ParameterType.NAMED);
-		super.setParameter(name, value);
 	}
 
 	private void assertParameterType(ParameterType parameterType) throws SQLException {

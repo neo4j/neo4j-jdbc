@@ -1,0 +1,20 @@
+= Neo4j specific conversions
+
+Neo4j does not offer all types used in the relational world.
+For some of them we offer conversions that used to be helpful in frameworks such as https://github.com/spring-projects/spring-data-neo4j[Spring Data Neo4j (SDN)] and we implement here in the exact same way, so you could use both SDN and this driver interchangeable.
+
+== Data types for Fixed-point arithmetic
+
+Neo4j does not support `BigInteger` and `BigDecimal`.
+The only way to store them is as String and read them back into the corresponding type.
+This is inline with SDN and OGM.
+
+So any parameter of those types passed to `PreparedStatement` or `CallableStatement` will be stored as String, but can be equally read back through corresponding methods on the resultsets.
+
+== SQL Date, Time and Timestamps
+
+`java.sql.Date`:: Maps to Cypher `DATE`
+`java.sql.Time`:: Maps to Cypher `LOCAL TIME`
+`java.sql.Timestamp`:: Maps to Cypher `LOCAL DATETIME`
+
+For more precise mapping use a Neo4j `Value` instance with the appropriate type and `setObject` respectively `getObject`.
