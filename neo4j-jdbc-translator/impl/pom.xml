@@ -50,7 +50,6 @@
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-translator-spi</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<!-- It is referenced by jOOQ and will lead to compiler warnings unless present during compilation. Using provided scope so that it never appears as transitive dependency. -->
