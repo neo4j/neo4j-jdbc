@@ -141,7 +141,7 @@
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<japicmp-maven-plugin.version>0.20.0</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
-		<jaxb-api.version>4.0.1</jaxb-api.version>
+		<jaxb-api.version>4.0.2</jaxb-api.version>
 		<jdbi3.version>3.45.0</jdbi3.version>
 		<jooq.version>3.19.6</jooq.version>
 		<jreleaser-maven-plugin.version>1.11.0</jreleaser-maven-plugin.version>
