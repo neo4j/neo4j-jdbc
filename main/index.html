@@ -530,8 +530,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT ba2f2b6,</span>
-<span id="revdate">2024-03-11T06:53:27Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 53f6c61,</span>
+<span id="revdate">2024-03-11T08:55:09Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -579,14 +579,20 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#s2c">7.3. Using the default translator</a></li>
 </ul>
 </li>
-<li><a href="#_neo4j_specific_syntax_for_statements">Appendix A: Neo4j specific syntax for statements</a>
+<li><a href="#_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</a>
 <ul class="sectlevel2">
-<li><a href="#_callable_statements">A.1. Callable statements</a></li>
+<li><a href="#_data_types_for_fixed_point_arithmetic">A.1. Data types for Fixed-point arithmetic</a></li>
+<li><a href="#_sql_date_time_and_timestamps">A.2. SQL Date, Time and Timestamps</a></li>
 </ul>
 </li>
-<li><a href="#_migrating_from_older_versions_or_other_jdbc_drivers_for_neo4j">Appendix B: Migrating from older versions or other JDBC drivers for Neo4j</a>
+<li><a href="#_neo4j_specific_syntax_for_statements">Appendix B: Neo4j specific syntax for statements</a>
 <ul class="sectlevel2">
-<li><a href="#_migrating_from_version_4_or_5_of_this_driver">B.1. Migrating from version 4 or 5 of this driver</a></li>
+<li><a href="#_callable_statements">B.1. Callable statements</a></li>
+</ul>
+</li>
+<li><a href="#_migrating_from_older_versions_or_other_jdbc_drivers_for_neo4j">Appendix C: Migrating from older versions or other JDBC drivers for Neo4j</a>
+<ul class="sectlevel2">
+<li><a href="#_migrating_from_version_4_or_5_of_this_driver">C.1. Migrating from version 4 or 5 of this driver</a></li>
 </ul>
 </li>
 </ul>
@@ -3571,15 +3577,57 @@ ON MATCH SET people.born = properties['born']</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_neo4j_specific_syntax_for_statements">Appendix A: Neo4j specific syntax for statements</h2>
+<h2 id="_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Neo4j does not offer all types used in the relational world.
+For some of them we offer conversions that used to be helpful in frameworks such as <a href="https://github.com/spring-projects/spring-data-neo4j">Spring Data Neo4j (SDN)</a> and we implement here in the exact same way, so you could use both SDN and this driver interchangeable.</p>
+</div>
+<div class="sect2">
+<h3 id="_data_types_for_fixed_point_arithmetic">A.1. Data types for Fixed-point arithmetic</h3>
+<div class="paragraph">
+<p>Neo4j does not support <code>BigInteger</code> and <code>BigDecimal</code>.
+The only way to store them is as String and read them back into the corresponding type.
+This is inline with SDN and OGM.</p>
+</div>
+<div class="paragraph">
+<p>So any parameter of those types passed to <code>PreparedStatement</code> or <code>CallableStatement</code> will be stored as String, but can be equally read back through corresponding methods on the resultsets.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_sql_date_time_and_timestamps">A.2. SQL Date, Time and Timestamps</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>java.sql.Date</code></dt>
+<dd>
+<p>Maps to Cypher <code>DATE</code></p>
+</dd>
+<dt class="hdlist1"><code>java.sql.Time</code></dt>
+<dd>
+<p>Maps to Cypher <code>LOCAL TIME</code></p>
+</dd>
+<dt class="hdlist1"><code>java.sql.Timestamp</code></dt>
+<dd>
+<p>Maps to Cypher <code>LOCAL DATETIME</code></p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>For more precise mapping use a Neo4j <code>Value</code> instance with the appropriate type and <code>setObject</code> respectively <code>getObject</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_neo4j_specific_syntax_for_statements">Appendix B: Neo4j specific syntax for statements</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This section deals with conventions for indexing and naming parameters in all types of statements (standard statements, prepared statements and callable statements) and other Neo4j specific syntax.</p>
 </div>
 <div class="sect2">
-<h3 id="_callable_statements">A.1. Callable statements</h3>
+<h3 id="_callable_statements">B.1. Callable statements</h3>
 <div class="sect3">
-<h4 id="_general_syntax">A.1.1. General syntax</h4>
+<h4 id="_general_syntax">B.1.1. General syntax</h4>
 <div class="paragraph">
 <p>You can invoke stored procedures as follows</p>
 </div>
@@ -3605,7 +3653,7 @@ ON MATCH SET people.born = properties['born']</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_named_parameters">A.1.2. Named parameters</h4>
+<h4 id="_named_parameters">B.1.2. Named parameters</h4>
 <div class="paragraph">
 <p>Our callable statement implementation (<code>org.neo4j.jdbc.Neo4jCallableStatement</code>) does support named parameters. As per JDBC spec those are not named placeholders in a query- or statement-string, but the actual, formal parameter for the stored procedures to be called.
 We support both the <code>$</code> and the colon syntax, that is you might use either <code>$name</code> or <code>:name</code>.</p>
@@ -3615,7 +3663,7 @@ We support both the <code>$</code> and the colon syntax, that is you might use e
 </div>
 </div>
 <div class="sect3">
-<h4 id="_result_sets_of_callable_statements">A.1.3. Result sets of callable statements</h4>
+<h4 id="_result_sets_of_callable_statements">B.1.3. Result sets of callable statements</h4>
 <div class="paragraph">
 <p>When you execute a callable statement via ´executeQuery`, you must use the result set returned.
 If you just use <code>execute</code>, we assume that the underlying procedure does only return one row and you use the getters on the statement itself.</p>
@@ -3625,7 +3673,7 @@ If you just use <code>execute</code>, we assume that the underlying procedure do
 </div>
 </div>
 <div class="sect1">
-<h2 id="_migrating_from_older_versions_or_other_jdbc_drivers_for_neo4j">Appendix B: Migrating from older versions or other JDBC drivers for Neo4j</h2>
+<h2 id="_migrating_from_older_versions_or_other_jdbc_drivers_for_neo4j">Appendix C: Migrating from older versions or other JDBC drivers for Neo4j</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>There are some other JDBC drivers for Neo4j, under various licenses and with varying features and capabilities.
@@ -3633,7 +3681,7 @@ In the following we outline possible migration processes.
 The basic usage patterns for all JDBC drivers for Neo4j are very similar, in the end it&#8217;s "just" using a JDBC compliant driver, and you would use it as described in the original <a href="https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html">Java tutorial about JDBC</a>.</p>
 </div>
 <div class="sect2">
-<h3 id="_migrating_from_version_4_or_5_of_this_driver">B.1. Migrating from version 4 or 5 of this driver</h3>
+<h3 id="_migrating_from_version_4_or_5_of_this_driver">C.1. Migrating from version 4 or 5 of this driver</h3>
 <div class="paragraph">
 <p>Version 5 and 4 of the Neo4j JDBC Driver have been mainly developed by <a href="http://larus-ba.it/">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j. Thank you so much for all your work.</p>
 </div>
@@ -3650,7 +3698,7 @@ The most important change that you need to make is removing the dependency on <c
 </table>
 </div>
 <div class="sect3">
-<h4 id="_url_format_parameters_and_main_driver_class">B.1.1. URL format, parameters and main driver class</h4>
+<h4 id="_url_format_parameters_and_main_driver_class">C.1.1. URL format, parameters and main driver class</h4>
 <div class="paragraph">
 <p>The previous version mapped the URLs from the common Java driver onto <code>jdbc:</code>, i.e. using <code>jdbc:neo4j:neo4j+s://foobar.io:7687/</code> for connecting against a database running on host <code>foobar.io</code> on port 7687.</p>
 </div>
@@ -3768,7 +3816,7 @@ If you depend on a <code>javax.sql.DataSource</code>, we provide <code>org.neo4j
 </div>
 </div>
 <div class="sect3">
-<h4 id="_flattening">B.1.2. Flattening</h4>
+<h4 id="_flattening">C.1.2. Flattening</h4>
 <div class="paragraph">
 <p>While the Neo4j JDBC Driver does not support <code>flatten</code> option, it can emulate its effect.
 <code>flatten</code> did unnest returned nodes and relationships by providing all their properties as individual columns.</p>
@@ -3787,8 +3835,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT ba2f2b6<br>
-Last updated 2024-03-11 06:53:32 UTC
+Version 6.0.0-SNAPSHOT 53f6c61<br>
+Last updated 2024-03-11 08:55:16 UTC
 </div>
 </div>
 </body>
