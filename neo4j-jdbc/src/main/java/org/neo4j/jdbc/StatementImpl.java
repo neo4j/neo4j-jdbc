@@ -33,6 +33,7 @@ import java.sql.SQLWarning;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,6 +85,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final Warnings warnings;
 
+	private final AtomicBoolean resultSetAcquired = new AtomicBoolean(false);
+
 	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, Warnings localWarnings) {
 		this.connection = Objects.requireNonNull(connection);
@@ -121,6 +124,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
 				this.fetchSize, this.maxRows, this.maxFieldSize);
+		this.resultSetAcquired.set(false);
 		return this.resultSet;
 	}
 
@@ -287,6 +291,9 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	@Override
 	public ResultSet getResultSet() throws SQLException {
 		assertIsOpen();
+		if (!this.resultSetAcquired.compareAndSet(false, true)) {
+			throw new SQLException("Result set has already been acquired");
+		}
 		return (this.multipleResultsApi && this.updateCount == -1) ? this.resultSet : null;
 	}
 
@@ -472,6 +479,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		if (this.resultSet != null) {
 			this.resultSet.close();
 			this.resultSet = null;
+			this.resultSetAcquired.set(false);
 		}
 	}
 
