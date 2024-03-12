@@ -706,14 +706,13 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 		if (cause instanceof ConnectionReadTimeoutException) {
 			var iterator = this.trackedStatements.iterator();
 			while (iterator.hasNext()) {
+				var autoClosable = iterator.next();
+				iterator.remove();
 				try {
-					iterator.next().close();
+					autoClosable.close();
 				}
 				catch (Exception ex) {
 					sqlException.addSuppressed(ex);
-				}
-				finally {
-					iterator.remove();
 				}
 			}
 			try {
