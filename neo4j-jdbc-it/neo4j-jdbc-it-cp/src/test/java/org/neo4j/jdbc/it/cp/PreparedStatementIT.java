@@ -885,10 +885,27 @@ class PreparedStatementIT extends IntegrationTestBase {
 					Mockito.verify(in).close();
 				}
 
-				try (var ps = connection.prepareStatement("MATCH (m:CSTest {type: $1}) RETURN m.content")) {
+				try (var ps = connection.prepareStatement(
+						"MATCH (m:CSTest {type: $1}) RETURN m.content AS content, 23.42 AS invalid, null AS n, 'a lengthy lengthy lengthy lengthy lengthy string' AS s")) {
+					if (lengthUsed != null && lengthUsed != 0) {
+						ps.setMaxFieldSize(lengthUsed);
+					}
 					ps.setString(1, type);
 					try (var result = ps.executeQuery()) {
+
 						assertThat(result.next()).isTrue();
+
+						try (var r = new BufferedReader(new InputStreamReader(result.getBinaryStream("s")))) {
+							var actual = r.readLine();
+							assertThat(actual).isEqualTo("a lengthy lengthy lengthy lengthy lengthy string".substring(0,
+									(lengthUsed != null && lengthUsed != 0) ? Math.min(lengthUsed, actual.length())
+											: actual.length()));
+						}
+						assertThat(result.getBinaryStream("n")).isNull();
+						assertThatExceptionOfType(SQLException.class)
+							.isThrownBy(() -> result.getBinaryStream("invalid"))
+							.withMessage("FLOAT value can not be mapped to java.io.InputStream");
+
 						var actual = result.getObject(1, Value.class).asByteArray();
 						if (lengthUsed != null) {
 							if (lengthUsed == 0) {
@@ -906,6 +923,12 @@ class PreparedStatementIT extends IntegrationTestBase {
 						}
 						else {
 							assertThat(md5.digest(actual)).asHexString().isEqualTo("DA4AF72F62E96D5A00CF20FEA8766D1C");
+						}
+						try (var compare = result.getBinaryStream(1)) {
+							assertThat(actual).isEqualTo(compare.readAllBytes());
+						}
+						try (var compare = result.getBinaryStream("content")) {
+							assertThat(actual).isEqualTo(compare.readAllBytes());
 						}
 					}
 				}
