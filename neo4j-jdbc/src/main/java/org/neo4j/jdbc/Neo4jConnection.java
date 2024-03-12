@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
  * @author Michael J. Simons
  * @since 6.0.0
  */
-public sealed interface Neo4jConnection extends Connection permits ExtendedNeo4jConnection {
+public sealed interface Neo4jConnection extends Connection permits ConnectionImpl {
 
 	/**
 	 * Sets the timeout for which a connection may remain idle following a request.

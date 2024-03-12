@@ -18,6 +18,9 @@
  */
 package org.neo4j.jdbc;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -71,7 +74,7 @@ import org.neo4j.jdbc.translator.spi.Translator;
  * @author Michael J. Simons
  * @since 6.0.0
  */
-final class ConnectionImpl implements ExtendedNeo4jConnection {
+final class ConnectionImpl implements Neo4jConnection {
 
 	private static final Logger LOGGER = Logger.getLogger(Neo4jConnection.class.getCanonicalName());
 
@@ -79,7 +82,9 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 
 	private final BoltConnection boltConnection;
 
-	private final Set<AutoCloseable> trackedStatements = new HashSet<>();
+	private final Set<Reference<Statement>> trackedStatementReferences = new HashSet<>();
+
+	private final ReferenceQueue<Statement> trackedStatementReferenceQueue = new ReferenceQueue<>();
 
 	private final Lazy<List<Translator>> translators;
 
@@ -393,7 +398,7 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
 		var localWarnings = new Warnings();
-		return addAutoCloseable(
+		return trackStatement(
 				new StatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings));
 	}
 
@@ -414,8 +419,8 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 		else {
 			decoratedTranslator = translator;
 		}
-		return addAutoCloseable(new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator,
-				localWarnings, this.rewriteBatchedStatements, sql));
+		return trackStatement(new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator, localWarnings,
+				this.rewriteBatchedStatements, sql));
 	}
 
 	@Override
@@ -424,7 +429,7 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		return addAutoCloseable(
+		return trackStatement(
 				CallableStatementImpl.prepareCall(this, this::getTransaction, this.rewriteBatchedStatements, sql));
 	}
 
@@ -691,28 +696,32 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 		}
 	}
 
-	private <T extends AutoCloseable> T addAutoCloseable(T autoCloseable) {
-		this.trackedStatements.add(autoCloseable);
-		return autoCloseable;
+	private <T extends Statement> T trackStatement(T statement) {
+		purgeClearedStatementReferences();
+		this.trackedStatementReferences.add(new WeakReference<>(statement, this.trackedStatementReferenceQueue));
+		return statement;
 	}
 
-	@Override
-	public void onClose(AutoCloseable autoCloseable) {
-		this.trackedStatements.remove(autoCloseable);
+	private void purgeClearedStatementReferences() {
+		var reference = this.trackedStatementReferenceQueue.poll();
+		while (reference != null) {
+			this.trackedStatementReferences.remove(reference);
+			reference = this.trackedStatementReferenceQueue.poll();
+		}
 	}
 
 	private void handleFatalException(SQLException fatalSqlException, SQLException sqlException) {
 		var cause = sqlException.getCause();
 		if (cause instanceof ConnectionReadTimeoutException) {
-			var iterator = this.trackedStatements.iterator();
-			while (iterator.hasNext()) {
-				var autoClosable = iterator.next();
-				iterator.remove();
-				try {
-					autoClosable.close();
-				}
-				catch (Exception ex) {
-					sqlException.addSuppressed(ex);
+			for (var reference : this.trackedStatementReferences) {
+				var statement = reference.get();
+				if (statement != null) {
+					try {
+						statement.close();
+					}
+					catch (Exception ex) {
+						sqlException.addSuppressed(ex);
+					}
 				}
 			}
 			try {

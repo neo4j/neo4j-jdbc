@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
@@ -90,7 +91,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		return sb.toString();
 	}
 
-	PreparedStatementImpl(ExtendedNeo4jConnection connection, Neo4jTransactionSupplier transactionSupplier,
+	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> translator, Warnings localWarnings, boolean rewriteBatchedStatements, String sql) {
 		super(connection, transactionSupplier, translator, localWarnings);
 		this.rewriteBatchedStatements = rewriteBatchedStatements;

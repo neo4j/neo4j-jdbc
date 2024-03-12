@@ -57,7 +57,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	static final int DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS = 4096;
 	static final Charset DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM = StandardCharsets.ISO_8859_1;
 
-	private final ExtendedNeo4jConnection connection;
+	private final Connection connection;
 
 	private final Neo4jTransactionSupplier transactionSupplier;
 
@@ -87,7 +87,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final AtomicBoolean resultSetAcquired = new AtomicBoolean(false);
 
-	StatementImpl(ExtendedNeo4jConnection connection, Neo4jTransactionSupplier transactionSupplier,
+	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, Warnings localWarnings) {
 		this.connection = Objects.requireNonNull(connection);
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
@@ -157,7 +157,6 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		}
 		closeResultSet();
 		this.closed = true;
-		this.connection.onClose(this);
 	}
 
 	@Override
