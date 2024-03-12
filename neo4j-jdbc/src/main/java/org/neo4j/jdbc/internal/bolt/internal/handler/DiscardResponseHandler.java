@@ -46,8 +46,8 @@ public final class DiscardResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.future.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.future.completeExceptionally(ex);
 	}
 
 	@Override

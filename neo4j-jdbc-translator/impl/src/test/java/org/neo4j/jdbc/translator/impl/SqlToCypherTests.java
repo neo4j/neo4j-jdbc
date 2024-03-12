@@ -42,6 +42,7 @@ import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.ContentNode;
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Treeprocessor;
+import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,7 @@ import org.neo4j.cypherdsl.parser.CypherParser;
 import org.neo4j.jdbc.translator.spi.Translator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
@@ -80,6 +82,20 @@ class SqlToCypherTests {
 		given(personColumns.next()).willReturn(true, results);
 		given(personColumns.getString("COLUMN_NAME")).willReturn(firstName, names);
 		return personColumns;
+	}
+
+	@Test
+	void parsingExceptionMustBeWrapped() {
+		assertThatIllegalArgumentException().isThrownBy(() -> NON_PRETTY_PRINTING_TRANSLATOR.translate("whatever"))
+			.withCauseInstanceOf(ParserException.class);
+	}
+
+	@Test
+	void nonSupportedStatementsShouldBeCaught() {
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> NON_PRETTY_PRINTING_TRANSLATOR.translate("CREATE SEQUENCE IF NOT EXISTS bike_id"))
+			.withMessageStartingWith("Unsupported SQL expression: create sequence if not exists bike_id");
+
 	}
 
 	@Test

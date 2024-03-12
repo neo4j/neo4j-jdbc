@@ -360,11 +360,11 @@ class CommonValueUnpacker implements ValueUnpacker {
 	}
 
 	@SuppressWarnings("deprecation")
-	private void setStartAndEnd(RelationshipImpl rel, Node start, Node end) {
+	private static void setStartAndEnd(RelationshipImpl rel, Node start, Node end) {
 		rel.setStartAndEnd(start.id(), start.elementId(), end.id(), end.elementId());
 	}
 
-	protected final void ensureCorrectStructSize(Type type, int expected, long actual) {
+	protected static void ensureCorrectStructSize(Type type, int expected, long actual) {
 		if (expected != actual) {
 			var structName = type.toString();
 			throw new BoltException(
@@ -408,6 +408,8 @@ class CommonValueUnpacker implements ValueUnpacker {
 		return Values.value(LocalDateTime.ofEpochSecond(epochSecondUtc, nano, ZoneOffset.UTC));
 	}
 
+	@SuppressWarnings("squid:S1941") // Reordering the unpacking is most likely a stupid
+										// idea ;)
 	private Value unpackDateTime(ZoneMode unpackOffset, BaselineMode useUtcBaseline) throws IOException {
 		var epochSecondLocal = this.unpacker.unpackLong();
 		var nano = Math.toIntExact(this.unpacker.unpackLong());
@@ -461,13 +463,13 @@ class CommonValueUnpacker implements ValueUnpacker {
 		return ZonedDateTime.of(localDateTime, zoneId);
 	}
 
-	private ZonedDateTime newZonedDateTimeUsingUtcBaseline(long epochSecondLocal, int nano, ZoneId zoneId) {
+	private static ZonedDateTime newZonedDateTimeUsingUtcBaseline(long epochSecondLocal, int nano, ZoneId zoneId) {
 		var instant = Instant.ofEpochSecond(epochSecondLocal, nano);
 		var localDateTime = LocalDateTime.ofInstant(instant, zoneId);
 		return ZonedDateTime.of(localDateTime, zoneId);
 	}
 
-	private RuntimeException instantiateExceptionForUnknownType(byte type) {
+	private static RuntimeException instantiateExceptionForUnknownType(byte type) {
 		return new RuntimeException("Unknown struct type: " + type);
 	}
 

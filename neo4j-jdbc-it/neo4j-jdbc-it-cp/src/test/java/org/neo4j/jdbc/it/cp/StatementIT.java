@@ -31,6 +31,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.jdbc.values.Path;
 import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -430,6 +431,20 @@ class StatementIT extends IntegrationTestBase {
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> result.getString("l"))
 				.withMessage("LIST OF ANY? value can not be mapped to String");
 			assertThat(result.getObject("l")).isInstanceOf(List.class);
+		}
+	}
+
+	@Test
+	void pathsShouldBeAccessible() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.createStatement();
+				var result = stmt.executeQuery(
+						"CREATE p = (:Show {name: 'The Last Of Us'}) <-[:WATCHED_BY]- (:Person {name: 'Michael'}) RETURN p")) {
+
+			assertThat(result.next()).isTrue();
+			var path = result.getObject("p", Path.class);
+			assertThat(path.start().get("name").asString()).isEqualTo("The Last Of Us");
+			assertThat(path.end().get("name").asString()).isEqualTo("Michael");
 		}
 	}
 

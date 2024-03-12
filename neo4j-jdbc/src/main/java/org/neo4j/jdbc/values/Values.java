@@ -408,6 +408,7 @@ public final class Values {
 	 * @param val the boolean value
 	 * @return the value
 	 */
+	@SuppressWarnings("squid:S2301")
 	public static Value value(final boolean val) {
 		return val ? BooleanValue.TRUE : BooleanValue.FALSE;
 	}

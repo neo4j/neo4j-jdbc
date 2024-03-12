@@ -30,6 +30,7 @@ import java.util.Map;
  * @param <V> type of the values
  * @author Michael J. Simons
  */
+@SuppressWarnings("squid:S2160") // Not going to overwrite equals, too
 final class LRUCache<K, V> extends LinkedHashMap<K, V> implements Cache<K, V> {
 
 	@Serial

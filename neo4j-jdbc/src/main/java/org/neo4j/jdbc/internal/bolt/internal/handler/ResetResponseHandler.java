@@ -37,8 +37,8 @@ public final class ResetResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.completionFuture.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.completionFuture.completeExceptionally(ex);
 	}
 
 	@Override

@@ -109,7 +109,7 @@ public final class NetworkConnection implements Connection {
 					TimeUnit.SECONDS);
 			channel.pipeline().addFirst(this.connectionReadTimeoutHandler);
 			LOGGER.log(Level.FINE, "Added ConnectionReadTimeoutHandler");
-			this.messageDispatcher.setBeforeLastHandlerHook((messageType) -> {
+			this.messageDispatcher.setBeforeLastHandlerHook(messageType -> {
 				channel.pipeline().remove(this.connectionReadTimeoutHandler);
 				this.connectionReadTimeoutHandler = null;
 				this.messageDispatcher.setBeforeLastHandlerHook(null);

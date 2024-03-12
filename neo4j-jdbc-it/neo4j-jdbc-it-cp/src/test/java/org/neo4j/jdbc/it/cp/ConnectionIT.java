@@ -27,9 +27,26 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ConnectionIT extends IntegrationTestBase {
+
+	@Test
+	void shouldCheckTXStateBeforeCommit() throws SQLException {
+		try (var connection = getConnection()) {
+			assertThatExceptionOfType(SQLException.class).isThrownBy(connection::commit)
+				.withMessage("There is no transaction to commit");
+		}
+	}
+
+	@Test
+	void shouldCheckTXStateBeforeRollback() throws SQLException {
+		try (var connection = getConnection()) {
+			assertThatExceptionOfType(SQLException.class).isThrownBy(connection::rollback)
+				.withMessage("There is no transaction to rollback");
+		}
+	}
 
 	@Test
 	void shouldBeginNewTransactionAfterFailureInAutoCommit() throws SQLException {

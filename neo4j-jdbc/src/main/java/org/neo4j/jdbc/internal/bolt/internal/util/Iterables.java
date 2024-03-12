@@ -18,24 +18,17 @@
  */
 package org.neo4j.jdbc.internal.bolt.internal.util;
 
-import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Queue;
 import java.util.function.Function;
 
 public final class Iterables {
 
 	private Iterables() {
 	}
-
-	@SuppressWarnings("rawtypes")
-	private static final Queue EMPTY_QUEUE = new EmptyQueue();
 
 	private static final float DEFAULT_HASH_MAP_LOAD_FACTOR = 0.75F;
 
@@ -95,17 +88,8 @@ public final class Iterables {
 		};
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> Queue<T> emptyQueue() {
-		return (Queue<T>) EMPTY_QUEUE;
-	}
-
 	public static <K, V> HashMap<K, V> newHashMapWithSize(int expectedSize) {
 		return new HashMap<>(hashMapCapacity(expectedSize));
-	}
-
-	public static <K, V> LinkedHashMap<K, V> newLinkedHashMapWithSize(int expectedSize) {
-		return new LinkedHashMap<>(hashMapCapacity(expectedSize));
 	}
 
 	@SuppressWarnings("squid:S3518") // Complaining about division by zero, which cannot
@@ -117,36 +101,7 @@ public final class Iterables {
 			}
 			return expectedSize + 1;
 		}
-		return (int) ((float) expectedSize / DEFAULT_HASH_MAP_LOAD_FACTOR + 1.0F);
-	}
-
-	private static final class EmptyQueue<T> extends AbstractQueue<T> {
-
-		@Override
-		public Iterator<T> iterator() {
-			return Collections.emptyIterator();
-		}
-
-		@Override
-		public int size() {
-			return 0;
-		}
-
-		@Override
-		public boolean offer(T t) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public T poll() {
-			return null;
-		}
-
-		@Override
-		public T peek() {
-			return null;
-		}
-
+		return (int) (expectedSize / DEFAULT_HASH_MAP_LOAD_FACTOR + 1.0F);
 	}
 
 }

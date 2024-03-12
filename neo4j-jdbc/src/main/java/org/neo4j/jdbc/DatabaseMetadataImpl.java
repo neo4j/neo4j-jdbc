@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -186,7 +187,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getDriverName() {
-		return ProductVersion.getName();
+		return "Neo4j JDBC Driver";
 	}
 
 	@Override
@@ -813,27 +814,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_SCHEM");
 		keys.add("TABLE_CATALOG");
-		// return RS with just public in it
-		var pull = new PullResponse() {
-			@Override
-			public List<Record> records() {
-				var values = new Value[] { Values.value("public"), Values.value("") };
-				return Collections.singletonList(Record.of(keys, values));
-			}
-
-			@Override
-			public Optional<ResultSummary> resultSummary() {
-				return Optional.empty(); // might need to populate this at some point.
-			}
-
-			@Override
-			public boolean hasMore() {
-				return false;
-			}
-		};
 
 		var response = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+		var staticPulLResponse = staticPullResponseFor(keys,
+				Collections.singletonList(new Value[] { Values.value("public"), Values.value("") }));
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, staticPulLResponse,
+				-1, -1, -1);
 	}
 
 	/***
@@ -857,25 +843,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_TYPE");
 
-		var pull = new PullResponse() {
-			@Override
-			public List<Record> records() {
-				var values = new Value[] { Values.value("TABLE") };
-				return Collections.singletonList(Record.of(keys, values));
-			}
-
-			@Override
-			public Optional<ResultSummary> resultSummary() {
-				return Optional.empty(); // might need to populate this at some point.
-			}
-
-			@Override
-			public boolean hasMore() {
-				return false;
-			}
-		};
-
 		var response = createRunResponseForStaticKeys(keys);
+		var pull = staticPullResponseFor(keys, Collections.singletonList(new Value[] { Values.value("TABLE") }));
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 	}
 
@@ -909,65 +878,74 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var rows = new ArrayList<Value[]>();
 
 		for (Record record : records) {
-			var nodeLabels = record.get(0);
+
 			var propertyName = record.get(1);
 			var propertyTypes = record.get(2);
 
-			if (!propertyName.isNull() && !propertyTypes.isNull()) {
-				var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
-				var propertyType = getTypeFromList(propertyTypeList, propertyName.asString());
+			if (propertyName.isNull() || propertyTypes.isNull()) {
+				continue;
+			}
 
-				var NULLABLE = DatabaseMetaData.columnNullable;
-				var IS_NULLABLE = "YES";
-				var innerRequest = getRequest("getColumns.nullability", "nodeLabels", nodeLabels, "propertyName",
-						propertyName);
-				try (var result = doQueryForResultSet(innerRequest)) {
-					result.next();
-					if (result.getBoolean(1)) {
-						NULLABLE = DatabaseMetaData.columnNoNulls;
-						IS_NULLABLE = "NO";
-					}
+			var nodeLabels = record.get(0);
+			var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
+			var propertyType = getTypeFromList(propertyTypeList, propertyName.asString());
+
+			var NULLABLE = DatabaseMetaData.columnNullable;
+			var IS_NULLABLE = "YES";
+			var innerRequest = getRequest("getColumns.nullability", "nodeLabels", nodeLabels, "propertyName",
+					propertyName);
+			try (var result = doQueryForResultSet(innerRequest)) {
+				result.next();
+				if (result.getBoolean(1)) {
+					NULLABLE = DatabaseMetaData.columnNoNulls;
+					IS_NULLABLE = "NO";
 				}
+			}
 
-				var nodeLabelList = nodeLabels.asList(label -> label);
-				for (Value nodeLabel : nodeLabelList) {
-					var values = new ArrayList<Value>();
-					values.add(Values.NULL); // TABLE_CAT
-					values.add(Values.value("public")); // TABLE_SCHEM is always public
-					values.add(nodeLabel); // TABLE_NAME
-					values.add(propertyName); // COLUMN_NAME
-					var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
-					values.add(Values.value(columnType)); // DATA_TYPE
-					values.add(Values.value(Neo4jConversions.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
-					var maxPrecision = getMaxPrecision(columnType);
-					values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
-					values.add(Values.NULL); // BUFFER_LENGTH
-					values.add(Values.NULL); // DECIMAL_DIGITS
-					values.add(Values.value(2)); // NUM_PREC_RADIX
-					values.add(Values.value(NULLABLE));
-					values.add(Values.NULL); // REMARKS
-					values.add(Values.NULL); // COLUMN_DEF
-					values.add(Values.NULL); // SQL_DATA_TYPE - unused
-					values.add(Values.NULL); // SQL_DATETIME_SUB
-					values.add(Values.NULL); // CHAR_OCTET_LENGTH
-					values.add(Values.value(nodeLabelList.indexOf(nodeLabel))); // ORDINAL_POSITION
-					values.add(Values.value(IS_NULLABLE));
-					values.add(Values.NULL); // SCOPE_CATALOG
-					values.add(Values.NULL); // SCOPE_SCHEMA
-					values.add(Values.NULL); // SCOPE_TABLE
-					values.add(Values.NULL); // SOURCE_DATA_TYPE
-					values.add(Values.value("NO")); // IS_AUTOINCREMENT
-					values.add(Values.value("NO")); // IS_GENERATEDCOLUMN
+			var nodeLabelList = nodeLabels.asList(Function.identity());
+			for (Value nodeLabel : nodeLabelList) {
+				var values = new ArrayList<Value>();
+				values.add(Values.NULL); // TABLE_CAT
+				values.add(Values.value("public")); // TABLE_SCHEM is always public
+				values.add(nodeLabel); // TABLE_NAME
+				values.add(propertyName); // COLUMN_NAME
+				var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
+				values.add(Values.value(columnType)); // DATA_TYPE
+				values.add(Values.value(Neo4jConversions.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
+				var maxPrecision = getMaxPrecision(columnType);
+				values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
+				values.add(Values.NULL); // BUFFER_LENGTH
+				values.add(Values.NULL); // DECIMAL_DIGITS
+				values.add(Values.value(2)); // NUM_PREC_RADIX
+				values.add(Values.value(NULLABLE));
+				values.add(Values.NULL); // REMARKS
+				values.add(Values.NULL); // COLUMN_DEF
+				values.add(Values.NULL); // SQL_DATA_TYPE - unused
+				values.add(Values.NULL); // SQL_DATETIME_SUB
+				values.add(Values.NULL); // CHAR_OCTET_LENGTH
+				values.add(Values.value(nodeLabelList.indexOf(nodeLabel))); // ORDINAL_POSITION
+				values.add(Values.value(IS_NULLABLE));
+				values.add(Values.NULL); // SCOPE_CATALOG
+				values.add(Values.NULL); // SCOPE_SCHEMA
+				values.add(Values.NULL); // SCOPE_TABLE
+				values.add(Values.NULL); // SOURCE_DATA_TYPE
+				values.add(Values.value("NO")); // IS_AUTOINCREMENT
+				values.add(Values.value("NO")); // IS_GENERATEDCOLUMN
 
-					rows.add(values.toArray(Value[]::new));
-				}
+				rows.add(values.toArray(Value[]::new));
 			}
 		}
 
 		var keys = getKeysForGetColumns();
 		var runResponse = createRunResponseForStaticKeys(keys);
+		var staticPullResponse = staticPullResponseFor(keys, rows);
 
-		var staticPullResponse = new PullResponse() {
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+				staticPullResponse, -1, -1, -1);
+	}
+
+	static PullResponse staticPullResponseFor(List<String> keys, List<Value[]> rows) {
+		return new PullResponse() {
 			@Override
 			public List<Record> records() {
 				var records = new ArrayList<Record>(rows.size());
@@ -989,9 +967,6 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				return false;
 			}
 		};
-
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
-				staticPullResponse, -1, -1, -1);
 	}
 
 	private static Value getTypeFromList(List<Value> types, String propertyName) {
@@ -1012,7 +987,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return types.get(0);
 	}
 
-	private static ArrayList<String> getKeysForGetColumns() {
+	private static List<String> getKeysForGetColumns() {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_CAT");
 		keys.add("TABLE_SCHEM");
@@ -1427,7 +1402,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return iface.isAssignableFrom(getClass());
 	}
 
-	private static RunResponse createRunResponseForStaticKeys(ArrayList<String> keys) {
+	private static RunResponse createRunResponseForStaticKeys(List<String> keys) {
 		return new RunResponse() {
 			@Override
 			public long queryId() {

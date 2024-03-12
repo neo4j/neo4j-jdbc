@@ -55,8 +55,8 @@ public final class BasicPullResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.pullFuture.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.pullFuture.completeExceptionally(ex);
 	}
 
 	@Override

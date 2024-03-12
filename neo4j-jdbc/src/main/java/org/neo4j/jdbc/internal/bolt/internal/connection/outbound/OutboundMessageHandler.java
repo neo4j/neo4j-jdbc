@@ -66,12 +66,12 @@ public final class OutboundMessageHandler extends MessageToMessageEncoder<Messag
 			this.writer.write(msg);
 			this.output.stop();
 		}
-		catch (Throwable error) {
+		catch (Exception ex) {
 			this.output.stop();
 			// release buffer because it will not get added to the out list and no other
 			// handler is going to handle it
 			messageBuf.release();
-			throw new EncoderException("Failed to write outbound message: " + msg, error);
+			throw new EncoderException("Failed to write outbound message: " + msg, ex);
 		}
 
 		BoltProtocolUtil.writeMessageBoundary(messageBuf);

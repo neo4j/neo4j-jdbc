@@ -29,7 +29,7 @@ public final class GoodbyeResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
+	public void onFailure(Exception ex) {
 	}
 
 	@Override

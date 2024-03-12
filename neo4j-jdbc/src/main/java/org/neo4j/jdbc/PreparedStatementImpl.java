@@ -807,7 +807,7 @@ sealed class PreparedStatementImpl extends StatementImpl
 		return resultSet;
 	}
 
-	private String computeParameterName(int parameterIndex) {
+	private static String computeParameterName(int parameterIndex) {
 		return String.valueOf(parameterIndex);
 	}
 

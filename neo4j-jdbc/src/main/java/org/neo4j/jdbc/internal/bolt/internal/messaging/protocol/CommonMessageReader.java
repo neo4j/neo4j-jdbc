@@ -27,15 +27,10 @@ import org.neo4j.jdbc.internal.bolt.internal.messaging.response.FailureMessage;
 import org.neo4j.jdbc.internal.bolt.internal.messaging.response.IgnoredMessage;
 import org.neo4j.jdbc.internal.bolt.internal.messaging.response.RecordMessage;
 import org.neo4j.jdbc.internal.bolt.internal.messaging.response.SuccessMessage;
-import org.neo4j.jdbc.internal.bolt.internal.packstream.PackInput;
 
 abstract class CommonMessageReader implements MessageFormat.Reader {
 
 	private final ValueUnpacker unpacker;
-
-	CommonMessageReader(PackInput input, boolean dateTimeUtcEnabled) {
-		this(new CommonValueUnpacker(input, dateTimeUtcEnabled));
-	}
 
 	CommonMessageReader(ValueUnpacker unpacker) {
 		this.unpacker = unpacker;
@@ -48,7 +43,7 @@ abstract class CommonMessageReader implements MessageFormat.Reader {
 		switch (type) {
 			case SuccessMessage.SIGNATURE -> unpackSuccessMessage(handler);
 			case FailureMessage.SIGNATURE -> unpackFailureMessage(handler);
-			case IgnoredMessage.SIGNATURE -> unpackIgnoredMessage(handler);
+			case IgnoredMessage.SIGNATURE -> handler.handleIgnoredMessage();
 			case RecordMessage.SIGNATURE -> unpackRecordMessage(handler);
 			default -> throw new IOException("Unknown message type: " + type);
 		}
@@ -64,10 +59,6 @@ abstract class CommonMessageReader implements MessageFormat.Reader {
 		var code = params.get("code").asString();
 		var message = params.get("message").asString();
 		output.handleFailureMessage(code, message);
-	}
-
-	private void unpackIgnoredMessage(ResponseMessageHandler output) {
-		output.handleIgnoredMessage();
 	}
 
 	private void unpackRecordMessage(ResponseMessageHandler output) throws IOException {

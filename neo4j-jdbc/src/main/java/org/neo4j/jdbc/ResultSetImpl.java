@@ -118,7 +118,7 @@ final class ResultSetImpl implements ResultSet {
 		this.transaction = Objects.requireNonNull(transaction);
 		this.runResponse = Objects.requireNonNull(runResponse);
 		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
-		this.fetchSize = (fetchSize > 0) ? fetchSize : StatementImpl.DEFAULT_FETCH_SIZE;
+		this.setFetchSize(fetchSize);
 		this.remainingRowAllowance = (maxRowLimit > 0) ? maxRowLimit : -1;
 		var recordsBatch = batchPullResponse.records();
 		this.recordsBatchIterator = recordsBatch.iterator();
@@ -489,7 +489,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public void setFetchSize(int rows) {
-		this.fetchSize = (rows > 0) ? rows : StatementImpl.DEFAULT_FETCH_SIZE;
+		this.fetchSize = (rows > 0) ? rows : Neo4jStatement.DEFAULT_FETCH_SIZE;
 	}
 
 	@Override
@@ -1333,6 +1333,7 @@ final class ResultSetImpl implements ResultSet {
 		throw new SQLException(String.format("%s value can not be mapped to double", value.type()));
 	}
 
+	@SuppressWarnings("squid:S1168")
 	private static byte[] mapToBytes(Value value, int maxFieldSize) throws SQLException {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
@@ -1389,7 +1390,7 @@ final class ResultSetImpl implements ResultSet {
 
 	private static InputStream mapToBinaryStream(Value value, int maxFieldSize) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
-			return new ByteArrayInputStream(truncate(value.asString(), maxFieldSize).getBytes());
+			return new ByteArrayInputStream(truncate(value.asString(), maxFieldSize).getBytes(StandardCharsets.UTF_8));
 		}
 		if (Type.BYTES.isTypeOf(value)) {
 			return new ByteArrayInputStream(truncate(value.asByteArray(), maxFieldSize));

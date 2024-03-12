@@ -24,6 +24,7 @@ import java.util.Map;
 import org.neo4j.jdbc.values.Node;
 import org.neo4j.jdbc.values.Value;
 
+@SuppressWarnings("squid:S2160") // Not overriding equals is fine here
 final class NodeImpl extends AbstractEntity implements Node {
 
 	private final Collection<String> labels;

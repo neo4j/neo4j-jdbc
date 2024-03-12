@@ -1033,6 +1033,40 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void shouldBeAbleToMapAllV5CypherTypes() throws Exception {
+
+		var query = """
+				CREATE (n:CypherTypes)
+				SET
+					n.aBoolean = true,
+					n.aLong = 9223372036854775807, n.aDouble = 1.7976931348, n.aString = 'Hallo, Cypher',
+					n.aByteArray = ?, n.aLocalDate = date('2015-07-21'),
+					n.anOffsetTime  = time({ hour:12, minute:31, timezone: '+01:00' }),
+					n.aLocalTime = localtime({ hour:12, minute:31, second:14 }),
+					n.aZoneDateTime = datetime('2015-07-21T21:40:32-04[America/New_York]'),
+					n.aLocalDateTime = localdatetime('2015202T21'), n.anIsoDuration = duration('P14DT16H12M'),
+					n.aPoint = point({x:47, y:11})
+				""";
+		try (var stmt = this.connection.prepareStatement(query)) {
+			stmt.setBytes(1, new byte[] { 6 });
+			stmt.execute();
+
+		}
+		var meta = this.connection.getMetaData();
+		int cnt = 0;
+		var types = new HashSet<String>();
+		try (var results = meta.getColumns(null, null, "CypherTypes", null)) {
+			while (results.next()) {
+				types.add(results.getString("TYPE_NAME"));
+				++cnt;
+			}
+			assertThat(cnt).isEqualTo(12);
+			assertThat(types).hasSize(cnt);
+			assertThat(types).doesNotContain("OTHER");
+		}
+	}
+
+	@Test
 	void getIndexInfoWithIndex() throws Exception {
 		String indexName = "bar_uuid";
 		try (var statement = this.connection.createStatement()) {

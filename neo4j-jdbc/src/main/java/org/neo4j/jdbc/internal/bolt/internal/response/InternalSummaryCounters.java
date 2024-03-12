@@ -52,7 +52,7 @@ public record InternalSummaryCounters(int nodesCreated, int nodesDeleted, int re
 		return isPositive(this.systemUpdates);
 	}
 
-	private boolean isPositive(int value) {
+	private static boolean isPositive(int value) {
 		return value > 0;
 	}
 }
