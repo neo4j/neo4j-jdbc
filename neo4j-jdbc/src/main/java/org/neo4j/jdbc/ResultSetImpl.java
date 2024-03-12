@@ -1391,6 +1391,9 @@ final class ResultSetImpl implements ResultSet {
 		if (Type.STRING.isTypeOf(value)) {
 			return new ByteArrayInputStream(truncate(value.asString(), maxFieldSize).getBytes());
 		}
+		if (Type.BYTES.isTypeOf(value)) {
+			return new ByteArrayInputStream(truncate(value.asByteArray(), maxFieldSize));
+		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}

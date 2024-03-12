@@ -23,11 +23,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -44,11 +48,21 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -61,6 +75,8 @@ import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -1373,6 +1389,161 @@ class ResultSetImplTests {
 				})))
 			// map each set of arguments to both index and label access methods
 			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@Test
+	void statementShouldBeAvailable() throws SQLException {
+		try (var resultSet = emptyResultSet()) {
+			assertThat(resultSet.getStatement()).isNotNull();
+		}
+	}
+
+	@Test
+	void indexShouldBeChecked() throws SQLException {
+		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
+			resultSet.next();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt(-23))
+				.withMessage("Invalid column index value");
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt(42))
+				.withMessage("Invalid column index value");
+		}
+	}
+
+	@Test
+	void nameShouldBeChecked() throws SQLException {
+		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
+			resultSet.next();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt("42"))
+				.withMessage("Invalid column label value");
+		}
+	}
+
+	@Test
+	void uncoercibleObject() throws SQLException {
+		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
+			resultSet.next();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getObject(1, Float.class))
+				.withMessage(
+						"org.neo4j.jdbc.values.UncoercibleException: Cannot coerce java.lang.String to java.lang.Float");
+		}
+	}
+
+	@Test
+	void shouldThrowWhenClosed() throws SQLException {
+		var resultSet = emptyResultSet();
+		resultSet.close();
+		assertThatExceptionOfType(SQLException.class).isThrownBy(resultSet::next)
+			.withMessage("This result set is closed");
+	}
+
+	@SuppressWarnings("deprecation")
+	@Test
+	void bigDecimalRounding() throws SQLException {
+		try (var resultSet = setupWithValue(Values.value(1.25), 0)) {
+			resultSet.next();
+
+			assertThat(resultSet.getBigDecimal(1, 2)).isEqualTo(new BigDecimal("1.25"));
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getBigDecimal(1, 1))
+				.withMessage("java.lang.ArithmeticException: Rounding necessary");
+		}
+	}
+
+	@SuppressWarnings("resource")
+	@TestFactory
+	Stream<DynamicNode> characteristicsShouldWork() {
+		var resultSet = emptyResultSet();
+		return Stream.of(
+				DynamicContainer
+					.dynamicContainer("fetchDirection",
+							Stream.of(
+									DynamicTest.dynamicTest("get",
+											() -> assertThat(resultSet.getFetchDirection())
+												.isEqualTo(ResultSet.FETCH_FORWARD)),
+									DynamicTest.dynamicTest("set", () -> {
+										assertThatNoException()
+											.isThrownBy(() -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
+										assertThatExceptionOfType(SQLException.class)
+											.isThrownBy(() -> resultSet.setFetchDirection(ResultSet.FETCH_REVERSE))
+											.withMessage("Only forward fetching is supported");
+									}))),
+				DynamicTest.dynamicTest("fetchSize", () -> {
+					var changedValue = StatementImpl.DEFAULT_FETCH_SIZE - 1;
+					resultSet.setFetchSize(changedValue);
+					assertThat(resultSet.getFetchSize()).isEqualTo(changedValue);
+					resultSet.setFetchSize(-1);
+					assertThat(resultSet.getFetchSize()).isEqualTo(StatementImpl.DEFAULT_FETCH_SIZE);
+				}),
+				DynamicTest.dynamicTest("type",
+						() -> assertThat(resultSet.getType()).isEqualTo(ResultSet.TYPE_FORWARD_ONLY)),
+				DynamicTest.dynamicTest("concurrency",
+						() -> assertThat(resultSet.getConcurrency()).isEqualTo(ResultSet.CONCUR_READ_ONLY)),
+				DynamicTest.dynamicTest("holdability",
+						() -> assertThat(resultSet.getHoldability()).isEqualTo(ResultSet.CLOSE_CURSORS_AT_COMMIT))
+
+		);
+	}
+
+	@TestFactory
+	Stream<DynamicContainer> unsupportedShouldThrowCorrectException() {
+		var testSupplier = generateTestsForUnsupportedMethods(emptyResultSet());
+
+		var updates = testSupplier.apply(method -> {
+			var name = method.getName();
+			return (name.startsWith("update") && !"updateRow".equals(name)) || name.matches("row.*ed");
+		});
+		var rowUpdates = testSupplier
+			.apply(method -> Set
+				.of("beforeFirst", "first", "last", "getRow", "absolute", "relative", "previous", "moveToCurrentRow",
+						"afterLast")
+				.contains(method.getName()));
+		var positional = testSupplier.apply(method -> Set
+			.of("insertRow", "updateRow", "deleteRow", "refreshRow", "cancelRowUpdates", "moveToInsertRow")
+			.contains(method.getName()));
+		var getters = testSupplier.apply(method -> Set
+			.of("getRef", "getBlob", "getClob", "getNClob", "getSQLXML", "getNString", "getNCharacterStream",
+					"getArray", "getURL", "getRowId", "getUnicodeStream", "getCursorName")
+			.contains(method.getName())
+				|| "getObject".equals(method.getName()) && method.getParameterTypes().length == 2
+						&& method.getParameterTypes()[1].isAssignableFrom(Map.class));
+
+		return Stream.of(DynamicContainer.dynamicContainer("updates", updates),
+				DynamicContainer.dynamicContainer("rowUpdates", rowUpdates),
+				DynamicContainer.dynamicContainer("positional", positional),
+				DynamicContainer.dynamicContainer("some getters", getters));
+	}
+
+	private static Function<Predicate<Method>, Stream<DynamicTest>> generateTestsForUnsupportedMethods(
+			ResultSet resultSet) {
+		var methods = ResultSet.class.getMethods();
+
+		BiFunction<Method, Object[], Executable> assertionSupplier = (method,
+				args) -> (Executable) () -> assertThatExceptionOfType(InvocationTargetException.class)
+					.isThrownBy(() -> method.invoke(resultSet, args))
+					.withCauseInstanceOf(SQLFeatureNotSupportedException.class);
+
+		return p -> Arrays.stream(methods).map(method -> {
+			if (p.test(method)) {
+				var name = method.getName();
+				var args = Arrays.stream(method.getParameterTypes()).map(ResultSetImplTests::getDefaultValue).toArray();
+				return DynamicTest.dynamicTest(name, assertionSupplier.apply(method, args));
+			}
+			return null;
+		}).filter(Objects::nonNull);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> T getDefaultValue(Class<T> clazz) {
+		return (T) Array.get(Array.newInstance(clazz, 1), 0);
+	}
+
+	private ResultSet emptyResultSet() {
+		var statement = mock(StatementImpl.class);
+		var runResponse = mock(RunResponse.class);
+
+		var pullResponse = mock(PullResponse.class);
+		given(pullResponse.records()).willReturn(List.of());
+
+		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0, 0);
 	}
 
 	private ResultSet setupWithValue(Value expectedValue, int maxFieldSize) throws SQLException {
