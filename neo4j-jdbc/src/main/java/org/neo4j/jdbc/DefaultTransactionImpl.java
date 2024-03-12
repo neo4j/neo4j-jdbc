@@ -101,7 +101,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertNoException();
 		if (State.READY != this.state) {
 			throw new SQLException(
-					String.format("The requested action is not supported in %s transaction state.", this.state));
+					String.format("The requested action is not supported in %s transaction state", this.state));
 		}
 		var responseFuture = this.boltConnection.pull(runResponse, request).toCompletableFuture();
 		var pullResponse = execute(responseFuture, 0);
@@ -155,24 +155,24 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			return (timeout > 0) ? future.get(timeout, TimeUnit.SECONDS) : future.get();
 		}
 		catch (TimeoutException ignored) {
-			fail(new SQLException("The transaction is no longer valid."));
-			throw new SQLTimeoutException("The query timeout has been exceeded.");
+			fail(new SQLException("The transaction is no longer valid"));
+			throw new SQLTimeoutException("The query timeout has been exceeded");
 		}
 		catch (InterruptedException ex) {
-			fail(new SQLException("The transaction is no longer valid."));
-			throw new SQLException("The thread has been interrupted.", ex);
+			fail(new SQLException("The transaction is no longer valid"));
+			throw new SQLException("The thread has been interrupted", ex);
 		}
 		catch (ExecutionException ex) {
 			var cause = ex.getCause();
 			if (cause == null) {
 				cause = ex;
 			}
-			var sqlException = new SQLException("An error occurred while handling request.", cause);
+			var sqlException = new SQLException("An error occurred while handling request", cause);
 			if (cause instanceof Neo4jException || cause instanceof MessageIgnoredException) {
-				fail(new SQLException("The transaction is no longer valid."));
+				fail(new SQLException("The transaction is no longer valid"));
 			}
 			else {
-				fail(new SQLException("The connection is no longer valid."));
+				fail(new SQLException("The connection is no longer valid"));
 				this.fatalExceptionHandler.handle(this.exception, sqlException);
 			}
 			throw sqlException;
@@ -188,7 +188,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	private void assertRunnableState() throws SQLException {
 		if (!isRunnable()) {
 			throw new SQLException(
-					String.format("The requested action is not supported in %s transaction state.", this.state));
+					String.format("The requested action is not supported in %s transaction state", this.state));
 		}
 	}
 
