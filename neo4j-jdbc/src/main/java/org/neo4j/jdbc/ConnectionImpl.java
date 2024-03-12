@@ -79,7 +79,7 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 
 	private final BoltConnection boltConnection;
 
-	private final Set<AutoCloseable> instantiatedAutoClosables = new HashSet<>();
+	private final Set<AutoCloseable> trackedStatements = new HashSet<>();
 
 	private final Lazy<List<Translator>> translators;
 
@@ -692,19 +692,19 @@ final class ConnectionImpl implements ExtendedNeo4jConnection {
 	}
 
 	private <T extends AutoCloseable> T addAutoCloseable(T autoCloseable) {
-		this.instantiatedAutoClosables.add(autoCloseable);
+		this.trackedStatements.add(autoCloseable);
 		return autoCloseable;
 	}
 
 	@Override
 	public void onClose(AutoCloseable autoCloseable) {
-		this.instantiatedAutoClosables.remove(autoCloseable);
+		this.trackedStatements.remove(autoCloseable);
 	}
 
 	private void handleFatalException(SQLException fatalSqlException, SQLException sqlException) {
 		var cause = sqlException.getCause();
 		if (cause instanceof ConnectionReadTimeoutException) {
-			var iterator = this.instantiatedAutoClosables.iterator();
+			var iterator = this.trackedStatements.iterator();
 			while (iterator.hasNext()) {
 				var autoClosable = iterator.next();
 				iterator.remove();
