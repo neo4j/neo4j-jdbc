@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.function.Consumer;
 
+import com.github.dockerjava.api.exception.NotModifiedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
@@ -64,7 +65,12 @@ public abstract class IntegrationTestBase {
 		if (Boolean.TRUE.equals(state.getRunning())) {
 			var dockerClient = this.stubServer.getDockerClient();
 			var containerId = this.stubServer.getContainerId();
-			dockerClient.stopContainerCmd(containerId).exec();
+			try {
+				dockerClient.stopContainerCmd(containerId).exec();
+			}
+			catch (NotModifiedException ignored) {
+				// assume it was stopped already
+			}
 			state = this.stubServer.getCurrentContainerInfo().getState();
 			var exitCode = state.getExitCodeLong();
 			if (exitCode != null && exitCode != 0) {

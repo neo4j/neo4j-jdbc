@@ -16,6 +16,8 @@ S: <SLEEP> 1
    SUCCESS {"type": "r"}
 C: COMMIT
 S: <SLEEP> 1
+   <NOOP>
+   <SLEEP> 1
    SUCCESS {}
 C: GOODBYE
 S: <EXIT>
