@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class SqlToCypherConfigTests {
 
@@ -46,15 +47,63 @@ class SqlToCypherConfigTests {
 	}
 
 	static Stream<Arguments> shouldParseBooleans() {
-		return Stream.of(Arguments.of(Boolean.FALSE, false), Arguments.of("true", true), Arguments.of(true, true),
-				Arguments.of("TRUE", true));
+		return Stream.of(Arguments.of(Boolean.FALSE, false, null), Arguments.of("true", true, null),
+				Arguments.of(true, true, null), Arguments.of("TRUE", true, null),
+				Arguments.of(23, true, "Unsupported boolean representation class java.lang.Integer"));
 	}
 
 	@ParameterizedTest
 	@MethodSource
-	void shouldParseBooleans(Object in, boolean expected) {
-		var result = SqlToCypherConfig.toBoolean(in);
-		assertThat(result).isEqualTo(expected);
+	void shouldParseBooleans(Object in, boolean expected, String expectedException) {
+
+		if (expectedException != null) {
+			assertThatIllegalArgumentException().isThrownBy(() -> SqlToCypherConfig.toBoolean(in))
+				.withMessage(expectedException);
+		}
+		else {
+			var result = SqlToCypherConfig.toBoolean(in);
+			assertThat(result).isEqualTo(expected);
+		}
+	}
+
+	static Stream<Arguments> shouldParseIntegers() {
+		return Stream.of(Arguments.of(1, 1, null), Arguments.of("1", 1, null),
+				Arguments.of("a", 1, "Unsupported Integer representation `a`"),
+				Arguments.of(1.0, 1, "Unsupported Integer representation class java.lang.Double"));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldParseIntegers(Object in, int expected, String expectedException) {
+
+		if (expectedException != null) {
+			assertThatIllegalArgumentException().isThrownBy(() -> SqlToCypherConfig.toInteger(in))
+				.withMessage(expectedException);
+		}
+		else {
+			var result = SqlToCypherConfig.toInteger(in);
+			assertThat(result).isEqualTo(expected);
+		}
+	}
+
+	static Stream<Arguments> shouldParseMaps() {
+		return Stream.of(Arguments.of(Map.of("a", "b"), Map.of("a", "b"), null),
+				Arguments.of("a:b", Map.of("a", "b"), null),
+				Arguments.of(1.23, null, "Unsupported Map<String, String> representation class java.lang.Double"));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldParseMaps(Object in, Map<String, String> expected, String expectedException) {
+
+		if (expectedException != null) {
+			assertThatIllegalArgumentException().isThrownBy(() -> SqlToCypherConfig.toMap(in))
+				.withMessage(expectedException);
+		}
+		else {
+			var result = SqlToCypherConfig.toMap(in);
+			assertThat(result).containsExactlyEntriesOf(expected);
+		}
 	}
 
 	@Test
@@ -91,7 +140,7 @@ class SqlToCypherConfigTests {
 				"s2c.renderNameCase", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true",
 				"s2c.sql-dialect", SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix",
 				"foo", "s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
-				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN"));
+				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN", "s2c.priority", 123));
 
 		assertThat(config.getParseNameCase()).isEqualTo(ParseNameCase.LOWER_IF_UNQUOTED);
 		assertThat(config.getRenderNameCase()).isEqualTo(RenderNameCase.LOWER_IF_UNQUOTED);
@@ -103,6 +152,7 @@ class SqlToCypherConfigTests {
 				Map.of("people", "Person", "movies", "Movie", "movie_actors", "ACTED_IN"));
 		assertThat(config.getJoinColumnsToTypeMappings())
 			.containsExactlyInAnyOrderEntriesOf(Map.of("actor_id", "ACTED_IN"));
+		assertThat(config.getPrecedence()).isEqualTo(123);
 	}
 
 }

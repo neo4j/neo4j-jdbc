@@ -30,9 +30,9 @@ import java.util.function.Consumer;
 class Warnings implements Consumer<SQLWarning> {
 
 	private static final AtomicReferenceFieldUpdater<Warnings, SQLWarning> UPDATER = AtomicReferenceFieldUpdater
-		.newUpdater(Warnings.class, SQLWarning.class, "warnings");
+		.newUpdater(Warnings.class, SQLWarning.class, "value");
 
-	private volatile SQLWarning warnings;
+	private volatile SQLWarning value;
 
 	@Override
 	public void accept(SQLWarning warning) {
@@ -41,15 +41,15 @@ class Warnings implements Consumer<SQLWarning> {
 			return;
 		}
 
-		this.warnings.setNextWarning(warning);
+		this.value.setNextWarning(warning);
 	}
 
 	SQLWarning get() {
-		return this.warnings;
+		return this.value;
 	}
 
 	void clear() {
-		UPDATER.compareAndSet(this, this.warnings, null);
+		UPDATER.compareAndSet(this, this.value, null);
 	}
 
 }

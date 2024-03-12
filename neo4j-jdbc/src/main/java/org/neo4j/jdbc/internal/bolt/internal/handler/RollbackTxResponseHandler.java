@@ -39,8 +39,8 @@ public final class RollbackTxResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.rollbackFuture.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.rollbackFuture.completeExceptionally(ex);
 	}
 
 	@Override

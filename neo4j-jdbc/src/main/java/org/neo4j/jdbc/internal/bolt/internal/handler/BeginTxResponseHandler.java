@@ -39,8 +39,8 @@ public final class BeginTxResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.beginTxFuture.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.beginTxFuture.completeExceptionally(ex);
 	}
 
 	@Override

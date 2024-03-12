@@ -62,8 +62,8 @@ public final class InboundMessageHandler extends SimpleChannelInboundHandler<Byt
 		try {
 			this.reader.read(this.messageDispatcher);
 		}
-		catch (Throwable error) {
-			throw new DecoderException("Failed to read inbound message:\n" + ByteBufUtil.hexDump(msg) + "\n", error);
+		catch (Exception ex) {
+			throw new DecoderException("Failed to read inbound message:\n" + ByteBufUtil.hexDump(msg) + "\n", ex);
 		}
 		finally {
 			this.input.stop();

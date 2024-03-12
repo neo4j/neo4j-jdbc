@@ -58,15 +58,15 @@ public final class HelloResponseHandler implements ResponseHandler {
 
 			this.helloFuture.complete(null);
 		}
-		catch (Throwable error) {
-			onFailure(error);
-			throw error;
+		catch (Exception ex) {
+			onFailure(ex);
+			throw ex;
 		}
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.channel.close().addListener(future -> this.helloFuture.completeExceptionally(error));
+	public void onFailure(Exception ex) {
+		this.channel.close().addListener(future -> this.helloFuture.completeExceptionally(ex));
 	}
 
 	@Override

@@ -42,8 +42,8 @@ public final class RunResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.runFuture.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.runFuture.completeExceptionally(ex);
 	}
 
 	@Override

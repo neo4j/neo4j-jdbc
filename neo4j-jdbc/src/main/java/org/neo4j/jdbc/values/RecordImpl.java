@@ -31,7 +31,7 @@ final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Re
 
 	private final Value[] values;
 
-	private int hashCode = 0;
+	private int hashCode;
 
 	RecordImpl(List<String> keys, Value[] values) {
 		this.keys = keys;
@@ -108,7 +108,7 @@ final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Re
 		}
 		else if (other instanceof Record otherRecord) {
 			var size = size();
-			if (!(size == otherRecord.size())) {
+			if (size != otherRecord.size()) {
 				return false;
 			}
 			if (!this.keys.equals(otherRecord.keys())) {

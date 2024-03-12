@@ -62,12 +62,12 @@ public final class IntegerValue extends AbstractNumberValue<Long> {
 			throw new LossyCoercion(type().name(), "Java double");
 		}
 
-		return (double) this.val;
+		return this.val;
 	}
 
 	@Override
 	public float asFloat() {
-		return (float) this.val;
+		return this.val;
 	}
 
 	@Override

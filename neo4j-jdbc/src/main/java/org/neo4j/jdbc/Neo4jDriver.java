@@ -871,8 +871,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	private static final class BuilderImpl
-			implements SpecifyEnvStep, SpecifyAdditionalPropertiesStep, SpecifyTranslationStep {
+	private static final class BuilderImpl implements SpecifyAdditionalPropertiesStep, SpecifyTranslationStep {
 
 		private boolean forceSqlTranslation;
 

@@ -28,8 +28,6 @@ public final class BoltAgentUtil {
 	}
 
 	public static BoltAgent boltAgent() {
-		var productInfo = String.format("neo4j-java/%s", driverVersion());
-
 		var platformBuilder = new StringBuilder();
 		getProperty("os.name").ifPresent(value -> append(value, platformBuilder));
 		getProperty("os.version").ifPresent(value -> append(value, platformBuilder));
@@ -45,8 +43,9 @@ public final class BoltAgentUtil {
 			return languageDetailsBuilder.isEmpty() ? null : languageDetailsBuilder;
 		});
 
-		return new BoltAgent(productInfo, platformBuilder.isEmpty() ? null : platformBuilder.toString(),
-				language.orElse(null), languageDetails.isEmpty() ? null : languageDetails.toString());
+		return new BoltAgent(String.format("neo4j-jdbc/%s", driverVersion()),
+				platformBuilder.isEmpty() ? null : platformBuilder.toString(), language.orElse(null),
+				languageDetails.isEmpty() ? null : languageDetails.toString());
 	}
 
 	/**

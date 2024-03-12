@@ -26,7 +26,7 @@ public interface ResponseHandler {
 
 	void onSuccess(Map<String, Value> metadata);
 
-	void onFailure(Throwable error);
+	void onFailure(Exception exception);
 
 	void onRecord(Value[] fields);
 
