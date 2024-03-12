@@ -157,7 +157,6 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		}
 		closeResultSet();
 		this.closed = true;
-		this.connection.onClose(this);
 	}
 
 	@Override

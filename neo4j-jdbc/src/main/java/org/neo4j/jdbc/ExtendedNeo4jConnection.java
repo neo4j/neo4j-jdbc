@@ -26,10 +26,4 @@ package org.neo4j.jdbc;
  */
 non-sealed interface ExtendedNeo4jConnection extends Neo4jConnection {
 
-	/**
-	 * A callback that is used by the linked {@link AutoCloseable} objects.
-	 * @param autoCloseable the object that has been closed
-	 */
-	void onClose(AutoCloseable autoCloseable);
-
 }
