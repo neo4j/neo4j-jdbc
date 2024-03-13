@@ -92,7 +92,7 @@ public final class InboundMessageDispatcher implements ResponseMessageHandler {
 		handler.onFailure(new MessageIgnoredException("The server has ignored the message"));
 	}
 
-	public void handleChannelInactive(Throwable cause) {
+	public void handleChannelInactive(Exception cause) {
 		while (!this.handlers.isEmpty()) {
 			var handler = removeHandler();
 			handler.onFailure(cause);
@@ -100,12 +100,12 @@ public final class InboundMessageDispatcher implements ResponseMessageHandler {
 		this.channel.close();
 	}
 
-	public void handleChannelError(Throwable error) {
+	public void handleChannelError(Exception cause) {
 		this.fatalErrorOccurred = true;
 
 		while (!this.handlers.isEmpty()) {
 			var handler = removeHandler();
-			handler.onFailure(error);
+			handler.onFailure(cause);
 		}
 
 		this.channel.close();

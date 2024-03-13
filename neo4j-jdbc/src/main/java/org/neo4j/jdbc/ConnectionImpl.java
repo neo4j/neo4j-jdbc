@@ -135,13 +135,13 @@ final class ConnectionImpl implements Neo4jConnection {
 			return UnaryOperator.identity();
 		}
 
-		var translators = this.translators.resolve();
-		if (translators.isEmpty()) {
+		var resolvedTranslators = this.translators.resolve();
+		if (resolvedTranslators.isEmpty()) {
 			throw Neo4jDriver.noTranslatorsAvailableException();
 		}
 
 		var metaData = this.getMetaData();
-		var sqlTranslator = new TranslatorChain(translators, metaData, warningConsumer);
+		var sqlTranslator = new TranslatorChain(resolvedTranslators, metaData, warningConsumer);
 
 		if (this.enableTranslationCaching) {
 			return sql -> {
@@ -239,24 +239,27 @@ final class ConnectionImpl implements Neo4jConnection {
 			return;
 		}
 
-		Throwable rollbackThrowable = null;
+		Exception exceptionDuringRollback = null;
 		if (this.transaction != null && this.transaction.isRunnable()) {
 			try {
 				this.transaction.rollback();
 			}
-			catch (Throwable throwable) {
-				rollbackThrowable = throwable;
+			catch (Exception ex) {
+				exceptionDuringRollback = ex;
 			}
 		}
 
 		try {
 			this.boltConnection.close().toCompletableFuture().get();
 		}
-		catch (Throwable throwable) {
-			if (rollbackThrowable != null) {
-				throwable.addSuppressed(rollbackThrowable);
+		catch (Exception ex) {
+			if (ex instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
 			}
-			throw new SQLException("An error occured while closing connection.", throwable);
+			if (exceptionDuringRollback != null) {
+				ex.addSuppressed(exceptionDuringRollback);
+			}
+			throw new SQLException("An error occurred while closing connection", ex);
 		}
 		finally {
 			this.closed = true;
@@ -509,6 +512,7 @@ final class ConnectionImpl implements Neo4jConnection {
 				return false;
 			}
 			catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
 				throw new SQLException("The thread has been interrupted.", ex);
 			}
 			catch (ExecutionException ex) {
@@ -607,6 +611,9 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.boltConnection.close().toCompletableFuture().get();
 		}
 		catch (InterruptedException | ExecutionException ex) {
+			if (ex instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
+			}
 			this.fatalException.addSuppressed(ex);
 		}
 		this.closed = true;

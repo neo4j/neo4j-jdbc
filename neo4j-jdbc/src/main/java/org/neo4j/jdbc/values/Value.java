@@ -97,7 +97,7 @@ import java.util.function.Function;
  * @author Neo4j Drivers Team
  * @since 6.0.0
  */
-public interface Value extends MapAccessor, MapAccessorWithDefaultValue {
+public interface Value extends MapAccessorWithDefaultValue {
 
 	/**
 	 * If the underlying value is a collection type, return the number of values in the

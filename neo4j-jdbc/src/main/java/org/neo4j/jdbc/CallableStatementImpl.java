@@ -592,8 +592,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setNString(String parameterName, String value) throws SQLException {
-		assertParameterType(ParameterType.NAMED);
-		super.setString(parameterName, value);
+		setString(parameterName, value);
 	}
 
 	@Override
@@ -749,8 +748,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setNCharacterStream(String parameterName, Reader reader) throws SQLException {
-		assertParameterType(ParameterType.NAMED);
-		super.setCharacterStream(parameterName, reader);
+		setCharacterStream(parameterName, reader);
 	}
 
 	@Override
@@ -968,7 +966,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 				}
 				else if (possibleParameter.startsWith("$") || possibleParameter.startsWith(":")) {
 					var v = possibleParameter.substring(1);
-					var matcher = VALID_IDENTIFIER.matcher(v);
+					var matcher = VALID_IDENTIFIER_PATTERN.matcher(v);
 					if (matcher.matches() || "0".equals(v)) {
 						namedParameters.put(cnt, v);
 					}
@@ -1078,21 +1076,20 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	private static final Pattern PARAMETER_LIST_SPLITTER = Pattern
 		.compile(",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*\\Z)");
 
-	private static final String VALID_METHOD_NAME = "\\p{javaJavaIdentifierStart}[.\\p{javaJavaIdentifierPart}]*";
+	private static final String VALID_IDENTIFIER = "\\p{javaJavaIdentifierStart}[.\\p{javaJavaIdentifierPart}]*";
 
 	private static final Predicate<String> IS_NUMBER = Pattern.compile("\\$?[1-9]+").asMatchPredicate();
 
-	private static final Pattern VALID_IDENTIFIER = Pattern
-		.compile("\\p{javaJavaIdentifierStart}[.\\p{javaJavaIdentifierPart}]*");
+	private static final Pattern VALID_IDENTIFIER_PATTERN = Pattern.compile(VALID_IDENTIFIER);
 
 	private static final String WS = "\\s*+";
 
 	private static final String RETURN_PARAMETER = "(?<returnParameter>" + WS + "(?:\\?|(?<returnParameterName>[$:]"
-			+ VALID_IDENTIFIER.pattern() + "))" + WS + "=" + WS + ")?";
+			+ VALID_IDENTIFIER_PATTERN.pattern() + "))" + WS + "=" + WS + ")?";
 
 	private static final String PARAMETER_LIST = "(?:\\((?<parameterList>.*)\\))?";
 
-	public static final String FQN_AND_PARAMETER_LIST = "(?<fqn>" + VALID_METHOD_NAME + ")" + WS + PARAMETER_LIST;
+	public static final String FQN_AND_PARAMETER_LIST = "(?<fqn>" + VALID_IDENTIFIER + ")" + WS + PARAMETER_LIST;
 
 	private static final Pattern JDBC_CALL = Pattern
 		.compile("(?i)" + WS + "\\{" + RETURN_PARAMETER + "call " + WS + FQN_AND_PARAMETER_LIST + WS + "}");
@@ -1102,7 +1099,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	private static final Pattern CYPHER_YIELD_CALL = Pattern
 		.compile("(?i)" + WS + "CALL " + WS + FQN_AND_PARAMETER_LIST + WS + "YIELD " + WS + "(\\*|(?<yieldedValues>"
-				+ VALID_IDENTIFIER.pattern() + "(?:," + WS + VALID_IDENTIFIER.pattern() + ")*))");
+				+ VALID_IDENTIFIER_PATTERN.pattern() + "(?:," + WS + VALID_IDENTIFIER_PATTERN.pattern() + ")*))");
 
 	private static final Pattern CYPHER_SIDE_EFFECT_CALL = Pattern
 		.compile("(?i)" + WS + "CALL " + WS + FQN_AND_PARAMETER_LIST);

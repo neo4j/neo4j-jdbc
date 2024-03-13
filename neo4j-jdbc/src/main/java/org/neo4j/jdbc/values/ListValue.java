@@ -75,7 +75,7 @@ public final class ListValue extends AbstractValue {
 	@Override
 	public <T> Iterable<T> values(final Function<Value, T> mapFunction) {
 		return () -> new Iterator<>() {
-			private int cursor = 0;
+			private int cursor;
 
 			@Override
 			public boolean hasNext() {

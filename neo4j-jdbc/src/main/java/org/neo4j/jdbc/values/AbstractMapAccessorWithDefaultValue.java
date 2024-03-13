@@ -29,7 +29,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Value get(Value value, Value defaultValue) {
+	private static Value get(Value value, Value defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -43,7 +43,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Object get(Value value, Object defaultValue) {
+	private static Object get(Value value, Object defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -57,7 +57,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Number get(Value value, Number defaultValue) {
+	private static Number get(Value value, Number defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -71,7 +71,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Entity get(Value value, Entity defaultValue) {
+	private static Entity get(Value value, Entity defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -85,7 +85,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Node get(Value value, Node defaultValue) {
+	private static Node get(Value value, Node defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -99,7 +99,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Path get(Value value, Path defaultValue) {
+	private static Path get(Value value, Path defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -113,7 +113,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Relationship get(Value value, Relationship defaultValue) {
+	private static Relationship get(Value value, Relationship defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -127,7 +127,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private List<Object> get(Value value, List<Object> defaultValue) {
+	private static List<Object> get(Value value, List<Object> defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -141,7 +141,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue, mapFunc);
 	}
 
-	private <T> List<T> get(Value value, List<T> defaultValue, Function<Value, T> mapFunc) {
+	private static <T> List<T> get(Value value, List<T> defaultValue, Function<Value, T> mapFunc) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -155,7 +155,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private Map<String, Object> get(Value value, Map<String, Object> defaultValue) {
+	private static Map<String, Object> get(Value value, Map<String, Object> defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -169,7 +169,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue, mapFunc);
 	}
 
-	private <T> Map<String, T> get(Value value, Map<String, T> defaultValue, Function<Value, T> mapFunc) {
+	private static <T> Map<String, T> get(Value value, Map<String, T> defaultValue, Function<Value, T> mapFunc) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -183,7 +183,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private int get(Value value, int defaultValue) {
+	private static int get(Value value, int defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -197,7 +197,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private long get(Value value, long defaultValue) {
+	private static long get(Value value, long defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -211,7 +211,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private boolean get(Value value, boolean defaultValue) {
+	private static boolean get(Value value, boolean defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -225,7 +225,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private String get(Value value, String defaultValue) {
+	private static String get(Value value, String defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -239,7 +239,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private float get(Value value, float defaultValue) {
+	private static float get(Value value, float defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}
@@ -253,7 +253,7 @@ abstract class AbstractMapAccessorWithDefaultValue implements MapAccessorWithDef
 		return get(get(key), defaultValue);
 	}
 
-	private double get(Value value, double defaultValue) {
+	private static double get(Value value, double defaultValue) {
 		if (value.equals(Values.NULL)) {
 			return defaultValue;
 		}

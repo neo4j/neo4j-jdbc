@@ -102,7 +102,7 @@ public final class HandshakeHandler extends ReplayingDecoder<Void> {
 		}
 	}
 
-	private BoltProtocol protocolForVersion(BoltProtocolVersion version) {
+	private static BoltProtocol protocolForVersion(BoltProtocolVersion version) {
 		try {
 			return BoltProtocol.forVersion(version);
 		}

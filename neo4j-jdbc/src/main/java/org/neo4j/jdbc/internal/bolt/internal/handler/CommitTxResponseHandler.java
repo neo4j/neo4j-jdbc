@@ -42,8 +42,8 @@ public final class CommitTxResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.commitFuture.completeExceptionally(error);
+	public void onFailure(Exception ex) {
+		this.commitFuture.completeExceptionally(ex);
 	}
 
 	@Override

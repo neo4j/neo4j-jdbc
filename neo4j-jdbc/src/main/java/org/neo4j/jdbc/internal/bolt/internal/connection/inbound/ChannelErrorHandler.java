@@ -51,7 +51,7 @@ public final class ChannelErrorHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) {
 		var terminationReason = ChannelAttributes.terminationReason(ctx.channel());
-		Throwable error = ErrorUtil.newConnectionTerminatedError(terminationReason);
+		Exception error = ErrorUtil.newConnectionTerminatedError(terminationReason);
 
 		if (!this.failed) {
 			// channel became inactive not because of a fatal exception that came from
@@ -67,30 +67,32 @@ public final class ChannelErrorHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) {
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		if (!this.failed) {
 			this.failed = true;
-			fail(error);
+			// The program cannot recover from an error.
+			if (cause instanceof Error) {
+				throw (Error) cause;
+			}
+			fail((Exception) cause);
 		}
 	}
 
-	private void fail(Throwable error) {
+	private void fail(Exception error) {
 		var cause = transformError(error);
 		this.messageDispatcher.handleChannelError(cause);
 	}
 
-	private static Throwable transformError(Throwable error) {
-		if (error instanceof CodecException && error.getCause() != null) {
-			// unwrap the CodecException if it has a cause
-			error = error.getCause();
+	private static Exception transformError(Exception error) {
+		// unwrap the CodecException if it has a cause
+		if (error instanceof CodecException && error.getCause() != null && error.getCause() instanceof Exception ex) {
+			return ex;
 		}
-
 		if (error instanceof IOException) {
 			return new BoltException("Connection to the database failed", error);
 		}
-		else {
-			return error;
-		}
+
+		return error;
 	}
 
 }

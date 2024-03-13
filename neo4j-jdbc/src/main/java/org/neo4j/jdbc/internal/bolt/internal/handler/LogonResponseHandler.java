@@ -43,8 +43,8 @@ public final class LogonResponseHandler implements ResponseHandler {
 	}
 
 	@Override
-	public void onFailure(Throwable error) {
-		this.channel.close().addListener(future -> this.future.completeExceptionally(error));
+	public void onFailure(Exception ex) {
+		this.channel.close().addListener(future -> this.future.completeExceptionally(ex));
 	}
 
 	@Override

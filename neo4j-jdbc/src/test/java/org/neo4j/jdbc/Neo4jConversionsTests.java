@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -43,6 +44,7 @@ import org.neo4j.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 class Neo4jConversionsTests {
 
@@ -272,6 +274,19 @@ class Neo4jConversionsTests {
 		var time = Neo4jConversions.asTimestamp(value, cal);
 		assertThat(time).isEqualTo(Timestamp.valueOf("2024-03-10 23:42:03"));
 		assertThat(Neo4jConversions.asTimestamp(Neo4jConversions.asValue((Timestamp) null, null))).isNull();
+	}
+
+	@ParameterizedTest
+	@EnumSource
+	void shouldCoverAllPredefinedTypes(Type type) {
+		// noinspection ResultOfMethodCallIgnored
+		assertThatNoException().isThrownBy(() -> Neo4jConversions.toSqlType(type));
+	}
+
+	@Test
+	void shouldNotFailOnSuddenNewNeo4jTypesThatDontMapToModernOnes() {
+		assertThat(Neo4jConversions.oldCypherTypesToNew("whatever")).isEqualTo("OTHER");
+		assertThat(Neo4jConversions.oldCypherTypesToNew("Null")).isEqualTo("NULL");
 	}
 
 }

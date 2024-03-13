@@ -73,7 +73,7 @@ final class Neo4jConversions {
 			case "Point" -> "POINT";
 
 			// Lists no way to get better mapping so loose info here
-			case "StringArray", "DoubleArray", "LongArray" -> "LIST";
+			case "StringArray", "ByteArray", "DoubleArray", "LongArray" -> "LIST";
 			// Temporal
 			case "Date" -> "DATE";
 			case "Duration" -> "DURATION";

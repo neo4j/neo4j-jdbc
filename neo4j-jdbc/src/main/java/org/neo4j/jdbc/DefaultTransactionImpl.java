@@ -159,6 +159,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			throw new SQLTimeoutException("The query timeout has been exceeded");
 		}
 		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
 			fail(new SQLException("The transaction is no longer valid"));
 			throw new SQLException("The thread has been interrupted", ex);
 		}

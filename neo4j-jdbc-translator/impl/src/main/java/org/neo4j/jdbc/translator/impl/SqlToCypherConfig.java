@@ -56,13 +56,14 @@ public final class SqlToCypherConfig {
 		}
 
 		var prefix = Pattern.compile("s2c\\.(.+)");
-		var dashWord = Pattern.compile("-(\\w)");
 
-		var builder = builder();
 		var relevantProperties = config.keySet().stream().map(prefix::matcher).filter(Matcher::matches).toList();
 		if (relevantProperties.isEmpty()) {
 			return defaultConfig();
 		}
+
+		var builder = builder();
+		var dashWord = Pattern.compile("-(\\w)");
 		boolean customConfig = false;
 		for (Matcher m : relevantProperties) {
 			var v = config.get(m.group());
@@ -139,7 +140,12 @@ public final class SqlToCypherConfig {
 			return integer;
 		}
 		else if (val instanceof String s) {
-			return Integer.parseInt(s);
+			try {
+				return Integer.parseInt(s);
+			}
+			catch (NumberFormatException ex) {
+				throw new IllegalArgumentException("Unsupported Integer representation `%s`".formatted(s), ex);
+			}
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported Integer representation " + val.getClass());
@@ -155,8 +161,8 @@ public final class SqlToCypherConfig {
 
 		return Arrays.stream(source.split(";"))
 			.map(String::trim)
-			.map((s) -> s.split(":"))
-			.collect(Collectors.toUnmodifiableMap((a) -> a[0], (a) -> a[1]));
+			.map(s -> s.split(":"))
+			.collect(Collectors.toUnmodifiableMap(a -> a[0], a -> a[1]));
 	}
 
 	/**
@@ -361,6 +367,7 @@ public final class SqlToCypherConfig {
 			this.alwaysEscapeNames = alwaysEscapeNames;
 			this.parseNamedParamPrefix = parseNamedParamPrefix;
 			this.enableCache = enableCache;
+			this.precedence = precedence;
 		}
 
 		/**

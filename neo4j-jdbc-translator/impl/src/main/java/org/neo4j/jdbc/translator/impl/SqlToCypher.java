@@ -209,25 +209,6 @@ final class SqlToCypher implements Translator {
 		return Renderer.getRenderer(this.rendererConfig).render(statement);
 	}
 
-	private static IllegalArgumentException unsupported(QueryPart p) {
-		var typeMsg = (p != null) ? " (Was of type " + p.getClass().getName() + ")" : "";
-		return new IllegalArgumentException("Unsupported SQL expression: " + p + typeMsg);
-	}
-
-	private static Node nodeWithProperties(Node src, Map<String, Expression> properties) {
-		// Due to a slightly problematic API in the Cypher-DSL ^ms
-		return src
-			.withProperties(properties.entrySet().stream().flatMap(e -> Stream.of(e.getKey(), e.getValue())).toArray());
-	}
-
-	private static SymbolicName symbolicName(String value) {
-		return Cypher.name(value.toLowerCase(Locale.ROOT));
-	}
-
-	private static String relationshipTypeName(Field<?> lhsJoinColumn) {
-		return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
-	}
-
 	static class ContextAwareStatementBuilder {
 
 		/**
@@ -281,6 +262,25 @@ final class SqlToCypher implements Translator {
 		ContextAwareStatementBuilder(SqlToCypherConfig config, DatabaseMetaData databaseMetaData) {
 			this.config = config;
 			this.databaseMetaData = databaseMetaData;
+		}
+
+		private static IllegalArgumentException unsupported(QueryPart p) {
+			var typeMsg = (p != null) ? " (Was of type " + p.getClass().getName() + ")" : "";
+			return new IllegalArgumentException("Unsupported SQL expression: " + p + typeMsg);
+		}
+
+		private static Node nodeWithProperties(Node src, Map<String, Expression> properties) {
+			// Due to a slightly problematic API in the Cypher-DSL ^ms
+			return src.withProperties(
+					properties.entrySet().stream().flatMap(e -> Stream.of(e.getKey(), e.getValue())).toArray());
+		}
+
+		private static SymbolicName symbolicName(String value) {
+			return Cypher.name(value.toLowerCase(Locale.ROOT));
+		}
+
+		private static String relationshipTypeName(Field<?> lhsJoinColumn) {
+			return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
 		}
 
 		private Statement statement(QOM.Delete<?> d) {
@@ -355,107 +355,119 @@ final class SqlToCypher implements Translator {
 
 			var node = (Node) this.resolveTableOrJoin(this.tables.get(0));
 			var rows = insert.$values();
-			var columns = insert.$columns();
+
 			var hasMergeProperties = !insert.$onConflict().isEmpty();
 			var useMerge = insert.$onDuplicateKeyIgnore() || hasMergeProperties;
 			if (rows.size() == 1) {
-				var row = rows.get(0);
-				Map<String, Expression> nodeProperties = new LinkedHashMap<>();
-				for (int i = 0; i < columns.size(); ++i) {
-					nodeProperties.put(columns.get(i).getName(), expression(row.field(i)));
-				}
-				if (useMerge) {
-					Map<String, Expression> mergeProperties = hasMergeProperties ? new LinkedHashMap<>()
-							: nodeProperties;
-					insert.$onConflict().forEach(c -> {
-						mergeProperties.put(c.getName(), nodeProperties.get(c.getName()));
-						nodeProperties.remove(c.getName());
-					});
-
-					var properties = new ArrayList<Expression>();
-					nodeProperties.forEach((k, v) -> properties.add(Cypher.set(node.property(k), v)));
-
-					StatementBuilder.BuildableStatement<?> merge = Cypher
-						.merge(nodeWithProperties(node, mergeProperties));
-					if (hasMergeProperties) {
-						merge = ((StatementBuilder.ExposesMergeAction) merge).onCreate().set(properties);
-					}
-					if (!insert.$updateSet().isEmpty()) {
-						var updates = new ArrayList<Expression>();
-						insert.$updateSet().forEach((c, v) -> {
-							synchronized (this) {
-								try {
-									this.columnsAndValues.putAll(nodeProperties);
-									updates.add(Cypher.set(node.property(((Field<?>) c).getName()),
-											expression((Field<?>) v)));
-								}
-								finally {
-									nodeProperties.keySet().forEach(this.columnsAndValues::remove);
-								}
-							}
-						});
-						merge = ((StatementBuilder.ExposesMergeAction) merge).onMatch().set(updates);
-					}
-					return addOptionalReturnAndBuild((ExposesReturning & StatementBuilder.BuildableStatement<?>) merge,
-							returning);
-				}
-				return addOptionalReturnAndBuild(Cypher.create(nodeWithProperties(node, nodeProperties)), returning);
+				return buildSingleCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
 			}
 			else {
-				if (useMerge && !hasMergeProperties) {
-					throw new UnsupportedOperationException(
-							"MERGE is not supported when inserting multiple rows without using a property to merge on");
+				return buildUnwindCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
+			}
+		}
+
+		private Statement buildSingleCreateStatement(QOM.Insert<?> insert,
+				List<? extends SelectFieldOrAsterisk> returning, Node node, boolean useMerge,
+				boolean hasMergeProperties) {
+			var row = Objects.requireNonNull(insert.$values().$first());
+			var columns = insert.$columns();
+			Map<String, Expression> nodeProperties = new LinkedHashMap<>();
+			for (int i = 0; i < columns.size(); ++i) {
+				nodeProperties.put(columns.get(i).getName(), expression(row.field(i)));
+			}
+			if (useMerge) {
+				Map<String, Expression> mergeProperties = hasMergeProperties ? new LinkedHashMap<>() : nodeProperties;
+				insert.$onConflict().forEach(c -> {
+					mergeProperties.put(c.getName(), nodeProperties.get(c.getName()));
+					nodeProperties.remove(c.getName());
+				});
+
+				var properties = new ArrayList<Expression>();
+				nodeProperties.forEach((k, v) -> properties.add(Cypher.set(node.property(k), v)));
+
+				StatementBuilder.BuildableStatement<?> merge = Cypher.merge(nodeWithProperties(node, mergeProperties));
+				if (hasMergeProperties) {
+					merge = ((StatementBuilder.ExposesMergeAction) merge).onCreate().set(properties);
 				}
-				var props = Cypher.listOf(insert.$values().stream().map(row -> {
-					var result = new HashMap<String, Object>(columns.size());
-					for (int i = 0; i < columns.size(); ++i) {
-						result.put(columns.get(i).getName(), expression(row.field(i)));
-					}
-					return Cypher.literalOf(result);
-				}).toList());
-
-				if (useMerge) {
-
-					var symName = Cypher.name("properties");
-					var mergeProperties = new LinkedHashMap<String, Expression>();
-
-					insert.$onConflict()
-						.forEach(c -> mergeProperties.put(c.getName(),
-								Cypher.property(symName, Cypher.literalOf(c.getName()))));
-
-					var properties = new ArrayList<Expression>();
-					columns.stream()
-						.filter(c -> !mergeProperties.containsKey(c.getName()))
-						.forEach(c -> properties
-							.add(Cypher.set(node.property(c.getName()), Cypher.property(symName, c.getName()))));
-
+				if (!insert.$updateSet().isEmpty()) {
 					var updates = new ArrayList<Expression>();
-					synchronized (this) {
-						try {
-							columns.forEach(c -> this.columnsAndValues.put(c.getName(),
-									Cypher.property(symName, Cypher.literalOf(c.getName()))));
-							insert.$updateSet()
-								.forEach((c, v) -> updates.add(
-										Cypher.set(node.property(((Field<?>) c).getName()), expression((Field<?>) v))));
+					insert.$updateSet().forEach((c, v) -> {
+						synchronized (this) {
+							try {
+								this.columnsAndValues.putAll(nodeProperties);
+								updates
+									.add(Cypher.set(node.property(((Field<?>) c).getName()), expression((Field<?>) v)));
+							}
+							finally {
+								nodeProperties.keySet().forEach(this.columnsAndValues::remove);
+							}
 						}
-						finally {
-							columns.forEach(c -> this.columnsAndValues.remove(c.getName()));
-						}
-					}
-
-					return addOptionalReturnAndBuild(Cypher.unwind(props)
-						.as("properties")
-						.merge(nodeWithProperties(node, mergeProperties))
-						.onCreate()
-						.set(properties)
-						.onMatch()
-						.set(updates), returning);
+					});
+					merge = ((StatementBuilder.ExposesMergeAction) merge).onMatch().set(updates);
 				}
-
-				return addOptionalReturnAndBuild(
-						Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")),
+				return addOptionalReturnAndBuild((ExposesReturning & StatementBuilder.BuildableStatement<?>) merge,
 						returning);
 			}
+			return addOptionalReturnAndBuild(Cypher.create(nodeWithProperties(node, nodeProperties)), returning);
+		}
+
+		private Statement buildUnwindCreateStatement(QOM.Insert<?> insert,
+				List<? extends SelectFieldOrAsterisk> returning, Node node, boolean useMerge,
+				boolean hasMergeProperties) {
+			if (useMerge && !hasMergeProperties) {
+				throw new UnsupportedOperationException(
+						"MERGE is not supported when inserting multiple rows without using a property to merge on");
+			}
+
+			var columns = insert.$columns();
+			var props = Cypher.listOf(insert.$values().stream().map(row -> {
+				var result = new HashMap<String, Object>(columns.size());
+				for (int i = 0; i < columns.size(); ++i) {
+					result.put(columns.get(i).getName(), expression(row.field(i)));
+				}
+				return Cypher.literalOf(result);
+			}).toList());
+
+			if (useMerge) {
+
+				var symName = Cypher.name("properties");
+				var mergeProperties = new LinkedHashMap<String, Expression>();
+
+				insert.$onConflict()
+					.forEach(c -> mergeProperties.put(c.getName(),
+							Cypher.property(symName, Cypher.literalOf(c.getName()))));
+
+				var properties = new ArrayList<Expression>();
+				columns.stream()
+					.filter(c -> !mergeProperties.containsKey(c.getName()))
+					.forEach(c -> properties
+						.add(Cypher.set(node.property(c.getName()), Cypher.property(symName, c.getName()))));
+
+				var updates = new ArrayList<Expression>();
+				synchronized (this) {
+					try {
+						columns.forEach(c -> this.columnsAndValues.put(c.getName(),
+								Cypher.property(symName, Cypher.literalOf(c.getName()))));
+						insert.$updateSet()
+							.forEach((c, v) -> updates
+								.add(Cypher.set(node.property(((Field<?>) c).getName()), expression((Field<?>) v))));
+					}
+					finally {
+						columns.forEach(c -> this.columnsAndValues.remove(c.getName()));
+					}
+				}
+
+				return addOptionalReturnAndBuild(Cypher.unwind(props)
+					.as("properties")
+					.merge(nodeWithProperties(node, mergeProperties))
+					.onCreate()
+					.set(properties)
+					.onMatch()
+					.set(updates), returning);
+			}
+
+			return addOptionalReturnAndBuild(
+					Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")), returning);
 		}
 
 		private <T extends ExposesReturning & StatementBuilder.BuildableStatement<?>> Statement addOptionalReturnAndBuild(
@@ -764,9 +776,6 @@ final class SqlToCypher implements Translator {
 			else if (f instanceof QOM.Sqrt e) {
 				return Cypher.sqrt(expression(e.$arg1()));
 			}
-			// TODO: Hyperbolic functions
-
-			// https://neo4j.com/docs/cypher-manual/current/functions/mathematical-trigonometric/
 			else if (f instanceof QOM.Acos e) {
 				return Cypher.acos(expression(e.$arg1()));
 			}
@@ -1093,7 +1102,6 @@ final class SqlToCypher implements Translator {
 				SymbolicName relSymbolicName = null;
 
 				PatternElement lhs;
-				PatternElement rhs;
 
 				Table<?> t1 = joinTable.$table1();
 				if (t1 instanceof QOM.JoinTable<?, ? extends Table<?>> lhsJoin) {
@@ -1119,7 +1127,7 @@ final class SqlToCypher implements Translator {
 					relSymbolicName = symbolicName(relType);
 				}
 
-				rhs = resolveTableOrJoin(joinTable.$table2());
+				PatternElement rhs = resolveTableOrJoin(joinTable.$table2());
 
 				if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
 
@@ -1165,8 +1173,8 @@ final class SqlToCypher implements Translator {
 			var comment = t.getComment();
 			if (!comment.isBlank()) {
 				var config = Arrays.stream(comment.split(","))
-					.map((s) -> s.split("="))
-					.collect(Collectors.toMap((a) -> a[0], (a) -> a[1]));
+					.map(s -> s.split("="))
+					.collect(Collectors.toMap(a -> a[0], a -> a[1]));
 				return config.getOrDefault("label", t.getName());
 			}
 

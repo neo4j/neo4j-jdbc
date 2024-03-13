@@ -23,6 +23,7 @@ import java.util.Map;
 import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 
+@SuppressWarnings("squid:S2160") // Not overriding equals is fine here
 final class RelationshipImpl extends AbstractEntity implements Relationship {
 
 	private long start;

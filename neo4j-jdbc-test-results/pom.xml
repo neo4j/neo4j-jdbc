@@ -73,6 +73,10 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-jdbc-translator-impl</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
