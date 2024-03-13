@@ -18,7 +18,9 @@
  */
 package org.neo4j.jdbc.it.cp;
 
+import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,42 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class TranslationIT extends IntegrationTestBase {
+
+	@Test
+	void shouldLoadTranslatorDirectly() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+		var driver = DriverManager.getDriver(url);
+		var properties = new Properties();
+		properties.put("user", "neo4j");
+		properties.put("password", this.neo4j.getAdminPassword());
+		properties.put("translatorFactory", "default");
+		properties.put("enableSQLTranslation", "true");
+
+		try (var con = driver.connect(url, properties);
+				var stmt = con.createStatement();
+				var rs = stmt.executeQuery("SELECT 1")) {
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getInt(1)).isOne();
+		}
+
+	}
+
+	@Test
+	void shouldFailWhenLoadingInvalidClassDirectly() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+		var driver = DriverManager.getDriver(url);
+		var properties = new Properties();
+		properties.put("user", "neo4j");
+		properties.put("password", this.neo4j.getAdminPassword());
+		properties.put("translatorFactory", "asd");
+		properties.put("enableSQLTranslation", "true");
+
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(url, properties))
+			.withMessage("No translators available");
+
+	}
 
 	@Test
 	void shouldTranslateAsterisk() throws SQLException {

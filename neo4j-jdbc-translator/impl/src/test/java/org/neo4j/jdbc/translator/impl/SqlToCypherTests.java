@@ -85,6 +85,11 @@ class SqlToCypherTests {
 	}
 
 	@Test
+	void selectNShouldWork() {
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT 1")).isEqualTo("RETURN 1");
+	}
+
+	@Test
 	void parsingExceptionMustBeWrapped() {
 		assertThatIllegalArgumentException().isThrownBy(() -> NON_PRETTY_PRINTING_TRANSLATOR.translate("whatever"))
 			.withCauseInstanceOf(ParserException.class);
