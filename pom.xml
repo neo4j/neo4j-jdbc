@@ -1070,6 +1070,7 @@
 				<pmd.skip>true</pmd.skip>
 				<skipTests>true</skipTests>
 				<sort.skip>true</sort.skip>
+				<spring-javaformat.skip>true</spring-javaformat.skip>
 			</properties>
 		</profile>
 	</profiles>

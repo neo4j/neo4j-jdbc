@@ -19,6 +19,7 @@
 package org.neo4j.jdbc;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.sql.Connection;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -125,6 +127,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * enable automatic translation caching.
 	 */
 	public static final String PROPERTY_SQL_TRANSLATION_CACHING_ENABLED = "cacheSQLTranslations";
+
+	/**
+	 * This is an alternative to the automatic configuration of translator factories and
+	 * can be applied to load a single translator. This is helpful in scenarios in which
+	 * an isolated class-loader is used, that prohibits access to the ServiceLoader
+	 * machinery.
+	 */
+	public static final String PROPERTY_TRANSLATOR_FACTORY = "translatorFactory";
 
 	private static final String PROPERTY_S2C_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
 
@@ -278,10 +288,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var enableTranslationCaching = driverConfig.enableTranslationCaching;
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
+		var translatorFactory = driverConfig.misc.get(PROPERTY_TRANSLATOR_FACTORY);
 
+		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this::getSqlTranslatorFactories;
+		if (translatorFactory != null && !translatorFactory.isBlank()) {
+			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
+		}
 		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(),
-						this::getSqlTranslatorFactories),
+				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders);
 	}
 
@@ -633,6 +647,24 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		return new SSLProperties(sslMode, ssl);
+	}
+
+	private List<TranslatorFactory> getSqlTranslatorFactory(String translatorFactory) {
+
+		var fqn = "DEFAULT".equalsIgnoreCase(translatorFactory)
+				? "org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory" : translatorFactory;
+		try {
+			@SuppressWarnings("unchecked")
+			Class<TranslatorFactory> cls = (Class<TranslatorFactory>) Class.forName(fqn);
+			return List.of(cls.getDeclaredConstructor().newInstance());
+		}
+		catch (ClassNotFoundException ex) {
+			getParentLogger().log(Level.WARNING, "Translator factory {0} not found", new Object[] { fqn });
+		}
+		catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
+			getParentLogger().log(Level.WARNING, ex, () -> "Could not load translator factory");
+		}
+		return List.of();
 	}
 
 	/**
