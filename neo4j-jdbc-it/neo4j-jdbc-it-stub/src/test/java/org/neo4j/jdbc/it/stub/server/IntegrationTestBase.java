@@ -45,7 +45,7 @@ public abstract class IntegrationTestBase {
 				new ImageFromDockerfile().withFileFromClasspath("scripts", "docker/scripts")
 					.withFileFromClasspath("entrypoint.sh", "docker/entrypoint.sh")
 					.withFileFromClasspath("Dockerfile", "docker/Dockerfile"))
-			.withExposedPorts(7687, 7687);
+			.withExposedPorts(7687);
 	}
 
 	private final GenericContainer<?> stubServer;
