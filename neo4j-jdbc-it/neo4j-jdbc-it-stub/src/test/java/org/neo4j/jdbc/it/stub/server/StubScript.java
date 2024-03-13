@@ -16,17 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.stub.it.server;
+package org.neo4j.jdbc.it.stub.server;
 
-import java.io.Serial;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-class StubServerException extends RuntimeException {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface StubScript {
 
-	@Serial
-	private static final long serialVersionUID = -6383135231551136807L;
-
-	StubServerException(String message) {
-		super(message);
-	}
+	String path();
 
 }

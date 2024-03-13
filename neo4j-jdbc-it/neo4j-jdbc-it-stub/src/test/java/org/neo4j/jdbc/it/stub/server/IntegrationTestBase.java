@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.stub.it.server;
+package org.neo4j.jdbc.it.stub.server;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

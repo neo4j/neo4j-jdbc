@@ -27,9 +27,9 @@
 		<artifactId>neo4j-jdbc-it</artifactId>
 		<version>6.0.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>neo4j-jdbc-stub-it</artifactId>
+	<artifactId>neo4j-jdbc-it-stub</artifactId>
 
-	<name>Neo4j JDBC Driver Stub IT</name>
+	<name>Neo4j JDBC Driver (IT w/ stub server)</name>
 	<description>Integration tests using the stub server.</description>
 
 	<properties>

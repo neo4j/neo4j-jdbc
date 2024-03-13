@@ -317,6 +317,7 @@
 									<exclude>**/*.conf</exclude>
 									<exclude>**/*.csv</exclude>
 									<exclude>**/*.cypher</exclude>
+									<exclude>**/*.script</exclude>
 									<exclude>**/*.tpl</exclude>
 									<exclude>**/.env</exclude>
 									<exclude>**/org.mockito.plugins.MockMaker</exclude>

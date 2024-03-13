@@ -623,7 +623,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
 		assertIsOpen();
 		if (milliseconds < 0) {
-			throw new SQLException("The network timeout must not be negative.");
+			throw new SQLException("The network timeout must not be negative");
 		}
 		this.networkTimeout = milliseconds;
 		if (milliseconds == 0) {

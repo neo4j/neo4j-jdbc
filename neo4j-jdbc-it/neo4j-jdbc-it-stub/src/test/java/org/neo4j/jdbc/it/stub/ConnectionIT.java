@@ -16,13 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.stub.it;
+package org.neo4j.jdbc.it.stub;
 
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.stub.it.server.IntegrationTestBase;
-import org.neo4j.jdbc.stub.it.server.StubScript;
+import org.neo4j.jdbc.it.stub.server.IntegrationTestBase;
+import org.neo4j.jdbc.it.stub.server.StubScript;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

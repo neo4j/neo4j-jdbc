@@ -34,7 +34,7 @@
 	<description>Parent project for the integration tests</description>
 
 	<modules>
-		<module>neo4j-jdbc-stub-it</module>
+		<module>neo4j-jdbc-it-stub</module>
 		<module>neo4j-jdbc-it-cp</module>
 		<module>neo4j-jdbc-it-mp</module>
 		<module>spring-boot-smoke-tests</module>
