@@ -16,26 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.internal.bolt.internal;
+package org.neo4j.jdbc.stub.it.server;
 
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.io.Serial;
 
-import org.neo4j.jdbc.internal.bolt.internal.handler.ResponseHandler;
-import org.neo4j.jdbc.internal.bolt.internal.messaging.Message;
+class StubServerException extends RuntimeException {
 
-public interface Connection {
+	@Serial
+	private static final long serialVersionUID = -6383135231551136807L;
 
-	void write(Message message, ResponseHandler handler, boolean flush);
-
-	BoltProtocol protocol();
-
-	String databaseName();
-
-	Optional<Long> defaultReadTimeoutMillis();
-
-	void setReadTimeoutMillis(Long timeout);
-
-	CompletionStage<Void> close();
+	StubServerException(String message) {
+		super(message);
+	}
 
 }

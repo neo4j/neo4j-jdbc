@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.internal.bolt.internal;
 
 import java.time.Clock;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -44,18 +45,22 @@ public final class NetworkConnection implements Connection {
 
 	private final BoltProtocol protocol;
 
-	private final Long connectionReadTimeout;
-
 	private final String databaseName;
+
+	private final Long defaultReadTimeout;
+
+	private Long readTimeout;
 
 	private ChannelHandler connectionReadTimeoutHandler;
 
-	public NetworkConnection(Channel channel, Clock clock, String databaseName) {
+	public NetworkConnection(Channel channel, Clock clock, String databaseName, Long readTimeout) {
 		this.channel = channel;
 		this.messageDispatcher = ChannelAttributes.messageDispatcher(channel);
 		this.protocol = BoltProtocol.forChannel(channel);
-		this.connectionReadTimeout = ChannelAttributes.connectionReadTimeout(channel).orElse(null);
 		this.databaseName = databaseName;
+		var timeout = ChannelAttributes.connectionReadTimeout(channel).orElse(null);
+		this.defaultReadTimeout = (timeout != null) ? TimeUnit.SECONDS.toMillis(timeout) : null;
+		this.readTimeout = this.defaultReadTimeout;
 	}
 
 	@Override
@@ -71,6 +76,21 @@ public final class NetworkConnection implements Connection {
 	@Override
 	public String databaseName() {
 		return this.databaseName;
+	}
+
+	@Override
+	public Optional<Long> defaultReadTimeoutMillis() {
+		return Optional.ofNullable(this.defaultReadTimeout);
+	}
+
+	@Override
+	public void setReadTimeoutMillis(Long timeout) {
+		if (timeout != null && timeout > 0) {
+			this.readTimeout = timeout;
+		}
+		else {
+			this.readTimeout = this.defaultReadTimeout;
+		}
 	}
 
 	@Override
@@ -104,9 +124,9 @@ public final class NetworkConnection implements Connection {
 			throw new IllegalStateException("This method may only be called in the EventLoop");
 		}
 
-		if (this.connectionReadTimeout != null && this.connectionReadTimeoutHandler == null) {
-			this.connectionReadTimeoutHandler = new ConnectionReadTimeoutHandler(this.connectionReadTimeout,
-					TimeUnit.SECONDS);
+		if (this.readTimeout != null && this.connectionReadTimeoutHandler == null) {
+			this.connectionReadTimeoutHandler = new ConnectionReadTimeoutHandler(this.readTimeout,
+					TimeUnit.MILLISECONDS);
 			channel.pipeline().addFirst(this.connectionReadTimeoutHandler);
 			LOGGER.log(Level.FINE, "Added ConnectionReadTimeoutHandler");
 			this.messageDispatcher.setBeforeLastHandlerHook(messageType -> {

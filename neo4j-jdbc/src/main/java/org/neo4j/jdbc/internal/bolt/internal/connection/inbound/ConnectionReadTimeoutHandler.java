@@ -26,16 +26,23 @@ import org.neo4j.jdbc.internal.bolt.exception.ConnectionReadTimeoutException;
 
 public final class ConnectionReadTimeoutHandler extends ReadTimeoutHandler {
 
+	private final long timeout;
+
+	private final TimeUnit unit;
+
 	private boolean triggered;
 
 	public ConnectionReadTimeoutHandler(long timeout, TimeUnit unit) {
 		super(timeout, unit);
+		this.timeout = timeout;
+		this.unit = unit;
 	}
 
 	@Override
 	protected void readTimedOut(ChannelHandlerContext ctx) {
 		if (!this.triggered) {
-			ctx.fireExceptionCaught(ConnectionReadTimeoutException.INSTANCE);
+			ctx.fireExceptionCaught(new ConnectionReadTimeoutException(String
+				.format("Connection read timed out due to it taking longer than %s %s.", this.timeout, this.unit)));
 			ctx.close();
 			this.triggered = true;
 		}

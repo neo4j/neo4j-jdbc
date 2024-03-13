@@ -20,6 +20,7 @@ package org.neo4j.jdbc.internal.bolt.internal;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -101,6 +102,16 @@ public final class BoltConnectionImpl implements BoltConnection {
 	@Override
 	public CompletionStage<Void> close() {
 		return this.protocol.close(this.connection);
+	}
+
+	@Override
+	public Optional<Long> defaultReadTimeoutMillis() {
+		return this.connection.defaultReadTimeoutMillis();
+	}
+
+	@Override
+	public void setReadTimeoutMillis(Long timeout) {
+		this.connection.setReadTimeoutMillis(timeout);
 	}
 
 	@Override

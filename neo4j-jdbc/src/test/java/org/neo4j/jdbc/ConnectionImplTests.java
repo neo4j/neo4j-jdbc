@@ -664,11 +664,6 @@ class ConnectionImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.createStruct("ignored", new Object[0]),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of(
-						(ConnectionMethodRunner) connection -> connection.setNetworkTimeout(mock(Executor.class), 1),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((ConnectionMethodRunner) Connection::getNetworkTimeout,
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setShardingKeyIfValid(null, null, 0),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setShardingKeyIfValid(null, 0),
@@ -721,6 +716,53 @@ class ConnectionImplTests {
 				Arguments.of(Neo4jConnection.class, true), Arguments.of(Wrapper.class, true),
 				Arguments.of(AutoCloseable.class, true), Arguments.of(Object.class, true),
 				Arguments.of(Statement.class, false));
+	}
+
+	@Test
+	void shouldHaveZeroNetworkTimeout() {
+		// given
+		var connection = makeConnection(mock(BoltConnection.class));
+
+		// when & then
+		assertThat(connection.getNetworkTimeout()).isEqualTo(0);
+	}
+
+	@Test
+	void shouldSetNetworkTimeout() throws SQLException {
+		// given
+		var connection = makeConnection(mock(BoltConnection.class));
+
+		// when
+		var timeout = 1000;
+		connection.setNetworkTimeout(mock(Executor.class), timeout);
+
+		// then
+		assertThat(connection.getNetworkTimeout()).isEqualTo(timeout);
+	}
+
+	@Test
+	// this is not required by JDBC
+	void shouldSetNetworkTimeoutWithNullExecutor() throws SQLException {
+		// given
+		var connection = makeConnection(mock(BoltConnection.class));
+
+		// when
+		var timeout = 1000;
+		connection.setNetworkTimeout(null, timeout);
+
+		// then
+		assertThat(connection.getNetworkTimeout()).isEqualTo(timeout);
+	}
+
+	@Test
+	void shouldNotAcceptNegativeNetworkTimeout() {
+		// given
+		var connection = makeConnection(mock(BoltConnection.class));
+
+		// when & then
+		assertThatThrownBy(() -> connection.setNetworkTimeout(mock(Executor.class), -1))
+			.isExactlyInstanceOf(SQLException.class);
+		assertThat(connection.getNetworkTimeout()).isEqualTo(0);
 	}
 
 	@FunctionalInterface

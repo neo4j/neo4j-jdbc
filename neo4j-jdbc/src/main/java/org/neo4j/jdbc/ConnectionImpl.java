@@ -18,6 +18,9 @@
  */
 package org.neo4j.jdbc;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -37,10 +40,12 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -49,10 +54,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.neo4j.jdbc.internal.bolt.AccessMode;
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.jdbc.internal.bolt.TransactionType;
+import org.neo4j.jdbc.internal.bolt.exception.ConnectionReadTimeoutException;
 import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.translator.spi.Cache;
@@ -68,9 +76,15 @@ import org.neo4j.jdbc.translator.spi.Translator;
  */
 final class ConnectionImpl implements Neo4jConnection {
 
+	private static final Logger LOGGER = Logger.getLogger(Neo4jConnection.class.getCanonicalName());
+
 	private static final int TRANSLATION_CACHE_SIZE = 128;
 
 	private final BoltConnection boltConnection;
+
+	private final Set<Reference<Statement>> trackedStatementReferences = new HashSet<>();
+
+	private final ReferenceQueue<Statement> trackedStatementReferenceQueue = new ReferenceQueue<>();
 
 	private final Lazy<List<Translator>> translators;
 
@@ -91,6 +105,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	private boolean autoCommit = true;
 
 	private boolean readOnly;
+
+	private int networkTimeout;
 
 	private final Warnings warnings = new Warnings();
 
@@ -385,7 +401,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
 		var localWarnings = new Warnings();
-		return new StatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings);
+		return trackStatement(
+				new StatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings));
 	}
 
 	@Override
@@ -405,8 +422,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		else {
 			decoratedTranslator = translator;
 		}
-		return new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator, localWarnings,
-				this.rewriteBatchedStatements, sql);
+		return trackStatement(new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator, localWarnings,
+				this.rewriteBatchedStatements, sql));
 	}
 
 	@Override
@@ -415,7 +432,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		return CallableStatementImpl.prepareCall(this, this::getTransaction, this.rewriteBatchedStatements, sql);
+		return trackStatement(
+				CallableStatementImpl.prepareCall(this, this::getTransaction, this.rewriteBatchedStatements, sql));
 	}
 
 	private static void assertValidResultSetHoldability(int resultSetHoldability) throws SQLException {
@@ -499,8 +517,12 @@ final class ConnectionImpl implements Neo4jConnection {
 			}
 			catch (ExecutionException ex) {
 				var cause = ex.getCause();
+				if (cause == null) {
+					cause = ex;
+				}
 				if (!(cause instanceof Neo4jException) && !(cause instanceof MessageIgnoredException)) {
 					this.fatalException = new SQLException("The connection is no longer valid.", ex);
+					handleFatalException(this.fatalException, new SQLException(cause));
 				}
 				return false;
 			}
@@ -599,12 +621,26 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		if (milliseconds < 0) {
+			throw new SQLException("The network timeout must not be negative.");
+		}
+		this.networkTimeout = milliseconds;
+		if (milliseconds == 0) {
+			this.boltConnection.defaultReadTimeoutMillis()
+				.ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
+						"setNetworkTimeout has been called with 0, will use the Bolt server default of %d milliseconds.",
+						defaultTimeout)));
+			this.boltConnection.setReadTimeoutMillis(0L);
+		}
+		else {
+			this.boltConnection.setReadTimeoutMillis((long) this.networkTimeout);
+		}
 	}
 
 	@Override
-	public int getNetworkTimeout() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getNetworkTimeout() {
+		return this.networkTimeout;
 	}
 
 	@Override
@@ -649,9 +685,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			var transactionType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 			var beginStage = this.boltConnection.beginTransaction(Collections.emptySet(), getAccessMode(),
 					transactionType, false);
-			this.transaction = new DefaultTransactionImpl(this.boltConnection,
-					exception -> this.fatalException = exception, resetStage.thenCompose(ignored -> beginStage),
-					this.autoCommit);
+			this.transaction = new DefaultTransactionImpl(this.boltConnection, this::handleFatalException,
+					resetStage.thenCompose(ignored -> beginStage), this.autoCommit);
 		}
 		return this.transaction;
 	}
@@ -665,6 +700,46 @@ final class ConnectionImpl implements Neo4jConnection {
 		synchronized (this) {
 			this.l2cache.flush();
 			this.translators.resolve().forEach(Translator::flushCache);
+		}
+	}
+
+	private <T extends Statement> T trackStatement(T statement) {
+		purgeClearedStatementReferences();
+		this.trackedStatementReferences.add(new WeakReference<>(statement, this.trackedStatementReferenceQueue));
+		return statement;
+	}
+
+	private void purgeClearedStatementReferences() {
+		var reference = this.trackedStatementReferenceQueue.poll();
+		while (reference != null) {
+			this.trackedStatementReferences.remove(reference);
+			reference = this.trackedStatementReferenceQueue.poll();
+		}
+	}
+
+	private void handleFatalException(SQLException fatalSqlException, SQLException sqlException) {
+		var cause = sqlException.getCause();
+		if (cause instanceof ConnectionReadTimeoutException) {
+			for (var reference : this.trackedStatementReferences) {
+				var statement = reference.get();
+				if (statement != null) {
+					try {
+						statement.close();
+					}
+					catch (Exception ex) {
+						sqlException.addSuppressed(ex);
+					}
+				}
+			}
+			try {
+				close();
+			}
+			catch (SQLException ex) {
+				sqlException.addSuppressed(ex);
+			}
+		}
+		else {
+			this.fatalException = fatalSqlException;
 		}
 	}
 

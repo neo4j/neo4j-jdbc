@@ -36,13 +36,7 @@ public final class ConnectionReadTimeoutException extends BoltException {
 	@Serial
 	private static final long serialVersionUID = -9222586212813330140L;
 
-	/**
-	 * An instance of {@link ConnectionReadTimeoutException}.
-	 */
-	public static final ConnectionReadTimeoutException INSTANCE = new ConnectionReadTimeoutException(
-			"Connection read timed out due to it taking longer than the server-supplied timeout value via configuration hint.");
-
-	private ConnectionReadTimeoutException(String message) {
+	public ConnectionReadTimeoutException(String message) {
 		super(message);
 	}
 

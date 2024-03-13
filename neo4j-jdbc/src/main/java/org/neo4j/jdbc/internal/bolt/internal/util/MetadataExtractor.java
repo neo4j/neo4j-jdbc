@@ -106,7 +106,7 @@ public final class MetadataExtractor {
 
 	public static String extractBookmark(Map<String, Value> metadata) {
 		var bookmarkValue = metadata.get("bookmark");
-		return bookmarkValue.asString();
+		return (bookmarkValue != null) ? bookmarkValue.asString() : null;
 	}
 
 	public static ResultSummary extractSummary(Map<String, Value> metadata) {

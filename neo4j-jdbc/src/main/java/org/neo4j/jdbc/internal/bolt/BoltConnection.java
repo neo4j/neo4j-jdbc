@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.internal.bolt;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 
@@ -150,5 +151,9 @@ public interface BoltConnection {
 	 * @return currently connected DB name
 	 */
 	String getDatabaseName();
+
+	Optional<Long> defaultReadTimeoutMillis();
+
+	void setReadTimeoutMillis(Long timeout);
 
 }

@@ -16,26 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.internal.bolt.internal;
+package org.neo4j.jdbc.stub.it.server;
 
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
-
-import org.neo4j.jdbc.internal.bolt.internal.handler.ResponseHandler;
-import org.neo4j.jdbc.internal.bolt.internal.messaging.Message;
-
-public interface Connection {
-
-	void write(Message message, ResponseHandler handler, boolean flush);
-
-	BoltProtocol protocol();
-
-	String databaseName();
-
-	Optional<Long> defaultReadTimeoutMillis();
-
-	void setReadTimeoutMillis(Long timeout);
-
-	CompletionStage<Void> close();
-
+record StubScriptConfig(String path) {
 }
