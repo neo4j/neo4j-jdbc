@@ -31,6 +31,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -45,7 +46,8 @@ public abstract class IntegrationTestBase {
 				new ImageFromDockerfile().withFileFromClasspath("scripts", "docker/scripts")
 					.withFileFromClasspath("entrypoint.sh", "docker/entrypoint.sh")
 					.withFileFromClasspath("Dockerfile", "docker/Dockerfile"))
-			.withExposedPorts(7687);
+			.withExposedPorts(7687)
+			.waitingFor(Wait.forLogMessage("^Listening\\n$", 1));
 	}
 
 	private final GenericContainer<?> stubServer;
