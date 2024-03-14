@@ -104,6 +104,8 @@ final class SqlToCypher implements Translator {
 		System.setProperty("org.jooq.no-tips", "true");
 	}
 
+	private static final Map<String, String> FUNCTION_MAPPING = Map.of("strpos", "apoc.text.indexOf");
+
 	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
 
 	private static final int STATEMENT_CACHE_SIZE = 64;
@@ -932,9 +934,7 @@ final class SqlToCypher implements Translator {
 				return Cypher.literalNull();
 			}
 			else if (f instanceof QOM.Function<?> func) {
-				Function<Field<?>, Expression> asExpression = v -> expression(v, true);
-				var args = func.$args().stream().map(asExpression).toArray(Expression[]::new);
-				return Cypher.call(func.getName()).withArgs(args).asFunction();
+				return buildFunction(func);
 			}
 			else if (f instanceof QOM.Excluded<?> excluded
 					&& this.columnsAndValues.containsKey(excluded.$field().getName())) {
@@ -955,9 +955,28 @@ final class SqlToCypher implements Translator {
 			else if (f instanceof Asterisk) {
 				return Cypher.asterisk();
 			}
+			else if (f instanceof QOM.Min<?> m) {
+				return Cypher.min(expression(m.$field()));
+			}
+			else if (f instanceof QOM.Max<?> m) {
+				return Cypher.max(expression(m.$field()));
+			}
+			else if (f instanceof QOM.Position p) {
+				return Cypher.call(FUNCTION_MAPPING.get("strpos"))
+					.withArgs(expression(p.$in()), expression(p.$arg2()))
+					.asFunction();
+			}
 			else {
 				throw unsupported(f);
 			}
+		}
+
+		private Expression buildFunction(QOM.Function<?> func) {
+			Function<Field<?>, Expression> asExpression = v -> expression(v, true);
+			var args = func.$args().stream().map(asExpression).toArray(Expression[]::new);
+			return Cypher.call(FUNCTION_MAPPING.getOrDefault(func.getName().toLowerCase(Locale.ROOT), func.getName()))
+				.withArgs(args)
+				.asFunction();
 		}
 
 		private <T> Condition condition(org.jooq.Condition c) {
