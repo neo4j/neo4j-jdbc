@@ -174,7 +174,7 @@
 		<mockito.version>5.11.0</mockito.version>
 		<moditect-maven-plugin.version>1.2.0.Final</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.10.1</native-maven-plugin.version>
-		<neo4j-cypher-dsl.version>2023.9.4</neo4j-cypher-dsl.version>
+		<neo4j-cypher-dsl.version>2023.9.5</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>5.0.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.15.0</neo4j.version>
@@ -216,6 +216,13 @@
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-bom</artifactId>
 				<version>${mockito.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-cypher-dsl-bom</artifactId>
+				<version>${neo4j-cypher-dsl.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -267,21 +274,6 @@
 				<groupId>org.jooq</groupId>
 				<artifactId>jooq</artifactId>
 				<version>${jooq.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.neo4j</groupId>
-				<artifactId>neo4j-cypher-dsl</artifactId>
-				<version>${neo4j-cypher-dsl.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.neo4j</groupId>
-				<artifactId>neo4j-cypher-dsl-parser</artifactId>
-				<version>${neo4j-cypher-dsl.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.neo4j</groupId>
-				<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
-				<version>${neo4j-cypher-dsl.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
