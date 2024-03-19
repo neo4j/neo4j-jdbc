@@ -229,7 +229,7 @@ Several advanced SQL expressions are supported as well, such as
 
 The simple `CASE` expressions
 
-[source,sql,id=e7_0,name=select_with_string_functions]
+[source,sql,id=e7_0,name=select_with_string_functions_case_s]
 ----
 SELECT
     CASE 1 WHEN 2 THEN 3 END,
@@ -240,7 +240,7 @@ SELECT
 
 which will be translated to
 
-[source,cypher,id=e7_0_expected]
+[source,cypher,id=e7_0_expected,parseCypher=false]
 ----
 RETURN CASE 1 WHEN 2 THEN 3 END, CASE 1 WHEN 2 THEN 3 ELSE 4 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
 ----
@@ -249,7 +249,7 @@ RETURN CASE 1 WHEN 2 THEN 3 END, CASE 1 WHEN 2 THEN 3 ELSE 4 END, CASE 1 WHEN 2 
 
 And `CASE` statement using a search (See https://neo4j.com/docs/cypher-manual/current/syntax/expressions[expressions] for more information):
 
-[source,sql,id=e7_1,name=select_with_string_functions]
+[source,sql,id=e7_1,name=select_with_string_functions_case_a]
 ----
 SELECT
     CASE WHEN 1 = 2 THEN 3 END,
