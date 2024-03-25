@@ -155,7 +155,7 @@
 		<junit-jupiter.version>5.10.2</junit-jupiter.version>
 		<license-maven-plugin.version>4.3</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
-		<maven-assembly-plugin.version>3.7.0</maven-assembly-plugin.version>
+		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
 		<maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 		<maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
 		<maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
