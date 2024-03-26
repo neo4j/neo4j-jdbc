@@ -315,7 +315,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		for (String param : urlParams) {
 			var matcher = pattern.matcher(param);
 			if (matcher.matches()) {
-				result.put(matcher.group("name"), matcher.group("value"));
+				var name = java.net.URLDecoder.decode(matcher.group("name"), java.nio.charset.StandardCharsets.UTF_8);
+				var value = java.net.URLDecoder.decode(matcher.group("value"), java.nio.charset.StandardCharsets.UTF_8);
+				result.put(name, value);
 			}
 		}
 

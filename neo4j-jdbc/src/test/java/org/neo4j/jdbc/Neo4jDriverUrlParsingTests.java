@@ -248,6 +248,19 @@ class Neo4jDriverUrlParsingTests {
 	}
 
 	@Test
+	void driverMustUnescapeURL() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		driver.connect("jdbc:neo4j://host?user=user%3D&password=%26pass%3D%20word%3F", new Properties());
+
+		var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?");
+
+		then(this.boltConnectionProvider).should()
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), eq(expectedAuthToken), any(),
+					any(), anyInt());
+	}
+
+	@Test
 	void driverMustUsePropsIfUrlParamsEmpty() throws SQLException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
