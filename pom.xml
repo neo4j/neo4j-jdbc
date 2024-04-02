@@ -135,7 +135,7 @@
 		<asciidoctorj.version>2.5.12</asciidoctorj.version>
 		<assertj.version>3.25.3</assertj.version>
 		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-		<checkstyle.version>10.14.2</checkstyle.version>
+		<checkstyle.version>10.15.0</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
