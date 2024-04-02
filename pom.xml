@@ -172,7 +172,7 @@
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
 		<mockito.version>5.11.0</mockito.version>
-		<moditect-maven-plugin.version>1.2.0.Final</moditect-maven-plugin.version>
+		<moditect-maven-plugin.version>1.2.1.Final</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.10.1</native-maven-plugin.version>
 		<neo4j-cypher-dsl.version>2023.9.5</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>5.0.0</neo4j-jdbc.previous.version>
