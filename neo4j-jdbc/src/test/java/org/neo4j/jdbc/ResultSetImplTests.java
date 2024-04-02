@@ -664,8 +664,11 @@ class ResultSetImplTests {
 		this.resultSet.next();
 
 		// when & then
-		verificationLogic.run(() -> indexAccess ? this.resultSet.getTime(INDEX, Calendar.getInstance())
-				: this.resultSet.getTime(LABEL, Calendar.getInstance()));
+		var cal = Calendar.getInstance();
+		cal.set(Calendar.MONTH, 2);
+		cal.set(Calendar.DATE, 1);
+		verificationLogic
+			.run(() -> indexAccess ? this.resultSet.getTime(INDEX, cal) : this.resultSet.getTime(LABEL, cal));
 	}
 
 	private static Stream<Arguments> getTimeWithCalendarArgs() {

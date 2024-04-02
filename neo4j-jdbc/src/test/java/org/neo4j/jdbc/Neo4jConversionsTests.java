@@ -115,6 +115,8 @@ class Neo4jConversionsTests {
 	void asTimeWithCalendar(Value value, String expected, Class<? extends SQLException> expectedExceptionType)
 			throws SQLException {
 		var cal = Calendar.getInstance(TimeZone.getTimeZone(ZoneId.of("Europe/Berlin")));
+		cal.set(Calendar.MONTH, 2);
+		cal.set(Calendar.DATE, 1);
 
 		if (expectedExceptionType != null) {
 			assertThatExceptionOfType(expectedExceptionType).isThrownBy(() -> Neo4jConversions.asTime(value, cal))
