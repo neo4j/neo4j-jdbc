@@ -20,6 +20,8 @@ package org.neo4j.jdbc;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.sql.Connection;
@@ -60,6 +62,7 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
  * this class directly, it registers automatically with the {@link DriverManager}.
  *
  * @author Michael J. Simons
+ * @author Rouven Bauer
  * @since 6.0.0
  */
 public final class Neo4jDriver implements Neo4jDriverExtensions {
@@ -315,7 +318,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		for (String param : urlParams) {
 			var matcher = pattern.matcher(param);
 			if (matcher.matches()) {
-				result.put(matcher.group("name"), matcher.group("value"));
+				var name = URLDecoder.decode(matcher.group("name"), StandardCharsets.UTF_8);
+				var value = URLDecoder.decode(matcher.group("value"), StandardCharsets.UTF_8);
+				result.put(name, value);
 			}
 		}
 
