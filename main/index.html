@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 809083e,</span>
-<span id="revdate">2024-04-04T06:43:31Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 3421d34,</span>
+<span id="revdate">2024-04-04T06:55:56Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -1314,9 +1314,9 @@ The class is public API.</p>
 </div>
 <div class="paragraph">
 <p>The database name and any query parameters are optional and can be omitted.
-All configuration arguments, except username and password, can be passed either as query parameters or via a <code>java.util.Properties</code> object.
+All configuration arguments, can be passed either as query parameters or via a <code>java.util.Properties</code> object.
 The latter is sometimes defined by tooling for you.
-With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.
+With regard to authentication it&#8217;s highly recommended to follow the JDBC spec, which discourages using any form of URL authentication.
 All query parameters must be <a href="https://en.wikipedia.org/wiki/Percent-encoding">percent-encoded</a> if they contain special characters, e.g., <code>&#8230;&#8203;?param1=space%20separated</code>.</p>
 </div>
 <div class="admonitionblock tip">
@@ -1396,6 +1396,18 @@ There is no need to specify <code>bolt</code> or other additional prefixes in th
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Enum&lt;SSLMode&gt;</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">An optional configuration for fine-grained control over SSL configuration. Allowed values are <code>disable</code>, <code>require</code>, <code>verify-full</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>user</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The username (principal) to use for authentication. <strong>NOT RECOMMENDED</strong> for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>neo4j</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>password</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The password (credentials) to use for authentication. <strong>NOT RECOMMENDED</strong> for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>password</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -3864,8 +3876,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 809083e<br>
-Last updated 2024-04-04 06:43:35 UTC
+Version 6.0.0-SNAPSHOT 3421d34<br>
+Last updated 2024-04-04 06:56:02 UTC
 </div>
 </div>
 </body>
