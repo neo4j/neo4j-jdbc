@@ -21,6 +21,7 @@ The database name and any query parameters are optional and can be omitted.
 All configuration arguments, except username and password, can be passed either as query parameters or via a `java.util.Properties` object.
 The latter is sometimes defined by tooling for you.
 With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.
+All query parameters must be https://en.wikipedia.org/wiki/Percent-encoding[percent-encoded] if they contain special characters, e.g., `...?param1=space%20separated`.
 
 TIP: There is no need to specify `bolt` or other additional prefixes in the URL, as a matter of fact: The driver does not support this.
      It does however support adding details about the transport being used:
