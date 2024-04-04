@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 42a9fe7,</span>
-<span id="revdate">2024-04-02T09:09:46Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 809083e,</span>
+<span id="revdate">2024-04-04T06:43:31Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -1316,7 +1316,8 @@ The class is public API.</p>
 <p>The database name and any query parameters are optional and can be omitted.
 All configuration arguments, except username and password, can be passed either as query parameters or via a <code>java.util.Properties</code> object.
 The latter is sometimes defined by tooling for you.
-With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.</p>
+With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.
+All query parameters must be <a href="https://en.wikipedia.org/wiki/Percent-encoding">percent-encoded</a> if they contain special characters, e.g., <code>&#8230;&#8203;?param1=space%20separated</code>.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -3863,8 +3864,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 42a9fe7<br>
-Last updated 2024-04-02 09:09:51 UTC
+Version 6.0.0-SNAPSHOT 809083e<br>
+Last updated 2024-04-04 06:43:35 UTC
 </div>
 </div>
 </body>
