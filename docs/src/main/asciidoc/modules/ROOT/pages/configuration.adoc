@@ -18,9 +18,9 @@ jdbc:neo4j://<host>:<port>/<database>?param1=value1&param2=value2
 ----
 
 The database name and any query parameters are optional and can be omitted.
-All configuration arguments, except username and password, can be passed either as query parameters or via a `java.util.Properties` object.
+All configuration arguments, can be passed either as query parameters or via a `java.util.Properties` object.
 The latter is sometimes defined by tooling for you.
-With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.
+With regard to authentication it's highly recommended to follow the JDBC spec, which discourages using any form of URL authentication.
 All query parameters must be https://en.wikipedia.org/wiki/Percent-encoding[percent-encoded] if they contain special characters, e.g., `...?param1=space%20separated`.
 
 TIP: There is no need to specify `bolt` or other additional prefixes in the URL, as a matter of fact: The driver does not support this.
@@ -69,6 +69,16 @@ The driver accepts the following configuration arguments, either properties or a
 |`Enum<SSLMode>`
 |An optional configuration for fine-grained control over SSL configuration. Allowed values are `disable`, `require`, `verify-full`.
 |`null`
+
+|`user`
+|`String`
+|The username (principal) to use for authentication. *NOT RECOMMENDED* for security reasons.
+|`neo4j`
+
+|`password`
+|`String`
+|The password (credentials) to use for authentication. *NOT RECOMMENDED* for security reasons.
+|`password`
 
 |===
 
