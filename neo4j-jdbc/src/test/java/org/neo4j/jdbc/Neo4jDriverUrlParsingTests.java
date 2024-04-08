@@ -19,9 +19,11 @@
 package org.neo4j.jdbc;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.jdbc.internal.bolt.AuthToken;
 import org.neo4j.jdbc.internal.bolt.AuthTokens;
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.jdbc.internal.bolt.BoltConnectionProvider;
@@ -37,6 +40,7 @@ import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -292,17 +296,20 @@ class Neo4jDriverUrlParsingTests {
 				case "host" -> assertThat(info.value).isEqualTo("host");
 				case "port" -> assertThat(info.value).isEqualTo("1234");
 				case "database" -> assertThat(info.value).isEqualTo("customDb");
+				case "authScheme" -> assertThat(info.value).isEqualTo("basic");
 				case "user" -> assertThat(info.value).isEqualTo("neo4j");
 				case "password" -> assertThat(info.value).isEqualTo("password");
+				case "authRealm" -> assertThat(info.value).isEqualTo("");
 				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
 				case "timeout" -> assertThat(info.value).isEqualTo("1000");
 				case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
 					assertThat(info.value).isEqualTo("false");
 				case "rewriteBatchedStatements" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
-				default -> assertThat(info.name).isIn("host", "port", "database", "user", "password", "agent",
-						"timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"s2c.enableCache", "rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
+				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
+						"authRealm", "agent", "timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames",
+						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode",
+						"cacheSQLTranslations");
 			}
 		}
 	}
@@ -327,8 +334,10 @@ class Neo4jDriverUrlParsingTests {
 
 		Properties props = new Properties();
 		props.put("user", "user1");
+		props.put("authScheme", "basic");
 		props.put("password", "user1Password");
 		props.put("database", "customDb");
+		props.put("authRealm", "myRealm");
 		props.put("timeout", "2000");
 		props.put("enableSQLTranslation", "true");
 		props.put("rewriteBatchedStatements", "false");
@@ -343,8 +352,10 @@ class Neo4jDriverUrlParsingTests {
 				case "host" -> assertThat(info.value).isEqualTo("host");
 				case "port" -> assertThat(info.value).isEqualTo("1234");
 				case "database" -> assertThat(info.value).isEqualTo("customDb");
+				case "authScheme" -> assertThat(info.value).isEqualTo("basic");
 				case "user" -> assertThat(info.value).isEqualTo("user1");
 				case "password" -> assertThat(info.value).isEqualTo("user1Password");
+				case "authRealm" -> assertThat(info.value).isEqualTo("myRealm");
 				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
 				case "timeout" -> assertThat(info.value).isEqualTo("2000");
 				case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
@@ -352,11 +363,54 @@ class Neo4jDriverUrlParsingTests {
 					assertThat(info.value).isEqualTo("false");
 				case "enableSQLTranslation" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
-				default -> assertThat(info.name).isIn("host", "port", "database", "user", "password", "agent",
-						"timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"s2c.enableCache", "rewriteBatchedStatements", "sslMode");
+				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
+						"agent", "authRealm", "timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames",
+						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode");
 			}
 		}
+	}
+
+	@ParameterizedTest
+	@MethodSource("authSchemeProvider")
+	void testAuthSchemesInfo(Properties props) throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
+
+		for (var info : infos) {
+			var expected = props.getProperty(info.name);
+			if (expected == null) {
+				continue;
+			}
+			assertThat(info.value).isEqualTo(expected);
+		}
+
+		var infoNames = Arrays.stream(infos).map(info -> info.name).collect(Collectors.toSet());
+		assertThat(infoNames).containsAll(props.stringPropertyNames());
+	}
+
+	@ParameterizedTest
+	@MethodSource("authSchemeProvider")
+	void driverMustParseUrlParamsWithHostAndPortAndDatabase(Properties props, AuthToken expectedAuthToken)
+			throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		driver.connect("jdbc:neo4j://host:1000/database", props);
+
+		then(this.boltConnectionProvider).should()
+			.connect(any(), any(), any(), eq(expectedAuthToken), any(), any(), anyInt());
+	}
+
+	@Test
+	void testUnknownAuthSchemeInfo() {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		var props = new Properties();
+		props.put("authScheme", "foobar");
+
+		assertThatThrownBy(() -> driver.getPropertyInfo("jdbc:neo4j://host:1234", props))
+			.isInstanceOf(SQLException.class)
+			.hasMessageContaining("Unknown auth scheme: foobar");
 	}
 
 	private static Stream<Arguments> jdbcURLProvider() {
@@ -364,6 +418,32 @@ class Neo4jDriverUrlParsingTests {
 				Arguments.of("jdbc:neo4j://host/neo4j", "host", DEFAULT_BOLT_PORT),
 				Arguments.of("jdbc:neo4j://host:1000", "host", 1000),
 				Arguments.of("jdbc:neo4j://host:1000/neo4j", "host", 1000));
+	}
+
+	private static Stream<Arguments> authSchemeProvider() {
+		var propsNone = new Properties();
+		propsNone.put("authScheme", "none");
+		var tokenNone = AuthTokens.none();
+
+		var propsBasic = new Properties();
+		propsBasic.put("authScheme", "basic");
+		propsBasic.put("user", "user1");
+		propsBasic.put("password", "user1Password");
+		propsBasic.put("authRealm", "user1Realm");
+		var tokenBasic = AuthTokens.basic("user1", "user1Password", "user1Realm");
+
+		var propsKerberos = new Properties();
+		propsKerberos.put("authScheme", "kerberos");
+		propsKerberos.put("password", "myTicket");
+		var tokenKerberos = AuthTokens.kerberos("myTicket");
+
+		var propsBearer = new Properties();
+		propsBearer.put("authScheme", "bearer");
+		propsBearer.put("password", "myToken");
+		var tokenBearer = AuthTokens.bearer("myToken");
+
+		return Stream.of(Arguments.of(propsBasic, tokenBasic), Arguments.of(propsNone, tokenNone),
+				Arguments.of(propsKerberos, tokenKerberos), Arguments.of(propsBearer, tokenBearer));
 	}
 
 }
