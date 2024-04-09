@@ -72,22 +72,22 @@ The driver accepts the following configuration arguments, either properties or a
 
 |`user`
 |`String`
-|The username (principal) to use for authentication. *NOT RECOMMENDED* for security reasons.
+|The username (principal) to use for authentication. *NOT RECOMMENDED* as URL query parameter for security reasons.
 |`neo4j`
 
 |`password`
 |`String`
-|The password (credentials) to use for authentication. *NOT RECOMMENDED* for security reasons.
+|The password (credentials) to use for authentication. *NOT RECOMMENDED* as URL query parameter for security reasons.
 |`password`
 
 |`authRealm`
 |`String`
-|The realm to use for authentication. *NOT RECOMMENDED* for security reasons.
+|The realm to use for authentication. *NOT RECOMMENDED* as URL query parameter for security reasons.
 |`null`
 
 |`authScheme`
 |`String`
-a|The authentication scheme to use. *NOT RECOMMENDED* for security reasons. Currently supported values are:
+a|The authentication scheme to use. *NOT RECOMMENDED* as URL query parameter for security reasons. Currently supported values are:
 
 * `basic` for basic authentication.
 * `none` for no authentication. The properties `user`, `password` and `authRealm` have no effect.
