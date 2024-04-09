@@ -359,6 +359,24 @@ class Neo4jDriverUrlParsingTests {
 		}
 	}
 
+	@Test
+	void testWronglyTypePropertyIsIgnored() throws SQLException {
+		var driver = new Neo4jDriver(this.boltConnectionProvider);
+
+		Properties props = new Properties();
+		props.put("user", 1);
+
+		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
+		for (var info : infos) {
+			if (!info.name.equals("user")) {
+				continue;
+			}
+			// invalid property type is being ignored - using default instead.
+			assertThat(info.value).isEqualTo("neo4j");
+		}
+
+	}
+
 	private static Stream<Arguments> jdbcURLProvider() {
 		return Stream.of(Arguments.of("jdbc:neo4j://host", "host", DEFAULT_BOLT_PORT),
 				Arguments.of("jdbc:neo4j://host/neo4j", "host", DEFAULT_BOLT_PORT),
