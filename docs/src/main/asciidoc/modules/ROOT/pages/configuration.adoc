@@ -89,7 +89,7 @@ The driver accepts the following configuration arguments, either properties or a
 |`String`
 a|The authentication scheme to use. *NOT RECOMMENDED* as URL query parameter for security reasons. Currently supported values are:
 
-* `basic` for basic authentication.
+* `basic` (default) for basic authentication.
 * `none` for no authentication. The properties `user`, `password` and `authRealm` have no effect.
 * `bearer` for bearer authentication (SSO). `password` should be set to the bearer token; `user` and `authRealm` have no effect.
 * `kerberos` for kerberos authentication. Requires `password` to be set to the kerberos ticket; `user` and `authRealm` have no effect.
