@@ -339,7 +339,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var result = new HashMap<String, String>();
 		for (Object key : jdbcProperties.keySet()) {
 			if (key instanceof String name) {
-				result.put(name, jdbcProperties.getProperty(name));
+				var value = jdbcProperties.getProperty(name);
+				if (value == null) {
+					continue;
+				}
+				result.put(name, value);
 			}
 		}
 		var regex = "^(?<name>\\S+)=(?<value>\\S+)$";
