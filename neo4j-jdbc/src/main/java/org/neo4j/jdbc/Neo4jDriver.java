@@ -777,6 +777,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return factories.stream().map(factory -> factory.create(config)).sorted(TranslatorComparator.INSTANCE).toList();
 	}
 
+	private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
+		if (scheme == null || scheme.isBlank()) {
+			return AuthScheme.BASIC;
+		}
+
+		try {
+			return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
+		}
+		catch (IllegalArgumentException ignored) {
+			throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
+		}
+	}
+
 	enum SSLMode {
 
 		DISABLE("disable"), REQUIRE("require"), VERIFY_FULL("verify-full");
@@ -820,19 +833,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			return this.name;
 		}
 
-	}
-
-	private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
-		if (scheme == null || scheme.isBlank()) {
-			return AuthScheme.BASIC;
-		}
-
-		try {
-			return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
-		}
-		catch (IllegalArgumentException ignored) {
-			throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
-		}
 	}
 
 	/**
