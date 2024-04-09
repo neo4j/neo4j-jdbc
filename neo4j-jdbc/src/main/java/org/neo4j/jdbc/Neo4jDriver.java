@@ -301,10 +301,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var authRealm = (driverConfig.authRealm == null || driverConfig.authRealm.isBlank()) ? null
 				: driverConfig.authRealm;
 		var authToken = switch (driverConfig.authScheme) {
-			case AUTH_SCHEME_NONE -> AuthTokens.none();
-			case AUTH_SCHEME_BASIC -> AuthTokens.basic(user, password, authRealm);
-			case AUTH_SCHEME_BEARER -> AuthTokens.bearer(password);
-			case AUTH_SCHEME_KERBEROS -> AuthTokens.kerberos(password);
+			case NONE -> AuthTokens.none();
+			case BASIC -> AuthTokens.basic(user, password, authRealm);
+			case BEARER -> AuthTokens.bearer(password);
+			case KERBEROS -> AuthTokens.kerberos(password);
 		};
 
 		var boltAgent = BoltAgentUtil.boltAgent();
@@ -397,12 +397,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		passwordPropInfo.required = false;
 		driverPropertyInfos.add(passwordPropInfo);
 
-		var authSchemePropInfo = new DriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.toString());
+		var authSchemePropInfo = new DriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.getName());
 		authSchemePropInfo.description = "The authentication scheme to use. Defaults to 'basic'.";
 		authSchemePropInfo.required = false;
-		authSchemePropInfo.choices = Arrays.stream(AuthScheme.values())
-			.map(AuthScheme::toString)
-			.toArray(String[]::new);
+		authSchemePropInfo.choices = Arrays.stream(AuthScheme.values()).map(AuthScheme::getName).toArray(String[]::new);
 		driverPropertyInfos.add(authSchemePropInfo);
 
 		var authRealmPropInfo = new DriverPropertyInfo(PROPERTY_AUTH_REALM, parsedConfig.authRealm);
@@ -501,7 +499,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var sslProperties = parseSSLProperties(info, matcher.group("transport"));
 		var misc = new HashMap<>(config);
 
-		var authScheme = AuthScheme.parse(config.getOrDefault(PROPERTY_AUTH_SCHEME, "basic"));
+		var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
 		misc.remove(PROPERTY_AUTH_SCHEME);
 
 		var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
@@ -810,31 +808,31 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private enum AuthScheme {
 
-		AUTH_SCHEME_NONE, AUTH_SCHEME_BASIC, AUTH_SCHEME_BEARER, AUTH_SCHEME_KERBEROS;
+		NONE("none"), BASIC("basic"), BEARER("bearer"), KERBEROS("kerberos");
 
-		static AuthScheme parse(String scheme) throws SQLException {
-			if (scheme == null || scheme.isBlank()) {
-				return AUTH_SCHEME_BASIC;
-			}
+		private final String name;
 
-			return switch (scheme) {
-				case "none" -> AUTH_SCHEME_NONE;
-				case "basic" -> AUTH_SCHEME_BASIC;
-				case "bearer" -> AUTH_SCHEME_BEARER;
-				case "kerberos" -> AUTH_SCHEME_KERBEROS;
-				default -> throw new SQLException("Unknown auth scheme: " + scheme);
-			};
+		AuthScheme(String name) {
+			this.name = name;
 		}
 
-		public String toString() {
-			return switch (this) {
-				case AUTH_SCHEME_NONE -> "none";
-				case AUTH_SCHEME_BASIC -> "basic";
-				case AUTH_SCHEME_BEARER -> "bearer";
-				case AUTH_SCHEME_KERBEROS -> "kerberos";
-			};
+		public String getName() {
+			return this.name;
 		}
 
+	}
+
+	private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
+		if (scheme == null || scheme.isBlank()) {
+			return AuthScheme.BASIC;
+		}
+
+		try {
+			return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
+		}
+		catch (IllegalArgumentException ignored) {
+			throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
+		}
 	}
 
 	/**
@@ -872,7 +870,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			props.put(PROPERTY_USER, this.user);
 			props.put(PROPERTY_USER_AGENT, this.agent);
 			props.put(PROPERTY_PASSWORD, this.password);
-			props.put(PROPERTY_AUTH_SCHEME, this.authScheme.toString());
+			props.put(PROPERTY_AUTH_SCHEME, this.authScheme.getName());
 			props.put(PROPERTY_AUTH_REALM, this.authRealm);
 			props.put(PROPERTY_TIMEOUT, String.valueOf(this.timeout));
 			props.put(PROPERTY_REWRITE_BATCHED_STATEMENTS, String.valueOf(this.rewriteBatchedStatements));

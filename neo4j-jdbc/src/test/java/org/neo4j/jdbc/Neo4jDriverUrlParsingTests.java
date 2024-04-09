@@ -409,8 +409,8 @@ class Neo4jDriverUrlParsingTests {
 		props.put("authScheme", "foobar");
 
 		assertThatThrownBy(() -> driver.getPropertyInfo("jdbc:neo4j://host:1234", props))
-			.isInstanceOf(SQLException.class)
-			.hasMessageContaining("Unknown auth scheme: foobar");
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("foobar is not a valid option for authScheme");
 	}
 
 	private static Stream<Arguments> jdbcURLProvider() {
