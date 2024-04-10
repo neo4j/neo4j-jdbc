@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 3f64f28,</span>
-<span id="revdate">2024-04-09T09:43:13Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT ea615d8,</span>
+<span id="revdate">2024-04-10T07:44:18Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -1400,14 +1400,44 @@ There is no need to specify <code>bolt</code> or other additional prefixes in th
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>user</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The username (principal) to use for authentication. <strong>NOT RECOMMENDED</strong> for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The username (principal) to use for authentication. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>neo4j</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>password</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The password (credentials) to use for authentication. <strong>NOT RECOMMENDED</strong> for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The password (credentials) to use for authentication. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>password</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>authRealm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The realm to use for authentication. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>authScheme</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>The authentication scheme to use. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons. Currently supported values are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>basic</code> (default) for basic authentication.</p>
+</li>
+<li>
+<p><code>none</code> for no authentication. The properties <code>user</code>, <code>password</code> and <code>authRealm</code> have no effect.</p>
+</li>
+<li>
+<p><code>bearer</code> for bearer authentication (SSO). <code>password</code> should be set to the bearer token; <code>user</code> and <code>authRealm</code> have no effect.</p>
+</li>
+<li>
+<p><code>kerberos</code> for kerberos authentication. Requires <code>password</code> to be set to the kerberos ticket; <code>user</code> and <code>authRealm</code> have no effect.</p>
+</li>
+</ul>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>basic</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -3876,8 +3906,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 3f64f28<br>
-Last updated 2024-04-09 09:43:18 UTC
+Version 6.0.0-SNAPSHOT ea615d8<br>
+Last updated 2024-04-10 07:44:24 UTC
 </div>
 </div>
 </body>
