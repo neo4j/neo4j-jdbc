@@ -105,6 +105,31 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
+	 * containing the auth scheme.
+	 * <p>
+	 * Currently supported values are:
+	 * <ul>
+	 * <li>{@literal "none"} for no authentication. The properties {@link #PROPERTY_USER},
+	 * {@link #PROPERTY_PASSWORD} and {@link #PROPERTY_AUTH_REALM} have no effect.
+	 * <li>{@literal "basic"} (default) for basic authentication.
+	 * <li>{@literal "bearer"} for bearer authentication (SSO). {@link #PROPERTY_PASSWORD}
+	 * should be set to the bearer token; {@link #PROPERTY_USER} and
+	 * {@link #PROPERTY_AUTH_REALM} have no effect.
+	 * <li>{@literal "kerberos"} for kerberos authentication. Requires
+	 * {@link #PROPERTY_PASSWORD} to be set to the kerberos ticket; {@link #PROPERTY_USER}
+	 * and {@link #PROPERTY_AUTH_REALM} have no effect.
+	 * </ul>
+	 */
+	public static final String PROPERTY_AUTH_SCHEME = "authScheme";
+
+	/**
+	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
+	 * containing the auth realm.
+	 */
+	public static final String PROPERTY_AUTH_REALM = "authRealm";
+
+	/**
+	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
 	 * containing the timeout.
 	 */
 	public static final String PROPERTY_TIMEOUT = "timeout";
@@ -271,12 +296,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		var databaseName = driverConfig.database;
 
-		var user = driverConfig.user;
-		var password = driverConfig.password;
-		var authToken = AuthTokens.none();
-		if (user != null && !user.isBlank() && password != null && !password.isBlank()) {
-			authToken = AuthTokens.basic(user, password);
-		}
+		var user = (driverConfig.user == null || driverConfig.user.isBlank()) ? "" : driverConfig.user;
+		var password = (driverConfig.password == null || driverConfig.password.isBlank()) ? "" : driverConfig.password;
+		var authRealm = (driverConfig.authRealm == null || driverConfig.authRealm.isBlank()) ? null
+				: driverConfig.authRealm;
+		var authToken = switch (driverConfig.authScheme) {
+			case NONE -> AuthTokens.none();
+			case BASIC -> AuthTokens.basic(user, password, authRealm);
+			case BEARER -> AuthTokens.bearer(password);
+			case KERBEROS -> AuthTokens.kerberos(password);
+		};
 
 		var boltAgent = BoltAgentUtil.boltAgent();
 		var userAgent = driverConfig.agent;
@@ -372,6 +401,17 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		passwordPropInfo.required = false;
 		driverPropertyInfos.add(passwordPropInfo);
 
+		var authSchemePropInfo = new DriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.getName());
+		authSchemePropInfo.description = "The authentication scheme to use. Defaults to 'basic'.";
+		authSchemePropInfo.required = false;
+		authSchemePropInfo.choices = Arrays.stream(AuthScheme.values()).map(AuthScheme::getName).toArray(String[]::new);
+		driverPropertyInfos.add(authSchemePropInfo);
+
+		var authRealmPropInfo = new DriverPropertyInfo(PROPERTY_AUTH_REALM, parsedConfig.authRealm);
+		authRealmPropInfo.description = "The authentication realm to use. Defaults to ''.";
+		authRealmPropInfo.required = false;
+		driverPropertyInfos.add(authRealmPropInfo);
+
 		var userAgentPropInfo = new DriverPropertyInfo(PROPERTY_USER_AGENT, parsedConfig.agent);
 		userAgentPropInfo.description = "user agent to send to server, can be found in logs later.";
 		userAgentPropInfo.required = false;
@@ -463,10 +503,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var sslProperties = parseSSLProperties(info, matcher.group("transport"));
 		var misc = new HashMap<>(config);
 
+		var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
+		misc.remove(PROPERTY_AUTH_SCHEME);
+
 		var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
 		misc.remove(PROPERTY_USER);
 		var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, "password"));
 		misc.remove(PROPERTY_PASSWORD);
+		var authRealm = config.getOrDefault(PROPERTY_AUTH_REALM, "");
+		misc.remove(PROPERTY_AUTH_REALM);
+
 		var userAgent = String.valueOf(config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent()));
 		misc.remove(PROPERTY_USER_AGENT);
 		var connectionTimeoutMillis = Integer.parseInt(config.getOrDefault(PROPERTY_TIMEOUT, "1000"));
@@ -488,9 +534,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		misc.putIfAbsent(PROPERTY_S2C_ALWAYS_ESCAPE_NAMES, "false");
 		misc.putIfAbsent(PROPERTY_S2C_ENABLE_CACHE, String.valueOf(enableTranslationCaching));
 
-		return new DriverConfig(host, port, databaseName, user, password, userAgent, connectionTimeoutMillis,
-				automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				sslProperties, Map.copyOf(misc));
+		return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
+				connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements,
+				rewritePlaceholders, sslProperties, Map.copyOf(misc));
 	}
 
 	@Override
@@ -735,6 +781,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return factories.stream().map(factory -> factory.create(config)).sorted(TranslatorComparator.INSTANCE).toList();
 	}
 
+	private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
+		if (scheme == null || scheme.isBlank()) {
+			return AuthScheme.BASIC;
+		}
+
+		try {
+			return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
+		}
+		catch (IllegalArgumentException ignored) {
+			throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
+		}
+	}
+
 	enum SSLMode {
 
 		DISABLE("disable"), REQUIRE("require"), VERIFY_FULL("verify-full");
@@ -764,14 +823,32 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
+	private enum AuthScheme {
+
+		NONE("none"), BASIC("basic"), BEARER("bearer"), KERBEROS("kerberos");
+
+		private final String name;
+
+		AuthScheme(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+	}
+
 	/**
 	 * Internal record class to handle parsing of driver config.
 	 *
 	 * @param host host name
 	 * @param port port
 	 * @param database database name
+	 * @param authScheme auth scheme
 	 * @param user user
 	 * @param password password for user
+	 * @param authRealm auth realm
 	 * @param agent driver bolt agent to be used by clients to distinguish between
 	 * applications
 	 * @param timeout timeout for network interactions
@@ -782,10 +859,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 * @param misc Unparsed properties
 	 */
-	private record DriverConfig(String host, int port, String database, String user, String password, String agent,
-			int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
-			boolean rewriteBatchedStatements, boolean rewritePlaceholders, SSLProperties sslProperties,
-			Map<String, String> misc) {
+
+	private record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user,
+			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
+			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
+			SSLProperties sslProperties, Map<String, String> misc) {
 
 		Map<String, Object> rawConfig() {
 			Map<String, Object> props = new HashMap<>();
@@ -796,6 +874,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			props.put(PROPERTY_USER, this.user);
 			props.put(PROPERTY_USER_AGENT, this.agent);
 			props.put(PROPERTY_PASSWORD, this.password);
+			props.put(PROPERTY_AUTH_SCHEME, this.authScheme.getName());
+			props.put(PROPERTY_AUTH_REALM, this.authRealm);
 			props.put(PROPERTY_TIMEOUT, String.valueOf(this.timeout));
 			props.put(PROPERTY_REWRITE_BATCHED_STATEMENTS, String.valueOf(this.rewriteBatchedStatements));
 			props.put(PROPERTY_REWRITE_PLACEHOLDERS, String.valueOf(this.rewritePlaceholders));
@@ -952,6 +1032,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				var password = env.get("NEO4J_PASSWORD");
 				if (password != null) {
 					properties.put(Neo4jDriver.PROPERTY_PASSWORD, password);
+				}
+				var authScheme = env.get("NEO4J_AUTH_SCHEME");
+				if (authScheme != null) {
+					properties.put(Neo4jDriver.PROPERTY_AUTH_SCHEME, authScheme);
+				}
+				var authRealm = env.get("NEO4J_AUTH_REALM");
+				if (authRealm != null) {
+					properties.put(Neo4jDriver.PROPERTY_AUTH_REALM, authRealm);
 				}
 				var sql2cypher = env.get("NEO4J_SQL_TRANSLATION_ENABLED");
 				if (this.forceSqlTranslation || Boolean.parseBoolean(sql2cypher)) {

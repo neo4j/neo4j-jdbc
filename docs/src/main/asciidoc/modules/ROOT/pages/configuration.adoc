@@ -72,13 +72,28 @@ The driver accepts the following configuration arguments, either properties or a
 
 |`user`
 |`String`
-|The username (principal) to use for authentication. *NOT RECOMMENDED* for security reasons.
+|The username (principal) to use for authentication. *NOT RECOMMENDED* as URL query parameter for security reasons.
 |`neo4j`
 
 |`password`
 |`String`
-|The password (credentials) to use for authentication. *NOT RECOMMENDED* for security reasons.
+|The password (credentials) to use for authentication. *NOT RECOMMENDED* as URL query parameter for security reasons.
 |`password`
+
+|`authRealm`
+|`String`
+|The realm to use for authentication. *NOT RECOMMENDED* as URL query parameter for security reasons.
+|`null`
+
+|`authScheme`
+|`String`
+a|The authentication scheme to use. *NOT RECOMMENDED* as URL query parameter for security reasons. Currently supported values are:
+
+* `basic` (default) for basic authentication.
+* `none` for no authentication. The properties `user`, `password` and `authRealm` have no effect.
+* `bearer` for bearer authentication (SSO). `password` should be set to the bearer token; `user` and `authRealm` have no effect.
+* `kerberos` for kerberos authentication. Requires `password` to be set to the kerberos ticket; `user` and `authRealm` have no effect.
+|`basic`
 
 |===
 
