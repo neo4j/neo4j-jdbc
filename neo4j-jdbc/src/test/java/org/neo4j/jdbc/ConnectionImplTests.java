@@ -366,7 +366,7 @@ class ConnectionImplTests {
 	@Test
 	void shouldClearWarnings() throws SQLException {
 		var connection = makeConnection(mock(BoltConnection.class));
-		connection.setClientInfo("a", "b");
+		connection.setClientInfo("", "b");
 		assertThat((Object) connection.getWarnings()).isNotNull();
 
 		connection.clearWarnings();
