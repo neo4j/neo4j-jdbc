@@ -735,7 +735,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			synchronized (this) {
 				result = this.sqlTranslatorFactories;
 				if (result == null) {
-					this.sqlTranslatorFactories = ServiceLoader.load(TranslatorFactory.class)
+					this.sqlTranslatorFactories = ServiceLoader
+						.load(TranslatorFactory.class, this.getClass().getClassLoader())
 						.stream()
 						.map(ServiceLoader.Provider::get)
 						.toList();
