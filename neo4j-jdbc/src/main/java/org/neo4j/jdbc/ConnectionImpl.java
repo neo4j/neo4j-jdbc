@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -115,6 +116,12 @@ final class ConnectionImpl implements Neo4jConnection {
 	private boolean closed;
 
 	private final Cache<String, String> l2cache = Cache.getInstance(TRANSLATION_CACHE_SIZE);
+
+	/**
+	 * Neo4j as of now has no session / server state to hold those, but we keep it around
+	 * for future use.
+	 */
+	private final Map<String, String> clientInfo = new ConcurrentHashMap<>();
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<List<Translator>> translators, boolean enableSQLTranslation,
 			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders) {
@@ -535,10 +542,30 @@ final class ConnectionImpl implements Neo4jConnection {
 		if (this.closed) {
 			throw new SQLClientInfoException("The connection is closed", Collections.emptyMap());
 		}
-		Objects.requireNonNull(name);
-		var reason = "Client info property is not supported.";
-		var throwable = new SQLClientInfoException(Map.of(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY));
-		this.warnings.accept(new SQLWarning(reason, throwable));
+
+		try {
+			setClientInfo0(name, value);
+		}
+		catch (SQLWarning ex) {
+			this.warnings.accept(ex);
+		}
+	}
+
+	private void setClientInfo0(String name, String value) throws SQLWarning {
+		if (name == null || name.isBlank()) {
+			var throwable = new SQLClientInfoException(Map.of("", ClientInfoStatus.REASON_UNKNOWN));
+			throw new SQLWarning("Client information without a name are not supported", throwable);
+		}
+		if (!Set.of("ApplicationName", "ClientUser", "ClientHostname").contains(name)) {
+			var throwable = new SQLClientInfoException(Map.of(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY));
+			throw new SQLWarning("Unknown client info property `" + name + "`", throwable);
+		}
+		if (value == null || value.isBlank()) {
+			var throwable = new SQLClientInfoException(Map.of("", ClientInfoStatus.REASON_VALUE_INVALID));
+			throw new SQLWarning("Client information without a value are not supported", throwable);
+
+		}
+		this.clientInfo.put(name, value);
 	}
 
 	@Override
@@ -548,29 +575,35 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		Objects.requireNonNull(properties);
 		var failedProperties = new HashMap<String, ClientInfoStatus>();
-		for (var entry : properties.entrySet()) {
-			var key = entry.getKey();
-			if (key instanceof String keyString) {
-				failedProperties.put(keyString, ClientInfoStatus.REASON_UNKNOWN_PROPERTY);
+		// It is supposed to be an atomic operation
+		synchronized (this) {
+			for (String key : properties.stringPropertyNames()) {
+				try {
+					setClientInfo0(key, properties.getProperty(key));
+				}
+				catch (SQLWarning ex) {
+					failedProperties.putAll(((SQLClientInfoException) ex.getCause()).getFailedProperties());
+				}
 			}
 		}
 		if (!failedProperties.isEmpty()) {
-			var reason = "Client info properties are not supported.";
 			var throwable = new SQLClientInfoException(Collections.unmodifiableMap(failedProperties));
-			this.warnings.accept(new SQLWarning(reason, throwable));
+			this.warnings.accept(new SQLWarning("There have been issues setting some properties", throwable));
 		}
 	}
 
 	@Override
 	public String getClientInfo(String name) throws SQLException {
 		assertIsOpen();
-		return null;
+		return this.clientInfo.get(name);
 	}
 
 	@Override
 	public Properties getClientInfo() throws SQLException {
 		assertIsOpen();
-		return new Properties();
+		var result = new Properties();
+		result.putAll(this.clientInfo);
+		return result;
 	}
 
 	@Override
