@@ -8,7 +8,7 @@ Michael Simons <michael.simons@neo4j.com>
 // tag::properties[]
 :groupId: org.neo4j
 :artifactIdCore: neo4j-jdbc
-:latest_version: 6.0.0-M02
+:latest_version: 6.0.0-M03
 :branch: main
 // end::properties[]
 
