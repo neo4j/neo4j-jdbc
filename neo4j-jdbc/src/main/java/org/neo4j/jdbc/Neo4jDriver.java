@@ -43,6 +43,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
@@ -176,6 +177,25 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * statements.
 	 */
 	public static final String PROPERTY_REWRITE_BATCHED_STATEMENTS = "rewriteBatchedStatements";
+
+	/**
+	 * An optional property that is an alternative to {@literal "neo4j+s"}. It can be used
+	 * for example to programmatically enable the full SSL chain. Possible values are
+	 * {@literal "true"} (SSL enabled) and {@literal "false"} (SSL disabled).
+	 */
+	public static final String PROPERTY_SSL = "ssl";
+
+	/**
+	 * An optional configuration for fine-grained control over SSL configuration. Allowed
+	 * values are
+	 * <ul>
+	 * <li>{@literal "disable"}: no SSL
+	 * <li>{@literal "require"}: enforce a save connection, but don't verify the server
+	 * certificate
+	 * <li>{@literal "verify-full"}: full SSL with certificate validation
+	 * </ul>
+	 */
+	public static final String PROPERTY_SSL_MODE = "sslMode";
 
 	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
 
@@ -320,14 +340,15 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var enableTranslationCaching = driverConfig.enableTranslationCaching;
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
-		var translatorFactory = driverConfig.misc.get(PROPERTY_TRANSLATOR_FACTORY);
+		var translatorFactory = driverConfig.rawConfig.get(PROPERTY_TRANSLATOR_FACTORY);
 
 		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this::getSqlTranslatorFactories;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
 		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
+				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawGenericConfig(),
+						translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders);
 	}
 
@@ -450,22 +471,20 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		sql2CypherCachingsPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(sql2CypherCachingsPropInfo);
 
-		var sslPropInfo = new DriverPropertyInfo(SSLProperties.SSL_PROP_NAME,
-				String.valueOf(parsedConfig.sslProperties.ssl));
+		var sslPropInfo = new DriverPropertyInfo(PROPERTY_SSL, String.valueOf(parsedConfig.sslProperties.ssl));
 		sslPropInfo.description = "SSL enabled";
 		sslPropInfo.required = false;
 		sslPropInfo.choices = trueFalseChoices;
 		driverPropertyInfos.add(sslPropInfo);
 
-		var sslModePropInfo = new DriverPropertyInfo(SSLProperties.SSL_MODE_PROP_NAME,
-				parsedConfig.sslProperties().sslMode.getName());
+		var sslModePropInfo = new DriverPropertyInfo(PROPERTY_SSL_MODE, parsedConfig.sslProperties().sslMode.getName());
 		sslModePropInfo.description = "The mode for ssl. Accepted values are: require, verify-full, disable.";
 		sslModePropInfo.required = false;
 		sslModePropInfo.choices = Arrays.stream(SSLMode.values()).map(SSLMode::getName).toArray(String[]::new);
 		driverPropertyInfos.add(sslModePropInfo);
 
 		parsedConfig.misc().forEach((k, v) -> {
-			if (SSLProperties.SSL_MODE_PROP_NAME.equals(k) || PROPERTY_S2C_ENABLE_CACHE.equals(k)) {
+			if (PROPERTY_S2C_ENABLE_CACHE.equals(k)) {
 				return;
 			}
 
@@ -478,7 +497,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return driverPropertyInfos.toArray(DriverPropertyInfo[]::new);
 	}
 
-	private static DriverConfig parseConfig(String url, Properties info) throws SQLException {
+	static DriverConfig parseConfig(String url, Properties info) throws SQLException {
 		if (url == null || info == null) {
 			throw new SQLException("url and info cannot be null");
 		}
@@ -492,51 +511,47 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var urlParams = splitUrlParams(matcher.group("urlParams"));
 
 		var config = mergeConfig(urlParams, info);
+		var raw = new HashMap<>(config);
 
 		var host = matcher.group(PROPERTY_HOST);
-		var port = Integer.parseInt((matcher.group(PROPERTY_PORT) != null) ? matcher.group("port") : "7687");
+		raw.put(PROPERTY_HOST, host);
+		var rawPort = matcher.group(PROPERTY_PORT);
+		var port = Integer.parseInt((rawPort != null) ? matcher.group("port") : "7687");
+		if (rawPort != null) {
+			raw.put(PROPERTY_PORT, matcher.group(PROPERTY_PORT));
+		}
 		var databaseName = matcher.group(PROPERTY_DATABASE);
 		if (databaseName == null) {
 			databaseName = config.getOrDefault(PROPERTY_DATABASE, "neo4j");
 		}
+		else {
+			raw.put(PROPERTY_DATABASE, databaseName);
+		}
 
-		var sslProperties = parseSSLProperties(info, matcher.group("transport"));
-		var misc = new HashMap<>(config);
+		var sslProperties = parseSSLProperties(config, matcher.group("transport"));
+		raw.put(PROPERTY_SSL, String.valueOf(sslProperties.ssl));
+		raw.put(PROPERTY_SSL_MODE, sslProperties.sslMode.getName());
 
 		var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
-		misc.remove(PROPERTY_AUTH_SCHEME);
 
 		var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
-		misc.remove(PROPERTY_USER);
 		var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, "password"));
-		misc.remove(PROPERTY_PASSWORD);
 		var authRealm = config.getOrDefault(PROPERTY_AUTH_REALM, "");
-		misc.remove(PROPERTY_AUTH_REALM);
 
 		var userAgent = String.valueOf(config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent()));
-		misc.remove(PROPERTY_USER_AGENT);
 		var connectionTimeoutMillis = Integer.parseInt(config.getOrDefault(PROPERTY_TIMEOUT, "1000"));
-		misc.remove(PROPERTY_TIMEOUT);
 		var automaticSqlTranslation = Boolean
 			.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_ENABLED, "false"));
-		misc.remove(PROPERTY_SQL_TRANSLATION_ENABLED);
 		var enableTranslationCaching = Boolean
 			.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, "false"));
-		misc.remove(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED);
 		var rewriteBatchedStatements = Boolean
 			.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
-		misc.remove(PROPERTY_REWRITE_BATCHED_STATEMENTS);
 		var rewritePlaceholders = Boolean.parseBoolean(
 				config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, Boolean.toString(!automaticSqlTranslation)));
-		misc.remove(PROPERTY_REWRITE_PLACEHOLDERS);
-
-		misc.putIfAbsent(PROPERTY_S2C_PRETTY_PRINT_CYPHER, "false");
-		misc.putIfAbsent(PROPERTY_S2C_ALWAYS_ESCAPE_NAMES, "false");
-		misc.putIfAbsent(PROPERTY_S2C_ENABLE_CACHE, String.valueOf(enableTranslationCaching));
 
 		return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
 				connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements,
-				rewritePlaceholders, sslProperties, Map.copyOf(misc));
+				rewritePlaceholders, sslProperties, raw);
 	}
 
 	@Override
@@ -619,12 +634,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
-	private static SSLProperties parseSSLProperties(Properties info, String transport) throws SQLException {
-		var sslMode = sslMode(info.getProperty("sslMode"));
+	private static SSLProperties parseSSLProperties(Map<String, String> info, String transport) throws SQLException {
+		var sslMode = sslMode(info.get(PROPERTY_SSL_MODE));
 		Boolean ssl = null;
 
 		// Some Parsing with validation
-		var sslString = info.getProperty("ssl");
+		var sslString = info.get(PROPERTY_SSL);
 		if (sslString != null) {
 			if (!sslString.equals("true") && !sslString.equals("false")) {
 				throw new SQLException("Invalid SSL option, accepts true or false");
@@ -817,14 +832,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslMode the current ssl mode
 	 * @param ssl boolean dictating if ssl is enabled
 	 */
-	private record SSLProperties(SSLMode sslMode, boolean ssl) {
-
-		static final String SSL_MODE_PROP_NAME = "sslMode";
-		static final String SSL_PROP_NAME = "ssl";
-
+	record SSLProperties(SSLMode sslMode, boolean ssl) {
 	}
 
-	private enum AuthScheme {
+	enum AuthScheme {
 
 		NONE("none"), BASIC("basic"), BEARER("bearer"), KERBEROS("kerberos");
 
@@ -858,33 +869,39 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param rewriteBatchedStatements rewrite batched statements to be more efficient
 	 * @param rewritePlaceholders rewrite ? to $0 .. $n
 	 * @param sslProperties ssl properties
-	 * @param misc Unparsed properties
+	 * @param rawConfig Unprocessed configuration options
 	 */
 
-	private record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user,
-			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
-			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
-			SSLProperties sslProperties, Map<String, String> misc) {
+	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
+			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
+			boolean rewriteBatchedStatements, boolean rewritePlaceholders, SSLProperties sslProperties,
+			Map<String, String> rawConfig) {
 
-		Map<String, Object> rawConfig() {
-			Map<String, Object> props = new HashMap<>();
-			props.put(PROPERTY_SQL_TRANSLATION_ENABLED, String.valueOf(this.enableSQLTranslation));
+		DriverConfig {
+			rawConfig = Map.copyOf(rawConfig);
+		}
 
-			props.put(PROPERTY_HOST, this.host);
-			props.put(PROPERTY_PORT, String.valueOf(this.port));
-			props.put(PROPERTY_USER, this.user);
-			props.put(PROPERTY_USER_AGENT, this.agent);
-			props.put(PROPERTY_PASSWORD, this.password);
-			props.put(PROPERTY_AUTH_SCHEME, this.authScheme.getName());
-			props.put(PROPERTY_AUTH_REALM, this.authRealm);
-			props.put(PROPERTY_TIMEOUT, String.valueOf(this.timeout));
-			props.put(PROPERTY_REWRITE_BATCHED_STATEMENTS, String.valueOf(this.rewriteBatchedStatements));
-			props.put(PROPERTY_REWRITE_PLACEHOLDERS, String.valueOf(this.rewritePlaceholders));
-			props.put(PROPERTY_DATABASE, this.database);
+		Map<String, String> misc() {
+			Map<String, String> misc = new HashMap<>();
 
-			props.putAll(this.misc);
+			for (var entry : this.rawConfig.entrySet()) {
+				switch (entry.getKey()) {
+					case PROPERTY_HOST, PROPERTY_PORT, PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER,
+							PROPERTY_PASSWORD, PROPERTY_AUTH_REALM, PROPERTY_USER_AGENT, PROPERTY_TIMEOUT,
+							PROPERTY_SQL_TRANSLATION_ENABLED, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED,
+							PROPERTY_REWRITE_BATCHED_STATEMENTS, PROPERTY_REWRITE_PLACEHOLDERS, PROPERTY_SSL,
+							PROPERTY_SSL_MODE -> {
+						// skip
+					}
+					default -> misc.put(entry.getKey(), entry.getValue());
+				}
+			}
 
-			return props;
+			return misc;
+		}
+
+		Map<String, Object> rawGenericConfig() {
+			return this.rawConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 		}
 	}
 

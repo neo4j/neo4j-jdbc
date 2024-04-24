@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.translator.impl;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -55,9 +56,19 @@ public final class SqlToCypherConfig {
 			return defaultConfig();
 		}
 
+		var configWithDefaults = new HashMap<>(config);
+		var cacheEnabled = Boolean.parseBoolean(String.valueOf(config.getOrDefault("cacheSQLTranslations", "false")));
+		if (cacheEnabled) {
+			configWithDefaults.putIfAbsent("s2c.enableCache", "true");
+		}
+
 		var prefix = Pattern.compile("s2c\\.(.+)");
 
-		var relevantProperties = config.keySet().stream().map(prefix::matcher).filter(Matcher::matches).toList();
+		var relevantProperties = configWithDefaults.keySet()
+			.stream()
+			.map(prefix::matcher)
+			.filter(Matcher::matches)
+			.toList();
 		if (relevantProperties.isEmpty()) {
 			return defaultConfig();
 		}
@@ -66,7 +77,7 @@ public final class SqlToCypherConfig {
 		var dashWord = Pattern.compile("-(\\w)");
 		boolean customConfig = false;
 		for (Matcher m : relevantProperties) {
-			var v = config.get(m.group());
+			var v = configWithDefaults.get(m.group());
 			var k = dashWord.matcher(m.group(1)).replaceAll(mr -> mr.group(1).toUpperCase(Locale.ROOT));
 			customConfig = null != switch (k) {
 				case "parseNameCase" -> builder.withParseNameCase(toEnum(ParseNameCase.class, v));
@@ -98,6 +109,9 @@ public final class SqlToCypherConfig {
 		else if (value instanceof String source) {
 			return buildMap(source);
 		}
+		else if (value == null) {
+			throw new IllegalArgumentException("Unsupported Map<String, String> representation representation null");
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported Map<String, String> representation " + value.getClass());
 		}
@@ -109,6 +123,9 @@ public final class SqlToCypherConfig {
 		}
 		else if (value instanceof String s) {
 			return Enum.valueOf(enumType, s);
+		}
+		else if (value == null) {
+			throw new IllegalArgumentException("Unsupported enum representation null");
 		}
 		else {
 			throw new IllegalArgumentException(
@@ -130,6 +147,9 @@ public final class SqlToCypherConfig {
 		else if (val instanceof Boolean b) {
 			return b;
 		}
+		else if (val == null) {
+			throw new IllegalArgumentException("Unsupported boolean representation null");
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported boolean representation " + val.getClass());
 		}
@@ -146,6 +166,9 @@ public final class SqlToCypherConfig {
 			catch (NumberFormatException ex) {
 				throw new IllegalArgumentException("Unsupported Integer representation `%s`".formatted(s), ex);
 			}
+		}
+		else if (val == null) {
+			throw new IllegalArgumentException("Unsupported Integer representation null");
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported Integer representation " + val.getClass());
@@ -196,7 +219,7 @@ public final class SqlToCypherConfig {
 
 	private final boolean prettyPrint;
 
-	private final Boolean alwaysEscapeNames;
+	private final boolean alwaysEscapeNames;
 
 	private final String parseNamedParamPrefix;
 
@@ -213,7 +236,7 @@ public final class SqlToCypherConfig {
 		this.joinColumnsToTypeMappings = builder.joinColumnsToTypeMappings;
 		this.sqlDialect = builder.sqlDialect;
 		this.prettyPrint = builder.prettyPrint;
-		this.alwaysEscapeNames = builder.alwaysEscapeNames();
+		this.alwaysEscapeNames = builder.alwaysEscapeNames;
 		this.parseNamedParamPrefix = builder.parseNamedParamPrefix;
 		this.cacheEnabled = builder.enableCache;
 		this.precedence = builder.precedence;
@@ -336,14 +359,14 @@ public final class SqlToCypherConfig {
 
 		private String parseNamedParamPrefix;
 
-		private Boolean alwaysEscapeNames;
+		private boolean alwaysEscapeNames;
 
 		private boolean enableCache;
 
 		private Integer precedence;
 
 		private Builder() {
-			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null,
+			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, false, false,
 					null, false, Translator.LOWEST_PRECEDENCE);
 		}
 
@@ -355,7 +378,7 @@ public final class SqlToCypherConfig {
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
-				SQLDialect sqlDialect, boolean prettyPrint, Boolean alwaysEscapeNames, String parseNamedParamPrefix,
+				SQLDialect sqlDialect, boolean prettyPrint, boolean alwaysEscapeNames, String parseNamedParamPrefix,
 				boolean enableCache, Integer precedence) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
@@ -478,10 +501,6 @@ public final class SqlToCypherConfig {
 		 */
 		public SqlToCypherConfig build() {
 			return new SqlToCypherConfig(this);
-		}
-
-		private boolean alwaysEscapeNames() {
-			return (this.alwaysEscapeNames != null) ? this.alwaysEscapeNames : !this.prettyPrint;
 		}
 
 		/**
