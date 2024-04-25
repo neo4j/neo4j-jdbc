@@ -44,31 +44,27 @@ public final class SqlToCypherConfig {
 
 	private static final SqlToCypherConfig DEFAULT_CONFIG = SqlToCypherConfig.builder().build();
 
+	private static Map<String, String> DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING = Map.of("cacheSQLTranslations",
+			"s2c.enableCache");
+
 	/**
 	 * Derives a configuration for {@code Sql2Cypher} based from the properties given.
 	 * @param config will be searched for values under keys prefixed with {@code s2c}.
 	 * @return a new configuration object or the default config if there are no matching
 	 * properties.
 	 */
-	public static SqlToCypherConfig of(Map<String, Object> config) {
+	public static SqlToCypherConfig of(Map<String, ?> config) {
 
 		if (config == null || config.isEmpty()) {
 			return defaultConfig();
 		}
 
-		var configWithDefaults = new HashMap<>(config);
-		var cacheEnabled = Boolean.parseBoolean(String.valueOf(config.getOrDefault("cacheSQLTranslations", "false")));
-		if (cacheEnabled) {
-			configWithDefaults.putIfAbsent("s2c.enableCache", "true");
-		}
+		var localConfig = new HashMap<String, Object>();
+		config.forEach((k, v) -> localConfig.put(DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING.getOrDefault(k, k), v));
 
 		var prefix = Pattern.compile("s2c\\.(.+)");
 
-		var relevantProperties = configWithDefaults.keySet()
-			.stream()
-			.map(prefix::matcher)
-			.filter(Matcher::matches)
-			.toList();
+		var relevantProperties = localConfig.keySet().stream().map(prefix::matcher).filter(Matcher::matches).toList();
 		if (relevantProperties.isEmpty()) {
 			return defaultConfig();
 		}
@@ -77,7 +73,7 @@ public final class SqlToCypherConfig {
 		var dashWord = Pattern.compile("-(\\w)");
 		boolean customConfig = false;
 		for (Matcher m : relevantProperties) {
-			var v = configWithDefaults.get(m.group());
+			var v = localConfig.get(m.group());
 			var k = dashWord.matcher(m.group(1)).replaceAll(mr -> mr.group(1).toUpperCase(Locale.ROOT));
 			customConfig = null != switch (k) {
 				case "parseNameCase" -> builder.withParseNameCase(toEnum(ParseNameCase.class, v));

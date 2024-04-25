@@ -39,11 +39,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
@@ -164,12 +164,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery.
 	 */
 	public static final String PROPERTY_TRANSLATOR_FACTORY = "translatorFactory";
-
-	private static final String PROPERTY_S2C_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
-
-	private static final String PROPERTY_S2C_PRETTY_PRINT_CYPHER = "s2c.prettyPrint";
-
-	private static final String PROPERTY_S2C_ENABLE_CACHE = "s2c.enableCache";
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name} that
@@ -347,8 +341,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
 		return new ConnectionImpl(boltConnection,
-				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawGenericConfig(),
-						translatorFactoriesSupplier),
+				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders);
 	}
 
@@ -484,10 +477,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		driverPropertyInfos.add(sslModePropInfo);
 
 		parsedConfig.misc().forEach((k, v) -> {
-			if (PROPERTY_S2C_ENABLE_CACHE.equals(k)) {
-				return;
-			}
-
 			var driverPropertyInfo = new DriverPropertyInfo(k, v);
 			driverPropertyInfo.required = false;
 			driverPropertyInfo.description = "";
@@ -762,9 +751,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return result;
 	}
 
-	static Supplier<List<Translator>> getSqlTranslatorSupplier(boolean automaticSqlTranslation,
-			Map<String, Object> config, Supplier<List<TranslatorFactory>> sqlTranslatorFactoriesSupplier)
-			throws SQLException {
+	static Supplier<List<Translator>> getSqlTranslatorSupplier(boolean automaticSqlTranslation, Map<String, ?> config,
+			Supplier<List<TranslatorFactory>> sqlTranslatorFactoriesSupplier) throws SQLException {
 
 		if (automaticSqlTranslation) {
 			// If the driver should translate all queries into cypher, we can make sure
@@ -789,8 +777,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new SQLException("No translators available");
 	}
 
-	private static List<Translator> sortedListOfTranslators(Map<String, Object> config,
-			List<TranslatorFactory> factories) {
+	private static List<Translator> sortedListOfTranslators(Map<String, ?> config, List<TranslatorFactory> factories) {
 		if (factories.size() == 1) {
 			return List.of(factories.get(0).create(config));
 		}
@@ -877,31 +864,32 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			boolean rewriteBatchedStatements, boolean rewritePlaceholders, SSLProperties sslProperties,
 			Map<String, String> rawConfig) {
 
+		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
+				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
+				PROPERTY_USER_AGENT, PROPERTY_TIMEOUT, PROPERTY_SQL_TRANSLATION_ENABLED,
+				PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, PROPERTY_REWRITE_BATCHED_STATEMENTS,
+				PROPERTY_REWRITE_PLACEHOLDERS, PROPERTY_SSL, PROPERTY_SSL_MODE);
+
 		DriverConfig {
 			rawConfig = Map.copyOf(rawConfig);
 		}
 
+		/**
+		 * Returns a view on all properties that are not directly used for the driver.
+		 * @return a view on all properties that are not directly used for the driver
+		 */
 		Map<String, String> misc() {
-			Map<String, String> misc = new HashMap<>();
 
+			Map<String, String> misc = new HashMap<>();
 			for (var entry : this.rawConfig.entrySet()) {
-				switch (entry.getKey()) {
-					case PROPERTY_HOST, PROPERTY_PORT, PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER,
-							PROPERTY_PASSWORD, PROPERTY_AUTH_REALM, PROPERTY_USER_AGENT, PROPERTY_TIMEOUT,
-							PROPERTY_SQL_TRANSLATION_ENABLED, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED,
-							PROPERTY_REWRITE_BATCHED_STATEMENTS, PROPERTY_REWRITE_PLACEHOLDERS, PROPERTY_SSL,
-							PROPERTY_SSL_MODE -> {
-						// skip
-					}
-					default -> misc.put(entry.getKey(), entry.getValue());
+				if (DRIVER_SPECIFIC_PROPERTIES.contains(entry.getKey())) {
+					continue;
 				}
+				misc.put(entry.getKey(), entry.getValue());
+
 			}
 
 			return misc;
-		}
-
-		Map<String, Object> rawGenericConfig() {
-			return this.rawConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 		}
 	}
 

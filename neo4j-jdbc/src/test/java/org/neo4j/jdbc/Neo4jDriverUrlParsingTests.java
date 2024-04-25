@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -337,7 +338,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.DISABLE);
 
 		// raw config, i.e., everything the user explicitly set
-		var rawConfig = config.rawGenericConfig();
+		var rawConfig = new HashMap<>(config.rawConfig());
 		assertThat(rawConfig.remove("host")).isEqualTo(config.host());
 		assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
 		assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
@@ -439,7 +440,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.REQUIRE);
 
 		// raw config, i.e., everything the user explicitly set
-		var rawConfig = config.rawGenericConfig();
+		var rawConfig = new HashMap<>(config.rawConfig());
 		assertThat(rawConfig.remove("host")).isEqualTo(config.host());
 		assertThat(rawConfig.remove("port")).isEqualTo(String.valueOf(config.port()));
 		assertThat(rawConfig.remove("database")).isEqualTo(config.database());
