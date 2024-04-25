@@ -390,100 +390,56 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var driverPropertyInfos = new ArrayList<DriverPropertyInfo>();
 		var trueFalseChoices = new String[] { "true", "false" };
 
-		var hostPropInfo = new DriverPropertyInfo(PROPERTY_HOST, parsedConfig.host);
-		hostPropInfo.description = "The host name";
-		hostPropInfo.required = true;
-		driverPropertyInfos.add(hostPropInfo);
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_HOST, parsedConfig.host, "The host name", true, null));
+		driverPropertyInfos
+			.add(newDriverPropertyInfo(PROPERTY_PORT, String.valueOf(parsedConfig.port), "The port", true, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_DATABASE, parsedConfig.database,
+				"The database name to connect to. Will default to neo4j if left blank.", false, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_USER, parsedConfig.user,
+				"The user that will be used to connect. Will be defaulted to neo4j if left blank.", false, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_PASSWORD, parsedConfig.password,
+				"The password that is used to connect. Defaults to 'password'.", false, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.getName(),
+				"The authentication scheme to use. Defaults to 'basic'.", false,
+				Arrays.stream(AuthScheme.values()).map(AuthScheme::getName).toArray(String[]::new)));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_AUTH_REALM, parsedConfig.authRealm,
+				"The authentication realm to use. Defaults to ''.", false, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_USER_AGENT, parsedConfig.agent,
+				"User agent to send to server, can be found in logs later.", false, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_TIMEOUT, String.valueOf(parsedConfig.timeout),
+				"Timeout for connection interactions. Defaults to 1000.", false, null));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_SQL_TRANSLATION_ENABLED,
+				String.valueOf(parsedConfig.enableSQLTranslation),
+				"Turns on or of sql to cypher translation. Defaults to false.", false, trueFalseChoices));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_REWRITE_BATCHED_STATEMENTS,
+				String.valueOf(parsedConfig.rewriteBatchedStatements),
+				"urns on generation of more efficient cypher when batching statements. Defaults to true.", false,
+				trueFalseChoices));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_REWRITE_PLACEHOLDERS,
+				String.valueOf(parsedConfig.rewritePlaceholders),
+				"Rewrites SQL placeholders (?) into $1, $2 .. $n. Defaults to true when SQL translation is not enabled.",
+				false, trueFalseChoices));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED,
+				String.valueOf(parsedConfig.enableTranslationCaching), "Enable caching of translations.", false,
+				trueFalseChoices));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_SSL, String.valueOf(parsedConfig.sslProperties.ssl),
+				"SSL enabled", false, trueFalseChoices));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_SSL_MODE, parsedConfig.sslProperties().sslMode.getName(),
+				"The mode for ssl. Accepted values are: require, verify-full, disable.", false,
+				Arrays.stream(SSLMode.values()).map(SSLMode::getName).toArray(String[]::new)));
 
-		var portPropInfo = new DriverPropertyInfo(PROPERTY_PORT, String.valueOf(parsedConfig.port));
-		portPropInfo.description = "The port";
-		portPropInfo.required = true;
-		driverPropertyInfos.add(portPropInfo);
-
-		var databaseNameInfo = new DriverPropertyInfo(PROPERTY_DATABASE, parsedConfig.database);
-		databaseNameInfo.description = "The database name to connect to. Will default to neo4j if left blank.";
-		databaseNameInfo.required = false;
-		driverPropertyInfos.add(databaseNameInfo);
-
-		var userPropInfo = new DriverPropertyInfo(PROPERTY_USER, parsedConfig.user);
-		userPropInfo.description = "The user that will be used to connect. Will be defaulted to neo4j if left blank.";
-		userPropInfo.required = false;
-		driverPropertyInfos.add(userPropInfo);
-
-		var passwordPropInfo = new DriverPropertyInfo(PROPERTY_PASSWORD, parsedConfig.password);
-		passwordPropInfo.description = "The password that is used to connect. Defaults to 'password'.";
-		passwordPropInfo.required = false;
-		driverPropertyInfos.add(passwordPropInfo);
-
-		var authSchemePropInfo = new DriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.getName());
-		authSchemePropInfo.description = "The authentication scheme to use. Defaults to 'basic'.";
-		authSchemePropInfo.required = false;
-		authSchemePropInfo.choices = Arrays.stream(AuthScheme.values()).map(AuthScheme::getName).toArray(String[]::new);
-		driverPropertyInfos.add(authSchemePropInfo);
-
-		var authRealmPropInfo = new DriverPropertyInfo(PROPERTY_AUTH_REALM, parsedConfig.authRealm);
-		authRealmPropInfo.description = "The authentication realm to use. Defaults to ''.";
-		authRealmPropInfo.required = false;
-		driverPropertyInfos.add(authRealmPropInfo);
-
-		var userAgentPropInfo = new DriverPropertyInfo(PROPERTY_USER_AGENT, parsedConfig.agent);
-		userAgentPropInfo.description = "user agent to send to server, can be found in logs later.";
-		userAgentPropInfo.required = false;
-		driverPropertyInfos.add(userAgentPropInfo);
-
-		var connectionTimoutPropInfo = new DriverPropertyInfo(PROPERTY_TIMEOUT, String.valueOf(parsedConfig.timeout));
-		connectionTimoutPropInfo.description = "Timeout for connection interactions. Defaults to 1000.";
-		connectionTimoutPropInfo.required = false;
-		driverPropertyInfos.add(connectionTimoutPropInfo);
-
-		var sql2cypherPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_ENABLED,
-				String.valueOf(parsedConfig.enableSQLTranslation));
-		sql2cypherPropInfo.description = "turns on or of sql to cypher translation. Defaults to false.";
-		sql2cypherPropInfo.required = false;
-		sql2cypherPropInfo.choices = trueFalseChoices;
-		driverPropertyInfos.add(sql2cypherPropInfo);
-
-		var rewriteBatchedStatementsPropInfo = new DriverPropertyInfo(PROPERTY_REWRITE_BATCHED_STATEMENTS,
-				String.valueOf(parsedConfig.rewriteBatchedStatements));
-		rewriteBatchedStatementsPropInfo.description = "turns on generation of more efficient cypher when batching statements. Defaults to true.";
-		rewriteBatchedStatementsPropInfo.required = false;
-		rewriteBatchedStatementsPropInfo.choices = trueFalseChoices;
-		driverPropertyInfos.add(rewriteBatchedStatementsPropInfo);
-
-		var rewritePlaceholdersPropInfo = new DriverPropertyInfo(PROPERTY_REWRITE_PLACEHOLDERS,
-				String.valueOf(parsedConfig.rewritePlaceholders));
-		rewritePlaceholdersPropInfo.description = "Rewrites SQL placeholders (?) into $1, $2 .. $n. Defaults to true when SQL translation is not enabled.";
-		rewritePlaceholdersPropInfo.required = false;
-		rewritePlaceholdersPropInfo.choices = trueFalseChoices;
-		driverPropertyInfos.add(rewriteBatchedStatementsPropInfo);
-
-		var sql2CypherCachingsPropInfo = new DriverPropertyInfo(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED,
-				String.valueOf(parsedConfig.enableTranslationCaching));
-		sql2CypherCachingsPropInfo.description = "Enable caching of translations.";
-		sql2CypherCachingsPropInfo.required = false;
-		sql2CypherCachingsPropInfo.choices = trueFalseChoices;
-		driverPropertyInfos.add(sql2CypherCachingsPropInfo);
-
-		var sslPropInfo = new DriverPropertyInfo(PROPERTY_SSL, String.valueOf(parsedConfig.sslProperties.ssl));
-		sslPropInfo.description = "SSL enabled";
-		sslPropInfo.required = false;
-		sslPropInfo.choices = trueFalseChoices;
-		driverPropertyInfos.add(sslPropInfo);
-
-		var sslModePropInfo = new DriverPropertyInfo(PROPERTY_SSL_MODE, parsedConfig.sslProperties().sslMode.getName());
-		sslModePropInfo.description = "The mode for ssl. Accepted values are: require, verify-full, disable.";
-		sslModePropInfo.required = false;
-		sslModePropInfo.choices = Arrays.stream(SSLMode.values()).map(SSLMode::getName).toArray(String[]::new);
-		driverPropertyInfos.add(sslModePropInfo);
-
-		parsedConfig.misc().forEach((k, v) -> {
-			var driverPropertyInfo = new DriverPropertyInfo(k, v);
-			driverPropertyInfo.required = false;
-			driverPropertyInfo.description = "";
-			driverPropertyInfos.add(driverPropertyInfo);
-		});
+		parsedConfig.misc().forEach((k, v) -> driverPropertyInfos.add(newDriverPropertyInfo(k, v, "", false, null)));
 
 		return driverPropertyInfos.toArray(DriverPropertyInfo[]::new);
+	}
+
+	private static DriverPropertyInfo newDriverPropertyInfo(String name, String value, String description,
+			boolean required, String[] choices) {
+		var result = new DriverPropertyInfo(name, value);
+		result.description = description;
+		result.required = required;
+		result.choices = choices;
+		return result;
 	}
 
 	static DriverConfig parseConfig(String url, Properties info) throws SQLException {

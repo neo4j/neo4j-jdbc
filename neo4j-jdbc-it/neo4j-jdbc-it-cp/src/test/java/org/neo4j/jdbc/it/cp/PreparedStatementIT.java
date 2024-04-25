@@ -30,6 +30,7 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
@@ -45,6 +46,7 @@ import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -60,6 +62,7 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
@@ -68,6 +71,35 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class PreparedStatementIT extends IntegrationTestBase {
+
+	@Test
+	void rewritingPlaceholdersByDefault() throws SQLException {
+		try (var connection = getConnection(false, false);
+				var statement = connection.prepareStatement("CREATE (n:BatchTestSimple {idx: ?})")) {
+			statement.setInt(1, 4711);
+			var result = statement.executeUpdate();
+			assertThat(result).isEqualTo(3);
+		}
+	}
+
+	@Test
+	void rewritingPlaceholdersMightBeTurnedOff() throws SQLException {
+
+		var url = "jdbc:neo4j://%s:%d?rewritePlaceholders=false".formatted(this.neo4j.getHost(),
+				this.neo4j.getMappedPort(7687));
+		var driver = DriverManager.getDriver(url);
+		var properties = new Properties();
+		properties.put("user", "neo4j");
+		properties.put("password", this.neo4j.getAdminPassword());
+
+		try (var connection = driver.connect(url, properties);
+				var statement = connection.prepareStatement("CREATE (n:BatchTestSimple {idx: ?})")) {
+			statement.setInt(1, 4711);
+			assertThatExceptionOfType(SQLException.class).isThrownBy(statement::executeUpdate)
+				.withCauseInstanceOf(Neo4jException.class)
+				.withStackTraceContaining("Invalid input '?'");
+		}
+	}
 
 	@Test
 	void simpleBatchShouldWork() throws SQLException {

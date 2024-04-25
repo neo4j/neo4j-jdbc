@@ -305,10 +305,10 @@ class Neo4jDriverUrlParsingTests {
 				case "timeout" -> assertThat(info.value).isEqualTo("1000");
 				case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
 					assertThat(info.value).isEqualTo("false");
-				case "rewriteBatchedStatements" -> assertThat(info.value).isEqualTo("true");
+				case "rewriteBatchedStatements", "rewritePlaceholders" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"authRealm", "agent", "timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames",
+						"authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames",
 						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode",
 						"cacheSQLTranslations");
 			}
@@ -392,13 +392,14 @@ class Neo4jDriverUrlParsingTests {
 				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
 				case "timeout" -> assertThat(info.value).isEqualTo("2000");
 				case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
-				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
+				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"rewritePlaceholders" ->
 					assertThat(info.value).isEqualTo("false");
 				case "enableSQLTranslation" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"agent", "authRealm", "timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames",
-						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode");
+						"agent", "authRealm", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"s2c.enableCache", "rewriteBatchedStatements", "sslMode");
 			}
 		}
 	}
