@@ -302,7 +302,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
-		var driverConfig = parseConfig(url, info);
+		var driverConfig = DriverConfig.of(url, info);
 
 		var address = new BoltServerAddress(driverConfig.host, driverConfig.port);
 
@@ -386,7 +386,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
 
-		var parsedConfig = parseConfig(url, info);
+		var parsedConfig = DriverConfig.of(url, info);
 		var driverPropertyInfos = new ArrayList<DriverPropertyInfo>();
 		var trueFalseChoices = new String[] { "true", "false" };
 
@@ -440,63 +440,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		result.required = required;
 		result.choices = choices;
 		return result;
-	}
-
-	static DriverConfig parseConfig(String url, Properties info) throws SQLException {
-		if (url == null || info == null) {
-			throw new SQLException("url and info cannot be null");
-		}
-
-		var matcher = URL_PATTERN.matcher(url);
-
-		if (!matcher.matches()) {
-			throw new SQLException("Invalid url");
-		}
-
-		var urlParams = splitUrlParams(matcher.group("urlParams"));
-
-		var config = mergeConfig(urlParams, info);
-		var raw = new HashMap<>(config);
-
-		var host = matcher.group(PROPERTY_HOST);
-		raw.put(PROPERTY_HOST, host);
-		var rawPort = matcher.group(PROPERTY_PORT);
-		var port = Integer.parseInt((rawPort != null) ? matcher.group("port") : "7687");
-		if (rawPort != null) {
-			raw.put(PROPERTY_PORT, matcher.group(PROPERTY_PORT));
-		}
-		var databaseName = matcher.group(PROPERTY_DATABASE);
-		if (databaseName == null) {
-			databaseName = config.getOrDefault(PROPERTY_DATABASE, "neo4j");
-		}
-		else {
-			raw.put(PROPERTY_DATABASE, databaseName);
-		}
-
-		var sslProperties = parseSSLProperties(config, matcher.group("transport"));
-		raw.put(PROPERTY_SSL, String.valueOf(sslProperties.ssl));
-		raw.put(PROPERTY_SSL_MODE, sslProperties.sslMode.getName());
-
-		var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
-
-		var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
-		var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, "password"));
-		var authRealm = config.getOrDefault(PROPERTY_AUTH_REALM, "");
-
-		var userAgent = String.valueOf(config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent()));
-		var connectionTimeoutMillis = Integer.parseInt(config.getOrDefault(PROPERTY_TIMEOUT, "1000"));
-		var automaticSqlTranslation = Boolean
-			.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_ENABLED, "false"));
-		var enableTranslationCaching = Boolean
-			.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, "false"));
-		var rewriteBatchedStatements = Boolean
-			.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
-		var rewritePlaceholders = Boolean.parseBoolean(
-				config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, Boolean.toString(!automaticSqlTranslation)));
-
-		return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
-				connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching, rewriteBatchedStatements,
-				rewritePlaceholders, sslProperties, raw);
 	}
 
 	@Override
@@ -740,19 +683,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return factories.stream().map(factory -> factory.create(config)).sorted(TranslatorComparator.INSTANCE).toList();
 	}
 
-	private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
-		if (scheme == null || scheme.isBlank()) {
-			return AuthScheme.BASIC;
-		}
-
-		try {
-			return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
-		}
-		catch (IllegalArgumentException ignored) {
-			throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
-		}
-	}
-
 	enum SSLMode {
 
 		DISABLE("disable"), REQUIRE("require"), VERIFY_FULL("verify-full");
@@ -847,6 +777,77 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 			return misc;
 		}
+
+		static DriverConfig of(String url, Properties info) throws SQLException {
+			if (url == null || info == null) {
+				throw new SQLException("url and info cannot be null");
+			}
+
+			var matcher = URL_PATTERN.matcher(url);
+
+			if (!matcher.matches()) {
+				throw new SQLException("Invalid url");
+			}
+
+			var urlParams = splitUrlParams(matcher.group("urlParams"));
+
+			var config = mergeConfig(urlParams, info);
+			var raw = new HashMap<>(config);
+
+			var host = matcher.group(PROPERTY_HOST);
+			raw.put(PROPERTY_HOST, host);
+			var rawPort = matcher.group(PROPERTY_PORT);
+			var port = Integer.parseInt((rawPort != null) ? matcher.group("port") : "7687");
+			if (rawPort != null) {
+				raw.put(PROPERTY_PORT, matcher.group(PROPERTY_PORT));
+			}
+			var databaseName = matcher.group(PROPERTY_DATABASE);
+			if (databaseName == null) {
+				databaseName = config.getOrDefault(PROPERTY_DATABASE, "neo4j");
+			}
+			else {
+				raw.put(PROPERTY_DATABASE, databaseName);
+			}
+
+			var sslProperties = parseSSLProperties(config, matcher.group("transport"));
+			raw.put(PROPERTY_SSL, String.valueOf(sslProperties.ssl));
+			raw.put(PROPERTY_SSL_MODE, sslProperties.sslMode.getName());
+
+			var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
+
+			var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
+			var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, "password"));
+			var authRealm = config.getOrDefault(PROPERTY_AUTH_REALM, "");
+
+			var userAgent = String.valueOf(config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent()));
+			var connectionTimeoutMillis = Integer.parseInt(config.getOrDefault(PROPERTY_TIMEOUT, "1000"));
+			var automaticSqlTranslation = Boolean
+				.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_ENABLED, "false"));
+			var enableTranslationCaching = Boolean
+				.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, "false"));
+			var rewriteBatchedStatements = Boolean
+				.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
+			var rewritePlaceholders = Boolean.parseBoolean(
+					config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, Boolean.toString(!automaticSqlTranslation)));
+
+			return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
+					connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
+					rewriteBatchedStatements, rewritePlaceholders, sslProperties, raw);
+		}
+
+		private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
+			if (scheme == null || scheme.isBlank()) {
+				return AuthScheme.BASIC;
+			}
+
+			try {
+				return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
+			}
+			catch (IllegalArgumentException ignored) {
+				throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
+			}
+		}
+
 	}
 
 	/**

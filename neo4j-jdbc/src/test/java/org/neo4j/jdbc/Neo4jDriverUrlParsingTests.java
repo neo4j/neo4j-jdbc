@@ -308,9 +308,8 @@ class Neo4jDriverUrlParsingTests {
 				case "rewriteBatchedStatements", "rewritePlaceholders" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames",
-						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode",
-						"cacheSQLTranslations");
+						"authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"s2c.enableCache", "rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
 			}
 		}
 	}
@@ -319,7 +318,7 @@ class Neo4jDriverUrlParsingTests {
 	void testMinimalParseConfig() throws SQLException {
 		Properties props = new Properties();
 
-		var config = Neo4jDriver.parseConfig("jdbc:neo4j://host", props);
+		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host", props);
 
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(7687);
@@ -422,7 +421,7 @@ class Neo4jDriverUrlParsingTests {
 		props.put("s2c.enableCache", "true");
 		props.put("customProperty", "foo");
 
-		var config = Neo4jDriver.parseConfig("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
+		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
 
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(1234);
