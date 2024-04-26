@@ -42,10 +42,25 @@ import org.neo4j.jdbc.translator.spi.Translator;
  */
 public final class SqlToCypherConfig {
 
+	/**
+	 * A constant property name to make the translator always escape literal names.
+	 */
+	public static final String PROPERTY_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
+
+	/**
+	 * A constant property name for enabling pretty formatted Cypher statements.
+	 */
+	public static final String PROPERTY_PRETTY_PRINT_CYPHER = "s2c.prettyPrint";
+
+	/**
+	 * A constant property name for enabling the local translator cache.
+	 */
+	public static final String PROPERTY_ENABLE_CACHE = "s2c.enableCache";
+
 	private static final SqlToCypherConfig DEFAULT_CONFIG = SqlToCypherConfig.builder().build();
 
 	private static Map<String, String> DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING = Map.of("cacheSQLTranslations",
-			"s2c.enableCache");
+			PROPERTY_ENABLE_CACHE);
 
 	/**
 	 * Derives a configuration for {@code Sql2Cypher} based from the properties given.
