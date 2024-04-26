@@ -37,6 +37,6 @@ public interface TranslatorFactory {
 	 * @param properties properties that will be used to configure the translator
 	 * @return a new or a cached translator instance
 	 */
-	Translator create(Map<String, Object> properties);
+	Translator create(Map<String, ?> properties);
 
 }

@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.translator.impl;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +42,25 @@ import org.neo4j.jdbc.translator.spi.Translator;
  */
 public final class SqlToCypherConfig {
 
+	/**
+	 * A constant property name to make the translator always escape literal names.
+	 */
+	public static final String PROPERTY_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
+
+	/**
+	 * A constant property name for enabling pretty formatted Cypher statements.
+	 */
+	public static final String PROPERTY_PRETTY_PRINT_CYPHER = "s2c.prettyPrint";
+
+	/**
+	 * A constant property name for enabling the local translator cache.
+	 */
+	public static final String PROPERTY_ENABLE_CACHE = "s2c.enableCache";
+
 	private static final SqlToCypherConfig DEFAULT_CONFIG = SqlToCypherConfig.builder().build();
+
+	private static Map<String, String> DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING = Map.of("cacheSQLTranslations",
+			PROPERTY_ENABLE_CACHE);
 
 	/**
 	 * Derives a configuration for {@code Sql2Cypher} based from the properties given.
@@ -49,15 +68,18 @@ public final class SqlToCypherConfig {
 	 * @return a new configuration object or the default config if there are no matching
 	 * properties.
 	 */
-	public static SqlToCypherConfig of(Map<String, Object> config) {
+	public static SqlToCypherConfig of(Map<String, ?> config) {
 
 		if (config == null || config.isEmpty()) {
 			return defaultConfig();
 		}
 
+		var localConfig = new HashMap<String, Object>();
+		config.forEach((k, v) -> localConfig.put(DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING.getOrDefault(k, k), v));
+
 		var prefix = Pattern.compile("s2c\\.(.+)");
 
-		var relevantProperties = config.keySet().stream().map(prefix::matcher).filter(Matcher::matches).toList();
+		var relevantProperties = localConfig.keySet().stream().map(prefix::matcher).filter(Matcher::matches).toList();
 		if (relevantProperties.isEmpty()) {
 			return defaultConfig();
 		}
@@ -66,7 +88,7 @@ public final class SqlToCypherConfig {
 		var dashWord = Pattern.compile("-(\\w)");
 		boolean customConfig = false;
 		for (Matcher m : relevantProperties) {
-			var v = config.get(m.group());
+			var v = localConfig.get(m.group());
 			var k = dashWord.matcher(m.group(1)).replaceAll(mr -> mr.group(1).toUpperCase(Locale.ROOT));
 			customConfig = null != switch (k) {
 				case "parseNameCase" -> builder.withParseNameCase(toEnum(ParseNameCase.class, v));
@@ -98,6 +120,9 @@ public final class SqlToCypherConfig {
 		else if (value instanceof String source) {
 			return buildMap(source);
 		}
+		else if (value == null) {
+			throw new IllegalArgumentException("Unsupported Map<String, String> representation representation null");
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported Map<String, String> representation " + value.getClass());
 		}
@@ -109,6 +134,9 @@ public final class SqlToCypherConfig {
 		}
 		else if (value instanceof String s) {
 			return Enum.valueOf(enumType, s);
+		}
+		else if (value == null) {
+			throw new IllegalArgumentException("Unsupported enum representation null");
 		}
 		else {
 			throw new IllegalArgumentException(
@@ -130,6 +158,9 @@ public final class SqlToCypherConfig {
 		else if (val instanceof Boolean b) {
 			return b;
 		}
+		else if (val == null) {
+			throw new IllegalArgumentException("Unsupported boolean representation null");
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported boolean representation " + val.getClass());
 		}
@@ -146,6 +177,9 @@ public final class SqlToCypherConfig {
 			catch (NumberFormatException ex) {
 				throw new IllegalArgumentException("Unsupported Integer representation `%s`".formatted(s), ex);
 			}
+		}
+		else if (val == null) {
+			throw new IllegalArgumentException("Unsupported Integer representation null");
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported Integer representation " + val.getClass());
@@ -196,7 +230,7 @@ public final class SqlToCypherConfig {
 
 	private final boolean prettyPrint;
 
-	private final Boolean alwaysEscapeNames;
+	private final boolean alwaysEscapeNames;
 
 	private final String parseNamedParamPrefix;
 
@@ -213,7 +247,7 @@ public final class SqlToCypherConfig {
 		this.joinColumnsToTypeMappings = builder.joinColumnsToTypeMappings;
 		this.sqlDialect = builder.sqlDialect;
 		this.prettyPrint = builder.prettyPrint;
-		this.alwaysEscapeNames = builder.alwaysEscapeNames();
+		this.alwaysEscapeNames = builder.alwaysEscapeNames;
 		this.parseNamedParamPrefix = builder.parseNamedParamPrefix;
 		this.cacheEnabled = builder.enableCache;
 		this.precedence = builder.precedence;
@@ -336,14 +370,14 @@ public final class SqlToCypherConfig {
 
 		private String parseNamedParamPrefix;
 
-		private Boolean alwaysEscapeNames;
+		private boolean alwaysEscapeNames;
 
 		private boolean enableCache;
 
 		private Integer precedence;
 
 		private Builder() {
-			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, true, null,
+			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, false, false,
 					null, false, Translator.LOWEST_PRECEDENCE);
 		}
 
@@ -355,7 +389,7 @@ public final class SqlToCypherConfig {
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
-				SQLDialect sqlDialect, boolean prettyPrint, Boolean alwaysEscapeNames, String parseNamedParamPrefix,
+				SQLDialect sqlDialect, boolean prettyPrint, boolean alwaysEscapeNames, String parseNamedParamPrefix,
 				boolean enableCache, Integer precedence) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
@@ -478,10 +512,6 @@ public final class SqlToCypherConfig {
 		 */
 		public SqlToCypherConfig build() {
 			return new SqlToCypherConfig(this);
-		}
-
-		private boolean alwaysEscapeNames() {
-			return (this.alwaysEscapeNames != null) ? this.alwaysEscapeNames : !this.prettyPrint;
 		}
 
 		/**

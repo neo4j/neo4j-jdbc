@@ -252,8 +252,11 @@ class SqlToCypherTests {
 
 	@Test
 	void namedParameterPrefixForParsingShouldBeConfigurable() {
-		var translator = SqlToCypher
-			.with(SqlToCypherConfig.builder().withParseNamedParamPrefix("$").withPrettyPrint(false).build());
+		var translator = SqlToCypher.with(SqlToCypherConfig.builder()
+			.withParseNamedParamPrefix("$")
+			.withPrettyPrint(false)
+			.withAlwaysEscapeNames(true)
+			.build());
 		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($a)"))
 			.isEqualTo("CREATE (movie:`Movie` {title: $a})");
 	}
@@ -262,10 +265,8 @@ class SqlToCypherTests {
 	void simpleUpdateShouldWork() {
 
 		var translator = SqlToCypher.defaultTranslator();
-		assertThat(translator.translate("UPDATE Actor a SET name = 'Foo' WHERE id(a) = 4711")).isEqualTo("""
-				MATCH (a:Actor)
-				WHERE id(a) = 4711
-				SET a.name = 'Foo'""");
+		assertThat(translator.translate("UPDATE Actor a SET name = 'Foo' WHERE id(a) = 4711"))
+			.isEqualTo("MATCH (a:Actor) WHERE id(a) = 4711 SET a.name = 'Foo'");
 	}
 
 	@Test
@@ -274,9 +275,7 @@ class SqlToCypherTests {
 		var translator = SqlToCypher.defaultTranslator();
 		assertThat(translator
 			.translate("SELECT * FROM (SELECT * FROM \"Movie\") AS \"tempTable_5301953691072342668\" WHERE 1 = 0"))
-			.isEqualTo("""
-					MATCH (movie:Movie)
-					RETURN * LIMIT 1""");
+			.isEqualTo("MATCH (movie:Movie) RETURN * LIMIT 1");
 	}
 
 	@Test
@@ -295,7 +294,8 @@ class SqlToCypherTests {
 			""")
 	void parserShallNotFailOnUnknownFunctions(String in, String expected) {
 
-		var translator = SqlToCypher.with(SqlToCypherConfig.builder().withPrettyPrint(false).build());
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(true).build());
 		assertThat(translator.translate(in)).isEqualTo(expected);
 	}
 
@@ -343,6 +343,7 @@ class SqlToCypherTests {
 		assertThat(SqlToCypher
 			.with(SqlToCypherConfig.builder()
 				.withPrettyPrint(prettyPrint)
+				.withAlwaysEscapeNames(!prettyPrint)
 				.withTableToLabelMappings(tableMappings)
 				.withJoinColumnsToTypeMappings(join_columns_mappings)
 				.build())
@@ -353,7 +354,7 @@ class SqlToCypherTests {
 	@CsvSource(textBlock = """
 			,,MATCH (movies:movies)$RETURN *
 			true,,MATCH (movies:movies)$RETURN *
-			false,,MATCH (movies:`movies`) RETURN *
+			false,,MATCH (movies:movies) RETURN *
 			,true,MATCH (movies:`movies`)$RETURN *
 			,false,MATCH (movies:movies)$RETURN *
 			true,false,MATCH (movies:movies)$RETURN *
@@ -373,7 +374,7 @@ class SqlToCypherTests {
 		var defaultCfg = SqlToCypherConfig.defaultConfig();
 		assertThat(cfg.isPrettyPrint()).isEqualTo((prettyPrint != null) ? prettyPrint : defaultCfg.isPrettyPrint());
 		assertThat(cfg.isAlwaysEscapeNames())
-			.isEqualTo((alwaysEscapeNames != null) ? alwaysEscapeNames : !cfg.isPrettyPrint());
+			.isEqualTo((alwaysEscapeNames != null) ? alwaysEscapeNames : defaultCfg.isAlwaysEscapeNames());
 		var sql = "Select * from movies";
 		var cypher = SqlToCypher.with(cfg).translate(sql);
 		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));

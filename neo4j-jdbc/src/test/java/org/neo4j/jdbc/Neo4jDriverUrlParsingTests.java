@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -304,14 +305,45 @@ class Neo4jDriverUrlParsingTests {
 				case "timeout" -> assertThat(info.value).isEqualTo("1000");
 				case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
 					assertThat(info.value).isEqualTo("false");
-				case "rewriteBatchedStatements" -> assertThat(info.value).isEqualTo("true");
+				case "rewriteBatchedStatements", "rewritePlaceholders" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"authRealm", "agent", "timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames",
-						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode",
-						"cacheSQLTranslations");
+						"authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"s2c.enableCache", "rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
 			}
 		}
+	}
+
+	@Test
+	void testMinimalParseConfig() throws SQLException {
+		Properties props = new Properties();
+
+		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host", props);
+
+		assertThat(config.host()).isEqualTo("host");
+		assertThat(config.port()).isEqualTo(7687);
+		assertThat(config.database()).isEqualTo("neo4j");
+		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
+		assertThat(config.user()).isEqualTo("neo4j");
+		assertThat(config.password()).isEqualTo("password");
+		assertThat(config.authRealm()).isEqualTo("");
+		assertThat(config.agent()).isEqualTo("neo4j-jdbc/unknown");
+		assertThat(config.timeout()).isEqualTo(1000);
+		assertThat(config.enableSQLTranslation()).isFalse();
+		assertThat(config.enableTranslationCaching()).isFalse();
+		assertThat(config.rewriteBatchedStatements()).isTrue();
+		assertThat(config.rewritePlaceholders()).isTrue();
+		assertThat(config.sslProperties().ssl()).isFalse();
+		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.DISABLE);
+
+		// raw config, i.e., everything the user explicitly set
+		var rawConfig = new HashMap<>(config.rawConfig());
+		assertThat(rawConfig.remove("host")).isEqualTo(config.host());
+		assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
+		assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
+		assertThat(rawConfig).isEmpty();
+
+		assertThat(config.misc()).isEqualTo(rawConfig);
 	}
 
 	@ParameterizedTest
@@ -359,15 +391,80 @@ class Neo4jDriverUrlParsingTests {
 				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
 				case "timeout" -> assertThat(info.value).isEqualTo("2000");
 				case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
-				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
+				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"rewritePlaceholders" ->
 					assertThat(info.value).isEqualTo("false");
 				case "enableSQLTranslation" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"agent", "authRealm", "timeout", "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames",
-						"s2c.prettyPrint", "s2c.enableCache", "rewriteBatchedStatements", "sslMode");
+						"agent", "authRealm", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+						"s2c.enableCache", "rewriteBatchedStatements", "sslMode");
 			}
 		}
+	}
+
+	@Test
+	void testParseConfigOverrides() throws SQLException {
+		Properties props = new Properties();
+		props.put("authScheme", "basic");
+		props.put("user", "user1");
+		props.put("password", "user1Password");
+		props.put("database", "customDb");
+		props.put("authRealm", "myRealm");
+		props.put("agent", "baby's-first-agent/1.2.3");
+		props.put("timeout", "2000");
+		props.put("enableSQLTranslation", "true");
+		props.put("rewriteBatchedStatements", "false");
+		props.put("cacheSQLTranslations", "true");
+		props.put("s2c.alwaysEscapeNames", "true");
+		props.put("s2c.prettyPrint", "true");
+		props.put("s2c.enableCache", "true");
+		props.put("customProperty", "foo");
+
+		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
+
+		assertThat(config.host()).isEqualTo("host");
+		assertThat(config.port()).isEqualTo(1234);
+		assertThat(config.database()).isEqualTo("customDb");
+		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
+		assertThat(config.user()).isEqualTo("user1");
+		assertThat(config.password()).isEqualTo("user1Password");
+		assertThat(config.authRealm()).isEqualTo("myRealm");
+		assertThat(config.agent()).isEqualTo("baby's-first-agent/1.2.3");
+		assertThat(config.timeout()).isEqualTo(2000);
+		assertThat(config.enableSQLTranslation()).isTrue();
+		assertThat(config.enableTranslationCaching()).isTrue();
+		assertThat(config.rewriteBatchedStatements()).isFalse();
+		assertThat(config.rewritePlaceholders()).isFalse();
+		assertThat(config.sslProperties().ssl()).isTrue();
+		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.REQUIRE);
+
+		// raw config, i.e., everything the user explicitly set
+		var rawConfig = new HashMap<>(config.rawConfig());
+		assertThat(rawConfig.remove("host")).isEqualTo(config.host());
+		assertThat(rawConfig.remove("port")).isEqualTo(String.valueOf(config.port()));
+		assertThat(rawConfig.remove("database")).isEqualTo(config.database());
+		assertThat(rawConfig.remove("authScheme")).isEqualTo(config.authScheme().getName());
+		assertThat(rawConfig.remove("user")).isEqualTo(config.user());
+		assertThat(rawConfig.remove("password")).isEqualTo(config.password());
+		assertThat(rawConfig.remove("authRealm")).isEqualTo(config.authRealm());
+		assertThat(rawConfig.remove("agent")).isEqualTo(config.agent());
+		assertThat(rawConfig.remove("timeout")).isEqualTo(String.valueOf(config.timeout()));
+		assertThat(rawConfig.remove("enableSQLTranslation")).isEqualTo(String.valueOf(config.enableSQLTranslation()));
+		assertThat(rawConfig.remove("cacheSQLTranslations"))
+			.isEqualTo(String.valueOf(config.enableTranslationCaching()));
+		assertThat(rawConfig.remove("rewriteBatchedStatements"))
+			.isEqualTo(String.valueOf(config.rewriteBatchedStatements()));
+		assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
+		assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
+		// the rest of the raw config should have ended up in misc
+		assertThat(config.misc()).isEqualTo(rawConfig);
+		assertThat(rawConfig.remove("s2c.alwaysEscapeNames")).isEqualTo("true");
+		assertThat(rawConfig.remove("s2c.prettyPrint")).isEqualTo("true");
+		assertThat(rawConfig.remove("s2c.enableCache")).isEqualTo("true");
+		assertThat(rawConfig.remove("customProperty")).isEqualTo("foo");
+		assertThat(rawConfig.remove("customQuery")).isEqualTo("bar");
+		assertThat(rawConfig).isEmpty();
 	}
 
 	@Test

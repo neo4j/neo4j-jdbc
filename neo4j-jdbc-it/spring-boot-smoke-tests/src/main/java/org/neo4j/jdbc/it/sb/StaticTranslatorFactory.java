@@ -32,7 +32,7 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 public final class StaticTranslatorFactory implements TranslatorFactory {
 
 	@Override
-	public Translator create(Map<String, Object> properties) {
+	public Translator create(Map<String, ?> properties) {
 
 		return new Translator() {
 
