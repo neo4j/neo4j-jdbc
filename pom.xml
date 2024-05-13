@@ -146,7 +146,7 @@
 		<git-commit-id-maven-plugin.version>8.0.2</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
 		<jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
-		<japicmp-maven-plugin.version>0.21.1</japicmp-maven-plugin.version>
+		<japicmp-maven-plugin.version>0.21.2</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
 		<jdbi3.version>3.45.1</jdbi3.version>
