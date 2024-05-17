@@ -65,17 +65,22 @@ public class ConnectionIT extends IntegrationTestBase {
 	void shouldExpectRollbackBeforeStartingNewTransactionInExplicitMode() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			connection.setAutoCommit(false);
+			System.out.println("1");
 			// tx1 should fail
 			assertThatThrownBy(() -> statement.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
 				.isExactlyInstanceOf(SQLException.class);
+			System.out.println("2");
 			// tx1 should remain failed
 			assertThatThrownBy(() -> statement.executeQuery("RETURN 1")).isExactlyInstanceOf(SQLException.class);
+			System.out.println("3");
 			// tx1 should finish
 			connection.rollback();
+			System.out.println("4");
 			// tx2 should succeed
 			var resultSet = statement.executeQuery("RETURN 1");
 			assertThat(resultSet.next()).isTrue();
 			assertThat(resultSet.getInt(1)).isEqualTo(1);
+			System.out.println("5");
 		}
 	}
 

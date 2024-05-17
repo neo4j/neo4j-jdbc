@@ -46,7 +46,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -60,7 +60,6 @@ import java.util.logging.Logger;
 
 import org.neo4j.jdbc.internal.bolt.AccessMode;
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.jdbc.internal.bolt.TransactionType;
 import org.neo4j.jdbc.internal.bolt.exception.ConnectionReadTimeoutException;
 import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
@@ -117,6 +116,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final Cache<String, String> l2cache = Cache.getInstance(TRANSLATION_CACHE_SIZE);
 
+	private final BookmarkManager bookmarkManager;
+
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
 	 * for future use.
@@ -124,13 +125,15 @@ final class ConnectionImpl implements Neo4jConnection {
 	private final Map<String, String> clientInfo = new ConcurrentHashMap<>();
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<List<Translator>> translators, boolean enableSQLTranslation,
-			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders) {
+			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
+			BookmarkManager bookmarkManager) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
 		this.enableTranslationCaching = enableTranslationCaching;
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.rewritePlaceholders = rewritePlaceholders;
+		this.bookmarkManager = Objects.requireNonNull(bookmarkManager);
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
@@ -712,14 +715,11 @@ final class ConnectionImpl implements Neo4jConnection {
 			}
 		}
 		else {
-			var resetStage = (this.transaction != null
+			CompletionStage<Void> resetStage = (this.transaction != null
 					&& Neo4jTransaction.State.FAILED.equals(this.transaction.getState()))
-							? this.boltConnection.reset(false) : CompletableFuture.completedStage(null);
-			var transactionType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-			var beginStage = this.boltConnection.beginTransaction(Collections.emptySet(), getAccessMode(),
-					transactionType, false);
-			this.transaction = new DefaultTransactionImpl(this.boltConnection, this::handleFatalException,
-					resetStage.thenCompose(ignored -> beginStage), this.autoCommit);
+							? this.boltConnection.reset(false) : null;
+			this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
+					this::handleFatalException, resetStage, this.autoCommit, getAccessMode(), null);
 		}
 		return this.transaction;
 	}
