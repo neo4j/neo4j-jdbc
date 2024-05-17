@@ -132,7 +132,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		var beginFuture = this.beginStage.toCompletableFuture();
 		var commitFuture = this.boltConnection.commit().toCompletableFuture();
 		execute(beginFuture.thenCompose(unused -> commitFuture).whenComplete((response, error) -> {
-			if (response != null) {
+			if (!(response == null || Objects.requireNonNullElse(response.bookmark(), "").isBlank())) {
 				this.bookmarkManager.updateBookmarks(Function.identity(), this.usedBookmarks,
 						List.of(response.bookmark()));
 			}
