@@ -71,11 +71,12 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		this.autoCommit = autoCommit;
 		this.state = Objects.requireNonNullElse(state, State.NEW);
 
+		var beginTransactionFuture = this.boltConnection.beginTransaction(
+				this.bookmarkManager.getBookmarks(Function.identity()),
+				Objects.requireNonNullElse(accessMode, AccessMode.WRITE),
+				this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT, false);
 		this.beginStage = Objects.requireNonNullElseGet(resetStage, () -> CompletableFuture.completedStage(null))
-			.thenCompose(ignored -> this.boltConnection.beginTransaction(this.usedBookmarks,
-					Objects.requireNonNullElse(accessMode, AccessMode.WRITE),
-					this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT, false));
-
+			.thenCompose(ignored -> beginTransactionFuture);
 	}
 
 	@Override
@@ -145,19 +146,14 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	@Override
 	public void rollback() throws SQLException {
 		if (State.OPEN_FAILED.equals(this.state)) {
-			System.out.println("what?!");
 			this.state = State.FAILED;
 			return;
 		}
 		assertNoException();
 		assertRunnableState();
-		System.out.println("fuck=?");
 		var beginFuture = this.beginStage.toCompletableFuture();
-		System.out.println("x");
 		var rollbackFuture = this.boltConnection.rollback().toCompletableFuture();
-		System.out.println("vor rollback");
 		execute(CompletableFuture.allOf(beginFuture, rollbackFuture), 0);
-		System.out.println("done");
 		this.state = State.ROLLEDBACK;
 	}
 
@@ -175,7 +171,6 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	public void fail(SQLException exception) throws SQLException {
 		assertRunnableState();
 		this.exception = exception;
-		this.exception.printStackTrace();
 		this.state = this.autoCommit ? State.FAILED : State.OPEN_FAILED;
 	}
 

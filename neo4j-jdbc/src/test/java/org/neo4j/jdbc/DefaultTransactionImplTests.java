@@ -70,6 +70,9 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.isRunnable()).isEqualTo(true);
 		assertThat(this.transaction.isOpen()).isEqualTo(true);
 		assertThat(this.transaction.isAutoCommit()).isEqualTo(autoCommit);
+		then(boltConnection).should()
+			.beginTransaction(Set.of(), AccessMode.WRITE,
+					autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT, false);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
