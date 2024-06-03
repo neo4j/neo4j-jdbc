@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 9d2c70e,</span>
-<span id="revdate">2024-06-03T07:09:07Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 8b34f05,</span>
+<span id="revdate">2024-06-03T08:42:21Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -562,9 +562,10 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_configuration">5. Configuration</a>
 <ul class="sectlevel2">
 <li><a href="#_driver_class_name">5.1. Driver class name</a></li>
-<li><a href="#_url_and_connection_properties">5.2. URL and connection properties</a></li>
-<li><a href="#_getting_a_driver_or_a_connection_instance">5.3. Getting a driver or a connection instance</a></li>
-<li><a href="#_securing_your_connection_by_using_ssl">5.4. Securing your connection by using SSL</a></li>
+<li><a href="#_causal_clustering_and_bookmarks">5.2. Causal clustering and bookmarks</a></li>
+<li><a href="#_url_and_connection_properties">5.3. URL and connection properties</a></li>
+<li><a href="#_getting_a_driver_or_a_connection_instance">5.4. Getting a driver or a connection instance</a></li>
+<li><a href="#_securing_your_connection_by_using_ssl">5.5. Securing your connection by using SSL</a></li>
 </ul>
 </li>
 <li><a href="#_metadata">6. Metadata</a>
@@ -1303,7 +1304,17 @@ The class is public API.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_url_and_connection_properties">5.2. URL and connection properties</h3>
+<h3 id="_causal_clustering_and_bookmarks">5.2. Causal clustering and bookmarks</h3>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency when running against a Neo4j cluster.
+Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver.
+Thus, all connections that are spawned by one instance, will partake in the same causal chain of transactions.
+Connections from different instances of the drivers will not use the same set of bookmarks and there is no built-in machinery that would enable this.
+If you want or need this, you can directly access the <code>Neo4jDriver</code> type to retrieve the current set of known bookmarks and pass them to another driver instance.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_url_and_connection_properties">5.3. URL and connection properties</h3>
 <div class="paragraph">
 <p>The canonical URL format for the Neo4j JDBC Driver is</p>
 </div>
@@ -1439,11 +1450,19 @@ There is no need to specify <code>bolt</code> or other additional prefixes in th
 </div></div></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>basic</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>useBookmarks</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>boolean</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enables bookmark management for full causal cluster support. This is enabled by default and the recommended setting for all scenarions that use a connection pool.
+If you disable it, it will only be disabled for the specific connection.
+Other connections retrieved from the driver instance are not affected, and the driver will still manage their bookmarks.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+</tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_getting_a_driver_or_a_connection_instance">5.3. Getting a driver or a connection instance</h3>
+<h3 id="_getting_a_driver_or_a_connection_instance">5.4. Getting a driver or a connection instance</h3>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -1513,7 +1532,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do interna
 </div>
 </div>
 <div class="sect2">
-<h3 id="_securing_your_connection_by_using_ssl">5.4. Securing your connection by using SSL</h3>
+<h3 id="_securing_your_connection_by_using_ssl">5.5. Securing your connection by using SSL</h3>
 <div class="paragraph">
 <p>The Neo4j JDBC Driver supports the same SSL option as the common Java driver does, with the same URL protocols, using <code>+s</code> or <code>+ssc</code> as additional indicators for the level of security that is required.</p>
 </div>
@@ -1522,7 +1541,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do interna
 As long as you don&#8217;t specify contradicting values, it&#8217;s fine to combine both approaches.</p>
 </div>
 <div class="sect3">
-<h4 id="_understanding_the_ssl_mode">5.4.1. Understanding the SSL mode</h4>
+<h4 id="_understanding_the_ssl_mode">5.5.1. Understanding the SSL mode</h4>
 <div class="paragraph">
 <p>The possible settings are best explained using the available SSL modes.
 The following list is ordered by ascending security:</p>
@@ -1574,7 +1593,7 @@ Neo4j cluster can offer both plain bolt connections and encrypted SSL connection
 </div>
 </div>
 <div class="sect3">
-<h4 id="_valid_urls">5.4.2. Valid URLs</h4>
+<h4 id="_valid_urls">5.5.2. Valid URLs</h4>
 <div class="paragraph">
 <p>The following URLs are all valid</p>
 </div>
@@ -1625,7 +1644,7 @@ The reason to offer several mechanism is that we want you to be able to use a fi
 </div>
 </div>
 <div class="sect3">
-<h4 id="_using_dotenv_files">5.4.3. Using .dotenv files</h4>
+<h4 id="_using_dotenv_files">5.5.3. Using .dotenv files</h4>
 <div class="paragraph">
 <p>When you sign up for <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j AuraDB</a> and create a database, you will be asked to download a text-file named similar to <code>Neo4j-9df57663-Created-2023-06-12.txt</code>. This is essentially a <a href="https://www.dotenv.org">.dotenv</a> file containing all necessary information required to connect to an aura Database.</p>
 </div>
@@ -3906,8 +3925,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 9d2c70e<br>
-Last updated 2024-06-03 07:09:12 UTC
+Version 6.0.0-SNAPSHOT 8b34f05<br>
+Last updated 2024-06-03 08:42:26 UTC
 </div>
 </div>
 </body>
