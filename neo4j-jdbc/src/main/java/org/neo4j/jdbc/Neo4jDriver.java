@@ -41,6 +41,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -224,7 +225,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private volatile List<TranslatorFactory> sqlTranslatorFactories;
 
-	private final DefaultBookmarkManagerImpl bookmarkManager = new DefaultBookmarkManagerImpl();
+	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
@@ -344,7 +345,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 		var translatorFactory = driverConfig.rawConfig.get(PROPERTY_TRANSLATOR_FACTORY);
-		var bookmarkManager = driverConfig.useBookmarks ? this.bookmarkManager : new VoidBookmarkManagerImpl();
+		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
+				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new VoidBookmarkManagerImpl());
 
 		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this::getSqlTranslatorFactories;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
@@ -697,13 +699,20 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	@Override
-	public Collection<Bookmark> getCurrentBookmarks() {
-		return this.bookmarkManager.getBookmarks(Bookmark::new);
+	public Collection<Bookmark> getCurrentBookmarks(String url, Properties info) throws SQLException {
+		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		if (bm == null) {
+			return Set.of();
+		}
+		return bm.getBookmarks(Bookmark::new);
 	}
 
 	@Override
-	public void addBookmarks(Collection<Bookmark> bookmarks) {
-		this.bookmarkManager.updateBookmarks(Bookmark::value, List.of(), bookmarks);
+	public void addBookmarks(String url, Properties info, Collection<Bookmark> bookmarks) throws SQLException {
+		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		if (bm != null) {
+			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
+		}
 	}
 
 	enum SSLMode {

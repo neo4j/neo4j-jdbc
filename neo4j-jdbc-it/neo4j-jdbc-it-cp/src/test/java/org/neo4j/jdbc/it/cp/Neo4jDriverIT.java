@@ -142,7 +142,7 @@ public class Neo4jDriverIT {
 		try (var connection = driver.connect(url, new Properties()); var stmt = connection.createStatement()) {
 			stmt.executeQuery("RETURN 1").close();
 		}
-		assertThat(((Neo4jDriver) driver).getCurrentBookmarks()).isNotEmpty();
+		assertThat(((Neo4jDriver) driver).getCurrentBookmarks(url)).isNotEmpty();
 	}
 
 	private boolean validateConnection(Connection connection) throws SQLException {
