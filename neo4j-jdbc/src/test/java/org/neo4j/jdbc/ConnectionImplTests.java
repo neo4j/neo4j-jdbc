@@ -124,7 +124,7 @@ class ConnectionImplTests {
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
 		var connection = new ConnectionImpl(mock(BoltConnection.class), () -> List.of(translator), false, true, false,
-				false);
+				false, new VoidBookmarkManagerImpl());
 
 		var nativeSQL = connection.nativeSQL(sql);
 		nativeSQL = connection.nativeSQL(sql);
@@ -707,7 +707,7 @@ class ConnectionImplTests {
 	}
 
 	ConnectionImpl makeConnection(BoltConnection boltConnection) {
-		return new ConnectionImpl(boltConnection, List::of, false, false, true, false);
+		return new ConnectionImpl(boltConnection, List::of, false, false, true, false, new VoidBookmarkManagerImpl());
 
 	}
 

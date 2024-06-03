@@ -305,7 +305,8 @@ class Neo4jDriverUrlParsingTests {
 				case "timeout" -> assertThat(info.value).isEqualTo("1000");
 				case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
 					assertThat(info.value).isEqualTo("false");
-				case "rewriteBatchedStatements", "rewritePlaceholders" -> assertThat(info.value).isEqualTo("true");
+				case "rewriteBatchedStatements", "rewritePlaceholders", "useBookmarks" ->
+					assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
 				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
 						"authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
@@ -373,6 +374,7 @@ class Neo4jDriverUrlParsingTests {
 		props.put("timeout", "2000");
 		props.put("enableSQLTranslation", "true");
 		props.put("rewriteBatchedStatements", "false");
+		props.put("useBookmarks", "false");
 		props.put("cacheSQLTranslations", "true");
 
 		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
@@ -392,7 +394,7 @@ class Neo4jDriverUrlParsingTests {
 				case "timeout" -> assertThat(info.value).isEqualTo("2000");
 				case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
 				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"rewritePlaceholders" ->
+						"rewritePlaceholders", "useBookmarks" ->
 					assertThat(info.value).isEqualTo("false");
 				case "enableSQLTranslation" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");

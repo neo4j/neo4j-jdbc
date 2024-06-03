@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -40,6 +41,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -142,6 +144,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_SQL_TRANSLATION_ENABLED = "enableSQLTranslation";
 
 	/**
+	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
+	 * enable the use of causal cluster bookmarks.
+	 */
+	public static final String PROPERTY_USE_BOOKMARKS = "useBookmarks";
+
+	/**
 	 * This property can be used when you want to use Cypher with quotation marks
 	 * ({@literal ?}) as placeholders. This can happen when you actually want to pass
 	 * Cypher to the driver but the Cypher gets preprocessed by another tooling down the
@@ -216,6 +224,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	private final BoltConnectionProvider boltConnectionProvider;
 
 	private volatile List<TranslatorFactory> sqlTranslatorFactories;
+
+	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
@@ -335,6 +345,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 		var translatorFactory = driverConfig.rawConfig.get(PROPERTY_TRANSLATOR_FACTORY);
+		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
+				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new VoidBookmarkManagerImpl());
 
 		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this::getSqlTranslatorFactories;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
@@ -342,7 +354,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 		return new ConnectionImpl(boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
-				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders);
+				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
+				bookmarkManager);
 	}
 
 	static String getDefaultUserAgent() {
@@ -413,8 +426,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				"Turns on or of sql to cypher translation. Defaults to false.", false, trueFalseChoices));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_REWRITE_BATCHED_STATEMENTS,
 				String.valueOf(parsedConfig.rewriteBatchedStatements),
-				"urns on generation of more efficient cypher when batching statements. Defaults to true.", false,
+				"Turns on generation of more efficient cypher when batching statements. Defaults to true.", false,
 				trueFalseChoices));
+		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_USE_BOOKMARKS, String.valueOf(parsedConfig.useBookmarks),
+				"Enables the use of causal cluster bookmarks. Defaults to true", false, trueFalseChoices));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_REWRITE_PLACEHOLDERS,
 				String.valueOf(parsedConfig.rewritePlaceholders),
 				"Rewrites SQL placeholders (?) into $1, $2 .. $n. Defaults to true when SQL translation is not enabled.",
@@ -683,6 +698,23 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return factories.stream().map(factory -> factory.create(config)).sorted(TranslatorComparator.INSTANCE).toList();
 	}
 
+	@Override
+	public Collection<Bookmark> getCurrentBookmarks(String url, Properties info) throws SQLException {
+		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		if (bm == null) {
+			return Set.of();
+		}
+		return bm.getBookmarks(Bookmark::new);
+	}
+
+	@Override
+	public void addBookmarks(String url, Properties info, Collection<Bookmark> bookmarks) throws SQLException {
+		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		if (bm != null) {
+			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
+		}
+	}
+
 	enum SSLMode {
 
 		DISABLE("disable"), REQUIRE("require"), VERIFY_FULL("verify-full");
@@ -741,14 +773,15 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param enableTranslationCaching enable caching for translations
 	 * @param rewriteBatchedStatements rewrite batched statements to be more efficient
 	 * @param rewritePlaceholders rewrite ? to $0 .. $n
+	 * @param useBookmarks enables the use of causal cluster bookmarks
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
 
 	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
 			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
-			boolean rewriteBatchedStatements, boolean rewritePlaceholders, SSLProperties sslProperties,
-			Map<String, String> rawConfig) {
+			boolean rewriteBatchedStatements, boolean rewritePlaceholders, boolean useBookmarks,
+			SSLProperties sslProperties, Map<String, String> rawConfig) {
 
 		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
 				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
@@ -829,10 +862,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				.parseBoolean(config.getOrDefault(PROPERTY_REWRITE_BATCHED_STATEMENTS, "true"));
 			var rewritePlaceholders = Boolean.parseBoolean(
 					config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, Boolean.toString(!automaticSqlTranslation)));
+			var useBookmarks = Boolean.parseBoolean(config.getOrDefault(PROPERTY_USE_BOOKMARKS, "true"));
 
 			return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
 					connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
-					rewriteBatchedStatements, rewritePlaceholders, sslProperties, raw);
+					rewriteBatchedStatements, rewritePlaceholders, useBookmarks, sslProperties, raw);
 		}
 
 		private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {

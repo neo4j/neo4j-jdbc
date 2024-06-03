@@ -76,8 +76,7 @@ public class Neo4jDriverIT {
 	@Test
 	void shouldConfigureConnectionToUseSqlTranslator() throws SQLException {
 
-		var url = "jdbc:neo4j://%s:%s?user=%s&password=%s".formatted(this.neo4j.getHost(),
-				this.neo4j.getMappedPort(7687), "neo4j", this.neo4j.getAdminPassword());
+		var url = computeUrl();
 
 		var connection = DriverManager.getConnection(url);
 		assertThat(connection).isNotNull();
@@ -90,6 +89,11 @@ public class Neo4jDriverIT {
 			assertThat(rs.next()).isTrue();
 			assertThat(rs.getInt(1)).isZero();
 		}
+	}
+
+	private String computeUrl() {
+		return "jdbc:neo4j://%s:%s?user=%s&password=%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687),
+				"neo4j", this.neo4j.getAdminPassword());
 	}
 
 	@Test
@@ -113,8 +117,7 @@ public class Neo4jDriverIT {
 	@Test
 	void additionalPropertiesParametersShouldBePreserved() throws SQLException {
 
-		var url = "jdbc:neo4j://%s:%s?user=%s&password=%s".formatted(this.neo4j.getHost(),
-				this.neo4j.getMappedPort(7687), "neo4j", this.neo4j.getAdminPassword());
+		var url = computeUrl();
 
 		var properties = new Properties();
 		properties.put("s2c.tableToLabelMappings", "genres:Genre");
@@ -129,6 +132,17 @@ public class Neo4jDriverIT {
 		var propertyInfo = driver.getPropertyInfo(url, properties);
 		assertThat(propertyInfo)
 			.anyMatch(pi -> "s2c.tableToLabelMappings".equals(pi.name) && "genres:Genre".equals(pi.value));
+	}
+
+	@Test
+	void shouldUseBookmarksByDefault() throws SQLException {
+
+		var url = computeUrl();
+		var driver = DriverManager.getDriver(url);
+		try (var connection = driver.connect(url, new Properties()); var stmt = connection.createStatement()) {
+			stmt.executeQuery("RETURN 1").close();
+		}
+		assertThat(((Neo4jDriver) driver).getCurrentBookmarks(url)).isNotEmpty();
 	}
 
 	private boolean validateConnection(Connection connection) throws SQLException {

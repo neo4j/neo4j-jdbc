@@ -20,15 +20,20 @@ package org.neo4j.jdbc;
 
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
+import org.neo4j.jdbc.internal.bolt.AccessMode;
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
+import org.neo4j.jdbc.internal.bolt.TransactionType;
 import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.internal.bolt.response.DiscardResponse;
@@ -45,22 +50,33 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private final boolean autoCommit;
 
+	private final BookmarkManager bookmarkManager;
+
+	private final Set<String> usedBookmarks;
+
 	private State state;
 
 	private SQLException exception;
 
-	DefaultTransactionImpl(BoltConnection boltConnection, FatalExceptionHandler fatalExceptionHandler,
-			CompletionStage<Void> beginStage, boolean autoCommit) {
-		this(boltConnection, fatalExceptionHandler, beginStage, autoCommit, State.NEW);
-	}
+	DefaultTransactionImpl(BoltConnection boltConnection, BookmarkManager bookmarkManager,
+			FatalExceptionHandler fatalExceptionHandler, CompletionStage<Void> resetStage, boolean autoCommit,
+			AccessMode accessMode, State state) {
 
-	DefaultTransactionImpl(BoltConnection boltConnection, FatalExceptionHandler fatalExceptionHandler,
-			CompletionStage<Void> beginStage, boolean autoCommit, State state) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
-		this.beginStage = Objects.requireNonNull(beginStage);
+
+		this.bookmarkManager = Objects.requireNonNullElseGet(bookmarkManager, VoidBookmarkManagerImpl::new);
+		this.usedBookmarks = this.bookmarkManager.getBookmarks(Function.identity());
+
 		this.autoCommit = autoCommit;
-		this.state = state;
+		this.state = Objects.requireNonNullElse(state, State.NEW);
+
+		var beginTransactionFuture = this.boltConnection.beginTransaction(
+				this.bookmarkManager.getBookmarks(Function.identity()),
+				Objects.requireNonNullElse(accessMode, AccessMode.WRITE),
+				this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT, false);
+		this.beginStage = Objects.requireNonNullElseGet(resetStage, () -> CompletableFuture.completedStage(null))
+			.thenCompose(ignored -> beginTransactionFuture);
 	}
 
 	@Override
@@ -115,8 +131,16 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertRunnableState();
 		var beginFuture = this.beginStage.toCompletableFuture();
 		var commitFuture = this.boltConnection.commit().toCompletableFuture();
-		execute(CompletableFuture.allOf(beginFuture, commitFuture), 0);
-		this.state = State.COMMITTED;
+		execute(beginFuture.thenCompose(unused -> commitFuture).whenComplete((response, error) -> {
+			if (!(response == null || Objects.requireNonNullElse(response.bookmark(), "").isBlank())) {
+				this.bookmarkManager.updateBookmarks(Function.identity(), this.usedBookmarks,
+						List.of(response.bookmark()));
+			}
+			if (error == null) {
+				this.state = State.COMMITTED;
+			}
+		}), 0);
+
 	}
 
 	@Override
@@ -191,9 +215,6 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			throw new SQLException(
 					String.format("The requested action is not supported in %s transaction state", this.state));
 		}
-	}
-
-	private record QueryResponses(RunResponse runResponse, PullResponse pullResponse, DiscardResponse discardResponse) {
 	}
 
 	@FunctionalInterface
