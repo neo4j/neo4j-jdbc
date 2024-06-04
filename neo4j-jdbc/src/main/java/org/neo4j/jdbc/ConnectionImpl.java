@@ -736,6 +736,11 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 	}
 
+	@Override
+	public String getDatabaseName() {
+		return this.boltConnection.getDatabaseName();
+	}
+
 	private <T extends Statement> T trackStatement(T statement) {
 		purgeClearedStatementReferences();
 		this.trackedStatementReferences.add(new WeakReference<>(statement, this.trackedStatementReferenceQueue));
