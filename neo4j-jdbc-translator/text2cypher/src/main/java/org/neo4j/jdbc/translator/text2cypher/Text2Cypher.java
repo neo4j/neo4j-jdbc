@@ -31,7 +31,6 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
-
 import org.neo4j.jdbc.translator.spi.Translator;
 
 /**
