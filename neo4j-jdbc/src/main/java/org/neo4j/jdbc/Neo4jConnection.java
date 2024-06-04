@@ -81,4 +81,10 @@ public sealed interface Neo4jConnection extends Connection permits ConnectionImp
 	 */
 	void flushTranslationCache();
 
+	/**
+	 * Returns the name of the database for this connection.
+	 * @return the name of the database for this connection
+	 */
+	String getDatabaseName();
+
 }

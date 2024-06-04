@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.jdbc.Neo4jConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -236,6 +237,14 @@ public class ConnectionIT extends IntegrationTestBase {
 			assertThat(resultSet.next()).isTrue();
 			assertThat(resultSet.next()).isTrue();
 			assertThatThrownBy(statement::close).isExactlyInstanceOf(SQLException.class);
+		}
+	}
+
+	@Test
+	void shouldRetrieveDatabaseName() throws SQLException {
+		try (var connection = getConnection()) {
+			var neo4jConnection = connection.unwrap(Neo4jConnection.class);
+			assertThat(neo4jConnection.getDatabaseName()).isNotBlank();
 		}
 	}
 
