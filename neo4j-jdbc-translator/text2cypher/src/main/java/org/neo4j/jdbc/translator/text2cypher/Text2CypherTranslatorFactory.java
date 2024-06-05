@@ -25,6 +25,7 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
 /**
  * Factory for {@code Text2Cypher}.
+ *
  * @author Gerrit Meier
  */
 public class Text2CypherTranslatorFactory implements TranslatorFactory {

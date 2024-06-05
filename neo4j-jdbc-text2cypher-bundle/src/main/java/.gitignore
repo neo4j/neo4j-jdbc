@@ -1,0 +1,6 @@
+# The empty Java folder has been added to surpress the warnings of the maven-jar-plugin.
+# We cannot skip this plugin in the bundle project because then, the maven-shade-plugin will go belly up.
+# This seems to be the easiest and cleanest solution.
+
+*
+!.gitignore
