@@ -403,7 +403,7 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>${maven-compiler-plugin.version}</version>
 					<configuration>
-						<forceJavacCompilerUse>true</forceJavacCompilerUse>
+						<forceLegacyJavacApi>true</forceLegacyJavacApi>
 						<showWarnings>true</showWarnings>
 						<compilerArgs>
 							<arg>-Xlint:all,-options,-path,-processing,-classfile</arg>

@@ -35,4 +35,5 @@ asciidoc:
     artifact-id-impl: ${mainArtifactId}-translator-impl
     artifact-id-bundle: ${mainArtifactId}-bundle
     artifact-id-full-bundle: ${mainArtifactId}-full-bundle
+    artifact-id-text2cypher-bundle: ${mainArtifactId}-text2cypher-bundle
     version: ${project.version}
