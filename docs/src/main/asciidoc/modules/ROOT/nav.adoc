@@ -3,6 +3,7 @@
 * xref:configuration.adoc[]
 * xref:metadata.adoc[]
 * xref:sql2cypher.adoc[]
+* xref:text2cypher.adoc[]
 * xref:datatypes.adoc[]
 * xref:syntax.adoc[]
 * xref:migrating.adoc[]

@@ -121,3 +121,12 @@ Otherwise, it is identical to the <<small_bundle, small bundle>>.
 Its coordinates are `{group-id}:{artifact-id-full-bundle}` and you can download it from central here:
 
 https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-full-bundle}/{version}/{artifact-id-full-bundle}-{version}.jar
+
+[#text2cypher_bundle]
+=== text2cypher bundle
+
+We also ship a very experimental bundle that we call `text2cypher`:
+
+https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-text2cypher-bundle}/{version}/{artifact-id-text2cypher-bundle}-{version}.jar
+
+See <<text2cypher>> for more information about the text2cypher translator.

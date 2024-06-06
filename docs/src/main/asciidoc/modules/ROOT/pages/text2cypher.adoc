@@ -1,0 +1,53 @@
+[#text2cypher]
+= text2cypher
+
+== Introduction
+
+This is an experimental translator inspired by the Neo4j Labs project https://github.com/neo4j-labs/text2cypher[text2cypher].
+
+If you add this translator to the classpath or use the <<text2cypher_bundle,text2cypher bundle>>, all queries that start with
+
+[source,txt]
+----
+🤖,
+----
+
+will be treated as _natural language_ queries written in plain english.
+The driver will strip the prefix, and use https://openai.com[OpenAI] for translating the input into a Cypher statement.
+The driver will augment the generation of the query by passing the current graphs schema along with the input question.
+
+[WARNING]
+====
+Keep in mind that the following data will be sent to an external API:
+
+* Your database schema, including label names
+* Any natural language question that you or one of your user write
+
+Don't use this translator if you don't want the above or are not a llowed to do so.
+====
+
+This module requires one additional configuration, the OpenAI API Key.
+You can use either a URL parameter, JDBC Properties entry or a environment variable:
+
+* URL parameter or properties name is: `openAIApiKey`
+* Name of the environment variable is: `OPEN_AI_API_KEY`
+
+One example of a valid URL is:
+
+[source,txt]
+----
+jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key
+----
+
+With that in place, a query such as the following should work just fine:
+
+[source,txt]
+----
+🤖, How was The Da Vinci Code rated?
+----
+
+NOTE: Once a natural language query was translated to Cypher, the result will be cached and further invocations of that query will use the cached result.
+
+All that statements that do not start with 🤖 will be used as is and treated as Cypher.
+
+Get the full, ready to use bundle here: https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-text2cypher-bundle}/{version}/{artifact-id-text2cypher-bundle}-{version}.jar
