@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 081101a,</span>
-<span id="revdate">2024-06-05T09:36:51Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 071bbff,</span>
+<span id="revdate">2024-06-06T07:39:42Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -579,6 +579,11 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#s2c_introduction">7.1. Introduction</a></li>
 <li><a href="#_translating_sql_to_cypher">7.2. Translating SQL to Cypher</a></li>
 <li><a href="#s2c">7.3. Using the default translator</a></li>
+</ul>
+</li>
+<li><a href="#text2cypher">8. text2cypher</a>
+<ul class="sectlevel2">
+<li><a href="#_introduction_2">8.1. Introduction</a></li>
 </ul>
 </li>
 <li><a href="#_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</a>
@@ -1284,6 +1289,18 @@ Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can do
 </div>
 <div class="paragraph">
 <p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.0.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.0.0-SNAPSHOT.jar</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="text2cypher_bundle">4.2.4. text2cypher bundle</h4>
+<div class="paragraph">
+<p>We also ship a very experimental bundle that we call <code>text2cypher</code>:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.0.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.0.0-SNAPSHOT.jar</a></p>
+</div>
+<div class="paragraph">
+<p>See <a href="#text2cypher">text2cypher</a> for more information about the text2cypher translator.</p>
 </div>
 </div>
 </div>
@@ -3667,6 +3684,105 @@ ON MATCH SET people.born = properties['born']</code></pre>
 </div>
 </div>
 <div class="sect1">
+<h2 id="text2cypher">8. text2cypher</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction_2">8.1. Introduction</h3>
+<div class="paragraph">
+<p>This is an experimental translator inspired by the Neo4j Labs project <a href="https://github.com/neo4j-labs/text2cypher">text2cypher</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you add this translator to the classpath or use the <a href="#text2cypher_bundle">text2cypher bundle</a>, all queries that start with</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">🤖,</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will be treated as <em>natural language</em> queries written in plain english.
+The driver will strip the prefix, and use <a href="https://openai.com">OpenAI</a> for translating the input into a Cypher statement.
+The driver will augment the generation of the query by passing the current graphs schema along with the input question.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Keep in mind that the following data will be sent to an external API:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Your database schema, including label names</p>
+</li>
+<li>
+<p>Any natural language question that you or one of your user write</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Don&#8217;t use this translator if you don&#8217;t want the above or are not a llowed to do so.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This module requires one additional configuration, the OpenAI API Key.
+You can use either a URL parameter, JDBC Properties entry or a environment variable:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>URL parameter or properties name is: <code>openAIApiKey</code></p>
+</li>
+<li>
+<p>Name of the environment variable is: <code>OPEN_AI_API_KEY</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>One example of a valid URL is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With that in place, a query such as the following should work just fine:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">🤖, How was The Da Vinci Code rated?</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Once a natural language query was translated to Cypher, the result will be cached and further invocations of that query will use the cached result.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>All that statements that do not start with 🤖 will be used as is and treated as Cypher.</p>
+</div>
+<div class="paragraph">
+<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.0.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.0.0-SNAPSHOT.jar</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -3925,8 +4041,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 081101a<br>
-Last updated 2024-06-05 09:36:55 UTC
+Version 6.0.0-SNAPSHOT 071bbff<br>
+Last updated 2024-06-06 07:39:49 UTC
 </div>
 </div>
 </body>
