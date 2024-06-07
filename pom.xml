@@ -107,9 +107,9 @@
 		<module>neo4j-jdbc-translator</module>
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-it</module>
-		<module>neo4j-jdbc-bundle</module>
-		<module>neo4j-jdbc-full-bundle</module>
-		<module>neo4j-jdbc-text2cypher-bundle</module>
+		<module>bundles/neo4j-jdbc-bundle</module>
+		<module>bundles/neo4j-jdbc-full-bundle</module>
+		<module>bundles/neo4j-jdbc-text2cypher-bundle</module>
 		<module>docs</module>
 		<module>dist</module>
 		<module>benchkit</module>
