@@ -38,7 +38,7 @@
 		</file>
 		<file>
 			<source>
-				${project.parent.basedir}/neo4j-jdbc-full-bundle/target/neo4j-jdbc-full-bundle-${project.version}.jar
+				${project.parent.basedir}/bundles/neo4j-jdbc-full-bundle/target/neo4j-jdbc-full-bundle-${project.version}.jar
 			</source>
 			<destName>neo4j-jdbc-full-bundle.jar</destName>
 			<outputDirectory/>

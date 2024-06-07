@@ -26,6 +26,7 @@
 		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-parent</artifactId>
 		<version>6.0.0-SNAPSHOT</version>
+		<relativePath>../../</relativePath>
 	</parent>
 
 	<artifactId>neo4j-jdbc-text2cypher-bundle</artifactId>
@@ -35,7 +36,7 @@
 	<description>Single jar package of the Neo4j JDBC Driver, including the text2cypher translator.</description>
 
 	<properties>
-		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
 	<dependencyManagement>
@@ -120,7 +121,7 @@
 						<configuration>
 							<artifacts>
 								<artifact>
-									<file>../neo4j-jdbc/target/neo4j-jdbc-${project.version}-javadoc.jar</file>
+									<file>../../neo4j-jdbc/target/neo4j-jdbc-${project.version}-javadoc.jar</file>
 									<type>jar</type>
 									<classifier>javadoc</classifier>
 								</artifact>

@@ -26,6 +26,7 @@
 		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-parent</artifactId>
 		<version>6.0.0-SNAPSHOT</version>
+		<relativePath>../../</relativePath>
 	</parent>
 
 	<artifactId>neo4j-jdbc-bundle</artifactId>
@@ -35,7 +36,7 @@
 	<description>Single jar package of the Neo4j JDBC Driver.</description>
 
 	<properties>
-		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
 	<dependencyManagement>
@@ -82,7 +83,7 @@
 						<configuration>
 							<executable>bin/remove-shaded-dependencies-from-module-info.sh</executable>
 							<arguments>
-								<argument>${project.basedir}/../neo4j-jdbc/src/main/java/module-info.java</argument>
+								<argument>${project.basedir}/../../neo4j-jdbc/src/main/java/module-info.java</argument>
 								<argument>${project.build.directory}/jpms/module-info.java</argument>
 							</arguments>
 							<skip>false</skip>
@@ -202,7 +203,7 @@
 						<configuration>
 							<artifacts>
 								<artifact>
-									<file>../neo4j-jdbc/target/neo4j-jdbc-${project.version}-javadoc.jar</file>
+									<file>../../neo4j-jdbc/target/neo4j-jdbc-${project.version}-javadoc.jar</file>
 									<type>jar</type>
 									<classifier>javadoc</classifier>
 								</artifact>
