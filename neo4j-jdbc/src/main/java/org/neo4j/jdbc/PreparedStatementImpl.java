@@ -61,8 +61,8 @@ import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.ValueException;
 import org.neo4j.jdbc.values.Values;
 
-sealed class PreparedStatementImpl extends StatementImpl
-		implements Neo4jPreparedStatement permits CallableStatementImpl {
+sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPreparedStatement
+		permits CallableStatementImpl {
 
 	private static final Logger LOGGER = Logger.getLogger(Neo4jPreparedStatement.class.getCanonicalName());
 
