@@ -154,7 +154,7 @@
 		<jooq.version>3.19.9</jooq.version>
 		<jreleaser-maven-plugin.version>1.12.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.10.2</junit-jupiter.version>
-		<kotlin-stdlib-jdk8.version>1.9.24</kotlin-stdlib-jdk8.version>
+		<kotlin-stdlib-jdk8.version>2.0.0</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>0.31.0</langchain4j.version>
 		<license-maven-plugin.version>4.5</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
