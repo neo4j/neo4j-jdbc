@@ -28,8 +28,8 @@ import java.io.Serial;
  * @author Neo4j Drivers Team
  * @since 6.0.0
  */
-public sealed class ValueException extends
-		RuntimeException permits LossyCoercion, NotMultiValuedException, UncoercibleException, UnsizableException {
+public sealed class ValueException extends RuntimeException
+		permits LossyCoercion, NotMultiValuedException, UncoercibleException, UnsizableException {
 
 	@Serial
 	private static final long serialVersionUID = 7850167285895596482L;
