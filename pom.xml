@@ -181,7 +181,7 @@
 		<neo4j-jdbc.previous.version>5.0.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.15.0</neo4j.version>
-		<netty.version>4.1.110.Final</netty.version>
+		<netty.version>4.1.111.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.6.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.9</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
