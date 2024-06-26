@@ -86,16 +86,18 @@ final class Text2Cypher implements Translator {
 			question = question.substring(0, question.length() - 1);
 		}
 
-		LOGGER.log(Level.FINE, "Translating question '{0}'", new Object[] { question });
+		LOGGER.log(Level.INFO, "Translating question ''{0}''", new Object[] { question });
 
 		try {
 			var schema = Schema.from(optionalDatabaseMetaData.getConnection());
-			var cypher = this.cypherExpert.translate(schema, question);
 
-			LOGGER.log(Level.FINE, "Intermediate query '{0}'", new Object[] { cypher });
+			var cypher = this.cypherExpert.translate(schema, question);
+			LOGGER.log(Level.INFO, "Intermediate query ''{0}''", new Object[] { cypher });
 
 			cypher = schema.enforceRelationships(cypher);
-			LOGGER.log(Level.FINE, "Final query '{0}'", new Object[] { cypher });
+			LOGGER.log(Level.INFO, "Final query ''{0}''", new Object[] { cypher });
+
+			// Disable any further translation
 			return cypher;
 		}
 		catch (SQLException ex) {
