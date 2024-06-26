@@ -804,6 +804,11 @@ final class ConnectionImpl implements Neo4jConnection {
 			String result = null;
 			for (var translator : this.translators) {
 				var in = (result != null) ? result : statement;
+				// Break out early if any of the translators indicates a final Cypher
+				// statement
+				if (StatementImpl.forceCypher(in)) {
+					return in;
+				}
 				try {
 					result = translator.translate(in, this.metaData);
 				}

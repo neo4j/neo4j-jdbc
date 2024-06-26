@@ -118,7 +118,7 @@ final class Text2Cypher implements Translator {
 			LOGGER.log(Level.INFO, "Final query ''{0}''", new Object[] { cypher });
 
 			// Disable any further translation
-			return cypher;
+			return "/*+ NEO4J FORCE_CYPHER */ " + cypher;
 		}
 		catch (SQLException ex) {
 			throw new IllegalArgumentException(ex);
