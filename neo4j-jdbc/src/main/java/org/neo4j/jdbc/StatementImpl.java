@@ -487,8 +487,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		try {
 			var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
 			var processedSQL = processor.apply(sql);
-			if (LOGGER.isLoggable(Level.FINEST) && !processedSQL.equals(sql)) {
-				LOGGER.log(Level.FINEST, "Processed ''{0}'' into ''{1}''", new Object[] { sql, processedSQL });
+			if (LOGGER.isLoggable(Level.FINE) && !processedSQL.equals(sql)) {
+				LOGGER.log(Level.FINE, "Processed ''{0}'' into ''{1}''", new Object[] { sql, processedSQL });
 			}
 			return processedSQL;
 		}
