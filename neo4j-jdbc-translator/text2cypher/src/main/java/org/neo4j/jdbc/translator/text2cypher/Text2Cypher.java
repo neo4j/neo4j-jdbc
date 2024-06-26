@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,6 +50,8 @@ final class Text2Cypher implements Translator {
 
 	private final CypherExpert cypherExpert;
 
+	private final Integer precedence;
+
 	Text2Cypher(Map<String, ?> config) {
 
 		String openAIApiKey;
@@ -63,6 +66,23 @@ final class Text2Cypher implements Translator {
 		var model = OpenAiChatModel.builder().modelName("gpt-4-turbo").temperature(0.0).apiKey(openAIApiKey).build();
 
 		this.cypherExpert = AiServices.builder(CypherExpert.class).chatLanguageModel(model).build();
+		this.precedence = configurePrecedence(config);
+	}
+
+	private static Integer configurePrecedence(Map<String, ?> config) {
+		var val = config.getOrDefault("t2c.precedence", null);
+		if (val instanceof Integer precedence) {
+			return precedence;
+		}
+		else if (val instanceof String precedence) {
+			return Integer.parseInt(precedence);
+		}
+		return null;
+	}
+
+	@Override
+	public int getOrder() {
+		return Optional.ofNullable(this.precedence).orElseGet(Translator.super::getOrder);
 	}
 
 	@Override

@@ -72,7 +72,7 @@ class Neo4jTestConfig {
 
 		@Override
 		public String getJdbcUrl() {
-			return "jdbc:neo4j://%s:%d?enableSQLTranslation=true&s2c.priority=20".formatted(this.getHost(),
+			return "jdbc:neo4j://%s:%d?enableSQLTranslation=true&s2c.precedence=20".formatted(this.getHost(),
 					this.getMappedPort(7687));
 		}
 

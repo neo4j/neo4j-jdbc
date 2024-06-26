@@ -101,7 +101,7 @@ public final class SqlToCypherConfig {
 				case "alwaysEscapeNames" -> builder.withAlwaysEscapeNames(toBoolean(v));
 				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(toString(v));
 				case "enableCache" -> builder.withCacheEnabled(toBoolean(v));
-				case "priority" -> builder.withPrecedence(toInteger(v));
+				case "precedence" -> builder.withPrecedence(toInteger(v));
 				default -> {
 					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;

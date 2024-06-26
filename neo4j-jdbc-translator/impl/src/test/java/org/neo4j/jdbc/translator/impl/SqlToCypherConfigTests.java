@@ -140,7 +140,7 @@ class SqlToCypherConfigTests {
 				"s2c.renderNameCase", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true",
 				"s2c.sql-dialect", SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix",
 				"foo", "s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
-				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN", "s2c.priority", 123));
+				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN", "s2c.precedence", 123));
 
 		assertThat(config.getParseNameCase()).isEqualTo(ParseNameCase.LOWER_IF_UNQUOTED);
 		assertThat(config.getRenderNameCase()).isEqualTo(RenderNameCase.LOWER_IF_UNQUOTED);
