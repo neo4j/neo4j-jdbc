@@ -84,6 +84,7 @@ final class Schema {
 		try (var statement = connection.createStatement()) {
 			var nodeProperties = new HashMap<String, List<String>>();
 			try (var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
 					CALL apoc.meta.data()
 					YIELD label, other, elementType, type, property
 					WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
@@ -100,6 +101,7 @@ final class Schema {
 
 			var relationshipProperties = new HashMap<String, List<String>>();
 			try (var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
 					CALL apoc.meta.data()
 					YIELD label, other, elementType, type, property
 					WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
@@ -116,6 +118,7 @@ final class Schema {
 
 			var relationships = new ArrayList<Configuration.RelationshipDefinition>();
 			try (var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
 					CALL apoc.meta.data()
 					YIELD label, other, elementType, type, property
 					WHERE type = "RELATIONSHIP" AND elementType = "node"
