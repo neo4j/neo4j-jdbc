@@ -44,10 +44,10 @@ public final class AuraGenAIExample {
 
 	public static void main(String... args) throws Exception {
 
-		var openAIToken = System.getenv("OPEN_AI_TOKEN");
+		var openAIToken = System.getenv("OPEN_AI_API_KEY");
 		if (openAIToken == null || openAIToken.isBlank()) {
 			throw new IllegalArgumentException(
-					"Please set a system environment variable named `OPEN_AI_TOKEN` containing your OpenAI token");
+					"Please set a system environment variable named `OPEN_AI_API_KEY` containing your OpenAI token");
 		}
 
 		// Getting a connection
