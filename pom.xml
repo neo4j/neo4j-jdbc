@@ -150,7 +150,7 @@
 		<japicmp-maven-plugin.version>0.21.2</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
-		<jdbi3.version>3.45.1</jdbi3.version>
+		<jdbi3.version>3.45.2</jdbi3.version>
 		<jooq.version>3.19.10</jooq.version>
 		<jreleaser-maven-plugin.version>1.12.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.10.3</junit-jupiter.version>
