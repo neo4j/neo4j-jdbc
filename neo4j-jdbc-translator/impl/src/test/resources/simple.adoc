@@ -385,3 +385,50 @@ SELECT * FROM Movies m ORDER BY m.title
 MATCH (m:Movies)
 RETURN * ORDER BY m.title
 ----
+
+=== `DISTINCT` projections
+
+The `DISTINCT` keyword for projections should be handled:
+
+[source,sql,id=t3_1,name=distinct]
+----
+SELECT DISTINCT m.released FROM Movies m
+----
+
+[source,cypher,id=t3_1_expected,parseCypher=false]
+----
+MATCH (m:Movies)
+RETURN DISTINCT m.released
+----
+
+It also works with `*` projections so that:
+
+[source,sql,id=t3_2,name=distinct_star]
+----
+SELECT DISTINCT m.* FROM Movies m
+----
+
+becomes.
+
+[source,cypher,id=t3_2_expected,parseCypher=true]
+----
+MATCH (m:Movies)
+RETURN DISTINCT m {.*} AS m
+----
+
+However, as the qualified asterisks will use meta data if the database connection is available, this
+
+[source,sql,id=t3_3,name=distinct_star_with_db,metaData=Movies:title|released]
+----
+SELECT DISTINCT m.* FROM Movies m
+----
+
+becomes than
+
+[source,cypher,id=t3_3_expected,parseCypher=false]
+----
+MATCH (m:Movies)
+RETURN DISTINCT elementId(m) AS element_id, m.title AS title, m.released AS released
+----
+
+including the Neo4j element id, which will make each row unique. Thus being sad, the `DISCTINCT` clause is of limited use with the asterisk.

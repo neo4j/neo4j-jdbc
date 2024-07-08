@@ -286,6 +286,14 @@ class SqlToCypherTests {
 			.isEqualTo("MERGE (movie:Movie {title: $1})");
 	}
 
+	@Test // GH-675
+	void simpleDistinct() {
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR
+			.translate("select distinct \"NAME\" from \"Pgm\" where \"snapshotId\" = ?"))
+			.isEqualTo("MATCH (pgm:Pgm) WHERE pgm.snapshotId = $1 RETURN DISTINCT pgm.NAME");
+	}
+
 	@ParameterizedTest
 	@CsvSource(delimiterString = "|", textBlock = """
 			SELECT id(n) FROM Movies n|MATCH (n:`Movies`) RETURN id(n)
