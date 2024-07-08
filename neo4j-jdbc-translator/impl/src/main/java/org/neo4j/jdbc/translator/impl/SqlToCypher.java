@@ -333,8 +333,9 @@ final class SqlToCypher implements Translator {
 			OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
 					: (OngoingReadingWithWhere) m1;
 
-			var returning = m2.returning(resultColumnsSupplier.get())
-				.orderBy(x.$orderBy().stream().map(this::expression).toList());
+			var intermediate = x.$distinct() ? m2.returningDistinct(resultColumnsSupplier.get())
+					: m2.returning(resultColumnsSupplier.get());
+			var returning = intermediate.orderBy(x.$orderBy().stream().map(this::expression).toList());
 
 			StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
 			if (!(x.$limit() instanceof Param<?> param)) {
@@ -526,7 +527,7 @@ final class SqlToCypher implements Translator {
 
 				return Stream.of(col);
 			}
-			else if (t instanceof Asterisk) {
+			else if (t instanceof Asterisk a) {
 				var properties = projectAllColumns();
 				if (properties.isEmpty()) {
 					properties.add(Cypher.asterisk());
