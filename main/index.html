@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT b772593,</span>
-<span id="revdate">2024-07-08T10:55:41Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 01cd4a9,</span>
+<span id="revdate">2024-07-08T11:02:41Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -2551,6 +2551,60 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
+<div class="sect6">
+<h7 id="_distinct_projections"><code>DISTINCT</code> projections</h7>
+<div class="paragraph">
+<p>The <code>DISTINCT</code> keyword for projections should be handled:</p>
+</div>
+<div id="t3_1" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="keyword">DISTINCT</span> m.released <span class="keyword">FROM</span> Movies m</code></pre>
+</div>
+</div>
+<div id="t3_1_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movies)
+RETURN DISTINCT m.released</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It also works with <code>*</code> projections so that:</p>
+</div>
+<div id="t3_2" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="keyword">DISTINCT</span> m.* <span class="keyword">FROM</span> Movies m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>becomes.</p>
+</div>
+<div id="t3_2_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movies)
+RETURN DISTINCT m {.*} AS m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>However, as the qualified asterisks will use meta data if the database connection is available, this</p>
+</div>
+<div id="t3_3" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="keyword">DISTINCT</span> m.* <span class="keyword">FROM</span> Movies m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>becomes than</p>
+</div>
+<div id="t3_3_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movies)
+RETURN DISTINCT elementId(m) AS element_id, m.title AS title, m.released AS released</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>including the Neo4j element id, which will make each row unique. Thus being sad, the <code>DISCTINCT</code> clause is of limited use with the asterisk.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect4">
@@ -4041,8 +4095,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT b772593<br>
-Last updated 2024-07-08 10:55:46 UTC
+Version 6.0.0-SNAPSHOT 01cd4a9<br>
+Last updated 2024-07-08 11:02:48 UTC
 </div>
 </div>
 </body>
