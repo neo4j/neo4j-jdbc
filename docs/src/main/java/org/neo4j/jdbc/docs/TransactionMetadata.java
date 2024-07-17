@@ -38,6 +38,11 @@ public final class TransactionMetadata {
 
 	private static final Logger LOGGER = Logger.getLogger(TransactionMetadata.class.getPackageName());
 
+	// end::example[]
+	private TransactionMetadata() {
+	}
+
+	// tag::example[]
 	public static void main(String... args) throws SQLException {
 		var url = "jdbc:neo4j://localhost:7687";
 
