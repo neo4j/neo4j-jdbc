@@ -531,8 +531,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="details">
 <span id="author" class="author">Michael Simons</span><br>
 <span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT bd148c1,</span>
-<span id="revdate">2024-07-15T15:28:16Z</span>
+<span id="revnumber">version 6.0.0-SNAPSHOT 752d31b,</span>
+<span id="revdate">2024-07-17T14:57:25Z</span>
 <br><span id="revremark">For EAP</span>
 </div>
 <div id="toc" class="toc2">
@@ -563,9 +563,10 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <ul class="sectlevel2">
 <li><a href="#_driver_class_name">5.1. Driver class name</a></li>
 <li><a href="#_causal_clustering_and_bookmarks">5.2. Causal clustering and bookmarks</a></li>
-<li><a href="#_url_and_connection_properties">5.3. URL and connection properties</a></li>
-<li><a href="#_getting_a_driver_or_a_connection_instance">5.4. Getting a driver or a connection instance</a></li>
-<li><a href="#_securing_your_connection_by_using_ssl">5.5. Securing your connection by using SSL</a></li>
+<li><a href="#_neo4j_transactional_metadata">5.3. Neo4j transactional metadata</a></li>
+<li><a href="#_url_and_connection_properties">5.4. URL and connection properties</a></li>
+<li><a href="#_getting_a_driver_or_a_connection_instance">5.5. Getting a driver or a connection instance</a></li>
+<li><a href="#_securing_your_connection_by_using_ssl">5.6. Securing your connection by using SSL</a></li>
 </ul>
 </li>
 <li><a href="#_metadata">6. Metadata</a>
@@ -1331,7 +1332,81 @@ If you want or need this, you can directly access the <code>Neo4jDriver</code> t
 </div>
 </div>
 <div class="sect2">
-<h3 id="_url_and_connection_properties">5.3. URL and connection properties</h3>
+<h3 id="_neo4j_transactional_metadata">5.3. Neo4j transactional metadata</h3>
+<div class="paragraph">
+<p>Neo4j supports additional metadata for each ongoing transaction, see <a href="https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions">SHOW TRANSACTIONS</a>.
+As there is no explicit transaction object in the JDBC spec (a <code>Connection</code> is either in auto-commit or explicit commit mode, and all variations of a transaction entity are always third party implementations), the Neo4j JDBC driver needs another mechanism to make these configurable.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC driver provides the extension interface <code>Neo4jMetadataWriter</code>.
+Our driver, the connection implementation and all statement variants can be unwrapped accordingly.
+The configuration is additive, which means that
+metadata configured for a driver instance will be used for all connections spawned from that driver,
+connections can add additional metadata to those before creating new statements and statements themselves can also add their own metadata.
+Metadata added on a statement has precedence over connection which in turn has precedence over the drivers:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 14. Configuring transactional metadata</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
+<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+<span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
+<span class="keyword">import</span> <span class="include">java.sql.Statement</span>;
+<span class="keyword">import</span> <span class="include">java.util.Map</span>;
+<span class="keyword">import</span> <span class="include">java.util.Properties</span>;
+<span class="keyword">import</span> <span class="include">java.util.logging.Level</span>;
+<span class="keyword">import</span> <span class="include">java.util.logging.Logger</span>;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDriver</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jMetadataWriter</span>;
+
+<span class="directive">public</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">TransactionMetadata</span> {
+
+    <span class="directive">private</span> <span class="directive">static</span> <span class="directive">final</span> <span class="predefined-type">Logger</span> LOGGER = <span class="predefined-type">Logger</span>.getLogger(TransactionMetadata.class.getPackageName());
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">SQLException</span> {
+        <span class="type">var</span> url = <span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687</span><span class="delimiter">&quot;</span></span>;
+
+        <span class="type">var</span> driver = (Neo4jDriver) <span class="predefined-type">DriverManager</span>.getDriver(url);
+        driver.withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_driver</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v1</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">irrelevant</span><span class="delimiter">&quot;</span></span>));
+
+        <span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
+        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">password</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
+
+        <span class="keyword">try</span> (
+            <span class="type">var</span> con = driver.connect(url, properties)
+                .unwrap(Neo4jMetadataWriter.class)
+                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_connection</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v2</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">xxx</span><span class="delimiter">&quot;</span></span>))
+                .unwrap(<span class="predefined-type">Connection</span>.class);
+            <span class="type">var</span> statement = con.createStatement()
+                .unwrap(Neo4jMetadataWriter.class)
+                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_stmt</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v3</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v4</span><span class="delimiter">&quot;</span></span>))
+                .unwrap(<span class="predefined-type">Statement</span>.class)
+        ) {
+            <span class="keyword">try</span> (<span class="type">var</span> result = statement.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="content">SHOW TRANSACTIONS YIELD metaData</span><span class="delimiter">&quot;</span></span>)) {
+                <span class="keyword">while</span> (result.next()) {
+                    <span class="type">var</span> metaData = result.getObject(<span class="string"><span class="delimiter">&quot;</span><span class="content">metaData</span><span class="delimiter">&quot;</span></span>, <span class="predefined-type">Map</span>.class);
+                    LOGGER.log(<span class="predefined-type">Level</span>.INFO, <span class="string"><span class="delimiter">&quot;</span><span class="content">{0}</span><span class="delimiter">&quot;</span></span>, metaData);
+                }
+            }
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output will be similar to this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="text">Juli 17, 2024 1:18:16 PM org.neo4j.jdbc.docs.TransactionMetadata main
+INFORMATION: {md_from_driver=v1, md_from_connection=v2, md_from_stmt=v3, will_be_overwritten=v4}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_url_and_connection_properties">5.4. URL and connection properties</h3>
 <div class="paragraph">
 <p>The canonical URL format for the Neo4j JDBC Driver is</p>
 </div>
@@ -1479,7 +1554,7 @@ Other connections retrieved from the driver instance are not affected, and the d
 </table>
 </div>
 <div class="sect2">
-<h3 id="_getting_a_driver_or_a_connection_instance">5.4. Getting a driver or a connection instance</h3>
+<h3 id="_getting_a_driver_or_a_connection_instance">5.5. Getting a driver or a connection instance</h3>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -1496,7 +1571,7 @@ This section most likely only applies if you use the Neo4j JDBC Driver as part o
 <p>The easiest way to acquire a connection is directly through the <code>java.sql.DriverManager</code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 14. Acquiring a JDBC connection towards Neo4j</div>
+<div class="title">Listing 15. Acquiring a JDBC connection towards Neo4j</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
@@ -1525,7 +1600,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do interna
 <p>If you need access to an instance of the Neo4j driver itself, you can use the following approach:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. Acquiring an instance of the Neo4j JDBC Driver</div>
+<div class="title">Listing 16. Acquiring an instance of the Neo4j JDBC Driver</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
@@ -1549,7 +1624,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do interna
 </div>
 </div>
 <div class="sect2">
-<h3 id="_securing_your_connection_by_using_ssl">5.5. Securing your connection by using SSL</h3>
+<h3 id="_securing_your_connection_by_using_ssl">5.6. Securing your connection by using SSL</h3>
 <div class="paragraph">
 <p>The Neo4j JDBC Driver supports the same SSL option as the common Java driver does, with the same URL protocols, using <code>+s</code> or <code>+ssc</code> as additional indicators for the level of security that is required.</p>
 </div>
@@ -1558,7 +1633,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do interna
 As long as you don&#8217;t specify contradicting values, it&#8217;s fine to combine both approaches.</p>
 </div>
 <div class="sect3">
-<h4 id="_understanding_the_ssl_mode">5.5.1. Understanding the SSL mode</h4>
+<h4 id="_understanding_the_ssl_mode">5.6.1. Understanding the SSL mode</h4>
 <div class="paragraph">
 <p>The possible settings are best explained using the available SSL modes.
 The following list is ordered by ascending security:</p>
@@ -1610,7 +1685,7 @@ Neo4j cluster can offer both plain bolt connections and encrypted SSL connection
 </div>
 </div>
 <div class="sect3">
-<h4 id="_valid_urls">5.5.2. Valid URLs</h4>
+<h4 id="_valid_urls">5.6.2. Valid URLs</h4>
 <div class="paragraph">
 <p>The following URLs are all valid</p>
 </div>
@@ -1661,7 +1736,7 @@ The reason to offer several mechanism is that we want you to be able to use a fi
 </div>
 </div>
 <div class="sect3">
-<h4 id="_using_dotenv_files">5.5.3. Using .dotenv files</h4>
+<h4 id="_using_dotenv_files">5.6.3. Using .dotenv files</h4>
 <div class="paragraph">
 <p>When you sign up for <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j AuraDB</a> and create a database, you will be asked to download a text-file named similar to <code>Neo4j-9df57663-Created-2023-06-12.txt</code>. This is essentially a <a href="https://www.dotenv.org">.dotenv</a> file containing all necessary information required to connect to an aura Database.</p>
 </div>
@@ -2006,7 +2081,7 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <p>Here are a couple of examples (Note that we are using the <code>properties</code> config to avoid terrible long URLs in this documentation, however, all the attributes can be specified via URL, too):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Disable pretty printing, only escape if necessary, configure dedicated table mappings</div>
+<div class="title">Listing 17. Disable pretty printing, only escape if necessary, configure dedicated table mappings</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2032,7 +2107,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 <p>In the next example we parse the table names into upper case, which might be helpful in some situations:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Upper case parsing</div>
+<div class="title">Listing 18. Upper case parsing</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2054,7 +2129,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 <p>Here we change the prefix of parameters (they are still going only by index in SQL) and add mappings for join columns:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Disable pretty printing, only escape if necessary, configure dedicated table mappings</div>
+<div class="title">Listing 19. Disable pretty printing, only escape if necessary, configure dedicated table mappings</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -4095,8 +4170,8 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT bd148c1<br>
-Last updated 2024-07-15 15:28:21 UTC
+Version 6.0.0-SNAPSHOT 752d31b<br>
+Last updated 2024-07-17 14:58:59 UTC
 </div>
 </div>
 </body>
