@@ -18,7 +18,6 @@
  */
 package org.neo4j.jdbc.internal.bolt.internal.messaging.encode;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,9 +49,10 @@ class BeginMessageEncoderTests {
 	@MethodSource("arguments")
 	void shouldEncodeBeginMessage(AccessMode mode, String impersonatedUser) throws Exception {
 		var bookmarks = Collections.singleton("neo4j:bookmark:v1:tx42");
-		var txTimeout = Duration.ofSeconds(1);
+		var transactionMetadata = Map.<String, Object>of("anInt", 1, "aString", "whatever");
 
-		this.encoder.encode(new BeginMessage(bookmarks, "neo4j", mode, TransactionType.DEFAULT), this.packer);
+		this.encoder.encode(new BeginMessage(bookmarks, "neo4j", transactionMetadata, mode, TransactionType.DEFAULT),
+				this.packer);
 
 		var order = Mockito.inOrder(this.packer);
 		order.verify(this.packer).packStructHeader(1, BeginMessage.SIGNATURE);
@@ -63,6 +63,7 @@ class BeginMessageEncoderTests {
 		if (mode == AccessMode.READ) {
 			expectedMetadata.put("mode", Values.value("r"));
 		}
+		expectedMetadata.put("tx_metadata", Values.value(transactionMetadata));
 
 		order.verify(this.packer).pack(expectedMetadata);
 	}

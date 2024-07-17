@@ -59,8 +59,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	private SQLException exception;
 
 	DefaultTransactionImpl(BoltConnection boltConnection, BookmarkManager bookmarkManager,
-			FatalExceptionHandler fatalExceptionHandler, CompletionStage<Void> resetStage, boolean autoCommit,
-			AccessMode accessMode, State state) {
+			Map<String, Object> transactionMetadata, FatalExceptionHandler fatalExceptionHandler,
+			CompletionStage<Void> resetStage, boolean autoCommit, AccessMode accessMode, State state) {
 
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
@@ -73,6 +73,10 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 		var beginTransactionFuture = this.boltConnection.beginTransaction(
 				this.bookmarkManager.getBookmarks(Function.identity()),
+				// The map is not copied as it is always created fresh in
+				// org.neo4j.jdbc.ConnectionImpl.getTransaction(java.util.Map<java.lang.String,java.lang.Object>,
+				// boolean) and there's no public api otherwise
+				Objects.requireNonNullElseGet(transactionMetadata, Map::of),
 				Objects.requireNonNullElse(accessMode, AccessMode.WRITE),
 				this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT, false);
 		this.beginStage = Objects.requireNonNullElseGet(resetStage, () -> CompletableFuture.completedStage(null))

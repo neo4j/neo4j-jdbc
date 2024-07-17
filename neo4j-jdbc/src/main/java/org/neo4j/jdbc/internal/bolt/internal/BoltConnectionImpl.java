@@ -46,12 +46,14 @@ public final class BoltConnectionImpl implements BoltConnection {
 	}
 
 	@Override
-	public CompletionStage<Void> beginTransaction(Set<String> bookmarks, AccessMode accessMode,
-			TransactionType transactionType, boolean flush) {
+	public CompletionStage<Void> beginTransaction(Set<String> bookmarks, Map<String, Object> transactionMetadata,
+			AccessMode accessMode, TransactionType transactionType, boolean flush) {
 		Objects.requireNonNull(bookmarks);
+		Objects.requireNonNull(transactionMetadata);
 		Objects.requireNonNull(accessMode);
 		Objects.requireNonNull(transactionType);
-		return this.protocol.beginTransaction(this.connection, bookmarks, accessMode, transactionType, flush);
+		return this.protocol.beginTransaction(this.connection, bookmarks, transactionMetadata, accessMode,
+				transactionType, flush);
 	}
 
 	@Override

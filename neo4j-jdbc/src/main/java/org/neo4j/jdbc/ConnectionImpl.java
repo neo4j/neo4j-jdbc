@@ -118,6 +118,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final BookmarkManager bookmarkManager;
 
+	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
+
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
 	 * for future use.
@@ -126,7 +128,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<List<Translator>> translators, boolean enableSQLTranslation,
 			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
-			BookmarkManager bookmarkManager) {
+			BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
@@ -134,6 +136,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.rewritePlaceholders = rewritePlaceholders;
 		this.bookmarkManager = Objects.requireNonNull(bookmarkManager);
+		this.transactionMetadata.putAll(Objects.requireNonNullElseGet(transactionMetadata, Map::of));
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
@@ -284,7 +287,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public DatabaseMetaData getMetaData() throws SQLException {
 		assertIsOpen();
-		return new DatabaseMetadataImpl(this, () -> getTransaction(false), this.enableSqlTranslation);
+		return new DatabaseMetadataImpl(this, (additionalMetadata) -> getTransaction(additionalMetadata, false),
+				this.enableSqlTranslation);
 	}
 
 	@Override
@@ -700,11 +704,12 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 	}
 
-	Neo4jTransaction getTransaction() throws SQLException {
-		return getTransaction(true);
+	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata) throws SQLException {
+		return getTransaction(additionalTransactionMetadata, true);
 	}
 
-	Neo4jTransaction getTransaction(boolean autoCommitCheck) throws SQLException {
+	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata, boolean autoCommitCheck)
+			throws SQLException {
 		assertIsOpen();
 		if (this.fatalException != null) {
 			throw this.fatalException;
@@ -718,8 +723,13 @@ final class ConnectionImpl implements Neo4jConnection {
 			CompletionStage<Void> resetStage = (this.transaction != null
 					&& Neo4jTransaction.State.FAILED.equals(this.transaction.getState()))
 							? this.boltConnection.reset(false) : null;
+			Map<String, Object> combinedTransactionMetadata = new HashMap<>(
+					this.transactionMetadata.size() + additionalTransactionMetadata.size());
+			combinedTransactionMetadata.putAll(this.transactionMetadata);
+			combinedTransactionMetadata.putAll(additionalTransactionMetadata);
 			this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
-					this::handleFatalException, resetStage, this.autoCommit, getAccessMode(), null);
+					combinedTransactionMetadata, this::handleFatalException, resetStage, this.autoCommit,
+					getAccessMode(), null);
 		}
 		return this.transaction;
 	}
@@ -779,6 +789,14 @@ final class ConnectionImpl implements Neo4jConnection {
 		else {
 			this.fatalException = fatalSqlException;
 		}
+	}
+
+	@Override
+	public Neo4jConnection withMetadata(Map<String, Object> metadata) {
+		if (metadata != null) {
+			this.transactionMetadata.putAll(metadata);
+		}
+		return this;
 	}
 
 	static class TranslatorChain implements UnaryOperator<String> {

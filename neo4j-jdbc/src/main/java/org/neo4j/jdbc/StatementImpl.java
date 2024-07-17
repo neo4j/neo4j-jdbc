@@ -33,6 +33,7 @@ import java.sql.SQLWarning;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -87,6 +88,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final AtomicBoolean resultSetAcquired = new AtomicBoolean(false);
 
+	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
+
 	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, Warnings localWarnings) {
 		this.connection = Objects.requireNonNull(connection);
@@ -119,7 +122,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		if (applyProcessor) {
 			sql = processSQL(sql);
 		}
-		var transaction = this.transactionSupplier.getTransaction();
+		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
 		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
@@ -142,7 +145,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		if (applyProcessor) {
 			sql = processSQL(sql);
 		}
-		var transaction = this.transactionSupplier.getTransaction();
+		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 		return transaction.runAndDiscard(sql, getParameters(parameters), this.queryTimeout, transaction.isAutoCommit())
 			.resultSummary()
 			.map(ResultSummary::counters)
@@ -245,7 +248,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		if (applyProcessor) {
 			sql = processSQL(sql);
 		}
-		var transaction = this.transactionSupplier.getTransaction();
+		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
 		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
 		var pullResponse = runAndPull.pullResponse();
@@ -506,6 +509,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public Neo4jStatement withMetadata(Map<String, Object> metadata) {
+		if (metadata != null) {
+			this.transactionMetadata.putAll(metadata);
+		}
+		return this;
 	}
 
 }

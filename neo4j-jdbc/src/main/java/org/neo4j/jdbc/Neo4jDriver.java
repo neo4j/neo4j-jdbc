@@ -68,7 +68,7 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
  * @author Rouven Bauer
  * @since 6.0.0
  */
-public final class Neo4jDriver implements Neo4jDriverExtensions, Neo4jMetadataWriter<Neo4jDriver> {
+public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
@@ -227,6 +227,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions, Neo4jMetadataWr
 
 	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
+	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
+
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
@@ -355,7 +357,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions, Neo4jMetadataWr
 		return new ConnectionImpl(boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				bookmarkManager);
+				bookmarkManager, this.transactionMetadata);
 	}
 
 	static String getDefaultUserAgent() {
@@ -717,7 +719,25 @@ public final class Neo4jDriver implements Neo4jDriverExtensions, Neo4jMetadataWr
 
 	@Override
 	public Neo4jDriver withMetadata(Map<String, Object> metadata) {
-		return null;
+		if (metadata != null) {
+			this.transactionMetadata.putAll(metadata);
+		}
+		return this;
+	}
+
+	@Override
+	public <T> T unwrap(Class<T> iface) throws SQLException {
+		if (iface.isAssignableFrom(getClass())) {
+			return iface.cast(this);
+		}
+		else {
+			throw new SQLException("This object does not implement the given interface");
+		}
+	}
+
+	@Override
+	public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return iface.isAssignableFrom(getClass());
 	}
 
 	enum SSLMode {

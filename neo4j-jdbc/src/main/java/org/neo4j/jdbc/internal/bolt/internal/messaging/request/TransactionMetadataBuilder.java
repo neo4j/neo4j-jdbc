@@ -50,9 +50,10 @@ public final class TransactionMetadataBuilder {
 	}
 
 	public static Map<String, Value> buildMetadata(String databaseName, AccessMode mode,
-			TransactionType transactionType, Set<String> bookmarks) {
+			TransactionType transactionType, Set<String> bookmarks, Map<String, Object> txMetadata) {
 		var databaseNamePresent = databaseName != null;
 		var bookmarksPresent = !bookmarks.isEmpty();
+		var txMetadataPresent = txMetadata != null && !txMetadata.isEmpty();
 		var accessModePresent = mode == AccessMode.READ;
 
 		if (!databaseNamePresent && !bookmarksPresent && !accessModePresent
@@ -64,6 +65,9 @@ public final class TransactionMetadataBuilder {
 
 		if (bookmarksPresent) {
 			result.put(BOOKMARKS_METADATA_KEY, Values.value(bookmarks));
+		}
+		if (txMetadataPresent) {
+			result.put(TX_METADATA_METADATA_KEY, Values.value(txMetadata));
 		}
 		if (accessModePresent) {
 			result.put(MODE_KEY, Values.value(MODE_READ_VALUE));

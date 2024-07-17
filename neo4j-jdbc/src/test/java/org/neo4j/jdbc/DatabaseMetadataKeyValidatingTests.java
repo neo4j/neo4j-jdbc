@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
 class DatabaseMetadataKeyValidatingTests {
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		return new DatabaseMetadataImpl(mock(Connection.class), () -> mock(Neo4jTransaction.class), false);
+		return new DatabaseMetadataImpl(mock(Connection.class), (s) -> mock(Neo4jTransaction.class), false);
 	}
 
 	@Test

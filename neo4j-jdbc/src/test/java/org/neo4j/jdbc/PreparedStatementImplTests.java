@@ -73,6 +73,7 @@ import org.neo4j.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -105,8 +106,8 @@ class PreparedStatementImplTests {
 		var transaction = mock(Neo4jTransaction.class);
 		var runResponse = mock(RunResponse.class);
 		var pullResponse = mock(PullResponse.class);
-		given(transactionSupplier.getTransaction()).willReturn(transaction);
-		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
+		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
 		given(transaction.runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0))
 			.willReturn(new Neo4jTransaction.RunAndPullResponses(runResponse, pullResponse));
 		this.statement = newStatement(mock(Connection.class), transactionSupplier, query);
@@ -118,7 +119,7 @@ class PreparedStatementImplTests {
 		// then
 		assertThat(resultSet).isNotNull();
 		assertThat(multipleResultsApiResultSet).isNull();
-		then(transactionSupplier).should().getTransaction();
+		then(transactionSupplier).should().getTransaction(Collections.emptyMap());
 		then(transaction).should().runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0);
 		then(transaction).shouldHaveNoMoreInteractions();
 	}
@@ -135,7 +136,7 @@ class PreparedStatementImplTests {
 		var discardResponse = mock(DiscardResponse.class);
 		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
 		var transaction = mock(Neo4jTransaction.class);
-		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
 		given(transaction.isAutoCommit()).willReturn(true);
 		given(transaction.runAndDiscard(query, Collections.emptyMap(), 0, true)).willReturn(discardResponse);
 		var response = mock(ResultSummary.class);
@@ -151,7 +152,7 @@ class PreparedStatementImplTests {
 
 		// then
 		assertThat(updates).isEqualTo(totalUpdates);
-		then(transactionSupplier).should().getTransaction();
+		then(transactionSupplier).should().getTransaction(Collections.emptyMap());
 		then(transaction).should().isAutoCommit();
 		then(transaction).should().runAndDiscard(query, Collections.emptyMap(), 0, true);
 		then(transaction).shouldHaveNoMoreInteractions();
@@ -163,7 +164,7 @@ class PreparedStatementImplTests {
 		var query = "query";
 		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
 		var transaction = mock(Neo4jTransaction.class);
-		given(transactionSupplier.getTransaction()).willReturn(transaction);
+		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
 		given(transaction.isAutoCommit()).willReturn(true);
 		var runResponse = mock(RunResponse.class);
 		var pullResponse = mock(PullResponse.class);
@@ -194,7 +195,7 @@ class PreparedStatementImplTests {
 		assertThat(nextResultSet).isNull();
 		assertThat(nextUpdates).isEqualTo(-1);
 		assertThat(resultSet.isClosed()).isTrue();
-		then(transactionSupplier).should().getTransaction();
+		then(transactionSupplier).should().getTransaction(Collections.emptyMap());
 		then(transaction).should().isAutoCommit();
 		then(transaction).should().runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0);
 		then(transaction).should().isRunnable();

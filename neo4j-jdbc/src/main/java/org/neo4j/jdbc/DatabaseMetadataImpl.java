@@ -1460,7 +1460,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {
-		var transaction = this.transactionSupplier.getTransaction();
+		var transaction = this.transactionSupplier.getTransaction(Map.of());
 		var newTransaction = Neo4jTransaction.State.NEW.equals(transaction.getState());
 		var responses = transaction.runAndPull(request.query, request.args, -1, 0);
 		if (newTransaction) {

@@ -40,6 +40,8 @@ public interface BoltConnection {
 	 * Appends BEGIN message to outbound messages and optionally flushes the pending
 	 * messages to the network.
 	 * @param bookmarks the bookmarks, must not be {@code null}
+	 * @param transactionMetadata metadata to be attached to the Neo4j transaction, must
+	 * not be {@code null}
 	 * @param accessMode the access mode, must not be {@code null}
 	 * @param transactionType the transaction type, must not be {@code null}
 	 * @param flush determines if the pending outbound messages must be flushed to the
@@ -47,8 +49,8 @@ public interface BoltConnection {
 	 * @return a completion stage that completes when there is a response to the BEGIN
 	 * message
 	 */
-	CompletionStage<Void> beginTransaction(Set<String> bookmarks, AccessMode accessMode,
-			TransactionType transactionType, boolean flush);
+	CompletionStage<Void> beginTransaction(Set<String> bookmarks, Map<String, Object> transactionMetadata,
+			AccessMode accessMode, TransactionType transactionType, boolean flush);
 
 	/**
 	 * Appends RUN message to outbound messages and optionally flushes the pending

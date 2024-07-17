@@ -19,16 +19,19 @@
 package org.neo4j.jdbc;
 
 import java.sql.SQLException;
+import java.util.Map;
 
+@FunctionalInterface
 interface Neo4jTransactionSupplier {
 
 	/**
 	 * Supplies the existing or a new transaction in {@link Neo4jTransaction.State#NEW}
 	 * state.
+	 * @param additionalMetadata any additional metadata for new transactions
 	 * @return the existing or a new transaction.
 	 * @throws SQLException if there is a connection issue or another issue prohibiting
 	 * the transaction supply.
 	 */
-	Neo4jTransaction getTransaction() throws SQLException;
+	Neo4jTransaction getTransaction(Map<String, Object> additionalMetadata) throws SQLException;
 
 }
