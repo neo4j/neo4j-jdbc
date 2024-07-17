@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.Neo4jMetadataWriter;
+
 // end::example[]
 // @formatter:off
 
