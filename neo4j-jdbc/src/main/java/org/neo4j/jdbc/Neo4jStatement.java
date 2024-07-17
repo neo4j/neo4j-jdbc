@@ -27,7 +27,7 @@ import java.sql.Statement;
  * @author Neo4j Drivers Team
  * @since 6.0.0
  */
-public sealed interface Neo4jStatement extends Statement permits StatementImpl {
+public sealed interface Neo4jStatement extends Statement, Neo4jMetadataWriter<Neo4jStatement> permits StatementImpl {
 
 	/**
 	 * The default (Bolt) fetch size that is used.

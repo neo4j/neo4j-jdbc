@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
  * @author Michael J. Simons
  * @since 6.0.0
  */
-public sealed interface Neo4jConnection extends Connection permits ConnectionImpl {
+public sealed interface Neo4jConnection extends Connection, Neo4jMetadataWriter<Neo4jConnection> permits ConnectionImpl {
 
 	/**
 	 * Sets the timeout for which a connection may remain idle following a request.
@@ -40,7 +40,7 @@ public sealed interface Neo4jConnection extends Connection permits ConnectionImp
 	 * <p>
 	 * When initializing a new Bolt connection, the Neo4j server may supply a
 	 * {@literal connection.recv_timeout_seconds} connection hint that defines the amount
-	 * of time for which a the connection may remain idle (see the linked documentation
+	 * of time for which the connection may remain idle (see the linked documentation
 	 * for more details). When the network timeout value is set to {@literal 0} and the
 	 * hint value is available, the latter is used as a default.
 	 * <p>

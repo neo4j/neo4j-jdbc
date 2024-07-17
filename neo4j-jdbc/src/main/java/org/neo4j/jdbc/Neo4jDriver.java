@@ -68,7 +68,7 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
  * @author Rouven Bauer
  * @since 6.0.0
  */
-public final class Neo4jDriver implements Neo4jDriverExtensions {
+public final class Neo4jDriver implements Neo4jDriverExtensions, Neo4jMetadataWriter<Neo4jDriver> {
 
 	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
@@ -713,6 +713,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (bm != null) {
 			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
 		}
+	}
+
+	@Override
+	public Neo4jDriver withMetadata(Map<String, Object> metadata) {
+		return null;
 	}
 
 	enum SSLMode {
