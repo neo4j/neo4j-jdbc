@@ -1,0 +1,15 @@
+!: BOLT 5.1
+
+A: HELLO {"{}": "*"}
+A: LOGON {"scheme": "basic", "principal": "neo4j", "credentials": "password"}
+*: RESET
+C: BEGIN {"db": "neo4j", "[tx_type]": "*", "tx_metadata": {"akey": "aval"}}
+S: SUCCESS {}
+C: RUN "RETURN 1 as n" {} {}
+S: SUCCESS {"fields": ["n"]}
+C: PULL {"n": 1000}
+S: SUCCESS {"type": "r"}
+C: COMMIT
+S: SUCCESS {}
+*: RESET
+?: GOODBYE
