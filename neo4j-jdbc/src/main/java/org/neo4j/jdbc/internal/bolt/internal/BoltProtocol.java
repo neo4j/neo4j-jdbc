@@ -62,8 +62,9 @@ public interface BoltProtocol {
 	void initializeChannel(BoltServerAddress address, String userAgent, BoltAgent boltAgent,
 			Map<String, Value> authToken, ChannelPromise channelInitializedPromise, Clock clock);
 
-	CompletionStage<Void> beginTransaction(Connection connection, Set<String> bookmarks, AccessMode accessMode,
-			TransactionType transactionType, boolean flush);
+	CompletionStage<Void> beginTransaction(Connection connection, Set<String> bookmarks,
+			Map<String, Object> transactionMetadata, AccessMode accessMode, TransactionType transactionType,
+			boolean flush);
 
 	CompletionStage<RunResponse> run(Connection connection, String query, Map<String, Object> parameters,
 			boolean flush);

@@ -32,6 +32,7 @@ import java.sql.Wrapper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -124,7 +125,7 @@ class ConnectionImplTests {
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
 		var connection = new ConnectionImpl(mock(BoltConnection.class), () -> List.of(translator), false, true, false,
-				false, new VoidBookmarkManagerImpl());
+				false, new VoidBookmarkManagerImpl(), Map.of());
 
 		var nativeSQL = connection.nativeSQL(sql);
 		nativeSQL = connection.nativeSQL(sql);
@@ -157,16 +158,17 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(!autoCommit);
 		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, transactionType,
+				false))
 			.willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.commit()).willReturn(CompletableFuture.completedStage(null));
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		connection.setAutoCommit(autoCommit);
 
 		assertThat(Neo4jTransaction.State.COMMITTED.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false);
+			.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, transactionType, false);
 		then(boltConnection).should().commit();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
@@ -178,15 +180,16 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(autoCommit);
 		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, transactionType,
+				false))
 			.willReturn(CompletableFuture.completedStage(null));
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		connection.setAutoCommit(autoCommit);
 
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, transactionType, false);
+			.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, transactionType, false);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -195,10 +198,10 @@ class ConnectionImplTests {
 	void shouldThrowOnManagingAutoCommitTransaction(boolean rollback) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
 		var connection = makeConnection(boltConnection);
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
-				false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE,
+				TransactionType.UNCONSTRAINED, false))
 			.willReturn(CompletableFuture.completedStage(null));
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		ConnectionMethodRunner methodRunner = rollback ? Connection::rollback : Connection::commit;
 
@@ -206,7 +209,7 @@ class ConnectionImplTests {
 
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
+			.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -216,7 +219,8 @@ class ConnectionImplTests {
 		var boltConnection = mock(BoltConnection.class);
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(false);
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.DEFAULT, false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE,
+				TransactionType.DEFAULT, false))
 			.willReturn(CompletableFuture.completedStage(null));
 		if (rollback) {
 			given(boltConnection.rollback()).willReturn(CompletableFuture.completedStage(null));
@@ -224,7 +228,7 @@ class ConnectionImplTests {
 		else {
 			given(boltConnection.commit()).willReturn(CompletableFuture.completedStage(null));
 		}
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		if (rollback) {
 			connection.rollback();
@@ -236,7 +240,7 @@ class ConnectionImplTests {
 		assertThat(transaction.getState()
 			.equals(rollback ? Neo4jTransaction.State.ROLLEDBACK : Neo4jTransaction.State.COMMITTED)).isTrue();
 		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.DEFAULT, false);
+			.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, TransactionType.DEFAULT, false);
 		then(boltConnection).should(times(rollback ? 1 : 0)).rollback();
 		then(boltConnection).should(times(rollback ? 0 : 1)).commit();
 		then(boltConnection).shouldHaveNoMoreInteractions();
@@ -266,20 +270,20 @@ class ConnectionImplTests {
 	@Test
 	void shouldRollbackOnClose() throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
-				false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE,
+				TransactionType.UNCONSTRAINED, false))
 			.willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.rollback()).willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		connection.close();
 
 		assertThat(connection.isClosed()).isTrue();
 		assertThat(Neo4jTransaction.State.ROLLEDBACK.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
+			.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE, TransactionType.UNCONSTRAINED, false);
 		then(boltConnection).should().rollback();
 		then(boltConnection).should().close();
 		then(boltConnection).shouldHaveNoMoreInteractions();
@@ -307,28 +311,29 @@ class ConnectionImplTests {
 		// given
 		var boltConnection = mock(BoltConnection.class);
 		var accessMode = readOnly ? AccessMode.READ : AccessMode.WRITE;
-		given(boltConnection.beginTransaction(Collections.emptySet(), accessMode, TransactionType.UNCONSTRAINED, false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), accessMode,
+				TransactionType.UNCONSTRAINED, false))
 			.willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 		connection.setReadOnly(readOnly);
 
 		// when
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		// then
 		assertThat(transaction).isNotNull();
 		then(boltConnection).should()
-			.beginTransaction(Collections.emptySet(), accessMode, TransactionType.UNCONSTRAINED, false);
+			.beginTransaction(Collections.emptySet(), Map.of(), accessMode, TransactionType.UNCONSTRAINED, false);
 	}
 
 	@Test
 	void shouldThrowOnUpdatingReadOnlyDuringTransaction() throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
-		given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE, TransactionType.UNCONSTRAINED,
-				false))
+		given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE,
+				TransactionType.UNCONSTRAINED, false))
 			.willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
-		var transaction = connection.getTransaction();
+		var transaction = connection.getTransaction(Map.of());
 
 		assertThatThrownBy(() -> connection.setReadOnly(true)).isExactlyInstanceOf(SQLException.class);
 	}
@@ -422,11 +427,11 @@ class ConnectionImplTests {
 		var boltConnection = mock(BoltConnection.class);
 		var connection = makeConnection(boltConnection);
 		if (setupClosedTransaction) {
-			given(boltConnection.beginTransaction(Collections.emptySet(), AccessMode.WRITE,
+			given(boltConnection.beginTransaction(Collections.emptySet(), Map.of(), AccessMode.WRITE,
 					TransactionType.UNCONSTRAINED, false))
 				.willReturn(CompletableFuture.completedStage(null));
 			given(boltConnection.commit()).willReturn(CompletableFuture.completedStage(null));
-			var transaction = connection.getTransaction();
+			var transaction = connection.getTransaction(Map.of());
 			transaction.commit();
 		}
 		given(boltConnection.reset(true)).willReturn(expectedValid ? CompletableFuture.completedStage(null)
@@ -537,9 +542,9 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		Neo4jTransaction transaction = null;
 		if (transactionPresent) {
-			given(boltConnection.beginTransaction(any(), any(), any(), anyBoolean()))
+			given(boltConnection.beginTransaction(any(), any(), any(), any(), anyBoolean()))
 				.willReturn(CompletableFuture.completedStage(null));
-			transaction = connection.getTransaction();
+			transaction = connection.getTransaction(Map.of());
 		}
 
 		connection.abort(Executors.newSingleThreadExecutor());
@@ -548,7 +553,7 @@ class ConnectionImplTests {
 		if (transactionPresent) {
 			assertThat(transaction).isNotNull();
 			assertThat(transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
-			then(boltConnection).should().beginTransaction(any(), any(), any(), anyBoolean());
+			then(boltConnection).should().beginTransaction(any(), any(), any(), any(), anyBoolean());
 		}
 		then(boltConnection).should().close();
 		then(boltConnection).shouldHaveNoMoreInteractions();
@@ -707,7 +712,8 @@ class ConnectionImplTests {
 	}
 
 	ConnectionImpl makeConnection(BoltConnection boltConnection) {
-		return new ConnectionImpl(boltConnection, List::of, false, false, true, false, new VoidBookmarkManagerImpl());
+		return new ConnectionImpl(boltConnection, List::of, false, false, true, false, new VoidBookmarkManagerImpl(),
+				Map.of());
 
 	}
 

@@ -100,10 +100,12 @@ public final class BoltProtocolV51 implements BoltProtocol {
 	}
 
 	@Override
-	public CompletionStage<Void> beginTransaction(Connection connection, Set<String> bookmarks, AccessMode accessMode,
-			TransactionType transactionType, boolean flush) {
+	public CompletionStage<Void> beginTransaction(Connection connection, Set<String> bookmarks,
+			Map<String, Object> transactionMetadata, AccessMode accessMode, TransactionType transactionType,
+			boolean flush) {
 		var beginFuture = new CompletableFuture<Void>();
-		var beginMessage = new BeginMessage(bookmarks, connection.databaseName(), accessMode, transactionType);
+		var beginMessage = new BeginMessage(bookmarks, connection.databaseName(), transactionMetadata, accessMode,
+				transactionType);
 		var beginHandler = new BeginTxResponseHandler(beginFuture);
 		connection.write(beginMessage, beginHandler, flush);
 		return beginFuture;

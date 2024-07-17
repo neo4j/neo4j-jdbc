@@ -16,6 +16,32 @@ Thus, all connections that are spawned by one instance, will partake in the same
 Connections from different instances of the drivers will not use the same set of bookmarks and there is no built-in machinery that would enable this.
 If you want or need this, you can directly access the `Neo4jDriver` type to retrieve the current set of known bookmarks and pass them to another driver instance.
 
+== Neo4j transactional metadata
+
+Neo4j supports additional metadata for each ongoing transaction, see https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions[SHOW TRANSACTIONS].
+As there is no explicit transaction object in the JDBC spec (a `Connection` is either in auto-commit or explicit commit mode, and all variations of a transaction entity are always third party implementations), the Neo4j JDBC driver needs another mechanism to make these configurable.
+
+The JDBC driver provides the extension interface `Neo4jMetadataWriter`.
+Our driver, the connection implementation and all statement variants can be unwrapped accordingly.
+The configuration is additive, which means that
+metadata configured for a driver instance will be used for all connections spawned from that driver,
+connections can add additional metadata to those before creating new statements and statements themselves can also add their own metadata.
+Metadata added on a statement has precedence over connection which in turn has precedence over the drivers:
+
+[source, java, tabsize=4]
+.Configuring transactional metadata
+----
+include::{examplesDir}/TransactionMetadata.java[tag=example]
+----
+
+The output will be similar to this:
+
+[source,text]
+----
+Juli 17, 2024 1:18:16 PM org.neo4j.jdbc.docs.TransactionMetadata main
+INFORMATION: {md_from_driver=v1, md_from_connection=v2, md_from_stmt=v3, will_be_overwritten=v4}
+----
+
 == URL and connection properties
 
 The canonical URL format for the Neo4j JDBC Driver is

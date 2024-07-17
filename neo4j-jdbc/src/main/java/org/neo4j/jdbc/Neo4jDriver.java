@@ -227,6 +227,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
+	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
+
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
@@ -355,7 +357,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new ConnectionImpl(boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				bookmarkManager);
+				bookmarkManager, this.transactionMetadata);
 	}
 
 	static String getDefaultUserAgent() {
@@ -713,6 +715,29 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (bm != null) {
 			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
 		}
+	}
+
+	@Override
+	public Neo4jDriver withMetadata(Map<String, Object> metadata) {
+		if (metadata != null) {
+			this.transactionMetadata.putAll(metadata);
+		}
+		return this;
+	}
+
+	@Override
+	public <T> T unwrap(Class<T> iface) throws SQLException {
+		if (iface.isAssignableFrom(getClass())) {
+			return iface.cast(this);
+		}
+		else {
+			throw new SQLException("This object does not implement the given interface");
+		}
+	}
+
+	@Override
+	public boolean isWrapperFor(Class<?> iface) throws SQLException {
+		return iface.isAssignableFrom(getClass());
 	}
 
 	enum SSLMode {

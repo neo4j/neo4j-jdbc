@@ -29,7 +29,7 @@ import java.util.Properties;
  * @author Michael J. Simons
  * @since 6.0.0
  */
-public sealed interface Neo4jDriverExtensions extends Driver permits Neo4jDriver {
+public sealed interface Neo4jDriverExtensions extends Driver, Neo4jMetadataWriter permits Neo4jDriver {
 
 	/**
 	 * Retrieves the bookmarks currently known to this driver.

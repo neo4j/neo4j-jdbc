@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.internal.bolt.internal.messaging.request;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -28,8 +29,10 @@ public final class BeginMessage extends MessageWithMetadata {
 
 	public static final byte SIGNATURE = 0x11;
 
-	public BeginMessage(Set<String> bookmarks, String databaseName, AccessMode mode, TransactionType transactionType) {
-		super(TransactionMetadataBuilder.buildMetadata(databaseName, mode, transactionType, bookmarks));
+	public BeginMessage(Set<String> bookmarks, String databaseName, Map<String, Object> transactionMetadata,
+			AccessMode mode, TransactionType transactionType) {
+		super(TransactionMetadataBuilder.buildMetadata(databaseName, mode, transactionType, bookmarks,
+				transactionMetadata));
 	}
 
 	@Override

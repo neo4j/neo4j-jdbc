@@ -19,8 +19,12 @@
 package org.neo4j.jdbc.it.stub;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.neo4j.jdbc.Neo4jMetadataWriter;
 import org.neo4j.jdbc.it.stub.server.IntegrationTestBase;
 import org.neo4j.jdbc.it.stub.server.StubScript;
 
@@ -267,6 +271,36 @@ class ConnectionIT extends IntegrationTestBase {
 			assertThat(result.isClosed()).isTrue();
 			assertThat(statement.isClosed()).isTrue();
 			assertThat(connection.isClosed()).isTrue();
+		}
+
+		verifyStubServer();
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			true, true
+			false, true
+			true, false
+			false, false
+			""")
+	@StubScript(path = "tx_meta.script")
+	void shouldSendMetadata(boolean autoCommit, boolean onConnection) throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			connection.setAutoCommit(autoCommit);
+
+			Neo4jMetadataWriter metadataWriter = onConnection ? connection.unwrap(Neo4jMetadataWriter.class)
+					: statement.unwrap(Neo4jMetadataWriter.class);
+			metadataWriter.withMetadata(Map.of("akey", "aval"));
+
+			statement.unwrap(Neo4jMetadataWriter.class).withMetadata(Map.of("akey2", "aval2"));
+
+			var result = statement.executeQuery("RETURN 1 as n");
+			while (result.next()) {
+				assertThat(result.getInt(1)).isEqualTo(1);
+			}
+			if (!autoCommit) {
+				connection.commit();
+			}
 		}
 
 		verifyStubServer();
