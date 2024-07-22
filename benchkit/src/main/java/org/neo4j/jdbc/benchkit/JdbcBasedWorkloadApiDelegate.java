@@ -47,9 +47,9 @@ public class JdbcBasedWorkloadApiDelegate implements WorkloadApiDelegate {
 
 	@Override
 	public ResponseEntity<Void> executeSuppliedWorkload(Workload workload) {
-		if (workload.getMode() != Workload.ModeEnum.SEQUENTIALSESSIONS
-				&& workload.getMode() != Workload.ModeEnum.SEQUENTIALQUERIES
-				&& workload.getMode() != Workload.ModeEnum.SEQUENTIALTRANSACTIONS) {
+		if (workload.getMode() != Workload.ModeEnum.SEQUENTIAL_SESSIONS
+				&& workload.getMode() != Workload.ModeEnum.SEQUENTIAL_QUERIES
+				&& workload.getMode() != Workload.ModeEnum.SEQUENTIAL_TRANSACTIONS) {
 			return ResponseEntity.badRequest().build();
 		}
 		if (!"neo4j".equalsIgnoreCase(
