@@ -191,7 +191,7 @@
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
-		<slf4j.version>2.0.13</slf4j.version>
+		<slf4j.version>2.0.16</slf4j.version>
 		<sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
 		<spring-boot.version>3.3.2</spring-boot.version>
