@@ -18,7 +18,7 @@
  */
 package org.neo4j.jdbc.it.quarkus;
 
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
-@QuarkusTestResource(value = Neo4jTestResource.class, restrictToAnnotatedClass = true)
+@WithTestResource(value = Neo4jTestResource.class, restrictToAnnotatedClass = true)
 class ResourcesTests {
 
 	@Test
