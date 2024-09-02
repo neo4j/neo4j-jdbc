@@ -3,32 +3,32 @@
 Add the JDBC driver to your application, for example as a Gradle dependency:
 
 [source, kotlin, subs="verbatim,attributes"]]
-.Using the full bundle as a runtime dependency inside a Gradle based project
+.Using the full bundle as a runtime dependency inside a Gradle-based project
 ----
 dependencies {
     runtimeOnly({group-id}:{artifact-id-full-bundle}:{version})
 }
 ----
 
-With that in place, you can use the JDBC driver for Neo4j as you would do with any other JDBC driver.
+You can then use the Neo4j JDBC driver as you would do with any other JDBC driver.
 
 [source, java, tabsize=4]
-.Acquire a connection using the JDBC driver and execute a query
+.Acquire a connection and execute a query
 ----
 include::{examplesDir}/Quickstart.java[tag=pt1]
 ----
-<.> Get a JDBC connection, no need to do any class loading beforehand, the driver will be automatically registered
-<.> Create a reusable statement
-<.> Immediate execute a query on it
-<.> Iterate the results like you would do with any other JDBC result set
-<.> JDBC is index 1 based
-<.> JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complexe objects such as lists
+<.> Instantiate a JDBC connection. There's no need to do any class loading beforehand, the driver will be automatically registered
+<.> Create a (reusable) statement
+<.> Execute a query
+<.> Iterate over the results, as with any other JDBC result set
+<.> JDBC's indexing starts at 1
+<.> JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complex objects, such as lists
 
-In the example above we used Neo4j's lingua franca, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query Neo4j.
+In the example above we used Neo4j's _lingua franca_, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query the database.
 The Neo4j JDBC Driver has limited support for using SQL as well.
-It will do so automatically or on a case by case basis.
-For the latter you can use `java.sql.Connection#nativeSQL(String)` and use the result in your queries
-For automatic translation instantiate the driver using an additional URL parameter, `sql2cypher` set to `true`.
+It can do so automatically, or on a case by case basis (which means?).
+For the latter you can use `java.sql.Connection#nativeSQL(String)` and use the result in your queries.
+For automatic translation instantiate the driver using the additional URL parameter `sql2cypher`, set to `true`.
 The following example shows how:
 
 [source, java, tabsize=4, indent=0]
@@ -36,15 +36,15 @@ The following example shows how:
 ----
 include::{examplesDir}/Quickstart.java[tag=pt2]
 ----
-<.> This SQL query will be translated into the same Cypher query shown before, the remainder of the method is identical to before.
+<.> This SQL query will be translated into the same Cypher query of the previous example.
+The remainder of the method is identical to before.
 
-TIP: In case any tooling asks you for the name of the concrete driver class, it is: `org.neo4j.jdbc.Neo4jDriver`.
+TIP: In case any tooling asks you for the name of the concrete driver class, it is `org.neo4j.jdbc.Neo4jDriver`.
 
-We will cover the SQL to Cypher translation in detail later in this manual.
+For more information on the SQL-to-Cypher translation layer, see xref:s2c_introduction[].
 
-The JDBC Spec does not support named parameters, only index based parameters.
-Indexes start at `1` in SQL.
-So for all `PreparedStatement` instances you would want to specify your parameters like this:
+The JDBC Spec does not support named parameters, only index-based parameters, starting at `1`.
+So for all `PreparedStatement` instances you need to specify parameters like this:
 
 [source, java, tabsize=4, indent=0]
 .Using parameters with a `PreparedStatement`
@@ -52,7 +52,7 @@ So for all `PreparedStatement` instances you would want to specify your paramete
 include::{examplesDir}/NamedParameters.java[tag=index]
 ----
 
-This is independent of the SQL to Cypher translation mechanism:
+This is independent of the SQL-to-Cypher translation mechanism:
 
 [source, java, tabsize=4, indent=0]
 .Using parameters with a `PreparedStatement` (SQL variant)
@@ -60,11 +60,10 @@ This is independent of the SQL to Cypher translation mechanism:
 include::{examplesDir}/NamedParameters.java[tag=index-sql]
 ----
 
-You can downcast the `PreparedStatement` to `Neo4jPreparedStatement`.
-This JDBC extension will let you use named parameters:
+To use named parameters, downcast the `PreparedStatement` to `Neo4jPreparedStatement`.
 
 [source, java, tabsize=4, indent=0]
-.Using named parameters with the `Neo4jPreparedStatement`
+.Using named parameters with a `Neo4jPreparedStatement`
 ----
 include::{examplesDir}/NamedParameters.java[tag=index-np]
 ----
@@ -74,29 +73,30 @@ include::{examplesDir}/NamedParameters.java[tag=index-np]
 If you are happy to depend directly on `org.neo4j.jdbc.Neo4jDriver` and want to get a connection as easy as possible, you might want to use `fromEnv`:
 
 [source, java, tabsize=4, indent=0]
-.Get a connection from the environment.
+.Get a connection from environment variables
 ----
 include::{examplesDir}/Quickstart.java[tag=pt3]
 ----
-<.> Notice how we directly use the concrete driver class here and how the methods returns an optional: If we don't find the required properties, we can't create a connection.
+<.> Notice how we directly use the concrete driver class here and how the methods return an optional: no connection can be created if the required connection variables are not found.
 
-The `fromEnv` looks for a couple of specific system environment variables and it will be true to the principles of the https://12factor.net[12 factor app] while doing so:
+The `fromEnv` method looks for a few specific system environment variables and it adheres to the https://12factor.net[12 factor app] principles:
 
-- It will look in the System environment first
-- It will then look for a file named `.env` in the current working directory
+- First, it looks in the system environment
+- Second, it looks for a file named `.env` in the current working directory. There are overloads that let you configure the directory and the filename to look for.
 
-There are overloads that let you configure the directory and the filename to look for.
-The properties we support are as follows:
+The supported variables are:
 
-`NEO4J_URI`:: The address or URI of the instance to connect to</li>
-`NEO4J_USERNAME`:: Optional username
-`NEO4J_PASSWORD`:: Optional password
-`NEO4J_SQL_TRANSLATION_ENABLED`:: Optional flag to enable full SQL to Cypher translation, defaults to `false`
+`NEO4J_URI`:: The address or URI of the instance to connect to.
+`NEO4J_USERNAME`:: (Optional) Username.
+`NEO4J_PASSWORD`:: (Optional) Password.
+`NEO4J_SQL_TRANSLATION_ENABLED`:: (Optional) Whether to enable full SQL-to-Cypher translation, defaults to `false`.
 
-NOTE: Information from both the System environment and the .env files are combined. If for example `NEO4J_SQL_TRANSLATION_ENABLED` is in the System environment but not in the .env file, it will still be picked up.
+NOTE: Information from both the system environment and the .env files are combined.
+If for example `NEO4J_SQL_TRANSLATION_ENABLED` is in the system environment but not in the .env file, it will still be picked up.
+Given the order of priority, information in the system environment always has preference with respect to the .env file.
 
 This feature is especially useful with Neo4j AuraDB.
-When creating a new AuraDB instance you are required to download an `.env` file and you can directly use it with the Neo4j JDBC Driver like this:
+When creating a new AuraDB instance, you download a `.env` file that you can directly use with the Neo4j JDBC Driver:
 
 [source,java]
 .Using a .env file from AuraDB

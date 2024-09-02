@@ -38,12 +38,6 @@ include::README.adoc[tag=abstract]
 == Introduction
 include::README.adoc[tag=introduction]
 
-== About this documentation
-
-In this documentation we will focus on getting and configuring the Neo4j JDBC Driver and enabling optional features.
-We will discuss the design choices made in the metadata retrieval and how we map Neo4j labels to tables as well as our opinionated choices with regards the automatic SQL to Cypher translation.
-
-While we do provide runnable examples that due to their nature will show how to use JDBC in general, this is not a documentation about how to correctly use JDBC as an API.
 
 ifndef::site-gen-antora[]
 include::quickstart.adoc[leveloffset=+1]
