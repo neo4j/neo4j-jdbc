@@ -213,6 +213,6 @@ The driver offers several mechanism so that you can use a fixed URL with dynamic
 When you create a https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j Aura] instance, you will be asked to download a text-file named similar to `Neo4j-9df57663-Created-2023-06-12.txt`.
 This is essentially a https://www.dotenv.org[.dotenv] file containing the information required to connect to the database.
 
-These files can be directly used via `Neo4jDriver.fromEnv()` (see <<connect-dotenv, Getting a connection via environment variables>>).
+These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:connect-dotenv[]).
 This method exists in several overloads, which let you configure both filename and directory.
 Additionally, the builder lets you configure options that are not contained in the files from Aura.

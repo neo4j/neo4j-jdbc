@@ -1,38 +1,38 @@
+[#s2c_introduction]
 = SQL to Cypher translation
 
-[#s2c_introduction]
 == Introduction
 
-The translation from SQL queries to Cypher is an optional feature of this driver that consists of two parts:
+The translation of queries from SQL to Cypher is an optional feature of this driver and it consists of two parts:
 
-- The translator SPI, which you find in the module `{group-id}:neo4j-jdbc-translator-spi`.
-It consists of two interfaces, `SqlTranslatorFactory` and the actual `SqlTranslator`.
+- The translator SPI, located in the module `{group-id}:neo4j-jdbc-translator-spi`.
+It consists of two interfaces: `SqlTranslatorFactory` and the actual `SqlTranslator`.
 - A concrete implementation of this SPI, published as `{group-id}:neo4j-jdbc-translator-impl`.
 
-The latter is covered in "xref:s2c[]" and bundled as the "full bundle", described in xref:available_bundles[xrefstyle=short].
-The former is provided for two reasons: It allows us to distribute the driver with and without the bundled, default translator and can be an option for you to run your custom translator.
+The latter is covered in "xref:s2c[]" and bundled as the "full bundle", described in xref:available_bundles[].
+The former is provided for two reasons: it allows us to distribute the driver with and without the bundled, default translator and can be an option for you to run your custom translator.
 
 Translators can be chained, and you can have as many translators on the classpath as you want.
 They will be ordered by a configurable precedence with our default implementation having the lowest precedence.
-Thus, you can have for example a custom translator that takes care of a fixed set of queries, and if it cannot translate another, it will just be passed down to our implementation.
+Thus, you can for example have a custom translator that takes care of a fixed set of queries and, if it cannot translate another, it will pass it down to our implementation.
 
-Translating arbitrary SQL queries to Cypher is an opinionated task as there is no right way to map table names to objects in the graph: A table name can be used as is as a label, you might want to transform it to a singular form etc. And then we haven't even started how to map relationships: Do you want to have relationship types derived from a join table, a join column (in that case, which one?) or the name of a foreign key?
+Translating arbitrary SQL queries to Cypher is an opinionated task as there is no right way to map table names to graph objects: a table name can be used as-is as a label, or you might want to transform it to a singular form, etc. Mapping relationships is even trickier: should relationship types derive from a join table, a join column (in that case, which one?) or the name of a foreign key?
 
-We made some assumptions that we find to match various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
+We believe our assumptions are appropriate for various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.
 
 NOTE: Some tools like Tableau use a class-loader that won't let the driver use the standard Java service loader mechanism.
-For these scenarios we provide an additional configuration property named `translatorFactory`.
-Set this to `DEFAULT` for directly loading our default implementation or to a fully-qualified classname for any other factory.
+For these scenarios, we provide an additional configuration property named `translatorFactory`.
+Set this to `DEFAULT` to directly load our default implementation or to a fully-qualified classname for any other factory.
 Be aware that either our default implementation or your custom one needs to be on the classpath nevertheless.
 
 == Translating SQL to Cypher
 
-There's only one requirement to enable SQL to Cypher translation:
-You have to have one module implementing the SPI on the classpath.
-This is *automatically* the case if you use the full-bundle under those coordinates: `{group-id}:{artifact-id-full-bundle}`.
-In that case, you *don't* need to add any other dependencies.
-If you use the individual distribution or the "small" bundle `{group-id}:{artifact-id-bundle}` you must add the following artifact: `{group-id}:{artifact-id-impl}`.
+There's only one requirement to enable the SQL-to-Cypher translation:
+you have to have one module implementing the SPI on the classpath.
+This is *automatically* the case if you use the full-bundle under these coordinates: `{group-id}:{artifact-id-full-bundle}`.
+In that case, you *don't* need to add any other dependency.
+If you use the individual distribution or the "small" bundle `{group-id}:{artifact-id-bundle}`, you must add the following artifact: `{group-id}:{artifact-id-impl}`.
 
 The implementation will be automatically loaded.
 If you use the translation on a case-by-case basis, it will be lazily loaded, that is: No additional classes are touched or loaded into memory.

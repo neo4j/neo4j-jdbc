@@ -1,4 +1,4 @@
-= Usage
+= Usage  (include in GH readme?)
 
 Add the JDBC driver to your application, for example as a Gradle dependency:
 
