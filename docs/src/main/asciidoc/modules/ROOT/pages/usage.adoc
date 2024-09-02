@@ -1,4 +1,4 @@
-= Quickstart
+= Usage
 
 Add the JDBC driver to your application, for example as a Gradle dependency:
 
@@ -43,7 +43,7 @@ TIP: In case any tooling asks you for the name of the concrete driver class, it 
 
 For more information on the SQL-to-Cypher translation layer, see xref:s2c_introduction[].
 
-The JDBC Spec does not support named parameters, only index-based parameters, starting at `1`.
+The JDBC specification does not support named parameters, only index-based parameters, starting at `1`.
 So for all `PreparedStatement` instances you need to specify parameters like this:
 
 [source, java, tabsize=4, indent=0]
@@ -68,6 +68,7 @@ To use named parameters, downcast the `PreparedStatement` to `Neo4jPreparedState
 include::{examplesDir}/NamedParameters.java[tag=index-np]
 ----
 
+[#connect-dotenv]
 == Getting a connection via environment variables
 
 If you are happy to depend directly on `org.neo4j.jdbc.Neo4jDriver` and want to get a connection as easy as possible, you might want to use `fromEnv`:
@@ -93,7 +94,7 @@ The supported variables are:
 
 NOTE: Information from both the system environment and the .env files are combined.
 If for example `NEO4J_SQL_TRANSLATION_ENABLED` is in the system environment but not in the .env file, it will still be picked up.
-Given the order of priority, information in the system environment always has preference with respect to the .env file.
+Given the order of priority, information in the system environment always has precedence over the .env file.
 
 This feature is especially useful with Neo4j AuraDB.
 When creating a new AuraDB instance, you download a `.env` file that you can directly use with the Neo4j JDBC Driver:

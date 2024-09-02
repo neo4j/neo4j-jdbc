@@ -8,27 +8,27 @@ The driver consists of 3 modules:
 This is the actual JDBC implementation for Neo4j
 
 {artifact-id-spi}::
-This is the SPI for the default SQL to Cypher translation implementation and for any further or custom implementation.
+This is the SPI for the default SQL-to-Cypher translation implementation and for any further or custom implementation.
 
 {artifact-id-impl}::
-This is the *optional* default implementation of a SQL to Cypher translator.
+This is the *optional* default implementation of an SQL-to-Cypher translator. (and how does it differ from the default?)
 
-IMPORTANT: If you just want to use the Neo4j JDBC Driver for running Cypher statements, the only module you need to think about is `{group-id}:{artifact-id}`, and in case you are developing in an environment with proper dependency management, this is all you need to declare.
+IMPORTANT: If you just want to use the Neo4j JDBC Driver to run Cypher statements, you only need the module `{group-id}:{artifact-id}`. As long as you are developing in an environment with proper dependency management, this is all you need to declare.
 
-While the translator SPI is a required dependency and pulled in via Maven or Gradle, the actual implementation is not.
-This allows for
+While the translator SPI is a required dependency and gets pulled in via Maven or Gradle, the actual implementation is not.
+This allows for:
 
-- The possibility to opt-out of having additional dependencies in all cases you are not using SQL to Cypher translation
+- The possibility to opt-out of having additional dependencies if you don't need the SQL-to-Cypher translation
 - Requiring different JDK baselines or licensing modules for our implementations
-- Allowing you to create alternative ways of creating a translator
+- Allowing you to create alternative translators
 
 === Dependencies
 
-We offer two "dependency free" modules, that shade everything into one binary artifact.
-Those bundles should cover a lot of tooling, and we discuss those bundles below in <<available_bundles>>.
-In case you are interested in the actual dependencies of the driver, those are the direct, compile-time dependencies of the driver:
+We offer two "dependency-free" modules, which shade everything into one binary artifact each.
+Those bundles cover a lot of tooling (see <<available_bundles>>).
+In case you are interested in the actual dependencies of the driver, those are its direct, compile-time dependencies:
 
-.Dependency tree of the core driver.
+.Dependency tree of the core driver
 [source,text]
 ----
 org.neo4j:neo4j-jdbc
@@ -49,8 +49,7 @@ org.neo4j:neo4j-jdbc
 == Available bundles
 
 All bundles of the Neo4j JDBC Driver are distributed on Maven Central.
-The bundles have different characteristics that we will explain the following sections.
-Depending on your use-case or your environment you pick one or the other bundle, but not several at once.
+The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not several at once.
 
 
 === Individual components
@@ -81,7 +80,7 @@ dependencies {
 }
 ----
 
-If you want to use the SQL to Cypher translation from Neo4j, you need to add the following dependency in your Maven build:
+If you want to use the SQL-to-Cypher translation from Neo4j, you need to add the following dependency in your Maven build:
 
 [source,xml,subs="verbatim,attributes"]
 .Maven dependency for the default SQL to Cypher translator
@@ -106,19 +105,20 @@ dependencies {
 [#small_bundle]
 === Small bundle
 
-Pick this distribution if you work with ETL tools or tooling for relational databases that allow adding JDBC driver only as single artifacts or that make it unnecessary hard to add additional jars.
-This bundle does not contain the default SQL to Cypher translator!
+Pick this distribution if you work with ETL tools or tooling for relational databases that allow adding the JDBC driver only as single artifacts or that make it unnecessary hard to add additional jars.
+This bundle does not contain the default SQL-to-Cypher translator!
 The coordinates of this bundle are `{group-id}:{artifact-id-bundle}` and you can download it from Maven central:
 
 https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-bundle}/{version}/{artifact-id-bundle}-{version}.jar
 
-TIP: All bundles can certainly be used as a normal project dependency as well. This might be useful for example if your project depends on another, potentially conflicting Netty version.
+TIP: All bundles can be used as normal project dependencies as well.
+This might be useful for example if your project depends on another, potentially conflicting Netty version.
 
 === Full bundle
 
-This bundle contains the default SQL to Cypher translator.
+This bundle contains the default SQL-to-Cypher translator.
 Otherwise, it is identical to the <<small_bundle, small bundle>>.
-Its coordinates are `{group-id}:{artifact-id-full-bundle}` and you can download it from central here:
+Its coordinates are `{group-id}:{artifact-id-full-bundle}` and you can download it from Maven central here:
 
 https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-full-bundle}/{version}/{artifact-id-full-bundle}-{version}.jar
 
@@ -129,4 +129,4 @@ We also ship a very experimental bundle that we call `text2cypher`:
 
 https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-text2cypher-bundle}/{version}/{artifact-id-text2cypher-bundle}-{version}.jar
 
-See <<text2cypher>> for more information about the text2cypher translator.
+See <<text2cypher>> for more information.
