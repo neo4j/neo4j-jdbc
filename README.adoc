@@ -62,7 +62,7 @@ You find the instructions in our link:CONTRIBUTING.adoc[contribution documentati
 
 == Introduction
 // tag::introduction[]
-The JDBC acronym stands for "Java Database Connectivity" and is thus not bound exclusively to relational databases.
+JDBC stands for "Java Database Connectivity" and is thus not bound exclusively to relational databases.
 Nevertheless, JDBC's terms, definitions, and behavior are highly influenced by SQL and relational databases.
 As Neo4j is a graph database with quite a different paradigm than relational and a non-standardized behaviour in some areas, there might be some details that don't map 100% in each place, and we make sure to educate you about these in this documentation.
 
@@ -121,4 +121,6 @@ This comes with a number of issues:
 WARNING: This driver does not support automatic reshaping or flattening of the result sets, as the previous versions do.
 If you query for nodes, relationships, paths, or maps, you should use `getObject` on the result sets and cast them to the appropriate type (you find all of them inside the package `org.neo4j.jdbc.values`).
 However, the default SQL-to-Cypher translator will (when connected to a database) figure out what properties nodes have and turn the asterisk (`*`) into individual columns of nodes and relationships, just like what you would expect when running a `SELECT *` statement.
+
+For information on upgrade/migration from other drivers to this one, see xref:migrating.adoc[].
 // end::introduction[]

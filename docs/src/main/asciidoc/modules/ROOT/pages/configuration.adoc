@@ -55,13 +55,16 @@ The latter is sometimes defined by tooling for you.
 With regard to authentication, we recommend to follow the JDBC spec, which discourages using any form of URL authentication.
 All query parameters must be https://en.wikipedia.org/wiki/Percent-encoding[percent-encoded] if they contain special characters, e.g. `...?param1=space%20separated`.
 
-TIP: The driver supports the following URI schemes, which tweak the security configuration:
-+
+[TIP]
+====
+The driver supports the following URI schemes, which tweak the security configuration:
+
 * `neo4j` - No encryption.
 * `neo4j+s` - Enables encryption and only accepts SSL certificates from the server that are signed by a known Certificate Authority.
 * `neo4j+ssc` - Enables encryption and accepts self-signed certificates (which must be added to the certificate store).
-+
+
 `bolt` URI schemes are not supported.
+====
 
 The driver accepts the following configuration arguments, either as properties or as URL query parameters:
 
@@ -213,6 +216,6 @@ The driver offers several mechanism so that you can use a fixed URL with dynamic
 When you create a https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j Aura] instance, you will be asked to download a text-file named similar to `Neo4j-9df57663-Created-2023-06-12.txt`.
 This is essentially a https://www.dotenv.org[.dotenv] file containing the information required to connect to the database.
 
-These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:connect-dotenv[]).
+These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:usage.adoc#connect-dotenv[Getting a connection via environment variables]).
 This method exists in several overloads, which let you configure both filename and directory.
 Additionally, the builder lets you configure options that are not contained in the files from Aura.

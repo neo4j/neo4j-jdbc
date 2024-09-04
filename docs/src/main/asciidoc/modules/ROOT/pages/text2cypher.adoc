@@ -29,8 +29,8 @@ Don't use this translator if you don't want the above, or are not allowed to do 
 This module requires one additional configuration: the OpenAI API key.
 You can use either a URL parameter, a JDBC property entry, or an environment variable:
 
-* URL parameter or properties name is `openAIApiKey`
-* Name of the environment variable is `OPEN_AI_API_KEY`
+* URL parameter/property name is `openAIApiKey`
+* Environment variable name is `OPEN_AI_API_KEY`
 
 [source,txt]
 .Example of a valid URL
@@ -38,7 +38,7 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key
 ----
 
-With that in place, a query such as the following will be translated into Cypher:
+With that in place, a query such as the following can be translated into Cypher:
 
 [source,txt]
 ----

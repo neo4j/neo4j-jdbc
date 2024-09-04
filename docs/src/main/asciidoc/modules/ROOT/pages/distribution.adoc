@@ -26,7 +26,8 @@ This allows for:
 
 We offer two "dependency-free" modules, which shade everything into one binary artifact each.
 Those bundles cover a lot of tooling (see <<available_bundles>>).
-In case you are interested in the actual dependencies of the driver, those are its direct, compile-time dependencies:
+
+The driver's direct, compile-time dependencies are listed below:
 
 .Dependency tree of the core driver
 [source,text]
@@ -58,7 +59,7 @@ Pick this distribution if you have an application that uses dependencies managem
 
 IMPORTANT: We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are `{group-id}:neo4j-jdbc-bom`.
 
-For Maven you will want to use this dependency declaration:
+For Maven, you will want to use this dependency declaration:
 
 [source,xml,subs="verbatim,attributes"]
 .Maven dependency for the core Neo4j JDBC Driver artifact
@@ -129,4 +130,4 @@ We also ship a very experimental bundle that we call `text2cypher`:
 
 https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-text2cypher-bundle}/{version}/{artifact-id-text2cypher-bundle}-{version}.jar
 
-See <<text2cypher>> for more information.
+See xref:text2cypher.adoc[] more information.

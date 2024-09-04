@@ -34,7 +34,7 @@ The following configuration properties are *not* supported and have no replaceme
 * `max.transaction.retry.time` (this driver has no built-in retry mechanism)
 
 As with any persistent database connection you want to cater for failed transactions.
-We made good experience with https://resilience4j.readme.io[resilience4j] which does fit in well with common Java frameworks, such as Spring Boot.
+We made good experience with https://resilience4j.readme.io[resilience4j] which fits in well with common Java frameworks, such as Spring Boot.
 
 The following properties can be achieved with standardized JDBC settings:
 
@@ -63,7 +63,8 @@ If you depend on a `javax.sql.DataSource`, we provide `org.neo4j.jdbc.Neo4jDataS
 While the Neo4j JDBC Driver does not support the `flatten` option, it can emulate its effect.
 `flatten` un-nests returned nodes and relationships by providing all their properties as individual columns.
 
-If you enable automatic SQL to Cypher translation (See xref:s2c_introduction[]), any `*`-select will inspect whether it affects nodes or relationships and will un-nest their properties, so that a `SELECT * FROM Movie m` will effectively become `MATCH (m:Movie) RETURN m.title AS title, m.released AS released`. Read more about this topic in xref:s2c_star_selects[]).
+If you enable automatic xref:sql2cypher.adoc#s2c_introduction[SQL to Cypher translation], any `*`-select will inspect whether it affects nodes or relationships and will un-nest their properties, so that a `SELECT * FROM Movie m` will effectively become `MATCH (m:Movie) RETURN m.title AS title, m.released AS released`.
+For more information, see xref:sql2cypher.adoc#s2c_star_selects[Star-Selects].
 
 In case you want to access the actual node, return the whole table alias or just use Cypher.
 

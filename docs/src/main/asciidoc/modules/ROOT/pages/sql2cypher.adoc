@@ -9,7 +9,7 @@ The translation of queries from SQL to Cypher is an optional feature of this dri
 It consists of two interfaces: `SqlTranslatorFactory` and the actual `SqlTranslator`.
 - A concrete implementation of this SPI, published as `{group-id}:neo4j-jdbc-translator-impl`.
 
-The latter is covered in "xref:s2c[]" and available in the "full bundle", described in xref:available_bundles[].
+The latter is covered in "xref:s2c[]" and available in the "full bundle", described in xref:distribution.adoc#available_bundles[Available bundles].
 The former is provided for two reasons: it allows us to distribute the driver with and without the bundled, default translator and allows you to run your custom translator.
 
 Translators can be chained, and there can be as many translators on the classpath as you want.
@@ -152,14 +152,12 @@ Is $ not the default already?
 
 The following statements are all under tests and describe what you can expect from the default translation layer:
 
-? nesting gets too deep, and level 3 headings in includes are not rendered as headings
+include::translator/simple.adoc[leveloffset=+2]
 
-include::translator/simple.adoc[leveloffset=+3]
+include::translator/expressions.adoc[leveloffset=+2]
 
-include::translator/expressions.adoc[leveloffset=+3]
+include::translator/predicates.adoc[leveloffset=+2]
 
-include::translator/predicates.adoc[leveloffset=+3]
+include::translator/joins.adoc[leveloffset=+2]
 
-include::translator/joins.adoc[leveloffset=+3]
-
-include::translator/dml.adoc[leveloffset=+3]
+include::translator/dml.adoc[leveloffset=+2]

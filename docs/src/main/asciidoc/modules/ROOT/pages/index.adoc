@@ -40,7 +40,7 @@ include::README.adoc[tag=introduction]
 
 
 ifndef::site-gen-antora[]
-include::quickstart.adoc[leveloffset=+1]
+include::usage.adoc[leveloffset=+1]
 
 include::distribution.adoc[leveloffset=+1]
 

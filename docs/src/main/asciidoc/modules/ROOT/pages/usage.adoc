@@ -41,7 +41,7 @@ The remainder of the method is identical to before.
 
 TIP: In case any tooling asks you for the name of the concrete driver class, it is `org.neo4j.jdbc.Neo4jDriver`.
 
-For more information on the SQL-to-Cypher translation layer, see xref:s2c_introduction[].
+For more information, see xref:sql2cypher.adoc#s2c_introduction[SQL to Cypher translation].
 
 The JDBC specification does not support named parameters, only index-based parameters, starting at `1`.
 So for all `PreparedStatement` instances you need to specify parameters like this:

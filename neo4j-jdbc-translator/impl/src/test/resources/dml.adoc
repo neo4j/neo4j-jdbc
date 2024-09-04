@@ -1,7 +1,7 @@
 = DML statements
 
 This section lists the supported Data-Manipulation-Language (DML) statements.
-Although a `SELECT` statement is technically DML as well, it is covered in xref:simple.adoc[].
+Although a `SELECT` statement is technically DML as well, it is covered in xref:translator/simple.adoc[].
 
 == Deleting nodes
 
@@ -203,7 +203,7 @@ CREATE (p:Person {name: $1}) RETURN elementId(p)
 
 We support a restricted range of "upserts" via the non-standard but pretty common `ON DUPLICATE` and `ON CONFLICT` SQL clauses.
 Upserts are translated into `MERGE` statements.
-While they work without constraints, you should really have uniqueness-constraints on the node properties you merge on, or Neo4j may create duplicates (see https://neo4j.com/developer/kb/understanding-how-merge-works/[Understanding-how-merge-works]).
+While they work without constraints, you should really have uniqueness-constraints on the node properties you merge on, or Neo4j may create duplicates (see https://neo4j.com/developer/kb/understanding-how-merge-works/[Understanding how merge works]).
 
 Upserts on all columns can happen via either `ON DUPLICATE KEY IGNORE` or `ON CONFLICT IGNORE`.
 While `ON DUPLICATE KEY` does offer upgrade options, it assumes the primary (or unique) key being violated to be known.
