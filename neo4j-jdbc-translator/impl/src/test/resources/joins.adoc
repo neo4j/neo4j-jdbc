@@ -1,3 +1,4 @@
+[#joinin-relationships]
 = Using joins to map relationships
 
 On the surface, joins are relationships materialized in SQL (foreign keys are not).

@@ -54,8 +54,7 @@ DELETE person
 
 '''
 
-This is safer, but also pointless:
-shouldn't this never delete anything??
+Of, the condition can also be that always evaluates to `false`, never deleting anything:
 
 [source,sql,id=d0_1c,name=delete]
 ----

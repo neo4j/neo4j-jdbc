@@ -11,7 +11,8 @@ This is the actual JDBC implementation for Neo4j
 This is the SPI for the default SQL-to-Cypher translation implementation and for any further or custom implementation.
 
 {artifact-id-impl}::
-This is the *optional* default implementation of an SQL-to-Cypher translator. (and how does it differ from the default?)
+This is the default and *optional* implementation of an SQL-to-Cypher translator.
+It provides a somewhat opinionated approach of translating SQL statements into semantically equivalent Cypher statements.
 
 IMPORTANT: If you just want to use the Neo4j JDBC Driver to run Cypher statements, you only need the module `{group-id}:{artifact-id}`. As long as you are developing in an environment with proper dependency management, this is all you need to declare.
 

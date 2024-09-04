@@ -45,10 +45,8 @@ With that in place, a query such as the following can be translated into Cypher:
 🤖, How was The Da Vinci Code rated?
 ----
 
-[source,cypher]
-----
-what goes here? how deterministic is it?
-----
+The outcome of the LLM is not deterministic and will most likely vary.
+While you can execute it directly, we strongly recommend to use `Connection#nativeSQL` to retrieve the Cypher statement, inspect it, and then run it separately.
 
 NOTE: Once a natural language query gets translated into Cypher, the result will be cached and further invocations of that query will use the cached result.
 

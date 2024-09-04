@@ -42,7 +42,8 @@ WHERE t.a = 1
 RETURN t.a, t.b
 ----
 
-We recommend using table aliases, but the translations works without them as well (then why recommend?).
+Table aliases are optional, if you omit them, we derive aliases from the labels and types.
+If you inspect the translated queries, we recommend using aliases, as this makes the queries better readable.
 
 [#s2c_star_selects]
 == Star-Selects
@@ -183,7 +184,7 @@ RETURN elementId(p) AS element_id,
 
 '''
 
-The following example uses a join-table to access relationships (we explain this later in this manual where? just ref it here), and the flattening of properties works here as well:
+The following example uses a join-table to access relationships (we explain this later in this manual <<joinin-relationships, when discussing joins>>), and the flattening of properties works here as well:
 
 [source,sql,id=star_9,name=unqualifiedAsteriskJoinTable, metaData=ACTED_IN:role;Person:born|name;Movie:title|released,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN]
 ----

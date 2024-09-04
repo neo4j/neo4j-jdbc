@@ -75,8 +75,6 @@ include::{examplesDir}/SQLTranslator.java[tag=force-cypher]
 
 === Possible error scenarios
 
-Is this really necessary? Exceptions with decent error messages don't need extra docs.
-
 A `NoSuchElementException` with a message of `No SQL translators available` will be thrown when there is no implementation of the SQL to Cypher translator available, and you either used `java.sql.Connection.nativeSQL` or enabled automatic translation. The exception will be thrown when you access the method or eagerly on opening a connection in the latter case.
 
 [#s2c]
@@ -140,12 +138,16 @@ include::{examplesDir}/SQLTranslator.java[tag=config1]
 include::{examplesDir}/SQLTranslator.java[tag=config2]
 ----
 
+Named parameter syntax in the SQL parser defaults to `:name` (such as supported by Oracle, JPA, Spring, a colon followed by a name).
+The following example changes that prefix to `$` (the same prefix that Cypher uses):
+
 [source, java, tabsize=4, indent=0]
-.Change parameters prefix (they still work only by index in SQL) and add mappings for join columns
+.Change parameters prefix and add mappings for join columns
 ----
 include::{examplesDir}/SQLTranslator.java[tag=config3]
 ----
-Is $ not the default already?
+
+This is helpful when a tool generates names like that and does not allow customization.
 
 [#s2c_supported_statements]
 === Supported statements

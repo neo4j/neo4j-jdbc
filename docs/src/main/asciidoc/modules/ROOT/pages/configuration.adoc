@@ -10,7 +10,7 @@ We also provide `org.neo4j.jdbc.Neo4jDataSource` as `javax.sql.DataSource`.
 
 == Causal clustering and bookmarks
 
-The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency when running against a Neo4j cluster (disabled on single instance?).
+The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency in all Neo4j deployments.
 Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver, so all connections spawned by one instance will partake in the same causal chain of transactions.
 Connections from different driver instances will not use the same set of bookmarks and there is no built-in machinery that would enable this.
 If you want or need this, you can directly access the `Neo4jDriver` type to retrieve the current set of known bookmarks and pass them to another driver instance.
@@ -135,8 +135,8 @@ a|The authentication scheme to use. *NOT RECOMMENDED* as URL query parameter for
 |`useBookmarks`
 |`boolean`
 |Enables bookmark management for full causal cluster support. This is enabled by default and the recommended setting for all scenarios that use a connection pool.
-If you disable it, it will only be disabled for the specific connection. (what does this mean? Is this not a _driver_ setting? how can it only affect ONE connection?)
-Other connections retrieved from the driver instance are not affected, and the driver will still manage their bookmarks.
+If you disable it, it will only be disabled for the specific connection.
+Other connections retrieved from the driver instance to the same or to other databases are not affected, and the individual connections will still manage their bookmarks.
 |`true`
 
 |===

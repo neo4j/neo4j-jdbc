@@ -2,9 +2,9 @@
 
 == Catalog and schema
 
-I have close to no idea what this section is about and I believe it would benefit from one example. It is theoretical and very much in the air. I also think it is of less importance than the sections 7 and 8 and could thus be demoted below them (but still clarified). ?
-
 All the methods on connection level dealing with metadata and information about the available content provide information in terms that are defined in the SQL standard, including catalogs and schemas.
+
+In most, but not all, relational databases, a catalog is equivalent to a specific database on a server or cluster, and the schema refers to the collection of tables, views and procedures in that catalog.
 
 From the SQL 1992 standard (find an archived copy http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt[here]):
 
