@@ -136,42 +136,42 @@
 		<asciidoctorj.version>2.5.13</asciidoctorj.version>
 		<assertj.version>3.26.3</assertj.version>
 		<build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
-		<checkstyle.version>10.17.0</checkstyle.version>
+		<checkstyle.version>10.18.1</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<docker-maven-plugin.version>0.45.0</docker-maven-plugin.version>
 		<dotenv-java.version>3.0.1</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
-		<exec-maven-plugin.version>3.4.0</exec-maven-plugin.version>
+		<exec-maven-plugin.version>3.4.1</exec-maven-plugin.version>
 		<flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
 		<jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
-		<japicmp-maven-plugin.version>0.22.0</japicmp-maven-plugin.version>
+		<japicmp-maven-plugin.version>0.23.0</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
-		<jdbi3.version>3.45.3</jdbi3.version>
-		<jooq.version>3.19.10</jooq.version>
+		<jdbi3.version>3.45.4</jdbi3.version>
+		<jooq.version>3.19.11</jooq.version>
 		<jreleaser-maven-plugin.version>1.13.1</jreleaser-maven-plugin.version>
-		<junit-jupiter.version>5.10.3</junit-jupiter.version>
-		<kotlin-stdlib-jdk8.version>2.0.10</kotlin-stdlib-jdk8.version>
+		<junit-jupiter.version>5.11.0</junit-jupiter.version>
+		<kotlin-stdlib-jdk8.version>2.0.20</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>0.33.0</langchain4j.version>
 		<license-maven-plugin.version>4.5</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
-		<maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
+		<maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
 		<maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-		<maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
+		<maven-deploy-plugin.version>3.1.3</maven-deploy-plugin.version>
 		<maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-		<maven-failsafe-plugin.version>3.3.1</maven-failsafe-plugin.version>
-		<maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+		<maven-failsafe-plugin.version>3.4.0</maven-failsafe-plugin.version>
+		<maven-install-plugin.version>3.1.3</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
 		<maven-javadoc-plugin.version>3.8.0</maven-javadoc-plugin.version>
 		<maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-		<maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.4.0</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
 		<mockito.version>5.12.0</mockito.version>
@@ -182,20 +182,20 @@
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.15.0</neo4j.version>
 		<netty.version>4.1.112.Final</netty.version>
-		<openapi-generator-maven-plugin.version>7.7.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>7.8.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.9</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.12.3</quarkus.platform.version>
+		<quarkus.platform.version>3.13.3</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
 		<slf4j.version>2.0.16</slf4j.version>
 		<sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-		<spring-boot.version>3.3.2</spring-boot.version>
-		<spring-javaformat.version>0.0.42</spring-javaformat.version>
+		<spring-boot.version>3.3.3</spring-boot.version>
+		<spring-javaformat.version>0.0.43</spring-javaformat.version>
 		<testcontainers.version>1.20.1</testcontainers.version>
 	</properties>
 
