@@ -1,18 +1,16 @@
 = Predicates
 :toc:
 
-As with expressions a lot of logical SQL expressions and conditions used as predicates can be translated into straight forward into Cypher predicates.
+As with expressions a lot of logical SQL expressions and conditions used as predicates can be translated straightforward into Cypher predicates.
 
-== Conjunctions and disjunctions.
+== Conjunctions and disjunctions
 
-Logical conjunctions and disjunctions are all supported:
+Logical conjunctions and disjunctions are all supported.
 
 [source,sql,id=p1_0,name=logic_operators]
 ----
 SELECT 1 FROM p WHERE 1 = 1 AND 2 = 2 OR 3 = 3
 ----
-
-will be translated to
 
 [source,cypher,id=p1_0_expected]
 ----
@@ -22,6 +20,8 @@ WHERE ((1 = 1
   OR 3 = 3)
 RETURN 1
 ----
+
+'''
 
 The input
 
@@ -83,7 +83,9 @@ WHERE (1 <= 2) AND (2 <= 3)
 RETURN 1
 ----
 
-SQL has a `SYMMETRIC` keyword for the `BETWEEN` clause, to indicate that you do not care whouch bound of the range is larger than the other:
+'''
+
+SQL has a `SYMMETRIC` keyword for the `BETWEEN` clause, to indicate that you do not care which bound of the range is larger:
 
 [source,sql,id=p2_2,name=predicate_between_symmetric]
 ----

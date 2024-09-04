@@ -2,7 +2,7 @@
 
 == Catalog and schema
 
-I have close to no idea what this section is about and I believe it would benefit from one example? It is theoretical and very much in the air. I also think it is of less importance than the sections 7 and 8 and could thus be demoted below them (but still clarified).
+I have close to no idea what this section is about and I believe it would benefit from one example. It is theoretical and very much in the air. I also think it is of less importance than the sections 7 and 8 and could thus be demoted below them (but still clarified). ?
 
 All the methods on connection level dealing with metadata and information about the available content provide information in terms that are defined in the SQL standard, including catalogs and schemas.
 

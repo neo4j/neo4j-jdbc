@@ -2,11 +2,11 @@
 
 There are some other JDBC drivers for Neo4j, under various licenses and with varying features and capabilities.
 In the following we outline possible migration processes.
-The basic usage patterns for all JDBC drivers for Neo4j are very similar, in the end it's "just" using a JDBC compliant driver, and you would use it as described in the original https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html[Java tutorial about JDBC].
+The basic usage patterns for all JDBC drivers for Neo4j are very similar: in the end, it's "just" about using a JDBC compliant driver, and you would use it as described in the original https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html[Java tutorial about JDBC].
 
 == Migrating from version 4 or 5 of this driver
 
-Version 5 and 4 of the Neo4j JDBC Driver have been mainly developed by http://larus-ba.it/[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j. Thank you so much for all your work.
+Version 5 and 4 of the Neo4j JDBC Driver have been mainly developed by http://larus-ba.it/[Larus BA, Italy], a certified consulting and integration solutions partner for Neo4j.
 
 WARNING: The most important change that you need to make is removing the dependency on `org.neo4j:neo4j-jdbc-bolt`. You need to replace it with `{group-id}:{artifact-id}` or one of the bundles we provide, see xref:distribution.adoc#available_bundles[available bundles].
 
@@ -26,25 +26,23 @@ The following URLs behave the same but must be rewritten:
 * `jdbc:neo4j:neo4j+s://<host>:<port>/` becomes `jdbc:neo4j+s://<host>:<port>/`
 * `jdbc:neo4j:neo4j+ssc://<host>:<port>/` becomes `jdbc:neo4j+ssc://<host>:<port>/`
 
-The following configuration properties are *not* supported and have no other replacement:
+The following configuration properties are *not* supported and have no replacement:
 
 * `leaked.sessions.logging`
 * `readonly`
 * `usebookmarks`
-
-We don't offer any build-in retry mechanism, so the corresponding setting don't have an effect:
-
-* `max.transaction.retry.time`
+* `max.transaction.retry.time` (this driver has no built-in retry mechanism)
 
 As with any persistent database connection you want to cater for failed transactions.
 We made good experience with https://resilience4j.readme.io[resilience4j] which does fit in well with common Java frameworks, such as Spring Boot.
 
 The following properties can be achieved with standardized JDBC settings:
 
-* `encryption`: Use the appropriate transport scheme (`neo4j`, `neo4j+s` or `neo4j+ssc`)
-* `autocommit`: Use `java.sql.Connection.setAutoCommit`
+* `encryption` -- Use the appropriate transport scheme (`neo4j`, `neo4j+s` or `neo4j+ssc`)
+* `autocommit` -- Use `java.sql.Connection.setAutoCommit`
 
-Connection pooling can be achieved with any JDBC compliant connection pool, the following properties don't have an effect:
+Connection pooling can be achieved with any JDBC-compliant connection pool.
+The following properties have no effect:
 
 * `max.connection.lifetime`
 * `max.connection.poolsize`
@@ -55,17 +53,18 @@ The following properties just have different names:
 
 The following properties can be achieved using a different URL:
 
-* `database` is now part of the URL, instead of specifying `jdbc:neo4j:neo4j+s://foobar.io:7687?database=abc` you would use the database name as path segment in the url, such as: `jdbc:neo4j+s://foobar.io:7687/abc`
+* `database` is now part of the URL: instead of specifying `jdbc:neo4j:neo4j+s://foobar.io:7687?database=abc` you would use the database name as path segment in the url, such as: `jdbc:neo4j+s://foobar.io:7687/abc`
 
-In case your tooling requires to use a concrete driver class: This JDBC driver has only `org.neo4j.jdbc.Neo4jDriver`.
+If your tooling requires to use a concrete driver class, this JDBC driver has only `org.neo4j.jdbc.Neo4jDriver`.
 If you depend on a `javax.sql.DataSource`, we provide `org.neo4j.jdbc.Neo4jDataSource`.
 
 === Flattening
 
-While the Neo4j JDBC Driver does not support `flatten` option, it can emulate its effect.
-`flatten` did unnest returned nodes and relationships by providing all their properties as individual columns.
+While the Neo4j JDBC Driver does not support the `flatten` option, it can emulate its effect.
+`flatten` un-nests returned nodes and relationships by providing all their properties as individual columns.
 
-If you enable automatic SQL to Cypher translation (See xref:s2c_introduction[xrefstyle=short]), any `*`-select will inspect whether it affects nodes or relationship and will unnest their properties, so that a `SELECT * FROM Movie m` will effectively become `MATCH (m:Movie) RETURN m.title AS title, m.released AS released`. Read more about this topic in xref:s2c_star_selects[xrefstyle=short]).
+If you enable automatic SQL to Cypher translation (See xref:s2c_introduction[]), any `*`-select will inspect whether it affects nodes or relationships and will un-nest their properties, so that a `SELECT * FROM Movie m` will effectively become `MATCH (m:Movie) RETURN m.title AS title, m.released AS released`. Read more about this topic in xref:s2c_star_selects[]).
 
 In case you want to access the actual node, return the whole table alias or just use Cypher.
-The Neo4j JDBC Driver does support complex object types as return types.
+
+The Neo4j JDBC Driver supports complex object types as return types.

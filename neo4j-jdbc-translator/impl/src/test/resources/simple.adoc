@@ -2,26 +2,26 @@
 
 == Table names to labels
 
-The most simple select statement to translate is a statement without the `FROM` clause, such as:
+The most simple `SELECT` statement to translate is one without `FROM` clause, such as:
 
 [source,sql,id=t1_1,name=no_driving_table]
 ----
 SELECT 1
 ----
 
-It is equivalent without loss to the following Cypher:
+It is equivalent to a Cypher `RETURN`:
 
 [source,cypher,id=t1_1_expected]
 ----
 RETURN 1
 ----
 
-`SELECT` statements without further `JOIN` clauses are pretty straight forward to translate.
-The hardest challenge here is how to map the table name to labels:
+`SELECT` statements without `JOIN` clauses are pretty straightforward to translate.
+The challenge here is how to map the table name to labels:
 
-* We parse the SQL Statement case-sensitive by default
-* Table names will be mapped to node labels
-* Table aliases will be used as identifiable symbolic names
+* We parse the SQL statement case-sensitive by default
+* Table names are mapped to node labels
+* Table aliases are used as identifiable symbolic names
 
 [source,sql,id=t1_0,name=select_with_condition]
 ----
@@ -31,7 +31,7 @@ FROM My_Table -- <.>
 WHERE t.a = 1
 ----
 <.> Will be used as the label to match, as-is, i.e. `My_Table`
-<.> The table alias will become the node-alias
+<.> The table alias will become the node alias
 
 The whole construct will be translated to
 
@@ -42,12 +42,12 @@ WHERE t.a = 1
 RETURN t.a, t.b
 ----
 
-We recommend using table aliases, but the translations works without them as well.
+We recommend using table aliases, but the translations works without them as well (then why recommend?).
 
 [#s2c_star_selects]
 == Star-Selects
 
-A star- or `*` select comes in different forms:
+A star- or `*`- select comes in different forms:
 
 Unqualified::
 `SELECT * FROM table`
@@ -56,9 +56,9 @@ Qualified::
 
 And a variant, selecting the relation itself: `SELECT t FROM table t`.
 
-We make use of this fact to give users a way to decide whether they want to return Neo4j nodes and relationships as entities, maps or flattened to individual columns.
-The latter however requires our translator to have access to the schema of the underlying Neo4j database.
-The following sections will describe the use-cases:
+We make use of this to let you decide whether you want to return Neo4j nodes and relationships as entities, maps, or flattened to individual columns.
+The latter requires our translator to have access to the schema of the underlying Neo4j database.
+The following sections describe the use-cases.
 
 === Projecting individual properties
 
@@ -69,13 +69,15 @@ Don't use a star-select but enumerate the properties:
 SELECT m.title FROM Movie m
 ----
 
-The table alias will be used as a symbolic name
+The table alias will be used as a symbolic name:
 
 [source,cypher,id=star_1_expected]
 ----
 MATCH (m:Movie)
 RETURN m.title;
 ----
+
+'''
 
 You can omit the table alias:
 
@@ -92,8 +94,10 @@ MATCH (movie:Movie)
 RETURN movie.title;
 ----
 
-If you access your JDBC columns by name, this might lead to code that is hard to maintain
-You might want to alias the column, then:
+'''
+
+Accessing JDBC columns by name leads to code that is hard to maintain, as column renamings impact code as well.
+To avoid this, alias the column:
 
 [source,sql,id=star_3]
 ----
@@ -110,26 +114,26 @@ RETURN movie.title AS title;
 
 === Projecting all properties
 
-If you run a
+A `SELECT *` statement gets translated differently depending on whether the connection to the Neo4j database is available.
 
 [source,sql,id=star_5]
 ----
-SELECT * FROM Movie m
+SELECT * FROM Person p
 ----
 
-you will get the following Cypher statement in case you run the translation offline:
+If you are offline, you will get the following Cypher statement:
 
 [source,cypher,id=star_5_expected]
 ----
-MATCH (m:Movie) RETURN *
+MATCH (p:Person) RETURN *
 ----
 
-The above query will return one column ("m"), which is a Neo4j node.
-This is usually not what is expected in the relational world.
+The above query will return one column (`p`) containing a Neo4j node.
+This is usually not what you expect in the relational world.
 If you run the translation online and Neo4j metadata can be retrieved,
-it will generate a statement that flattens the properties of each node and relationship plus their element ids:
+you will get a statement that flattens the properties of each node and relationship, plus their element IDs:
 
-In case the `Person` node has properties `born` and `name`
+In case the `Person` node has properties `born` and `name`,
 
 [source,sql,id=star_6,name=unqualifiedAsteriskSingleTable,metaData=Person:born|name]
 ----
@@ -145,14 +149,12 @@ RETURN elementId(p) AS element_id,
        p.born AS born, p.name AS name
 ----
 
-This works well with multiple tables as well (`Movie` has properties `title` and `released`)
+This works well with multiple tables as well (`Movie` has properties `title` and `released`):
 
 [source,sql,id=star_7,name=unqualifiedAsteriskMultipleTables,metaData=Person:born|name;Movie:title|released]
 ----
 SELECT * FROM Person p JOIN Movie m ON m.id = p.acted_in
 ----
-
-Properties will be delivered as requested:
 
 [source,cypher,id=star_7_expected]
 ----
@@ -161,7 +163,7 @@ RETURN elementId(p) AS element_id, p.born AS born, p.name AS name,
        elementId(m) AS element_id1, m.title AS title, m.released AS released
 ----
 
-We add increasing numbers to column names if they clash (we duplicated the `name` property and added a `remark` to the metadata):
+We append increasing numbers to column names to clashing ones (ex. with `name` and `remark` properties both in `Movie` and `Person`):
 
 [source,sql,id=star_8,name=unqualifiedAsteriskDuplicatedColumns,metaData=Person:born|name|remark;Movie:name|released|remark]
 ----
@@ -179,7 +181,9 @@ RETURN elementId(p) AS element_id,
        m.name AS name1, m.released AS released, m.remark AS remark1
 ----
 
-The following example uses a join-table to access relationships (we explain this later in this manual), but the flattening of properties works there as well:
+'''
+
+The following example uses a join-table to access relationships (we explain this later in this manual where? just ref it here), and the flattening of properties works here as well:
 
 [source,sql,id=star_9,name=unqualifiedAsteriskJoinTable, metaData=ACTED_IN:role;Person:born|name;Movie:title|released,table_mappings=people:Person;movies:Movie;movie_actors:ACTED_IN]
 ----
@@ -199,14 +203,13 @@ RETURN elementId(p) AS element_id,
        m.title AS title, m.released AS released
 ----
 
-Ordering without specifying a table alias does work as expected:
+'''
 
 [source,sql,id=star_6b,name=unqualifiedAsteriskSingleTable,metaData=Person:born|name]
+.Ordering without specifying a table alias
 ----
 SELECT * FROM Person p ORDER BY name ASC
 ----
-
-you will get this Cypher statement
 
 [source,cypher,id=star_6b_expected]
 ----
@@ -216,8 +219,10 @@ RETURN elementId(p) AS element_id,
 ORDER BY p.name
 ----
 
+'''
+
 A qualified alias can be used as well.
-In case without meta-data it will return a map of properties of the node or relationship in question:
+If no Neo4j metadata is available, you will get a map of properties of the node/relationship:
 
 [source,sql,id=star_4,name=mapQualifiedAsteriskWithoutMetadata]
 ----
@@ -226,7 +231,7 @@ FROM Person p
 JOIN Movie m ON m.id = p.acted_in
 ----
 
-The corresponding columns must be downcast to a Map in JDBC:
+The corresponding columns must be downcast to a map in JDBC:
 
 [source,cypher,id=star_4_expected]
 ----
@@ -234,7 +239,9 @@ MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
 RETURN m{.*} AS m, p{.*} AS p
 ----
 
-If we add meta-data (here `born` and `name` to `Person`), the qualified star will project all those:
+'''
+
+If we add more data (ex. `born` and `name` to `Person`), the qualified star will project all of them (note how we also project one single, known column from the `Movie` table):
 
 [source,sql,id=star_4a,name=mapQualifiedAsteriskWithMetadata,metaData=Person:born|name]
 ----
@@ -242,8 +249,6 @@ SELECT p.*, m.title AS title
 FROM Person p
 JOIN Movie m ON m.id = p.acted_in
 ----
-
-Note how we also projected one single, known property from the `Movie` node:
 
 [source,cypher,id=star_4a_expected]
 ----
@@ -268,14 +273,14 @@ MATCH (m:Movie)
 RETURN m;
 ----
 
-A node can be alias as well:
+'''
+
+A node can be aliased as well:
 
 [source,sql,id=star_n2]
 ----
 SELECT m AS node FROM Movie m
 ----
-
-will result in a Cypher statement returning the matched node as node.
 
 [source,cypher,id=star_n2_expected]
 ----
@@ -283,7 +288,9 @@ MATCH (m:Movie)
 RETURN m AS node;
 ----
 
-Unaliased tables can be used as well:
+'''
+
+Un-aliased tables can be used as well:
 
 [source,sql,id=star_n3]
 ----
@@ -296,7 +303,9 @@ MATCH (movie:Movie)
 RETURN movie;
 ----
 
-And multiple entities are supported, too:
+'''
+
+Multiple entities are supported, too:
 
 [source,sql,id=star_10]
 ----
@@ -312,13 +321,13 @@ MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) RETURN p, r, m
 
 == Comparing SQL with Cypher examples
 
-Sources of the following examples are from https://neo4j.com/developer/cypher/guide-sql-to-cypher/[Comparing SQL with Cypher].
+The source of the following examples is: https://neo4j.com/developer/cypher/guide-sql-to-cypher/[Comparing SQL with Cypher].
 
 === Find all Products
 
 === Select and Return Records
 
-Easy in SQL, just select everything from the `products` table.
+Select everything from the `products` table.
 
 [source,sql,id=t2_0,name=select_and_return_records,table_mappings=products:Product]
 ----
@@ -326,7 +335,7 @@ SELECT p.*
 FROM products as p
 ----
 
-Similarly, in Cypher, you just *match* a simple pattern: all nodes with the *label* `:Product` and `RETURN` them.
+Similarly, in Cypher, you just `MATCH` a simple pattern: all nodes with the *label* `Product` and `RETURN` them.
 
 [source,cypher,id=t2_0_expected]
 ----
@@ -334,16 +343,16 @@ MATCH (p:Product)
 RETURN p{.*} AS p
 ----
 
+'''
+
 The above query will project all properties of the matched node.
-If you want to select the node itself, just select it without using the asterisk:
+If you want to return the node itself, select it without using the asterisk:
 
 [source,sql,id=t2_0a,name=select_and_return_records,table_mappings=products:Product]
 ----
 SELECT p
 FROM products as p
 ----
-
-It will be translated into a query that returns nodes:
 
 [source,cypher,id=t2_0a_expected]
 ----
@@ -353,8 +362,9 @@ RETURN p
 
 === Field Access, Ordering and Paging
 
-*More efficient is to return only a subset of attributes*, like `ProductName` and `UnitPrice`.
-And while we're on it, let's also order by price and only return the 10 most expensive items.
+*It is more efficient to return only a subset of attributes*, like `ProductName` and `UnitPrice`.
+And while we are at it, let's also order by price and only return the 10 most expensive items.
+(Remember that labels, relationship-types and property-names are *case sensitive* in Neo4j.)
 
 [source,sql,id=t2_1,name=field_acces_ordering_paging,table_mappings=products:Product]
 ----
@@ -364,16 +374,15 @@ ORDER BY p.`unitPrice` DESC
 LIMIT 10
 ----
 
-You can copy and paste the changes from SQL to Cypher, it's thankfully unsurprising.
-But remember that labels, relationship-types and property-names are *case sensitive* in Neo4j.
-
 [source,cypher,id=t2_1_expected]
 ----
 MATCH (p:Product)
 RETURN p.productName, p.unitPrice ORDER BY p.unitPrice DESC LIMIT 10
 ----
 
-Default order direction will be translated as is:
+'''
+
+The default order direction will be translated as is:
 
 [source,sql,id=t2_2,name=order_by_default]
 ----
@@ -388,7 +397,7 @@ RETURN * ORDER BY m.title
 
 === `DISTINCT` projections
 
-The `DISTINCT` keyword for projections should be handled:
+The `DISTINCT` keyword for projections is handled:
 
 [source,sql,id=t3_1,name=distinct]
 ----
@@ -401,14 +410,12 @@ MATCH (m:Movies)
 RETURN DISTINCT m.released
 ----
 
-It also works with `*` projections so that:
+It works with `*` projections as well:
 
 [source,sql,id=t3_2,name=distinct_star]
 ----
 SELECT DISTINCT m.* FROM Movies m
 ----
-
-becomes.
 
 [source,cypher,id=t3_2_expected,parseCypher=true]
 ----
@@ -416,14 +423,12 @@ MATCH (m:Movies)
 RETURN DISTINCT m {.*} AS m
 ----
 
-However, as the qualified asterisks will use meta data if the database connection is available, this
+However, as the qualified asterisks will use metadata if available, the translation with a database connection is different:
 
 [source,sql,id=t3_3,name=distinct_star_with_db,metaData=Movies:title|released]
 ----
 SELECT DISTINCT m.* FROM Movies m
 ----
-
-becomes than
 
 [source,cypher,id=t3_3_expected,parseCypher=false]
 ----
@@ -431,4 +436,5 @@ MATCH (m:Movies)
 RETURN DISTINCT elementId(m) AS element_id, m.title AS title, m.released AS released
 ----
 
-including the Neo4j element id, which will make each row unique. Thus being sad, the `DISCTINCT` clause is of limited use with the asterisk.
+Note that each row includes the Neo4j element ID, making each row unique.
+This being said, the `DISCTINCT` clause is of limited use with the asterisk.
