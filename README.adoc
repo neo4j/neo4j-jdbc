@@ -63,7 +63,7 @@ You find the instructions in our link:CONTRIBUTING.adoc[contribution documentati
 
 == Quickstart
 
-When you added the bundle to your application via one of the dependency management solutions mentioned above or manually as an explicit artifact, you can then use the Neo4j JDBC driver as you would do with any other JDBC driver.
+After adding the bundle to your application, you can use the Neo4j JDBC driver as any other JDBC driver.
 
 // tag::quickstart[]
 TIP: In case any tooling asks you for the name of the concrete driver class, it is `org.neo4j.jdbc.Neo4jDriver`.
@@ -82,9 +82,9 @@ include::{examplesDir}/Quickstart.java[tag=pt1]
 
 In the example above we used Neo4j's _lingua franca_, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query the database.
 The Neo4j JDBC Driver has limited support for using SQL as well.
-It can do so automatically, or on a case by case basis, either disabling it with a special comment in your query, explicitly translating single statements.
-For the latter you can use `java.sql.Connection#nativeSQL(String)` and use the result in your queries.
-For automatic translation instantiate the driver using the additional URL parameter `sql2cypher`, set to `true`.
+It can do so automatically or on a case-by-case basis.
+To translate a single, call `java.sql.Connection#nativeSQL(String)` and use the result in your queries.
+For automatic translation, instantiate the driver setting the optional URL parameter `sql2cypher` to `true`.
 The following example shows how:
 
 [source, java, tabsize=4, indent=0]
@@ -94,6 +94,8 @@ include::{examplesDir}/Quickstart.java[tag=pt2]
 ----
 <.> This SQL query will be translated into the same Cypher query of the previous example.
 The remainder of the method is identical to before.
+
+For more informaiton, see xref:sql2cypher.adoc[SQL to Cypher translation].
 // end::quickstart[]
 
 == Introduction
@@ -105,7 +107,7 @@ As Neo4j is a graph database with quite a different paradigm than relational and
 This documentation focuses on install, use, and configure the Neo4j JDBC Driver, as well as discussing the driver's design choices.
 While we do provide runnable examples showing how to use JDBC with Neo4j, this is not a documentation about how to correctly use JDBC as an API.
 
-NOTE: The Neo4j JDBC Driver requires JDK 17 on the client side and a minimum version of Neo4j 5.5 on the server side.
+NOTE: The Neo4j JDBC Driver requires JDK 17 on the client side and Neo4j 5.5+ on the server side.
 To use it with a Neo4j cluster, server-side routing must be enabled on the cluster.
 
 === Features
@@ -151,7 +153,8 @@ This comes with a number of issues:
 
 * You end up with a _pool of connection pools_, because the common Neo4j Java Driver manages a connection pool, whereas JDBC drivers delegate this task to dedicated pooling solutions.
 * The transaction management of the common Neo4j Java Driver is not aligned with the way JDBC manages transactions.
-* Older versions of the Neo4j JDBC driver shade a few dependencies, such as `Jackson` as well as additional logging frameworks. This takes a toll on the classpath and, in case of logging, it leads to runtime problems.
+* Older versions of the Neo4j JDBC driver shade a few dependencies, such as `Jackson` as well as additional logging frameworks.
+This takes a toll on the classpath and, in case of logging, it leads to runtime problems.
 * Existing drivers with an SQL-to-Cypher translation layer are "read-only" and don't support write statements, so they cannot be used for ETL use-cases aiming to ingest data into Neo4j.
 
 WARNING: This driver does not support automatic reshaping or flattening of the result sets, as the previous versions do.

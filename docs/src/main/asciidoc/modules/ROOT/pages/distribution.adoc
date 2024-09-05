@@ -19,13 +19,13 @@ IMPORTANT: If you just want to use the Neo4j JDBC Driver to run Cypher statement
 While the translator SPI is a required dependency and gets pulled in via Maven or Gradle, the actual implementation is not.
 This allows for:
 
-- The possibility to opt-out of having additional dependencies if you don't need the SQL-to-Cypher translation
+- Opting out of having additional dependencies if you don't need the SQL-to-Cypher translation
 - Requiring different JDK baselines or licensing modules for our implementations
 - Allowing you to create alternative translators
 
 === Dependencies
 
-We offer two "dependency-free" modules, which shade everything into one binary artifact each.
+There are two "dependency-free" modules, which shade everything into one binary artifact each.
 Those bundles cover a lot of tooling (see <<available_bundles>>).
 
 The driver's direct, compile-time dependencies are listed below:
@@ -51,7 +51,7 @@ org.neo4j:neo4j-jdbc
 == Available bundles
 
 All bundles of the Neo4j JDBC Driver are distributed on Maven Central.
-The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not several at once.
+The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not both at once.
 
 
 === Individual components
@@ -60,7 +60,7 @@ Pick this distribution if you have an application that uses dependencies managem
 
 IMPORTANT: We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are `{group-id}:neo4j-jdbc-bom`.
 
-For Maven, you will want to use this dependency declaration:
+For Maven, use this dependency declaration:
 
 [source,xml,subs="verbatim,attributes"]
 .Maven dependency for the core Neo4j JDBC Driver artifact
@@ -114,7 +114,7 @@ The coordinates of this bundle are `{group-id}:{artifact-id-bundle}` and you can
 https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-bundle}/{version}/{artifact-id-bundle}-{version}.jar
 
 TIP: All bundles can be used as normal project dependencies as well.
-This might be useful for example if your project depends on another, potentially conflicting Netty version.
+This might be useful for example if your project depends on a different, potentially conflicting Netty version.
 
 === Full bundle
 

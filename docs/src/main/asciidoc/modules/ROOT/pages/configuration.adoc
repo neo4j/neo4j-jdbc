@@ -52,7 +52,7 @@ The database name and all query parameters are optional and can be omitted.
 All configuration arguments can be passed either as query parameters or via a `java.util.Properties` object.
 The latter is sometimes defined by tooling for you.
 
-With regard to authentication, we recommend to follow the JDBC spec, which discourages using any form of URL authentication.
+With regard to authentication, we recommend to follow the JDBC specification, which discourages using any form of URL authentication.
 All query parameters must be https://en.wikipedia.org/wiki/Percent-encoding[percent-encoded] if they contain special characters, e.g. `...?param1=space%20separated`.
 
 [TIP]
@@ -129,7 +129,7 @@ a|The authentication scheme to use. *NOT RECOMMENDED* as URL query parameter for
 * `basic` (default) for basic authentication.
 * `bearer` for bearer authentication (SSO). `password` should be set to the bearer token; `user` and `authRealm` have no effect.
 * `kerberos` for kerberos authentication. Requires `password` to be set to the kerberos ticket; `user` and `authRealm` have no effect.
-* `none` if authentication is disabled on the server. The properties `user`, `password` and `authRealm` have no effect.
+* `none` if authentication is disabled on the server. The properties `user`, `password`, `authRealm` have no effect.
 |`basic`
 
 |`useBookmarks`
