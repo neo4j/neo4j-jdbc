@@ -11,6 +11,7 @@ Michael Simons <michael.simons@neo4j.com>
 :latest_version: 6.0.0-M05
 :branch: main
 // end::properties[]
+:examplesdir: docs/src/main/asciidoc/modules/ROOT/examples
 
 [abstract]
 --
@@ -59,6 +60,41 @@ All https://github.com/neo4j/neo4j-jdbc/releases/[releases] from 6.0 onwards con
 We offer several distributions, please have a look http://neo4j.github.io/neo4j-jdbc/${latest_version}/#_distribution[here] for more details.
 If you feel adventurous, grab the code and build the driver yourself.
 You find the instructions in our link:CONTRIBUTING.adoc[contribution documentation].
+
+== Quickstart
+
+When you added the bundle to your application via one of the dependency management solutions mentioned above or manually as an explicit artifact, you can then use the Neo4j JDBC driver as you would do with any other JDBC driver.
+
+// tag::quickstart[]
+TIP: In case any tooling asks you for the name of the concrete driver class, it is `org.neo4j.jdbc.Neo4jDriver`.
+
+[source, java, tabsize=4]
+.Acquire a connection and execute a query
+----
+include::{examplesDir}/Quickstart.java[tag=pt1]
+----
+<.> Instantiate a JDBC connection. There's no need to do any class loading beforehand, the driver will be automatically registered
+<.> Create a (reusable) statement
+<.> Execute a query
+<.> Iterate over the results, as with any other JDBC result set
+<.> JDBC's indexing starts at 1
+<.> JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complex objects, such as lists
+
+In the example above we used Neo4j's _lingua franca_, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query the database.
+The Neo4j JDBC Driver has limited support for using SQL as well.
+It can do so automatically, or on a case by case basis, either disabling it with a special comment in your query, explicitly translating single statements.
+For the latter you can use `java.sql.Connection#nativeSQL(String)` and use the result in your queries.
+For automatic translation instantiate the driver using the additional URL parameter `sql2cypher`, set to `true`.
+The following example shows how:
+
+[source, java, tabsize=4, indent=0]
+.Configure the JDBC driver to automatically translate SQL to cypher.
+----
+include::{examplesDir}/Quickstart.java[tag=pt2]
+----
+<.> This SQL query will be translated into the same Cypher query of the previous example.
+The remainder of the method is identical to before.
+// end::quickstart[]
 
 == Introduction
 // tag::introduction[]

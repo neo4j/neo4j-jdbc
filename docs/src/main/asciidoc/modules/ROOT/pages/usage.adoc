@@ -1,4 +1,4 @@
-= Usage  (include in GH readme?)
+= Usage
 
 Add the JDBC driver to your application, for example as a Gradle dependency:
 
@@ -10,36 +10,9 @@ dependencies {
 }
 ----
 
-You can then use the Neo4j JDBC driver as you would do with any other JDBC driver.
+You can then use the Neo4j JDBC driver as you would do with any other JDBC driver:
 
-[source, java, tabsize=4]
-.Acquire a connection and execute a query
-----
-include::{examplesDir}/Quickstart.java[tag=pt1]
-----
-<.> Instantiate a JDBC connection. There's no need to do any class loading beforehand, the driver will be automatically registered
-<.> Create a (reusable) statement
-<.> Execute a query
-<.> Iterate over the results, as with any other JDBC result set
-<.> JDBC's indexing starts at 1
-<.> JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complex objects, such as lists
-
-In the example above we used Neo4j's _lingua franca_, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query the database.
-The Neo4j JDBC Driver has limited support for using SQL as well.
-It can do so automatically, or on a case by case basis (which means?).
-For the latter you can use `java.sql.Connection#nativeSQL(String)` and use the result in your queries.
-For automatic translation instantiate the driver using the additional URL parameter `sql2cypher`, set to `true`.
-The following example shows how:
-
-[source, java, tabsize=4, indent=0]
-.Configure the JDBC driver to automatically translate SQL to cypher.
-----
-include::{examplesDir}/Quickstart.java[tag=pt2]
-----
-<.> This SQL query will be translated into the same Cypher query of the previous example.
-The remainder of the method is identical to before.
-
-TIP: In case any tooling asks you for the name of the concrete driver class, it is `org.neo4j.jdbc.Neo4jDriver`.
+include::README.adoc[tag=quickstart]
 
 For more information, see xref:sql2cypher.adoc#s2c_introduction[SQL to Cypher translation].
 
