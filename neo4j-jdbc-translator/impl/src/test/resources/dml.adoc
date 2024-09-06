@@ -1,19 +1,18 @@
 = DML statements
 
-In this section we list the supported Data-Manipulation-Language (DML) statements.
-While a `SELECT` statement is technically DML as well, as it is used to project existing relations into new relations, it has been covered previously.
+This section lists the supported Data-Manipulation-Language (DML) statements.
+Although a `SELECT` statement is technically DML as well, it is covered in xref:translator/simple.adoc[].
 
 == Deleting nodes
 
 Nodes can be deleted via the SQL `DELETE` statement.
-This can happen unconditionally:
+
+For example, to unconditionally delete all `person` nodes:
 
 [source,sql,id=d0_0,name=delete]
 ----
 DELETE FROM person
 ----
-
-which will delete all `person` nodes:
 
 [source,cypher,id=d0_0_expected]
 ----
@@ -21,15 +20,13 @@ MATCH (person:person)
 DELETE person
 ----
 
-A `WHERE` clause can be added to prevent this and all conditions can be used:
+A `WHERE` clause can be added to prevent this:
 
 [source,sql,id=d0_1,name=delete]
 ----
 DELETE FROM person
 WHERE person.id = 1
 ----
-
-so that only the `person` node with a matching property is deleted.
 
 [source,cypher,id=d0_1_expected]
 ----
@@ -38,15 +35,15 @@ WHERE person.id = 1
 DELETE person
 ----
 
-If you want to delete everything, but your tooling is complaining, just add a conditions that is always `true`:
+'''
+
+If you want to delete everything, but your tooling complains, just add a conditions that is always `true`:
 
 [source,sql,id=d0_1b,name=delete]
 ----
 DELETE FROM person
 WHERE true
 ----
-
-Your data is gone, either way:
 
 [source,cypher,id=d0_1b_expected]
 ----
@@ -55,15 +52,15 @@ WHERE true
 DELETE person
 ----
 
-This is safer, but also pointless:
+'''
+
+Of, the condition can also be that always evaluates to `false`, never deleting anything:
 
 [source,sql,id=d0_1c,name=delete]
 ----
 DELETE FROM person
 WHERE false
 ----
-
-Your data is gone, either way:
 
 [source,cypher,id=d0_1c_expected]
 ----
@@ -72,14 +69,14 @@ WHERE false
 DELETE person
 ----
 
-Tables can be aliased
+'''
+
+Tables can be aliased, and the alias will be used in Cypher, too:
 
 [source,sql,id=d0_2,name=delete]
 ----
 DELETE FROM person p
 ----
-
-and the alias will be used in Cypher, too:
 
 [source,cypher,id=d0_2_expected]
 ----
@@ -87,7 +84,7 @@ MATCH (p:person)
 DELETE p
 ----
 
-Alias tables is also support in combination with specifying the label to which the table name is mapped.
+Aliasing tables is also supported in combination with specifying the label to which the table name is mapped.
 Using the same query with `table_mappings=person:Person` configured,
 
 [source,sql,id=d0_3,name=delete,table_mappings=person:Person]
@@ -105,7 +102,7 @@ DELETE p
 
 == Deleting nodes and their related nodes
 
-You can use SQL `TRUNCATE` to detach delete nodes.
+You can use SQL `TRUNCATE` to https://neo4j.com/docs/cypher-manual/current/clauses/delete/#delete-a-node-with-all-its-relationships[`DETACH DELETE` nodes].
 
 [source,sql,id=d0_4,name=truncate,table_mappings=people:Person]
 ----
@@ -129,42 +126,43 @@ A single list of values with explicit columns and constant values can be inserte
 INSERT INTO People (first_name, last_name, born) VALUES ('Helge', 'Schneider', 1955)
 ----
 
-which will be translated to:
-
 [source,cypher,id=d1_0_expected]
 ----
 CREATE (people:`Person` {first_name: 'Helge', last_name: 'Schneider', born: 1955})
 ----
 
-All expressions, including parameters, are supported:
+All expressions, including parameters, are supported.
+Parameters will be named from 1 on upwards in Cypher.
 
 [source,sql,id=d1_1,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People (first_name, last_name, born) VALUES (?, ?, ?)
 ----
 
-Parameters will be named from 0 on upwards in Cypher:
-
 [source,cypher,id=d1_1_expected]
 ----
 CREATE (people:`Person` {first_name: $1, last_name: $2, born: $3})
 ----
 
-If you omit the columns names on the insertion target, we generate names:
+'''
+
+If you omit the column names on the insertion target, we generate names:
 
 [source,sql,id=d1_2,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People VALUES ('Helge', 'Schneider', 1955)
 ----
 
-Note the `unknown field xxx` graph properties created:
+Note the `unknown field xxx` property names:
 
 [source,cypher,id=d1_2_expected]
 ----
 CREATE (people:`Person` {`unknown field 0`: 'Helge', `unknown field 1`: 'Schneider', `unknown field 2`: 1955})
 ----
 
-The SQL `VALUES` clause actually supports list of values:
+'''
+
+The SQL `VALUES` clause actually supports lists of values:
 
 [source,sql,id=d1_3,name=insert,table_mappings=people:Person]
 ----
@@ -173,7 +171,7 @@ INSERT INTO People (first_name, last_name, born) VALUES
     ('Bela', 'B', 1962)
 ----
 
-Those values will be translated into a Cypher array to be unwind in the Cypher statement.
+Those values will be translated into a Cypher array to be unwound in the Cypher statement.
 This is a great solution for batching inserts:
 
 [source,cypher,id=d1_3_expected]
@@ -186,14 +184,14 @@ CREATE (people:`Person`)
 SET people = properties
 ----
 
-A returning clause is supported as well, so that
+'''
+
+A returning clause is supported as well:
 
 [source,sql,id=d1_4,name=insert,table_mappings=people:Person]
 ----
 INSERT INTO People p (name) VALUES (?) RETURNING elementId(p)
 ----
-
-is translated into
 
 [source,cypher,id=d1_4_expected]
 ----
@@ -203,43 +201,38 @@ CREATE (p:Person {name: $1}) RETURN elementId(p)
 == Upserts
 
 We support a restricted range of "upserts" via the non-standard but pretty common `ON DUPLICATE` and `ON CONFLICT` SQL clauses.
-Upserts will generally be translated to `MERGE` statements.
-While they tend to work without constraints, you really should but unique-constraints on the node properties you merge on.
-Otherwise, Neo4j create duplicates due to locking issues.
-Read me more about the latter https://neo4j.com/developer/kb/understanding-how-merge-works/[here].
+Upserts are translated into `MERGE` statements.
+While they work without constraints, you should really have uniqueness-constraints on the node properties you merge on, or Neo4j may create duplicates (see https://neo4j.com/developer/kb/understanding-how-merge-works/[Understanding how merge works]).
 
-Two options are possible to merge on all columns inserted via `ON DUPLICATE KEY IGNORE` and `ON CONFLICT IGNORE`.
+Upserts on all columns can happen via either `ON DUPLICATE KEY IGNORE` or `ON CONFLICT IGNORE`.
+While `ON DUPLICATE KEY` does offer upgrade options, it assumes the primary (or unique) key being violated to be known.
+Although this is most certainly the case in a relational system, this translation layer that runs without a database connection doesn't know.
 
 [source,sql,id=upsert1]
+.Upsert with `ON DUPLICATE KEY IGNORE`
 ----
 INSERT INTO Movie(title, released) VALUES(?, ?) ON DUPLICATE KEY IGNORE
 ----
-
-will be translated to:
 
 [source,cypher,id=upsert1_expected]
 ----
 MERGE (movie:`Movie` {title: $1, released: $2})
 ----
 
-The same goes for `ON CONFLICT DO NOTHING`.
-In the example we configured a table mapping:
-
 [source,sql,id=upsert2,table_mappings=actors:Actor]
+.Upsert with `ON CONFLICT IGNORE`
 ----
 INSERT INTO actors(name, firstname) VALUES(?, ?) ON CONFLICT DO NOTHING
 ----
-
-will be translated to:
 
 [source,cypher,id=upsert2_expected]
 ----
 MERGE (actors:`Actor` {name: $1, firstname: $2})
 ----
 
-If you want to define an action, you must use `ON CONFLICT` specifying the key you want to merge on.
-While `ON DUPLICATE KEY` does offer upgrade options, it assumes the primary (or unique) key being violated to be known.
-This is most certainly the case in a relational system, but not in this translation layer, that does run without a database connection:
+'''
+
+If you want to define an action, you must use `ON CONFLICT` and specify the key you want to merge on.
 
 [source,sql,id=upsert3]
 ----
@@ -247,7 +240,7 @@ INSERT INTO tbl(i, j, k) VALUES (1, 40, 700)
 ON CONFLICT (i) DO UPDATE SET j = 0, k = 2 * EXCLUDED.k
 ----
 
-Take note how the special reference `EXCLUDED` can be used to refer to the values of columns that have not been part of the key.
+Note how the special reference `EXCLUDED` can be used to refer to the values of columns that have not been part of the key.
 They will be reused with their values in the `ON MATCH SET` clause.
 
 [source,cypher,id=upsert3_expected]
@@ -265,8 +258,6 @@ INSERT INTO tbl(i, j, k) VALUES (1, 2, ?)
 ON CONFLICT (i) DO UPDATE SET j = EXCLUDED.k
 ----
 
-Same result, but referring to the parameter:
-
 [source,cypher,id=upsert4_expected]
 ----
 MERGE (tbl:`tbl` {i: 1})
@@ -274,7 +265,10 @@ ON CREATE SET tbl.j = 2, tbl.k = $1
 ON MATCH SET tbl.j = $1
 ----
 
-If you just want to specify a concrete merge column instead of merging on all columns, this possible too:
+'''
+
+It's possible to just specify a concrete merge column instead of merging on all columns as well.
+It will be translated with `ON CREATE`:
 
 [source,sql,id=upsert3b]
 ----
@@ -282,14 +276,13 @@ INSERT INTO tbl(i, j, k) VALUES (1, 40, 700)
 ON CONFLICT (i) DO NOTHING
 ----
 
-will be using `ON CREATE` only:
-
 [source,cypher,id=upsert3b_expected]
 ----
 MERGE (tbl:`tbl` {i: 1})
 ON CREATE SET tbl.j = 40, tbl.k = 700
 ----
 
+'''
 
 Using `ON CONFLICT` and specifying a key is the only way to insert multiple rows with a `MERGE` statement:
 

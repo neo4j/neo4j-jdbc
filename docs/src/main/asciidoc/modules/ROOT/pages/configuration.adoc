@@ -3,30 +3,27 @@
 == Driver class name
 
 The Neo4j JDBC Driver is `org.neo4j.jdbc.Neo4jDriver`.
-In modern Java tools you should not have to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
+With modern Java tools, you should not need to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
 The class is public API.
 
 We also provide `org.neo4j.jdbc.Neo4jDataSource` as `javax.sql.DataSource`.
 
 == Causal clustering and bookmarks
 
-The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency when running against a Neo4j cluster.
-Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver.
-Thus, all connections that are spawned by one instance, will partake in the same causal chain of transactions.
-Connections from different instances of the drivers will not use the same set of bookmarks and there is no built-in machinery that would enable this.
+The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency in all Neo4j deployments.
+Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver, so all connections spawned by one instance will partake in the same causal chain of transactions.
+Connections from different driver instances will not use the same set of bookmarks and there is no built-in machinery that would enable this.
 If you want or need this, you can directly access the `Neo4jDriver` type to retrieve the current set of known bookmarks and pass them to another driver instance.
 
 == Neo4j transactional metadata
 
-Neo4j supports additional metadata for each ongoing transaction, see https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions[SHOW TRANSACTIONS].
-As there is no explicit transaction object in the JDBC spec (a `Connection` is either in auto-commit or explicit commit mode, and all variations of a transaction entity are always third party implementations), the Neo4j JDBC driver needs another mechanism to make these configurable.
+Neo4j supports attaching metadata to transactions, see https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions[`SHOW TRANSACTIONS`].
+As there is no explicit transaction object in the JDBC specification, the Neo4j JDBC driver needs another mechanism to make these configurable.
 
 The JDBC driver provides the extension interface `Neo4jMetadataWriter`.
-Our driver, the connection implementation and all statement variants can be unwrapped accordingly.
-The configuration is additive, which means that
-metadata configured for a driver instance will be used for all connections spawned from that driver,
-connections can add additional metadata to those before creating new statements and statements themselves can also add their own metadata.
-Metadata added on a statement has precedence over connection which in turn has precedence over the drivers:
+Our driver, the connection implementation, and all statement variants can be unwrapped accordingly.
+The configuration is additive: metadata configured for a driver instance will be used for all connections spawned from that driver, connections can add further metadata, and  statements can also add their own metadata.
+Metadata added on a statement has precedence over connection metadata which in turn has precedence over driver metadata:
 
 [source, java, tabsize=4]
 .Configuring transactional metadata
@@ -51,19 +48,25 @@ The canonical URL format for the Neo4j JDBC Driver is
 jdbc:neo4j://<host>:<port>/<database>?param1=value1&param2=value2
 ----
 
-The database name and any query parameters are optional and can be omitted.
-All configuration arguments, can be passed either as query parameters or via a `java.util.Properties` object.
+The database name and all query parameters are optional and can be omitted.
+All configuration arguments can be passed either as query parameters or via a `java.util.Properties` object.
 The latter is sometimes defined by tooling for you.
-With regard to authentication it's highly recommended to follow the JDBC spec, which discourages using any form of URL authentication.
-All query parameters must be https://en.wikipedia.org/wiki/Percent-encoding[percent-encoded] if they contain special characters, e.g., `...?param1=space%20separated`.
 
-TIP: There is no need to specify `bolt` or other additional prefixes in the URL, as a matter of fact: The driver does not support this.
-     It does however support adding details about the transport being used:
-     +
-     `neo4j+s` enables encryption and only accepts SSL certificates from the server that are signed by a known certificate authority.
-     `neo4j+ssc` enables encryption and accepts self-signed certificates (which must be added to the certificate store).
+With regard to authentication, we recommend to follow the JDBC specification, which discourages using any form of URL authentication.
+All query parameters must be https://en.wikipedia.org/wiki/Percent-encoding[percent-encoded] if they contain special characters, e.g. `...?param1=space%20separated`.
 
-The driver accepts the following configuration arguments, either properties or as URL query parameters:
+[TIP]
+====
+The driver supports the following URI schemes, which tweak the security configuration:
+
+* `neo4j` - No encryption.
+* `neo4j+s` - Enables encryption and only accepts SSL certificates from the server that are signed by a known Certificate Authority.
+* `neo4j+ssc` - Enables encryption and accepts self-signed certificates (which must be added to the certificate store).
+
+`bolt` URI schemes are not supported.
+====
+
+The driver accepts the following configuration arguments, either as properties or as URL query parameters:
 
 .Configuration arguments
 |===
@@ -81,27 +84,27 @@ The driver accepts the following configuration arguments, either properties or a
 
 |`enableSQLTranslation`
 |`Boolean`
-|Flag that enables automatic translation from SQL to Cypher (requires a translator on the classpath)
+|Flag that enables automatic translation from SQL-to-Cypher (requires a translator on the classpath)
 |`false`
 
 |`cacheSQLTranslations`
 |`Boolean`
-|Flag that enables caching of translations. SQL translations are not "free", parsing of SQL costs a bit of time, and so does Cypher rendering. In addition, we might up look up metadata to be able to project individual properties. If this takes to long, any translation might be cached.
+|Flag that enables caching of translations. SQL translations are not "free": parsing of SQL costs a bit of time, and so does Cypher rendering. In addition, we might up look up metadata to be able to project individual properties. If this takes too long, translations may be cached.
 |`false`
 
 |`rewritePlaceholders`
 |`Boolean`
-|Flag that allows you to use `?` as placeholders in *Cypher* statements (as required by JDBC). These will automatically be rewritten into `$1`, `$2` … `$n`, starting at 1, so that the numbering matches the 1-based JDBC index.
-|Defaults to `true` when `enableSQLTranslation` is `false`, `false` otherwise
+|Flag that allows you to use `?` as placeholder in *Cypher* statements (as required by JDBC). These will automatically be rewritten into `$1`, `$2` … `$n`, starting at 1, so that the numbering matches the 1-based JDBC index.
+|`true` when `enableSQLTranslation` is `false`, `false` otherwise
 
 |`ssl`
 |`Boolean`
-|An optional flag that is an alternative to `neo4j+s`. It can be used for example to programmatically enable the full SSL chain.
+|Optional flag, alternative to `neo4j+s`. It can be used for example to programmatically enable the full SSL chain.
 |`null`
 
 |`sslMode`
 |`Enum<SSLMode>`
-|An optional configuration for fine-grained control over SSL configuration. Allowed values are `disable`, `require`, `verify-full`.
+|Optional configuration for fine-grained control over SSL configuration. Allowed values are `disable`, `require`, `verify-full`. See <ssl_mode, Understanding the SSL mode>>.
 |`null`
 
 |`user`
@@ -124,36 +127,36 @@ The driver accepts the following configuration arguments, either properties or a
 a|The authentication scheme to use. *NOT RECOMMENDED* as URL query parameter for security reasons. Currently supported values are:
 
 * `basic` (default) for basic authentication.
-* `none` for no authentication. The properties `user`, `password` and `authRealm` have no effect.
 * `bearer` for bearer authentication (SSO). `password` should be set to the bearer token; `user` and `authRealm` have no effect.
 * `kerberos` for kerberos authentication. Requires `password` to be set to the kerberos ticket; `user` and `authRealm` have no effect.
+* `none` if authentication is disabled on the server. The properties `user`, `password`, `authRealm` have no effect.
 |`basic`
 
 |`useBookmarks`
 |`boolean`
-|Enables bookmark management for full causal cluster support. This is enabled by default and the recommended setting for all scenarions that use a connection pool.
+|Enables bookmark management for full causal cluster support. This is enabled by default and the recommended setting for all scenarios that use a connection pool.
 If you disable it, it will only be disabled for the specific connection.
-Other connections retrieved from the driver instance are not affected, and the driver will still manage their bookmarks.
+Other connections retrieved from the driver instance to the same or to other databases are not affected, and the individual connections will still manage their bookmarks.
 |`true`
 
 |===
 
 == Getting a driver or a connection instance
 
-NOTE: This section most likely only applies if you use the Neo4j JDBC Driver as part of application development in contrast to using it as part of front-end tool such as https://dbeaver.io[DBeaver], https://www.jetbrains.com/datagrip/[DataGrip] or UI-based ETL tools.
+NOTE: This section likely only applies if you use the Neo4j JDBC Driver as part of application development in contrast to using it as part of front-end tool such as https://dbeaver.io[DBeaver], https://www.jetbrains.com/datagrip/[DataGrip] or UI-based ETL tools.
 
 The easiest way to acquire a connection is directly through the `java.sql.DriverManager`.
 
 [source, java, tabsize=4]
-.Acquiring a JDBC connection towards Neo4j
+.Acquiring a JDBC connection to a Neo4j server
 ----
 include::{examplesDir}/Configuration.java[tag=cdm]
 ----
 
-While our connection implementation is thread-safe, it does—as dictated by the JDBC Spec—only allow one concurrent transaction per connection.
-For a multi-thread application you want to use a connection pool.
-There's https://github.com/brettwooldridge/HikariCP[HikariCP], but usually application server and containers or frameworks bring their own.
-It's safe to use any of them, as the Neo4j JDBC Driver does not do internal pooling.
+While our connection implementation is thread-safe, it allows only one concurrent transaction per connection (as dictated by the JDBC specification).
+For a multi-thread application, use a connection pool.
+There's https://github.com/brettwooldridge/HikariCP[HikariCP], but usually application server and containers/frameworks bring their own.
+It's safe to use any of them, as the Neo4j JDBC Driver does no internal pooling.
 
 If you need access to an instance of the Neo4j driver itself, you can use the following approach:
 
@@ -165,33 +168,33 @@ include::{examplesDir}/Configuration.java[tag=ddm]
 
 == Securing your connection by using SSL
 
-The Neo4j JDBC Driver supports the same SSL option as the common Java driver does, with the same URL protocols, using `+s` or `+ssc` as additional indicators for the level of security that is required.
+The Neo4j JDBC Driver supports the same SSL option of the common Java driver, with the same URL protocols, using `+s` or `+ssc` as additional indicators for the required level of security.
 
 The same configuration can also be achieved with a URL query parameter or an entry in the properties passed to the `DriverManager` or driver instance when asking for a connection.
 As long as you don't specify contradicting values, it's fine to combine both approaches.
 
+[#ssl-mode]
 === Understanding the SSL mode
 
-The possible settings are best explained using the available SSL modes.
 The following list is ordered by ascending security:
 
-* `disable` default, "I don’t care about security and don’t want to pay the overhead for encryption"
-* `require` "I want my data to be encrypted, and I accept the overhead. I trust that the network will make sure I always connect to the server I want." (Server must support encryption, no hostname / CA validation is done, this is only secure on private networks, without going through the "hassle" of proper certificates and should not really be used over public internet)
-* `verify-full` "I want my data encrypted, and I accept the overhead. I want to be sure that I connect to a server I trust, and that it’s the one I specify."
+* `disable` -- (default), "I don't care about security and don't want to pay the overhead for encryption."
+* `require` -- "I want my data to be encrypted, and I accept the overhead. I trust that the network will make sure I always connect to the server I want." (Server must support encryption, no hostname/CA validation is done. This saves the hassle of proper certificates and is only secure on private networks; it should not really be used over public networks.)
+* `verify-full` -- "I want my data encrypted, and I accept the overhead. I want to be sure that I connect to a server I trust, and that it's the one I specify."
 
 NOTE: The Neo4j JDBC Driver does not include revocation checks.
 
-The most secure option can also be enabled by just using `ssl=true` either as query parameter or as property entry passed to the `DriverManager`.
+The most secure option can also be enabled by setting `ssl=true` either as query parameter or as property entry passed to the `DriverManager`.
 This option corresponds to `neo4j+s`.
-`require` on the other hand corresponds to `neo4j+ssc`.
+On the other hand, `require` corresponds to `neo4j+ssc`.
 
-You might wonder why using the additional enum: We might support additional modes in the future, such as letting the service decide about SSL, or being able to express a preference towards SSL without requiring it.
+The additional enum allows us to possibly support additional modes in the future, such as letting the service decide about SSL, or being able to express a preference towards SSL without requiring it.
 
-TIP: Neo4j cluster can offer both plain bolt connections and encrypted SSL connection or just one of them. So just because you can connect using `neo4j+s` does not mean that you cannot connect using just `neo4j` or vice versa. This is dependent on the setup of your database. Neo4js managed offering, https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j AuraDB], only supports encrypted connection, so you _must_ use `+s`, `ssl=true` or `sslMode=verify-full`.
+TIP: Neo4j servers can offer both plain Bolt connections and encrypted SSL connection, or just one of them. The fact that you can connect using `neo4j+s` does not mean that you cannot connect using just `neo4j`, or viceversa. This is dependent on the server setup. https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j Aura], Neo4j's managed cloud service, only supports encrypted connections, so you _must_ use `+s`, `ssl=true`, or `sslMode=verify-full`.
 
 === Valid URLs
 
-The following URLs are all valid
+The following URLs are all valid:
 
 `neo4j+s://xyz.databases.neo4j.io`:: Use full verification with the `xzy` instance at AuraDB
 `neo4j://xyz.databases.neo4j.io?ssl=true`:: The same, but using the shorthand URL parameter
@@ -200,16 +203,19 @@ The following URLs are all valid
 `neo4j+ssc://this.is.a.trustworthy.instance.for.sure.com`:: Trust whatever certificate and hostname there is, but do use SSL
 `neo4j://my-testing-instance.local`:: Use a plain connection.
 
-We only refuse contradicting values when you use several configuration mechanism:
+The driver only refuses contradicting configurations, such as:
 
-* `+s` with `ssl=false` or `sslMode` set to `disable`
-* `+ssc` with `ssl=false` or any `sslmode` not equal to `require`
+* `+s` with `ssl=false`, or `sslMode` set to `disable`
+* `+ssc` with `ssl=false`, or any `sslmode` not equal to `require`
 
-In essence, you cannot express to use SSL and not use it at the same time.
-The reason to offer several mechanism is that we want you to be able to use a fixed URL with dynamic query parameters or dynamic URLs or whatever way of configuring you prefer in a programmatic way.
+Basically, you cannot ask to use SSL and not use it at the same time.
+The driver offers several mechanism so that you can use a fixed URL with dynamic query parameters, or dynamic URLs, or whatever way of configuring you prefer in a programmatic way.
 
 === Using .dotenv files
 
-When you sign up for https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j AuraDB] and create a database, you will be asked to download a text-file named similar to `Neo4j-9df57663-Created-2023-06-12.txt`. This is essentially a https://www.dotenv.org[.dotenv] file containing all necessary information required to connect to an aura Database.
+When you create a https://neo4j.com/cloud/platform/aura-graph-database/[Neo4j Aura] instance, you will be asked to download a text-file named similar to `Neo4j-9df57663-Created-2023-06-12.txt`.
+This is essentially a https://www.dotenv.org[.dotenv] file containing the information required to connect to the database.
 
-These files can be directly used via `Neo4jDriver.fromEnv()`. This method exists in several overloads, which let you configure both filename and directory. Additionally, the builder behind it let's you configure options that are not usually contained in the files from AuraDB.
+These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:usage.adoc#connect-dotenv[Getting a connection via environment variables]).
+This method exists in several overloads, which let you configure both filename and directory.
+Additionally, the builder lets you configure options that are not contained in the files from Aura.

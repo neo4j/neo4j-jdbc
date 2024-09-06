@@ -6,7 +6,7 @@ This section deals with conventions for indexing and naming parameters in all ty
 
 === General syntax
 
-You can invoke stored procedures as follows
+You can invoke stored procedures as follows:
 
 Common JDBC syntax::
     `{? = call db.index.fulltext.queryNodes(?, ?)}`
@@ -19,12 +19,12 @@ Return (only applicable for functions)::
 
 === Named parameters
 
-Our callable statement implementation (`org.neo4j.jdbc.Neo4jCallableStatement`) does support named parameters. As per JDBC spec those are not named placeholders in a query- or statement-string, but the actual, formal parameter for the stored procedures to be called.
-We support both the `$` and the colon syntax, that is you might use either `$name` or `:name`.
+Our callable statement implementation (`org.neo4j.jdbc.Neo4jCallableStatement`) does support named parameters. As per the JDBC specification, those are not named placeholders in a query- or statement-string, but the actual, formal parameters for the stored procedures to be called.
+We support both the `$` and the colon syntax (i.e. either `$name` or `:name`).
 
-The assigment `{? = call xxx()}` will be rewritten into `call xxx() yield *`, and `{$x = call xxx()}` will be rewritten as `call xxx() yield x`.
+The assigment `{? = call xxx()}` will be rewritten to `call xxx() yield *`, and `{$x = call xxx()}` will be rewritten to `call xxx() yield x`.
 
 === Result sets of callable statements
 
-When you execute a callable statement via ´executeQuery`, you must use the result set returned.
-If you just use `execute`, we assume that the underlying procedure does only return one row and you use the getters on the statement itself.
+When you execute a callable statement via `executeQuery`, you must use the result set returned.
+If you just use `execute`, we assume that the underlying procedure returns only one row and that you use the getters on the statement itself.

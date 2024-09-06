@@ -12,42 +12,72 @@ If you add this translator to the classpath or use the <<text2cypher_bundle,text
 🤖,
 ----
 
-will be treated as _natural language_ queries written in plain english.
-The driver will strip the prefix, and use https://openai.com[OpenAI] for translating the input into a Cypher statement.
-The driver will augment the generation of the query by passing the current graphs schema along with the input question.
+will be treated as _natural language_ queries written in *plain english*.
+The driver will strip the prefix, and use https://openai.com[OpenAI] to translate the input into a Cypher statement.
+The driver will augment the generation of the query by passing the current graph schema along with the input question.
 
 [WARNING]
 ====
-Keep in mind that the following data will be sent to an external API:
+The following data will be sent to an external API:
 
 * Your database schema, including label names
-* Any natural language question that you or one of your user write
+* Any natural language query
 
-Don't use this translator if you don't want the above or are not a llowed to do so.
+Don't use this translator if you don't want the above, or are not allowed to do so.
 ====
 
-This module requires one additional configuration, the OpenAI API Key.
-You can use either a URL parameter, JDBC Properties entry or a environment variable:
+This module requires one additional configuration: the OpenAI API key.
+You can use either a URL parameter, a JDBC property entry, or an environment variable:
 
-* URL parameter or properties name is: `openAIApiKey`
-* Name of the environment variable is: `OPEN_AI_API_KEY`
-
-One example of a valid URL is:
+* URL parameter/property name is `openAIApiKey`
+* Environment variable name is `OPEN_AI_API_KEY`
 
 [source,txt]
+.Example of a valid URL
 ----
 jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key
 ----
 
-With that in place, a query such as the following should work just fine:
+With that in place, a query such as the following can be translated into Cypher:
 
 [source,txt]
 ----
 🤖, How was The Da Vinci Code rated?
 ----
 
-NOTE: Once a natural language query was translated to Cypher, the result will be cached and further invocations of that query will use the cached result.
+The outcome of the LLM is not deterministic and is likely to vary.
+While you can execute it directly, we strongly recommend to use `Connection#nativeSQL` to retrieve the Cypher statement, inspect it, and then run it separately.
+In our test runs, the above questions was most often correctly translated to
 
-All that statements that do not start with 🤖 will be used as is and treated as Cypher.
+[source,text]
+----
+MATCH (m:`Movie` {
+  title: 'The Da Vinci Code'
+})<-[r:`REVIEWED`]-(p:`Person`)
+RETURN r.rating AS Rating, p.name AS ReviewerName
+----
 
-Get the full, ready to use bundle here: https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-text2cypher-bundle}/{version}/{artifact-id-text2cypher-bundle}-{version}.jar
+Other times the result was a syntactically correct statement, but it would only return the reviewers and the movie itself.
+Also note that while a human likely recognizes that you are actually thinking about the average rating, the LLM does not infer this.
+Making the question more explicit gives better results:
+
+[source,txt]
+----
+🤖, How was The Da Vinci Code rated on average?
+----
+
+is translated more accurately to:
+
+[source,cypher]
+----
+MATCH (m:`Movie` {
+  title: 'The Da Vinci Code'
+})<-[:`REVIEWED`]-(p:`Person`)
+RETURN avg(p.rating) AS AverageRating
+----
+
+NOTE: Once a natural language query gets translated into Cypher, the result will be cached and further invocations of that query will use the cached result.
+
+All that statements that do not start with 🤖 will be used as-is and treated as Cypher.
+
+Get the full, ready to use bundle here: https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-text2cypher-bundle}/{version}/{artifact-id-text2cypher-bundle}-{version}.jar. More information in xref:distribution.adoc#available_bundles[Available bundles].

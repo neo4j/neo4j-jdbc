@@ -1,48 +1,47 @@
+[#s2c_introduction]
 = SQL to Cypher translation
 
-[#s2c_introduction]
 == Introduction
 
-The translation from SQL queries to Cypher is an optional feature of this driver that consists of two parts:
+The translation of queries from SQL to Cypher is an optional feature of this driver and it consists of two parts:
 
-- The translator SPI, which you find in the module `{group-id}:neo4j-jdbc-translator-spi`.
-It consists of two interfaces, `SqlTranslatorFactory` and the actual `SqlTranslator`.
+- The translator SPI, located in the module `{group-id}:neo4j-jdbc-translator-spi`.
+It consists of two interfaces: `SqlTranslatorFactory` and the actual `SqlTranslator`.
 - A concrete implementation of this SPI, published as `{group-id}:neo4j-jdbc-translator-impl`.
 
-The latter is covered in "xref:s2c[]" and bundled as the "full bundle", described in xref:available_bundles[xrefstyle=short].
-The former is provided for two reasons: It allows us to distribute the driver with and without the bundled, default translator and can be an option for you to run your custom translator.
+The latter is covered in "xref:s2c[]" and available in the "full bundle", described in xref:distribution.adoc#available_bundles[Available bundles].
+The former is provided for two reasons: it allows us to distribute the driver with and without the bundled, default translator and allows you to run your custom translator.
 
-Translators can be chained, and you can have as many translators on the classpath as you want.
-They will be ordered by a configurable precedence with our default implementation having the lowest precedence.
-Thus, you can have for example a custom translator that takes care of a fixed set of queries, and if it cannot translate another, it will just be passed down to our implementation.
+Translators can be chained, and there can be as many translators on the classpath as you want.
+Their precedence is configurable, with our default implementation having the lowest precedence.
+Thus, you can for example have a custom translator that takes care of a fixed set of queries and, if it receives a query it cannot translate, it will pass it down to our implementation.
 
-Translating arbitrary SQL queries to Cypher is an opinionated task as there is no right way to map table names to objects in the graph: A table name can be used as is as a label, you might want to transform it to a singular form etc. And then we haven't even started how to map relationships: Do you want to have relationship types derived from a join table, a join column (in that case, which one?) or the name of a foreign key?
+Translating arbitrary SQL queries to Cypher is an opinionated task, as there is no right way to map table names to graph objects: a table name can be used as-is as a label, or may be transformed into a singular form, etc. Mapping relationships is even trickier: should relationship types derive from a join table, a join column (in that case, which one?), or a foreign key?
 
-We made some assumptions that we find to match various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
+We believe our assumptions are appropriate for various use cases and instead of providing configuration to cater for all scenarios, we offer the possibility to write your own translation layer.
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.
 
-NOTE: Some tools like Tableau use a class-loader that won't let the driver use the standard Java service loader mechanism.
-For these scenarios we provide an additional configuration property named `translatorFactory`.
-Set this to `DEFAULT` for directly loading our default implementation or to a fully-qualified classname for any other factory.
-Be aware that either our default implementation or your custom one needs to be on the classpath nevertheless.
+NOTE: Some tools (like Tableau) use a class-loader that won't let the driver use the standard Java service loader mechanism.
+For these scenarios, we provide an additional configuration property named `translatorFactory`.
+Set this to `DEFAULT` to directly load our default implementation or to a fully-qualified classname for any other factory.
+*Be aware* that either our default implementation or your custom one must be on the classpath.
 
 == Translating SQL to Cypher
 
-There's only one requirement to enable SQL to Cypher translation:
-You have to have one module implementing the SPI on the classpath.
-This is *automatically* the case if you use the full-bundle under those coordinates: `{group-id}:{artifact-id-full-bundle}`.
-In that case, you *don't* need to add any other dependencies.
-If you use the individual distribution or the "small" bundle `{group-id}:{artifact-id-bundle}` you must add the following artifact: `{group-id}:{artifact-id-impl}`.
+There's only one requirement to enable the SQL-to-Cypher translation: you have to have one module implementing the SPI on the classpath.
+This is *automatically* the case if you use the full-bundle (`{group-id}:{artifact-id-full-bundle}`).
+In that case, you *don't* need to add any other dependency.
+If you use the individual distribution or the "small" bundle `{group-id}:{artifact-id-bundle}`, you must add the artifact `{group-id}:{artifact-id-impl}`.
 
 The implementation will be automatically loaded.
-If you use the translation on a case-by-case basis, it will be lazily loaded, that is: No additional classes are touched or loaded into memory.
+If you use the translation on a case-by-case basis, it will be lazily loaded (i.e no additional classes are touched or loaded into memory).
 If you configure automatic translation for all statements, the implementation will be eagerly loaded.
-There are no further configuration option with regard to loading the implementation.
+There are no further configuration options with regard to loading the implementation.
 
 === On a case-by-case basis
 
 The translator can be used on a case-by-case basis through the official JDBC API `nativeSQL`, which you find on the `java.sql.Connection` class.
-With the following imports
+With the following imports:
 
 [source, java, tabsize=4]
 ----
@@ -58,18 +57,16 @@ include::{examplesDir}/SQLTranslator.java[tag=pt1]
 
 === For all queries
 
-If you open the connection to your Neo4j instance using `enableSQLTranslation=true` either as URL parameter or configuration property, all statements will be translated from SQL to Cypher on your behalf.
-If you configure the driver in that way, the translator will be eagerly loaded
+If you open the connection to your Neo4j instance using `enableSQLTranslation=true` either as URL parameter or configuration property, all statements will be translated from SQL to Cypher.
+If you configure the driver in this way, the translator will be eagerly loaded.
 
 [source, java, tabsize=4, indent=0]
 ----
 include::{examplesDir}/SQLTranslator.java[tag=pt2]
 ----
 
-Sometimes it maybe is necessary to fall back to Cypher for some statements.
-You might want to use some constructs that you cannot express with SQL or our default translator cannot handle the SQL necessary.
-We offer a special comment that you can use as a hint in your statement that will stop automatic translation: `/*+ NEO4J FORCE_CYPHER */`.
-Use it like this:
+Sometimes you may need to fall back to Cypher for some statements, either to use constructs that you cannot express with SQL, or because our default translator cannot handle your query.
+We offer a special comment that you can use as a hint in your statement to stop automatic translation: `/*+ NEO4J FORCE_CYPHER */`.
 
 [source, java, tabsize=4, indent=0]
 ----
@@ -78,7 +75,7 @@ include::{examplesDir}/SQLTranslator.java[tag=force-cypher]
 
 === Possible error scenarios
 
-A `NoSuchElementException` with a message of `No SQL translators available` will be thrown when there is no implementation of the SQL to Cypher translator available, and you either use `java.sql.Connection.nativeSQL` or enable automatic translation. The exception will be thrown when you access the method or eagerly on opening a connection in the latter case.
+A `NoSuchElementException` with a message of `No SQL translators available` will be thrown when there is no implementation of the SQL to Cypher translator available, and you either used `java.sql.Connection.nativeSQL` or enabled automatic translation. The exception will be thrown when you access the method or eagerly on opening a connection in the latter case.
 
 [#s2c]
 == Using the default translator
@@ -87,9 +84,9 @@ A `NoSuchElementException` with a message of `No SQL translators available` will
 
 Our default translator uses the OSS parser from https://www.jooq.org[jOOQ], which supports a broad spectrum of SQL dialects already.
 We picked the generic, default dialect of jOOQ as our default dialect, but you can overwrite this in the SQL to Cypher configuration using the parameter `s2c.sqlDialect` with one of the supported dialects listed in <<s2c_configuration, configuration below>>.
-`POSTGRES` might be a good choice for several integrations.
+`POSTGRES` can be a good choice for several integrations.
 
-Bear in mind though that any shortcomings in the translation are probably not due to the lack of parser support, but due to the lack of an obvious, semantically equivalent Cypher construct.
+Bear in mind though that any shortcomings in the translation are probably not due to a lack in the parser, but due to the lack of an obvious, semantically equivalent Cypher construct.
 That means we might be able to parse a certain piece of SQL, but are unable to translate in into something meaningful that Neo4j can understand without additional, contextual information.
 
 
@@ -103,65 +100,66 @@ They must be prefixed with `s2c` in the URL or config options:
 |Name |Meaning|Default
 
 |`parseNameCase`
-|Whether to parse table names as is or not
-|As is
+|Whether to parse table names as is or not.
+|`true`
 
 |`tableToLabelMappings`
-|A map from table names to labels
+|A map from table names to labels.
 |An empty map
 
 |`joinColumnsToTypeMappings`
-|A map from column names to relationship type names
+|A map from column names to relationship types.
 |An empty map
 
 |`prettyPrint`
-|Whether to format the generated Cypher or not
+|Whether to format the generated Cypher or not.
 |`true`
 
 |`alwaysEscapeNames`
-|Whether to always escape names
-|Unless explicitly configured `false` when pretty printing is on, otherwise true
+|Whether to always escape names.
+|Unless explicitly configured `false` when pretty printing is on, otherwise `true`.
 
 |`sqlDialect`
-|Which dialect to use when parsing, supported values are `POSTGRES`, `SQLITE`, `MYSQL`, `H2`, `HSQLDB`, `DERBY` and `DEFAULT`
+|Which dialect to use when parsing. Supported values are `POSTGRES`, `SQLITE`, `MYSQL`, `H2`, `HSQLDB`, `DERBY` and `DEFAULT`.
 |`DEFAULT`
 |===
 
-Here are a couple of examples (Note that we are using the `properties` config to avoid terrible long URLs in this documentation, however, all the attributes can be specified via URL, too):
+The next few examples use the `properties` config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.
 
 [source, java, tabsize=4, indent=0]
-.Disable pretty printing, only escape if necessary, configure dedicated table mappings
+.Disable pretty printing; only escape if necessary; configure dedicated table mappings
 ----
 include::{examplesDir}/SQLTranslator.java[tag=config1]
 ----
 
-In the next example we parse the table names into upper case, which might be helpful in some situations:
-
 [source, java, tabsize=4, indent=0]
-.Upper case parsing
+.Parse table names into upper case
 ----
 include::{examplesDir}/SQLTranslator.java[tag=config2]
 ----
 
-Here we change the prefix of parameters (they are still going only by index in SQL) and add mappings for join columns:
+Named parameter syntax in the SQL parser defaults to `:name` (such as supported by Oracle, JPA, Spring, a colon followed by a name).
+The following example changes that prefix to `$` (the same prefix that Cypher uses):
 
 [source, java, tabsize=4, indent=0]
-.Disable pretty printing, only escape if necessary, configure dedicated table mappings
+.Change parameters prefix and add mappings for join columns
 ----
 include::{examplesDir}/SQLTranslator.java[tag=config3]
 ----
+
+This is helpful when a tool generates names like that and does not allow customization.
 
 [#s2c_supported_statements]
 === Supported statements
 
 The following statements are all under tests and describe what you can expect from the default translation layer:
 
-include::translator/simple.adoc[leveloffset=+3]
+include::translator/simple.adoc[leveloffset=+2]
 
-include::translator/expressions.adoc[leveloffset=+3]
+include::translator/expressions.adoc[leveloffset=+2]
 
-include::translator/predicates.adoc[leveloffset=+3]
+include::translator/predicates.adoc[leveloffset=+2]
 
-include::translator/joins.adoc[leveloffset=+3]
+include::translator/joins.adoc[leveloffset=+2]
 
-include::translator/dml.adoc[leveloffset=+3]
+include::translator/dml.adoc[leveloffset=+2]

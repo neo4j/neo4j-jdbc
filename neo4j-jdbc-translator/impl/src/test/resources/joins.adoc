@@ -1,19 +1,21 @@
+[#joinin-relationships]
 = Using joins to map relationships
 
-On the surface joins are relationships materialized in SQL (Foreign keys are not).
-Sadly, it's not as straight forward to map.
-There are several options and possibilities to handle things:
+On the surface, joins are relationships materialized in SQL (foreign keys are not).
+Sadly, it's not as straightforward to map to Cypher.
+There are several implementation options:
 
-* When joining two tables on a column, taking the left hand table column, use its name as relationship type and treat it as outgoing from left to right
-* When joining two tables with an intersection table (which you usually model in SQL for m:n relationships with attributes), use the name of that intersection table as relationship type
+* When joining two tables on a column, take the left hand table column, use its name as relationship type, and treat it as outgoing from left to right.
+* When joining two tables with an intersection table (which it's usually modeled in SQL for `m:n` relationships with attributes), use the name of that intersection table as relationship type.
 
-We implemented some variants thereof, however we don't claim their absolute usefulness in all cases
+We implemented some variants thereof, however we don't claim their absolute usefulness in all cases.
 
 == 1:n joins
 
 === Natural joins
 
-SQL `NATURAL` joins are the easiest way to denote relationship names without having todo any mapping.
+SQL `NATURAL` joins are the easiest way to denote relationship names without having to do any mapping.
+A one-hope `NATURAL JOIN` will translate to an anonymous, wildcard relationship.
 
 [source,sql,id=nj1,name=naturalJoin]
 ----
@@ -21,14 +23,15 @@ SELECT p, m FROM Person p
 NATURAL JOIN Movie m
 ----
 
-A one-hope `NATURAL JOIN` will resolve to an anonymous, wildcard relationship:
-
 [source,cypher,id=nj1_expected]
 ----
 MATCH (p:Person)-->(m:Movie) RETURN p, m
 ----
 
-`NATURAL` joins can be chained like this, the connecting join table does not need to exist:
+'''
+
+`NATURAL` joins can be chained, and the connecting join table does not need to exist.
+This will be turned into a Neo4j relationship:
 
 [source,sql,id=nj2,name=naturalJoins,metaData=Movie:title|released]
 ----
@@ -36,8 +39,6 @@ SELECT p.name, r.role, m.* FROM Person p
 NATURAL JOIN ACTED_IN r
 NATURAL JOIN Movie m
 ----
-
-It will be turned into a Neo4j relation:
 
 [source,cypher,id=nj2_expected]
 ----
@@ -48,7 +49,7 @@ RETURN p.name, r.role,
 
 === Simple join
 
-We configured the translator use the following table mapping:
+Assume we configured the translator to use the following table mapping:
 
 * `people` mapped to label `People`
 * `movies` mapped to label `Movie`
@@ -91,7 +92,7 @@ RETURN p.name, m.title
 
 === Using the `ON` clause
 
-We used backticks here for the table- and column names and no mapping.
+We used backticks here for the table and column names and no mapping.
 
 [source,sql,id=r1_0,name=foreign_key_join]
 ----
@@ -100,7 +101,7 @@ FROM `Person` as p
 JOIN `Movie` as m ON (m.id = p.`DIRECTED`)
 ----
 
-The translation yields in the same result as before
+The translation is same as before:
 
 [source,cypher,id=r1_0_expected]
 ----
@@ -110,12 +111,11 @@ RETURN p.name, m.title
 
 == m:n joins
 
-An intersection table is a table that contains references to two other tables in the form of at least two columns—hopefully with foreign keys and therefor indexes defined on them.
-This construct is usually required in the relational model to create an m:n relationship.
-Sometimes the intersection table also spots additional columns.
-Of course, such an auxiliary construct is not necessary in Neo4j.
-We can model as many outgoing and incoming relationships from one label to another as we desire and they can also have properties.
-We can hover use that construct for our translator
+An intersection table is a table that contains references to two other tables in the form of at least two columns.
+This construct is usually required in the relational model to create an `m:n` relationship.
+Such an auxiliary construct is not necessary in Neo4j.
+We can model as many outgoing and incoming relationships from one label to another, and they can also have properties.
+We can thus use that construct for our translator.
 
 The following example uses a configured mapping as follows:
 
@@ -130,11 +130,11 @@ FROM people p -- <.>
 JOIN movie_actors r ON r.person_id = p.id -- <.>
 JOIN movies m ON m.id = r.person_id -- <.>
 ----
-<.> The driving table from which we map outgoing relationships
+<.> The table from which to map outgoing relationships
 <.> An intersection table, that is used again in the next `JOIN` clause
-<.> The final join clause
+<.> The final `JOIN` clause
 
-We don't do semantic analysis, the order of the joins matter and will lead to the following query:
+We do no semantic analysis: the order of the joins matter, and will lead to the following query:
 
 [source,cypher,id=r2_0_expected]
 ----
@@ -153,8 +153,6 @@ FROM people p
  JOIN movie_directors r2 ON r2.movie_id = m.id
  JOIN people d ON r2.person_id = d.id
 ----
-
-as demonstrated by
 
 [source,cypher,id=r2_1_expected]
 ----

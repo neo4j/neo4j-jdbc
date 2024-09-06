@@ -4,16 +4,14 @@
 
 All the methods on connection level dealing with metadata and information about the available content provide information in terms that are defined in the SQL standard, including catalogs and schemas.
 
+In most relational databases, a catalog is equivalent to a specific database on a server or cluster, and the schema refers to the collection of tables, views and procedures in that catalog.
+
 From the SQL 1992 standard (find an archived copy http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt[here]):
 
-> (4.12) Catalogs are named collections of schemas in an SQL-environment. An
-SQL-environment contains zero or more catalogs. A catalog con-
-tains one or more schemas, but always contains a schema named
-INFORMATION_SCHEMA that contains the views and domains of the
-Information Schema.
+> (4.12) Catalogs are named collections of schemas in an SQL-environment. An SQL-environment contains zero or more catalogs. A catalog contains one or more schemas, but always contains a schema named INFORMATION_SCHEMA that contains the views and domains of the Information Schema.
 
-We decided in https://github.com/neo4j/neo4j-jdbc/discussions/55[55] to not support catalogs at the beginning, so any metadata result set will return literal `null` when asked for the catalog of a database object.
-No metadata method does support filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
+This driver does not support catalogs (see https://github.com/neo4j/neo4j-jdbc/discussions/55[discussion 55]), so any metadata result set will return literal `null` when asked for the catalog of a database object.
+No metadata method supports filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
 Future developments might use catalogs to describe composite databases, in essence listing the constituents of the composite database defined in the connection.
 
 The same standard defines schemas as follows:
@@ -38,22 +36,22 @@ Labels will be reported as table objects with the `TABLE_TYPE` being literal `TA
 
 === Summary
 
-* Catalog: Always `null`, trying to filter on anything non-null does not yield results
-* Schema: Always `public`, filtering on `public` and literal will yield result, anything else won't.
+* Catalog: Always `null`; filtering on anything non-null yields no results.
+* Schema: Always `public`; filtering on `public` and literal will yield result, anything else won't.
 * Table descriptors: Reported as `TABLE` in the `TABLE_TYPE` column.
 
 == Labels to tables
 
-The CLG and Langstar groups speak about "Node type combinations" and gravitates towards "open node type semantics" in the GQL standard:
+The CLG and Langstar groups speak about "Node type combinations" and gravitate towards "open node type semantics" in the GQL standard:
 
 > Node type combinations is a less permissive form of open node type semantics. The idea of node type combinations is that nodes also conform to a graph type if they are not of one of the node types in the node type set of the graph type, but of a node type that is an intersection of (a subset of) the node type in a node type set of the graph type.
 
-An example for their proposal can be seen https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19[here].
+An example for their proposal can be found https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19[here].
 
-We therefor compute node types in a similar way:
+This driver therefore compute node types in a similar way:
 
 * Single label nodes will map naturally to a table name, the single label will become the table name
-** The label name will be taken as is and will be case-sensitive. So if you have three labels `Movie`, `movie`, `MOVIE` you will see three tables in the meta-data
-** This is in-line with the default SQL to Cypher translation
-* Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically, so that it is independent of the way Neo4j will return those
-* Property sets for these Node type combinations will then be computed
+** The label name will be taken as is and will be case-sensitive. The labels `Movie`, `movie`, `MOVIE` will result in three tables in the metadata
+** This is in line with the default SQL-to-Cypher translation
+* Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically to make them independent of the order Neo4j returns them
+* Property sets for these node type combinations will then be computed

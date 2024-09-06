@@ -11,6 +11,7 @@ Michael Simons <michael.simons@neo4j.com>
 :latest_version: 6.0.0-M05
 :branch: main
 // end::properties[]
+:examplesdir: docs/src/main/asciidoc/modules/ROOT/examples
 
 [abstract]
 --
@@ -24,6 +25,8 @@ The functionality and behaviour released in the GA release may differ from those
 This driver is officially supported and endorsed by Neo4j.
 It is a standalone driver, independent of and *not* built on top of the https://github.com/neo4j/neo4j-java-driver[common Neo4j Java Driver].
 While the latter provides a Neo4j-idiomatic way to access Neo4j from Java, the JDBC driver adheres to https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html[JDBC 4.3].
+
+NOTE: This documentation refers to *this* driver as the _Neo4j JDBC Driver_ and to the idiomatic Neo4j driver as the _common Neo4j Java Driver_.
 // end::abstract[]
 --
 
@@ -58,21 +61,57 @@ We offer several distributions, please have a look http://neo4j.github.io/neo4j-
 If you feel adventurous, grab the code and build the driver yourself.
 You find the instructions in our link:CONTRIBUTING.adoc[contribution documentation].
 
+== Quickstart
+
+After adding the bundle to your application, you can use the Neo4j JDBC driver as any other JDBC driver.
+
+// tag::quickstart[]
+TIP: In case any tooling asks you for the name of the concrete driver class, it is `org.neo4j.jdbc.Neo4jDriver`.
+
+[source, java, tabsize=4]
+.Acquire a connection and execute a query
+----
+include::{examplesDir}/Quickstart.java[tag=pt1]
+----
+<.> Instantiate a JDBC connection. There's no need to do any class loading beforehand, the driver will be automatically registered
+<.> Create a (reusable) statement
+<.> Execute a query
+<.> Iterate over the results, as with any other JDBC result set
+<.> JDBC's indexing starts at 1
+<.> JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complex objects, such as lists
+
+In the example above we used Neo4j's _lingua franca_, https://neo4j.com/docs/getting-started/cypher-intro/[Cypher], to query the database.
+The Neo4j JDBC Driver has limited support for using SQL as well.
+It can do so automatically or on a case-by-case basis.
+To translate a single, call `java.sql.Connection#nativeSQL(String)` and use the result in your queries.
+For automatic translation, instantiate the driver setting the optional URL parameter `sql2cypher` to `true`.
+The following example shows how:
+
+[source, java, tabsize=4, indent=0]
+.Configure the JDBC driver to automatically translate SQL to cypher.
+----
+include::{examplesDir}/Quickstart.java[tag=pt2]
+----
+<.> This SQL query will be translated into the same Cypher query of the previous example.
+The remainder of the method is identical to before.
+
+For more informaiton, see xref:sql2cypher.adoc[SQL to Cypher translation].
+// end::quickstart[]
+
 == Introduction
 // tag::introduction[]
-The JDBC acronym stands for "Java Database Connectivity" and as such is not bound exclusively to relational databases.
-Nevertheless, JDBC is highly influenced by the SQL standard and existing, relational databases, in regard to terms, definitions and behaviour defined.
-Neo4j is a graph database with quite a different paradigm than relational and a non-standardized behaviour in some areas.
-There might be some details that don't map 100% in each place, and we make sure to educate you about these in this documentation
+JDBC stands for "Java Database Connectivity" and is thus not bound exclusively to relational databases.
+Nevertheless, JDBC's terms, definitions, and behavior are highly influenced by SQL and relational databases.
+As Neo4j is a graph database with quite a different paradigm than relational and a non-standardized behaviour in some areas, there might be some details that don't map 100% in each place, and we make sure to educate you about these in this documentation.
 
-NOTE: Inside this documentation we will refer to *this* driver as the _Neo4j JDBC Driver_ and to the idiomatic Neo4j driver as the _common Neo4j Java Driver_.
+This documentation focuses on install, use, and configure the Neo4j JDBC Driver, as well as discussing the driver's design choices.
+While we do provide runnable examples showing how to use JDBC with Neo4j, this is not a documentation about how to correctly use JDBC as an API.
 
-The Neo4j JDBC Driver requires JDK 17 on the client side and a minimum version of Neo4j 5.5 on the server side.
-To use it against a Neo4j cluster, server-side routing must be enabled on the cluster.
+NOTE: The Neo4j JDBC Driver requires JDK 17 on the client side and Neo4j 5.5+ on the server side.
+To use it with a Neo4j cluster, server-side routing must be enabled on the cluster.
 
 === Features
 
-* JDK 17 baseline
 * Fully supports the Java module system
 * Adheres to JDBC 4.3
 * Can run any Cypher statement
@@ -81,53 +120,46 @@ To use it against a Neo4j cluster, server-side routing must be enabled on the cl
 * Provides an optional default implementation to translate many SQL statements into semantically similar Cypher statements
 * Can be safely used with JDBC connection pools as opposed to the common Neo4j Java Driver or any JDBC driver based on that, as it doesn't do internal connection pooling and transaction management otherwise than dictated by the JDBC Spec
 
-The absence of any connection pooling and transaction management is actually an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
+The absence of any connection pooling and transaction management is an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
 It allows to pick and choose any database connection pooling system such as https://github.com/brettwooldridge/HikariCP[HikariCP] and transaction management such as https://jakarta.ee/specifications/transactions/[Jakarta Transactions].
-
-NOTE: The default SQL to Cypher translation implementation is based on https://www.jooq.org[jOOQ] by https://www.datageekery.com[Datageekery].
-We are a long-time fans of how Lukas Eder—inventor of jOOQ—has bridged the gap between Java and database querying.
-It even inspired the https://github.com/neo4j-contrib/cypher-dsl[Cypher-DSL], providing the other half of our translation layer.
-We are grateful for kick-starting the original Sql2Cypher project together in early 2023, on which we can build now.
 
 === Limitations
 
-* The database metadata is retrieved on a best effort base, using existing schema methods of Neo4j, such as `db.labels`, `db.schema.nodeTypeProperties()`
-* While single label nodes map naturally to table names, Nodes with multiple labels don't
-* There is no reliable way to always determine the datatype for properties on nodes without reading all of them (which this driver does not do)
-* Some JDBC features are not yet supported (such as the `CallableStatement`), some feature won't ever be supported
-* The SQL to Cypher translator does only support a limited subset of clauses and SQL constructs that can be semantically equivalent translated to Cypher (See xref:s2c_supported_statements[xrefstyle=short])
-* There is no "right" way to map `JOIN` statements to relations, so your mileage may vary
+* The database metadata is retrieved using Neo4j's schema methods, such as `db.labels`, `db.schema.nodeTypeProperties()`, which may not always be accurate
+* While single label nodes map naturally to table names, nodes with multiple labels don't
+* There is no reliable way to always determine the datatype for properties on nodes, as it would require reading all of them (which this driver does not do)
+* Some JDBC features are not supported yet (such as the `CallableStatement`); some feature will never be supported
+* The SQL to Cypher translator supports only a limited subset of clauses and SQL constructs that can be equivalently translated to Cypher (See xref:s2c_supported_statements[])
+* There is no "right" way to map `JOIN` statements to relationships, so your mileage may vary
 
 === When to use the Neo4j JDBC Driver?
 
-This driver has been developed with the following use-cases in mind:
-
 * Integration with ETL and ELT tools that don't offer an integration based on the common Neo4j Java driver
-* An easier on-ramp towards Neo4j for teams that are familiar with JDBC and want to keep on using that API, but with Cypher and Neo4j
-* Integration for ecosystems like Jakarta EE whose transaction management will directly support any compliant JDBC driver
+* An easier on-ramp towards Neo4j for people familiar with JDBC, who want to keep using that API, but with Cypher and Neo4j
+* Integration for ecosystems like Jakarta EE whose transaction management directly supports any JDBC-compliant driver
 * Integration with database migration tools such as Flyway
 
-There is *no need* to redesign an application that is build on the common Neo4j Java Driver to use this driver.
+*There is no need to redesign an application that is built on the common Neo4j Java Driver to migrate to this driver.*
 If your ecosystem already provides a higher-level integration based on the common Neo4j Java Driver, such as https://github.com/spring-projects/spring-data-neo4j[Spring Data Neo4j (SDN)] for https://spring.io/projects/spring-boot/[Spring], there is no need to switch to something else.
-In case of https://quarkus.io[Quarkus] the Neo4j JDBC Driver is an option to consider: While we do provide an integration for the https://github.com/quarkiverse/quarkus-neo4j[common Neo4j Java Driver], this integration does not support Quarkus' transaction systems in contrast to this driver.
+In case of https://quarkus.io[Quarkus], the Neo4j JDBC Driver is an option to consider: although we do provide an integration for the https://github.com/quarkiverse/quarkus-neo4j[common Neo4j Java Driver], this integration does not support Quarkus' transaction systems in contrast to this driver.
 
-While there is little incentive to use this driver with Hibernate (https://github.com/neo4j/neo4j-ogm[Neo4j-OGM] or SDN are the better alternatives for Neo4j), it might be worth giving https://spring.io/projects/spring-data-jdbc/[Spring Data JDBC] a try.
+As there is little incentive to use this driver with Hibernate (https://github.com/neo4j/neo4j-ogm[Neo4j-OGM] or SDN are the best alternatives for Neo4j), it might be worth giving https://spring.io/projects/spring-data-jdbc/[Spring Data JDBC] a try.
 
-=== Differences to the previous versions of this driver and other JDBC drivers for Neo4j
+=== Differences with the previous versions of this driver and other JDBC drivers for Neo4j
 
-Several other JDBC drivers exists for Neo4j, most notably the previous versions 4 and 5 of this driver, originally developed by http://larus-ba.it/[Larus BA, Italy] for Neo4j.
-Most—if not all of them—do wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.
-This comes with a bunch of problems:
+Several other JDBC drivers exists for Neo4j, most notably the previous versions 4 and 5 of this driver.
+Most (if not all) of them wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.
+This comes with a number of issues:
 
-* The common Neo4j Java Driver manages a connection pool; JDBC drivers on the other hand delegate this task to dedicated pooling solutions: If you take the above-mentioned driver into a standard container, you will eventually end up with a pool of pools
-* The transaction management of the common Neo4j Java Driver is not exactly aligned with the way JDBC thinks about transactions, it's usually hard to get this exactly right
-* Additionally, the original JDBC driver from Larus shades a couple of dependencies, such as Jackson as well as additional logging frameworks which takes a toll on the classpath and in case of logging, does actually lead to runtime problems
-* Existing drivers with a SQL to Cypher translation layer are "read-only" and don't support write statements
+* You end up with a _pool of connection pools_, because the common Neo4j Java Driver manages a connection pool, whereas JDBC drivers delegate this task to dedicated pooling solutions.
+* The transaction management of the common Neo4j Java Driver is not aligned with the way JDBC manages transactions.
+* Older versions of the Neo4j JDBC driver shade a few dependencies, such as `Jackson` as well as additional logging frameworks.
+This takes a toll on the classpath and, in case of logging, it leads to runtime problems.
+* Existing drivers with an SQL-to-Cypher translation layer are "read-only" and don't support write statements, so they cannot be used for ETL use-cases aiming to ingest data into Neo4j.
 
-There are some drivers available that provide a SQL to Cypher translation layer as well.
-Those however are read-only and cannot be used for ETL use-cases aiming to ingest data into Neo4j.
+WARNING: This driver does not support automatic reshaping or flattening of the result sets, as the previous versions do.
+If you query for nodes, relationships, paths, or maps, you should use `getObject` on the result sets and cast them to the appropriate type (you find all of them inside the package `org.neo4j.jdbc.values`).
+However, the default SQL-to-Cypher translator will (when connected to a database) figure out what properties nodes have and turn the asterisk (`*`) into individual columns of nodes and relationships, just like what you would expect when running a `SELECT *` statement.
 
-One feature that this driver does not provide is automatic reshaping or flattening of the result-sets, as the previous incarnation does:
-If you query for objects such as nodes, relationships, paths or maps you can and should use `getObject` on the result-sets and cast to the appropriate type (you find all of them inside the package `org.neo4j.jdbc.values`).
-However, the default SQL to Cypher translator will—when connected to a database—figure out what properties labels have and turn the asterisk (`*`) into individual columns of nodes and relationships, just like what you would expect when running a `SELECT *` statement.
+For information on upgrade/migration from other drivers to this one, see xref:migrating.adoc[].
 // end::introduction[]

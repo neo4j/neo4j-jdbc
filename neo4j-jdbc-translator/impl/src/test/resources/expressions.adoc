@@ -1,18 +1,16 @@
 = Expressions
 
-Most SQL expressions will have a corresponding Cypher expression and can be translated straigt forward:
+Most SQL expressions have corresponding Cypher expressions and can be translated straightforward.
 
 == Literal Values
 
-Literal values are usually 1:1 translations:
+Literal values are 1:1 translations.
 
 [source,sql,id=e0_0,name=select_literal_values]
 ----
 SELECT
     1, TRUE, FALSE, NULL, 'a'
 ----
-
-become
 
 [source,cypher,id=e0_0_expected]
 ----
@@ -21,7 +19,7 @@ RETURN 1, TRUE, FALSE, NULL, 'a'
 
 == Arithmetic expressions
 
-So are the arithmetic expressions:
+Arithmetic expressions are 1:1 translations.
 
 [source,sql,id=e1_0,name=select_with_arithmetic]
 ----
@@ -33,7 +31,7 @@ SELECT
     square(2)
 ----
 
-Note that the underlying tech of the default translator uses https://github.com/neo4j-contrib/cypher-dsl[Cypher-DSL] internally, which will wrap arithmetic (and logical expressions) with parentheses:
+Note that the underlying tech of the default translator uses https://github.com/neo4j-contrib/cypher-dsl[Cypher-DSL] internally, which will wrap arithmetic (and logical) expressions with parentheses:
 
 [source,cypher,id=e1_0_expected]
 ----
@@ -49,7 +47,7 @@ RETURN
 
 === Numeric functions
 
-We can translate all numeric functions that are supported by Neo4j's Cypher implementation: https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/[Mathematical functions - numeric]:
+We can translate all numeric functions that are supported by Neo4j's Cypher implementation: https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/[Mathematical functions - Numeric]:
 
 [source,sql,id=e2_0,name=select_with_mathematical_functions]
 ----
@@ -77,7 +75,7 @@ RETURN
 
 === Logarithmic functions
 
-Neo4j supports a brought range of https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/[logarithmic functions] and the input
+Neo4j supports a broad range of https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/[logarithmic functions].
 
 [source,sql,id=e3_0,name=select_with_logarithmic_functions]
 ----
@@ -203,7 +201,7 @@ SELECT
     cast(1 as bigint)
 ----
 
-will be translated to (Compare https://neo4j.com/docs/cypher-manual/current/functions/scalar/[Scalar functions]):
+will be translated to (see https://neo4j.com/docs/cypher-manual/current/functions/scalar/[Scalar functions]):
 
 [source,cypher,id=e6_0_expected]
 ----
@@ -223,7 +221,7 @@ RETURN
 
 == Query expressions
 
-Several advanced SQL expressions are supported as well, such as
+Several advanced SQL expressions are supported as well.
 
 === `CASE` simple
 
@@ -238,16 +236,16 @@ SELECT
     CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
 ----
 
-which will be translated to
-
 [source,cypher,id=e7_0_expected,parseCypher=false]
 ----
 RETURN CASE 1 WHEN 2 THEN 3 END, CASE 1 WHEN 2 THEN 3 ELSE 4 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END
 ----
 
+See https://neo4j.com/docs/cypher-manual/current/queries/case/[Cypher -> Conditional expressions (CASE)] for more information.
+
 === `CASE` advanced
 
-And `CASE` statement using a search (See https://neo4j.com/docs/cypher-manual/current/syntax/expressions[expressions] for more information):
+And `CASE` statement using a search:
 
 [source,sql,id=e7_1,name=select_with_string_functions_case_a]
 ----
@@ -269,7 +267,9 @@ RETURN
     CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 ELSE 7 END
 ----
 
-=== `CASE` abbreviations (which aren't `COALESCE` or `NVL`)
+See https://neo4j.com/docs/cypher-manual/current/queries/case/[Cypher -> Conditional expressions (CASE)] for more information.
+
+=== `CASE` abbreviations (which are not `COALESCE` or `NVL`)
 
 The input
 
