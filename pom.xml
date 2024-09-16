@@ -133,7 +133,7 @@
 		<artifactsDir>${project.build.directory}</artifactsDir>
 		<asciidoctor-maven-plugin.version>3.0.0</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.18</asciidoctorj.pdf.version>
-		<asciidoctorj.version>2.5.13</asciidoctorj.version>
+		<asciidoctorj.version>3.0.0</asciidoctorj.version>
 		<assertj.version>3.26.3</assertj.version>
 		<build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
 		<checkstyle.version>10.18.1</checkstyle.version>
