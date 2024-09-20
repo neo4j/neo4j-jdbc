@@ -129,7 +129,7 @@ It allows to pick and choose any database connection pooling system such as http
 * While single label nodes map naturally to table names, nodes with multiple labels don't
 * There is no reliable way to always determine the datatype for properties on nodes, as it would require reading all of them (which this driver does not do)
 * Some JDBC features are not supported yet (such as the `CallableStatement`); some feature will never be supported
-* The SQL to Cypher translator supports only a limited subset of clauses and SQL constructs that can be equivalently translated to Cypher (See xref:s2c_supported_statements[])
+* The SQL to Cypher translator supports only a limited subset of clauses and SQL constructs that can be equivalently translated to Cypher (See xref:sql2cypher.adoc#s2c_supported_statements[Supported statements])
 * There is no "right" way to map `JOIN` statements to relationships, so your mileage may vary
 
 === When to use the Neo4j JDBC Driver?

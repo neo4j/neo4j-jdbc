@@ -4,7 +4,12 @@
   "description": "Neo4j JDBC Driver Documentation Site",
   "private": true,
   "scripts": {
-    "build-preview": "antora preview.yml",
+    "start": "nodemon -w ../../docs/target -e adoc --exec \"npm run build-preview\" & npm run serve",
+    "serve": "node server.js",
+    "adoc-gen": "node scripts/adoc-gen.js",
+    "build-verify": "antora --stacktrace --fetch preview.yml --log-format=json --log-level=info --log-file ./build/log/log.json",
+    "publish-verify": "antora --stacktrace --fetch publish.yml --log-format=json --log-level=info --log-file ./build/log/log.json",
+    "build-preview": "antora ../../docs/target/asciidoc/preview.yml --stacktrace --log-format=pretty",
     "preview": "npm run build-preview && npx http-server -a localhost -o -c-1 ../../target/antora"
   },
   "repository": {
@@ -18,7 +23,25 @@
     "url": "https://github.com/neo4j/neo4j-jdbc/issues"
   },
   "homepage": "https://github.com/neo4j/neo4j-jdbc",
+  "dependencies": {
+    "@antora/cli": "^3.1.7",
+    "@antora/site-generator-default": "^3.1.7",
+    "@neo4j-antora/aliases-redirects": "^0.2.3",
+    "@neo4j-antora/antora-add-notes": "^0.3.1",
+    "@neo4j-antora/antora-modify-sitemaps": "^0.4.4",
+    "@neo4j-antora/antora-page-roles": "^0.3.2",
+    "@neo4j-antora/antora-table-footnotes": "^0.3.2",
+    "@neo4j-antora/mark-terms": "1.1.0",
+    "@neo4j-documentation/macros": "^1.0.2",
+    "@neo4j-documentation/remote-include": "^1.0.0"
+  },
   "devDependencies": {
-    "antora": "~3.1"
+    "express": "^4.18.2",
+    "nodemon": "^3.0.3"
+  },
+  "overrides": {
+    "@antora/site-generator-default": {
+      "glob-parent": "6.0.2"
+    }
   }
 }

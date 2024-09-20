@@ -1,0 +1,62 @@
+site:
+  title: JDBC Driver Manual
+  url: https://neo4j.com/docs
+  start_page: jdbc-manual:ROOT:index.adoc
+
+content:
+  sources:
+  - url: ../../
+    start_path: docs/target/asciidoc
+    include: docs/target/asciidoc/
+    branches: ['HEAD']
+    exclude:
+    - '!**/_includes/*'
+    - '**/README.adoc'
+    - 'modules/ROOT/index.adoc'
+
+ui:
+  bundle:
+    url: https://static-content.neo4j.com/build/ui-bundle.zip
+    snapshot: true
+  output_dir: /assets
+
+urls:
+  html_extension_style: indexify
+
+antora:
+  extensions:
+  - require: "@neo4j-antora/antora-modify-sitemaps"
+    sitemap_version: '${project.version}'
+    sitemap_loc_version: 'current'
+    move_sitemaps_to_components: true
+
+asciidoc:
+  extensions:
+  - "@neo4j-documentation/remote-include"
+  - "@neo4j-documentation/macros"
+  - "@neo4j-antora/antora-add-notes"
+  - "@neo4j-antora/antora-page-roles"
+  - "@neo4j-antora/antora-table-footnotes"
+  - "@neo4j-antora/mark-terms"
+  attributes:
+    page-theme: docs
+    page-type: Docs
+    page-search-type: Docs
+    page-search-site: Reference Docs
+    page-canonical-root: /docs
+    page-terms-to-mark: Cypher
+    page-pagination: true
+    page-no-canonical: true
+    page-origin-private: true
+    page-hide-toc: false
+    page-mixpanel: 4bfb2414ab973c741b6f067bf06d5575
+    includePDF: false
+    nonhtmloutput: ""
+    experimental: ''
+    copyright: 2022
+    common-license-page-uri: https://neo4j.com/docs/license/
+    check-mark: icon:check[]
+    cross-mark: icon:times[]
+    site-gen-antora: true
+    neo4j-base-uri: ''
+    neo4j-docs-base-uri: /docs
