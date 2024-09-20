@@ -10,7 +10,7 @@
     "build-verify": "antora --stacktrace --fetch preview.yml --log-format=json --log-level=info --log-file ./build/log/log.json",
     "publish-verify": "antora --stacktrace --fetch publish.yml --log-format=json --log-level=info --log-file ./build/log/log.json",
     "build-preview": "antora ../../docs/target/asciidoc/preview.yml --stacktrace --log-format=pretty",
-    "preview": "npm run build-preview && npx http-server -a localhost -o -c-1 ../../target/antora"
+    "preview": "npm run build-preview && npx http-server -a localhost -o -c-1 ../../docs/target/asciidoc/build/site"
   },
   "repository": {
     "type": "git",
