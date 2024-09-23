@@ -1,0 +1,8 @@
+# Snyk (https://snyk.io) policy file
+
+exclude:
+ code:
+  - neo4j-jdbc-it
+  - ./**/src/test
+  - benchkit
+  - docs
