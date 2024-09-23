@@ -1,8 +1,6 @@
 [#text2cypher]
 = text2cypher
 
-== Introduction
-
 This is an experimental translator inspired by the Neo4j Labs project https://github.com/neo4j-labs/text2cypher[text2cypher].
 
 If you add this translator to the classpath or use the <<text2cypher_bundle,text2cypher bundle>>, all queries that start with
