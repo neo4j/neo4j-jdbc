@@ -57,7 +57,7 @@ dependencies {
 ----
 
 All https://github.com/neo4j/neo4j-jdbc/releases/[releases] from 6.0 onwards contain a zipped version of the driver, including a PDF version of the manual.
-We offer several distributions, please have a look http://neo4j.github.io/neo4j-jdbc/${latest_version}/#_distribution[here] for more details.
+We offer several distributions, please have a look http://neo4j.github.io/neo4j-jdbc/{latest_version}/#_distribution[here] for more details.
 If you feel adventurous, grab the code and build the driver yourself.
 You find the instructions in our link:CONTRIBUTING.adoc[contribution documentation].
 
