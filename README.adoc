@@ -95,7 +95,7 @@ include::{examplesDir}/Quickstart.java[tag=pt2]
 <.> This SQL query will be translated into the same Cypher query of the previous example.
 The remainder of the method is identical to before.
 
-For more informaiton, see xref:sql2cypher.adoc[SQL to Cypher translation].
+For more information, see xref:sql2cypher.adoc[SQL to Cypher translation].
 // end::quickstart[]
 
 == Introduction
