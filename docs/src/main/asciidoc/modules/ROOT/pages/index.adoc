@@ -37,6 +37,7 @@ include::README.adoc[tag=abstract]
 
 == Introduction
 include::README.adoc[tag=introduction]
+For information on upgrade/migration from other drivers to this one, see xref:migrating.adoc[].
 
 
 ifndef::site-gen-antora[]

@@ -213,5 +213,6 @@ WARNING: This driver does not support automatic reshaping or flattening of the r
 If you query for nodes, relationships, paths, or maps, you should use `getObject` on the result sets and cast them to the appropriate type (you find all of them inside the package `org.neo4j.jdbc.values`).
 However, the default SQL-to-Cypher translator will (when connected to a database) figure out what properties nodes have and turn the asterisk (`*`) into individual columns of nodes and relationships, just like what you would expect when running a `SELECT *` statement.
 
-For information on upgrade/migration from other drivers to this one, see xref:migrating.adoc[].
 // end::introduction[]
+
+For information on upgrade/migration from other drivers to this one, see http://neo4j.github.io/neo4j-jdbc/main/#_migrating_from_older_versions_or_other_jdbc_drivers_for_neo4j[Migrating from older versions or other JDBC drivers for Neo4j].
