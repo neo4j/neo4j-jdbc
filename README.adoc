@@ -71,7 +71,39 @@ TIP: In case any tooling asks you for the name of the concrete driver class, it 
 [source, java, tabsize=4]
 .Acquire a connection and execute a query
 ----
-include::{examplesDir}/Quickstart.java[tag=pt1]
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.List;
+
+public final class Quickstart {
+
+    static void queryWithCypher() {
+        var query = """
+                MATCH (m:Movie)<-[:ACTED_IN]-(p:Person)
+                RETURN m.title AS title, collect(p.name) AS actors
+                ORDER BY m.title
+                """;
+
+        var url = "jdbc:neo4j://localhost:7687";
+        var username = "neo4j";
+        var password = "verysecret";
+
+        try (var con = DriverManager.getConnection(url, username, password); // <.>
+                var stmt = con.createStatement();  // <.>
+                var result = stmt.executeQuery(query)) { // <.>
+
+            while (result.next()) { // <.>
+                var movie = result.getString(1); // <.>
+                var actors = (List<String>) result.getObject("actors"); // <.>
+                System.out.printf("%s%n", movie);
+                actors.forEach(actor -> System.out.printf("\t * %s%n", actor));
+            }
+        }
+        catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+}
 ----
 <.> Instantiate a JDBC connection. There's no need to do any class loading beforehand, the driver will be automatically registered
 <.> Create a (reusable) statement
@@ -90,13 +122,33 @@ The following example shows how:
 [source, java, tabsize=4, indent=0]
 .Configure the JDBC driver to automatically translate SQL to cypher.
 ----
-include::{examplesDir}/Quickstart.java[tag=pt2]
+var query = """
+        SELECT m.title AS title, collect(p.name) AS actors
+        FROM Person as p
+        JOIN Movie as m ON (m.id = p.ACTED_IN)
+        ORDER BY m.title
+        """; // <.>
+
+var url = "jdbc:neo4j://localhost:7687?enableSQLTranslation=true";
+
+try (var con = DriverManager.getConnection(url, username, password);
+        var stmt = con.createStatement();
+        var result = stmt.executeQuery(query)) {
+
+    while (result.next()) {
+        var movie = result.getString(1);
+        var actors = (List<String>) result.getObject("actors");
+        System.out.printf("%s%n", movie);
+        actors.forEach(actor -> System.out.printf("\t * %s%n", actor));
+    }
+}
 ----
 <.> This SQL query will be translated into the same Cypher query of the previous example.
 The remainder of the method is identical to before.
 
-For more information, see xref:sql2cypher.adoc[SQL to Cypher translation].
 // end::quickstart[]
+
+For more information, see http://neo4j.github.io/neo4j-jdbc/main/#s2c_introduction[SQL to Cypher translation].
 
 == Introduction
 // tag::introduction[]

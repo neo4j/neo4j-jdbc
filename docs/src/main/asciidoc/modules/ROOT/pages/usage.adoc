@@ -6,9 +6,10 @@ Add the JDBC driver to your application, for example as a Gradle dependency:
 .Using the full bundle as a runtime dependency inside a Gradle-based project
 ----
 dependencies {
-    runtimeOnly({group-id}:{artifact-id-full-bundle}:{version})
+    runtimeOnly({group-id}:{artifact-id-full-bundle}:{version}) // <.>
 }
 ----
+<.> The coordinates are the same for a Maven project.
 
 You can then use the Neo4j JDBC driver as you would do with any other JDBC driver:
 
