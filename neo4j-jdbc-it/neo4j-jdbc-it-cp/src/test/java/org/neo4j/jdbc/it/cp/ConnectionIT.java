@@ -221,7 +221,7 @@ public class ConnectionIT extends IntegrationTestBase {
 	void shouldRaiseErrorOnClosingResultSetWhenInAutoCommit() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			statement.setFetchSize(2);
-			var resultSet = statement.executeQuery("UNWIND [1, 1, 0] AS x RETURN 1/x");
+			var resultSet = statement.executeQuery("UNWIND [1, 1, 0] AS x CREATE (n {val: 1/x}) RETURN n");
 			assertThat(resultSet.next()).isTrue();
 			assertThat(resultSet.next()).isTrue();
 			assertThatThrownBy(resultSet::close).isExactlyInstanceOf(SQLException.class);
@@ -233,7 +233,7 @@ public class ConnectionIT extends IntegrationTestBase {
 		try (var connection = getConnection()) {
 			var statement = connection.createStatement();
 			statement.setFetchSize(2);
-			var resultSet = statement.executeQuery("UNWIND [1, 1, 0] AS x RETURN 1/x");
+			var resultSet = statement.executeQuery("UNWIND [1, 1, 0] AS x CREATE (n {val: 1/x}) RETURN n");
 			assertThat(resultSet.next()).isTrue();
 			assertThat(resultSet.next()).isTrue();
 			assertThatThrownBy(statement::close).isExactlyInstanceOf(SQLException.class);

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -481,6 +482,56 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.isRunnable()).isFalse();
 		assertThat(this.transaction.isOpen()).isEqualTo(false);
 		then(fatalExceptionHandler).shouldHaveNoMoreInteractions();
+	}
+
+	@SuppressWarnings("unchecked")
+	@ParameterizedTest
+	@ValueSource(booleans = { true, false })
+	void shouldDiscardOpenCursorsOnClose(boolean commit) throws SQLException {
+		var boltConnection = mockBoltConnection();
+		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER,
+				CompletableFuture.completedStage(null), false, null, null);
+		var query = "query";
+		var parameters = Collections.<String, Object>emptyMap();
+		var runResponse0 = mock(RunResponse.class);
+		var runResponse1 = mock(RunResponse.class);
+		given(boltConnection.run(query, parameters, false)).willReturn(CompletableFuture.completedFuture(runResponse0))
+			.willReturn(CompletableFuture.completedFuture(runResponse1));
+		var pullResponse0 = mock(PullResponse.class);
+		var pullResponse1 = mock(PullResponse.class);
+		given(pullResponse1.hasMore()).willReturn(true);
+		given(boltConnection.pull(any(CompletionStage.class), anyLong()))
+			.willReturn(CompletableFuture.completedFuture(pullResponse0))
+			.willReturn(CompletableFuture.completedFuture(pullResponse1));
+		given(boltConnection.discard(runResponse1, -1, false))
+			.willReturn(CompletableFuture.completedFuture(mock(DiscardResponse.class)));
+		if (commit) {
+			given(boltConnection.commit()).willReturn(CompletableFuture.completedFuture(null));
+		}
+		else {
+			given(boltConnection.rollback()).willReturn(CompletableFuture.completedFuture(null));
+		}
+		var responses0 = this.transaction.runAndPull(query, parameters, 1, 0);
+		var responses1 = this.transaction.runAndPull(query, parameters, 1, 0);
+
+		if (commit) {
+			this.transaction.commit();
+		}
+		else {
+			this.transaction.rollback();
+		}
+
+		then(boltConnection).should().beginTransaction(anySet(), anyMap(), any(), any(), anyBoolean());
+		then(boltConnection).should(times(2)).run(query, parameters, false);
+		then(boltConnection).should(times(2)).pull(any(CompletionStage.class), anyLong());
+		then(boltConnection).should().discard(runResponse1, -1, false);
+		if (commit) {
+			then(boltConnection).should().commit();
+		}
+		else {
+			then(boltConnection).should().rollback();
+		}
+		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
 	static Stream<Arguments> getNetworkTransactionMethodRunners() {

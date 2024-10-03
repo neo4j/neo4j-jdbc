@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +54,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	private final BookmarkManager bookmarkManager;
 
 	private final Set<String> usedBookmarks;
+
+	private final List<RunResponse> openResults = new ArrayList<>();
 
 	private State state;
 
@@ -95,6 +98,9 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			.thenCompose(ignored -> pullFuture)
 			.thenApply(pullResponse -> new RunAndPullResponses(runFuture.join(), pullResponse));
 		var responses = execute(responsesFuture, timeout);
+		if (responses.pullResponse().hasMore()) {
+			this.openResults.add(responses.runResponse());
+		}
 		this.state = State.READY;
 		return responses;
 	}
@@ -125,6 +131,9 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 		var responseFuture = this.boltConnection.pull(runResponse, request).toCompletableFuture();
 		var pullResponse = execute(responseFuture, 0);
+		if (!pullResponse.hasMore()) {
+			this.openResults.remove(runResponse);
+		}
 		this.state = State.READY;
 		return pullResponse;
 	}
@@ -134,17 +143,23 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertNoException();
 		assertRunnableState();
 		var beginFuture = this.beginStage.toCompletableFuture();
+		var allMessagesSize = this.openResults.size() + 1;
+		var allMessages = new CompletableFuture<?>[allMessagesSize];
+		appendDiscards(allMessages, 0);
 		var commitFuture = this.boltConnection.commit().toCompletableFuture();
-		execute(beginFuture.thenCompose(unused -> commitFuture).whenComplete((response, error) -> {
-			if (!(response == null || Objects.requireNonNullElse(response.bookmark(), "").isBlank())) {
-				this.bookmarkManager.updateBookmarks(Function.identity(), this.usedBookmarks,
-						List.of(response.bookmark()));
-			}
-			if (error == null) {
-				this.state = State.COMMITTED;
-			}
-		}), 0);
-
+		allMessages[allMessagesSize - 1] = commitFuture;
+		execute(beginFuture.thenCompose(unused -> CompletableFuture.allOf(allMessages))
+			.thenCompose(unused -> commitFuture)
+			.whenComplete((response, error) -> {
+				if (!(response == null || Objects.requireNonNullElse(response.bookmark(), "").isBlank())) {
+					this.bookmarkManager.updateBookmarks(Function.identity(), this.usedBookmarks,
+							List.of(response.bookmark()));
+				}
+				if (error == null) {
+					this.state = State.COMMITTED;
+				}
+			}), 0);
+		this.openResults.clear();
 	}
 
 	@Override
@@ -155,10 +170,14 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 		assertNoException();
 		assertRunnableState();
-		var beginFuture = this.beginStage.toCompletableFuture();
-		var rollbackFuture = this.boltConnection.rollback().toCompletableFuture();
-		execute(CompletableFuture.allOf(beginFuture, rollbackFuture), 0);
+		var allMessagesSize = this.openResults.size() + 2;
+		var allMessages = new CompletableFuture<?>[allMessagesSize];
+		allMessages[0] = this.beginStage.toCompletableFuture();
+		appendDiscards(allMessages, 1);
+		allMessages[allMessagesSize - 1] = this.boltConnection.rollback().toCompletableFuture();
+		execute(CompletableFuture.allOf(allMessages), 0);
 		this.state = State.ROLLEDBACK;
+		this.openResults.clear();
 	}
 
 	@Override
@@ -205,6 +224,12 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 				this.fatalExceptionHandler.handle(this.exception, sqlException);
 			}
 			throw sqlException;
+		}
+	}
+
+	private void appendDiscards(CompletableFuture<?>[] array, int offset) {
+		for (var i = 0; i < this.openResults.size(); i++) {
+			array[i + offset] = this.boltConnection.discard(this.openResults.get(i), -1, false).toCompletableFuture();
 		}
 	}
 
