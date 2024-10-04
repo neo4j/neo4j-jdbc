@@ -1,8 +1,4 @@
 = Neo4j JDBC Driver
-Michael Simons <michael.simons@neo4j.com>
-:revdate: ${revdate}
-:revnumber: ${project.version} ${git.commit.id.abbrev}
-:revremark: For EAP
 :doctype: article
 :title-page:
 :lang: en

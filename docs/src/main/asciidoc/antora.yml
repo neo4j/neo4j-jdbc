@@ -37,9 +37,6 @@ asciidoc:
     artifact-id-full-bundle: ${mainArtifactId}-full-bundle
     artifact-id-text2cypher-bundle: ${mainArtifactId}-text2cypher-bundle
     version: ${project.version}
-    revdate: ${revdate}
-    revnumber: ${project.version} ${git.commit.id.abbrev}
-    revremark: For EAP
     doctype: article
     title-page:
     lang: en
