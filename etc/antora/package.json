@@ -32,7 +32,7 @@
     "@neo4j-antora/antora-page-roles": "^0.3.2",
     "@neo4j-antora/antora-table-footnotes": "^0.3.2",
     "@neo4j-antora/mark-terms": "1.1.0",
-    "@neo4j-documentation/macros": "^1.0.2",
+    "@neo4j-documentation/macros": "^1.0.4",
     "@neo4j-documentation/remote-include": "^1.0.0"
   },
   "devDependencies": {
