@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2024-10-25T08:01:28Z</span>
+<span id="revdate">2024-10-25T12:22:38Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -3817,6 +3817,35 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 </div>
 </div>
 <div class="paragraph">
+<p>Additional configuration properties are</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">property name</th>
+<th class="tableblock halign-left valign-top">default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">openAIBaseUrl</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://api.openai.com/v1" class="bare">https://api.openai.com/v1</a> (defined by langchain4j)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">openAIModelName</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gpt-4-turbo</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">openAITemperature</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.0</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
 <p>With that in place, a query such as the following can be translated into Cypher:</p>
 </div>
 <div class="listingblock">
@@ -4138,7 +4167,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-10-25 08:01:36 UTC
+Last updated 2024-10-25 12:22:44 UTC
 </div>
 </div>
 </body>
