@@ -45,8 +45,17 @@ final class Text2Cypher implements Translator {
 
 	private static final Logger LOGGER = Logger.getLogger(Text2Cypher.class.getCanonicalName());
 
-	static final String PREFIX = "🤖, ";
-	static final int PREFIX_LENGTH = PREFIX.length();
+	private static final String PREFIX = "🤖, ";
+
+	private static final int PREFIX_LENGTH = PREFIX.length();
+
+	private static final String CONFIG_KEY_OPEN_AI_API_KEY = "openAIApiKey";
+
+	private static final String CONFIG_KEY_OPEN_AI_MODEL_NAME = "openAIModelName";
+
+	private static final String CONFIG_KEY_OPEN_AI_TEMPERATURE = "openAITemperature";
+
+	private static final String CONFIG_KEY_OPEN_AI_BASE_URL = "openAIBaseUrl";
 
 	private final CypherExpert cypherExpert;
 
@@ -55,15 +64,37 @@ final class Text2Cypher implements Translator {
 	Text2Cypher(Map<String, ?> config) {
 
 		String openAIApiKey;
-		if (config.containsKey("openAIApiKey")) {
-			openAIApiKey = (String) config.get("openAIApiKey");
+		if (config.containsKey(CONFIG_KEY_OPEN_AI_API_KEY)) {
+			openAIApiKey = (String) config.get(CONFIG_KEY_OPEN_AI_API_KEY);
 		}
 		else {
 			openAIApiKey = System.getenv("OPEN_AI_API_KEY");
 		}
 		openAIApiKey = Objects.requireNonNull(openAIApiKey,
 				"Please configure an OpenAI API Key (Via system env OPEN_AI_API_KEY or explicit configuration)");
-		var model = OpenAiChatModel.builder().modelName("gpt-4-turbo").temperature(0.0).apiKey(openAIApiKey).build();
+
+		String modelName = (config.get(CONFIG_KEY_OPEN_AI_MODEL_NAME) != null)
+				? (String) config.get(CONFIG_KEY_OPEN_AI_MODEL_NAME) : "gpt-4-turbo";
+
+		Double temperature = 0.0;
+
+		try {
+			if (config.get(CONFIG_KEY_OPEN_AI_TEMPERATURE) != null) {
+				temperature = Double.valueOf((String) config.get(CONFIG_KEY_OPEN_AI_TEMPERATURE));
+			}
+		}
+		catch (NumberFormatException ex) {
+			throw new RuntimeException(
+					"Could not convert " + config.get(CONFIG_KEY_OPEN_AI_TEMPERATURE) + " to Double.", ex);
+		}
+
+		String baseUrl = (String) config.get(CONFIG_KEY_OPEN_AI_BASE_URL);
+		var model = OpenAiChatModel.builder()
+			.baseUrl(baseUrl)
+			.modelName(modelName)
+			.temperature(temperature)
+			.apiKey(openAIApiKey)
+			.build();
 
 		this.cypherExpert = AiServices.builder(CypherExpert.class).chatLanguageModel(model).build();
 		this.precedence = configurePrecedence(config);
