@@ -366,14 +366,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	static Map<String, String> mergeConfig(String[] urlParams, Properties jdbcProperties) {
 		var result = new HashMap<String, String>();
-		for (Object key : jdbcProperties.keySet()) {
-			if (key instanceof String name) {
-				var value = jdbcProperties.getProperty(name);
-				if (value == null) {
-					continue;
-				}
-				result.put(name, value);
+		for (String name : jdbcProperties.stringPropertyNames()) {
+			var value = jdbcProperties.getProperty(name);
+			if (value == null) {
+				continue;
 			}
+			result.put(name, value);
 		}
 		var regex = "^(?<name>\\S+)=(?<value>\\S+)$";
 		var pattern = Pattern.compile(regex);
