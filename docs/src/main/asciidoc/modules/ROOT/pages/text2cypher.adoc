@@ -36,6 +36,22 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key
 ----
 
+Additional configuration properties are
+
+|===
+|property name | default value
+
+|openAIBaseUrl
+|https://api.openai.com/v1 (defined by langchain4j)
+
+|openAIModelName
+|gpt-4-turbo
+
+|openAITemperature
+|0.0
+|===
+
+
 With that in place, a query such as the following can be translated into Cypher:
 
 [source,txt]
