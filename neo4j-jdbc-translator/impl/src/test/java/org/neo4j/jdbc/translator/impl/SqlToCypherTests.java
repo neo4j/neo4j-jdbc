@@ -269,6 +269,25 @@ class SqlToCypherTests {
 			.isEqualTo("MATCH (a:Actor) WHERE id(a) = 4711 SET a.name = 'Foo'");
 	}
 
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|", textBlock = """
+			SELECT name, count(*) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name, count(*)
+			SELECT name, max(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name, max(p.age)
+			SELECT name, min(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name, min(p.age)
+			SELECT sum(age) FROM People p GROUP BY name|MATCH (p:People) RETURN sum(p.age)
+			SELECT avg(age) FROM People p GROUP BY name|MATCH (p:People) RETURN avg(p.age)
+			SELECT percentileCont(age) FROM People p GROUP BY name|MATCH (p:People) RETURN percentileCont(p.age)
+			SELECT percentileDisc(age) FROM People p GROUP BY name|MATCH (p:People) RETURN percentileDisc(p.age)
+			SELECT stDev(age) FROM People p GROUP BY name|MATCH (p:People) RETURN stDev(p.age)
+			SELECT stDevP(age) FROM People p GROUP BY name|MATCH (p:People) RETURN stDevP(p.age)
+			""")
+	void aggregates(String sql, String cypher) {
+
+		var translator = SqlToCypher.defaultTranslator();
+		assertThat(translator.translate(sql)).isEqualTo(cypher);
+
+	}
+
 	@Test
 	void outerSelectStarShouldBeRemoved() {
 

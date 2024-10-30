@@ -962,6 +962,18 @@ final class SqlToCypher implements Translator {
 			else if (f instanceof QOM.Max<?> m) {
 				return Cypher.max(expression(m.$field()));
 			}
+			else if (f instanceof QOM.Sum s) {
+				return Cypher.sum(expression(s.$field()));
+			}
+			else if (f instanceof QOM.Avg s) {
+				return Cypher.avg(expression(s.$field()));
+			}
+			else if (f instanceof QOM.StddevSamp s) {
+				return Cypher.stDev(expression(s.$field()));
+			}
+			else if (f instanceof QOM.StddevPop s) {
+				return Cypher.stDevP(expression(s.$field()));
+			}
 			else if (f instanceof QOM.Position p) {
 				return Cypher.call(FUNCTION_MAPPING.get("strpos"))
 					.withArgs(expression(p.$in()), expression(p.$arg2()))
