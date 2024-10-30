@@ -327,6 +327,56 @@
 								</excludes>
 							</licenseSet>
 						</licenseSets>
+						<dependencyEnforce>true</dependencyEnforce>
+						<dependencyExceptionMessage>One or more dependencies are licensed under a non-approved license.</dependencyExceptionMessage>
+						<dependencyPolicies>
+							<dependencyPolicy>
+								<type>LICENSE_URL</type>
+								<rule>APPROVE</rule>
+								<value>https://www.apache.org/licenses/LICENSE-2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>Apache License, Version 2</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>Apache License, Version 2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>The Apache Software License, Version 2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>The Apache Software License, version 2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>Apache-2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>Apache License 2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>Apache 2</value>
+							</dependencyPolicy>
+							<!-- Mainly due to Slf4j simple, which is used by ArchUnit in tests, and langchain4j in the text2cypher module -->
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>MIT License</value>
+							</dependencyPolicy>
+						</dependencyPolicies>
 						<mapping>
 							<factories>SCRIPT_STYLE</factories>
 						</mapping>
