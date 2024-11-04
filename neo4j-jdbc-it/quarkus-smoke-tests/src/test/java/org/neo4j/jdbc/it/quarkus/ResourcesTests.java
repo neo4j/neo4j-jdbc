@@ -26,7 +26,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
-@WithTestResource(value = Neo4jTestResource.class, restrictToAnnotatedClass = true)
+@WithTestResource(Neo4jTestResource.class)
 class ResourcesTests {
 
 	@Test
