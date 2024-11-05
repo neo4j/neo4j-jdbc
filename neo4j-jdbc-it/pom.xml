@@ -40,6 +40,7 @@
 		<module>spring-boot-smoke-tests</module>
 		<module>mybatis-smoke-tests</module>
 		<module>quarkus-smoke-tests</module>
+		<module>hibernate-smoke-tests</module>
 	</modules>
 
 	<dependencyManagement>

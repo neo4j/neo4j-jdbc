@@ -376,6 +376,17 @@
 								<rule>APPROVE</rule>
 								<value>MIT License</value>
 							</dependencyPolicy>
+							<!-- Testing only -->
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>EPL 2.0</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>GNU Library General Public License v2.1 or later</value>
+							</dependencyPolicy>
 						</dependencyPolicies>
 						<mapping>
 							<factories>SCRIPT_STYLE</factories>
