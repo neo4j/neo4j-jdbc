@@ -78,7 +78,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 				var statement = connection.prepareStatement("CREATE (n:BatchTestSimple {idx: ?})")) {
 			statement.setInt(1, 4711);
 			var result = statement.executeUpdate();
-			assertThat(result).isEqualTo(3);
+			assertThat(result).isEqualTo(1);
 		}
 	}
 
@@ -111,7 +111,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 			}
 			var result = statement.executeBatch();
 			assertThat(result).hasSize(4);
-			assertThat(result).containsExactly(3, 3, 3, Statement.SUCCESS_NO_INFO);
+			assertThat(result).containsExactly(1, 1, 1, Statement.SUCCESS_NO_INFO);
 		}
 	}
 
@@ -125,7 +125,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 			}
 			var result = statement.executeBatch();
 			assertThat(result).hasSize(1);
-			assertThat(result).containsExactly(9);
+			assertThat(result).containsExactly(3);
 		}
 	}
 
@@ -254,7 +254,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 			try (var ps = connection.prepareStatement("INSERT INTO Movie(name) VALUES (?)")) {
 				ps.setString(1, "Praxis Dr. Hasenbein");
 				var cnt = ps.executeUpdate();
-				assertThat(cnt).isEqualTo(3); // one node, one label, one property
+				assertThat(cnt).isEqualTo(1);
 			}
 
 			try (var ps = connection.prepareStatement("SELECT elementId(m) AS id FROM Movie m WHERE m.name = ?")) {
@@ -656,7 +656,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 						ps.setCharacterStream(2, in);
 					}
 					var cnt = ps.executeUpdate();
-					assertThat(cnt).isEqualTo(4);
+					assertThat(cnt).isEqualTo(1);
 					Mockito.verify(in).close();
 				}
 
@@ -734,7 +734,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 						ps.setAsciiStream(2, in);
 					}
 					var cnt = ps.executeUpdate();
-					assertThat(cnt).isEqualTo(4);
+					assertThat(cnt).isEqualTo(1);
 					Mockito.verify(in).close();
 				}
 
@@ -789,7 +789,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 						ps.setNCharacterStream(2, in);
 					}
 					var cnt = ps.executeUpdate();
-					assertThat(cnt).isEqualTo(4);
+					assertThat(cnt).isEqualTo(1);
 					Mockito.verify(in).close();
 				}
 
@@ -839,7 +839,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 					ps.setString(1, type);
 					ps.setUnicodeStream(2, in, lengthUsed);
 					var cnt = ps.executeUpdate();
-					assertThat(cnt).isEqualTo(4);
+					assertThat(cnt).isEqualTo(1);
 					Mockito.verify(in).close();
 				}
 
@@ -913,7 +913,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 						ps.setBinaryStream(2, in);
 					}
 					var cnt = ps.executeUpdate();
-					assertThat(cnt).isEqualTo(4);
+					assertThat(cnt).isEqualTo(1);
 					Mockito.verify(in).close();
 				}
 

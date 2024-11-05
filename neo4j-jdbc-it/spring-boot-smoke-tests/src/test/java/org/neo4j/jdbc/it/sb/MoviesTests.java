@@ -55,12 +55,12 @@ class MoviesTests {
 	@Test
 	void shouldCreateNewMovie(@Autowired MovieRepository movieRepository) {
 		// 3 for node, label and property
-		assertThat(movieRepository.createOrUpdate(new Movie(UUID.randomUUID().toString()))).isEqualTo(3);
+		assertThat(movieRepository.createOrUpdate(new Movie(UUID.randomUUID().toString()))).isEqualTo(1);
 	}
 
 	@Test
 	void shouldNotFailOnMerge(@Autowired MovieRepository movieRepository) {
-		assertThat(movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter"))).isEqualTo(3);
+		assertThat(movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter"))).isEqualTo(1);
 		assertThat(movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter"))).isEqualTo(0);
 	}
 
