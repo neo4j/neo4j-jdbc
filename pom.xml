@@ -151,7 +151,7 @@
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
 		<jdbi3.version>3.47.0</jdbi3.version>
-		<jooq.version>3.19.14</jooq.version>
+		<jooq.version>3.19.15</jooq.version>
 		<jreleaser-maven-plugin.version>1.15.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.11.3</junit-jupiter.version>
 		<kotlin-stdlib-jdk8.version>2.0.21</kotlin-stdlib-jdk8.version>
