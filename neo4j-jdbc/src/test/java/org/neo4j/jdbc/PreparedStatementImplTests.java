@@ -144,7 +144,7 @@ class PreparedStatementImplTests {
 		var counters = mock(SummaryCounters.class);
 		given(response.counters()).willReturn(counters);
 		var totalUpdates = 5;
-		given(counters.totalCount()).willReturn(totalUpdates);
+		given(counters.nodesCreated()).willReturn(totalUpdates);
 		this.statement = newStatement(mock(Connection.class), transactionSupplier, query);
 
 		// when

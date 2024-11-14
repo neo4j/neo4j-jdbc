@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.neo4j.jdbc.values.Node;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,12 +47,12 @@ public class MovieRepository {
 	}
 
 	public Map<String, Object> findAsMap(String title) {
-		// Magic comment just added because I configured the driver here to always assume SQL by default
+		// Magic comment just added because I configured the driver here to always assume
+		// SQL by default
 		// SQL parameters start at 1, though
-		return this.jdbcTemplate.queryForObject(
-			"/*+ NEO4J FORCE_CYPHER */ MATCH (p:Movie) WHERE p.title = $1 RETURN p",
-			Node.class, title
-		).asMap();
+		return this.jdbcTemplate
+			.queryForObject("/*+ NEO4J FORCE_CYPHER */ MATCH (p:Movie) WHERE p.title = $1 RETURN p", Node.class, title)
+			.asMap();
 	}
 
 }

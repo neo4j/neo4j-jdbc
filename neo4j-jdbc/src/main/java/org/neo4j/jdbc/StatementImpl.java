@@ -42,7 +42,6 @@ import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.jdbc.internal.bolt.response.SummaryCounters;
 import org.neo4j.jdbc.values.Values;
 
 non-sealed class StatementImpl implements Neo4jStatement {
@@ -149,7 +148,15 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		return transaction.runAndDiscard(sql, getParameters(parameters), this.queryTimeout, transaction.isAutoCommit())
 			.resultSummary()
 			.map(ResultSummary::counters)
-			.map(SummaryCounters::totalCount)
+			.map(c -> {
+				var rowCount = c.nodesCreated() + c.nodesDeleted() + c.relationshipsCreated()
+						+ c.relationshipsDeleted();
+				if (rowCount == 0 && c.containsUpdates()) {
+					var labelsAndProperties = c.labelsAdded() + c.labelsRemoved() + c.propertiesSet();
+					rowCount = (labelsAndProperties > 0) ? 1 : 0;
+				}
+				return rowCount;
+			})
 			.orElse(0);
 	}
 
