@@ -149,7 +149,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			.resultSummary()
 			.map(ResultSummary::counters)
 			.map(c -> {
-				var rowCount = c.nodesCreated() + c.nodesDeleted();
+				var rowCount = c.nodesCreated() + c.nodesDeleted() + c.relationshipsCreated()
+						+ c.relationshipsDeleted();
 				if (rowCount == 0 && c.containsUpdates()) {
 					var labelsAndProperties = c.labelsAdded() + c.labelsRemoved() + c.propertiesSet();
 					rowCount = (labelsAndProperties > 0) ? 1 : 0;
