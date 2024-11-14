@@ -64,6 +64,11 @@ class MoviesTests {
 		assertThat(movieRepository.createOrUpdate(new Movie("00 Schneider – Jagd auf Nihil Baxter"))).isEqualTo(0);
 	}
 
+	@Test
+	void shouldReturnAMap(@Autowired MovieRepository movieRepository) {
+		assertThat(movieRepository.findAsMap("Barbieheimer")).containsExactlyEntriesOf(Map.of("title", "Barbieheimer"));
+	}
+
 	@SuppressWarnings("unchecked")
 	@AfterAll
 	static void makeSureEverythingHasBeenRolledBack(@Autowired Neo4jHttpClient httpClient) {
