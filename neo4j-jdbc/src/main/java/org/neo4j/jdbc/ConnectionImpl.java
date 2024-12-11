@@ -120,6 +120,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
+	private final int relationshipSampleSize = 1000;
+
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
 	 * for future use.
@@ -173,18 +175,24 @@ final class ConnectionImpl implements Neo4jConnection {
 		return sqlTranslator;
 	}
 
+	@SuppressWarnings("MagicConstant") // This is the whole purpose here to encapsulate
+										// those
 	@Override
 	public Statement createStatement() throws SQLException {
 		return this.createStatement(ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
 				ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
+	@SuppressWarnings({ "MagicConstant", "SqlSourceToSinkFlow" }) // This is the whole
+																	// purpose here to
+																	// encapsulate those
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
 		return prepareStatement(sql, ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
 				ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
+	@SuppressWarnings("SqlSourceToSinkFlow") // O'Really?
 	@Override
 	public CallableStatement prepareCall(String sql) throws SQLException {
 		return prepareCall(sql, ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
@@ -288,7 +296,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public DatabaseMetaData getMetaData() throws SQLException {
 		assertIsOpen();
 		return new DatabaseMetadataImpl(this, (additionalMetadata) -> getTransaction(additionalMetadata, false),
-				this.enableSqlTranslation);
+				this.enableSqlTranslation, this.relationshipSampleSize);
 	}
 
 	@Override
@@ -341,11 +349,13 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.warnings.clear();
 	}
 
+	@SuppressWarnings("MagicConstant")
 	@Override
 	public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
 		return createStatement(resultSetType, resultSetConcurrency, ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
+	@SuppressWarnings({ "MagicConstant", "SqlSourceToSinkFlow" })
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
 			throws SQLException {
@@ -362,6 +372,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 	}
 
+	@SuppressWarnings("SqlSourceToSinkFlow")
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
 		return prepareCall(sql, resultSetType, resultSetConcurrency, ResultSetImpl.SUPPORTED_HOLDABILITY);

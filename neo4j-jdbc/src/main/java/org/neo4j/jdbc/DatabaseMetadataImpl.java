@@ -30,11 +30,14 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -87,11 +90,14 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final boolean automaticSqlTranslation;
 
+	private final int relationshipSampleSize;
+
 	DatabaseMetadataImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			boolean automaticSqlTranslation) {
+			boolean automaticSqlTranslation, int relationshipSampleSize) {
 		this.connection = connection;
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.automaticSqlTranslation = automaticSqlTranslation;
+		this.relationshipSampleSize = relationshipSampleSize;
 	}
 
 	static Request getRequest(String queryName, Object... keyAndValues) {
@@ -805,7 +811,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 
 		var request = getRequest("getTables", "name",
-				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null);
+				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null, "sampleSize",
+				this.relationshipSampleSize, "types", types);
 		return doQueryForResultSet(request);
 	}
 
@@ -869,13 +876,16 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
+		columnNamePattern = (columnNamePattern != null) ? columnNamePattern.replace("%", ".*") : columnNamePattern;
 		var request = getRequest("getColumns", "name",
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern, "column_name",
-				(columnNamePattern != null) ? columnNamePattern.replace("%", ".*") : columnNamePattern);
+				columnNamePattern, "sampleSize", this.relationshipSampleSize);
 		var pullResponse = doQueryForPullResponse(request);
 		var records = pullResponse.records();
 
-		var rows = new ArrayList<Value[]>();
+		var rows = new LinkedList<Value[]>();
+
+		var columnPerLabel = new HashMap<Value, Set<Value>>();
 
 		for (Record record : records) {
 
@@ -887,12 +897,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			}
 
 			var nodeLabels = record.get(0);
+			Value labelsOrTypes = nodeLabels;
+			if ("RELATIONSHIP".equals(record.get("TABLE_TYPE").asString())) {
+				// This column contains the flat rel type, so that we don't have to strip
+				// away start / end node again.
+				labelsOrTypes = Values.value(List.of(record.get("relationshipType").asString()));
+			}
 			var propertyTypeList = propertyTypes.asList(propertyType -> propertyType);
 			var propertyType = getTypeFromList(propertyTypeList, propertyName.asString());
 
 			var NULLABLE = DatabaseMetaData.columnNullable;
 			var IS_NULLABLE = "YES";
-			var innerRequest = getRequest("getColumns.nullability", "nodeLabels", nodeLabels, "propertyName",
+			var innerRequest = getRequest("getColumns.nullability", "nodeLabels", labelsOrTypes, "propertyName",
 					propertyName);
 			try (var result = doQueryForResultSet(innerRequest)) {
 				result.next();
@@ -904,35 +920,46 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 			var nodeLabelList = nodeLabels.asList(Function.identity());
 			for (Value nodeLabel : nodeLabelList) {
-				var values = new ArrayList<Value>();
-				values.add(Values.NULL); // TABLE_CAT
-				values.add(Values.value("public")); // TABLE_SCHEM is always public
-				values.add(nodeLabel); // TABLE_NAME
-				values.add(propertyName); // COLUMN_NAME
-				var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
-				values.add(Values.value(columnType)); // DATA_TYPE
-				values.add(Values.value(Neo4jConversions.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
-				var maxPrecision = getMaxPrecision(columnType);
-				values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
-				values.add(Values.NULL); // BUFFER_LENGTH
-				values.add(Values.NULL); // DECIMAL_DIGITS
-				values.add(Values.value(2)); // NUM_PREC_RADIX
-				values.add(Values.value(NULLABLE));
-				values.add(Values.NULL); // REMARKS
-				values.add(Values.NULL); // COLUMN_DEF
-				values.add(Values.NULL); // SQL_DATA_TYPE - unused
-				values.add(Values.NULL); // SQL_DATETIME_SUB
-				values.add(Values.NULL); // CHAR_OCTET_LENGTH
-				values.add(Values.value(nodeLabelList.indexOf(nodeLabel))); // ORDINAL_POSITION
-				values.add(Values.value(IS_NULLABLE));
-				values.add(Values.NULL); // SCOPE_CATALOG
-				values.add(Values.NULL); // SCOPE_SCHEMA
-				values.add(Values.NULL); // SCOPE_TABLE
-				values.add(Values.NULL); // SOURCE_DATA_TYPE
-				values.add(Values.value("NO")); // IS_AUTOINCREMENT
-				values.add(Values.value("NO")); // IS_GENERATEDCOLUMN
+				// Avoid duplicates while unrolling
+				var properties = columnPerLabel.computeIfAbsent(nodeLabel, i -> new HashSet<>());
+				if (properties.contains(propertyName)) {
+					continue;
+				}
+				properties.add(propertyName);
 
+				var values = addColumn(nodeLabel, propertyName, propertyType, NULLABLE, IS_NULLABLE,
+						nodeLabelList.indexOf(nodeLabel) + 1, false);
 				rows.add(values.toArray(Value[]::new));
+			}
+		}
+
+		if (columnPerLabel.isEmpty()) {
+			var tables = getTables(catalog, schemaPattern, tableNamePattern, null);
+			while (tables.next()) {
+				columnPerLabel.put(tables.getObject("TABLE_NAME", Value.class), new HashSet<>());
+			}
+		}
+
+		// Add artificial element ids
+		for (Value v : columnPerLabel.keySet()) {
+			boolean isRelationship = v.asString().contains("_");
+			var additionalIds = new ArrayList<>(List.of("element_id"));
+			if (isRelationship) {
+				var result = getTables(null, null, v.asString(), new String[] { "RELATIONSHIP" });
+				if (result.next()) {
+					var definition = result.getString("REMARKS").split("\n");
+					additionalIds.add(definition[0] + "_id");
+					additionalIds.add(definition[2] + "_id");
+				}
+			}
+			for (var additionalId : additionalIds) {
+				if (columnNamePattern != null && !additionalId.matches(columnNamePattern.replace("%", ".*"))) {
+					continue;
+				}
+
+				var values = addColumn(v, Values.value(additionalId), Values.value("String"),
+						DatabaseMetaData.columnNoNulls, "NO", 0, true);
+				rows.add(0, values.toArray(Value[]::new));
 			}
 		}
 
@@ -942,6 +969,38 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
 				staticPullResponse, -1, -1, -1);
+	}
+
+	private static ArrayList<Value> addColumn(Value nodeLabel, Value propertyName, Value propertyType, int NULLABLE,
+			String IS_NULLABLE, Integer ordinalPosition, boolean generated) {
+		var values = new ArrayList<Value>();
+		values.add(Values.NULL); // TABLE_CAT
+		values.add(Values.value("public")); // TABLE_SCHEM is always public
+		values.add(nodeLabel); // TABLE_NAME
+		values.add(propertyName); // COLUMN_NAME
+		var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
+		values.add(Values.value(columnType)); // DATA_TYPE
+		values.add(Values.value(Neo4jConversions.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
+		var maxPrecision = getMaxPrecision(columnType);
+		values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
+		values.add(Values.NULL); // BUFFER_LENGTH
+		values.add(Values.NULL); // DECIMAL_DIGITS
+		values.add(Values.value(2)); // NUM_PREC_RADIX
+		values.add(Values.value(NULLABLE));
+		values.add(Values.NULL); // REMARKS
+		values.add(Values.NULL); // COLUMN_DEF
+		values.add(Values.NULL); // SQL_DATA_TYPE - unused
+		values.add(Values.NULL); // SQL_DATETIME_SUB
+		values.add(Values.NULL); // CHAR_OCTET_LENGTH
+		values.add(Values.value(ordinalPosition)); // ORDINAL_POSITION
+		values.add(Values.value(IS_NULLABLE));
+		values.add(Values.NULL); // SCOPE_CATALOG
+		values.add(Values.NULL); // SCOPE_SCHEMA
+		values.add(Values.NULL); // SCOPE_TABLE
+		values.add(Values.NULL); // SOURCE_DATA_TYPE
+		values.add(Values.value("NO")); // IS_AUTOINCREMENT
+		values.add(Values.value(generated ? "YES" : "NO")); // IS_GENERATEDCOLUMN
+		return values;
 	}
 
 	static PullResponse staticPullResponseFor(List<String> keys, List<Value[]> rows) {
