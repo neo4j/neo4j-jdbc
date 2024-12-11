@@ -528,7 +528,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test2 {nameTwo: 'column2'})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, null, null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, null, "name%")) {
 			var seenTable1 = false;
 			var seenTable2 = false;
 			while (rs.next()) {
@@ -573,7 +573,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test4 {nameTwo: 'column2'})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test3", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test3", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -600,7 +600,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test {name: 3})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -627,7 +627,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test {name: 3.3})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -655,7 +655,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: 3})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -683,7 +683,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: 3})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -710,7 +710,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: point({srid:7203, x: 3.0, y: 0.0})})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -734,12 +734,12 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 
 	@Test
 	void getColumnsWithLists() throws SQLException {
-		executeQueryWithoutResult("Create (:Test4 {long: [1,2]})");
-		executeQueryWithoutResult("Create (:Test4 {double: [1.1,2.1]})");
-		executeQueryWithoutResult("Create (:Test4 {string: ['1','2']})");
+		executeQueryWithoutResult("Create (:Test4 {along: [1,2]})");
+		executeQueryWithoutResult("Create (:Test4 {adouble: [1.1,2.1]})");
+		executeQueryWithoutResult("Create (:Test4 {astring: ['1','2']})");
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test4", null)) {
+		try (var rs = databaseMetadata.getColumns(null, null, "Test4", "a%")) {
 			for (int i = 0; i < 3; i++) {
 				assertThat(rs.next()).isTrue();
 
@@ -747,7 +747,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				assertThat(schema).isEqualTo("public");
 
 				var columnName = rs.getString("COLUMN_NAME");
-				assertThat(columnName).isIn("long", "double", "string");
+				assertThat(columnName).isIn("along", "adouble", "astring");
 
 				var columnType = rs.getString("TYPE_NAME");
 				assertThat(columnType).isEqualTo("LIST");
@@ -866,7 +866,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			columnNames.add(columns.getString("COLUMN_NAME"));
 		}
 
-		assertThat(columnNames).containsExactlyInAnyOrder("one", "two", "three", "four");
+		assertThat(columnNames).containsOnly("element_id", "one", "two", "three", "four");
 	}
 
 	@Test
@@ -886,7 +886,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			columnNames.add(columns.getString("COLUMN_NAME"));
 		}
 
-		assertThat(columnNames).containsExactlyInAnyOrder("one", "two");
+		assertThat(columnNames).containsExactlyInAnyOrder("element_id", "one", "two");
 	}
 
 	@Test
@@ -1055,7 +1055,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		var meta = this.connection.getMetaData();
 		int cnt = 0;
 		var types = new HashSet<String>();
-		try (var results = meta.getColumns(null, null, "CypherTypes", null)) {
+		try (var results = meta.getColumns(null, null, "CypherTypes", "a%")) {
 			while (results.next()) {
 				types.add(results.getString("TYPE_NAME"));
 				++cnt;

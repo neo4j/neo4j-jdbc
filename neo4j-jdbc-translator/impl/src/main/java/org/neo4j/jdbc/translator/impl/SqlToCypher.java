@@ -70,10 +70,12 @@ import org.neo4j.cypherdsl.core.ExposesRelationships;
 import org.neo4j.cypherdsl.core.ExposesReturning;
 import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Node;
+import org.neo4j.cypherdsl.core.NodeLabel;
 import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.PropertyContainer;
 import org.neo4j.cypherdsl.core.Relationship;
 import org.neo4j.cypherdsl.core.RelationshipChain;
+import org.neo4j.cypherdsl.core.RelationshipPattern;
 import org.neo4j.cypherdsl.core.ResultStatement;
 import org.neo4j.cypherdsl.core.SortItem;
 import org.neo4j.cypherdsl.core.Statement;
@@ -235,6 +237,8 @@ final class SqlToCypher implements Translator {
 		 * passed around everywhere. Might be empty and is mutable on purpose.
 		 */
 		private final List<Table<?>> tables = new ArrayList<>();
+
+		private final Map<SymbolicName, Relationship> resolvedRelationships = new HashMap<>();
 
 		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query) {
 			if (query instanceof Select<?> s) {
@@ -567,19 +571,43 @@ final class SqlToCypher implements Translator {
 			for (Table<?> table : from) {
 				var pc = (PropertyContainer) resolveTableOrJoin(table);
 				var tableName = labelOrType(table);
-				try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
-					properties.add(Cypher.call("elementId")
-						.withArgs(pc.asExpression())
-						.asFunction()
-						.as(uniqueColumnName("element_id")));
-					while (columns.next()) {
-						var columnName = columns.getString("COLUMN_NAME");
-						properties.add(pc.property(columnName).as(uniqueColumnName(columnName)));
+				if (!(pc instanceof Relationship rel)) {
+					properties.addAll(findProperties(tableName, pc));
+				}
+				else {
+					properties.add(makeFk(rel.getLeft()));
+					properties.add(makeFk(rel.getRight()));
+					properties.addAll(findProperties(tableName, pc));
+				}
+			}
+			return properties;
+		}
+
+		private Expression makeFk(Node node) {
+			var nodeName = node.getLabels().get(0).getValue();
+			return Cypher.call("elementId")
+				.withArgs(node.asExpression())
+				.asFunction()
+				.as(uniqueColumnName(nodeName + "_id"));
+		}
+
+		private List<Expression> findProperties(String tableName, PropertyContainer pc) {
+			List<Expression> properties = new ArrayList<>();
+			try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
+				properties.add(Cypher.call("elementId")
+					.withArgs(pc.asExpression())
+					.asFunction()
+					.as(uniqueColumnName("element_id")));
+				while (columns.next()) {
+					var columnName = columns.getString("COLUMN_NAME");
+					if ("YES".equalsIgnoreCase(columns.getString("IS_GENERATEDCOLUMN"))) {
+						continue;
 					}
+					properties.add(pc.property(columnName).as(uniqueColumnName(columnName)));
 				}
-				catch (SQLException ex) {
-					throw new RuntimeException(ex);
-				}
+			}
+			catch (SQLException ex) {
+				throw new RuntimeException(ex);
 			}
 			return properties;
 		}
@@ -1130,76 +1158,130 @@ final class SqlToCypher implements Translator {
 
 		private PatternElement resolveTableOrJoin(Table<?> t) {
 			if (t instanceof QOM.JoinTable<?, ? extends Table<?>> joinTable) {
-				QOM.Join<?> join = (joinTable instanceof QOM.Join<?> $join) ? $join : null;
-				QOM.Eq<?> eq = (join != null && join.$on() instanceof QOM.Eq<?> $eq) ? $eq : null;
-
-				String relType;
-				SymbolicName relSymbolicName = null;
-
-				PatternElement lhs;
-
-				Table<?> t1 = joinTable.$table1();
-				if (t1 instanceof QOM.JoinTable<?, ? extends Table<?>> lhsJoin) {
-					lhs = resolveTableOrJoin(lhsJoin.$table1());
-					relType = labelOrType(lhsJoin.$table2());
-					if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
-						relSymbolicName = symbolicName(tableAlias.getName());
-					}
-				}
-				else if (eq != null) {
-					lhs = resolveTableOrJoin(t1);
-					relType = type(t1, eq.$arg2());
-				}
-				else if (join != null && join.$using().isEmpty()) {
-					throw unsupported(joinTable);
-				}
-				else {
-					lhs = resolveTableOrJoin(t1);
-					relType = (join != null) ? type(t1, join.$using().get(0)) : null;
-				}
-
-				if (relSymbolicName == null && relType != null) {
-					relSymbolicName = symbolicName(relType);
-				}
-
-				PatternElement rhs = resolveTableOrJoin(joinTable.$table2());
-
-				if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
-
-					var direction = Relationship.Direction.LTR;
-					if (eq != null && joinTable.$table2() instanceof TableAlias<?> ta && !ta.$alias().empty()
-							&& Objects.equals(ta.$alias().last(), eq.$arg2().getQualifiedName().first())) {
-						direction = Relationship.Direction.RTL;
-					}
-
-					var relationship = from.relationshipWith(to, direction, relType);
-					if (relSymbolicName != null) {
-						if (relationship instanceof Relationship r) {
-							relationship = r.named(relSymbolicName);
-						}
-						else if (relationship instanceof RelationshipChain r) {
-							relationship = r.named(relSymbolicName);
-						}
-					}
-					return relationship;
-				}
-				else {
-					throw unsupported(joinTable);
-				}
+				return resolveJoin(joinTable);
 			}
 
 			if (t instanceof TableAlias<?> ta) {
-				if (resolveTableOrJoin(ta.$aliased()) instanceof Node && !ta.$alias().empty()) {
-					return Cypher.node(labelOrType(ta.$aliased()))
-						.named(symbolicName(Objects.requireNonNull(ta.$alias().last())));
+				var resolved = resolveTableOrJoin(ta.$aliased());
+				if ((resolved instanceof Node || resolved instanceof Relationship) && !ta.$alias().empty()) {
+					return nodeOrPattern(ta.$aliased(), ta.$alias().last());
 				}
 				else {
 					throw unsupported(ta);
 				}
 			}
 			else {
-				return Cypher.node(labelOrType(t)).named(symbolicName(t.getName()));
+				return nodeOrPattern(t, t.getName());
 			}
+		}
+
+		private PatternElement nodeOrPattern(Table<?> t, String name) {
+			var primaryLabel = labelOrType(t);
+			var symbolicName = symbolicName(Objects.requireNonNull(name));
+			if (primaryLabel.contains("_") && this.databaseMetaData != null) {
+				var relationship = this.resolvedRelationships.get(symbolicName);
+				if (relationship != null) {
+					return relationship;
+				}
+				try {
+					var resultSet = this.databaseMetaData.getTables(null, null, primaryLabel,
+							new String[] { "RELATIONSHIP" });
+					if (resultSet != null && resultSet.next()) {
+						var definition = resultSet.getString("REMARKS").split("\n");
+						relationship = Cypher.node(definition[0])
+							.named("_lhs")
+							.relationshipTo(Cypher.node(definition[2]).named("_rhs"), definition[1])
+							.named(symbolicName);
+						this.resolvedRelationships.put(symbolicName, relationship);
+						return relationship;
+					}
+				}
+				catch (SQLException ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+			return Cypher.node(primaryLabel).named(symbolicName);
+		}
+
+		private RelationshipPattern resolveJoin(QOM.JoinTable<?, ? extends Table<?>> joinTable) {
+			QOM.Join<?> join = (joinTable instanceof QOM.Join<?> $join) ? $join : null;
+			QOM.Eq<?> eq = (join != null && join.$on() instanceof QOM.Eq<?> $eq) ? $eq : null;
+
+			String relType;
+			SymbolicName relSymbolicName = null;
+
+			PatternElement lhs;
+
+			Table<?> t1 = joinTable.$table1();
+			if (t1 instanceof QOM.JoinTable<?, ? extends Table<?>> lhsJoin) {
+				lhs = resolveTableOrJoin(lhsJoin.$table1());
+				relType = labelOrType(lhsJoin.$table2());
+				if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
+					relSymbolicName = symbolicName(tableAlias.getName());
+				}
+			}
+			else if (eq != null) {
+				lhs = resolveTableOrJoin(t1);
+				relType = type(t1, eq.$arg2());
+			}
+			else if (join != null && join.$using().isEmpty()) {
+				throw unsupported(joinTable);
+			}
+			else {
+				lhs = resolveTableOrJoin(t1);
+				relType = (join != null) ? type(t1, join.$using().get(0)) : null;
+			}
+
+			if (relSymbolicName == null && relType != null) {
+				relSymbolicName = symbolicName(relType);
+			}
+
+			PatternElement rhs = resolveTableOrJoin(joinTable.$table2());
+
+			if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
+
+				var direction = Relationship.Direction.LTR;
+				if (eq != null && joinTable.$table2() instanceof TableAlias<?> ta && !ta.$alias().empty()
+						&& Objects.equals(ta.$alias().last(), eq.$arg2().getQualifiedName().first())) {
+					direction = Relationship.Direction.RTL;
+				}
+
+				var relationship = from.relationshipWith(to, direction, relType);
+				if (relSymbolicName != null) {
+					if (relationship instanceof Relationship r) {
+						relationship = r.named(relSymbolicName);
+					}
+					else if (relationship instanceof RelationshipChain r) {
+						relationship = r.named(relSymbolicName);
+					}
+				}
+				return relationship;
+			}
+			else if (lhs instanceof Node node && rhs instanceof Relationship rel && eq != null) {
+				if (("element_id".equalsIgnoreCase(eq.$arg1().$name().last())
+						&& anyLabelMatches(rel, eq.$arg2().$name().last()))
+						|| ("element_id".equalsIgnoreCase(eq.$arg2().$name().last())
+								&& anyLabelMatches(rel, eq.$arg1().$name().last()))) {
+					var relationship = node
+						.relationshipTo(rel.getRight(), rel.getDetails().getTypes().toArray(String[]::new))
+						.named(rel.getRequiredSymbolicName());
+					this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
+					return relationship;
+				}
+			}
+
+			throw unsupported(joinTable);
+		}
+
+		private static boolean anyLabelMatches(Relationship rel, String needle) {
+			if (needle == null) {
+				return false;
+			}
+
+			return Stream.concat(rel.getLeft().getLabels().stream(), rel.getRight().getLabels().stream())
+				.map(NodeLabel::getValue)
+				.map("%s_id"::formatted)
+				.anyMatch(needle::equals);
 		}
 
 		private String labelOrType(Table<?> tableOrAlias) {
