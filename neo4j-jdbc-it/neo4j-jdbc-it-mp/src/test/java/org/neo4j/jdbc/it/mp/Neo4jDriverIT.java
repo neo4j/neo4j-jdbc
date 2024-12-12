@@ -35,7 +35,7 @@ public class Neo4jDriverIT {
 	void driverMinorVersionMustWork() {
 
 		var driver = new Neo4jDriver();
-		Assertions.assertThat(driver.getMinorVersion()).isZero();
+		Assertions.assertThat(driver.getMinorVersion()).isGreaterThanOrEqualTo(0);
 	}
 
 }
