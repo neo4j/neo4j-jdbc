@@ -157,9 +157,9 @@ class SqlToCypherTests {
 				""", databaseMetaData)).isEqualTo(renderer.render(CypherParser.parse("""
 				MATCH (movie:Movie)-[has:HAS]->(genre:Genre)
 				WHERE genre.name IN ['action comedy film', 'romcom']
-				RETURN elementId(movie) AS element_id, movie.title AS title,
-					elementId(has) AS element_id1, has.foobar AS foobar,
-					elementId(genre) AS element_id2, genre.name AS name
+				RETURN elementId(movie) AS `v$id`, movie.title AS title,
+					elementId(has) AS `v$id1`, has.foobar AS foobar,
+					elementId(genre) AS `v$id2`, genre.name AS name
 				""")));
 	}
 

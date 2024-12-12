@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -943,13 +944,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		// Add artificial element ids
 		for (Value v : columnPerLabel.keySet()) {
 			boolean isRelationship = v.asString().contains("_");
-			var additionalIds = new ArrayList<>(List.of("element_id"));
+			var additionalIds = new ArrayList<>(List.of("v$id"));
 			if (isRelationship) {
 				var result = getTables(null, null, v.asString(), new String[] { "RELATIONSHIP" });
 				if (result.next()) {
 					var definition = result.getString("REMARKS").split("\n");
-					additionalIds.add(definition[0] + "_id");
-					additionalIds.add(definition[2] + "_id");
+					additionalIds.add("v$" + definition[0].toLowerCase(Locale.ROOT) + "_id");
+					additionalIds.add("v$" + definition[2].toLowerCase(Locale.ROOT) + "_id");
 				}
 			}
 			for (var additionalId : additionalIds) {

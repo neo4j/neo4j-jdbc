@@ -35,7 +35,7 @@ This will be turned into a Neo4j relationship:
 
 [source,sql,id=nj2,name=naturalJoins,metaData=Movie:title|released]
 ----
-SELECT p.name, r.role, m.* FROM Person p
+SELECT p.name, r.roles, m.* FROM Person p
 NATURAL JOIN ACTED_IN r
 NATURAL JOIN Movie m
 ----
@@ -43,8 +43,8 @@ NATURAL JOIN Movie m
 [source,cypher,id=nj2_expected]
 ----
 MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
-RETURN p.name, r.role,
-       elementId(m) AS element_id, m.title AS title, m.released AS released
+RETURN p.name, r.roles,
+       elementId(m) AS `v$id`, m.title AS title, m.released AS released
 ----
 
 === Simple join

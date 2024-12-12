@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -36,6 +37,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -98,6 +100,10 @@ import org.neo4j.jdbc.translator.spi.Translator;
  * @author Michael Hunger
  */
 final class SqlToCypher implements Translator {
+
+	static final Pattern ELEMENT_ID_PATTERN = Pattern.compile("(?i)v\\$(?:(?<prefix>.+?)_)?id");
+	static final String ELEMENT_ID_FUNCTION_NAME = "elementId";
+	static final String ELEMENT_ID_ALIAS = "v$id";
 
 	static {
 		Logger.getLogger("org.jooq.Constants").setLevel(Level.WARNING);
@@ -213,6 +219,15 @@ final class SqlToCypher implements Translator {
 		return Renderer.getRenderer(this.rendererConfig).render(statement);
 	}
 
+	record JoinDetails(QOM.Join<?> join, QOM.Eq<?> eq) {
+		static JoinDetails of(QOM.JoinTable<?, ?> joinTable) {
+			QOM.Join<?> join = (joinTable instanceof QOM.Join<?> $join) ? $join : null;
+			QOM.Eq<?> eq = (join != null && join.$on() instanceof QOM.Eq<?> $eq) ? $eq : null;
+
+			return new JoinDetails(join, eq);
+		}
+	}
+
 	static class ContextAwareStatementBuilder {
 
 		/**
@@ -238,7 +253,9 @@ final class SqlToCypher implements Translator {
 		 */
 		private final List<Table<?>> tables = new ArrayList<>();
 
-		private final Map<SymbolicName, Relationship> resolvedRelationships = new HashMap<>();
+		private final Map<SymbolicName, PatternElement> resolvedRelationships = new HashMap<>();
+
+		private final AtomicBoolean useAliasForVColumn = new AtomicBoolean(true);
 
 		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query) {
 			if (query instanceof Select<?> s) {
@@ -519,7 +536,7 @@ final class SqlToCypher implements Translator {
 				var theField = (s instanceof QOM.FieldAlias<?> fa) ? fa.$aliased() : s;
 				Expression col;
 				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
-					col = findTableFieldInTables(tf);
+					col = findTableFieldInTables(tf, true);
 				}
 				else {
 					col = expression(s);
@@ -531,7 +548,7 @@ final class SqlToCypher implements Translator {
 
 				return Stream.of(col);
 			}
-			else if (t instanceof Asterisk a) {
+			else if (t instanceof Asterisk) {
 				var properties = projectAllColumns();
 				if (properties.isEmpty()) {
 					properties.add(Cypher.asterisk());
@@ -576,8 +593,8 @@ final class SqlToCypher implements Translator {
 				}
 				else {
 					properties.add(makeFk(rel.getLeft()));
-					properties.add(makeFk(rel.getRight()));
 					properties.addAll(findProperties(tableName, pc));
+					properties.add(makeFk(rel.getRight()));
 				}
 			}
 			return properties;
@@ -585,19 +602,16 @@ final class SqlToCypher implements Translator {
 
 		private Expression makeFk(Node node) {
 			var nodeName = node.getLabels().get(0).getValue();
-			return Cypher.call("elementId")
+			return Cypher.call(ELEMENT_ID_FUNCTION_NAME)
 				.withArgs(node.asExpression())
 				.asFunction()
-				.as(uniqueColumnName(nodeName + "_id"));
+				.as(uniqueColumnName("v$" + nodeName.toLowerCase(Locale.ROOT) + "_id"));
 		}
 
 		private List<Expression> findProperties(String tableName, PropertyContainer pc) {
 			List<Expression> properties = new ArrayList<>();
 			try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
-				properties.add(Cypher.call("elementId")
-					.withArgs(pc.asExpression())
-					.asFunction()
-					.as(uniqueColumnName("element_id")));
+				properties.add(makeId(pc, null));
 				while (columns.next()) {
 					var columnName = columns.getString("COLUMN_NAME");
 					if ("YES".equalsIgnoreCase(columns.getString("IS_GENERATEDCOLUMN"))) {
@@ -610,6 +624,12 @@ final class SqlToCypher implements Translator {
 				throw new RuntimeException(ex);
 			}
 			return properties;
+		}
+
+		private Expression makeId(PropertyContainer pc, String alias) {
+			var function = Cypher.call(ELEMENT_ID_FUNCTION_NAME).withArgs(pc.asExpression()).asFunction();
+			return this.useAliasForVColumn.get()
+					? function.as(uniqueColumnName((alias != null) ? alias : ELEMENT_ID_ALIAS)) : function;
 		}
 
 		private static List<? extends Table<?>> unnestFromClause(List<? extends Table<?>> tables) {
@@ -639,27 +659,30 @@ final class SqlToCypher implements Translator {
 		}
 
 		private SortItem expression(SortField<?> s) {
-			var direction = s.$sortOrder().name().toUpperCase(Locale.ROOT);
-
-			Field<?> theField = s.$field();
-			Expression col = null;
 			try {
-				col = expression(theField);
-			}
-			catch (IllegalArgumentException ex) {
-				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
-					col = findTableFieldInTables(tf);
-				}
-				if (s instanceof QOM.FieldAlias<?> fa && col != null) {
-					col = col.as(fa.$alias().last());
-				}
-			}
-			return Cypher.sort(col,
-					"DEFAULT".equals(direction) ? SortItem.Direction.UNDEFINED : SortItem.Direction.valueOf(direction));
-		}
+				this.useAliasForVColumn.set(false);
 
-		private Expression findTableFieldInTables(TableField<?, ?> tf) {
-			return findTableFieldInTables(tf, true);
+				var direction = s.$sortOrder().name().toUpperCase(Locale.ROOT);
+
+				Field<?> theField = s.$field();
+				Expression col = null;
+				try {
+					col = expression(theField);
+				}
+				catch (IllegalArgumentException ex) {
+					if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
+						col = findTableFieldInTables(tf, false);
+					}
+					if (s instanceof QOM.FieldAlias<?> fa && col != null) {
+						col = col.as(fa.$alias().last());
+					}
+				}
+				return Cypher.sort(col, "DEFAULT".equals(direction) ? SortItem.Direction.UNDEFINED
+						: SortItem.Direction.valueOf(direction));
+			}
+			finally {
+				this.useAliasForVColumn.set(true);
+			}
 		}
 
 		/**
@@ -674,14 +697,38 @@ final class SqlToCypher implements Translator {
 			Expression col = null;
 			if (this.tables.size() == 1) {
 				var propertyContainer = (PropertyContainer) resolveTableOrJoin(this.tables.get(0));
+				if (isElementId(tf)) {
+					return makeId(propertyContainer, tf.getName());
+				}
+				if (isFkId(tf) != null && propertyContainer instanceof Relationship rel) {
+					if (anyLabelMatches(rel.getLeft(), tf.getName())) {
+						return makeId(rel.getLeft(), tf.getName());
+					}
+					else if (anyLabelMatches(rel.getRight(), tf.getName())) {
+						return makeId(rel.getRight(), tf.getName());
+					}
+				}
 				col = propertyContainer.getSymbolicName()
 					.filter(f -> !f.getValue().equals(tf.getName()))
 					.map(__ -> propertyContainer.property(tf.getName()))
 					.orElse(null);
 			}
 			else if (this.databaseMetaData != null) {
+				var isId = isElementId(tf);
+				var prefix = isFkId(tf);
 				for (Table<?> table : this.tables) {
 					var tableName = labelOrType(table);
+
+					// Figure out virtual columns
+					if (isId) {
+						var pc = (PropertyContainer) resolveTableOrJoin(table);
+						return makeId(pc, tf.getName());
+					}
+					if (tableName.equalsIgnoreCase(prefix)) {
+						var pc = (PropertyContainer) resolveTableOrJoin(table);
+						return makeId(pc, tf.getName());
+					}
+
 					try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
 						while (columns.next()) {
 							var columnName = columns.getString("COLUMN_NAME");
@@ -727,22 +774,31 @@ final class SqlToCypher implements Translator {
 				}
 			}
 			else if (f instanceof TableField<?, ?> tf) {
-				if (tf.getTable() != null) {
-					var pe = resolveTableOrJoin(tf.getTable());
-					if (pe instanceof Node node) {
-						return node.property(tf.getName());
+				if (tf.getTable() == null) {
+					var tableField = findTableFieldInTables(tf, turnUnknownIntoNames);
+					if (tableField == null) {
+						throw unsupported(tf);
 					}
-					else if (pe instanceof Relationship rel) {
-						return rel.property(tf.getName());
-					}
+					return tableField;
 				}
 
-				var tableField = findTableFieldInTables(tf, turnUnknownIntoNames);
-				if (tableField == null) {
-					throw unsupported(tf);
-				}
-				return tableField;
+				var pe = resolveTableOrJoin(tf.getTable());
+				if (pe instanceof PropertyContainer pc) {
+					var m = ELEMENT_ID_PATTERN.matcher(tf.getName());
+					if (m.matches()) {
+						var src = pc;
+						if (pc instanceof Relationship rel && !"element".equalsIgnoreCase(m.group("prefix"))) {
+							src = rel.getLeft().getLabels().get(0).getValue().equalsIgnoreCase(m.group("prefix"))
+									? rel.getLeft() : rel.getRight();
+						}
+						// Not using makeId here as we don't want this aliased in a
+						// condition
+						return makeId(src, tf.getName());
+					}
 
+					return pc.property(tf.getName());
+				}
+				throw unsupported(tf);
 			}
 			else if (f instanceof QOM.Add<?> e) {
 				return expression(e.$arg1()).add(expression(e.$arg2()));
@@ -1024,121 +1080,128 @@ final class SqlToCypher implements Translator {
 		}
 
 		private <T> Condition condition(org.jooq.Condition c) {
-			if (c instanceof QOM.And a) {
-				return condition(a.$arg1()).and(condition(a.$arg2()));
-			}
-			else if (c instanceof QOM.Or o) {
-				return condition(o.$arg1()).or(condition(o.$arg2()));
-			}
-			else if (c instanceof QOM.Xor o) {
-				return condition(o.$arg1()).xor(condition(o.$arg2()));
-			}
-			else if (c instanceof QOM.Not o) {
-				return condition(o.$arg1()).not();
-			}
-			else if (c instanceof QOM.Eq<?> e) {
-				return expression(e.$arg1()).eq(expression(e.$arg2()));
-			}
-			else if (c instanceof QOM.Gt<?> e) {
-				return expression(e.$arg1()).gt(expression(e.$arg2()));
-			}
-			else if (c instanceof QOM.Ge<?> e) {
-				return expression(e.$arg1()).gte(expression(e.$arg2()));
-			}
-			else if (c instanceof QOM.Lt<?> e) {
-				return expression(e.$arg1()).lt(expression(e.$arg2()));
-			}
-			else if (c instanceof QOM.Le<?> e) {
-				return expression(e.$arg1()).lte(expression(e.$arg2()));
-			}
-			else if (c instanceof QOM.Between<?> e) {
-				if (e.$symmetric()) {
-					@SuppressWarnings("unchecked")
-					QOM.Between<T> t = (QOM.Between<T>) e;
-					return condition(t.$symmetric(false))
-						.or(condition(t.$symmetric(false).$arg2(t.$arg3()).$arg3(t.$arg2())));
+			try {
+				this.useAliasForVColumn.set(false);
+				if (c instanceof QOM.And a) {
+					return condition(a.$arg1()).and(condition(a.$arg2()));
+				}
+				else if (c instanceof QOM.Or o) {
+					return condition(o.$arg1()).or(condition(o.$arg2()));
+				}
+				else if (c instanceof QOM.Xor o) {
+					return condition(o.$arg1()).xor(condition(o.$arg2()));
+				}
+				else if (c instanceof QOM.Not o) {
+					return condition(o.$arg1()).not();
+				}
+				else if (c instanceof QOM.Eq<?> e) {
+					return expression(e.$arg1()).eq(expression(e.$arg2()));
+				}
+				else if (c instanceof QOM.Gt<?> e) {
+					return expression(e.$arg1()).gt(expression(e.$arg2()));
+				}
+				else if (c instanceof QOM.Ge<?> e) {
+					return expression(e.$arg1()).gte(expression(e.$arg2()));
+				}
+				else if (c instanceof QOM.Lt<?> e) {
+					return expression(e.$arg1()).lt(expression(e.$arg2()));
+				}
+				else if (c instanceof QOM.Le<?> e) {
+					return expression(e.$arg1()).lte(expression(e.$arg2()));
+				}
+				else if (c instanceof QOM.Between<?> e) {
+					if (e.$symmetric()) {
+						@SuppressWarnings("unchecked")
+						QOM.Between<T> t = (QOM.Between<T>) e;
+						return condition(t.$symmetric(false))
+							.or(condition(t.$symmetric(false).$arg2(t.$arg3()).$arg3(t.$arg2())));
+					}
+					else {
+						return expression(e.$arg2()).lte(expression(e.$arg1()))
+							.and(expression(e.$arg1()).lte(expression(e.$arg3())));
+					}
+				}
+				else if (c instanceof QOM.Ne<?> e) {
+					return expression(e.$arg1()).ne(expression(e.$arg2()));
+				}
+				else if (c instanceof QOM.IsNull e) {
+					return expression(e.$arg1()).isNull();
+				}
+				else if (c instanceof QOM.IsNotNull e) {
+					return expression(e.$arg1()).isNotNull();
+				}
+				else if (c instanceof QOM.RowEq<?> e) {
+					Condition result = null;
+
+					for (int i = 0; i < e.$arg1().size(); i++) {
+						Condition r = expression(e.$arg1().field(i)).eq(expression(e.$arg2().field(i)));
+						result = (result != null) ? result.and(r) : r;
+					}
+
+					return result;
+				}
+				else if (c instanceof QOM.RowNe<?> e) {
+					Condition result = null;
+
+					for (int i = 0; i < e.$arg1().size(); i++) {
+						Condition r = expression(e.$arg1().field(i)).ne(expression(e.$arg2().field(i)));
+						result = (result != null) ? result.and(r) : r;
+					}
+
+					return result;
+				}
+				else if (c instanceof QOM.RowGt<?> e) {
+					return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gt);
+				}
+				else if (c instanceof QOM.RowGe<?> e) {
+					return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gte);
+				}
+				else if (c instanceof QOM.RowLt<?> e) {
+					return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lt);
+				}
+				else if (c instanceof QOM.RowLe<?> e) {
+					return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lte);
+				}
+				else if (c instanceof QOM.RowIsNull e) {
+					return e.$arg1()
+						.$fields()
+						.stream()
+						.map(f -> expression(f).isNull())
+						.reduce(Condition::and)
+						.orElseThrow();
+				}
+				else if (c instanceof QOM.RowIsNotNull e) {
+					return e.$arg1()
+						.$fields()
+						.stream()
+						.map(f -> expression(f).isNotNull())
+						.reduce(Condition::and)
+						.orElseThrow();
+				}
+				else if (c instanceof QOM.Like like) {
+					Expression rhs;
+					if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
+						rhs = Cypher.literalOf(s.replace("%", ".*"));
+					}
+					else {
+						rhs = expression(like.$arg2());
+					}
+					return expression(like.$arg1()).matches(rhs);
+				}
+				else if (c instanceof QOM.FieldCondition fc && fc.$field() instanceof Param<Boolean> param) {
+					return (Boolean.TRUE.equals(param.getValue()) ? Cypher.literalTrue() : Cypher.literalFalse())
+						.asCondition();
+				}
+				else if (c instanceof QOM.InList<?> il) {
+					return expression(il.$field())
+						.in(Cypher.listOf(il.$list().stream().map(this::expression).toList()));
 				}
 				else {
-					return expression(e.$arg2()).lte(expression(e.$arg1()))
-						.and(expression(e.$arg1()).lte(expression(e.$arg3())));
+					throw unsupported(c);
 				}
 			}
-			else if (c instanceof QOM.Ne<?> e) {
-				return expression(e.$arg1()).ne(expression(e.$arg2()));
-			}
-			else if (c instanceof QOM.IsNull e) {
-				return expression(e.$arg1()).isNull();
-			}
-			else if (c instanceof QOM.IsNotNull e) {
-				return expression(e.$arg1()).isNotNull();
-			}
-			else if (c instanceof QOM.RowEq<?> e) {
-				Condition result = null;
-
-				for (int i = 0; i < e.$arg1().size(); i++) {
-					Condition r = expression(e.$arg1().field(i)).eq(expression(e.$arg2().field(i)));
-					result = (result != null) ? result.and(r) : r;
-				}
-
-				return result;
-			}
-			else if (c instanceof QOM.RowNe<?> e) {
-				Condition result = null;
-
-				for (int i = 0; i < e.$arg1().size(); i++) {
-					Condition r = expression(e.$arg1().field(i)).ne(expression(e.$arg2().field(i)));
-					result = (result != null) ? result.and(r) : r;
-				}
-
-				return result;
-			}
-			else if (c instanceof QOM.RowGt<?> e) {
-				return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gt);
-			}
-			else if (c instanceof QOM.RowGe<?> e) {
-				return rowCondition(e.$arg1(), e.$arg2(), Expression::gt, Expression::gte);
-			}
-			else if (c instanceof QOM.RowLt<?> e) {
-				return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lt);
-			}
-			else if (c instanceof QOM.RowLe<?> e) {
-				return rowCondition(e.$arg1(), e.$arg2(), Expression::lt, Expression::lte);
-			}
-			else if (c instanceof QOM.RowIsNull e) {
-				return e.$arg1()
-					.$fields()
-					.stream()
-					.map(f -> expression(f).isNull())
-					.reduce(Condition::and)
-					.orElseThrow();
-			}
-			else if (c instanceof QOM.RowIsNotNull e) {
-				return e.$arg1()
-					.$fields()
-					.stream()
-					.map(f -> expression(f).isNotNull())
-					.reduce(Condition::and)
-					.orElseThrow();
-			}
-			else if (c instanceof QOM.Like like) {
-				Expression rhs;
-				if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
-					rhs = Cypher.literalOf(s.replace("%", ".*"));
-				}
-				else {
-					rhs = expression(like.$arg2());
-				}
-				return expression(like.$arg1()).matches(rhs);
-			}
-			else if (c instanceof QOM.FieldCondition fc && fc.$field() instanceof Param<Boolean> param) {
-				return (Boolean.TRUE.equals(param.getValue()) ? Cypher.literalTrue() : Cypher.literalFalse())
-					.asCondition();
-			}
-			else if (c instanceof QOM.InList<?> il) {
-				return expression(il.$field()).in(Cypher.listOf(il.$list().stream().map(this::expression).toList()));
-			}
-			else {
-				throw unsupported(c);
+			finally {
+				this.useAliasForVColumn.set(true);
 			}
 		}
 
@@ -1157,6 +1220,11 @@ final class SqlToCypher implements Translator {
 		}
 
 		private PatternElement resolveTableOrJoin(Table<?> t) {
+			var relationship = this.resolvedRelationships.get(Cypher.name(t.getName()));
+			if (relationship != null) {
+				return relationship;
+			}
+
 			if (t instanceof QOM.JoinTable<?, ? extends Table<?>> joinTable) {
 				return resolveJoin(joinTable);
 			}
@@ -1204,10 +1272,9 @@ final class SqlToCypher implements Translator {
 		}
 
 		private RelationshipPattern resolveJoin(QOM.JoinTable<?, ? extends Table<?>> joinTable) {
-			QOM.Join<?> join = (joinTable instanceof QOM.Join<?> $join) ? $join : null;
-			QOM.Eq<?> eq = (join != null && join.$on() instanceof QOM.Eq<?> $eq) ? $eq : null;
+			var join = JoinDetails.of(joinTable);
 
-			String relType;
+			String relType = null;
 			SymbolicName relSymbolicName = null;
 
 			PatternElement lhs;
@@ -1215,21 +1282,29 @@ final class SqlToCypher implements Translator {
 			Table<?> t1 = joinTable.$table1();
 			if (t1 instanceof QOM.JoinTable<?, ? extends Table<?>> lhsJoin) {
 				lhs = resolveTableOrJoin(lhsJoin.$table1());
-				relType = labelOrType(lhsJoin.$table2());
-				if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
-					relSymbolicName = symbolicName(tableAlias.getName());
+				var eqJoin2 = JoinDetails.of(lhsJoin);
+				var relationship = tryToIntegrateNodeAndVirtualTable(lhs, resolveTableOrJoin(lhsJoin.$table2()),
+						eqJoin2.eq);
+				if (relationship != null) {
+					lhs = relationship;
+				}
+				else {
+					relType = labelOrType(lhsJoin.$table2());
+					if (lhsJoin.$table2() instanceof TableAlias<?> tableAlias) {
+						relSymbolicName = symbolicName(tableAlias.getName());
+					}
 				}
 			}
-			else if (eq != null) {
+			else if (join.eq != null) {
 				lhs = resolveTableOrJoin(t1);
-				relType = type(t1, eq.$arg2());
+				relType = type(t1, join.eq.$arg2());
 			}
-			else if (join != null && join.$using().isEmpty()) {
+			else if (join.join != null && join.join.$using().isEmpty()) {
 				throw unsupported(joinTable);
 			}
 			else {
 				lhs = resolveTableOrJoin(t1);
-				relType = (join != null) ? type(t1, join.$using().get(0)) : null;
+				relType = (join.join != null) ? type(t1, join.join.$using().get(0)) : null;
 			}
 
 			if (relSymbolicName == null && relType != null) {
@@ -1239,14 +1314,18 @@ final class SqlToCypher implements Translator {
 			PatternElement rhs = resolveTableOrJoin(joinTable.$table2());
 
 			if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
+				var relationship = tryToIntegrateNodeAndVirtualTable(lhs, rhs, join.eq);
+				if (relationship != null) {
+					return relationship;
+				}
 
 				var direction = Relationship.Direction.LTR;
-				if (eq != null && joinTable.$table2() instanceof TableAlias<?> ta && !ta.$alias().empty()
-						&& Objects.equals(ta.$alias().last(), eq.$arg2().getQualifiedName().first())) {
+				if (join.eq != null && joinTable.$table2() instanceof TableAlias<?> ta && !ta.$alias().empty()
+						&& Objects.equals(ta.$alias().last(), join.eq.$arg2().getQualifiedName().first())) {
 					direction = Relationship.Direction.RTL;
 				}
 
-				var relationship = from.relationshipWith(to, direction, relType);
+				relationship = from.relationshipWith(to, direction, relType);
 				if (relSymbolicName != null) {
 					if (relationship instanceof Relationship r) {
 						relationship = r.named(relSymbolicName);
@@ -1254,18 +1333,13 @@ final class SqlToCypher implements Translator {
 					else if (relationship instanceof RelationshipChain r) {
 						relationship = r.named(relSymbolicName);
 					}
+					this.resolvedRelationships.put(relSymbolicName, relationship);
 				}
 				return relationship;
 			}
-			else if (lhs instanceof Node node && rhs instanceof Relationship rel && eq != null) {
-				if (("element_id".equalsIgnoreCase(eq.$arg1().$name().last())
-						&& anyLabelMatches(rel, eq.$arg2().$name().last()))
-						|| ("element_id".equalsIgnoreCase(eq.$arg2().$name().last())
-								&& anyLabelMatches(rel, eq.$arg1().$name().last()))) {
-					var relationship = node
-						.relationshipTo(rel.getRight(), rel.getDetails().getTypes().toArray(String[]::new))
-						.named(rel.getRequiredSymbolicName());
-					this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
+			else {
+				var relationship = tryToIntegrateNodeAndVirtualTable(lhs, rhs, join.eq);
+				if (relationship != null) {
 					return relationship;
 				}
 			}
@@ -1273,15 +1347,64 @@ final class SqlToCypher implements Translator {
 			throw unsupported(joinTable);
 		}
 
-		private static boolean anyLabelMatches(Relationship rel, String needle) {
+		private RelationshipPattern tryToIntegrateNodeAndVirtualTable(PatternElement lhs, PatternElement rhs,
+				QOM.Eq<?> eq) {
+
+			Node node = (lhs instanceof Node hlp) ? hlp : (rhs instanceof Node hlp) ? hlp : null;
+			Relationship rel = (lhs instanceof Relationship hlp) ? hlp : (rhs instanceof Relationship hlp) ? hlp : null;
+
+			if (eq == null || node == null || rel == null) {
+				return null;
+			}
+
+			if ((isElementId(eq.$arg1()) && anyLabelMatches(rel.getLeft(), eq.$arg2().$name().last()))
+					|| (isElementId(eq.$arg2()) && anyLabelMatches(rel.getLeft(), eq.$arg1().$name().last()))) {
+				var relationship = node
+					.relationshipTo(rel.getRight(), rel.getDetails().getTypes().toArray(String[]::new))
+					.named(rel.getRequiredSymbolicName());
+				this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
+				return relationship;
+			}
+			else if ((isElementId(eq.$arg1()) && anyLabelMatches(rel.getRight(), eq.$arg2().$name().last()))
+					|| (isElementId(eq.$arg2()) && anyLabelMatches(rel.getRight(), eq.$arg1().$name().last()))) {
+				var relationship = rel.getLeft()
+					.relationshipTo(node, rel.getDetails().getTypes().toArray(String[]::new))
+					.named(rel.getRequiredSymbolicName());
+				this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
+				return relationship;
+			}
+
+			return null;
+		}
+
+		static boolean isElementId(Field<?> field) {
+			var matcher = ELEMENT_ID_PATTERN.matcher(Objects.requireNonNull(field.$name().last()));
+			if (!matcher.matches()) {
+				return false;
+			}
+			var prefix = matcher.group("prefix");
+			return prefix == null || prefix.isBlank() || "element".equalsIgnoreCase(prefix);
+		}
+
+		static String isFkId(Field<?> field) {
+			var matcher = ELEMENT_ID_PATTERN.matcher(Objects.requireNonNull(field.$name().last()));
+			if (!matcher.matches()) {
+				return null;
+			}
+			var prefix = matcher.group("prefix");
+			return (prefix != null && !prefix.isBlank()) ? prefix : null;
+		}
+
+		private static boolean anyLabelMatches(Node node, String needle) {
 			if (needle == null) {
 				return false;
 			}
 
-			return Stream.concat(rel.getLeft().getLabels().stream(), rel.getRight().getLabels().stream())
+			return node.getLabels()
+				.stream()
 				.map(NodeLabel::getValue)
-				.map("%s_id"::formatted)
-				.anyMatch(needle::equals);
+				.map("v$%s_id"::formatted)
+				.anyMatch(needle::equalsIgnoreCase);
 		}
 
 		private String labelOrType(Table<?> tableOrAlias) {

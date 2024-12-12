@@ -50,7 +50,7 @@ public class SmokeIT {
 		var connection = DriverManager.getConnection(url);
 		assertThat(connection).isNotNull();
 		assertThat(connection.nativeSQL("SELECT * FROM FooBar"))
-			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS element_id");
+			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS `v$id`");
 	}
 
 	static boolean boltPortIsReachable() {

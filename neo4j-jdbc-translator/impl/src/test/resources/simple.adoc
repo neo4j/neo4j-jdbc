@@ -146,7 +146,7 @@ you will get this Cypher statement
 [source,cypher,id=star_6_expected]
 ----
 MATCH (p:Person)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name
 ----
 
@@ -160,8 +160,8 @@ SELECT * FROM Person p JOIN Movie m ON m.id = p.acted_in
 [source,cypher,id=star_7_expected]
 ----
 MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS element_id, p.born AS born, p.name AS name,
-       elementId(m) AS element_id1, m.title AS title, m.released AS released
+RETURN elementId(p) AS `v$id`, p.born AS born, p.name AS name,
+       elementId(m) AS `v$id1`, m.title AS title, m.released AS released
 ----
 
 We append increasing numbers to column names to clashing ones (ex. with `name` and `remark` properties both in `Movie` and `Person`):
@@ -176,9 +176,9 @@ Note the increasing numbers per duplicate name:
 [source,cypher,id=star_8_expected]
 ----
 MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name, p.remark AS remark,
-       elementId(m) AS element_id1,
+       elementId(m) AS `v$id1`,
        m.name AS name1, m.released AS released, m.remark AS remark1
 ----
 
@@ -197,10 +197,12 @@ JOIN movies m ON m.id = r.person_id
 [source,cypher,id=star_9_expected]
 ----
 MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name,
-       elementId(r) AS element_id1, r.role AS role,
-       elementId(m) AS element_id2,
+       elementId(p) AS `v$person_id`,
+       elementId(r) AS `v$id1`, r.role AS role,
+       elementId(m) AS `v$movie_id`,
+       elementId(m) AS `v$id2`,
        m.title AS title, m.released AS released
 ----
 
@@ -215,7 +217,7 @@ SELECT * FROM Person p ORDER BY name ASC
 [source,cypher,id=star_6b_expected]
 ----
 MATCH (p:Person)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name
 ORDER BY p.name
 ----
@@ -254,7 +256,7 @@ JOIN Movie m ON m.id = p.acted_in
 [source,cypher,id=star_4a_expected]
 ----
 MATCH (p:Person)-[acted_in:ACTED_IN]->(m:Movie)
-RETURN elementId(p) AS element_id, p.born AS born, p.name AS name, m.title AS title
+RETURN elementId(p) AS `v$id`, p.born AS born, p.name AS name, m.title AS title
 ----
 
 === Returning nodes and relationships
@@ -434,7 +436,7 @@ SELECT DISTINCT m.* FROM Movies m
 [source,cypher,id=t3_3_expected,parseCypher=false]
 ----
 MATCH (m:Movies)
-RETURN DISTINCT elementId(m) AS element_id, m.title AS title, m.released AS released
+RETURN DISTINCT elementId(m) AS `v$id`, m.title AS title, m.released AS released
 ----
 
 Note that each row includes the Neo4j element ID, making each row unique.

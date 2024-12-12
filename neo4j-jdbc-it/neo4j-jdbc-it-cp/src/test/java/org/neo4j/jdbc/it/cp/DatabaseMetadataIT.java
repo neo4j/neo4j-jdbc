@@ -866,7 +866,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			columnNames.add(columns.getString("COLUMN_NAME"));
 		}
 
-		assertThat(columnNames).containsOnly("element_id", "one", "two", "three", "four");
+		assertThat(columnNames).containsOnly("v$id", "one", "two", "three", "four");
 	}
 
 	@Test
@@ -886,7 +886,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			columnNames.add(columns.getString("COLUMN_NAME"));
 		}
 
-		assertThat(columnNames).containsExactlyInAnyOrder("element_id", "one", "two");
+		assertThat(columnNames).containsExactlyInAnyOrder("v$id", "one", "two");
 	}
 
 	@Test

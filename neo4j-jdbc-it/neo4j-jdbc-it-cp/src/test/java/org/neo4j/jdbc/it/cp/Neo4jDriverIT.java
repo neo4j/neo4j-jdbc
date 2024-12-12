@@ -82,7 +82,7 @@ public class Neo4jDriverIT {
 		assertThat(connection).isNotNull();
 		assertThat(validateConnection(connection)).isTrue();
 		assertThat(connection.nativeSQL("SELECT * FROM FooBar"))
-			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS element_id");
+			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS `v$id`");
 
 		try (var stmt = connection.createStatement();
 				var rs = stmt.executeQuery(connection.nativeSQL("SELECT count(*) FROM Whatever"))) {
@@ -106,7 +106,7 @@ public class Neo4jDriverIT {
 		assertThat(connection).isNotNull();
 		assertThat(validateConnection(connection)).isTrue();
 		assertThat(connection.nativeSQL("SELECT * FROM genres"))
-			.isEqualTo("MATCH (genres:Genre) RETURN elementId(genres) AS element_id");
+			.isEqualTo("MATCH (genres:Genre) RETURN elementId(genres) AS `v$id`");
 
 		var driver = new Neo4jDriver();
 		var propertyInfo = driver.getPropertyInfo(url, new Properties());
@@ -126,7 +126,7 @@ public class Neo4jDriverIT {
 		assertThat(connection).isNotNull();
 		assertThat(validateConnection(connection)).isTrue();
 		assertThat(connection.nativeSQL("SELECT * FROM genres"))
-			.isEqualTo("MATCH (genres:Genre) RETURN elementId(genres) AS element_id");
+			.isEqualTo("MATCH (genres:Genre) RETURN elementId(genres) AS `v$id`");
 
 		var driver = new Neo4jDriver();
 		var propertyInfo = driver.getPropertyInfo(url, properties);
