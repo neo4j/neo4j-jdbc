@@ -979,6 +979,9 @@ final class SqlToCypher implements Translator {
 					.withArgs(expression(p.$in()), expression(p.$arg2()))
 					.asFunction();
 			}
+			else if (f instanceof QOM.ArrayGet<?> g && g.$arg1() instanceof TableField<?, ?> tf) {
+				return Cypher.valueAt(expression(tf), expression(g.$arg2()));
+			}
 			else {
 				throw unsupported(f);
 			}
