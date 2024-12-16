@@ -54,3 +54,10 @@ This driver therefore compute node types in a similar way:
 ** This is in line with the default SQL-to-Cypher translation
 * Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically to make them independent of the order Neo4j returns them
 * Property sets for these node type combinations will then be computed
+
+== Primary keys
+
+The driver uses available constraint information and will figure out if there is a single, unique constraint on a label.
+If that's the case, the constrained property will be assumed to be the primary key.
+This will also work for unique constraints over multiple properties, in SQL lingo composite primary keys.
+If there is no unique constraint or more than one, we assume the `v$id` virtual columns for the `elementId` value to be primary keys.

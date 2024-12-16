@@ -1104,18 +1104,76 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schema);
 
 		var keys = new ArrayList<String>();
-		keys.add("TABLE_SCHEM");
 		keys.add("TABLE_CATALOG");
+		keys.add("TABLE_SCHEM");
 		keys.add("TABLE_NAME");
 		keys.add("COLUMN_NAME");
 		keys.add("KEY_SEQ");
 		keys.add("PK_NAME");
+		List<Value[]> resultRows = List.of();
 
-		var emptyPullResponse = createEmptyPullResponse();
+		if (table != null) {
+			var finalTable = table;
+			boolean relationshipChecked = false;
+			// Check if it is a virtual table and extract the relationship name
+			if (table.matches(".+?_.+?_.+?")) {
+				var relationships = getTables(catalog, schema, table, new String[] { "RELATIONSHIP" });
+				if (relationships.next()) {
+					relationshipChecked = true;
+					finalTable = relationships.getString("REMARKS").split("\n")[1].trim();
+				}
+				relationships.close();
+			}
+
+			var request = getRequest("getPrimaryKeys", "name", finalTable);
+			var pullResponse = doQueryForPullResponse(request);
+			var records = pullResponse.records();
+
+			var uniqueConstraints = new ArrayList<UniqueConstraint>();
+			for (var record : records) {
+				uniqueConstraints.add(new UniqueConstraint(record.get("name").asString(),
+						record.get("labelsOrTypes").asList(Value::asString),
+						record.get("properties").asList(Value::asString)));
+			}
+
+			// Exactly one unique constraint is fine
+			if (uniqueConstraints.size() == 1) {
+				resultRows = makeUniqueKeyValues(getSingleCatalog(), "public", table, uniqueConstraints);
+			}
+			// Otherwise we go with element ids if the "table" exists
+			else {
+				var exists = relationshipChecked;
+				if (!exists) {
+					var tables = getTables(catalog, schema, table, new String[] { "TABLE" });
+					exists = tables.next();
+					tables.close();
+				}
+
+				resultRows = exists
+						? makeUniqueKeyValues(getSingleCatalog(), "public", table,
+								List.of(new UniqueConstraint(table + "_elementId", List.of(table), List.of("v$id"))))
+						: List.of();
+
+			}
+		}
+
+		var pull = staticPullResponseFor(keys, resultRows);
 		var runResponse = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse, pull, -1, -1,
+				-1);
+	}
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
-				emptyPullResponse, -1, -1, -1);
+	private List<Value[]> makeUniqueKeyValues(String catalog, String schema, String table,
+			List<UniqueConstraint> uniqueConstraints) {
+		List<Value[]> results = new ArrayList<>();
+		for (var uniqueConstraint : uniqueConstraints) {
+			for (var i = 0; i < uniqueConstraint.properties.size(); i++) {
+				results.add(new Value[] { Values.value(catalog), Values.value(schema), Values.value(table),
+						Values.value(uniqueConstraint.properties.get(i)), Values.value(i + 1),
+						Values.value(uniqueConstraint.name) });
+			}
+		}
+		return results;
 	}
 
 	@Override
@@ -1560,6 +1618,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private record QueryAndRunResponse(PullResponse pullResponse, CompletableFuture<RunResponse> runFuture) {
+	}
+
+	private record UniqueConstraint(String name, List<String> labelsOrTypes, List<String> properties) {
 	}
 
 }

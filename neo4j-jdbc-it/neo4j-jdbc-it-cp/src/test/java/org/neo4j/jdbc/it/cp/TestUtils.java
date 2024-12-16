@@ -18,9 +18,13 @@
  */
 package org.neo4j.jdbc.it.cp;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -58,6 +62,23 @@ final class TestUtils {
 
 	static Connection getConnection(Neo4jContainer<?> neo4j) throws SQLException {
 		return getConnection(neo4j, false);
+	}
+
+	static void createMovieGraph(Connection connection) throws SQLException, IOException {
+		try (var stmt = connection.createStatement();
+				var reader = new BufferedReader(new InputStreamReader(
+						Objects.requireNonNull(TestUtils.class.getResourceAsStream("/movies.cypher"))))) {
+			var sb = new StringBuilder();
+			var buffer = new char[2048];
+			var l = 0;
+			while ((l = reader.read(buffer, 0, buffer.length)) > 0) {
+				sb.append(buffer, 0, l);
+			}
+			var statements = sb.toString().split(";");
+			for (String statement : statements) {
+				stmt.execute("/*+ NEO4J FORCE_CYPHER */ " + statement);
+			}
+		}
 	}
 
 	static Connection getConnection(Neo4jContainer<?> neo4j, boolean translate) throws SQLException {

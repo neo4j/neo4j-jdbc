@@ -114,14 +114,6 @@ class DatabaseMetadataImplTests {
 	}
 
 	@Test
-	void getPrimaryKeysShouldReturnEmptyResultSet() throws SQLException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var tableTypes = databaseMetadata.getPrimaryKeys(null, "public", "someTableDoesNotMatter")) {
-			assertThat(tableTypes.next()).isFalse();
-		}
-	}
-
-	@Test
 	void getPrimaryKeysShouldErrorWhenNonPublicSchemaPassed() {
 		var databaseMetadata = newDatabaseMetadata();
 		assertThatExceptionOfType(SQLException.class)

@@ -18,14 +18,11 @@
  */
 package org.neo4j.jdbc.it.cp;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 
 import org.jooq.impl.ParserException;
@@ -197,20 +194,7 @@ class TranslationIT extends IntegrationTestBase {
 	void joins() throws IOException, SQLException {
 
 		try (var connection = getConnection(true, false)) {
-			try (var stmt = connection.createStatement();
-					var reader = new BufferedReader(new InputStreamReader(
-							Objects.requireNonNull(TranslationIT.class.getResourceAsStream("/movies.cypher"))))) {
-				var sb = new StringBuilder();
-				var buffer = new char[2048];
-				var l = 0;
-				while ((l = reader.read(buffer, 0, buffer.length)) > 0) {
-					sb.append(buffer, 0, l);
-				}
-				var statements = sb.toString().split(";");
-				for (String statement : statements) {
-					stmt.execute("/*+ NEO4J FORCE_CYPHER */ " + statement);
-				}
-			}
+			TestUtils.createMovieGraph(connection);
 
 			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
 					SELECT name AS name, title AS title FROM Person p JOIN Movie m on (m = p.ACTED_IN)
