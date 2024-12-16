@@ -38,6 +38,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.neo4j.jdbc.Neo4jConnection;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,7 +113,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			while (results.next()) {
 				resultCount++;
 				assertThat(results.getString(3)).isNotNull();
-				assertThat(results.getString(1)).isNull(); // Catalog
+				assertThat(results.getString(1)).isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 				assertThat(results.getString(2)).isEqualTo("public"); // Schema
 				assertThat(results.getInt("PROCEDURE_TYPE")).isEqualTo(DatabaseMetaData.procedureResultUnknown);
 			}
@@ -127,7 +128,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			while (results.next()) {
 				resultCount++;
 				assertThat(results.getString(3)).isNotNull();
-				assertThat(results.getString(1)).isNull(); // Catalog
+				assertThat(results.getString(1)).isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 				assertThat(results.getString(2)).isEqualTo("public"); // Schema
 				assertThat(results.getInt("FUNCTION_TYPE")).isEqualTo(DatabaseMetaData.functionResultUnknown);
 			}
@@ -197,7 +198,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	@Test
 	void getAllCatalogsShouldReturnAnEmptyResultSet() throws SQLException {
 		var catalogRs = this.connection.getMetaData().getCatalogs();
-		assertThat(catalogRs.next()).isFalse();
+		assertThat(catalogRs.next()).isTrue();
+		assertThat(catalogRs.getString("TABLE_CAT")).isEqualTo("neo4j");
 	}
 
 	@Test
@@ -948,7 +950,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
 			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
 			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
-			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_CAT"))
+				.isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
 			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
 			assertThat(resultSet.getObject("CARDINALITY")).isNull();
@@ -980,7 +983,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
 			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
 			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
-			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_CAT"))
+				.isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
 			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
 			assertThat(resultSet.getObject("CARDINALITY")).isNull();
@@ -1083,7 +1087,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
 			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
 			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
-			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_CAT"))
+				.isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
 			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
 			assertThat(resultSet.getObject("CARDINALITY")).isNull();
@@ -1096,6 +1101,11 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				statement.execute("DROP INDEX " + indexName + " IF EXISTS");
 			}
 		}
+	}
+
+	@Test
+	void catalogEqualsToDatabaseNameIsOk() {
+		assertThatNoException().isThrownBy(() -> this.connection.getMetaData().getTables("neo4j", null, null, null));
 	}
 
 	record IndexInfo(String tableName, boolean nonUnique, String indexName, int type, int ordinalPosition,

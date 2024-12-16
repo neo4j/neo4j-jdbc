@@ -317,13 +317,16 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public void setCatalog(String catalog) throws SQLException {
 		assertIsOpen();
-		// cannot have catalog.
+		var databaseName = this.getDatabaseName();
+		if (databaseName == null || !databaseName.equalsIgnoreCase(catalog)) {
+			throw new SQLException("Changing the catalog is not implemented");
+		}
 	}
 
 	@Override
 	public String getCatalog() throws SQLException {
 		assertIsOpen();
-		return null;
+		return this.getDatabaseName();
 	}
 
 	@Override
