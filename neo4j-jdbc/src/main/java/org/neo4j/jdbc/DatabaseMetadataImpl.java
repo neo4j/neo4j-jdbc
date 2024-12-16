@@ -53,6 +53,19 @@ import org.neo4j.jdbc.values.Values;
 
 /**
  * Internal implementation for providing Neo4j specific database metadata.
+ * <p>
+ * PostgreSQL and SQL Standard way of defining Catalogs and Schema:
+ *
+ * <ul>
+ * <li>A computer may have one cluster or multiple.</li>
+ * <li>A database server is a cluster.</li>
+ * <li>A cluster has catalogs. ( Catalog = Database )</li>
+ * <li>Catalogs have schemas. (Schema = namespace of tables, and security boundary)</li>
+ * <li>Schemas have tables</li>
+ * <li>Tables have rows</li>
+ * <li>Rows have values, defined by columns</li>
+ * </ul>
+ * From this excellent <a href="https://stackoverflow.com/a/17943883/1547989">answer</a>.
  *
  * @author Michael J. Simons
  * @author Conor Watson
@@ -785,7 +798,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 
 		var request = getRequest("getProcedures", "name", procedureNamePattern, "procedureType",
-				DatabaseMetaData.procedureResultUnknown);
+				DatabaseMetaData.procedureResultUnknown, "catalogAsParameterWorkaround", getSingleCatalog());
 		return doQueryForResultSet(request);
 	}
 
@@ -800,7 +813,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var request = getRequest("getProcedureColumns", "results", intermediateResults, "columnNamePattern",
 				columnNamePattern, "columnType", DatabaseMetaData.procedureColumnIn, "nullable",
-				DatabaseMetaData.procedureNullableUnknown);
+				DatabaseMetaData.procedureNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog());
 		return doQueryForResultSet(request);
 	}
 
@@ -817,33 +830,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return doQueryForResultSet(request);
 	}
 
-	@Override
-	public ResultSet getSchemas() {
-		var keys = new ArrayList<String>();
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_CATALOG");
-
-		var response = createRunResponseForStaticKeys(keys);
-		var staticPulLResponse = staticPullResponseFor(keys,
-				Collections.singletonList(new Value[] { Values.value("public"), Values.value("") }));
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, staticPulLResponse,
-				-1, -1, -1);
-	}
-
 	/***
 	 * Returns an empty Result set as there cannot be Catalogs in neo4j.
 	 * @return all catalogs
 	 */
 	@Override
-	public ResultSet getCatalogs() {
+	public ResultSet getCatalogs() throws SQLException {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_CAT");
 
-		var pull = createEmptyPullResponse();
-
 		var response = createRunResponseForStaticKeys(keys);
+		var pull = staticPullResponseFor(keys, List.<Value[]>of(new Value[] { Values.value(getSingleCatalog()) }));
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
-
 	}
 
 	@Override
@@ -852,7 +850,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add("TABLE_TYPE");
 
 		var response = createRunResponseForStaticKeys(keys);
-		var pull = staticPullResponseFor(keys, Collections.singletonList(new Value[] { Values.value("TABLE") }));
+		var pull = staticPullResponseFor(keys,
+				List.of(new Value[] { Values.value("TABLE") }, new Value[] { Values.value("RELATIONSHIP") }));
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 	}
 
@@ -972,10 +971,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				staticPullResponse, -1, -1, -1);
 	}
 
-	private static ArrayList<Value> addColumn(Value nodeLabel, Value propertyName, Value propertyType, int NULLABLE,
-			String IS_NULLABLE, Integer ordinalPosition, boolean generated) {
+	private ArrayList<Value> addColumn(Value nodeLabel, Value propertyName, Value propertyType, int NULLABLE,
+			String IS_NULLABLE, Integer ordinalPosition, boolean generated) throws SQLException {
 		var values = new ArrayList<Value>();
-		values.add(Values.NULL); // TABLE_CAT
+		values.add(Values.value(getSingleCatalog())); // TABLE_CAT
 		values.add(Values.value("public")); // TABLE_SCHEM is always public
 		values.add(nodeLabel); // TABLE_NAME
 		values.add(propertyName); // COLUMN_NAME
@@ -1105,18 +1104,76 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schema);
 
 		var keys = new ArrayList<String>();
-		keys.add("TABLE_SCHEM");
 		keys.add("TABLE_CATALOG");
+		keys.add("TABLE_SCHEM");
 		keys.add("TABLE_NAME");
 		keys.add("COLUMN_NAME");
 		keys.add("KEY_SEQ");
 		keys.add("PK_NAME");
+		List<Value[]> resultRows = List.of();
 
-		var emptyPullResponse = createEmptyPullResponse();
+		if (table != null) {
+			var finalTable = table;
+			boolean relationshipChecked = false;
+			// Check if it is a virtual table and extract the relationship name
+			if (table.matches(".+?_.+?_.+?")) {
+				var relationships = getTables(catalog, schema, table, new String[] { "RELATIONSHIP" });
+				if (relationships.next()) {
+					relationshipChecked = true;
+					finalTable = relationships.getString("REMARKS").split("\n")[1].trim();
+				}
+				relationships.close();
+			}
+
+			var request = getRequest("getPrimaryKeys", "name", finalTable);
+			var pullResponse = doQueryForPullResponse(request);
+			var records = pullResponse.records();
+
+			var uniqueConstraints = new ArrayList<UniqueConstraint>();
+			for (var record : records) {
+				uniqueConstraints.add(new UniqueConstraint(record.get("name").asString(),
+						record.get("labelsOrTypes").asList(Value::asString),
+						record.get("properties").asList(Value::asString)));
+			}
+
+			// Exactly one unique constraint is fine
+			if (uniqueConstraints.size() == 1) {
+				resultRows = makeUniqueKeyValues(getSingleCatalog(), "public", table, uniqueConstraints);
+			}
+			// Otherwise we go with element ids if the "table" exists
+			else {
+				var exists = relationshipChecked;
+				if (!exists) {
+					var tables = getTables(catalog, schema, table, new String[] { "TABLE" });
+					exists = tables.next();
+					tables.close();
+				}
+
+				resultRows = exists
+						? makeUniqueKeyValues(getSingleCatalog(), "public", table,
+								List.of(new UniqueConstraint(table + "_elementId", List.of(table), List.of("v$id"))))
+						: List.of();
+
+			}
+		}
+
+		var pull = staticPullResponseFor(keys, resultRows);
 		var runResponse = createRunResponseForStaticKeys(keys);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse, pull, -1, -1,
+				-1);
+	}
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
-				emptyPullResponse, -1, -1, -1);
+	private List<Value[]> makeUniqueKeyValues(String catalog, String schema, String table,
+			List<UniqueConstraint> uniqueConstraints) {
+		List<Value[]> results = new ArrayList<>();
+		for (var uniqueConstraint : uniqueConstraints) {
+			for (var i = 0; i < uniqueConstraint.properties.size(); i++) {
+				results.add(new Value[] { Values.value(catalog), Values.value(schema), Values.value(table),
+						Values.value(uniqueConstraint.properties.get(i)), Values.value(i + 1),
+						Values.value(uniqueConstraint.name) });
+			}
+		}
+		return results;
 	}
 
 	@Override
@@ -1357,11 +1414,24 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+	public ResultSet getSchemas() throws SQLException {
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_CATALOG");
 
+		var response = createRunResponseForStaticKeys(keys);
+		var staticPulLResponse = staticPullResponseFor(keys,
+				Collections.singletonList(new Value[] { Values.value("public"), Values.value(getSingleCatalog()) }));
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, staticPulLResponse,
+				-1, -1, -1);
+	}
+
+	@Override
+	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
 		assertCatalogIsNullOrEmpty(catalog);
 
-		if (schemaPattern.equals("public")) {
+		var thePattern = Objects.requireNonNullElse(schemaPattern, "public").trim().replace("%", ".*");
+		if (thePattern.isEmpty() || "public".matches("(?i)" + thePattern)) {
 			return getSchemas();
 		}
 
@@ -1400,7 +1470,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 
 		return doQueryForResultSet(getRequest("getFunctions", "name", functionNamePattern, "functionType",
-				DatabaseMetaData.functionResultUnknown));
+				DatabaseMetaData.functionResultUnknown, "catalogAsParameterWorkaround", getSingleCatalog()));
 	}
 
 	@Override
@@ -1413,7 +1483,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var intermediateResults = getArgumentDescriptions("FUNCTIONS", functionNamePattern);
 		return doQueryForResultSet(getRequest("getFunctionColumns", "results", intermediateResults, "columnNamePattern",
 				columnNamePattern, "columnType", DatabaseMetaData.functionColumnIn, "nullable",
-				DatabaseMetaData.functionNullableUnknown));
+				DatabaseMetaData.functionNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog()));
 	}
 
 	private List<Map<String, Object>> getArgumentDescriptions(String category, String namePattern) throws SQLException {
@@ -1496,15 +1566,28 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private static void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
-		if (schemaPattern != null && !"public".equals(schemaPattern)) {
-			throw new SQLException("Schema must be public or null");
+		if (schemaPattern != null && !"public".equalsIgnoreCase(schemaPattern)) {
+			throw new SQLException("Schema must be public or null (was '%s')".formatted(schemaPattern));
 		}
 	}
 
-	private static void assertCatalogIsNullOrEmpty(String catalog) throws SQLException {
-		if (catalog != null && !catalog.isEmpty()) {
-			throw new SQLException("Catalog is not applicable to Neo4j please leave null");
+	private void assertCatalogIsNullOrEmpty(String catalog) throws SQLException {
+		if (catalog != null && !(catalog.isBlank() || catalog.trim().equalsIgnoreCase(getSingleCatalog()))) {
+			throw new SQLException(
+					"Catalog '%s' is not available in this Neo4j instance, please leave blank or specify the current database name"
+						.formatted(catalog));
 		}
+	}
+
+	/**
+	 * To have a central point to get the single supported catalog.
+	 * @return the single supported catalog for this connection
+	 */
+	private String getSingleCatalog() throws SQLException {
+		if (this.connection instanceof Neo4jConnection neo4jConnection) {
+			return neo4jConnection.getDatabaseName();
+		}
+		return this.connection.getCatalog();
 	}
 
 	private PullResponse doQueryForPullResponse(Request request) throws SQLException {
@@ -1535,6 +1618,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private record QueryAndRunResponse(PullResponse pullResponse, CompletableFuture<RunResponse> runFuture) {
+	}
+
+	private record UniqueConstraint(String name, List<String> labelsOrTypes, List<String> properties) {
 	}
 
 }

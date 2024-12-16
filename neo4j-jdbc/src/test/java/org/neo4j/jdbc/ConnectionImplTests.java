@@ -346,12 +346,11 @@ class ConnectionImplTests {
 	}
 
 	@Test
-	void shouldIgnoreUpdatingCatalog() throws SQLException {
+	void changingCatalogIsNotSupported() {
 		var connection = makeConnection(mock(BoltConnection.class));
 
-		connection.setCatalog("ignored");
-
-		assertThat(connection.getCatalog()).isNull();
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> connection.setCatalog("someCatalog"))
+			.withMessage("Changing the catalog is not implemented");
 	}
 
 	@Test

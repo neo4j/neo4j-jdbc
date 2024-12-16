@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -55,14 +56,7 @@ class DatabaseMetadataImplTests {
 
 	@Test
 	void getProcedureNamesShouldFailIfYouPassSchema() throws SQLException {
-		var url = "jdbc:neo4j://host";
-
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-
-		var connection = driver.connect(url, props);
+		var connection = newConnection();
 
 		var metaData = connection.getMetaData();
 		assertThatExceptionOfType(SQLException.class)
@@ -110,19 +104,13 @@ class DatabaseMetadataImplTests {
 	@Test
 	void getTableTypes() throws SQLException {
 		var databaseMetadata = newDatabaseMetadata();
-		try (var tableTypes = databaseMetadata.getTableTypes()) {
-			assertThat(tableTypes.next()).isTrue();
-			assertThat(tableTypes.getString(1)).isEqualTo("TABLE");
-			assertThat(tableTypes.next()).isFalse();
+		var tableTypes = new ArrayList<String>();
+		try (var rs = databaseMetadata.getTableTypes()) {
+			while (rs.next()) {
+				tableTypes.add(rs.getString("TABLE_TYPE"));
+			}
 		}
-	}
-
-	@Test
-	void getPrimaryKeysShouldReturnEmptyResultSet() throws SQLException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var tableTypes = databaseMetadata.getPrimaryKeys(null, "public", "someTableDoesNotMatter")) {
-			assertThat(tableTypes.next()).isFalse();
-		}
+		assertThat(tableTypes).containsExactlyInAnyOrder("TABLE", "RELATIONSHIP");
 	}
 
 	@Test
@@ -171,14 +159,7 @@ class DatabaseMetadataImplTests {
 
 	@Test
 	void getAllTablesShouldErrorIfYouPassNonPublicSchema() throws SQLException {
-		var url = "jdbc:neo4j://host";
-
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-
-		var connection = driver.connect(url, props);
+		var connection = newConnection();
 
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> connection.getMetaData().getTables(null, "NotNull", null, null));
@@ -186,6 +167,20 @@ class DatabaseMetadataImplTests {
 
 	@Test
 	void getAllTablesShouldErrorIfYouPassCatalog() throws SQLException {
+		var connection = newConnection();
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", null, null, null))
+			.withMessage(
+					"Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
+
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", "public", null, null))
+			.withMessage(
+					"Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
+	}
+
+	private Connection newConnection() throws SQLException {
 		var url = "jdbc:neo4j://host";
 
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
@@ -193,13 +188,7 @@ class DatabaseMetadataImplTests {
 		props.put("username", "test");
 		props.put("password", "password");
 
-		var connection = driver.connect(url, props);
-
-		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", null, null, null));
-
-		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", "public", null, null));
+		return driver.connect(url, props);
 	}
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {

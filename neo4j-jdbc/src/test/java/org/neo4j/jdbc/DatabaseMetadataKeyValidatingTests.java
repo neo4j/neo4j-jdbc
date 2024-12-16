@@ -25,12 +25,15 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 class DatabaseMetadataKeyValidatingTests {
 
-	static DatabaseMetadataImpl newDatabaseMetadata() {
-		return new DatabaseMetadataImpl(mock(Connection.class), (s) -> mock(Neo4jTransaction.class), false, 1000);
+	static DatabaseMetadataImpl newDatabaseMetadata() throws SQLException {
+		var connection = mock(Connection.class);
+		given(connection.getCatalog()).willReturn("someCatalog");
+		return new DatabaseMetadataImpl(connection, (s) -> mock(Neo4jTransaction.class), false, 1000);
 	}
 
 	@Test

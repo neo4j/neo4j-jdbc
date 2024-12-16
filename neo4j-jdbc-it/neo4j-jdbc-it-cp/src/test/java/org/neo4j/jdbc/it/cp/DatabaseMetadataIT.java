@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.it.cp;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -32,12 +33,16 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.jdbc.Neo4jConnection;
+import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +56,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	private Connection connection;
 
 	DatabaseMetadataIT() {
-		super("neo4j:5.13.0-enterprise");
+		super("neo4j:5.26.0-enterprise");
 	}
 
 	@BeforeAll
@@ -105,6 +110,28 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
 	}
 
+	@AfterEach
+	void dropConstraintsAndIndexes() throws SQLException {
+		dropConstraint0("SHOW CONSTRAINTS YIELD name", "DROP CONSTRAINT $constraint");
+		dropConstraint0("SHOW INDEXES YIELD name", "DROP INDEX $constraint");
+	}
+
+	private void dropConstraint0(String getConstraintsStatement, String dropConstraintsStatement) throws SQLException {
+		this.connection.setAutoCommit(false);
+		try (var stmt = this.connection.createStatement();
+				var results = stmt.executeQuery(getConstraintsStatement);
+				var stmt2 = this.connection.prepareStatement(dropConstraintsStatement)
+					.unwrap(Neo4jPreparedStatement.class)) {
+
+			while (results.next()) {
+				stmt2.setString("constraint", results.getString("name"));
+				stmt2.addBatch();
+			}
+			stmt2.executeBatch();
+		}
+		this.connection.setAutoCommit(true);
+	}
+
 	@Test
 	void getAllProcedures() throws SQLException {
 		try (var results = this.connection.getMetaData().getProcedures(null, null, null)) {
@@ -112,7 +139,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			while (results.next()) {
 				resultCount++;
 				assertThat(results.getString(3)).isNotNull();
-				assertThat(results.getString(1)).isNull(); // Catalog
+				assertThat(results.getString(1)).isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 				assertThat(results.getString(2)).isEqualTo("public"); // Schema
 				assertThat(results.getInt("PROCEDURE_TYPE")).isEqualTo(DatabaseMetaData.procedureResultUnknown);
 			}
@@ -127,7 +154,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			while (results.next()) {
 				resultCount++;
 				assertThat(results.getString(3)).isNotNull();
-				assertThat(results.getString(1)).isNull(); // Catalog
+				assertThat(results.getString(1)).isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 				assertThat(results.getString(2)).isEqualTo("public"); // Schema
 				assertThat(results.getInt("FUNCTION_TYPE")).isEqualTo(DatabaseMetaData.functionResultUnknown);
 			}
@@ -197,25 +224,29 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	@Test
 	void getAllCatalogsShouldReturnAnEmptyResultSet() throws SQLException {
 		var catalogRs = this.connection.getMetaData().getCatalogs();
-		assertThat(catalogRs.next()).isFalse();
+		assertThat(catalogRs.next()).isTrue();
+		assertThat(catalogRs.getString("TABLE_CAT")).isEqualTo("neo4j");
 	}
 
 	@Test
 	void getAllSchemasShouldReturnPublic() throws SQLException {
 		var schemasRs = this.connection.getMetaData().getSchemas();
 
-		if (schemasRs.next()) {
-			assertThat(schemasRs.getString(1)).isEqualTo("public");
-		}
+		assertThat(schemasRs.next()).isTrue();
+		assertThat(schemasRs.getString("TABLE_SCHEM")).isEqualTo("public");
+		assertThat(schemasRs.getString("TABLE_CATALOG")).isEqualTo("neo4j");
+		assertThat(schemasRs.next()).isFalse();
 	}
 
-	@Test
-	void getAllSchemasAskingForPublicShouldReturnPublic() throws SQLException {
-		var schemasRs = this.connection.getMetaData().getSchemas(null, "public");
+	@ParameterizedTest
+	@ValueSource(strings = { "", "%", " %", "% ", "public", "Public ", "%pub%" })
+	void getAllSchemasAskingForPublicShouldReturnPublic(String schemaPattern) throws SQLException {
+		var schemasRs = this.connection.getMetaData().getSchemas(null, schemaPattern);
 
-		if (schemasRs.next()) {
-			assertThat(schemasRs.getString(1)).isEqualTo("public");
-		}
+		assertThat(schemasRs.next()).isTrue();
+		assertThat(schemasRs.getString("TABLE_SCHEM")).isEqualTo("public");
+		assertThat(schemasRs.getString("TABLE_CATALOG")).isEqualTo("neo4j");
+		assertThat(schemasRs.next()).isFalse();
 	}
 
 	@Test
@@ -233,17 +264,17 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	}
 
 	@Test
-	void testGetDatabaseProductNameShouldReturnNeo4j() throws SQLException {
+	void getDatabaseProductNameShouldWork() throws SQLException {
 		var productName = this.connection.getMetaData().getDatabaseProductName();
 
-		assertThat(productName).isEqualTo("Neo4j Kernel-enterprise-5.13.0");
+		assertThat(productName).isEqualTo("Neo4j Kernel-enterprise-5.26.0");
 	}
 
 	@Test
-	void getDatabaseProductVersionShouldReturnTestContainerVersion() throws SQLException {
-		var productName = this.connection.getMetaData().getDatabaseProductVersion();
+	void getDatabaseProductVersionShouldWork() throws SQLException {
+		var productVersion = this.connection.getMetaData().getDatabaseProductVersion();
 
-		assertThat(productName).isEqualTo("5.13.0");
+		assertThat(productVersion).isEqualTo("5.26.0");
 	}
 
 	@Test
@@ -948,7 +979,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
 			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
 			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
-			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_CAT"))
+				.isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
 			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
 			assertThat(resultSet.getObject("CARDINALITY")).isNull();
@@ -980,7 +1012,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
 			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
 			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
-			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_CAT"))
+				.isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
 			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
 			assertThat(resultSet.getObject("CARDINALITY")).isNull();
@@ -1083,7 +1116,8 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 			assertThat(resultSet.getInt("TYPE")).isEqualTo(3);
 			assertThat(resultSet.getInt("ORDINAL_POSITION")).isOne();
 			assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("uuid");
-			assertThat(resultSet.getObject("TABLE_CAT")).isNull();
+			assertThat(resultSet.getObject("TABLE_CAT"))
+				.isEqualTo(((Neo4jConnection) this.connection).getDatabaseName());
 			assertThat(resultSet.getObject("TABLE_SCHEM")).isEqualTo("public");
 			assertThat(resultSet.getObject("ASC_OR_DESC")).isEqualTo("A");
 			assertThat(resultSet.getObject("CARDINALITY")).isNull();
@@ -1096,6 +1130,85 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				statement.execute("DROP INDEX " + indexName + " IF EXISTS");
 			}
 		}
+	}
+
+	@Test
+	void catalogEqualsToDatabaseNameIsOk() {
+		assertThatNoException().isThrownBy(() -> this.connection.getMetaData().getTables("neo4j", null, null, null));
+	}
+
+	@Test
+	void primaryKeysWithoutUniqueConstraints() throws SQLException, IOException {
+
+		TestUtils.createMovieGraph(this.connection);
+
+		var primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Movie");
+		assertThat(primaryKeys.next()).isTrue();
+		assertPrimaryKey(primaryKeys, "Movie", "v$id", 1, "Movie_elementId");
+		assertThat(primaryKeys.next()).isFalse();
+
+		primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Person_ACTED_IN_Movie");
+		assertThat(primaryKeys.next()).isTrue();
+		assertPrimaryKey(primaryKeys, "Person_ACTED_IN_Movie", "v$id", 1, "Person_ACTED_IN_Movie_elementId");
+		assertThat(primaryKeys.next()).isFalse();
+	}
+
+	@Test
+	void primaryKeysForNonExistingTable() throws SQLException {
+		var primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Foobar");
+		assertThat(primaryKeys.next()).isFalse();
+	}
+
+	@Test
+	void primaryKeysWithUniqueConstraints() throws SQLException, IOException {
+
+		TestUtils.createMovieGraph(this.connection);
+
+		try (var stmt = this.connection.createStatement()) {
+			stmt.execute("CREATE CONSTRAINT movie_title FOR (n:Movie) REQUIRE n.title IS UNIQUE");
+			stmt.execute("CREATE CONSTRAINT movie_random_col FOR (n:Movie) REQUIRE n.whatever IS UNIQUE");
+			stmt.execute("CREATE CONSTRAINT person_id FOR (n:Person) REQUIRE n.id IS UNIQUE");
+			stmt.execute(
+					"CREATE CONSTRAINT acted_in_id  IF NOT EXISTS FOR ()-[r:ACTED_IN]-() REQUIRE r.engagement_id IS UNIQUE");
+		}
+
+		var primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Movie");
+		assertThat(primaryKeys.next()).isTrue();
+		assertPrimaryKey(primaryKeys, "Movie", "v$id", 1, "Movie_elementId");
+		assertThat(primaryKeys.next()).isFalse();
+
+		primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Person_ACTED_IN_Movie");
+		assertThat(primaryKeys.next()).isTrue();
+		assertPrimaryKey(primaryKeys, "Person_ACTED_IN_Movie", "engagement_id", 1, "acted_in_id");
+		assertThat(primaryKeys.next()).isFalse();
+	}
+
+	private static void assertPrimaryKey(ResultSet primaryKeys, String tableName, String columnName, int seq,
+			String name) throws SQLException {
+		assertThat(primaryKeys.getString("TABLE_SCHEM")).isEqualTo("public");
+		assertThat(primaryKeys.getString("TABLE_CATALOG")).isEqualTo("neo4j");
+		assertThat(primaryKeys.getString("TABLE_NAME")).isEqualTo(tableName);
+		assertThat(primaryKeys.getString("COLUMN_NAME")).isEqualTo(columnName);
+		assertThat(primaryKeys.getInt("KEY_SEQ")).isEqualTo(seq);
+		assertThat(primaryKeys.getString("PK_NAME")).isEqualTo(name);
+	}
+
+	@Test
+	void primaryKeysWithMoreThanOneColumn() throws SQLException, IOException {
+
+		TestUtils.createMovieGraph(this.connection);
+
+		try (var stmt = this.connection.createStatement()) {
+			stmt.execute(
+					"CREATE CONSTRAINT movie_title_per_year FOR (n:Movie) REQUIRE (n.title, n.released) IS UNIQUE");
+		}
+
+		var primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Movie");
+		assertThat(primaryKeys.next()).isTrue();
+		assertPrimaryKey(primaryKeys, "Movie", "title", 1, "movie_title_per_year");
+		assertThat(primaryKeys.next()).isTrue();
+		assertPrimaryKey(primaryKeys, "Movie", "released", 2, "movie_title_per_year");
+		assertThat(primaryKeys.next()).isFalse();
 	}
 
 	record IndexInfo(String tableName, boolean nonUnique, String indexName, int type, int ordinalPosition,

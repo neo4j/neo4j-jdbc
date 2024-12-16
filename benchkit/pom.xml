@@ -163,6 +163,20 @@
 					<skip>true</skip>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<!-- Can't use -dangling-doc-comments in Java 17, see https://docs.oracle.com/en/java/javase/23/docs/specs/man/javac.html,
+				 so we enable all and print the warnings only for this module. -->
+				<configuration combine.self="override">
+					<forceLegacyJavacApi>true</forceLegacyJavacApi>
+					<showWarnings>true</showWarnings>
+					<compilerArgs>
+						<arg>-Xlint:all</arg>
+						<arg>-parameters</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>

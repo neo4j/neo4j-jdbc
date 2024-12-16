@@ -10,9 +10,8 @@ From the SQL 1992 standard (find an archived copy http://www.contrib.andrew.cmu.
 
 > (4.12) Catalogs are named collections of schemas in an SQL-environment. An SQL-environment contains zero or more catalogs. A catalog contains one or more schemas, but always contains a schema named INFORMATION_SCHEMA that contains the views and domains of the Information Schema.
 
-This driver does not support catalogs (see https://github.com/neo4j/neo4j-jdbc/discussions/55[discussion 55]), so any metadata result set will return literal `null` when asked for the catalog of a database object.
-No metadata method supports filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
-Future developments might use catalogs to describe composite databases, in essence listing the constituents of the composite database defined in the connection.
+This driver only supports a single catalog, which is equal to the Neo4j database to which the driver is connected to.
+Filtering on a catalog pattern is not supported in metadata queries, all values except literal `null`, the empty or blank string or the name of the current database will lead to an exception.
 
 The same standard defines schemas as follows:
 
@@ -36,8 +35,8 @@ Labels will be reported as table objects with the `TABLE_TYPE` being literal `TA
 
 === Summary
 
-* Catalog: Always `null`; filtering on anything non-null yields no results.
-* Schema: Always `public`; filtering on `public` and literal will yield result, anything else won't.
+* Catalog: Always equals to the current database; filtering on anything else except an empty string will error.
+* Schema: Always `public`; filtering on `public` and literal `null` will yield result, anything else won't.
 * Table descriptors: Reported as `TABLE` in the `TABLE_TYPE` column.
 
 == Labels to tables
@@ -55,3 +54,10 @@ This driver therefore compute node types in a similar way:
 ** This is in line with the default SQL-to-Cypher translation
 * Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically to make them independent of the order Neo4j returns them
 * Property sets for these node type combinations will then be computed
+
+== Primary keys
+
+The driver uses available constraint information and will figure out if there is a single, unique constraint on a label.
+If that's the case, the constrained property will be assumed to be the primary key.
+This will also work for unique constraints over multiple properties, in SQL lingo composite primary keys.
+If there is no unique constraint or more than one, we assume the `v$id` virtual columns for the `elementId` value to be primary keys.
