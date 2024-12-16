@@ -830,19 +830,6 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return doQueryForResultSet(request);
 	}
 
-	@Override
-	public ResultSet getSchemas() throws SQLException {
-		var keys = new ArrayList<String>();
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_CATALOG");
-
-		var response = createRunResponseForStaticKeys(keys);
-		var staticPulLResponse = staticPullResponseFor(keys,
-				Collections.singletonList(new Value[] { Values.value("public"), Values.value(getSingleCatalog()) }));
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, staticPulLResponse,
-				-1, -1, -1);
-	}
-
 	/***
 	 * Returns an empty Result set as there cannot be Catalogs in neo4j.
 	 * @return all catalogs
@@ -1369,11 +1356,24 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
+	public ResultSet getSchemas() throws SQLException {
+		var keys = new ArrayList<String>();
+		keys.add("TABLE_SCHEM");
+		keys.add("TABLE_CATALOG");
 
+		var response = createRunResponseForStaticKeys(keys);
+		var staticPulLResponse = staticPullResponseFor(keys,
+				Collections.singletonList(new Value[] { Values.value("public"), Values.value(getSingleCatalog()) }));
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, staticPulLResponse,
+				-1, -1, -1);
+	}
+
+	@Override
+	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
 		assertCatalogIsNullOrEmpty(catalog);
 
-		if (schemaPattern.equals("public")) {
+		var thePattern = Objects.requireNonNullElse(schemaPattern, "public").trim().replace("%", ".*");
+		if (thePattern.isEmpty() || "public".matches("(?i)" + thePattern)) {
 			return getSchemas();
 		}
 

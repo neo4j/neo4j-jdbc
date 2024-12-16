@@ -38,6 +38,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jConnection;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -206,18 +207,21 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	void getAllSchemasShouldReturnPublic() throws SQLException {
 		var schemasRs = this.connection.getMetaData().getSchemas();
 
-		if (schemasRs.next()) {
-			assertThat(schemasRs.getString(1)).isEqualTo("public");
-		}
+		assertThat(schemasRs.next()).isTrue();
+		assertThat(schemasRs.getString("TABLE_SCHEM")).isEqualTo("public");
+		assertThat(schemasRs.getString("TABLE_CATALOG")).isEqualTo("neo4j");
+		assertThat(schemasRs.next()).isFalse();
 	}
 
-	@Test
-	void getAllSchemasAskingForPublicShouldReturnPublic() throws SQLException {
-		var schemasRs = this.connection.getMetaData().getSchemas(null, "public");
+	@ParameterizedTest
+	@ValueSource(strings = { "", "%", " %", "% ", "public", "Public ", "%pub%" })
+	void getAllSchemasAskingForPublicShouldReturnPublic(String schemaPattern) throws SQLException {
+		var schemasRs = this.connection.getMetaData().getSchemas(null, schemaPattern);
 
-		if (schemasRs.next()) {
-			assertThat(schemasRs.getString(1)).isEqualTo("public");
-		}
+		assertThat(schemasRs.next()).isTrue();
+		assertThat(schemasRs.getString("TABLE_SCHEM")).isEqualTo("public");
+		assertThat(schemasRs.getString("TABLE_CATALOG")).isEqualTo("neo4j");
+		assertThat(schemasRs.next()).isFalse();
 	}
 
 	@Test
