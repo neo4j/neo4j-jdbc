@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2024-12-13T08:28:51Z</span>
+<span id="revdate">2024-12-16T12:14:27Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -1758,9 +1758,8 @@ Additionally, the builder lets you configure options that are not contained in t
 </blockquote>
 </div>
 <div class="paragraph">
-<p>This driver does not support catalogs (see <a href="https://github.com/neo4j/neo4j-jdbc/discussions/55">discussion 55</a>), so any metadata result set will return literal <code>null</code> when asked for the catalog of a database object.
-No metadata method supports filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
-Future developments might use catalogs to describe composite databases, in essence listing the constituents of the composite database defined in the connection.</p>
+<p>This driver only supports a single catalog, which is equal to the Neo4j database to which the driver is connected to.
+Filtering on a catalog pattern is not supported in metadata queries, all values except literal <code>null</code>, the empty or blank string or the name of the current database will lead to an exception.</p>
 </div>
 <div class="paragraph">
 <p>The same standard defines schemas as follows:</p>
@@ -1797,10 +1796,10 @@ We support querying for objects in any schema, however only literal <code>null</
 <div class="ulist">
 <ul>
 <li>
-<p>Catalog: Always <code>null</code>; filtering on anything non-null yields no results.</p>
+<p>Catalog: Always equals to the current database; filtering on anything else except an empty string will error.</p>
 </li>
 <li>
-<p>Schema: Always <code>public</code>; filtering on <code>public</code> and literal will yield result, anything else won&#8217;t.</p>
+<p>Schema: Always <code>public</code>; filtering on <code>public</code> and literal <code>null</code> will yield result, anything else won&#8217;t.</p>
 </li>
 <li>
 <p>Table descriptors: Reported as <code>TABLE</code> in the <code>TABLE_TYPE</code> column.</p>
@@ -4169,7 +4168,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-12-13 08:28:57 UTC
+Last updated 2024-12-16 12:14:34 UTC
 </div>
 </div>
 </body>
