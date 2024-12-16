@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2024-12-16T12:19:08Z</span>
+<span id="revdate">2024-12-16T16:46:38Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -567,6 +567,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <ul class="sectlevel2">
 <li><a href="#_catalog_and_schema">5.1. Catalog and schema</a></li>
 <li><a href="#_labels_to_tables">5.2. Labels to tables</a></li>
+<li><a href="#_primary_keys">5.3. Primary keys</a></li>
 </ul>
 </li>
 <li><a href="#s2c_introduction">6. SQL to Cypher translation</a>
@@ -1848,6 +1849,15 @@ We support querying for objects in any schema, however only literal <code>null</
 <p>Property sets for these node type combinations will then be computed</p>
 </li>
 </ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_primary_keys">5.3. Primary keys</h3>
+<div class="paragraph">
+<p>The driver uses available constraint information and will figure out if there is a single, unique constraint on a label.
+If that&#8217;s the case, the constrained property will be assumed to be the primary key.
+This will also work for unique constraints over multiple properties, in SQL lingo composite primary keys.
+If there is no unique constraint or more than one, we assume the <code>v$id</code> virtual columns for the <code>elementId</code> value to be primary keys.</p>
 </div>
 </div>
 </div>
@@ -4168,7 +4178,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-12-16 12:19:15 UTC
+Last updated 2024-12-16 16:46:44 UTC
 </div>
 </div>
 </body>
