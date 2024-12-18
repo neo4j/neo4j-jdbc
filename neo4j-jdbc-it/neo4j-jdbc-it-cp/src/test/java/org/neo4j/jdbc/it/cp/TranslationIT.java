@@ -312,6 +312,24 @@ class TranslationIT extends IntegrationTestBase {
 		}
 	}
 
+	@Test
+	void shouldMatchCorrectVid() throws SQLException, IOException {
+		try (var connection = getConnection(true, false)) {
+			TestUtils.createMovieGraph(connection);
+
+			var cypher = connection.nativeSQL("""
+					  SELECT TOP 100 `Person_ACTED_IN_Movie`.`roles` AS `roles`,
+					     `Person_ACTED_IN_Movie`.`v$id` AS `v_id`,
+					     `Person_ACTED_IN_Movie`.`v$movie_id` AS `v_movie_id`,
+					     `Person_ACTED_IN_Movie`.`v$person_id` AS `v_person_id`
+					   FROM `public`.`Person_ACTED_IN_Movie` `Person_ACTED_IN_Movie`
+					""");
+			assertThat(cypher).isEqualTo(
+					"MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) RETURN person_acted_in_movie.roles AS roles, elementId(person_acted_in_movie) AS v_id, elementId(_rhs) AS v_movie_id, elementId(_lhs) AS v_person_id LIMIT 100");
+		}
+
+	}
+
 	record PersonAndTitle(String name, String title) {
 	}
 

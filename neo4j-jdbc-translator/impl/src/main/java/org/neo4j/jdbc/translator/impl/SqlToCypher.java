@@ -754,6 +754,7 @@ final class SqlToCypher implements Translator {
 			return expression(f, false);
 		}
 
+		@SuppressWarnings("NestedIfDepth")
 		private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
 
 			if (f instanceof Param<?> p) {
@@ -787,9 +788,14 @@ final class SqlToCypher implements Translator {
 					var m = ELEMENT_ID_PATTERN.matcher(tf.getName());
 					if (m.matches()) {
 						var src = pc;
-						if (pc instanceof Relationship rel && !"element".equalsIgnoreCase(m.group("prefix"))) {
-							src = rel.getLeft().getLabels().get(0).getValue().equalsIgnoreCase(m.group("prefix"))
-									? rel.getLeft() : rel.getRight();
+						var prefix = m.group("prefix");
+						if (pc instanceof Relationship rel && !"element".equalsIgnoreCase(prefix)) {
+							if (rel.getLeft().getLabels().get(0).getValue().equalsIgnoreCase(prefix)) {
+								src = rel.getLeft();
+							}
+							else if (rel.getRight().getLabels().get(0).getValue().equalsIgnoreCase(prefix)) {
+								src = rel.getRight();
+							}
 						}
 						// Not using makeId here as we don't want this aliased in a
 						// condition
