@@ -118,14 +118,16 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		var responseFuture = CompletableFuture.allOf(beginFuture, runFuture, discardFuture, commitFuture)
 			.thenCompose(ignored -> discardFuture);
 		var response = execute(responseFuture, timeout);
-		this.state = commit ? State.COMMITTED : State.READY;
+		if (!State.COMMITTED.equals(this.state)) {
+			this.state = commit ? State.COMMITTED : State.READY;
+		}
 		return response;
 	}
 
 	@Override
 	public PullResponse pull(RunResponse runResponse, long request) throws SQLException {
 		assertNoException();
-		if (State.READY != this.state) {
+		if (!State.READY.equals(this.state)) {
 			throw new SQLException(
 					String.format("The requested action is not supported in %s transaction state", this.state));
 		}
@@ -134,7 +136,6 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		if (!pullResponse.hasMore()) {
 			this.openResults.remove(runResponse);
 		}
-		this.state = State.READY;
 		return pullResponse;
 	}
 
