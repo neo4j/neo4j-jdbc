@@ -1379,6 +1379,36 @@ final class SqlToCypher implements Translator {
 				this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
 				return relationship;
 			}
+			else if (fitsLeftOrRight(node, rel)) {
+				try {
+					this.useAliasForVColumn.set(false);
+					Expression e1 = null;
+					Expression e2 = null;
+					Relationship relationship = null;
+					if (isElementIdFor(eq.$arg1(), rel.getLeft())) {
+						relationship = node
+							.relationshipTo(rel.getRight(), rel.getDetails().getTypes().toArray(String[]::new))
+							.named(rel.getRequiredSymbolicName());
+						e1 = makeId(relationship.getLeft(), null);
+						e2 = makeId(relationship, null);
+					}
+					else if (isElementIdFor(eq.$arg1(), rel.getRight())) {
+						relationship = rel.getLeft()
+							.relationshipTo(node, rel.getDetails().getTypes().toArray(String[]::new))
+							.named(rel.getRequiredSymbolicName());
+						e1 = makeId(relationship.getRight(), null);
+						e2 = makeId(relationship, null);
+					}
+					if (relationship != null) {
+						relationship = (Relationship) relationship.where(Cypher.isEqualTo(e1, e2));
+						this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
+						return relationship;
+					}
+				}
+				finally {
+					this.useAliasForVColumn.set(true);
+				}
+			}
 
 			return null;
 		}
@@ -1392,6 +1422,14 @@ final class SqlToCypher implements Translator {
 			return prefix == null || prefix.isBlank() || "element".equalsIgnoreCase(prefix);
 		}
 
+		static boolean isElementIdFor(Field<?> field, Node node) {
+			if (!isElementId(field)) {
+				return false;
+			}
+
+			return node.getLabels().stream().anyMatch(l -> l.getValue().equals(field.$name().first()));
+		}
+
 		static String isFkId(Field<?> field) {
 			var matcher = ELEMENT_ID_PATTERN.matcher(Objects.requireNonNull(field.$name().last()));
 			if (!matcher.matches()) {
@@ -1399,6 +1437,28 @@ final class SqlToCypher implements Translator {
 			}
 			var prefix = matcher.group("prefix");
 			return (prefix != null && !prefix.isBlank()) ? prefix : null;
+		}
+
+		private static boolean fitsLeftOrRight(Node node, Relationship relationship) {
+			boolean result = node.getLabels()
+				.stream()
+				.map(NodeLabel::getValue)
+				.anyMatch(l -> relationship.getLeft()
+					.getLabels()
+					.stream()
+					.map(NodeLabel::getValue)
+					.anyMatch(r -> r.equals(l)));
+			if (result) {
+				return result;
+			}
+			return node.getLabels()
+				.stream()
+				.map(NodeLabel::getValue)
+				.anyMatch(l -> relationship.getRight()
+					.getLabels()
+					.stream()
+					.map(NodeLabel::getValue)
+					.anyMatch(r -> r.equals(l)));
 		}
 
 		private static boolean anyLabelMatches(Node node, String needle) {

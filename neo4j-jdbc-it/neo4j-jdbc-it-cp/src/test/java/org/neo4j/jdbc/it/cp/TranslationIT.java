@@ -330,6 +330,32 @@ class TranslationIT extends IntegrationTestBase {
 
 	}
 
+	@SuppressWarnings("SqlNoDataSourceInspection")
+	@Test
+	void innerJoinWrongColumn() throws SQLException, IOException {
+		// Those queries will return empty results, but will not fail and are essentially
+		// correct as formulated in SQL
+		try (var connection = getConnection(true, false)) {
+			TestUtils.createMovieGraph(connection);
+			var cypher = connection.nativeSQL("""
+					SELECT `Person`.`name` AS `name`, `Person_DIRECTED_Movie`.`v$movie_id` AS `v_movie_id`
+					FROM `public`.`Person` `Person`
+					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
+					ON (`Person`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
+			assertThat(cypher).isEqualTo(
+					"MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(_rhs:Movie) RETURN person.name AS name, elementId(_rhs) AS v_movie_id");
+
+			cypher = connection.nativeSQL("""
+					SELECT `Movie`.`title` AS `title`, `Person_DIRECTED_Movie`.`v$movie_id` AS `v_movie_id`
+					FROM `public`.`Movie` `Movie`
+					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
+					ON (`Movie`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
+			assertThat(cypher).isEqualTo(
+					"MATCH (_lhs:Person)-[person_directed_movie:DIRECTED WHERE elementId(movie) = elementId(person_directed_movie)]->(movie) RETURN movie.title AS title, elementId(movie) AS v_movie_id");
+		}
+
+	}
+
 	record PersonAndTitle(String name, String title) {
 	}
 
