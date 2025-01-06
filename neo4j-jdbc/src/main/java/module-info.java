@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 "Neo4j,"
+ * Copyright (c) 2023-2025 "Neo4j,"
  * Neo4j Sweden AB [https://neo4j.com]
  *
  * This file is part of Neo4j.
@@ -16,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * The Neo4j JDBC Driver exposes both the actual JDBC API and the Neo4j value system being used. The value system can be used with methods like {@link java.sql.ResultSet#getObject(int, Class)}, for retrieving Neo4j nodes, relationships, paths and especially, the original value objects.
  */
