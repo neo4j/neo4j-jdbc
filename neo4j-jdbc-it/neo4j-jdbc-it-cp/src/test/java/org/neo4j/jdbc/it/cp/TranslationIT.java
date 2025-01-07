@@ -356,6 +356,49 @@ class TranslationIT extends IntegrationTestBase {
 
 	}
 
+	@Test // GH-814
+	void multipleHops() throws SQLException {
+		try (var connection = getConnection(true, false)) {
+			var createGraph = """
+					/*+ NEO4J FORCE_CYPHER */
+					CREATE (p:Person {name: 'A'})
+					CREATE (pr:Project {serial: '1'})
+					CREATE (c:Company {name: 'B'})
+					CREATE (p)-[:PARTICIPATES_IN]->(pr)
+					CREATE (p)-[:WORKS_FOR]->(c);
+					""";
+
+			var sql = """
+					SELECT a.*,c.*,e.*
+					FROM Person a
+					JOIN Person_PARTICIPATES_IN_Project b
+						ON b."v$person_id" = a."v$id"
+					JOIN Project c
+						ON c."v$id" = b."v$project_id"
+					JOIN Person_WORKS_FOR_Company d
+						ON d."v$person_id"= a."v$id"
+					JOIN Company e
+						ON e."v$id" = d."v$company_id"
+					""";
+
+			try (var statement = connection.createStatement()) {
+				statement.executeUpdate(createGraph);
+			}
+
+			var cypher = connection.nativeSQL(sql);
+			assertThat(cypher).isEqualTo(
+					"MATCH (a:Person)-[b:PARTICIPATES_IN]->(c:Project), (a)-[d:WORKS_FOR]->(e:Company) RETURN elementId(a) AS `v$id`, a.name AS name, elementId(c) AS `v$id1`, c.serial AS serial, elementId(e) AS `v$id2`, e.name AS name1");
+			try (var statement = connection.createStatement(); var result = statement.executeQuery(sql)) {
+				assertThat(result.next()).isTrue();
+				assertThat(result.getString("name")).isEqualTo("A");
+				assertThat(result.getString("name1")).isEqualTo("B");
+				assertThat(result.next()).isFalse();
+			}
+
+		}
+
+	}
+
 	record PersonAndTitle(String name, String title) {
 	}
 
