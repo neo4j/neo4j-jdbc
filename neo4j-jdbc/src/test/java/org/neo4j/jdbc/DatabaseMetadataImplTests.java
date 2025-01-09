@@ -180,6 +180,20 @@ class DatabaseMetadataImplTests {
 					"Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
 	}
 
+	@Test
+	void getCatalogTermShouldWork() throws SQLException {
+
+		var connection = newConnection();
+		assertThat(connection.getMetaData().getCatalogTerm()).isEqualTo("database");
+	}
+
+	@Test
+	void getCatalogSeparatorShouldWork() throws SQLException {
+
+		var connection = newConnection();
+		assertThat(connection.getMetaData().getCatalogSeparator()).isEqualTo(".");
+	}
+
 	private Connection newConnection() throws SQLException {
 		var url = "jdbc:neo4j://host";
 

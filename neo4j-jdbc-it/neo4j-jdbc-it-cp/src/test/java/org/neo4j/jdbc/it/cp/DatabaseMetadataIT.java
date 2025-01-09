@@ -1211,6 +1211,18 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 		assertThat(primaryKeys.next()).isFalse();
 	}
 
+	@Test
+	void getCatalogsShouldWork() throws SQLException {
+
+		var catalogs = new ArrayList<String>();
+		try (var rs = this.connection.getMetaData().getCatalogs()) {
+			while (rs.next()) {
+				catalogs.add(rs.getString("TABLE_CAT"));
+			}
+		}
+		assertThat(catalogs).containsExactly("neo4j", "system");
+	}
+
 	record IndexInfo(String tableName, boolean nonUnique, String indexName, int type, int ordinalPosition,
 			String columnName, String ascOrDesc) {
 		IndexInfo(ResultSet resultset) throws SQLException {

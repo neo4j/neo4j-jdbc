@@ -492,7 +492,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getCatalogTerm() {
-		return "catalog";
+		return "database";
 	}
 
 	@Override
@@ -830,18 +830,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return doQueryForResultSet(request);
 	}
 
-	/***
-	 * Returns an empty Result set as there cannot be Catalogs in neo4j.
-	 * @return all catalogs
-	 */
 	@Override
 	public ResultSet getCatalogs() throws SQLException {
-		var keys = new ArrayList<String>();
-		keys.add("TABLE_CAT");
 
-		var response = createRunResponseForStaticKeys(keys);
-		var pull = staticPullResponseFor(keys, List.<Value[]>of(new Value[] { Values.value(getSingleCatalog()) }));
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+		return doQueryForResultSet(getRequest("getCatalogs"));
 	}
 
 	@Override
