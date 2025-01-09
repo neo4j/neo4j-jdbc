@@ -179,13 +179,13 @@ The `LIKE` operator
 
 [source,sql,id=p5_0,name=predicates_like]
 ----
-SELECT * FROM movies m WHERE m.title LIKE '%Matrix%'
+SELECT * FROM movies m WHERE m.title LIKE '%Matrix%' OR m.title LIKE 'M_trix'
 ----
 
 will be translated into a regular expressions, replacing the `%` with `.*`:
 
 [source,cypher,id=p5_0_expected]
 ----
-MATCH (m:`movies`) WHERE m.title =~ '.*Matrix.*'
+MATCH (m:`movies`) WHERE m.title =~ '.*Matrix.*' OR m.title =~ 'M.trix'
 RETURN *
 ----

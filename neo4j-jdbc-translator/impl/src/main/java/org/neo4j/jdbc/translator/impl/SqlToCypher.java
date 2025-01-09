@@ -1188,7 +1188,7 @@ final class SqlToCypher implements Translator {
 				else if (c instanceof QOM.Like like) {
 					Expression rhs;
 					if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
-						rhs = Cypher.literalOf(s.replace("%", ".*"));
+						rhs = Cypher.literalOf(s.replace("%", ".*").replace("_", "."));
 					}
 					else {
 						rhs = expression(like.$arg2());
