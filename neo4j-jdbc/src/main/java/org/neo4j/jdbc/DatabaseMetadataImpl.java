@@ -48,6 +48,7 @@ import org.neo4j.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
 import org.neo4j.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.jdbc.values.Record;
+import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
@@ -847,18 +848,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
 	}
 
-	static int getMaxPrecision(int type) {
+	static Value getMaxPrecision(int type) {
 		if (type == Types.INTEGER) {
 			// 64bit;
-			return 19;
+			return Values.value(19);
 		}
 		if (type == Types.FLOAT) {
 			// 64bit double,
 			// https://stackoverflow.com/questions/322749/retain-precision-with-double-in-java
 			// Neo4j has no fixed point arithmetic, so it's kinda guess work.
-			return 15;
+			return Values.value(15);
 		}
-		return 0;
+		return Values.NULL;
 	}
 
 	@Override
@@ -973,8 +974,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
 		values.add(Values.value(columnType)); // DATA_TYPE
 		values.add(Values.value(Neo4jConversions.oldCypherTypesToNew(propertyType.asString()))); // TYPE_NAME
-		var maxPrecision = getMaxPrecision(columnType);
-		values.add((maxPrecision != 0) ? Values.value(maxPrecision) : Values.NULL); // COLUMN_SIZE
+		values.add(getMaxPrecision(columnType)); // COLUMN_SIZE
 		values.add(Values.NULL); // BUFFER_LENGTH
 		values.add(Values.NULL); // DECIMAL_DIGITS
 		values.add(Values.value(2)); // NUM_PREC_RADIX
@@ -1216,8 +1216,33 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getTypeInfo() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public ResultSet getTypeInfo() {
+
+		var keys = List.of("TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX", "LITERAL_SUFFIX", "CREATE_PARAMS",
+				"NULLABLE", "CASE_SENSITIVE", "SEARCHABLE", "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE", "AUTO_INCREMENT",
+				"LOCAL_TYPE_NAME", "MINIMUM_SCALE", "MAXIMUM_SCALE", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
+				"NUM_PREC_RADIX");
+
+		var values = new ArrayList<Value[]>();
+		for (var type : Type.values()) {
+			var sqlType = Neo4jConversions.toSqlType(type);
+			var row = new Value[] { Values.value(type.name()), Values.value(sqlType), getMaxPrecision(sqlType),
+					Values.NULL, // Prefix and suffix are actually determined for some, we
+									// should use this at some point
+					Values.NULL, Values.NULL, Values.value(DatabaseMetaData.typeNullable),
+					Values.value(type == Type.STRING),
+					Values.value((type == Type.STRING) ? DatabaseMetaData.typeSearchable
+							: (type != Type.RELATIONSHIP) ? DatabaseMetaData.typePredBasic
+									: DatabaseMetaData.typePredNone),
+					Values.value(false), Values.value(false), Values.NULL, Values.NULL, Values.NULL, Values.NULL,
+					Values.NULL, Values.NULL, Values.value(10), };
+			values.add(row);
+		}
+
+		var response = createRunResponseForStaticKeys(keys);
+		var pull = staticPullResponseFor(keys, values);
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+
 	}
 
 	@Override

@@ -19,6 +19,7 @@
 package org.neo4j.jdbc;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.jdbc.internal.bolt.BoltConnection;
 import org.neo4j.jdbc.internal.bolt.BoltConnectionProvider;
+import org.neo4j.jdbc.values.Type;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -192,6 +194,48 @@ class DatabaseMetadataImplTests {
 
 		var connection = newConnection();
 		assertThat(connection.getMetaData().getCatalogSeparator()).isEqualTo(".");
+	}
+
+	@Test
+	void getTypeInfoShouldWork() throws SQLException {
+		var connection = newConnection();
+		try (var rs = connection.getMetaData().getTypeInfo()) {
+			while (rs.next()) {
+				var type = Type.valueOf(rs.getString("TYPE_NAME"));
+				assertThat(rs.getInt("DATA_TYPE")).isEqualTo(Neo4jConversions.toSqlType(type));
+				var mp = switch (type) {
+					case INTEGER -> 19;
+					case FLOAT -> 15;
+					default -> 0;
+				};
+				assertThat(rs.getInt("PRECISION")).isEqualTo(mp);
+				assertThat(rs.getString("LITERAL_PREFIX")).isNull();
+				assertThat(rs.getString("LITERAL_SUFFIX")).isNull();
+				assertThat(rs.getString("CREATE_PARAMS")).isNull();
+				assertThat(rs.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.typeNullable);
+				assertThat(rs.getBoolean("CASE_SENSITIVE")).isEqualTo(type == Type.STRING);
+				var sb = switch (type) {
+					case RELATIONSHIP -> DatabaseMetaData.typePredNone;
+					case STRING -> DatabaseMetaData.typeSearchable;
+					default -> DatabaseMetaData.typePredBasic;
+				};
+				assertThat(rs.getInt("SEARCHABLE")).isEqualTo(sb);
+				assertThat(rs.getBoolean("UNSIGNED_ATTRIBUTE")).isEqualTo(false);
+				assertThat(rs.getBoolean("FIXED_PREC_SCALE")).isEqualTo(false);
+				assertThat(rs.getBoolean("AUTO_INCREMENT")).isEqualTo(false);
+				assertThat(rs.getShort("MINIMUM_SCALE")).isEqualTo((short) 0);
+				assertThat(rs.wasNull()).isTrue();
+				assertThat(rs.getShort("MAXIMUM_SCALE")).isEqualTo((short) 0);
+				assertThat(rs.wasNull()).isTrue();
+
+				assertThat(rs.getInt("SQL_DATA_TYPE")).isZero();
+				assertThat(rs.wasNull()).isTrue();
+				assertThat(rs.getInt("SQL_DATETIME_SUB")).isZero();
+				assertThat(rs.wasNull()).isTrue();
+
+				assertThat(rs.getInt("NUM_PREC_RADIX")).isEqualTo(10);
+			}
+		}
 	}
 
 	private Connection newConnection() throws SQLException {
