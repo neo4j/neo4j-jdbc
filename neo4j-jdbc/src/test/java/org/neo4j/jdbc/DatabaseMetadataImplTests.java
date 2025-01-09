@@ -238,6 +238,31 @@ class DatabaseMetadataImplTests {
 		}
 	}
 
+	@Test
+	void getClientInfoPropertiesShouldWork() throws SQLException {
+		var connection = newConnection();
+		var maxLen = (int) Math.pow(2, 16);
+		try (var rs = connection.getMetaData().getClientInfoProperties()) {
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getString("NAME")).isEqualTo("ApplicationName");
+			assertThat(rs.getInt("MAX_LEN")).isEqualTo(maxLen);
+			assertThat(rs.getString("DEFAULT_VALUE")).isNull();
+			assertThat(rs.getString("DESCRIPTION")).isNotNull();
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getString("NAME")).isEqualTo("ClientUser");
+			assertThat(rs.getInt("MAX_LEN")).isEqualTo(maxLen);
+			assertThat(rs.getString("DESCRIPTION")).isNotNull();
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getString("NAME")).isEqualTo("ClientHostname");
+			assertThat(rs.getInt("MAX_LEN")).isEqualTo(maxLen);
+			assertThat(rs.getString("DESCRIPTION")).isNotNull();
+			assertThat(rs.next()).isFalse();
+		}
+
+		connection.setClientInfo("ApplicationName", "a unit test");
+		assertThat(connection.getClientInfo("ApplicationName")).isEqualTo("a unit test");
+	}
+
 	private Connection newConnection() throws SQLException {
 		var url = "jdbc:neo4j://host";
 

@@ -97,6 +97,13 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	private static final List<String> TIME_DATE_FUNCTIONS = List.of("date", "datetime", "localdatetime", "localtime",
 			"time", "duration");
 
+	private static final List<ClientInfoProperty> SUPPORTED_CLIENT_INFO_PROPERTIES = List.of(
+			new ClientInfoProperty("ApplicationName", "The name of the application currently utilizing the connection"),
+			new ClientInfoProperty("ClientUser",
+					"The name of the user that the application using the connection is performing work for"),
+			new ClientInfoProperty("ClientHostname",
+					"The hostname of the computer the application using the connection is running on"));
+
 	private static final Logger LOGGER = Logger.getLogger(DatabaseMetadataImpl.class.getCanonicalName());
 
 	private final Connection connection;
@@ -1476,8 +1483,22 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getClientInfoProperties() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public ResultSet getClientInfoProperties() {
+
+		var keys = List.of("NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION");
+		var values = new ArrayList<Value[]>();
+		for (var property : SUPPORTED_CLIENT_INFO_PROPERTIES) {
+			values.add(new Value[] { Values.value(property.name()), Values.value(65536), Values.NULL,
+					Values.value(property.description()) });
+		}
+		var response = createRunResponseForStaticKeys(keys);
+		var pull = staticPullResponseFor(keys, values);
+
+		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+	}
+
+	static boolean isSupportedClientInfoProperty(String name) {
+		return SUPPORTED_CLIENT_INFO_PROPERTIES.stream().anyMatch(p -> p.name().equals(name));
 	}
 
 	@Override
@@ -1638,6 +1659,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private record UniqueConstraint(String name, List<String> labelsOrTypes, List<String> properties) {
+	}
+
+	private record ClientInfoProperty(String name, String description) {
 	}
 
 }

@@ -577,7 +577,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			var throwable = new SQLClientInfoException(Map.of("", ClientInfoStatus.REASON_UNKNOWN));
 			throw new SQLWarning("Client information without a name are not supported", throwable);
 		}
-		if (!Set.of("ApplicationName", "ClientUser", "ClientHostname").contains(name)) {
+		if (!DatabaseMetadataImpl.isSupportedClientInfoProperty(name)) {
 			var throwable = new SQLClientInfoException(Map.of(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY));
 			throw new SQLWarning("Unknown client info property `" + name + "`", throwable);
 		}
