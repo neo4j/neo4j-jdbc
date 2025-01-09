@@ -42,6 +42,7 @@
 			<property
 					name="excludes"
 					value="
+					com.github.stefanbirkner.systemlambda.SystemLambda.*,
                     com.tngtech.archunit.base.DescribedPredicate.*,
                     com.tngtech.archunit.core.domain.JavaClass.Predicates.*,
                     com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*

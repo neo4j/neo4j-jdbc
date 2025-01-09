@@ -51,7 +51,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.neo4j.jdbc.internal.bolt.AuthTokens;
-import org.neo4j.jdbc.internal.bolt.BoltAgentUtil;
+import org.neo4j.jdbc.internal.bolt.BoltAgent;
 import org.neo4j.jdbc.internal.bolt.BoltConnectionProvider;
 import org.neo4j.jdbc.internal.bolt.BoltConnectionProviders;
 import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
@@ -333,7 +333,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			case KERBEROS -> AuthTokens.kerberos(password);
 		};
 
-		var boltAgent = BoltAgentUtil.boltAgent();
+		var boltAgent = BoltAgent.of(ProductVersion.getValue());
 		var userAgent = driverConfig.agent;
 		var connectTimeoutMillis = driverConfig.timeout;
 

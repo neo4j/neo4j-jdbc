@@ -301,7 +301,7 @@ class Neo4jDriverUrlParsingTests {
 				case "user" -> assertThat(info.value).isEqualTo("neo4j");
 				case "password" -> assertThat(info.value).isEqualTo("password");
 				case "authRealm" -> assertThat(info.value).isEqualTo("");
-				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
+				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
 				case "timeout" -> assertThat(info.value).isEqualTo("1000");
 				case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
 					assertThat(info.value).isEqualTo("false");
@@ -328,7 +328,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.user()).isEqualTo("neo4j");
 		assertThat(config.password()).isEqualTo("password");
 		assertThat(config.authRealm()).isEqualTo("");
-		assertThat(config.agent()).isEqualTo("neo4j-jdbc/unknown");
+		assertThat(config.agent()).isEqualTo("neo4j-jdbc/dev");
 		assertThat(config.timeout()).isEqualTo(1000);
 		assertThat(config.enableSQLTranslation()).isFalse();
 		assertThat(config.enableTranslationCaching()).isFalse();
@@ -390,7 +390,7 @@ class Neo4jDriverUrlParsingTests {
 				case "user" -> assertThat(info.value).isEqualTo("user1");
 				case "password" -> assertThat(info.value).isEqualTo("user1Password");
 				case "authRealm" -> assertThat(info.value).isEqualTo("myRealm");
-				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/unknown");
+				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
 				case "timeout" -> assertThat(info.value).isEqualTo("2000");
 				case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
 				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint",

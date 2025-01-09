@@ -3,7 +3,7 @@
 A: HELLO {"{}": "*"}
 A: LOGON {"scheme": "basic", "principal": "neo4j", "credentials": "password"}
 *: RESET
-C: BEGIN {"db": "neo4j", "[tx_type]": "*", "tx_metadata": {"akey": "aval", "akey2": "aval2"}}
+C: BEGIN {"db": "neo4j", "[tx_type]": "*", "tx_metadata": {"app": "StubServerTest Java/1.4 (ms fake -) neo4j-jdbc/xxx", "akey": "aval", "akey2": "aval2"}}
 S: SUCCESS {}
 C: RUN "RETURN 1 as n" {} {}
 S: SUCCESS {"fields": ["n"]}

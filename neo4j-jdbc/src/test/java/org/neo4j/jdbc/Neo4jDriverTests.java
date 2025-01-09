@@ -146,7 +146,7 @@ class Neo4jDriverTests {
 
 	@Test
 	void defaultUAShouldWork() {
-		assertThat(Neo4jDriver.getDefaultUserAgent()).matches("neo4j-jdbc/unknown");
+		assertThat(Neo4jDriver.getDefaultUserAgent()).matches("neo4j-jdbc/dev");
 	}
 
 }

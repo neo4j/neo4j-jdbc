@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
@@ -53,6 +54,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -175,17 +177,14 @@ final class ConnectionImpl implements Neo4jConnection {
 		return sqlTranslator;
 	}
 
-	@SuppressWarnings("MagicConstant") // This is the whole purpose here to encapsulate
-										// those
+	@SuppressWarnings("MagicConstant") // On purpose
 	@Override
 	public Statement createStatement() throws SQLException {
 		return this.createStatement(ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
 				ResultSetImpl.SUPPORTED_HOLDABILITY);
 	}
 
-	@SuppressWarnings({ "MagicConstant", "SqlSourceToSinkFlow" }) // This is the whole
-																	// purpose here to
-																	// encapsulate those
+	@SuppressWarnings({ "MagicConstant", "SqlSourceToSinkFlow" }) // On purpose
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
 		return prepareStatement(sql, ResultSetImpl.SUPPORTED_TYPE, ResultSetImpl.SUPPORTED_CONCURRENCY,
@@ -738,9 +737,12 @@ final class ConnectionImpl implements Neo4jConnection {
 					&& Neo4jTransaction.State.FAILED.equals(this.transaction.getState()))
 							? this.boltConnection.reset(false) : null;
 			Map<String, Object> combinedTransactionMetadata = new HashMap<>(
-					this.transactionMetadata.size() + additionalTransactionMetadata.size());
+					this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
 			combinedTransactionMetadata.putAll(this.transactionMetadata);
 			combinedTransactionMetadata.putAll(additionalTransactionMetadata);
+			if (!combinedTransactionMetadata.containsKey("app")) {
+				combinedTransactionMetadata.put("app", this.getApp());
+			}
 			this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
 					combinedTransactionMetadata, this::handleFatalException, resetStage, this.autoCommit,
 					getAccessMode(), null);
@@ -811,6 +813,33 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.transactionMetadata.putAll(metadata);
 		}
 		return this;
+	}
+
+	/**
+	 * A string suitable to be used as {@code app} value inside Neo4j transactional
+	 * metadata.
+	 * @return a string suitable to be used as {@code app} value inside Neo4j
+	 * transactional metadata
+	 */
+	String getApp() throws SQLException {
+		var applicationName = getClientInfo("ApplicationName");
+		return String.format("%sJava/%s (%s %s %s) neo4j-jdbc/%s",
+				(applicationName == null || applicationName.isBlank()) ? "" : applicationName.trim() + " ",
+				Optional.ofNullable(System.getProperty("java.version"))
+					.filter(Predicate.not(String::isBlank))
+					.orElse("-"),
+				Optional.ofNullable(System.getProperty("java.vm.vendor"))
+					.filter(Predicate.not(String::isBlank))
+					.orElse("-"),
+				Optional.ofNullable(System.getProperty("java.vm.name"))
+					.filter(Predicate.not(String::isBlank))
+					.orElse("-"),
+				Optional.ofNullable(System.getProperty("java.vm.version"))
+					.filter(Predicate.not(String::isBlank))
+					.orElse("-"),
+				Optional.ofNullable(System.getProperty("neo4j.jdbc.version"))
+					.filter(Predicate.not(String::isBlank))
+					.orElseGet(ProductVersion::getValue));
 	}
 
 	static class TranslatorChain implements UnaryOperator<String> {

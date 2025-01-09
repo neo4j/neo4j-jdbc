@@ -18,5 +18,46 @@
  */
 package org.neo4j.jdbc.internal.bolt;
 
+import java.util.Optional;
+
 public record BoltAgent(String product, String platform, String language, String languageDetails) {
+
+	public static BoltAgent of(String driverVersion) {
+		var platformBuilder = new StringBuilder();
+		getProperty("os.name").ifPresent(value -> append(value, platformBuilder));
+		getProperty("os.version").ifPresent(value -> append(value, platformBuilder));
+		getProperty("os.arch").ifPresent(value -> append(value, platformBuilder));
+
+		var language = getProperty("java.version").map(version -> "Java/" + version);
+
+		var languageDetailsBuilder = new StringBuilder();
+		getProperty("java.vm.vendor").ifPresent(value -> append(value, languageDetailsBuilder));
+		getProperty("java.vm.name").ifPresent(value -> append(value, languageDetailsBuilder));
+		getProperty("java.vm.version").ifPresent(value -> append(value, languageDetailsBuilder));
+
+		return new BoltAgent(String.format("neo4j-jdbc/%s", driverVersion),
+				platformBuilder.isEmpty() ? null : platformBuilder.toString(), language.orElse(null),
+				languageDetailsBuilder.isEmpty() ? null : languageDetailsBuilder.toString());
+	}
+
+	private static Optional<String> getProperty(String key) {
+		try {
+			var value = System.getProperty(key);
+			if (value != null) {
+				value = value.trim();
+			}
+			return (value != null && !value.isEmpty()) ? Optional.of(value) : Optional.empty();
+		}
+		catch (SecurityException exception) {
+			return Optional.empty();
+		}
+	}
+
+	private static void append(String value, StringBuilder builder) {
+		if (value != null && !value.isEmpty()) {
+			var separator = builder.isEmpty() ? "" : "; ";
+			builder.append(separator).append(value);
+		}
+	}
+
 }

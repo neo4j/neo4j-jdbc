@@ -68,6 +68,11 @@
 			<artifactId>neo4j-jdbc-translator-spi</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.github.stefanbirkner</groupId>
+			<artifactId>system-lambda</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.tngtech.archunit</groupId>
 			<artifactId>archunit</artifactId>
 			<scope>test</scope>

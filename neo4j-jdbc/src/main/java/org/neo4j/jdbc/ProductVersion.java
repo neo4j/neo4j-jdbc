@@ -63,7 +63,7 @@ final class ProductVersion {
 	private static int getVersion(int idx) {
 
 		var value = getValue();
-		if ("unknown".equalsIgnoreCase(value)) {
+		if ("dev".equalsIgnoreCase(value)) {
 			throw new IllegalArgumentException("Unsupported or unknown version '%s'".formatted(value));
 		}
 		var part = value.split("\\.")[idx];
@@ -73,6 +73,8 @@ final class ProductVersion {
 
 	private static String getVersionImpl() {
 		try {
+			// Using Neo4jDriver.class.getPackage().getImplementationVersion()
+			// doesn't work on the module path
 			Enumeration<URL> resources = Neo4jDriver.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
 			while (resources.hasMoreElements()) {
 				URL url = resources.nextElement();
@@ -87,7 +89,7 @@ final class ProductVersion {
 			throw new UncheckedIOException("Unable to read from neo4j-jdbc manifest.", ex);
 		}
 
-		return "unknown";
+		return "dev";
 	}
 
 	private static boolean isApplicableManifest(Manifest manifest) {
