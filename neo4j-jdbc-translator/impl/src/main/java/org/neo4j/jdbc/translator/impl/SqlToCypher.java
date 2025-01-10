@@ -58,10 +58,7 @@ import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.conf.ParamType;
-import org.jooq.conf.ParseUnknownFunctions;
-import org.jooq.conf.ParseWithMetaLookups;
 import org.jooq.impl.DSL;
-import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.ParserException;
 import org.jooq.impl.QOM;
 import org.jooq.impl.QOM.TableAlias;
@@ -181,14 +178,7 @@ final class SqlToCypher implements Translator {
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private DSLContext createDSLContext() {
 
-		var settings = new DefaultConfiguration().settings()
-			.withParseNameCase(this.config.getParseNameCase())
-			.withRenderNameCase(this.config.getRenderNameCase())
-			.withParseWithMetaLookups(ParseWithMetaLookups.IGNORE_ON_FAILURE)
-			.withDiagnosticsLogging(true)
-			.withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
-			.withParseDialect(this.config.getSqlDialect());
-
+		var settings = this.config.asSettings();
 		Optional.ofNullable(this.config.getParseNamedParamPrefix())
 			.filter(Predicate.not(String::isBlank))
 			.map(String::trim)

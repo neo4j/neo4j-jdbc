@@ -48,6 +48,11 @@
 			<artifactId>neo4j-jdbc-translator-impl</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-jdbc-translator-sparkcleaner</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
