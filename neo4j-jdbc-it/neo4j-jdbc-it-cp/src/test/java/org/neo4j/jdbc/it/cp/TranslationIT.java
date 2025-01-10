@@ -399,6 +399,56 @@ class TranslationIT extends IntegrationTestBase {
 
 	}
 
+	@SuppressWarnings({ "SqlNoDataSourceInspection", "unchecked" })
+	@Test
+	void sparkUnwrapRewrap() throws Exception {
+
+		var title = "JDBC The SQL strikes back";
+
+		try (var connection = getConnection(true, false)) {
+			try (var statement = ((Neo4jPreparedStatement) connection.prepareStatement("""
+					/*+ NEO4J FORCE_CYPHER */
+					CREATE (m:Movie {title:  $title, released: $released})
+					CREATE (d:Person {name: 'Donald D. Chamberlin'})
+					CREATE (r:Person {name: 'Raymond F. Boyce'})
+					CREATE (e:Person {name: 'Edgar F. Codd'})
+					CREATE (r)-[:ACTED_IN {roles: ['Researcher']}]->(m)
+					CREATE (d)-[:ACTED_IN {roles: ['Designer']}]->(m)
+					CREATE (e)-[:ACTED_IN {roles: ['Influencer']}]->(m)
+					"""))) {
+				statement.setString("title", title);
+				statement.setInt("released", 1974);
+				statement.execute();
+			}
+
+			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					SELECT * FROM (
+					MATCH (m:Movie)<-[:ACTED_IN]-(p:Person)
+					RETURN m.title AS title, collect(p.name) AS actors
+					ORDER BY m.title
+					) SPARK_GEN_SUBQ_0 WHERE 1=0
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getString("title")).isEqualTo(title);
+				assertThat((List<String>) rs.getObject("actors")).containsExactlyInAnyOrder("Donald D. Chamberlin",
+						"Raymond F. Boyce", "Edgar F. Codd");
+				assertThat(rs.next()).isFalse();
+			}
+
+			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					SELECT * FROM (
+					SELECT name FROM Person SPARK_GEN_SUBQ_0 ORDER BY name DESC
+					) SPARK_GEN_SUBQ_0 WHERE 1=0
+					""")) {
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getString(1)).isEqualTo("Raymond F. Boyce");
+				assertThat(rs.next()).isFalse();
+			}
+
+		}
+	}
+
 	record PersonAndTitle(String name, String title) {
 	}
 

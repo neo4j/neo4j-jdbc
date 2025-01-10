@@ -1,1 +1,2 @@
 org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory
+org.neo4j.jdbc.translator.impl.SparkSubqueryCleaningTranslatorFactory

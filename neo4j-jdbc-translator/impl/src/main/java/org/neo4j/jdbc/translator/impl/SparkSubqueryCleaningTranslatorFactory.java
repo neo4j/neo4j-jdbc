@@ -16,17 +16,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.neo4j.jdbc.translator.impl.SparkSubqueryCleaningTranslatorFactory;
-import org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
+package org.neo4j.jdbc.translator.impl;
+
+import java.util.Map;
+
+import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
 /**
- * The default Sql translator shipped with the JDK 17 version of the driver.
+ * Creates a {@link SparkSubqueryCleaningTranslator} with the same settings as the
+ * {@link SqlToCypher} translator for parsing.
+ *
+ * @author Michael J. Simons
+ * @since 6.2.0
  */
-module org.neo4j.jdbc.translator.impl {
-	provides TranslatorFactory with SqlToCypherTranslatorFactory, SparkSubqueryCleaningTranslatorFactory;
+public final class SparkSubqueryCleaningTranslatorFactory implements TranslatorFactory {
 
-	requires org.neo4j.jdbc.translator.spi;
-	requires org.jooq;
-	requires org.neo4j.cypherdsl.core;
+	@Override
+	public Translator create(Map<String, ?> config) {
+
+		var sqlToCypherConfig = SqlToCypherConfig.of(config);
+		return new SparkSubqueryCleaningTranslator(sqlToCypherConfig);
+	}
+
 }
