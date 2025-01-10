@@ -1478,8 +1478,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean autoCommitFailureClosesAllResultSets() {
+		return true;
 	}
 
 	@Override
