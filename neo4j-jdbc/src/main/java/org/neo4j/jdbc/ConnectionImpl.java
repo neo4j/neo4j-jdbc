@@ -862,9 +862,11 @@ final class ConnectionImpl implements Neo4jConnection {
 			if (this.translators.size() == 1) {
 				return this.translators.get(0).translate(statement, this.metaData);
 			}
+
+			Throwable lastException = null;
 			String result = null;
+			String in = statement;
 			for (var translator : this.translators) {
-				var in = (result != null) ? result : statement;
 				// Break out early if any of the translators indicates a final Cypher
 				// statement
 				if (StatementImpl.forceCypher(in)) {
@@ -872,16 +874,24 @@ final class ConnectionImpl implements Neo4jConnection {
 				}
 				try {
 					result = translator.translate(in, this.metaData);
+					// Don't overwrite previous results if the intermediate is null
+					if (result != null) {
+						in = result;
+					}
 				}
 				catch (IllegalArgumentException ex) {
 					this.warningSink.accept(new SQLWarning(
 							"Translator %s failed to translate `%s`".formatted(translator.getClass().getName(), in),
 							ex));
+					if (ex.getCause() != null) {
+						lastException = ex.getCause();
+					}
 				}
 			}
 
 			if (result == null) {
-				throw new IllegalStateException("No suitable translator for input `%s`".formatted(statement));
+				throw new IllegalStateException("No suitable translator for input `%s`".formatted(statement),
+						lastException);
 			}
 
 			return result;
