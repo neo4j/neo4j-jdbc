@@ -59,16 +59,16 @@ final class SparkSubqueryCleaningTranslator implements Translator {
 	@Override
 	public String translate(String statement, DatabaseMetaData optionalDatabaseMetaData) {
 		if (!mightBeASparkQuery(statement)) {
-			return null;
+			return statement;
 		}
 
 		var extractedSubquery = extractSubquery(statement);
 		if (extractedSubquery.isEmpty()) {
-			return null;
+			return statement;
 		}
 
 		if (canParseAsSelect(extractedSubquery.get())) {
-			return null;
+			return statement;
 		}
 
 		// Thing is by a good chance Cypher…
