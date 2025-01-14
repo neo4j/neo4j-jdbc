@@ -693,9 +693,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private static List<Translator> sortedListOfTranslators(Map<String, ?> config, List<TranslatorFactory> factories) {
 		if (factories.size() == 1) {
-			return List.of(factories.get(0).create(config));
+			var t1 = factories.get(0).create(config);
+			return (t1 != null) ? List.of(t1) : List.of();
 		}
-		return factories.stream().map(factory -> factory.create(config)).sorted(TranslatorComparator.INSTANCE).toList();
+		return factories.stream()
+			.map(factory -> factory.create(config))
+			.filter(Objects::nonNull)
+			.sorted(TranslatorComparator.INSTANCE)
+			.toList();
 	}
 
 	@Override
