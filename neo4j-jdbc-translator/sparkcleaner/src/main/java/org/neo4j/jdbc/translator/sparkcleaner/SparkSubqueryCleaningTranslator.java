@@ -90,7 +90,6 @@ final class SparkSubqueryCleaningTranslator implements Translator {
 		var parser = new Cypher5Parser(tokens);
 		parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
 		parser.setErrorHandler(new BailErrorStrategy());
-		Cypher5Parser.StatementsContext statements;
 		try {
 			parser.statements();
 		}
