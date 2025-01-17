@@ -23,8 +23,11 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.neo4j.cypher.internal.parser.v5.Cypher5Lexer;
 import org.neo4j.cypher.internal.parser.v5.Cypher5Parser;
 import org.neo4j.jdbc.translator.spi.Translator;
@@ -81,11 +84,29 @@ final class SparkSubqueryCleaningTranslator implements Translator {
 
 	boolean canParseAsCypher(String statement) {
 
+		// We might want to replace Unicode escape characters in the future
+		// https://github.com/neo-technology/neo4j/blob/dev/public/community/cypher/front-end/parser/common/antlr-ast-common/src/main/java/org/neo4j/cypher/internal/parser/lexer/UnicodeEscapeReplacementReader.java
 		var tokens = new CommonTokenStream(new Cypher5Lexer(CharStreams.fromString(statement)));
 		var parser = new Cypher5Parser(tokens);
-		parser.getErrorListeners().clear();
-		var statements = parser.statements();
-		return statements.getChildCount() != 0 && parser.isMatchedEOF() && parser.getNumberOfSyntaxErrors() == 0;
+		parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+		parser.setErrorHandler(new BailErrorStrategy());
+		Cypher5Parser.StatementsContext statements;
+		try {
+			parser.statements();
+		}
+		catch (Exception ex) {
+			tokens.seek(0);
+			parser.reset();
+			parser.getInterpreter().setPredictionMode(PredictionMode.LL);
+			try {
+				parser.statements();
+			}
+			catch (ParseCancellationException ex2) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 }
