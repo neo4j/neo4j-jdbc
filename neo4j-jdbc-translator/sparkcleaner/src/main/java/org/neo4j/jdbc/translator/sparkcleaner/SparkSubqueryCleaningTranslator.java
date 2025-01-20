@@ -39,7 +39,7 @@ import org.neo4j.jdbc.translator.spi.Translator;
  * The check is performed by parsing it with jOOQ as well.
  *
  * @author Michael J. Simons
- * @since 6.2.0
+ * @since 6.1.2
  */
 final class SparkSubqueryCleaningTranslator implements Translator {
 

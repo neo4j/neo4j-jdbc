@@ -29,7 +29,7 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
  * Creates a {@link SparkSubqueryCleaningTranslator}.
  *
  * @author Michael J. Simons
- * @since 6.2.0
+ * @since 6.1.2
  */
 public final class SparkSubqueryCleaningTranslatorFactory implements TranslatorFactory {
 
