@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-01-20T08:38:46Z</span>
+<span id="revdate">2025-01-20T10:58:35Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -3204,7 +3204,7 @@ RETURN 1</code></pre>
 </div>
 <div id="p5_0_expected" class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:`movies`) WHERE m.title =~ '.*Matrix.*' OR m.title =~ 'M.trix'
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:`movies`) WHERE m.title CONTAINS 'Matrix' OR m.title =~ 'M.trix'
 RETURN *</code></pre>
 </div>
 </div>
@@ -4178,7 +4178,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-20 08:38:52 UTC
+Last updated 2025-01-20 10:58:44 UTC
 </div>
 </div>
 </body>
