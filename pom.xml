@@ -134,7 +134,7 @@
 		<asciidoctor-maven-plugin.version>3.1.1</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 		<asciidoctorj.version>3.0.0</asciidoctorj.version>
-		<assertj.version>3.27.2</assertj.version>
+		<assertj.version>3.27.3</assertj.version>
 		<build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
 		<checkstyle.version>10.21.1</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
@@ -152,7 +152,7 @@
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
 		<jdbi3.version>3.47.0</jdbi3.version>
-		<jooq.version>3.19.17</jooq.version>
+		<jooq.version>3.19.18</jooq.version>
 		<jreleaser-maven-plugin.version>1.16.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.11.4</junit-jupiter.version>
 		<kotlin-stdlib-jdk8.version>2.1.0</kotlin-stdlib-jdk8.version>
@@ -182,13 +182,13 @@
 		<neo4j-jdbc.previous.version>6.1.1</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.26.0</neo4j.version>
-		<netty.version>4.1.116.Final</netty.version>
+		<netty.version>4.1.117.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.10.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.10</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.17.6</quarkus.platform.version>
+		<quarkus.platform.version>3.17.7</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
