@@ -407,6 +407,28 @@ class SqlToCypherTests {
 		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));
 	}
 
+	@ParameterizedTest
+	@CsvSource(
+			textBlock = """
+					SELECT * FROM blub b WHERE name like '%Test%', MATCH (b:blub) WHERE b.name CONTAINS 'Test' RETURN *
+					SELECT * FROM blub b WHERE name like '%Test', MATCH (b:blub) WHERE b.name ENDS WITH 'Test' RETURN *
+					SELECT * FROM blub b WHERE name like 'Test%', MATCH (b:blub) WHERE b.name STARTS WITH 'Test' RETURN *
+					SELECT * FROM blub b WHERE name like 'This is _ %Test%', MATCH (b:blub) WHERE b.name =~ 'This is . .*Test.*' RETURN *
+					SELECT * FROM blub b WHERE name like '%', MATCH (b:blub) WHERE b.name =~ '.*' RETURN *
+					SELECT * FROM blub b WHERE name like '%%', MATCH (b:blub) WHERE b.name =~ '.*' RETURN *
+					SELECT * FROM blub b WHERE name like '%%%', MATCH (b:blub) WHERE b.name =~ '.*' RETURN *
+					SELECT * FROM blub b WHERE name like '_', MATCH (b:blub) WHERE b.name =~ '.' RETURN *
+					SELECT * FROM blub b WHERE name like '__', MATCH (b:blub) WHERE b.name =~ '..' RETURN *
+					SELECT * FROM blub b WHERE name like '___', MATCH (b:blub) WHERE b.name =~ '...' RETURN *
+					SELECT * FROM blub b WHERE name like '%_%', MATCH (b:blub) WHERE b.name =~ '.*..*' RETURN *
+					SELECT * FROM blub b WHERE name like '%ein%schöner%Name%', MATCH (b:blub) WHERE b.name =~ '.*ein.*schöner.*Name.*' RETURN *
+					""")
+	void likeShouldBeHandledNicely(String sql, String expected) {
+
+		var translator = SqlToCypher.defaultTranslator();
+		assertThat(translator.translate(sql)).isEqualTo(expected);
+	}
+
 	private static class TestDataExtractor extends Treeprocessor {
 
 		private final List<TestData> testData = new ArrayList<>();

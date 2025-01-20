@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -104,6 +105,7 @@ final class SqlToCypher implements Translator {
 	static final Pattern ELEMENT_ID_PATTERN = Pattern.compile("(?i)v\\$(?:(?<prefix>.+?)_)?id");
 	static final String ELEMENT_ID_FUNCTION_NAME = "elementId";
 	static final String ELEMENT_ID_ALIAS = "v$id";
+	static final Pattern PERCENT_OR_UNDERSCORE = Pattern.compile("[%_]");
 
 	static {
 		Logger.getLogger("org.jooq.Constants").setLevel(Level.WARNING);
@@ -1186,14 +1188,7 @@ final class SqlToCypher implements Translator {
 						.orElseThrow();
 				}
 				else if (c instanceof QOM.Like like) {
-					Expression rhs;
-					if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
-						rhs = Cypher.literalOf(s.replace("%", ".*").replace("_", "."));
-					}
-					else {
-						rhs = expression(like.$arg2());
-					}
-					return expression(like.$arg1()).matches(rhs);
+					return like(like);
 				}
 				else if (c instanceof QOM.FieldCondition fc && fc.$field() instanceof Param<Boolean> param) {
 					return (Boolean.TRUE.equals(param.getValue()) ? Cypher.literalTrue() : Cypher.literalFalse())
@@ -1210,6 +1205,41 @@ final class SqlToCypher implements Translator {
 			finally {
 				this.useAliasForVColumn.set(true);
 			}
+		}
+
+		private Condition like(QOM.Like like) {
+			Expression rhs;
+			Expression lhs = expression(like.$arg1());
+			if (like.$arg2() instanceof Param<?> p && p.$inline() && p.getValue() instanceof String s) {
+				var sw = s.startsWith("%");
+				var ew = s.endsWith("%");
+				var length = s.length();
+				var cnt = new LongSupplier() {
+					Long value = null;
+
+					@Override
+					public long getAsLong() {
+						if (this.value == null) {
+							this.value = PERCENT_OR_UNDERSCORE.matcher(s).results().count();
+						}
+						return this.value;
+					}
+				};
+				if (sw && ew && length > 2 && cnt.getAsLong() == 2) {
+					return lhs.contains(Cypher.literalOf(s.substring(1, length - 1)));
+				}
+				else if (sw && length > 1 && cnt.getAsLong() == 1) {
+					return lhs.endsWith(Cypher.literalOf(s.substring(1)));
+				}
+				else if (ew && length > 1 && cnt.getAsLong() == 1) {
+					return lhs.startsWith(Cypher.literalOf(s.substring(0, length - 1)));
+				}
+				rhs = Cypher.literalOf(s.replaceAll("%+", ".*").replace("_", "."));
+			}
+			else {
+				rhs = expression(like.$arg2());
+			}
+			return lhs.matches(rhs);
 		}
 
 		private Condition rowCondition(Row r1, Row r2,

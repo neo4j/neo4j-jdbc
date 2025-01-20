@@ -186,6 +186,6 @@ will be translated into a regular expressions, replacing the `%` with `.*`:
 
 [source,cypher,id=p5_0_expected]
 ----
-MATCH (m:`movies`) WHERE m.title =~ '.*Matrix.*' OR m.title =~ 'M.trix'
+MATCH (m:`movies`) WHERE m.title CONTAINS 'Matrix' OR m.title =~ 'M.trix'
 RETURN *
 ----
