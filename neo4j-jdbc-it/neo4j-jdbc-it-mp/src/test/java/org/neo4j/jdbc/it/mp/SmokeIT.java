@@ -43,6 +43,7 @@ public class SmokeIT {
 		Assertions.assertThatNoException().isThrownBy(() -> DriverManager.getDriver(url));
 	}
 
+	@SuppressWarnings("SqlNoDataSourceInspection")
 	@Test
 	void shouldConfigureConnectionToUseSqlTranslator() throws SQLException {
 
@@ -51,6 +52,18 @@ public class SmokeIT {
 		assertThat(connection).isNotNull();
 		assertThat(connection.nativeSQL("SELECT * FROM FooBar"))
 			.isEqualTo("MATCH (foobar:FooBar) RETURN elementId(foobar) AS `v$id`");
+		assertThat(connection.nativeSQL("""
+				SELECT * FROM (
+				MATCH (m:Movie)<-[:ACTED_IN]-(p:Person)
+				RETURN m.title AS title, collect(p.name) AS actors
+				ORDER BY m.title
+				) SPARK_GEN_SUBQ_0 WHERE 1=0
+				""")).isEqualTo("""
+				/*+ NEO4J FORCE_CYPHER */
+				CALL {MATCH (m:Movie)<-[:ACTED_IN]-(p:Person)
+				RETURN m.title AS title, collect(p.name) AS actors
+				ORDER BY m.title} RETURN * LIMIT 1
+				""".trim());
 	}
 
 	static boolean boltPortIsReachable() {

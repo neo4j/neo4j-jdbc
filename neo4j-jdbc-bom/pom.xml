@@ -58,6 +58,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-jdbc-translator-sparkcleaner</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.neo4j</groupId>
 				<artifactId>neo4j-jdbc-translator-spi</artifactId>
 				<version>${project.version}</version>
 			</dependency>

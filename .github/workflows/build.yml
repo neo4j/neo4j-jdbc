@@ -58,7 +58,7 @@ jobs:
         run: >
           ./mvnw --no-transfer-progress
           -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc'
-          -am -pl neo4j-jdbc -pl neo4j-jdbc-bom -pl bundles/neo4j-jdbc-bundle -pl bundles/neo4j-jdbc-full-bundle          
+          -am -pl neo4j-jdbc -pl neo4j-jdbc-bom -pl bundles/neo4j-jdbc-bundle -pl bundles/neo4j-jdbc-full-bundle -pl neo4j-jdbc-translator/sparkcleaner
           clean install
 
   integration_tests:

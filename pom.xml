@@ -139,6 +139,7 @@
 		<checkstyle.version>10.21.1</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
+		<cypher-v5-antlr-parser.version>5.26.1</cypher-v5-antlr-parser.version>
 		<docker-maven-plugin.version>0.45.1</docker-maven-plugin.version>
 		<dotenv-java.version>3.1.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
@@ -180,7 +181,7 @@
 		<neo4j-cypher-dsl.version>2024.4.0</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.1.1</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
-		<neo4j.version>5.23.0</neo4j.version>
+		<neo4j.version>5.26.0</neo4j.version>
 		<netty.version>4.1.117.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.10.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.10</opencsv.version>
@@ -283,6 +284,11 @@
 				<groupId>org.jooq</groupId>
 				<artifactId>jooq</artifactId>
 				<version>${jooq.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>cypher-v5-antlr-parser</artifactId>
+				<version>${cypher-v5-antlr-parser.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>

@@ -36,6 +36,7 @@
 	<modules>
 		<module>spi</module>
 		<module>impl</module>
+		<module>sparkcleaner</module>
 		<module>text2cypher</module>
 	</modules>
 

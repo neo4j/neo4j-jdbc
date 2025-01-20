@@ -30,7 +30,11 @@ import java.util.stream.Collectors;
 
 import org.jooq.SQLDialect;
 import org.jooq.conf.ParseNameCase;
+import org.jooq.conf.ParseUnknownFunctions;
+import org.jooq.conf.ParseWithMetaLookups;
 import org.jooq.conf.RenderNameCase;
+import org.jooq.conf.Settings;
+import org.jooq.impl.DefaultConfiguration;
 import org.neo4j.jdbc.translator.spi.Translator;
 
 /**
@@ -347,6 +351,20 @@ public final class SqlToCypherConfig {
 	 */
 	public Integer getPrecedence() {
 		return this.precedence;
+	}
+
+	public Settings asSettings() {
+		return asSettings(ParseWithMetaLookups.IGNORE_ON_FAILURE);
+	}
+
+	public Settings asSettings(ParseWithMetaLookups withMetaLookups) {
+		return new DefaultConfiguration().settings()
+			.withParseNameCase(getParseNameCase())
+			.withRenderNameCase(getRenderNameCase())
+			.withParseWithMetaLookups(withMetaLookups)
+			.withDiagnosticsLogging(isJooqDiagnosticLogging())
+			.withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
+			.withParseDialect(getSqlDialect());
 	}
 
 	/**
