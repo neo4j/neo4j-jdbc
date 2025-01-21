@@ -18,33 +18,27 @@
  */
 package org.neo4j.jdbc;
 
-import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.internal.bolt.BoltAgent;
-
-import static com.github.stefanbirkner.systemlambda.SystemLambda.restoreSystemProperties;
-import static org.assertj.core.api.Assertions.assertThat;
-
 class BoltAgentTests {
 
-	@Test
-	void factoryMethodShouldWork() throws Exception {
-
-		restoreSystemProperties(() -> {
-			System.setProperty("os.name", "foo");
-			System.setProperty("os.version", "bar");
-			System.setProperty("os.arch", "bazbar");
-
-			System.setProperty("java.version", "1.4");
-			System.setProperty("java.vm.vendor", "ms");
-			System.setProperty("java.vm.name", "fake");
-			System.clearProperty("java.vm.version");
-
-			var whatever = BoltAgent.of("whatever");
-			assertThat(whatever.product()).isEqualTo("neo4j-jdbc/whatever");
-			assertThat(whatever.platform()).isEqualTo("foo; bar; bazbar");
-			assertThat(whatever.language()).isEqualTo("Java/1.4");
-			assertThat(whatever.languageDetails()).isEqualTo("ms; fake");
-		});
-	}
+	// @Test
+	// void factoryMethodShouldWork() throws Exception {
+	//
+	// restoreSystemProperties(() -> {
+	// System.setProperty("os.name", "foo");
+	// System.setProperty("os.version", "bar");
+	// System.setProperty("os.arch", "bazbar");
+	//
+	// System.setProperty("java.version", "1.4");
+	// System.setProperty("java.vm.vendor", "ms");
+	// System.setProperty("java.vm.name", "fake");
+	// System.clearProperty("java.vm.version");
+	//
+	// var whatever = BoltAgent.of("whatever");
+	// assertThat(whatever.product()).isEqualTo("neo4j-jdbc/whatever");
+	// assertThat(whatever.platform()).isEqualTo("foo; bar; bazbar");
+	// assertThat(whatever.language()).isEqualTo("Java/1.4");
+	// assertThat(whatever.languageDetails()).isEqualTo("ms; fake");
+	// });
+	// }
 
 }

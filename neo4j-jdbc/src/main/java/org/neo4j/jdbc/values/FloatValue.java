@@ -43,6 +43,11 @@ public final class FloatValue extends AbstractNumberValue<Double> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.FLOAT);
+	}
+
+	@Override
 	public long asLong() {
 		var longVal = (long) this.val;
 		if (Double.compare(longVal, this.val) != 0) {

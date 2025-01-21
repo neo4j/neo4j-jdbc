@@ -47,7 +47,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -57,14 +56,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.neo4j.jdbc.internal.bolt.AccessMode;
-import org.neo4j.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.jdbc.internal.bolt.exception.ConnectionReadTimeoutException;
-import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
-import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
+import org.neo4j.driver.internal.bolt.api.AccessMode;
+import org.neo4j.driver.internal.bolt.api.BasicResponseHandler;
+import org.neo4j.driver.internal.bolt.api.BoltConnection;
+import org.neo4j.driver.internal.bolt.api.exception.BoltConnectionReadTimeoutException;
+import org.neo4j.driver.internal.bolt.api.exception.BoltFailureException;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
 
@@ -124,6 +122,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final int relationshipSampleSize = 1000;
 
+	private final String databaseName;
+
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
 	 * for future use.
@@ -132,7 +132,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	ConnectionImpl(BoltConnection boltConnection, Supplier<List<Translator>> translators, boolean enableSQLTranslation,
 			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
-			BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata) {
+			BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata, String databaseName) {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
@@ -141,6 +141,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.rewritePlaceholders = rewritePlaceholders;
 		this.bookmarkManager = Objects.requireNonNull(bookmarkManager);
 		this.transactionMetadata.putAll(Objects.requireNonNullElseGet(transactionMetadata, Map::of));
+		this.databaseName = Objects.requireNonNull(databaseName);
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
@@ -527,7 +528,11 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		else {
 			try {
-				var future = this.boltConnection.reset(true).toCompletableFuture();
+				var handler = new BasicResponseHandler();
+				var future = this.boltConnection.reset()
+					.thenCompose(conn -> conn.flush(handler))
+					.thenCompose(ignored -> handler.summaries())
+					.toCompletableFuture();
 				if (timeout > 0) {
 					future.get(timeout, TimeUnit.SECONDS);
 				}
@@ -547,7 +552,7 @@ final class ConnectionImpl implements Neo4jConnection {
 				if (cause == null) {
 					cause = ex;
 				}
-				if (!(cause instanceof Neo4jException) && !(cause instanceof MessageIgnoredException)) {
+				if (!(cause instanceof BoltFailureException)) {
 					this.fatalException = new SQLException("The connection is no longer valid.", ex);
 					handleFatalException(this.fatalException, new SQLException(cause));
 				}
@@ -680,14 +685,15 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		this.networkTimeout = milliseconds;
 		if (milliseconds == 0) {
-			this.boltConnection.defaultReadTimeoutMillis()
-				.ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
-						"setNetworkTimeout has been called with 0, will use the Bolt server default of %d milliseconds.",
-						defaultTimeout)));
-			this.boltConnection.setReadTimeoutMillis(0L);
+			// this.boltConnection.defaultReadTimeoutMillis()
+			// .ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
+			// "setNetworkTimeout has been called with 0, will use the Bolt server default
+			// of %d milliseconds.",
+			// defaultTimeout)));
+			// this.boltConnection.setReadTimeoutMillis(0L);
 		}
 		else {
-			this.boltConnection.setReadTimeoutMillis((long) this.networkTimeout);
+			// this.boltConnection.setReadTimeoutMillis((long) this.networkTimeout);
 		}
 	}
 
@@ -733,9 +739,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			}
 		}
 		else {
-			CompletionStage<Void> resetStage = (this.transaction != null
-					&& Neo4jTransaction.State.FAILED.equals(this.transaction.getState()))
-							? this.boltConnection.reset(false) : null;
+			var resetNeeded = this.transaction != null
+					&& Neo4jTransaction.State.FAILED.equals(this.transaction.getState());
 			Map<String, Object> combinedTransactionMetadata = new HashMap<>(
 					this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
 			combinedTransactionMetadata.putAll(this.transactionMetadata);
@@ -744,8 +749,8 @@ final class ConnectionImpl implements Neo4jConnection {
 				combinedTransactionMetadata.put("app", this.getApp());
 			}
 			this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
-					combinedTransactionMetadata, this::handleFatalException, resetStage, this.autoCommit,
-					getAccessMode(), null);
+					combinedTransactionMetadata, this::handleFatalException, resetNeeded, this.autoCommit,
+					getAccessMode(), null, this.databaseName);
 		}
 		return this.transaction;
 	}
@@ -764,7 +769,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String getDatabaseName() {
-		return this.boltConnection.getDatabaseName();
+		return this.databaseName;
 	}
 
 	private <T extends Statement> T trackStatement(T statement) {
@@ -783,7 +788,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private void handleFatalException(SQLException fatalSqlException, SQLException sqlException) {
 		var cause = sqlException.getCause();
-		if (cause instanceof ConnectionReadTimeoutException) {
+		if (cause instanceof BoltConnectionReadTimeoutException) {
 			for (var reference : this.trackedStatementReferences) {
 				var statement = reference.get();
 				if (statement != null) {

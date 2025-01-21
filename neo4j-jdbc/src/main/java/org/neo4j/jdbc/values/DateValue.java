@@ -40,6 +40,11 @@ public final class DateValue extends AbstractObjectValue<LocalDate> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.DATE);
+	}
+
+	@Override
 	public LocalDate asLocalDate() {
 		return asObject();
 	}

@@ -31,6 +31,11 @@ public final class PathValue extends AbstractObjectValue<Path> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.PATH);
+	}
+
+	@Override
 	public Path asPath() {
 		return asObject();
 	}

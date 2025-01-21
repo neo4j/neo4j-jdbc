@@ -52,6 +52,11 @@ public final class BytesValue extends AbstractValue {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.BYTES);
+	}
+
+	@Override
 	public byte[] asObject() {
 		return this.val;
 	}

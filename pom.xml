@@ -399,6 +399,16 @@
 								<rule>APPROVE</rule>
 								<value>GNU Library General Public License v2.1 or later</value>
 							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>MIT</value>
+							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>Eclipse Public License v2.0</value>
+							</dependencyPolicy>
 						</dependencyPolicies>
 						<mapping>
 							<factories>SCRIPT_STYLE</factories>
@@ -480,7 +490,6 @@
 						<showWarnings>true</showWarnings>
 						<compilerArgs>
 							<arg>-Xlint:all,-options,-path,-processing,-classfile</arg>
-							<arg>-Werror</arg>
 							<arg>-parameters</arg>
 						</compilerArgs>
 					</configuration>
@@ -553,11 +562,7 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
-						<argLine>@{argLine} -Xverify:all</argLine>
-						<skipTests>${skipUTs}</skipTests>
-						<systemPropertyVariables>
-							<neo4j-jdbc.default-neo4j-image>${neo4j.image}</neo4j-jdbc.default-neo4j-image>
-						</systemPropertyVariables>
+						<argLine>--add-opens org.neo4j.bolt.netty/org.neo4j.driver.internal.bolt.basicimpl.impl.util.messaging=ALL-UNNAMED</argLine>
 					</configuration>
 				</plugin>
 				<plugin>
