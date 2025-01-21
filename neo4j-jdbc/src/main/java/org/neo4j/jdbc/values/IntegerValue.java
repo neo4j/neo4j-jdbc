@@ -43,6 +43,11 @@ public final class IntegerValue extends AbstractNumberValue<Long> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.INTEGER);
+	}
+
+	@Override
 	public long asLong() {
 		return this.val;
 	}

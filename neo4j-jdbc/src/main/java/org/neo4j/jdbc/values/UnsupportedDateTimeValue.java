@@ -56,6 +56,11 @@ public final class UnsupportedDateTimeValue extends AbstractValue {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.DATE_TIME);
+	}
+
+	@Override
 	public Object asObject() {
 		throw instantiateDateTimeException();
 	}

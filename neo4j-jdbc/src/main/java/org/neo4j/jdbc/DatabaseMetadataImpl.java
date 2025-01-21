@@ -45,9 +45,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;

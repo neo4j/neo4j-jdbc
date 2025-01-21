@@ -76,6 +76,9 @@ public final class Values {
 			return NullValue.NULL;
 		}
 
+		if (value instanceof BoltValue boltValue) {
+			return boltValue.asDriverValue();
+		}
 		if (value instanceof Value alreadyAValue) {
 			return alreadyAValue;
 		}

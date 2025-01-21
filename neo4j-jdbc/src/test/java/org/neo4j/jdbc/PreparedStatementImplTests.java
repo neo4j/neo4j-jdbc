@@ -64,11 +64,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.neo4j.jdbc.internal.bolt.response.DiscardResponse;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.jdbc.internal.bolt.response.SummaryCounters;
+import org.neo4j.driver.internal.bolt.api.SummaryCounters;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
