@@ -45,9 +45,10 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
+import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
+import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
+import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -1898,7 +1899,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {
 		var transaction = this.transactionSupplier.getTransaction(Map.of());
-		var newTransaction = Neo4jTransaction.State.NEW.equals(transaction.getState());
+		var newTransaction = State.NEW.equals(transaction.getState());
 		var responses = transaction.runAndPull(request.query, request.args, -1, 0);
 		if (newTransaction) {
 			transaction.rollback();

@@ -35,6 +35,7 @@
 	<description>Implementation of the Neo4j JDBC driver.</description>
 
 	<properties>
+		<japicmp.skip>true</japicmp.skip>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
@@ -56,16 +57,17 @@
 			<artifactId>dotenv-java</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-handler</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-cypher-dsl-schema-name-support</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-translator-spi</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j.driver</groupId>
+			<artifactId>neo4j-bolt-api-netty</artifactId>
+			<version>${neo4j-bolt-connection.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.stefanbirkner</groupId>

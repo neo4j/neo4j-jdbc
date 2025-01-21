@@ -21,9 +21,11 @@ package org.neo4j.jdbc;
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -32,14 +34,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
-import org.neo4j.jdbc.internal.bolt.AccessMode;
-import org.neo4j.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.jdbc.internal.bolt.TransactionType;
-import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
-import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
-import org.neo4j.jdbc.internal.bolt.response.DiscardResponse;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.driver.internal.bolt.api.AccessMode;
+import org.neo4j.driver.internal.bolt.api.BasicResponseHandler;
+import org.neo4j.driver.internal.bolt.api.BoltConnection;
+import org.neo4j.driver.internal.bolt.api.DatabaseNameUtil;
+import org.neo4j.driver.internal.bolt.api.NotificationConfig;
+import org.neo4j.driver.internal.bolt.api.TransactionType;
+import org.neo4j.driver.internal.bolt.api.exception.BoltFailureException;
+import org.neo4j.driver.internal.bolt.api.summary.PullSummary;
+import org.neo4j.driver.internal.bolt.api.values.Value;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
+import org.neo4j.jdbc.values.Record;
+import org.neo4j.jdbc.values.Values;
 
 final class DefaultTransactionImpl implements Neo4jTransaction {
 
@@ -47,7 +53,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private final FatalExceptionHandler fatalExceptionHandler;
 
-	private final CompletionStage<Void> beginStage;
+	private final CompletionStage<Void> beginPipelinedStage;
 
 	private final boolean autoCommit;
 
@@ -62,8 +68,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	private SQLException exception;
 
 	DefaultTransactionImpl(BoltConnection boltConnection, BookmarkManager bookmarkManager,
-			Map<String, Object> transactionMetadata, FatalExceptionHandler fatalExceptionHandler,
-			CompletionStage<Void> resetStage, boolean autoCommit, AccessMode accessMode, State state) {
+			Map<String, Object> transactionMetadata, FatalExceptionHandler fatalExceptionHandler, boolean resetNeeded,
+			boolean autoCommit, AccessMode accessMode, State state, String databaseName) {
 
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
@@ -74,16 +80,15 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		this.autoCommit = autoCommit;
 		this.state = Objects.requireNonNullElse(state, State.NEW);
 
-		var beginTransactionFuture = this.boltConnection.beginTransaction(
-				this.bookmarkManager.getBookmarks(Function.identity()),
-				// The map is not copied as it is always created fresh in
-				// org.neo4j.jdbc.ConnectionImpl.getTransaction(java.util.Map<java.lang.String,java.lang.Object>,
-				// boolean) and there's no public api otherwise
-				Objects.requireNonNullElseGet(transactionMetadata, Map::of),
-				Objects.requireNonNullElse(accessMode, AccessMode.WRITE),
-				this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT, false);
-		this.beginStage = Objects.requireNonNullElseGet(resetStage, () -> CompletableFuture.completedStage(null))
-			.thenCompose(ignored -> beginTransactionFuture);
+		var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
+		var resetStage = resetNeeded ? this.boltConnection.reset()
+				: CompletableFuture.completedStage(this.boltConnection);
+		this.beginPipelinedStage = resetStage
+			.thenCompose(conn -> conn.beginTransaction(DatabaseNameUtil.database(databaseName), accessMode, null,
+					this.bookmarkManager.getBookmarks(Function.identity()), txType, null,
+					BoltAdapters.adaptMap(transactionMetadata), this.autoCommit ? "IMPLICIT" : null,
+					NotificationConfig.defaultConfig()))
+			.thenApply(ignored -> null);
 	}
 
 	@Override
@@ -91,12 +96,15 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			throws SQLException {
 		assertNoException();
 		assertRunnableState();
-		var beginFuture = this.beginStage.toCompletableFuture();
-		var runFuture = this.boltConnection.run(query, parameters, false).toCompletableFuture();
-		var pullFuture = this.boltConnection.pull(runFuture, fetchSize).toCompletableFuture();
-		var responsesFuture = CompletableFuture.allOf(beginFuture, runFuture)
-			.thenCompose(ignored -> pullFuture)
-			.thenApply(pullResponse -> new RunAndPullResponses(runFuture.join(), pullResponse));
+
+		var handler = new BasicResponseHandler();
+		var responsesFuture = this.beginPipelinedStage
+			.thenCompose(ignored -> this.boltConnection.run(query, BoltAdapters.adaptMap(parameters)))
+			.thenCompose(conn -> conn.pull(-1, fetchSize))
+			.thenCompose(conn -> conn.flush(handler))
+			.thenCompose(ignored -> handler.summaries())
+			.thenApply(DefaultTransactionImpl::asRunAndPullResponses)
+			.toCompletableFuture();
 		var responses = execute(responsesFuture, timeout);
 		if (responses.pullResponse().hasMore()) {
 			this.openResults.add(responses.runResponse());
@@ -110,14 +118,17 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			throws SQLException {
 		assertNoException();
 		assertRunnableState();
-		var beginFuture = this.beginStage.toCompletableFuture();
-		var runFuture = this.boltConnection.run(query, parameters, false).toCompletableFuture();
-		var discardFuture = this.boltConnection.discard(-1, !commit).toCompletableFuture();
-		var commitFuture = commit ? this.boltConnection.commit().toCompletableFuture()
-				: CompletableFuture.completedFuture(null);
-		var responseFuture = CompletableFuture.allOf(beginFuture, runFuture, discardFuture, commitFuture)
-			.thenCompose(ignored -> discardFuture);
-		var response = execute(responseFuture, timeout);
+
+		var handler = new BasicResponseHandler();
+		var responsesFuture = this.beginPipelinedStage
+			.thenCompose(ignored -> this.boltConnection.run(query, BoltAdapters.adaptMap(parameters)))
+			.thenCompose(conn -> conn.discard(-1, -1))
+			.thenCompose(conn -> commit ? conn.commit() : CompletableFuture.completedStage(conn))
+			.thenCompose(conn -> conn.flush(handler))
+			.thenCompose(ignored -> handler.summaries())
+			.thenApply(DefaultTransactionImpl::asDiscardResponse)
+			.toCompletableFuture();
+		var response = execute(responsesFuture, timeout);
 		if (!State.COMMITTED.equals(this.state)) {
 			this.state = commit ? State.COMMITTED : State.READY;
 		}
@@ -131,7 +142,12 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			throw new SQLException(
 					String.format("The requested action is not supported in %s transaction state", this.state));
 		}
-		var responseFuture = this.boltConnection.pull(runResponse, request).toCompletableFuture();
+		var handler = new BasicResponseHandler();
+		var responseFuture = this.boltConnection.pull(runResponse.queryId(), request)
+			.thenCompose(conn -> conn.flush(handler))
+			.thenCompose(ignored -> handler.summaries())
+			.thenApply(summaries -> asPullResponse(runResponse.keys(), summaries.valuesList(), summaries.pullSummary()))
+			.toCompletableFuture();
 		var pullResponse = execute(responseFuture, 0);
 		if (!pullResponse.hasMore()) {
 			this.openResults.remove(runResponse);
@@ -143,23 +159,25 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	public void commit() throws SQLException {
 		assertNoException();
 		assertRunnableState();
-		var beginFuture = this.beginStage.toCompletableFuture();
-		var allMessagesSize = this.openResults.size() + 1;
-		var allMessages = new CompletableFuture<?>[allMessagesSize];
-		appendDiscards(allMessages, 0);
-		var commitFuture = this.boltConnection.commit().toCompletableFuture();
-		allMessages[allMessagesSize - 1] = commitFuture;
-		execute(beginFuture.thenCompose(unused -> CompletableFuture.allOf(allMessages))
-			.thenCompose(unused -> commitFuture)
+
+		var handler = new BasicResponseHandler();
+		var responsesFuture = this.beginPipelinedStage.thenApply(ignored -> this.boltConnection)
+			.thenCompose(this::pipelineDiscards)
+			.thenCompose(BoltConnection::commit)
+			.thenCompose(conn -> conn.flush(handler))
+			.thenCompose(ignored -> handler.summaries())
+			.thenApply(BasicResponseHandler.Summaries::commitSummary)
 			.whenComplete((response, error) -> {
-				if (!(response == null || Objects.requireNonNullElse(response.bookmark(), "").isBlank())) {
+				if (!(response == null || response.bookmark().orElse("").isBlank())) {
 					this.bookmarkManager.updateBookmarks(Function.identity(), this.usedBookmarks,
-							List.of(response.bookmark()));
+							List.of(response.bookmark().orElse("")));
 				}
 				if (error == null) {
 					this.state = State.COMMITTED;
 				}
-			}), 0);
+			})
+			.toCompletableFuture();
+		execute(responsesFuture, 0);
 		this.openResults.clear();
 	}
 
@@ -171,12 +189,16 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 		assertNoException();
 		assertRunnableState();
-		var allMessagesSize = this.openResults.size() + 2;
-		var allMessages = new CompletableFuture<?>[allMessagesSize];
-		allMessages[0] = this.beginStage.toCompletableFuture();
-		appendDiscards(allMessages, 1);
-		allMessages[allMessagesSize - 1] = this.boltConnection.rollback().toCompletableFuture();
-		execute(CompletableFuture.allOf(allMessages), 0);
+
+		var handler = new BasicResponseHandler();
+		var responsesFuture = this.beginPipelinedStage.thenApply(ignored -> this.boltConnection)
+			.thenCompose(this::pipelineDiscards)
+			.thenCompose(BoltConnection::rollback)
+			.thenCompose(conn -> conn.flush(handler))
+			.thenCompose(ignored -> handler.summaries())
+			.toCompletableFuture();
+
+		execute(responsesFuture, 0);
 		this.state = State.ROLLEDBACK;
 		this.openResults.clear();
 	}
@@ -217,7 +239,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 				cause = ex;
 			}
 			var sqlException = new SQLException("An error occurred while handling request", cause);
-			if (cause instanceof Neo4jException || cause instanceof MessageIgnoredException) {
+			if (cause instanceof BoltFailureException) {
 				fail(new SQLException("The transaction is no longer valid"));
 			}
 			else {
@@ -228,10 +250,12 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 	}
 
-	private void appendDiscards(CompletableFuture<?>[] array, int offset) {
-		for (var i = 0; i < this.openResults.size(); i++) {
-			array[i + offset] = this.boltConnection.discard(this.openResults.get(i), -1, false).toCompletableFuture();
+	private CompletionStage<BoltConnection> pipelineDiscards(BoltConnection boltConnection) {
+		var pipelineStage = CompletableFuture.completedStage(boltConnection);
+		for (var runResponse : this.openResults) {
+			pipelineStage = pipelineStage.thenCompose(conn -> conn.discard(runResponse.queryId(), -1));
 		}
+		return pipelineStage;
 	}
 
 	private void assertNoException() throws SQLException {
@@ -247,6 +271,32 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 	}
 
+	private static RunAndPullResponses asRunAndPullResponses(BasicResponseHandler.Summaries summaries) {
+		return new RunAndPullResponses(asRunResponse(summaries),
+				asPullResponse(summaries.runSummary().keys(), summaries.valuesList(), summaries.pullSummary()));
+	}
+
+	private static RunResponse asRunResponse(BasicResponseHandler.Summaries summaries) {
+		return new RunResponseImpl(summaries.runSummary().queryId(), summaries.runSummary().keys());
+	}
+
+	private static PullResponse asPullResponse(List<String> keys, List<Value[]> valuesList, PullSummary pullSummary) {
+		return new PullResponseImpl(pullSummary.hasMore(), valuesList.stream().map(v -> asRecord(keys, v)).toList(),
+				asResultSummary(pullSummary.metadata()));
+	}
+
+	private static Record asRecord(List<String> keys, Value[] values) {
+		return Record.of(keys, Arrays.stream(values).map(Values::value).toArray(org.neo4j.jdbc.values.Value[]::new));
+	}
+
+	private static ResultSummary asResultSummary(Map<String, Value> metadata) {
+		return new ResultSummary(BoltAdapters.newSummaryCounters(metadata.get("stats")));
+	}
+
+	private static DiscardResponse asDiscardResponse(BasicResponseHandler.Summaries summaries) {
+		return new DiscardResponseImpl(asResultSummary(summaries.discardSummary().metadata()));
+	}
+
 	@FunctionalInterface
 	interface FatalExceptionHandler {
 
@@ -257,6 +307,24 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		 */
 		void handle(SQLException fatalSqlException, SQLException sqlException);
 
+	}
+
+	private record RunResponseImpl(long queryId, List<String> keys) implements RunResponse {
+	}
+
+	private record PullResponseImpl(boolean hasMore, List<Record> records,
+			ResultSummary summary) implements PullResponse {
+		@Override
+		public Optional<ResultSummary> resultSummary() {
+			return Optional.ofNullable(this.summary);
+		}
+	}
+
+	record DiscardResponseImpl(ResultSummary summary) implements DiscardResponse {
+		@Override
+		public Optional<ResultSummary> resultSummary() {
+			return Optional.ofNullable(this.summary);
+		}
 	}
 
 }

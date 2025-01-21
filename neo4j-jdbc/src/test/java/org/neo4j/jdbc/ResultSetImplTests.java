@@ -69,8 +69,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -1590,9 +1588,9 @@ class ResultSetImplTests {
 
 	private ResultSet emptyResultSet() {
 		var statement = mock(StatementImpl.class);
-		var runResponse = mock(RunResponse.class);
+		var runResponse = mock(Neo4jTransaction.RunResponse.class);
 
-		var pullResponse = mock(PullResponse.class);
+		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(pullResponse.records()).willReturn(List.of());
 
 		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0, 0);
@@ -1600,7 +1598,7 @@ class ResultSetImplTests {
 
 	private ResultSet setupWithValue(Value expectedValue, int maxFieldSize) throws SQLException {
 		var statement = mock(StatementImpl.class);
-		var runResponse = mock(RunResponse.class);
+		var runResponse = mock(Neo4jTransaction.RunResponse.class);
 
 		var boltRecord = mock(Record.class);
 		given(boltRecord.size()).willReturn(1);
@@ -1609,7 +1607,7 @@ class ResultSetImplTests {
 		given(boltRecord.get(LABEL)).willReturn(expectedValue);
 		given(boltRecord.keys()).willReturn(List.of(LABEL));
 
-		var pullResponse = mock(PullResponse.class);
+		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(pullResponse.records()).willReturn(List.of(boltRecord));
 
 		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0,

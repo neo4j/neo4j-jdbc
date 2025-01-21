@@ -27,8 +27,6 @@ import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.Type;
@@ -153,7 +151,7 @@ class ResultSetMetaDataImplTests {
 		var connection = mock(Connection.class);
 		given(connection.getSchema()).willReturn("private");
 		given(connection.getCatalog()).willReturn("Otto");
-		var runResponse = mock(RunResponse.class);
+		var runResponse = mock(Neo4jTransaction.RunResponse.class);
 
 		given(statement.getConnection()).willReturn(connection);
 
@@ -169,7 +167,7 @@ class ResultSetMetaDataImplTests {
 			boltRecords.add(boltRecord);
 		}
 
-		var pullResponse = mock(PullResponse.class);
+		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(pullResponse.records()).willReturn(boltRecords);
 
 		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0, 0);
