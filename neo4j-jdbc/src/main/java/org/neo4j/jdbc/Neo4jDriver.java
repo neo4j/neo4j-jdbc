@@ -52,6 +52,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.neo4j.driver.internal.bolt.api.AccessMode;
+import org.neo4j.driver.internal.bolt.api.AuthTokens;
 import org.neo4j.driver.internal.bolt.api.BoltAgent;
 import org.neo4j.driver.internal.bolt.api.BoltConnectionProvider;
 import org.neo4j.driver.internal.bolt.api.BoltProtocolVersion;
@@ -330,15 +331,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				: driverConfig.authRealm;
 		var valueFactory = BoltValueFactory.getInstance();
 		var authToken = switch (driverConfig.authScheme) {
-			case NONE -> Map.of("scheme", valueFactory.value("none"));
-			case BASIC -> (authRealm != null)
-					? Map.of("scheme", valueFactory.value("basic"), "principal", valueFactory.value(user),
-							"credentials", valueFactory.value(password), "realm", valueFactory.value(authRealm))
-					: Map.of("scheme", valueFactory.value("basic"), "principal", valueFactory.value(user),
-							"credentials", valueFactory.value(password));
-			case BEARER -> Map.of("scheme", valueFactory.value("bearer"), "credentials", valueFactory.value(password));
-			case KERBEROS -> Map.of("scheme", valueFactory.value("kerberos"), "principal", valueFactory.value(""),
-					"credentials", valueFactory.value(password));
+			case NONE -> AuthTokens.none(valueFactory);
+			case BASIC -> AuthTokens.basic(user, password, authRealm, valueFactory);
+			case BEARER -> AuthTokens.bearer(password, valueFactory);
+			case KERBEROS -> AuthTokens.kerberos(password, valueFactory);
 		};
 		var authTokenStage = CompletableFuture.completedStage(authToken);
 
@@ -348,7 +344,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var boltConnection = getBoltConnectionProvider(address, userAgent, connectTimeoutMillis)
 			.connect(securityPlan, DatabaseNameUtil.database(databaseName), () -> authTokenStage, AccessMode.WRITE,
 					Collections.emptySet(), null, MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), (ignored) -> {
-					})
+					}, Collections.emptyMap())
 			.toCompletableFuture()
 			.join();
 
