@@ -19,7 +19,6 @@
 package org.neo4j.jdbc;
 
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -52,8 +51,9 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.neo4j.driver.internal.bolt.api.AccessMode;
+import org.neo4j.driver.internal.bolt.api.AuthToken;
 import org.neo4j.driver.internal.bolt.api.AuthTokens;
-import org.neo4j.driver.internal.bolt.api.BoltAgent;
+import org.neo4j.driver.internal.bolt.api.BoltConnection;
 import org.neo4j.driver.internal.bolt.api.BoltConnectionProvider;
 import org.neo4j.driver.internal.bolt.api.BoltProtocolVersion;
 import org.neo4j.driver.internal.bolt.api.BoltServerAddress;
@@ -229,7 +229,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
-	private final Map<BoltServerAddress, BoltConnectionProvider> addressToBoltProvider = new HashMap<>();
+	private final BoltConnectionProvider boltConnectionProvider;
 
 	private volatile List<TranslatorFactory> sqlTranslatorFactories;
 
@@ -313,6 +313,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
+		this.boltConnectionProvider = new NettyBoltConnectionProvider(eventLoopGroup, Clock.systemUTC(),
+				DefaultDomainNameResolver.getInstance(), null, new BoltLoggingProvider(),
+				BoltValueFactory.getInstance(), null);
 	}
 
 	@Override
@@ -336,17 +339,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			case BEARER -> AuthTokens.bearer(password, valueFactory);
 			case KERBEROS -> AuthTokens.kerberos(password, valueFactory);
 		};
-		var authTokenStage = CompletableFuture.completedStage(authToken);
-
 		var userAgent = driverConfig.agent;
 		var connectTimeoutMillis = driverConfig.timeout;
 
-		var boltConnection = getBoltConnectionProvider(address, userAgent, connectTimeoutMillis)
-			.connect(securityPlan, DatabaseNameUtil.database(databaseName), () -> authTokenStage, AccessMode.WRITE,
-					Collections.emptySet(), null, MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), (ignored) -> {
-					}, Collections.emptyMap())
-			.toCompletableFuture()
-			.join();
+		var boltConnection = establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan,
+				databaseName, authToken);
 
 		var enableSqlTranslation = driverConfig.enableSQLTranslation;
 		var enableTranslationCaching = driverConfig.enableTranslationCaching;
@@ -366,20 +363,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				bookmarkManager, this.transactionMetadata, databaseName);
 	}
 
-	private synchronized BoltConnectionProvider getBoltConnectionProvider(BoltServerAddress address, String userAgent,
-			int connectTimeoutMillis) {
-		return this.addressToBoltProvider.computeIfAbsent(address, addr -> {
-			var boltProvider = new NettyBoltConnectionProvider(eventLoopGroup, Clock.systemUTC(),
-					DefaultDomainNameResolver.getInstance(), null, new BoltLoggingProvider(),
-					BoltValueFactory.getInstance());
-			boltProvider
-				.init(address,
-						new RoutingContext(URI.create(String.format("bolt://%s:%d", address.host(), address.port()))),
-						new BoltAgent("", "", "", ""), userAgent, connectTimeoutMillis, null)
-				.toCompletableFuture()
-				.join();
-			return boltProvider;
-		});
+	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
+			int connectTimeoutMillis, SecurityPlan securityPlan, String databaseName, AuthToken authToken) {
+		return this.boltConnectionProvider
+			.connect(address, RoutingContext.EMPTY, BoltAgentUtil.of(ProductVersion.getValue()), userAgent,
+					connectTimeoutMillis, securityPlan, DatabaseNameUtil.database(databaseName),
+					() -> CompletableFuture.completedStage(authToken), AccessMode.WRITE, Collections.emptySet(), null,
+					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), (ignored) -> {
+					}, Collections.emptyMap())
+			.toCompletableFuture()
+			.join();
 	}
 
 	static String getDefaultUserAgent() {
