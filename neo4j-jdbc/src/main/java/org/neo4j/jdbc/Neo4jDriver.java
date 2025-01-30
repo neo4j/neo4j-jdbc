@@ -18,10 +18,12 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
@@ -62,6 +64,7 @@ import org.neo4j.driver.internal.bolt.api.DefaultDomainNameResolver;
 import org.neo4j.driver.internal.bolt.api.NotificationConfig;
 import org.neo4j.driver.internal.bolt.api.RoutingContext;
 import org.neo4j.driver.internal.bolt.api.SecurityPlan;
+import org.neo4j.driver.internal.bolt.api.SecurityPlans;
 import org.neo4j.driver.internal.bolt.basicimpl.NettyBoltConnectionProvider;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
@@ -520,24 +523,22 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	private static SecurityPlan parseSSLParams(SSLProperties sslProperties) throws SQLException {
 		return switch (sslProperties.sslMode) {
 			case REQUIRE -> {
-				yield null;
-				// try {
-				// yield SecurityPlans.forAllCertificates();
-				// }
-				// catch (GeneralSecurityException ex) {
-				// throw new SQLException(ex);
-				// }
+				try {
+					yield SecurityPlans.encryptedForAnyCertificate();
+				}
+				catch (GeneralSecurityException ex) {
+					throw new SQLException(ex);
+				}
 			}
 			case VERIFY_FULL -> {
-				yield null;
-				// try {
-				// yield SecurityPlans.forSystemCASignedCertificates();
-				// }
-				// catch (GeneralSecurityException | IOException ex) {
-				// throw new SQLException(ex);
-				// }
+				try {
+					yield SecurityPlans.encryptedForSystemCASignedCertificates();
+				}
+				catch (GeneralSecurityException | IOException ex) {
+					throw new SQLException(ex);
+				}
 			}
-			case DISABLE -> SecurityPlan.INSECURE;
+			case DISABLE -> SecurityPlans.unencrypted();
 		};
 	}
 
