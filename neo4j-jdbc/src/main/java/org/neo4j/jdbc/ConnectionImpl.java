@@ -38,6 +38,7 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +57,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.neo4j.driver.internal.bolt.api.AccessMode;
@@ -685,15 +687,14 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		this.networkTimeout = milliseconds;
 		if (milliseconds == 0) {
-			// this.boltConnection.defaultReadTimeoutMillis()
-			// .ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
-			// "setNetworkTimeout has been called with 0, will use the Bolt server default
-			// of %d milliseconds.",
-			// defaultTimeout)));
-			// this.boltConnection.setReadTimeoutMillis(0L);
+			this.boltConnection.defaultReadTimeout()
+				.ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
+						"setNetworkTimeout has been called with 0, will use the Bolt server default of % d milliseconds.",
+						defaultTimeout.toMillis())));
+			this.boltConnection.setReadTimeout(null).toCompletableFuture().join();
 		}
 		else {
-			// this.boltConnection.setReadTimeoutMillis((long) this.networkTimeout);
+			this.boltConnection.setReadTimeout(Duration.ofMillis(this.networkTimeout));
 		}
 	}
 
