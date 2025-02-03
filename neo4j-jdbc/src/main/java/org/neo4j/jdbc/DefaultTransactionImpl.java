@@ -44,7 +44,6 @@ import org.neo4j.driver.internal.bolt.api.exception.BoltFailureException;
 import org.neo4j.driver.internal.bolt.api.summary.PullSummary;
 import org.neo4j.driver.internal.bolt.api.values.Value;
 import org.neo4j.jdbc.values.Record;
-import org.neo4j.jdbc.values.RecordImpl;
 import org.neo4j.jdbc.values.Values;
 
 final class DefaultTransactionImpl implements Neo4jTransaction {
@@ -289,8 +288,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	}
 
 	private static Record asRecord(List<String> keys, Value[] values) {
-		return new RecordImpl(keys,
-				Arrays.stream(values).map(Values::value).toArray(org.neo4j.jdbc.values.Value[]::new));
+		return Record.of(keys, Arrays.stream(values).map(Values::value).toArray(org.neo4j.jdbc.values.Value[]::new));
 	}
 
 	private static ResultSummary asResultSummary(Map<String, Value> metadata) {

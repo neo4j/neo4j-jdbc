@@ -25,8 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-// todo should not be public
-public final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
+final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Record {
 
 	private final List<String> keys;
 
@@ -34,8 +33,7 @@ public final class RecordImpl extends AbstractMapAccessorWithDefaultValue implem
 
 	private int hashCode;
 
-	// todo should not be public
-	public RecordImpl(List<String> keys, Value[] values) {
+	RecordImpl(List<String> keys, Value[] values) {
 		this.keys = keys;
 		this.values = values;
 	}
