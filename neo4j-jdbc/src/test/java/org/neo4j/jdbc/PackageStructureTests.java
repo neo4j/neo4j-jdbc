@@ -32,7 +32,6 @@ import static com.tngtech.archunit.base.DescribedPredicate.describe;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackages;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.theClass;
 
@@ -47,26 +46,6 @@ class PackageStructureTests {
 	void importAllClasses() {
 		this.allClasses = new ClassFileImporter().withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
 			.importPackages("org.neo4j.jdbc..");
-	}
-
-	@Test
-	void boltInternalsShouldOnlyBeUsedFromBoltApi() {
-		var rule = classes().that()
-			.resideInAPackage("..jdbc.internal.bolt.internal..")
-			.should()
-			.onlyBeAccessed()
-			.byAnyPackage("..jdbc.internal.bolt..");
-		rule.check(this.allClasses);
-	}
-
-	@Test
-	void jdbcModuleClassesMustNotBeUsedFromBoltInternals() {
-
-		var rule = noClasses().that()
-			.resideInAPackage("..jdbc.internal..")
-			.should()
-			.dependOnClassesThat(this.jdbcModuleClasses);
-		rule.check(this.allClasses);
 	}
 
 	@Test
@@ -85,8 +64,9 @@ class PackageStructureTests {
 		var rule = noClasses().that()
 			.resideInAPackage(packageUnderTest)
 			.should()
-			.dependOnClassesThat(resideOutsideOfPackages("java..", packageUnderTest)
-				.and(describe("are not primitives", not(arePrimitives()))));
+			.dependOnClassesThat(
+					resideOutsideOfPackages("java..", "org.neo4j.driver.internal.bolt.api.values..", packageUnderTest)
+						.and(describe("are not primitives", not(arePrimitives()))));
 		rule.check(this.allClasses);
 	}
 

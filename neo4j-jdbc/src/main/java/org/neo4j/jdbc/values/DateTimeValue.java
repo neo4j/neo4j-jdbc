@@ -41,6 +41,11 @@ public final class DateTimeValue extends AbstractObjectValue<ZonedDateTime> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.DATE_TIME);
+	}
+
+	@Override
 	public OffsetDateTime asOffsetDateTime() {
 		return asZonedDateTime().toOffsetDateTime();
 	}

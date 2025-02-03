@@ -53,6 +53,11 @@ public final class StringValue extends AbstractValue {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.STRING);
+	}
+
+	@Override
 	public String asString() {
 		return this.val;
 	}

@@ -23,6 +23,9 @@
 module org.neo4j.jdbc {
 	requires transitive java.sql;
 
+	requires org.neo4j.bolt.api;
+	requires org.neo4j.bolt.netty;
+
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;
 	requires io.netty.buffer;

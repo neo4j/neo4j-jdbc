@@ -21,10 +21,6 @@ package org.neo4j.jdbc;
 import java.sql.SQLException;
 import java.util.Map;
 
-import org.neo4j.jdbc.internal.bolt.response.DiscardResponse;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
-
 /**
  * A transaction that manages a Bolt transaction on the network level.
  * <p>

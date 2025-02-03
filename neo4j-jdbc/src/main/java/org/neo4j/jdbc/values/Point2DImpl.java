@@ -18,7 +18,7 @@
  */
 package org.neo4j.jdbc.values;
 
-record Point2DImpl(int srid, double x, double y) implements Point {
+record Point2DImpl(int srid, double x, double y) implements Point, org.neo4j.driver.internal.bolt.api.values.Point {
 	@Override
 	public double z() {
 		return Double.NaN;
