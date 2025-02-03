@@ -691,10 +691,20 @@ final class ConnectionImpl implements Neo4jConnection {
 				.ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
 						"setNetworkTimeout has been called with 0, will use the Bolt server default of % d milliseconds.",
 						defaultTimeout.toMillis())));
-			this.boltConnection.setReadTimeout(null).toCompletableFuture().join();
+			try {
+				this.boltConnection.setReadTimeout(null).toCompletableFuture().get();
+			}
+			catch (ExecutionException | InterruptedException ex) {
+				throw new SQLException("Failed to set read timeout", ex);
+			}
 		}
 		else {
-			this.boltConnection.setReadTimeout(Duration.ofMillis(this.networkTimeout));
+			try {
+				this.boltConnection.setReadTimeout(Duration.ofMillis(this.networkTimeout)).toCompletableFuture().get();
+			}
+			catch (ExecutionException | InterruptedException ex) {
+				throw new SQLException("Failed to set read timeout", ex);
+			}
 		}
 	}
 
