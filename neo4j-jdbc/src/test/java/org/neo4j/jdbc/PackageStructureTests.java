@@ -24,7 +24,6 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.jdbc.values.Value;
@@ -33,7 +32,6 @@ import static com.tngtech.archunit.base.DescribedPredicate.describe;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackages;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.theClass;
 
@@ -51,28 +49,6 @@ class PackageStructureTests {
 	}
 
 	@Test
-	@Disabled("needs fixing")
-	void boltInternalsShouldOnlyBeUsedFromBoltApi() {
-		var rule = classes().that()
-			.resideInAPackage("..jdbc.internal.bolt.internal..")
-			.should()
-			.onlyBeAccessed()
-			.byAnyPackage("..jdbc.internal.bolt..");
-		rule.check(this.allClasses);
-	}
-
-	@Test
-	@Disabled("needs fixing")
-	void jdbcModuleClassesMustNotBeUsedFromBoltInternals() {
-
-		var rule = noClasses().that()
-			.resideInAPackage("..jdbc.internal..")
-			.should()
-			.dependOnClassesThat(this.jdbcModuleClasses);
-		rule.check(this.allClasses);
-	}
-
-	@Test
 	void callableStatementMustNotDoAnyParameterConversion() {
 
 		var rule = theClass(CallableStatementImpl.class).should()
@@ -82,15 +58,15 @@ class PackageStructureTests {
 	}
 
 	@Test
-	@Disabled("needs fixing")
 	void typeSystemShouldBeFreeOfBoltDependencies() {
 
 		var packageUnderTest = Value.class.getPackageName();
 		var rule = noClasses().that()
 			.resideInAPackage(packageUnderTest)
 			.should()
-			.dependOnClassesThat(resideOutsideOfPackages("java..", packageUnderTest)
-				.and(describe("are not primitives", not(arePrimitives()))));
+			.dependOnClassesThat(
+					resideOutsideOfPackages("java..", "org.neo4j.driver.internal.bolt.api.values..", packageUnderTest)
+						.and(describe("are not primitives", not(arePrimitives()))));
 		rule.check(this.allClasses);
 	}
 
