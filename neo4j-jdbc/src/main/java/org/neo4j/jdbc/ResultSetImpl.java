@@ -370,8 +370,9 @@ final class ResultSetImpl implements ResultSet {
 	}
 
 	@Override
-	public ResultSetMetaData getMetaData() {
-		return new ResultSetMetaDataImpl(this.keys, this.firstRecord);
+	public ResultSetMetaData getMetaData() throws SQLException {
+		var connection = this.statement.getConnection();
+		return new ResultSetMetaDataImpl(connection.getSchema(), connection.getCatalog(), this.keys, this.firstRecord);
 	}
 
 	@Override

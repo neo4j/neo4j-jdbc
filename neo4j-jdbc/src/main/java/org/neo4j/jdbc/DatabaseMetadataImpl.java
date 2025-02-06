@@ -852,7 +852,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var response = createRunResponseForStaticKeys(keys);
 		var pull = staticPullResponseFor(keys,
 				List.of(new Value[] { Values.value("TABLE") }, new Value[] { Values.value("RELATIONSHIP") }));
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
+				-1, -1, -1);
 	}
 
 	static Value getMaxPrecision(int type) {
@@ -967,7 +968,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var runResponse = createRunResponseForStaticKeys(keys);
 		var staticPullResponse = staticPullResponseFor(keys, rows);
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
 				staticPullResponse, -1, -1, -1);
 	}
 
@@ -1158,8 +1159,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var pull = staticPullResponseFor(keys, resultRows);
 		var runResponse = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse, pull, -1, -1,
-				-1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
+				pull, -1, -1, -1);
 	}
 
 	private List<Value[]> makeUniqueKeyValues(String catalog, String schema, String table,
@@ -1212,7 +1213,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var emptyPullResponse = createEmptyPullResponse();
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse,
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
 				emptyPullResponse, -1, -1, -1);
 	}
 
@@ -1248,7 +1249,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var response = createRunResponseForStaticKeys(keys);
 		var pull = staticPullResponseFor(keys, values);
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
+				-1, -1, -1);
 
 	}
 
@@ -1446,8 +1448,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var response = createRunResponseForStaticKeys(keys);
 		var staticPulLResponse = staticPullResponseFor(keys,
 				Collections.singletonList(new Value[] { Values.value("public"), Values.value(getSingleCatalog()) }));
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, staticPulLResponse,
-				-1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response,
+				staticPulLResponse, -1, -1, -1);
 	}
 
 	@Override
@@ -1468,8 +1470,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), runResponse, pull, -1, -1,
-				-1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
+				pull, -1, -1, -1);
 	}
 
 	@Override
@@ -1494,7 +1496,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var response = createRunResponseForStaticKeys(keys);
 		var pull = staticPullResponseFor(keys, values);
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response, pull, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
+				-1, -1, -1);
 	}
 
 	static boolean isSupportedClientInfoProperty(String name) {
@@ -1636,8 +1639,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	private ResultSet doQueryForResultSet(Request request) throws SQLException {
 		var response = doQuery(request);
 
-		return new ResultSetImpl(new LocalStatementImpl(), new ThrowingTransactionImpl(), response.runFuture.join(),
-				response.pullResponse, -1, -1, -1);
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(),
+				response.runFuture.join(), response.pullResponse, -1, -1, -1);
 	}
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {

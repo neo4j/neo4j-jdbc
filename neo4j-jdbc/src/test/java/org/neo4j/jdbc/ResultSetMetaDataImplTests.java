@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ class ResultSetMetaDataImplTests {
 	void testResultSetMetadataGetSchema() throws SQLException {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.value(2)))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getSchemaName(1)).isEqualTo("public");
+			Assertions.assertThat(rsMetadata.getSchemaName(1)).isEqualTo("private");
 		}
 	}
 
@@ -63,7 +64,15 @@ class ResultSetMetaDataImplTests {
 	void testResultSetMetadataGetCatalog() throws SQLException {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.value(2)))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getCatalogName(1)).isEqualTo("");
+			Assertions.assertThat(rsMetadata.getCatalogName(1)).isEqualTo("Otto");
+		}
+	}
+
+	@Test
+	void testResultSetMetadataGetTable() throws SQLException {
+		try (var resultSet = setupWithValues(Collections.singletonList(Values.value(2)))) {
+			var rsMetadata = resultSet.getMetaData();
+			Assertions.assertThat(rsMetadata.getTableName(1)).isEqualTo("");
 		}
 	}
 
@@ -139,9 +148,14 @@ class ResultSetMetaDataImplTests {
 		}
 	}
 
-	private ResultSet setupWithValues(List<Value> expectedValue) {
+	private ResultSet setupWithValues(List<Value> expectedValue) throws SQLException {
 		var statement = mock(StatementImpl.class);
+		var connection = mock(Connection.class);
+		given(connection.getSchema()).willReturn("private");
+		given(connection.getCatalog()).willReturn("Otto");
 		var runResponse = mock(RunResponse.class);
+
+		given(statement.getConnection()).willReturn(connection);
 
 		List<Record> boltRecords = new ArrayList<>();
 

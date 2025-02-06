@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.List;
+import java.util.Objects;
 
 import org.neo4j.jdbc.values.BooleanValue;
 import org.neo4j.jdbc.values.BytesValue;
@@ -48,11 +49,22 @@ import org.neo4j.jdbc.values.Value;
 
 final class ResultSetMetaDataImpl implements ResultSetMetaData {
 
+	private final String schemaName;
+
+	private final String catalogName;
+
+	private final String tableName;
+
 	private final List<String> keys;
 
 	private final Record firstRecord;
 
-	ResultSetMetaDataImpl(List<String> keys, Record firstRecord) {
+	ResultSetMetaDataImpl(String schemaName, String catalogName, List<String> keys, Record firstRecord) {
+		// JDBC spec defines the empty string as "not applicable"
+		this.schemaName = Objects.requireNonNullElse(schemaName, "").trim();
+		this.catalogName = Objects.requireNonNullElse(catalogName, "").trim();
+		// right now we have no way of tracking where a specific column comes from.
+		this.tableName = "";
 		this.keys = keys;
 		this.firstRecord = firstRecord;
 	}
@@ -112,7 +124,7 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 
 	@Override
 	public String getSchemaName(int column) {
-		return "public"; // every schema is public.
+		return this.schemaName;
 	}
 
 	@Override
@@ -127,16 +139,16 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 
 	@Override
 	public String getTableName(int column) {
-		return "Unknown?"; // can we get this? or does it need another query?
+		return this.tableName;
 	}
 
 	@Override
 	public String getCatalogName(int column) {
-		return ""; // No Catalog ever for neo4j.
+		return this.catalogName;
 	}
 
 	@Override
-	public int getColumnType(int column) throws SQLException {
+	public int getColumnType(int column) {
 		if (this.firstRecord == null) {
 			return Types.NULL;
 		}

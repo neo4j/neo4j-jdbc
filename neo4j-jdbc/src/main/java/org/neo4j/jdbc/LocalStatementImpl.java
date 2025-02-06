@@ -31,13 +31,15 @@ import java.sql.SQLFeatureNotSupportedException;
  */
 final class LocalStatementImpl extends StatementImpl {
 
-	LocalStatementImpl() {
-		super();
-	}
+	private final Connection connection;
 
 	private boolean closeOnCompletion;
 
 	private boolean closed;
+
+	LocalStatementImpl(Connection connection) {
+		this.connection = connection;
+	}
 
 	@Override
 	public ResultSet executeQuery(String sql) throws SQLException {
@@ -95,8 +97,8 @@ final class LocalStatementImpl extends StatementImpl {
 	}
 
 	@Override
-	public Connection getConnection() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public Connection getConnection() {
+		return this.connection;
 	}
 
 	@Override
