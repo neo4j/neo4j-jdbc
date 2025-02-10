@@ -523,6 +523,7 @@ final class SqlToCypher implements Translator {
 			return exposesSet.set(updates).build();
 		}
 
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		private Stream<Expression> expression(SelectFieldOrAsterisk t) {
 
 			if (t instanceof SelectField<?> s) {
@@ -686,6 +687,7 @@ final class SqlToCypher implements Translator {
 		 * field name
 		 * @return the Cypher column that was determined
 		 */
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName) {
 			Expression col = null;
 			if (this.tables.size() == 1) {
@@ -747,7 +749,7 @@ final class SqlToCypher implements Translator {
 			return expression(f, false);
 		}
 
-		@SuppressWarnings("NestedIfDepth")
+		@SuppressWarnings({ "NestedIfDepth", "squid:S3776" })
 		private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
 
 			if (f instanceof Param<?> p) {
@@ -1078,6 +1080,7 @@ final class SqlToCypher implements Translator {
 				.asFunction();
 		}
 
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		private <T> Condition condition(org.jooq.Condition c) {
 			try {
 				this.useAliasForVColumn.set(false);
@@ -1205,7 +1208,7 @@ final class SqlToCypher implements Translator {
 				var ew = s.endsWith("%");
 				var length = s.length();
 				var cnt = new LongSupplier() {
-					Long value = null;
+					Long value;
 
 					@Override
 					public long getAsLong() {
@@ -1299,6 +1302,7 @@ final class SqlToCypher implements Translator {
 			return Cypher.node(primaryLabel).named(symbolicName);
 		}
 
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		private List<PatternElement> resolveJoin(QOM.JoinTable<?, ? extends Table<?>> joinTable) {
 			var join = JoinDetails.of(joinTable);
 
@@ -1399,6 +1403,7 @@ final class SqlToCypher implements Translator {
 			throw unsupported(joinTable);
 		}
 
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		private RelationshipPattern tryToIntegrateNodeAndVirtualTable(PatternElement lhs, PatternElement rhs,
 				QOM.Eq<?> eq) {
 

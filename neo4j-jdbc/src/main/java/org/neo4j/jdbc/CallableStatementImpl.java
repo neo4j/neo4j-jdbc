@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -946,57 +947,62 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	static ParameterListDescriptor parseParameterList(String parameterList) {
 
+		if (parameterList == null) {
+			return new ParameterListDescriptor(Map.of(), Map.of(), Map.of());
+		}
 		var ordinalParameters = new HashMap<Integer, Integer>();
 		var namedParameters = new HashMap<Integer, String>();
 		var constants = new HashMap<Integer, String>();
 
-		if (parameterList != null) {
-			int cnt = 0;
-			for (String s : PARAMETER_LIST_SPLITTER.split(parameterList.trim())) {
-				++cnt;
-				var possibleParameter = s.trim();
-				if (possibleParameter.isEmpty()) {
-					continue;
+		int cnt = 0;
+		for (String s : PARAMETER_LIST_SPLITTER.split(parameterList.trim())) {
+			++cnt;
+			var possibleParameter = s.trim();
+			if (possibleParameter.isEmpty()) {
+				continue;
+			}
+			if ("?".equals(possibleParameter)) {
+				ordinalParameters.put(cnt, -1);
+			}
+			else if (IS_NUMBER.test(possibleParameter)) {
+				ordinalParameters.put(cnt, Integer.parseInt(possibleParameter.replace("$", "")));
+			}
+			else if (possibleParameter.startsWith("$") || possibleParameter.startsWith(":")) {
+				var v = possibleParameter.substring(1);
+				var matcher = VALID_IDENTIFIER_PATTERN.matcher(v);
+				if (matcher.matches() || "0".equals(v)) {
+					namedParameters.put(cnt, v);
 				}
-				if ("?".equals(possibleParameter)) {
-					ordinalParameters.put(cnt, -1);
-				}
-				else if (IS_NUMBER.test(possibleParameter)) {
-					ordinalParameters.put(cnt, Integer.parseInt(possibleParameter.replace("$", "")));
-				}
-				else if (possibleParameter.startsWith("$") || possibleParameter.startsWith(":")) {
-					var v = possibleParameter.substring(1);
-					var matcher = VALID_IDENTIFIER_PATTERN.matcher(v);
-					if (matcher.matches() || "0".equals(v)) {
-						namedParameters.put(cnt, v);
-					}
-				}
-				else {
-					constants.put(cnt, possibleParameter);
-				}
+			}
+			else {
+				constants.put(cnt, possibleParameter);
 			}
 		}
 
+		assertEitherOrdinalOrNamedParameters(ordinalParameters, namedParameters);
+
+		var used = ordinalParameters.values().stream().filter(i -> i > 0).collect(Collectors.toSet());
+		int max = 1;
+		for (Map.Entry<Integer, Integer> entry : ordinalParameters.entrySet()) {
+			Integer key = entry.getKey();
+			Integer v = entry.getValue();
+			if (v < 0) {
+				while (used.contains(max)) {
+					++max;
+				}
+				v = max++;
+			}
+			ordinalParameters.put(key, v);
+		}
+
+		return new ParameterListDescriptor(ordinalParameters, namedParameters, constants);
+	}
+
+	private static void assertEitherOrdinalOrNamedParameters(Map<Integer, Integer> ordinalParameters,
+			Map<Integer, String> namedParameters) {
 		if (!(ordinalParameters.isEmpty() || namedParameters.isEmpty())) {
 			throw new IllegalArgumentException("Index- and named ordinalParameters cannot be mixed");
 		}
-
-		if (!ordinalParameters.isEmpty()) {
-			var used = ordinalParameters.values().stream().filter(i -> i > 0).collect(Collectors.toSet());
-			int max = 1;
-			for (Map.Entry<Integer, Integer> entry : ordinalParameters.entrySet()) {
-				Integer key = entry.getKey();
-				Integer v = entry.getValue();
-				if (v < 0) {
-					while (used.contains(max)) {
-						++max;
-					}
-					v = max++;
-				}
-				ordinalParameters.put(key, v);
-			}
-		}
-		return new ParameterListDescriptor(ordinalParameters, namedParameters, constants);
 	}
 
 	/**
@@ -1023,47 +1029,22 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		var matcher = JDBC_CALL.matcher(statement);
 		try {
 			if (matcher.matches()) {
-				var returnParameter = Optional.ofNullable(matcher.group("returnParameter"))
-					.map(String::trim)
-					.orElse("");
-				var returnType = ReturnType.NONE;
-				List<String> returnParameterName = new ArrayList<>();
-				if (!returnParameter.isBlank()) {
-					Optional.ofNullable(matcher.group("returnParameterName"))
-						.map(String::trim)
-						.map(s -> s.substring(1))
-						.ifPresent(returnParameterName::add);
-					returnType = returnParameterName.isEmpty() ? ReturnType.ORDINAL : ReturnType.NAMED;
-				}
-				var parameterList = parseParameterList(matcher.group("parameterList"));
-				return new Descriptor(matcher.group("fqn"), returnType, returnParameterName, parameterList, null);
+				return describeJdbcCall(matcher);
 			}
 
 			matcher = CYPHER_RETURN_CALL.matcher(statement);
 			if (matcher.matches()) {
-				var parameterList = parseParameterList(matcher.group("parameterList"));
-				return new Descriptor(matcher.group("fqn"), ReturnType.ORDINAL, null, parameterList, true);
+				return describeCypherReturnCall(matcher);
 			}
 
 			matcher = CYPHER_YIELD_CALL.matcher(statement);
 			if (matcher.matches()) {
-				var yieldedStuff = Optional.ofNullable(matcher.group("yieldedValues")).map(String::trim).orElse("");
-				List<String> returnParameterName = new ArrayList<>();
-				for (String s : PARAMETER_LIST_SPLITTER.split(yieldedStuff)) {
-					if (!s.isBlank()) {
-						returnParameterName.add(s.trim());
-					}
-				}
-
-				var returnType = returnParameterName.isEmpty() ? ReturnType.ORDINAL : ReturnType.NAMED;
-				var parameterList = parseParameterList(matcher.group("parameterList"));
-				return new Descriptor(matcher.group("fqn"), returnType, returnParameterName, parameterList, false);
+				return describeCypherYieldCall(matcher);
 			}
 
 			matcher = CYPHER_SIDE_EFFECT_CALL.matcher(statement);
 			if (matcher.matches()) {
-				var parameterList = parseParameterList(matcher.group("parameterList"));
-				return new Descriptor(matcher.group("fqn"), ReturnType.NONE, null, parameterList, false);
+				return describeCypherSideEffectCall(matcher);
 			}
 		}
 		catch (IllegalArgumentException ex) {
@@ -1071,6 +1052,45 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		}
 
 		throw new IllegalArgumentException("Cannot create a callable statement from `" + statement + "`");
+	}
+
+	private static Descriptor describeCypherSideEffectCall(Matcher matcher) {
+		var parameterList = parseParameterList(matcher.group("parameterList"));
+		return new Descriptor(matcher.group("fqn"), ReturnType.NONE, null, parameterList, false);
+	}
+
+	private static Descriptor describeCypherYieldCall(Matcher matcher) {
+		var yieldedStuff = Optional.ofNullable(matcher.group("yieldedValues")).map(String::trim).orElse("");
+		List<String> returnParameterName = new ArrayList<>();
+		for (String s : PARAMETER_LIST_SPLITTER.split(yieldedStuff)) {
+			if (!s.isBlank()) {
+				returnParameterName.add(s.trim());
+			}
+		}
+
+		var returnType = returnParameterName.isEmpty() ? ReturnType.ORDINAL : ReturnType.NAMED;
+		var parameterList = parseParameterList(matcher.group("parameterList"));
+		return new Descriptor(matcher.group("fqn"), returnType, returnParameterName, parameterList, false);
+	}
+
+	private static Descriptor describeCypherReturnCall(Matcher matcher) {
+		var parameterList = parseParameterList(matcher.group("parameterList"));
+		return new Descriptor(matcher.group("fqn"), ReturnType.ORDINAL, null, parameterList, true);
+	}
+
+	private static Descriptor describeJdbcCall(Matcher matcher) {
+		var returnParameter = Optional.ofNullable(matcher.group("returnParameter")).map(String::trim).orElse("");
+		var returnType = ReturnType.NONE;
+		List<String> returnParameterName = new ArrayList<>();
+		if (!returnParameter.isBlank()) {
+			Optional.ofNullable(matcher.group("returnParameterName"))
+				.map(String::trim)
+				.map(s -> s.substring(1))
+				.ifPresent(returnParameterName::add);
+			returnType = returnParameterName.isEmpty() ? ReturnType.ORDINAL : ReturnType.NAMED;
+		}
+		var parameterList = parseParameterList(matcher.group("parameterList"));
+		return new Descriptor(matcher.group("fqn"), returnType, returnParameterName, parameterList, null);
 	}
 
 	private static final Pattern PARAMETER_LIST_SPLITTER = Pattern

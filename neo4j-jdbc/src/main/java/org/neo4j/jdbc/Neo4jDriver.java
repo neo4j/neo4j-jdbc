@@ -537,6 +537,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
+	@SuppressWarnings("squid:S3776") // Yep, this is complex.
 	private static SSLProperties parseSSLProperties(Map<String, String> info, String transport) throws SQLException {
 		var sslMode = sslMode(info.get(PROPERTY_SSL_MODE));
 		Boolean ssl = null;
@@ -1028,6 +1029,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			this.additionalProperties = additionalProperties;
 		}
 
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		@Override
 		public Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
 
@@ -1046,34 +1048,34 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			if (address != null && !address.toLowerCase(Locale.ROOT).startsWith("jdbc:")) {
 				address = "jdbc:" + address;
 			}
-			if (address != null && Neo4jDriver.URL_PATTERN.matcher(address).matches()) {
-				var properties = new Properties();
-				properties.putAll(this.additionalProperties);
-
-				var username = env.get("NEO4J_USERNAME");
-				if (username != null) {
-					properties.put(Neo4jDriver.PROPERTY_USER, username);
-				}
-				var password = env.get("NEO4J_PASSWORD");
-				if (password != null) {
-					properties.put(Neo4jDriver.PROPERTY_PASSWORD, password);
-				}
-				var authScheme = env.get("NEO4J_AUTH_SCHEME");
-				if (authScheme != null) {
-					properties.put(Neo4jDriver.PROPERTY_AUTH_SCHEME, authScheme);
-				}
-				var authRealm = env.get("NEO4J_AUTH_REALM");
-				if (authRealm != null) {
-					properties.put(Neo4jDriver.PROPERTY_AUTH_REALM, authRealm);
-				}
-				var sql2cypher = env.get("NEO4J_SQL_TRANSLATION_ENABLED");
-				if (this.forceSqlTranslation || Boolean.parseBoolean(sql2cypher)) {
-					properties.put(Neo4jDriver.PROPERTY_SQL_TRANSLATION_ENABLED, "true");
-				}
-				return Optional.of(new Neo4jDriver().connect(address, properties));
+			if (address == null || !Neo4jDriver.URL_PATTERN.matcher(address).matches()) {
+				return Optional.empty();
 			}
+			var properties = new Properties();
+			properties.putAll(this.additionalProperties);
 
-			return Optional.empty();
+			var username = env.get("NEO4J_USERNAME");
+			if (username != null) {
+				properties.put(Neo4jDriver.PROPERTY_USER, username);
+			}
+			var password = env.get("NEO4J_PASSWORD");
+			if (password != null) {
+				properties.put(Neo4jDriver.PROPERTY_PASSWORD, password);
+			}
+			var authScheme = env.get("NEO4J_AUTH_SCHEME");
+			if (authScheme != null) {
+				properties.put(Neo4jDriver.PROPERTY_AUTH_SCHEME, authScheme);
+			}
+			var authRealm = env.get("NEO4J_AUTH_REALM");
+			if (authRealm != null) {
+				properties.put(Neo4jDriver.PROPERTY_AUTH_REALM, authRealm);
+			}
+			var sql2cypher = env.get("NEO4J_SQL_TRANSLATION_ENABLED");
+			if (this.forceSqlTranslation || Boolean.parseBoolean(sql2cypher)) {
+				properties.put(Neo4jDriver.PROPERTY_SQL_TRANSLATION_ENABLED, "true");
+			}
+			return Optional.of(new Neo4jDriver().connect(address, properties));
+
 		}
 
 		@Override

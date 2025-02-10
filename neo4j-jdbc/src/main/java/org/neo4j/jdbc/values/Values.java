@@ -70,7 +70,7 @@ public final class Values {
 	 * @param value the object value
 	 * @return the array of values
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "squid:S3776", "unchecked" })
 	public static Value value(Object value) {
 		if (value == null) {
 			return NullValue.NULL;

@@ -271,6 +271,7 @@ public final class PackStream {
 			}
 		}
 
+		@SuppressWarnings("squid:S3776") // Yep, this is complex.
 		public void pack(Object value) throws IOException {
 			if (value == null) {
 				packNull();
