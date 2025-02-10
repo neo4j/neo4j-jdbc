@@ -520,41 +520,41 @@ final class ConnectionImpl implements Neo4jConnection {
 		if (this.transaction != null && this.transaction.isRunnable()) {
 			try {
 				this.transaction.runAndDiscard("RETURN 1", Collections.emptyMap(), timeout, false);
+				return true;
 			}
 			catch (SQLException ignored) {
 				return false;
 			}
 		}
-		else {
-			try {
-				var future = this.boltConnection.reset(true).toCompletableFuture();
-				if (timeout > 0) {
-					future.get(timeout, TimeUnit.SECONDS);
-				}
-				else {
-					future.get();
-				}
+
+		try {
+			var future = this.boltConnection.reset(true).toCompletableFuture();
+			if (timeout > 0) {
+				future.get(timeout, TimeUnit.SECONDS);
 			}
-			catch (TimeoutException ignored) {
-				return false;
+			else {
+				future.get();
 			}
-			catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-				throw new SQLException("The thread has been interrupted.", ex);
-			}
-			catch (ExecutionException ex) {
-				var cause = ex.getCause();
-				if (cause == null) {
-					cause = ex;
-				}
-				if (!(cause instanceof Neo4jException) && !(cause instanceof MessageIgnoredException)) {
-					this.fatalException = new SQLException("The connection is no longer valid.", ex);
-					handleFatalException(this.fatalException, new SQLException(cause));
-				}
-				return false;
-			}
+			return true;
 		}
-		return true;
+		catch (TimeoutException ignored) {
+			return false;
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			throw new SQLException("The thread has been interrupted.", ex);
+		}
+		catch (ExecutionException ex) {
+			var cause = ex.getCause();
+			if (cause == null) {
+				cause = ex;
+			}
+			if (!(cause instanceof Neo4jException) && !(cause instanceof MessageIgnoredException)) {
+				this.fatalException = new SQLException("The connection is no longer valid.", ex);
+				handleFatalException(this.fatalException, new SQLException(cause));
+			}
+			return false;
+		}
 	}
 
 	@Override

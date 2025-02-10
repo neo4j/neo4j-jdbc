@@ -870,6 +870,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return Values.NULL;
 	}
 
+	@SuppressWarnings("squid:S3776") // Yep, this is complex.
 	@Override
 	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
 			throws SQLException {
@@ -1098,6 +1099,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		throw new SQLFeatureNotSupportedException();
 	}
 
+	@SuppressWarnings("squid:S3776") // Yep, this is complex.
 	@Override
 	public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
 		assertCatalogIsNullOrEmpty(catalog);
