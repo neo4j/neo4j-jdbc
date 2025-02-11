@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -149,6 +150,18 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				assertThat(results.getInt("PROCEDURE_TYPE")).isEqualTo(DatabaseMetaData.procedureResultUnknown);
 			}
 			assertThat(resultCount).isGreaterThan(0);
+		}
+	}
+
+	static Stream<Arguments> getReadOnlyShouldWork() {
+		return Stream.of(Arguments.of("neo4j", false), Arguments.of("rodb", true));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void getReadOnlyShouldWork(String database, boolean expected) throws SQLException {
+		try (var connection = driver.connect(getConnectionURL() + "/" + database, new Properties())) {
+			assertThat(connection.getMetaData().isReadOnly()).isEqualTo(expected);
 		}
 	}
 

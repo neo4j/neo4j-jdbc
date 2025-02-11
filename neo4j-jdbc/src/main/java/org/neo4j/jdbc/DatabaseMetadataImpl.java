@@ -173,7 +173,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		var response = doQueryForPullResponse(getRequest("isReadOnly", "name", this.getSingleCatalog()));
+		return response.records().get(0).get(0).asBoolean();
 	}
 
 	// Wrt ordering see
@@ -1627,10 +1628,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	 * @return the single supported catalog for this connection
 	 */
 	private String getSingleCatalog() throws SQLException {
-		if (this.connection instanceof Neo4jConnection neo4jConnection) {
-			return neo4jConnection.getDatabaseName();
-		}
-		return this.connection.getCatalog();
+		return this.connection.unwrap(Neo4jConnection.class).getDatabaseName();
 	}
 
 	private PullResponse doQueryForPullResponse(Request request) throws SQLException {

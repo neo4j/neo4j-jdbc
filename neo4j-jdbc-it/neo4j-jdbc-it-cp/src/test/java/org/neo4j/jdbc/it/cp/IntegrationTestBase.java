@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -44,9 +45,22 @@ abstract class IntegrationTestBase {
 	@SuppressWarnings("resource") // On purpose to reuse this
 	protected final Neo4jContainer<?> neo4j;
 
+	protected Driver driver;
+
 	@BeforeAll
-	void startNeo4j() {
+	void startNeo4j() throws SQLException {
 		this.neo4j.start();
+
+		var url = getConnectionURL();
+		this.driver = DriverManager.getDriver(url);
+		var properties = new Properties();
+		properties.put("user", "neo4j");
+		properties.put("password", this.neo4j.getAdminPassword());
+		properties.put("database", "system");
+		try (var connection = this.driver.connect(url, properties); var stmt = connection.createStatement()) {
+			stmt.execute("CREATE DATABASE rodb IF NOT EXISTS WAIT");
+			stmt.execute("ALTER DATABASE rodb SET ACCESS READ ONLY");
+		}
 	}
 
 	@BeforeEach
@@ -67,7 +81,6 @@ abstract class IntegrationTestBase {
 
 	final Connection getConnection(boolean translate, boolean rewriteBatchedStatements) throws SQLException {
 		var url = getConnectionURL();
-		var driver = DriverManager.getDriver(url);
 		var properties = new Properties();
 		properties.put("user", "neo4j");
 		properties.put("password", this.neo4j.getAdminPassword());
@@ -77,7 +90,7 @@ abstract class IntegrationTestBase {
 			properties.put("s2c.alwaysEscapeNames", "false");
 			properties.put("s2c.prettyPrint", "false");
 		}
-		return driver.connect(url, properties);
+		return this.driver.connect(url, properties);
 	}
 
 	String getConnectionURL() {
