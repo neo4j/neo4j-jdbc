@@ -49,6 +49,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("resource")
 class Neo4jDriverUrlParsingTests {
 
 	private BoltConnectionProvider boltConnectionProvider;
@@ -467,6 +468,10 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(rawConfig.remove("customProperty")).isEqualTo("foo");
 		assertThat(rawConfig.remove("customQuery")).isEqualTo("bar");
 		assertThat(rawConfig).isEmpty();
+
+		var url = config.toUrl().toString();
+		assertThat(url).isEqualTo(
+				"jdbc:neo4j+ssc://host:1234/customDb?authScheme=BASIC&user=user1&authRealm=myRealm&agent=baby%27s-first-agent%2F1.2.3&timeout=2000&enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true&customProperty=foo&customQuery=bar&s2c.alwaysEscapeNames=true&s2c.enableCache=true&s2c.prettyPrint=true");
 	}
 
 	@Test

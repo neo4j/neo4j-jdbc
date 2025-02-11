@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.net.URI;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -82,6 +83,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private static final int TRANSLATION_CACHE_SIZE = 128;
 
+	private final URI databaseUrl;
+
 	private final BoltConnection boltConnection;
 
 	private final Set<Reference<Statement>> trackedStatementReferences = new HashSet<>();
@@ -130,9 +133,10 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final Map<String, String> clientInfo = new ConcurrentHashMap<>();
 
-	ConnectionImpl(BoltConnection boltConnection, Supplier<List<Translator>> translators, boolean enableSQLTranslation,
-			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
-			BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata) {
+	ConnectionImpl(URI databaseUrl, BoltConnection boltConnection, Supplier<List<Translator>> translators,
+			boolean enableSQLTranslation, boolean enableTranslationCaching, boolean rewriteBatchedStatements,
+			boolean rewritePlaceholders, BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata) {
+		this.databaseUrl = databaseUrl;
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
@@ -840,6 +844,10 @@ final class ConnectionImpl implements Neo4jConnection {
 				Optional.ofNullable(System.getProperty("neo4j.jdbc.version"))
 					.filter(Predicate.not(String::isBlank))
 					.orElseGet(ProductVersion::getValue));
+	}
+
+	URI getDatabaseURL() {
+		return this.databaseUrl;
 	}
 
 	static class TranslatorChain implements UnaryOperator<String> {

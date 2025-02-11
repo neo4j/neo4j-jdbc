@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc;
 
+import java.net.URI;
 import java.sql.ClientInfoStatus;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -125,8 +126,8 @@ class ConnectionImplTests {
 		var sql = "SQL";
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
-		var connection = new ConnectionImpl(mock(BoltConnection.class), () -> List.of(translator), false, true, false,
-				false, new VoidBookmarkManagerImpl(), Map.of());
+		var connection = new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), mock(BoltConnection.class),
+				() -> List.of(translator), false, true, false, false, new VoidBookmarkManagerImpl(), Map.of());
 
 		var nativeSQL = connection.nativeSQL(sql);
 		nativeSQL = connection.nativeSQL(sql);
@@ -716,8 +717,8 @@ class ConnectionImplTests {
 	}
 
 	ConnectionImpl makeConnection(BoltConnection boltConnection) {
-		return new ConnectionImpl(boltConnection, List::of, false, false, true, false, new VoidBookmarkManagerImpl(),
-				Map.of());
+		return new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), boltConnection, List::of, false, false, true,
+				false, new VoidBookmarkManagerImpl(), Map.of());
 
 	}
 

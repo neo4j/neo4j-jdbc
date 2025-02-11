@@ -162,7 +162,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getURL() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return this.connection.unwrap(ConnectionImpl.class).getDatabaseURL().toString();
 	}
 
 	@Override

@@ -20,7 +20,9 @@ package org.neo4j.jdbc;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -32,6 +34,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +44,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -354,7 +358,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
-		return new ConnectionImpl(boltConnection,
+		return new ConnectionImpl(driverConfig.toUrl(), boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata);
@@ -767,6 +771,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param ssl boolean dictating if ssl is enabled
 	 */
 	record SSLProperties(SSLMode sslMode, boolean ssl) {
+
+		String protocolSuffix() {
+			if (!this.ssl) {
+				return "";
+			}
+			return (this.sslMode == SSLMode.VERIFY_FULL) ? "+s" : "+ssc";
+		}
 	}
 
 	enum AuthScheme {
@@ -819,7 +830,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				PROPERTY_REWRITE_PLACEHOLDERS, PROPERTY_SSL, PROPERTY_SSL_MODE);
 
 		DriverConfig {
-			rawConfig = Map.copyOf(rawConfig);
+			rawConfig = Collections.unmodifiableMap(new TreeMap<>(rawConfig));
 		}
 
 		/**
@@ -909,6 +920,35 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			catch (IllegalArgumentException ignored) {
 				throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
 			}
+		}
+
+		URI toUrl() {
+			var sslProperties = this.sslProperties();
+			var result = new StringBuilder("jdbc:neo4j%s://%s:%s/%s?".formatted(sslProperties.protocolSuffix(),
+					this.host(), this.port(), this.database()));
+			append(result, PROPERTY_AUTH_SCHEME, this.authScheme()).append("&");
+			append(result, PROPERTY_USER, this.user()).append("&");
+			append(result, PROPERTY_AUTH_REALM, this.authRealm()).append("&");
+			append(result, PROPERTY_USER_AGENT, this.agent()).append("&");
+			append(result, PROPERTY_TIMEOUT, this.timeout()).append("&");
+			append(result, PROPERTY_SQL_TRANSLATION_ENABLED, this.enableSQLTranslation()).append("&");
+			append(result, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, this.enableTranslationCaching()).append("&");
+			append(result, PROPERTY_REWRITE_BATCHED_STATEMENTS, this.rewriteBatchedStatements()).append("&");
+			append(result, PROPERTY_REWRITE_PLACEHOLDERS, this.rewriteBatchedStatements()).append("&");
+			append(result, PROPERTY_USE_BOOKMARKS, this.useBookmarks()).append("&");
+			this.misc()
+				.entrySet()
+				.stream()
+				.sorted(Map.Entry.comparingByKey())
+				.forEach(e -> append(result, e.getKey(), e.getValue()).append("&"));
+			return URI.create(result.substring(0, result.length() - 1));
+		}
+
+		static StringBuilder append(StringBuilder result, String name, Object value) {
+			result.append(URLEncoder.encode(name, StandardCharsets.UTF_8))
+				.append("=")
+				.append(URLEncoder.encode(String.valueOf(value), StandardCharsets.UTF_8));
+			return result;
 		}
 
 	}

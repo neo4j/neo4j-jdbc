@@ -66,7 +66,7 @@ abstract class IntegrationTestBase {
 	}
 
 	final Connection getConnection(boolean translate, boolean rewriteBatchedStatements) throws SQLException {
-		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
+		var url = getConnectionURL();
 		var driver = DriverManager.getDriver(url);
 		var properties = new Properties();
 		properties.put("user", "neo4j");
@@ -78,6 +78,10 @@ abstract class IntegrationTestBase {
 			properties.put("s2c.prettyPrint", "false");
 		}
 		return driver.connect(url, properties);
+	}
+
+	String getConnectionURL() {
+		return "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));
 	}
 
 }

@@ -133,6 +133,11 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void getURLShouldWork() throws SQLException {
+		assertThat(this.getConnection().getMetaData().getURL()).startsWith(this.getConnectionURL());
+	}
+
+	@Test
 	void getAllProcedures() throws SQLException {
 		try (var results = this.connection.getMetaData().getProcedures(null, null, null)) {
 			var resultCount = 0;
