@@ -58,8 +58,14 @@ abstract class IntegrationTestBase {
 		properties.put("password", this.neo4j.getAdminPassword());
 		properties.put("database", "system");
 		try (var connection = this.driver.connect(url, properties); var stmt = connection.createStatement()) {
-			stmt.execute("CREATE DATABASE rodb IF NOT EXISTS WAIT");
-			stmt.execute("ALTER DATABASE rodb SET ACCESS READ ONLY");
+			var resultSet = stmt.executeQuery("CALL dbms.components() YIELD edition");
+			resultSet.next();
+			var edition = resultSet.getString("edition");
+			resultSet.close();
+			if ("enterprise".equalsIgnoreCase(edition)) {
+				stmt.execute("CREATE DATABASE rodb IF NOT EXISTS WAIT");
+				stmt.execute("ALTER DATABASE rodb SET ACCESS READ ONLY");
+			}
 		}
 	}
 

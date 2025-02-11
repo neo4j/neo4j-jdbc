@@ -25,7 +25,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -156,8 +155,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean allTablesAreSelectable() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean allTablesAreSelectable() {
+		return true;
 	}
 
 	@Override
@@ -287,7 +286,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
+	public boolean storesMixedCaseQuotedIdentifiers() {
 		return true;
 	}
 
@@ -428,7 +427,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsMinimumSQLGrammar() throws SQLException {
+	public boolean supportsMinimumSQLGrammar() {
 		return this.automaticSqlTranslation;
 	}
 
@@ -640,43 +639,43 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public int getMaxBinaryLiteralLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxBinaryLiteralLength() {
+		return 0; // No limit or unknown
 	}
 
 	@Override
-	public int getMaxCharLiteralLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxCharLiteralLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxColumnNameLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxColumnNameLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxColumnsInGroupBy() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxColumnsInGroupBy() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxColumnsInIndex() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxColumnsInIndex() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxColumnsInOrderBy() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxColumnsInOrderBy() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxColumnsInSelect() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxColumnsInSelect() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxColumnsInTable() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxColumnsInTable() {
+		return 0;
 	}
 
 	@Override
@@ -691,38 +690,38 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public int getMaxCursorNameLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxCursorNameLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxIndexLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxIndexLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxSchemaNameLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxSchemaNameLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxProcedureNameLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxProcedureNameLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxCatalogNameLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxCatalogNameLength() {
+		return 63;
 	}
 
 	@Override
-	public int getMaxRowSize() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxRowSize() {
+		return 0;
 	}
 
 	@Override
-	public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean doesMaxRowSizeIncludeBlobs() {
+		return true;
 	}
 
 	@Override
@@ -731,18 +730,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public int getMaxStatements() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxStatements() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxTableNameLength() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxTableNameLength() {
+		return 0;
 	}
 
 	@Override
-	public int getMaxTablesInSelect() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getMaxTablesInSelect() {
+		return 0;
 	}
 
 	@Override
@@ -1080,24 +1079,47 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern)
 			throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "GRANTOR", "GRANTEE", "PRIVILEGE",
+				"IS_GRANTABLE");
+		return emptyResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
 			throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE");
+		return emptyResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable)
 			throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = List.of("SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
+				"DECIMAL_DIGITS", "PSEUDO_COLUMN");
+		return emptyResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schema);
+
+		var keys = List.of("SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
+				"DECIMAL_DIGITS", "PSEUDO_COLUMN");
+		return emptyResultSet(keys);
 	}
 
 	@SuppressWarnings("squid:S3776") // Yep, this is complex.
@@ -1223,7 +1245,18 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable,
 			String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(parentCatalog);
+		assertSchemaIsPublicOrNull(parentSchema);
+		assertCatalogIsNullOrEmpty(foreignCatalog);
+		assertSchemaIsPublicOrNull(foreignSchema);
+
+		// TODO the remarks on element ids in relationships from getColumns should be
+		// duplicated here in a meaningful way
+		var keys = List.of("PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT",
+				"FKTABLE_SCHEM", "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME",
+				"PK_NAME", "DEFERRABILITY");
+		return emptyResultSet(keys);
 	}
 
 	@Override
@@ -1339,7 +1372,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
 			throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var keys = List.of("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE", "REMARKS", "BASE_TYPE");
+		return emptyResultSet(keys);
 	}
 
 	@Override
@@ -1376,18 +1414,36 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var keys = List.of("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SUPERTYPE_CAT", "SUPERTYPE_SCHEM", "SUPERTYPE_NAME");
+		return emptyResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "SUPERTABLE_NAME");
+		return emptyResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
 			String attributeNamePattern) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertCatalogIsNullOrEmpty(catalog);
+		assertSchemaIsPublicOrNull(schemaPattern);
+
+		var keys = List.of("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "ATTR_NAME", "DATA_TYPE", "ATTR_TYPE_NAME",
+				"ATTR_SIZE", "DECIMAL_DIGITS", "NUM_PREC_RADIX", "NULLABLE", "REMARKS", "ATTR_DEF", "SQL_DATA_TYPE",
+				"SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATALOG",
+				"SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE");
+		return emptyResultSet(keys);
 	}
 
 	@Override
@@ -1429,17 +1485,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public boolean locatorsUpdateCopy() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return true;
 	}
 
 	@Override
 	public boolean supportsStatementPooling() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return false;
 	}
 
 	@Override
-	public RowIdLifetime getRowIdLifetime() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public RowIdLifetime getRowIdLifetime() {
+		return RowIdLifetime.ROWID_UNSUPPORTED;
 	}
 
 	@Override
@@ -1553,7 +1609,21 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern,
 			String columnNamePattern) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+
+		assertSchemaIsPublicOrNull(schemaPattern);
+		assertCatalogIsNullOrEmpty(catalog);
+
+		// TODO the generated v$id columns should really move her
+		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "DATA_TYPE", "COLUMN_SIZE",
+				"DECIMAL_DIGITS", "NUM_PREC_RADIX", "COLUMN_USAGE", "REMARKS", "CHAR_OCTET_LENGTH", "IS_NULLABLE");
+		return emptyResultSet(keys);
+	}
+
+	private ResultSetImpl emptyResultSet(List<String> keys) {
+		var response = createRunResponseForStaticKeys(keys);
+		var pull = staticPullResponseFor(keys, List.of());
+		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
+				-1, -1, -1);
 	}
 
 	@Override

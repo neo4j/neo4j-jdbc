@@ -166,6 +166,134 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void getPseudoColumnsShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getPseudoColumns(null, null, null, null)) {
+			assertThat(results.getMetaData().getColumnCount()).isEqualTo(12);
+			assertThat(results.next()).isFalse();
+		}
+	}
+
+	@Test
+	void getColumnPrivilegesShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getColumnPrivileges(null, null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "GRANTOR", "GRANTEE",
+					"PRIVILEGE", "IS_GRANTABLE" };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getUDTsShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getUDTs(null, null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE", "REMARKS",
+					"BASE_TYPE" };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getSuperTypesShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getSuperTypes(null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SUPERTYPE_CAT", "SUPERTYPE_SCHEM",
+					"SUPERTYPE_NAME" };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getSuperTablesShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getSuperTables(null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "SUPERTABLE_NAME" };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getAttributesShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getAttributes(null, null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "ATTR_NAME", "DATA_TYPE",
+					"ATTR_TYPE_NAME", "ATTR_SIZE", "DECIMAL_DIGITS", "NUM_PREC_RADIX", "NULLABLE", "REMARKS",
+					"ATTR_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH", "ORDINAL_POSITION",
+					"IS_NULLABLE", "SCOPE_CATALOG", "SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE" };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getSchemasShouldMatchTheSpec() throws SQLException {
+		var databaseMetadata = this.connection.getMetaData();
+		try (var expectedKeysRs = databaseMetadata.getSchemas(null, "public")) {
+			var rsMetadata = expectedKeysRs.getMetaData();
+			assertThat(rsMetadata.getColumnCount()).isEqualTo(2);
+			assertThat(rsMetadata.getColumnName(1)).isEqualTo("TABLE_SCHEM");
+			assertThat(rsMetadata.getColumnName(2)).isEqualTo("TABLE_CATALOG");
+
+		}
+
+		try (var expectedKeysRs = databaseMetadata.getSchemas()) {
+			var rsMetadata = expectedKeysRs.getMetaData();
+			assertThat(rsMetadata.getColumnCount()).isEqualTo(2);
+			assertThat(rsMetadata.getColumnName(1)).isEqualTo("TABLE_SCHEM");
+			assertThat(rsMetadata.getColumnName(2)).isEqualTo("TABLE_CATALOG");
+
+		}
+	}
+
+	private static void assertEmptyResultSet(int columnCount, String[] names, ResultSet results) throws SQLException {
+		assertThat(columnCount).isEqualTo(names.length);
+		for (int i = 1; i <= columnCount; ++i) {
+			assertThat(results.getMetaData().getColumnName(i)).isEqualTo(names[i - 1]);
+		}
+		assertThat(results.next()).isFalse();
+	}
+
+	@Test
+	void getCrossReferenceShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getCrossReference(null, null, null, null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT",
+					"FKTABLE_SCHEM", "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE",
+					"FK_NAME", "PK_NAME", "DEFERRABILITY", };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getTablePrivilegesShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getTablePrivileges(null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "GRANTOR", "GRANTEE", "PRIVILEGE",
+					"IS_GRANTABLE" };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getBestRowIdentifierShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getBestRowIdentifier(null, null, null, 0, true)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
+					"DECIMAL_DIGITS", "PSEUDO_COLUMN", };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
+	void getVersionColumnsShouldWork() throws SQLException {
+		try (var results = this.connection.getMetaData().getVersionColumns(null, null, null)) {
+			var columnCount = results.getMetaData().getColumnCount();
+			var names = new String[] { "SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
+					"DECIMAL_DIGITS", "PSEUDO_COLUMN", };
+			assertEmptyResultSet(columnCount, names, results);
+		}
+	}
+
+	@Test
 	void getAllFunctions() throws SQLException {
 		try (var results = this.connection.getMetaData().getFunctions(null, null, null)) {
 			var resultCount = 0;
@@ -1238,7 +1366,7 @@ class DatabaseMetadataIT extends IntegrationTestBase {
 				catalogs.add(rs.getString("TABLE_CAT"));
 			}
 		}
-		assertThat(catalogs).containsExactly("neo4j", "system");
+		assertThat(catalogs).containsExactlyInAnyOrder("neo4j", "system", "rodb");
 	}
 
 	record IndexInfo(String tableName, boolean nonUnique, String indexName, int type, int ordinalPosition,

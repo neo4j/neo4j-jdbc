@@ -33,6 +33,8 @@ class DatabaseMetadataKeyValidatingTests {
 	static DatabaseMetadataImpl newDatabaseMetadata() throws SQLException {
 		var connection = mock(Connection.class);
 		given(connection.getCatalog()).willReturn("someCatalog");
+		// given(connection.unwrap(Neo4jConnection.class)).willReturn(((Neo4jConnection)
+		// connection));
 		return new DatabaseMetadataImpl(connection, (s) -> mock(Neo4jTransaction.class), false, 1000);
 	}
 
@@ -79,26 +81,6 @@ class DatabaseMetadataKeyValidatingTests {
 			assertThat(rsMetadata.getColumnName(12)).isEqualTo("FK_NAME");
 			assertThat(rsMetadata.getColumnName(13)).isEqualTo("PK_NAME");
 			assertThat(rsMetadata.getColumnName(14)).isEqualTo("DEFERRABILITY");
-		}
-	}
-
-	@Test
-	void getSchemasShouldMatchTheSpec() throws SQLException, ExecutionException, InterruptedException {
-		var databaseMetadata = newDatabaseMetadata();
-		try (var expectedKeysRs = databaseMetadata.getSchemas(null, "public")) {
-			var rsMetadata = expectedKeysRs.getMetaData();
-			assertThat(rsMetadata.getColumnCount()).isEqualTo(2);
-			assertThat(rsMetadata.getColumnName(1)).isEqualTo("TABLE_SCHEM");
-			assertThat(rsMetadata.getColumnName(2)).isEqualTo("TABLE_CATALOG");
-
-		}
-
-		try (var expectedKeysRs = databaseMetadata.getSchemas()) {
-			var rsMetadata = expectedKeysRs.getMetaData();
-			assertThat(rsMetadata.getColumnCount()).isEqualTo(2);
-			assertThat(rsMetadata.getColumnName(1)).isEqualTo("TABLE_SCHEM");
-			assertThat(rsMetadata.getColumnName(2)).isEqualTo("TABLE_CATALOG");
-
 		}
 	}
 
