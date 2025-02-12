@@ -75,6 +75,136 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private static final Properties QUERIES;
 
+	private static final String COL_TABLE_NAME = "TABLE_NAME";
+
+	private static final String COL_TABLE_CAT = "TABLE_CAT";
+
+	private static final String COL_TABLE_SCHEM = "TABLE_SCHEM";
+
+	private static final String COL_COLUMN_NAME = "COLUMN_NAME";
+
+	private static final String COL_GRANTOR = "GRANTOR";
+
+	private static final String COL_GRANTEE = "GRANTEE";
+
+	private static final String COL_PRIVILEGE = "PRIVILEGE";
+
+	private static final String COL_IS_GRANTABLE = "IS_GRANTABLE";
+
+	private static final String COL_SCOPE = "SCOPE";
+
+	private static final String COL_DATA_TYPE = "DATA_TYPE";
+
+	private static final String COL_TYPE_NAME = "TYPE_NAME";
+
+	private static final String COL_COLUMN_SIZE = "COLUMN_SIZE";
+
+	private static final String COL_BUFFER_LENGTH = "BUFFER_LENGTH";
+
+	private static final String COL_DECIMAL_DIGITS = "DECIMAL_DIGITS";
+
+	private static final String COL_PSEUDO_COLUMN = "PSEUDO_COLUMN";
+
+	private static final String COL_TABLE_CATALOG = "TABLE_CATALOG";
+
+	private static final String COL_KEY_SEQ = "KEY_SEQ";
+
+	private static final String COL_PK_NAME = "PK_NAME";
+
+	private static final String COL_PKTABLE_CAT = "PKTABLE_CAT";
+
+	private static final String COL_PKTABLE_SCHEM = "PKTABLE_SCHEM";
+
+	private static final String COL_PKTABLE_NAME = "PKTABLE_NAME";
+
+	private static final String COL_PKCOLUMN_NAME = "PKCOLUMN_NAME";
+
+	private static final String COL_FKTABLE_CAT = "FKTABLE_CAT";
+
+	private static final String COL_FKTABLE_SCHEM = "FKTABLE_SCHEM";
+
+	private static final String COL_FKTABLE_NAME = "FKTABLE_NAME";
+
+	private static final String COL_FKCOLUMN_NAME = "FKCOLUMN_NAME";
+
+	private static final String COL_UPDATE_RULE = "UPDATE_RULE";
+
+	private static final String COL_DELETE_RULE = "DELETE_RULE";
+
+	private static final String COL_FK_NAME = "FK_NAME";
+
+	private static final String COL_DEFERRABILITY = "DEFERRABILITY";
+
+	private static final String COL_PRECISION = "PRECISION";
+
+	private static final String COL_LITERAL_PREFIX = "LITERAL_PREFIX";
+
+	private static final String COL_LITERAL_SUFFIX = "LITERAL_SUFFIX";
+
+	private static final String COL_CREATE_PARAMS = "CREATE_PARAMS";
+
+	private static final String COL_AUTO_INCREMENT = "AUTO_INCREMENT";
+
+	private static final String COL_SQL_DATETIME_SUB = "SQL_DATETIME_SUB";
+
+	private static final String COL_FIXED_PREC_SCALE = "FIXED_PREC_SCALE";
+
+	private static final String COL_UNSIGNED_ATTRIBUTE = "UNSIGNED_ATTRIBUTE";
+
+	private static final String COL_MAXIMUM_SCALE = "MAXIMUM_SCALE";
+
+	private static final String COL_SQL_DATA_TYPE = "SQL_DATA_TYPE";
+
+	private static final String COL_NUM_PREC_RADIX = "NUM_PREC_RADIX";
+
+	private static final String COL_LOCAL_TYPE_NAME = "LOCAL_TYPE_NAME";
+
+	private static final String COL_NULLABLE = "NULLABLE";
+
+	private static final String COL_CASE_SENSITIVE = "CASE_SENSITIVE";
+
+	private static final String COL_MINIMUM_SCALE = "MINIMUM_SCALE";
+
+	private static final String COL_SEARCHABLE = "SEARCHABLE";
+
+	private static final String COL_TYPE_SCHEM = "TYPE_SCHEM";
+
+	private static final String COL_TYPE_CAT = "TYPE_CAT";
+
+	private static final String COL_SUPERTYPE_CAT = "SUPERTYPE_CAT";
+
+	private static final String COL_SUPERTYPE_SCHEM = "SUPERTYPE_SCHEM";
+
+	private static final String COL_SUPERTYPE_NAME = "SUPERTYPE_NAME";
+
+	private static final String COL_SUPERTABLE_NAME = "SUPERTABLE_NAME";
+
+	private static final String COL_ATTR_SIZE = "ATTR_SIZE";
+
+	private static final String COL_SCOPE_SCHEMA = "SCOPE_SCHEMA";
+
+	private static final String COL_SCOPE_TABLE = "SCOPE_TABLE";
+
+	private static final String COL_CHAR_OCTET_LENGTH = "CHAR_OCTET_LENGTH";
+
+	private static final String COL_SOURCE_DATA_TYPE = "SOURCE_DATA_TYPE";
+
+	private static final String COL_ORDINAL_POSITION = "ORDINAL_POSITION";
+
+	private static final String COL_IS_NULLABLE = "IS_NULLABLE";
+
+	private static final String COL_REMARKS = "REMARKS";
+
+	private static final String COL_ATTR_NAME = "ATTR_NAME";
+
+	private static final String COL_ATTR_TYPE_NAME = "ATTR_TYPE_NAME";
+
+	private static final String COL_SCOPE_CATALOG = "SCOPE_CATALOG";
+
+	private static final String COL_ATTR_DEF = "ATTR_DEF";
+
+	private static final String COL_COLUMN_USAGE = "COLUMN_USAGE";
+
 	static {
 		QUERIES = new Properties();
 		try {
@@ -938,7 +1068,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		if (columnPerLabel.isEmpty()) {
 			var tables = getTables(catalog, schemaPattern, tableNamePattern, null);
 			while (tables.next()) {
-				columnPerLabel.put(tables.getObject("TABLE_NAME", Value.class), new HashSet<>());
+				columnPerLabel.put(tables.getObject(COL_TABLE_NAME, Value.class), new HashSet<>());
 			}
 		}
 
@@ -949,7 +1079,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			if (isRelationship) {
 				var result = getTables(null, null, v.asString(), new String[] { "RELATIONSHIP" });
 				if (result.next()) {
-					var definition = result.getString("REMARKS").split("\n");
+					var definition = result.getString(COL_REMARKS).split("\n");
 					additionalIds.add("v$" + definition[0].toLowerCase(Locale.ROOT) + "_id");
 					additionalIds.add("v$" + definition[2].toLowerCase(Locale.ROOT) + "_id");
 				}
@@ -1049,28 +1179,28 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private static List<String> getKeysForGetColumns() {
 		var keys = new ArrayList<String>();
-		keys.add("TABLE_CAT");
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_NAME");
-		keys.add("COLUMN_NAME");
-		keys.add("DATA_TYPE");
-		keys.add("TYPE_NAME"); // this will be computed if possible.
-		keys.add("COLUMN_SIZE");
-		keys.add("BUFFER_LENGTH");
-		keys.add("DECIMAL_DIGITS");
-		keys.add("NUM_PREC_RADIX");
-		keys.add("NULLABLE");
-		keys.add("REMARKS");
+		keys.add(COL_TABLE_CAT);
+		keys.add(COL_TABLE_SCHEM);
+		keys.add(COL_TABLE_NAME);
+		keys.add(COL_COLUMN_NAME);
+		keys.add(COL_DATA_TYPE);
+		keys.add(COL_TYPE_NAME); // this will be computed if possible.
+		keys.add(COL_COLUMN_SIZE);
+		keys.add(COL_BUFFER_LENGTH);
+		keys.add(COL_DECIMAL_DIGITS);
+		keys.add(COL_NUM_PREC_RADIX);
+		keys.add(COL_NULLABLE);
+		keys.add(COL_REMARKS);
 		keys.add("COLUMN_DEF");
-		keys.add("SQL_DATA_TYPE");
-		keys.add("SQL_DATETIME_SUB");
-		keys.add("CHAR_OCTET_LENGTH");
-		keys.add("ORDINAL_POSITION");
-		keys.add("IS_NULLABLE");
-		keys.add("SCOPE_CATALOG");
-		keys.add("SCOPE_SCHEMA");
-		keys.add("SCOPE_TABLE");
-		keys.add("SOURCE_DATA_TYPE");
+		keys.add(COL_SQL_DATA_TYPE);
+		keys.add(COL_SQL_DATETIME_SUB);
+		keys.add(COL_CHAR_OCTET_LENGTH);
+		keys.add(COL_ORDINAL_POSITION);
+		keys.add(COL_IS_NULLABLE);
+		keys.add(COL_SCOPE_CATALOG);
+		keys.add(COL_SCOPE_SCHEMA);
+		keys.add(COL_SCOPE_TABLE);
+		keys.add(COL_SOURCE_DATA_TYPE);
 		keys.add("IS_AUTOINCREMENT");
 		keys.add("IS_GENERATEDCOLUMN");
 		return keys;
@@ -1083,8 +1213,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schema);
 
-		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "GRANTOR", "GRANTEE", "PRIVILEGE",
-				"IS_GRANTABLE");
+		var keys = List.of(COL_TABLE_CAT, COL_TABLE_SCHEM, COL_TABLE_NAME, COL_COLUMN_NAME, COL_GRANTOR, COL_GRANTEE,
+				COL_PRIVILEGE, COL_IS_GRANTABLE);
 		return emptyResultSet(keys);
 	}
 
@@ -1095,7 +1225,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "GRANTOR", "GRANTEE", "PRIVILEGE", "IS_GRANTABLE");
+		var keys = List.of(COL_TABLE_CAT, COL_TABLE_SCHEM, COL_TABLE_NAME, COL_GRANTOR, COL_GRANTEE, COL_PRIVILEGE,
+				COL_IS_GRANTABLE);
 		return emptyResultSet(keys);
 	}
 
@@ -1106,8 +1237,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schema);
 
-		var keys = List.of("SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
-				"DECIMAL_DIGITS", "PSEUDO_COLUMN");
+		var keys = List.of(COL_SCOPE, COL_COLUMN_NAME, COL_DATA_TYPE, COL_TYPE_NAME, COL_COLUMN_SIZE, COL_BUFFER_LENGTH,
+				COL_DECIMAL_DIGITS, COL_PSEUDO_COLUMN);
 		return emptyResultSet(keys);
 	}
 
@@ -1117,8 +1248,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schema);
 
-		var keys = List.of("SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH",
-				"DECIMAL_DIGITS", "PSEUDO_COLUMN");
+		var keys = List.of(COL_SCOPE, COL_COLUMN_NAME, COL_DATA_TYPE, COL_TYPE_NAME, COL_COLUMN_SIZE, COL_BUFFER_LENGTH,
+				COL_DECIMAL_DIGITS, COL_PSEUDO_COLUMN);
 		return emptyResultSet(keys);
 	}
 
@@ -1129,12 +1260,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schema);
 
 		var keys = new ArrayList<String>();
-		keys.add("TABLE_CATALOG");
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_NAME");
-		keys.add("COLUMN_NAME");
-		keys.add("KEY_SEQ");
-		keys.add("PK_NAME");
+		keys.add(COL_TABLE_CATALOG);
+		keys.add(COL_TABLE_SCHEM);
+		keys.add(COL_TABLE_NAME);
+		keys.add(COL_COLUMN_NAME);
+		keys.add(COL_KEY_SEQ);
+		keys.add(COL_PK_NAME);
 		List<Value[]> resultRows = List.of();
 
 		if (table != null) {
@@ -1145,7 +1276,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 				var relationships = getTables(catalog, schema, table, new String[] { "RELATIONSHIP" });
 				if (relationships.next()) {
 					relationshipChecked = true;
-					finalTable = relationships.getString("REMARKS").split("\n")[1].trim();
+					finalTable = relationships.getString(COL_REMARKS).split("\n")[1].trim();
 				}
 				relationships.close();
 			}
@@ -1220,20 +1351,20 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private ResultSet createKeysResultSet(ArrayList<String> keys) {
-		keys.add("PKTABLE_CAT");
-		keys.add("PKTABLE_SCHEM");
-		keys.add("PKTABLE_NAME");
-		keys.add("PKCOLUMN_NAME");
-		keys.add("FKTABLE_CAT");
-		keys.add("FKTABLE_SCHEM");
-		keys.add("FKTABLE_NAME");
-		keys.add("FKCOLUMN_NAME");
-		keys.add("KEY_SEQ");
-		keys.add("UPDATE_RULE");
-		keys.add("DELETE_RULE");
-		keys.add("FK_NAME");
-		keys.add("PK_NAME");
-		keys.add("DEFERRABILITY");
+		keys.add(COL_PKTABLE_CAT);
+		keys.add(COL_PKTABLE_SCHEM);
+		keys.add(COL_PKTABLE_NAME);
+		keys.add(COL_PKCOLUMN_NAME);
+		keys.add(COL_FKTABLE_CAT);
+		keys.add(COL_FKTABLE_SCHEM);
+		keys.add(COL_FKTABLE_NAME);
+		keys.add(COL_FKCOLUMN_NAME);
+		keys.add(COL_KEY_SEQ);
+		keys.add(COL_UPDATE_RULE);
+		keys.add(COL_DELETE_RULE);
+		keys.add(COL_FK_NAME);
+		keys.add(COL_PK_NAME);
+		keys.add(COL_DEFERRABILITY);
 
 		var emptyPullResponse = createEmptyPullResponse();
 		var runResponse = createRunResponseForStaticKeys(keys);
@@ -1253,19 +1384,19 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		// TODO the remarks on element ids in relationships from getColumns should be
 		// duplicated here in a meaningful way
-		var keys = List.of("PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT",
-				"FKTABLE_SCHEM", "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME",
-				"PK_NAME", "DEFERRABILITY");
+		var keys = List.of(COL_PKTABLE_CAT, COL_PKTABLE_SCHEM, COL_PKTABLE_NAME, COL_PKCOLUMN_NAME, COL_FKTABLE_CAT,
+				COL_FKTABLE_SCHEM, COL_FKTABLE_NAME, COL_FKCOLUMN_NAME, COL_KEY_SEQ, COL_UPDATE_RULE, COL_DELETE_RULE,
+				COL_FK_NAME, COL_PK_NAME, COL_DEFERRABILITY);
 		return emptyResultSet(keys);
 	}
 
 	@Override
 	public ResultSet getTypeInfo() {
 
-		var keys = List.of("TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX", "LITERAL_SUFFIX", "CREATE_PARAMS",
-				"NULLABLE", "CASE_SENSITIVE", "SEARCHABLE", "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE", "AUTO_INCREMENT",
-				"LOCAL_TYPE_NAME", "MINIMUM_SCALE", "MAXIMUM_SCALE", "SQL_DATA_TYPE", "SQL_DATETIME_SUB",
-				"NUM_PREC_RADIX");
+		var keys = List.of(COL_TYPE_NAME, COL_DATA_TYPE, COL_PRECISION, COL_LITERAL_PREFIX, COL_LITERAL_SUFFIX,
+				COL_CREATE_PARAMS, COL_NULLABLE, COL_CASE_SENSITIVE, COL_SEARCHABLE, COL_UNSIGNED_ATTRIBUTE,
+				COL_FIXED_PREC_SCALE, COL_AUTO_INCREMENT, COL_LOCAL_TYPE_NAME, COL_MINIMUM_SCALE, COL_MAXIMUM_SCALE,
+				COL_SQL_DATA_TYPE, COL_SQL_DATETIME_SUB, COL_NUM_PREC_RADIX);
 
 		var values = new ArrayList<Value[]>();
 		for (var type : Type.values()) {
@@ -1376,7 +1507,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var keys = List.of("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE", "REMARKS", "BASE_TYPE");
+		var keys = List.of(COL_TYPE_CAT, COL_TYPE_SCHEM, COL_TYPE_NAME, "CLASS_NAME", COL_DATA_TYPE, COL_REMARKS,
+				"BASE_TYPE");
 		return emptyResultSet(keys);
 	}
 
@@ -1418,7 +1550,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var keys = List.of("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SUPERTYPE_CAT", "SUPERTYPE_SCHEM", "SUPERTYPE_NAME");
+		var keys = List.of(COL_TYPE_CAT, COL_TYPE_SCHEM, COL_TYPE_NAME, COL_SUPERTYPE_CAT, COL_SUPERTYPE_SCHEM,
+				COL_SUPERTYPE_NAME);
 		return emptyResultSet(keys);
 	}
 
@@ -1428,7 +1561,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "SUPERTABLE_NAME");
+		var keys = List.of(COL_TABLE_CAT, COL_TABLE_SCHEM, COL_TABLE_NAME, COL_SUPERTABLE_NAME);
 		return emptyResultSet(keys);
 	}
 
@@ -1439,10 +1572,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		var keys = List.of("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "ATTR_NAME", "DATA_TYPE", "ATTR_TYPE_NAME",
-				"ATTR_SIZE", "DECIMAL_DIGITS", "NUM_PREC_RADIX", "NULLABLE", "REMARKS", "ATTR_DEF", "SQL_DATA_TYPE",
-				"SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH", "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATALOG",
-				"SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE");
+		var keys = List.of(COL_TYPE_CAT, COL_TYPE_SCHEM, COL_TYPE_NAME, COL_ATTR_NAME, COL_DATA_TYPE,
+				COL_ATTR_TYPE_NAME, COL_ATTR_SIZE, COL_DECIMAL_DIGITS, COL_NUM_PREC_RADIX, COL_NULLABLE, COL_REMARKS,
+				COL_ATTR_DEF, COL_SQL_DATA_TYPE, COL_SQL_DATETIME_SUB, COL_CHAR_OCTET_LENGTH, COL_ORDINAL_POSITION,
+				COL_IS_NULLABLE, COL_SCOPE_CATALOG, COL_SCOPE_SCHEMA, COL_SCOPE_TABLE, COL_SOURCE_DATA_TYPE);
 		return emptyResultSet(keys);
 	}
 
@@ -1501,8 +1634,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	@Override
 	public ResultSet getSchemas() throws SQLException {
 		var keys = new ArrayList<String>();
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_CATALOG");
+		keys.add(COL_TABLE_SCHEM);
+		keys.add(COL_TABLE_CATALOG);
 
 		var response = createRunResponseForStaticKeys(keys);
 		var staticPulLResponse = staticPullResponseFor(keys,
@@ -1522,8 +1655,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		// return an empty result set if anything other than public is asked for.
 		var keys = new ArrayList<String>();
-		keys.add("TABLE_SCHEM");
-		keys.add("TABLE_CATALOG");
+		keys.add(COL_TABLE_SCHEM);
+		keys.add(COL_TABLE_CATALOG);
 		// return RS with just public in it
 		PullResponse pull = createEmptyPullResponse();
 
@@ -1614,8 +1747,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 
 		// TODO the generated v$id columns should really move her
-		var keys = List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "DATA_TYPE", "COLUMN_SIZE",
-				"DECIMAL_DIGITS", "NUM_PREC_RADIX", "COLUMN_USAGE", "REMARKS", "CHAR_OCTET_LENGTH", "IS_NULLABLE");
+		var keys = List.of(COL_TABLE_CAT, COL_TABLE_SCHEM, COL_TABLE_NAME, COL_COLUMN_NAME, COL_DATA_TYPE,
+				COL_COLUMN_SIZE, COL_DECIMAL_DIGITS, COL_NUM_PREC_RADIX, COL_COLUMN_USAGE, COL_REMARKS,
+				COL_CHAR_OCTET_LENGTH, COL_IS_NULLABLE);
 		return emptyResultSet(keys);
 	}
 
