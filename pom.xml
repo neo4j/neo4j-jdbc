@@ -764,6 +764,8 @@
 							<excludes>
 								<!-- This is not public API -->
 								<exclude>org.neo4j.jdbc.internal.bolt</exclude>
+								<!-- This is shady stuff -->
+								<exclude>org.neo4j.jdbc.translator.sparkcleaner.internal.shaded</exclude>
 							</excludes>
 						</parameter>
 					</configuration>
