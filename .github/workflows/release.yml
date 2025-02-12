@@ -34,4 +34,5 @@ jobs:
       - name: 'Create release'
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_TOKEN }}
+          JRELEASER_SLACK_WEBHOOK: ${{ secrets.JRELEASER_SLACK_WEBHOOK }}
         run: ./mvnw -Dfast --no-transfer-progress package jreleaser:full-release

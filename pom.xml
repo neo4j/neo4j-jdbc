@@ -1080,6 +1080,15 @@
 								</artifacts>
 							</full-bundle>
 						</distributions>
+						<announce>
+							<webhooks>
+								<slack>
+									<active>ALWAYS</active>
+									<messageProperty>msg</messageProperty>
+									<structuredMessage>true</structuredMessage>
+								</slack>
+							</webhooks>
+						</announce>
 					</jreleaser>
 				</configuration>
 			</plugin>
