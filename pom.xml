@@ -1083,7 +1083,7 @@
 						<announce>
 							<webhooks>
 								<slack>
-									<active>ALWAYS</active>
+									<active>RELEASE</active>
 									<messageProperty>msg</messageProperty>
 									<structuredMessage>true</structuredMessage>
 								</slack>
