@@ -192,6 +192,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_SSL = "ssl";
 
 	/**
+	 * Use this to configure the sample size for determining the relationship types
+	 * between labels. Defaults to {@literal 1000}.
+	 */
+	public static final String PROPERTY_RELATIONSHIP_SAMPLE_SIZE = "relationshipSampleSize";
+
+	/**
 	 * An optional configuration for fine-grained control over SSL configuration. Allowed
 	 * values are
 	 * <ul>
@@ -361,7 +367,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new ConnectionImpl(driverConfig.toUrl(), boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				bookmarkManager, this.transactionMetadata);
+				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize());
 	}
 
 	static String getDefaultUserAgent() {
@@ -814,6 +820,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param rewriteBatchedStatements rewrite batched statements to be more efficient
 	 * @param rewritePlaceholders rewrite ? to $0 .. $n
 	 * @param useBookmarks enables the use of causal cluster bookmarks
+	 * @param relationshipSampleSize Sample size for determining relationship types
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
@@ -821,7 +828,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
 			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
 			boolean rewriteBatchedStatements, boolean rewritePlaceholders, boolean useBookmarks,
-			SSLProperties sslProperties, Map<String, String> rawConfig) {
+			int relationshipSampleSize, SSLProperties sslProperties, Map<String, String> rawConfig) {
 
 		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
 				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
@@ -903,10 +910,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var rewritePlaceholders = Boolean.parseBoolean(
 					config.getOrDefault(PROPERTY_REWRITE_PLACEHOLDERS, Boolean.toString(!automaticSqlTranslation)));
 			var useBookmarks = Boolean.parseBoolean(config.getOrDefault(PROPERTY_USE_BOOKMARKS, "true"));
+			var relationshipSampleSize = Integer
+				.parseInt(config.getOrDefault(PROPERTY_RELATIONSHIP_SAMPLE_SIZE, "1000"));
 
 			return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
 					connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
-					rewriteBatchedStatements, rewritePlaceholders, useBookmarks, sslProperties, raw);
+					rewriteBatchedStatements, rewritePlaceholders, useBookmarks, relationshipSampleSize, sslProperties,
+					raw);
 		}
 
 		private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {

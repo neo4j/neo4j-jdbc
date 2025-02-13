@@ -125,7 +125,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
-	private final int relationshipSampleSize = 1000;
+	private final int relationshipSampleSize;
 
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
@@ -135,7 +135,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	ConnectionImpl(URI databaseUrl, BoltConnection boltConnection, Supplier<List<Translator>> translators,
 			boolean enableSQLTranslation, boolean enableTranslationCaching, boolean rewriteBatchedStatements,
-			boolean rewritePlaceholders, BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata) {
+			boolean rewritePlaceholders, BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata,
+			int relationshipSampleSize) {
 		this.databaseUrl = databaseUrl;
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.translators = Lazy.of(translators);
@@ -145,6 +146,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.rewritePlaceholders = rewritePlaceholders;
 		this.bookmarkManager = Objects.requireNonNull(bookmarkManager);
 		this.transactionMetadata.putAll(Objects.requireNonNullElseGet(transactionMetadata, Map::of));
+		this.relationshipSampleSize = relationshipSampleSize;
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {

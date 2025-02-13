@@ -331,6 +331,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.authRealm()).isEqualTo("");
 		assertThat(config.agent()).isEqualTo("neo4j-jdbc/dev");
 		assertThat(config.timeout()).isEqualTo(1000);
+		assertThat(config.relationshipSampleSize()).isEqualTo(1000);
 		assertThat(config.enableSQLTranslation()).isFalse();
 		assertThat(config.enableTranslationCaching()).isFalse();
 		assertThat(config.rewriteBatchedStatements()).isTrue();
@@ -423,6 +424,7 @@ class Neo4jDriverUrlParsingTests {
 		props.put("s2c.prettyPrint", "true");
 		props.put("s2c.enableCache", "true");
 		props.put("customProperty", "foo");
+		props.put("relationshipSampleSize", "4711");
 
 		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
 
@@ -435,6 +437,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.authRealm()).isEqualTo("myRealm");
 		assertThat(config.agent()).isEqualTo("baby's-first-agent/1.2.3");
 		assertThat(config.timeout()).isEqualTo(2000);
+		assertThat(config.relationshipSampleSize()).isEqualTo(4711);
 		assertThat(config.enableSQLTranslation()).isTrue();
 		assertThat(config.enableTranslationCaching()).isTrue();
 		assertThat(config.rewriteBatchedStatements()).isFalse();
@@ -467,11 +470,12 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(rawConfig.remove("s2c.enableCache")).isEqualTo("true");
 		assertThat(rawConfig.remove("customProperty")).isEqualTo("foo");
 		assertThat(rawConfig.remove("customQuery")).isEqualTo("bar");
+		assertThat(rawConfig.remove("relationshipSampleSize")).isEqualTo("4711");
 		assertThat(rawConfig).isEmpty();
 
 		var url = config.toUrl().toString();
 		assertThat(url).isEqualTo(
-				"jdbc:neo4j+ssc://host:1234/customDb?authScheme=BASIC&user=user1&authRealm=myRealm&agent=baby%27s-first-agent%2F1.2.3&timeout=2000&enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true&customProperty=foo&customQuery=bar&s2c.alwaysEscapeNames=true&s2c.enableCache=true&s2c.prettyPrint=true");
+				"jdbc:neo4j+ssc://host:1234/customDb?authScheme=BASIC&user=user1&authRealm=myRealm&agent=baby%27s-first-agent%2F1.2.3&timeout=2000&enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true&customProperty=foo&customQuery=bar&relationshipSampleSize=4711&s2c.alwaysEscapeNames=true&s2c.enableCache=true&s2c.prettyPrint=true");
 	}
 
 	@Test

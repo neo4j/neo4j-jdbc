@@ -127,7 +127,7 @@ class ConnectionImplTests {
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
 		var connection = new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), mock(BoltConnection.class),
-				() -> List.of(translator), false, true, false, false, new VoidBookmarkManagerImpl(), Map.of());
+				() -> List.of(translator), false, true, false, false, new VoidBookmarkManagerImpl(), Map.of(), 23);
 
 		var nativeSQL = connection.nativeSQL(sql);
 		nativeSQL = connection.nativeSQL(sql);
@@ -718,7 +718,7 @@ class ConnectionImplTests {
 
 	ConnectionImpl makeConnection(BoltConnection boltConnection) {
 		return new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), boltConnection, List::of, false, false, true,
-				false, new VoidBookmarkManagerImpl(), Map.of());
+				false, new VoidBookmarkManagerImpl(), Map.of(), 23);
 
 	}
 
