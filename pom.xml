@@ -1086,6 +1086,7 @@
 							<webhooks>
 								<slack>
 									<active>RELEASE</active>
+									<structuredMessage>true</structuredMessage>
 								</slack>
 							</webhooks>
 						</announce>
