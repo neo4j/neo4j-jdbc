@@ -243,12 +243,42 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final int relationshipSampleSize;
 
+	private volatile Boolean apocAvailable;
+
 	DatabaseMetadataImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			boolean automaticSqlTranslation, int relationshipSampleSize) {
 		this.connection = connection;
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.automaticSqlTranslation = automaticSqlTranslation;
 		this.relationshipSampleSize = relationshipSampleSize;
+	}
+
+	boolean isApocAvailable() {
+
+		Boolean result = this.apocAvailable;
+		if (result == null) {
+			synchronized (ProductVersion.class) {
+				result = this.apocAvailable;
+				if (result == null) {
+					this.apocAvailable = isApocAvailable0();
+					result = this.apocAvailable;
+				}
+			}
+		}
+		return result;
+	}
+
+	private boolean isApocAvailable0() {
+		try {
+			var response = doQueryForPullResponse(new Request(
+					"SHOW FUNCTIONS YIELD name WHERE name = 'apoc.version' RETURN count(*) >= 1 AS available",
+					Map.of()));
+			var records = response.records();
+			return records.size() == 1 && records.get(0).get("available").asBoolean();
+		}
+		catch (SQLException ex) {
+			return false;
+		}
 	}
 
 	static Request getRequest(String queryName, Object... keyAndValues) {
@@ -962,7 +992,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 		assertCatalogIsNullOrEmpty(catalog);
 
-		var request = getRequest("getTables", "name",
+		var request = getRequest(isApocAvailable() ? "getTablesApoc" : "getTablesFallback", "name",
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null, "sampleSize",
 				this.relationshipSampleSize, "types", types);
 		return doQueryForResultSet(request);

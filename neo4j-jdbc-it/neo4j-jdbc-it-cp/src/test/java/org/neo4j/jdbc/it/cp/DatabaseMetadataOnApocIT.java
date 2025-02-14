@@ -18,15 +18,15 @@
  */
 package org.neo4j.jdbc.it.cp;
 
-class DatabaseMetadataIT extends AbstractDatabaseMetadata {
+class DatabaseMetadataOnApocIT extends AbstractDatabaseMetadata {
 
-	DatabaseMetadataIT() {
-		super(false);
+	DatabaseMetadataOnApocIT() {
+		super(true);
 	}
 
 	@Override
 	boolean apocShouldBeAvailable() {
-		return false;
+		return true;
 	}
 
 }

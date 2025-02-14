@@ -46,11 +46,22 @@ final class TestUtils {
 	}
 
 	/**
-	 * {@return a Neo4j testcontainer configured to the needs of the integration tests}
+	 * @param image the name of the image to use
+	 * {@return a Neo4j testcontainer configured
+	 * to the needs of the integration tests}
+	 */
+	static Neo4jContainer<?> getNeo4jContainer(String image) {
+		return getNeo4jContainer(image, false);
+	}
+
+	/**
+	 * @param enableApoc optionally enable apoc
+	 * {@return a Neo4j testcontainer configured
+	 * to the needs of the integration tests}
 	 */
 	@SuppressWarnings("resource")
-	static Neo4jContainer<?> getNeo4jContainer(String image) {
-		return new Neo4jContainer<>(
+	static Neo4jContainer<?> getNeo4jContainer(String image, boolean enableApoc) {
+		var container = new Neo4jContainer<>(
 				Optional.ofNullable(image).orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image")))
 			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT) // The HTTP wait strategy used by
@@ -58,6 +69,10 @@ final class TestUtils {
 			// native image, bolt must be
 			// sufficed.
 			.withReuse(true);
+		if (enableApoc) {
+			container = container.withPlugins("apoc");
+		}
+		return container;
 	}
 
 	static Connection getConnection(Neo4jContainer<?> neo4j) throws SQLException {

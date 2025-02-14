@@ -127,6 +127,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final int relationshipSampleSize;
 
+	private volatile Boolean apocAvailable;
+
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
 	 * for future use.

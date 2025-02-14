@@ -824,7 +824,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
-
 	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
 			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
 			boolean rewriteBatchedStatements, boolean rewritePlaceholders, boolean useBookmarks,
