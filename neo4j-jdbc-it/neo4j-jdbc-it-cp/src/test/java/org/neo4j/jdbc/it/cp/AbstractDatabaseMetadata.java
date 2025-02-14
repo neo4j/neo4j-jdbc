@@ -964,6 +964,16 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	void getTablesWithoutSamplingShouldWork() throws SQLException {
+
+		try (var connection = this.driver.connect(getConnectionURL() + "?relationshipSampleSize=-1",
+				new Properties())) {
+			var metaData = connection.getMetaData();
+			assertThatNoException().isThrownBy(() -> metaData.getTables(null, null, null, null));
+		}
+	}
+
+	@Test
 	void getTablesWithStrictPattern() throws SQLException {
 
 		try (Statement statement = this.connection.createStatement()) {

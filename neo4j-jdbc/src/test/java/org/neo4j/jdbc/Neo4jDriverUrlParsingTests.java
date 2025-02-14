@@ -408,6 +408,15 @@ class Neo4jDriverUrlParsingTests {
 	}
 
 	@Test
+	void sampleSizeShouldBeValidated() {
+		var properties = new Properties();
+		assertThatExceptionOfType(SQLException.class)
+			.isThrownBy(
+					() -> Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?relationshipSampleSize=-2", properties))
+			.withMessage("Sample size for relationships must be greater than or equal -1");
+	}
+
+	@Test
 	void testParseConfigOverrides() throws SQLException {
 		Properties props = new Properties();
 		props.put("authScheme", "basic");

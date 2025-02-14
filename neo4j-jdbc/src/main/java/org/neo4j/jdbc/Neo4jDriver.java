@@ -911,6 +911,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var useBookmarks = Boolean.parseBoolean(config.getOrDefault(PROPERTY_USE_BOOKMARKS, "true"));
 			var relationshipSampleSize = Integer
 				.parseInt(config.getOrDefault(PROPERTY_RELATIONSHIP_SAMPLE_SIZE, "1000"));
+			if (relationshipSampleSize < -1) {
+				throw new SQLException("Sample size for relationships must be greater than or equal -1");
+			}
 
 			return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
 					connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
