@@ -27,6 +27,7 @@ import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -244,6 +246,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	private final int relationshipSampleSize;
 
 	private volatile Boolean apocAvailable;
+
+	private final Map<GetTablesCacheKey, GetTablesCacheValue> getTablesResults = new ConcurrentHashMap<>();
 
 	DatabaseMetadataImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			boolean automaticSqlTranslation, int relationshipSampleSize) {
@@ -992,10 +996,35 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 		assertCatalogIsNullOrEmpty(catalog);
 
+		try {
+			var key = new GetTablesCacheKey(catalog, schemaPattern, tableNamePattern, types);
+			var result = this.getTablesResults.computeIfAbsent(key, this::getTables0);
+			// We cannot cache the result set, as any proper usage would close it for
+			// good, and it's much harder to dig down into the implementation and prevent
+			// closing it on a case base case basis than just recreating it
+			return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(),
+					result.response, result.pull, -1, -1, -1);
+		}
+		catch (UncheckedSQLException ex) {
+			throw ex.getCause();
+		}
+	}
+
+	private GetTablesCacheValue getTables0(GetTablesCacheKey key) {
+
+		var tableNamePattern = key.tableNamePattern();
+		var types = key.types();
+
 		var request = getRequest(isApocAvailable() ? "getTablesApoc" : "getTablesFallback", "name",
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null, "sampleSize",
 				this.relationshipSampleSize, "types", types);
-		return doQueryForResultSet(request);
+
+		try (var resultSet = doQueryForResultSet(request)) {
+			return GetTablesCacheValue.of(resultSet);
+		}
+		catch (SQLException ex) {
+			throw new UncheckedSQLException(ex);
+		}
 	}
 
 	@Override
@@ -1899,6 +1928,46 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private record ClientInfoProperty(String name, String description) {
+	}
+
+	private record GetTablesCacheKey(String catalog, String schemaPattern, String tableNamePattern, String[] types) {
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof GetTablesCacheKey that)) {
+				return false;
+			}
+			return Objects.equals(this.catalog, that.catalog) && Objects.deepEquals(this.types, that.types)
+					&& Objects.equals(this.schemaPattern, that.schemaPattern)
+					&& Objects.equals(this.tableNamePattern, that.tableNamePattern);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(this.catalog, this.schemaPattern, this.tableNamePattern, Arrays.hashCode(this.types));
+		}
+	}
+
+	private record GetTablesCacheValue(RunResponse response, PullResponse pull) {
+
+		static GetTablesCacheValue of(ResultSet resultSet) throws SQLException {
+			var keys = new ArrayList<String>();
+			var metaData = resultSet.getMetaData();
+			var columnCount = metaData.getColumnCount();
+			for (int i = 1; i <= columnCount; ++i) {
+				keys.add(metaData.getColumnName(i));
+			}
+			var values = new ArrayList<Value[]>();
+			while (resultSet.next()) {
+				var row = new Value[columnCount];
+				for (int i = 1; i <= columnCount; ++i) {
+					row[i - 1] = resultSet.getObject(i, Value.class);
+				}
+				values.add(row);
+			}
+			var response = createRunResponseForStaticKeys(keys);
+			var pull = staticPullResponseFor(keys, values);
+			return new GetTablesCacheValue(response, pull);
+		}
 	}
 
 }
