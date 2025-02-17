@@ -24,7 +24,7 @@
 
 	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-jdbc-parent</artifactId>
-	<version>6.1.3</version>
+	<version>6.1.4-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver</name>
@@ -118,7 +118,7 @@
 	<scm>
 		<connection>scm:git:git@github.com:neo4j/neo4j-jdbc.git</connection>
 		<developerConnection>scm:git:git@github.com:neo4j/neo4j-jdbc.git</developerConnection>
-		<tag>6.1.3</tag>
+		<tag>HEAD</tag>
 		<url>https://github.com/neo4j/neo4j-jdbc</url>
 	</scm>
 
@@ -179,7 +179,7 @@
 		<moditect-maven-plugin.version>1.2.2.Final</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.10.5</native-maven-plugin.version>
 		<neo4j-cypher-dsl.version>2024.4.1</neo4j-cypher-dsl.version>
-		<neo4j-jdbc.previous.version>6.1.2</neo4j-jdbc.previous.version>
+		<neo4j-jdbc.previous.version>6.1.3</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>5.26.0</neo4j.version>
 		<netty.version>4.1.118.Final</netty.version>
