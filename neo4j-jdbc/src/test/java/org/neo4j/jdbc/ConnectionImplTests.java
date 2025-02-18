@@ -613,6 +613,12 @@ class ConnectionImplTests {
 				Arguments.of((ConnectionMethodRunner) Connection::getSchema, SQLException.class));
 	}
 
+	@Test
+	void getTypeMapShouldAlwaysBeEmpty() {
+		var connection = makeConnection(mock(BoltConnection.class));
+		assertThat(connection.getTypeMap()).isEqualTo(Map.of());
+	}
+
 	@ParameterizedTest
 	@MethodSource("getUnsupportedMethodExecutors")
 	void shouldThrowUnsupported(ConnectionMethodRunner consumer, Class<? extends SQLException> exceptionType) {
@@ -626,7 +632,6 @@ class ConnectionImplTests {
 					.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("RETURN pi()",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
-				Arguments.of((ConnectionMethodRunner) Connection::getTypeMap, SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setTypeMap(Collections.emptyMap()),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection
@@ -660,7 +665,7 @@ class ConnectionImplTests {
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT),
 						SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
-						Statement.NO_GENERATED_KEYS), SQLFeatureNotSupportedException.class),
+						Statement.RETURN_GENERATED_KEYS), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored", new int[0]),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of(

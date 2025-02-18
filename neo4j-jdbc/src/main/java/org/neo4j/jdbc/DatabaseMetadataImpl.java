@@ -1002,8 +1002,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			// We cannot cache the result set, as any proper usage would close it for
 			// good, and it's much harder to dig down into the implementation and prevent
 			// closing it on a case base case basis than just recreating it
-			return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(),
-					result.response, result.pull, -1, -1, -1);
+			return new LocalStatementImpl(this.connection, result.runResponse, result.pullResponse).getResultSet();
 		}
 		catch (UncheckedSQLException ex) {
 			throw ex.getCause();
@@ -1034,15 +1033,14 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getTableTypes() {
+	public ResultSet getTableTypes() throws SQLException {
 		var keys = new ArrayList<String>();
 		keys.add("TABLE_TYPE");
 
-		var response = createRunResponseForStaticKeys(keys);
-		var pull = staticPullResponseFor(keys,
+		var runResponse = createRunResponseForStaticKeys(keys);
+		var pullResponse = staticPullResponseFor(keys,
 				List.of(new Value[] { Values.value("TABLE") }, new Value[] { Values.value("RELATIONSHIP") }));
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
-				-1, -1, -1);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	static Value getMaxPrecision(int type) {
@@ -1071,8 +1069,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		var request = getRequest("getColumns", "name",
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern, "column_name",
 				columnNamePattern, "sampleSize", this.relationshipSampleSize);
-		var pullResponse = doQueryForPullResponse(request);
-		var records = pullResponse.records();
+		var innerColumnsResponse = doQueryForPullResponse(request);
+		var records = innerColumnsResponse.records();
 
 		var rows = new LinkedList<Value[]>();
 
@@ -1156,10 +1154,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		var keys = getKeysForGetColumns();
 		var runResponse = createRunResponseForStaticKeys(keys);
-		var staticPullResponse = staticPullResponseFor(keys, rows);
+		var pullResponse = staticPullResponseFor(keys, rows);
 
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
-				staticPullResponse, -1, -1, -1);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	private ArrayList<Value> addColumn(Value nodeLabel, Value propertyName, Value propertyType, int NULLABLE,
@@ -1372,10 +1369,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			}
 		}
 
-		var pull = staticPullResponseFor(keys, resultRows);
 		var runResponse = createRunResponseForStaticKeys(keys);
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
-				pull, -1, -1, -1);
+		var pullResponse = staticPullResponseFor(keys, resultRows);
+
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	private List<Value[]> makeUniqueKeyValues(String catalog, String schema, String table,
@@ -1409,7 +1406,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return createKeysResultSet(keys);
 	}
 
-	private ResultSet createKeysResultSet(ArrayList<String> keys) {
+	private ResultSet createKeysResultSet(ArrayList<String> keys) throws SQLException {
 		keys.add(COL_PKTABLE_CAT);
 		keys.add(COL_PKTABLE_SCHEM);
 		keys.add(COL_PKTABLE_NAME);
@@ -1425,11 +1422,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add(COL_PK_NAME);
 		keys.add(COL_DEFERRABILITY);
 
-		var emptyPullResponse = createEmptyPullResponse();
 		var runResponse = createRunResponseForStaticKeys(keys);
+		var pullResponse = createEmptyPullResponse();
 
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
-				emptyPullResponse, -1, -1, -1);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	@Override
@@ -1450,7 +1446,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getTypeInfo() {
+	public ResultSet getTypeInfo() throws SQLException {
 
 		var keys = List.of(COL_TYPE_NAME, COL_DATA_TYPE, COL_PRECISION, COL_LITERAL_PREFIX, COL_LITERAL_SUFFIX,
 				COL_CREATE_PARAMS, COL_NULLABLE, COL_CASE_SENSITIVE, COL_SEARCHABLE, COL_UNSIGNED_ATTRIBUTE,
@@ -1473,10 +1469,9 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			values.add(row);
 		}
 
-		var response = createRunResponseForStaticKeys(keys);
-		var pull = staticPullResponseFor(keys, values);
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
-				-1, -1, -1);
+		var runResponse = createRunResponseForStaticKeys(keys);
+		var pullResponse = staticPullResponseFor(keys, values);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 
 	}
 
@@ -1696,11 +1691,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add(COL_TABLE_SCHEM);
 		keys.add(COL_TABLE_CATALOG);
 
-		var response = createRunResponseForStaticKeys(keys);
-		var staticPulLResponse = staticPullResponseFor(keys,
+		var runResponse = createRunResponseForStaticKeys(keys);
+		var pullResponse = staticPullResponseFor(keys,
 				Collections.singletonList(new Value[] { Values.value("public"), Values.value(getSingleCatalog()) }));
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response,
-				staticPulLResponse, -1, -1, -1);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	@Override
@@ -1717,12 +1711,11 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		keys.add(COL_TABLE_SCHEM);
 		keys.add(COL_TABLE_CATALOG);
 		// return RS with just public in it
-		PullResponse pull = createEmptyPullResponse();
+		PullResponse pullResponse = createEmptyPullResponse();
 
 		var runResponse = createRunResponseForStaticKeys(keys);
 
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), runResponse,
-				pull, -1, -1, -1);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	@Override
@@ -1736,7 +1729,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public ResultSet getClientInfoProperties() {
+	public ResultSet getClientInfoProperties() throws SQLException {
 
 		var keys = List.of("NAME", "MAX_LEN", "DEFAULT_VALUE", "DESCRIPTION");
 		var values = new ArrayList<Value[]>();
@@ -1744,11 +1737,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 			values.add(new Value[] { Values.value(property.name()), Values.value(65536), Values.NULL,
 					Values.value(property.description()) });
 		}
-		var response = createRunResponseForStaticKeys(keys);
-		var pull = staticPullResponseFor(keys, values);
+		var runResponse = createRunResponseForStaticKeys(keys);
+		var pullResponse = staticPullResponseFor(keys, values);
 
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
-				-1, -1, -1);
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	static boolean isSupportedClientInfoProperty(String name) {
@@ -1812,11 +1804,10 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		return emptyResultSet(keys);
 	}
 
-	private ResultSetImpl emptyResultSet(List<String> keys) {
-		var response = createRunResponseForStaticKeys(keys);
-		var pull = staticPullResponseFor(keys, List.of());
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(), response, pull,
-				-1, -1, -1);
+	private ResultSet emptyResultSet(List<String> keys) throws SQLException {
+		var runResponse = createRunResponseForStaticKeys(keys);
+		var pullResponse = staticPullResponseFor(keys, List.of());
+		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
 	@Override
@@ -1902,8 +1893,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	private ResultSet doQueryForResultSet(Request request) throws SQLException {
 		var response = doQuery(request);
 
-		return new ResultSetImpl(new LocalStatementImpl(this.connection), new ThrowingTransactionImpl(),
-				response.runFuture.join(), response.pullResponse, -1, -1, -1);
+		return new LocalStatementImpl(this.connection, response.runFuture.join(), response.pullResponse).getResultSet();
 	}
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {
@@ -1947,7 +1937,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 		}
 	}
 
-	private record GetTablesCacheValue(RunResponse response, PullResponse pull) {
+	private record GetTablesCacheValue(RunResponse runResponse, PullResponse pullResponse) {
 
 		static GetTablesCacheValue of(ResultSet resultSet) throws SQLException {
 			var keys = new ArrayList<String>();

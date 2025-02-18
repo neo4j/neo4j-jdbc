@@ -20,7 +20,6 @@ package org.neo4j.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.List;
 import java.util.Objects;
@@ -90,8 +89,8 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 	}
 
 	@Override
-	public boolean isCurrency(int column) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public boolean isCurrency(int column) {
+		return false;
 	}
 
 	@Override
