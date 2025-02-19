@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -314,10 +315,6 @@ class PreparedStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setArray(1, mock(Array.class)),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL, "name"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, mock(URL.class)),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRowId(1, mock(RowId.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNClob(1, mock(NClob.class)),
@@ -411,8 +408,9 @@ class PreparedStatementImplTests {
 	}
 
 	@ParameterizedTest
-	@MethodSource("getShouldSetParameterArgs")
-	void shouldSetParameter(StatementMethodRunner parameterSettingRunner, Value expectedValue) throws SQLException {
+	@MethodSource
+	void shouldSetParameter(StatementMethodRunner parameterSettingRunner, Value expectedValue)
+			throws SQLException, MalformedURLException {
 		this.statement = newStatement(mock(Connection.class), mock(Neo4jTransactionSupplier.class), "query");
 
 		parameterSettingRunner.run(this.statement);
@@ -420,7 +418,7 @@ class PreparedStatementImplTests {
 		assertThat(this.statement.getCurrentBatch()).isEqualTo(Map.of("1", expectedValue));
 	}
 
-	static Stream<Arguments> getShouldSetParameterArgs() {
+	static Stream<Arguments> shouldSetParameter() {
 
 		var zoneId = ZoneId.of("America/Los_Angeles");
 		var offset = zoneId.getRules().getOffset(Instant.now());
@@ -428,6 +426,8 @@ class PreparedStatementImplTests {
 		return Stream.of(
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL), Values.NULL),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean(1, true), Values.value(true)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, new URL("https://neo4j.com")),
+						Values.value("https://neo4j.com")),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean(1, false), Values.value(false)),
 				Arguments.of((StatementMethodRunner) statement -> statement.setByte(1, (byte) 1),
 						Values.value((byte) 1)),
@@ -582,7 +582,7 @@ class PreparedStatementImplTests {
 	@FunctionalInterface
 	private interface StatementMethodRunner {
 
-		void run(PreparedStatementImpl statement) throws SQLException;
+		void run(PreparedStatementImpl statement) throws SQLException, MalformedURLException;
 
 	}
 

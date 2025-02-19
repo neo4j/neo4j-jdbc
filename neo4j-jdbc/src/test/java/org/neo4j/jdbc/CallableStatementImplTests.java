@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -47,12 +48,23 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.sql.Wrapper;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -63,6 +75,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.jdbc.values.Value;
+import org.neo4j.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -75,6 +89,103 @@ class CallableStatementImplTests {
 	public static final String TEST_STATEMENT = "RETURN pi()";
 
 	private CallableStatementImpl statement;
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldSetParameter(StatementMethodRunner parameterSettingRunner, Value expectedValue)
+			throws SQLException, MalformedURLException, IllegalAccessException {
+		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), false,
+				"RETURN $x");
+
+		parameterSettingRunner.run(this.statement);
+
+		assertThat(this.statement.getCurrentBatch()).isEqualTo(Map.of("x", expectedValue));
+	}
+
+	static Stream<Arguments> shouldSetParameter() {
+
+		var zoneId = ZoneId.of("America/Los_Angeles");
+		var offset = zoneId.getRules().getOffset(Instant.now());
+
+		return Stream.of(
+				Arguments.of((StatementMethodRunner) statement -> statement.setNull("x", Types.NULL), Values.NULL),
+				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean("x", true), Values.value(true)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setURL("x", new URL("https://neo4j.com")),
+						Values.value("https://neo4j.com")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setURL("x", null), Values.NULL),
+				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean("x", false),
+						Values.value(false)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setByte("x", (byte) 1),
+						Values.value((byte) 1)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setShort("x", (short) 1),
+						Values.value((short) 1)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setInt("x", 1), Values.value(1)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setLong("x", 1), Values.value(1L)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setFloat("x", 1.0f), Values.value(1.0f)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setDouble("x", 1.0), Values.value(1.0)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setString("x", "string"),
+						Values.value("string")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setBytes("x", new byte[] { 0, 1 }),
+						Values.value(new byte[] { 0, 1 })),
+				Arguments.of((StatementMethodRunner) statement -> statement.setDate("x",
+						Date.valueOf(LocalDate.of(2000, 1, 1))), Values.value(LocalDate.of(2000, 1, 1))),
+				Arguments.of((StatementMethodRunner) statement -> statement.setTime("x",
+						Time.valueOf(LocalTime.of(1, 1, 1))), Values.value(LocalTime.of(1, 1, 1))),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setTimestamp("x",
+								Timestamp.valueOf(LocalDateTime.of(2000, 1, 1, 1, 1, 1))),
+						Values.value(LocalDateTime.of(2000, 1, 1, 1, 1, 1))),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setAsciiStream("x",
+								new ByteArrayInputStream("string".getBytes(StandardCharsets.US_ASCII)), 6),
+						Values.value("string")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setBinaryStream("x",
+						new ByteArrayInputStream(new byte[] { 0, 1 }), 6), Values.value(new byte[] { 0, 1 })),
+				Arguments.of((StatementMethodRunner) statement -> statement.setCharacterStream("x",
+						new StringReader("string"), 6), Values.value("string")),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setDate("x",
+								Date.valueOf(LocalDate.of(2000, 1, 1)),
+								Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"))),
+						Values.value(ZonedDateTime.of(LocalDate.of(2000, 1, 1), LocalTime.of(0, 0),
+								ZoneId.of("America/Los_Angeles")))),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setTime("x", Time.valueOf(LocalTime.of(1, 1, 1)),
+								Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"))),
+						Values.value(OffsetTime.of(LocalTime.of(1, 1, 1), offset))),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setTimestamp("x",
+								Timestamp.valueOf(LocalDateTime.of(2000, 1, 1, 1, 1, 1)),
+								Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"))),
+						Values.value(ZonedDateTime.of(LocalDateTime.of(2000, 1, 1, 1, 1, 1),
+								ZoneId.of("America/Los_Angeles")))),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setAsciiStream("x",
+								new ByteArrayInputStream("string".getBytes(StandardCharsets.US_ASCII)), 6L),
+						Values.value("string")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setBinaryStream("x",
+						new ByteArrayInputStream(new byte[] { 0, 1 }), 6L), Values.value(new byte[] { 0, 1 })),
+				Arguments.of((StatementMethodRunner) statement -> statement.setCharacterStream("x",
+						new StringReader("string"), 6L), Values.value("string")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", LocalDate.MAX),
+						Values.value(LocalDate.MAX)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", LocalTime.MAX),
+						Values.value(LocalTime.MAX)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", LocalDateTime.MAX),
+						Values.value(LocalDateTime.MAX)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", OffsetTime.MAX),
+						Values.value(OffsetTime.MAX)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", OffsetDateTime.MAX),
+						Values.value(OffsetDateTime.MAX)),
+				Arguments.of(
+						(StatementMethodRunner) statement -> statement.setObject("x",
+								ZonedDateTime.of(LocalDateTime.MAX, ZoneId.of("UTC"))),
+						Values.value(ZonedDateTime.of(LocalDateTime.MAX, ZoneId.of("UTC")))),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", Period.ZERO),
+						Values.value(Period.ZERO)),
+				Arguments.of((StatementMethodRunner) statement -> statement.setObject("x", Duration.ZERO),
+						Values.value(Duration.ZERO)));
+	}
 
 	@ParameterizedTest
 	@MethodSource
@@ -155,6 +266,7 @@ class CallableStatementImplTests {
 				// callable statement
 				Arguments.of((StatementMethodRunner) CallableStatement::wasNull),
 				Arguments.of((StatementMethodRunner) statement -> statement.getString(1)),
+				Arguments.of((StatementMethodRunner) statement -> statement.getURL(1)),
 				Arguments.of((StatementMethodRunner) statement -> statement.getBoolean(1)),
 				Arguments.of((StatementMethodRunner) statement -> statement.getByte(1)),
 				Arguments.of((StatementMethodRunner) statement -> statement.getShort(1)),
@@ -204,10 +316,6 @@ class CallableStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.setClob(1, mock(Clob.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setArray(1, mock(Array.class)),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL, "name"),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, mock(URL.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRowId(1, mock(RowId.class)),
 						SQLFeatureNotSupportedException.class),
@@ -266,6 +374,7 @@ class CallableStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) CallableStatement::wasNull, SQLException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.getString(1), SQLException.class),
+				Arguments.of((StatementMethodRunner) statement -> statement.getURL(1), SQLException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.getBoolean(1), SQLException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.getByte(1), SQLException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.getShort(1), SQLException.class),
@@ -389,6 +498,7 @@ class CallableStatementImplTests {
 	static Stream<Named<StatementMethodRunner>> streamSetterRunners(Class<?> type, Map<Class<?>, Object> typeToValue) {
 		return Arrays.stream(type.getDeclaredMethods())
 			.filter(method -> method.getName().startsWith("set"))
+			.filter(method -> !method.getName().endsWith("setNull"))
 			.map(method -> Named.of(method.toString(), newRunner(method, typeToValue)));
 	}
 

@@ -281,12 +281,14 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public URL getURL(int parameterIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return assertCallAndPositionAtFirstRow().getURL(parameterIndex);
 	}
 
 	@Override
 	public void setURL(String parameterName, URL value) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertParameterType(ParameterType.NAMED);
+		Objects.requireNonNull(parameterName);
+		super.setURL(parameterName, value);
 	}
 
 	@Override
@@ -433,7 +435,8 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void setNull(String parameterName, int sqlType, String typeName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertParameterType(ParameterType.NAMED);
+		super.setNull(parameterName, sqlType);
 	}
 
 	@SuppressWarnings("resource")
@@ -831,6 +834,12 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	public void setString(int parameterIndex, String value) throws SQLException {
 		assertParameterType(ParameterType.ORDINAL);
 		super.setString(parameterIndex, value);
+	}
+
+	@Override
+	public void setURL(int parameterIndex, URL url) throws SQLException {
+		assertParameterType(ParameterType.ORDINAL);
+		super.setURL(parameterIndex, url);
 	}
 
 	@Override

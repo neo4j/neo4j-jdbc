@@ -27,6 +27,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -124,6 +126,59 @@ class ResultSetImplTests {
 				Arguments.of(Values.value(true),
 						Named.<VerificationLogic<Boolean>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))))
+			// map each set of arguments to both index and label access methods
+			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
+	}
+
+	@ParameterizedTest
+	@MethodSource("getUrlArgs")
+	void shouldProcessValueOnGetUrl(Value value, VerificationLogic<URL> verificationLogic, boolean indexAccess)
+			throws SQLException {
+		// given
+		this.resultSet = setupWithValue(value, 0);
+		this.resultSet.next();
+
+		// when & then
+		verificationLogic.run(() -> indexAccess ? this.resultSet.getURL(INDEX) : this.resultSet.getURL(LABEL));
+	}
+
+	private static Stream<Arguments> getUrlArgs() {
+
+		URL url;
+		try {
+			url = new URL("https://neo4j.com");
+		}
+		catch (MalformedURLException ex) {
+			throw new RuntimeException(ex);
+		}
+		return Stream
+			.of(Arguments.of(Values.value("https://neo4j.com"),
+					Named.<VerificationLogic<URL>>of("verify returns valid URL",
+							supplier -> assertThat(supplier.get()).isEqualTo(url))),
+					// invalid url handling
+					Arguments.of(Values.value("0"),
+							Named.<VerificationLogic<URL>>of("verify throws exception",
+									supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class)
+										.hasCauseInstanceOf(MalformedURLException.class))),
+					Arguments.of(Values.value(""),
+							Named.<VerificationLogic<URL>>of("verify throws exception",
+									supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class)
+										.hasCauseInstanceOf(MalformedURLException.class))),
+					Arguments.of(Values.value("testing"),
+							Named.<VerificationLogic<URL>>of("verify throws exception",
+									supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class)
+										.hasCauseInstanceOf(MalformedURLException.class))),
+					// null handling
+					Arguments.of(Values.NULL,
+							Named.<VerificationLogic<Boolean>>of("verify returns null",
+									supplier -> assertThat(supplier.get()).isNull())),
+					// other types handling
+					Arguments.of(Values.value(0),
+							Named.<VerificationLogic<Boolean>>of("verify throws exception",
+									supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+					Arguments.of(Values.value(true),
+							Named.<VerificationLogic<Boolean>>of("verify throws exception",
+									supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))))
 			// map each set of arguments to both index and label access methods
 			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
 	}
@@ -1504,7 +1559,7 @@ class ResultSetImplTests {
 			.contains(method.getName()));
 		var getters = testSupplier.apply(method -> Set
 			.of("getRef", "getBlob", "getClob", "getNClob", "getSQLXML", "getNString", "getNCharacterStream",
-					"getArray", "getURL", "getRowId", "getUnicodeStream", "getCursorName")
+					"getArray", "getRowId", "getUnicodeStream", "getCursorName")
 			.contains(method.getName())
 				|| "getObject".equals(method.getName()) && method.getParameterTypes().length == 2
 						&& method.getParameterTypes()[1].isAssignableFrom(Map.class));

@@ -648,12 +648,16 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setParameter(computeParameterName(parameterIndex), Values.NULL);
 	}
 
 	@Override
-	public void setURL(int parameterIndex, URL x) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public void setURL(int parameterIndex, URL url) throws SQLException {
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setParameter(computeParameterName(parameterIndex), (url != null) ? Values.value(url.toString()) : Values.NULL);
 	}
 
 	@Override
@@ -819,6 +823,12 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		if (index < 1) {
 			throw new SQLException("Parameter index must be equal or more than 1");
 		}
+	}
+
+	protected void setURL(String parameterName, URL value) throws SQLException {
+		assertIsOpen();
+		Objects.requireNonNull(parameterName);
+		setParameter(parameterName, (value != null) ? Values.value(value.toString()) : Values.NULL);
 	}
 
 }

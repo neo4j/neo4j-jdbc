@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -835,12 +836,12 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public URL getURL(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToUrl);
 	}
 
 	@Override
 	public URL getURL(String columnLabel) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToUrl);
 	}
 
 	@Override
@@ -1221,6 +1222,21 @@ final class ResultSetImpl implements ResultSet {
 			return null;
 		}
 		throw new SQLException(String.format("%s value can not be mapped to String", value.type()));
+	}
+
+	private static URL mapToUrl(Value value) throws SQLException {
+		if (Type.STRING.isTypeOf(value)) {
+			try {
+				return new URL(value.asString());
+			}
+			catch (MalformedURLException ex) {
+				throw new SQLException(ex);
+			}
+		}
+		if (Type.NULL.isTypeOf(value)) {
+			return null;
+		}
+		throw new SQLException(String.format("%s value can not be mapped to URL", value.type()));
 	}
 
 	private static boolean mapToBoolean(Value value) throws SQLException {

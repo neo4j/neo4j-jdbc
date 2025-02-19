@@ -400,7 +400,9 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setHoldability(int holdability) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		if (holdability != ResultSetImpl.SUPPORTED_HOLDABILITY) {
+			throw new SQLFeatureNotSupportedException();
+		}
 	}
 
 	@Override
