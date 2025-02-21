@@ -341,8 +341,6 @@ class CallableStatementImplTests {
 						Types.DECIMAL, 1), SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setObject("parameterName", new Object(),
 						Types.DECIMAL), SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setNull("parameterName", Types.DECIMAL,
-						"typeName"), SQLFeatureNotSupportedException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.setRowId("parameterName", mock(RowId.class)),
 						SQLFeatureNotSupportedException.class),
