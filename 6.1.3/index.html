@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.20">
-<meta name="author" content="Michael Simons">
+<meta name="generator" content="Asciidoctor 2.0.23">
 <title>Neo4j JDBC Driver</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -141,7 +140,7 @@ p a>code:hover{color:rgba(0,0,0,.9)}
 #content::before{content:none}
 #header>h1:first-child{color:rgba(0,0,0,.85);margin-top:2.25rem;margin-bottom:0}
 #header>h1:first-child+#toc{margin-top:8px;border-top:1px solid #dddddf}
-#header>h1:only-child,body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #dddddf;padding-bottom:8px}
+#header>h1:only-child{border-bottom:1px solid #dddddf;padding-bottom:8px}
 #header .details{border-bottom:1px solid #dddddf;line-height:1.45;padding-top:.25em;padding-bottom:.25em;padding-left:.25em;color:rgba(0,0,0,.6);display:flex;flex-flow:row wrap}
 #header .details span:first-child{margin-left:-.125em}
 #header .details span.email a{color:rgba(0,0,0,.85)}
@@ -163,6 +162,7 @@ p a>code:hover{color:rgba(0,0,0,.9)}
 #toctitle{color:#7a2518;font-size:1.2em}
 @media screen and (min-width:768px){#toctitle{font-size:1.375em}
 body.toc2{padding-left:15em;padding-right:0}
+body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #dddddf;padding-bottom:8px}
 #toc.toc2{margin-top:0!important;background:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #e7e7e9;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
 #toc.toc2 #toctitle{margin-top:0;margin-bottom:.8rem;font-size:1.2em}
 #toc.toc2>ul{font-size:.9em;margin-bottom:0}
@@ -328,7 +328,7 @@ a.image{text-decoration:none;display:inline-block}
 a.image object{pointer-events:none}
 sup.footnote,sup.footnoteref{font-size:.875em;position:static;vertical-align:super}
 sup.footnote a,sup.footnoteref a{text-decoration:none}
-sup.footnote a:active,sup.footnoteref a:active{text-decoration:underline}
+sup.footnote a:active,sup.footnoteref a:active,#footnotes .footnote a:first-of-type:active{text-decoration:underline}
 #footnotes{padding-top:.75em;padding-bottom:.75em;margin-bottom:.625em}
 #footnotes hr{width:20%;min-width:6.25em;margin:-.25em 0 .75em;border-width:1px 0 0}
 #footnotes .footnote{padding:0 .375em 0 .225em;line-height:1.3334;font-size:.875em;margin-left:1.2em;margin-bottom:.2em}
@@ -528,11 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="author" class="author">Michael Simons</span><br>
-<span id="email" class="email"><a href="mailto:michael.simons@neo4j.com">michael.simons@neo4j.com</a></span><br>
-<span id="revnumber">version 6.0.0-SNAPSHOT 7a09ab7,</span>
-<span id="revdate">2024-03-13T18:44:41Z</span>
-<br><span id="revremark">For EAP</span>
+<span id="revdate">2025-02-25T13:50:56Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -543,45 +539,48 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_features">1.1. Features</a></li>
 <li><a href="#_limitations">1.2. Limitations</a></li>
 <li><a href="#_when_to_use_the_neo4j_jdbc_driver">1.3. When to use the Neo4j JDBC Driver?</a></li>
-<li><a href="#_differences_to_the_previous_versions_of_this_driver_and_other_jdbc_drivers_for_neo4j">1.4. Differences to the previous versions of this driver and other JDBC drivers for Neo4j</a></li>
+<li><a href="#_differences_with_the_previous_versions_of_this_driver_and_other_jdbc_drivers_for_neo4j">1.4. Differences with the previous versions of this driver and other JDBC drivers for Neo4j</a></li>
 </ul>
 </li>
-<li><a href="#_about_this_documentation">2. About this documentation</a></li>
-<li><a href="#_quickstart">3. Quickstart</a>
+<li><a href="#_usage">2. Usage</a>
 <ul class="sectlevel2">
-<li><a href="#_getting_a_connection_via_environment_variables">3.1. Getting a connection via environment variables</a></li>
+<li><a href="#connect-dotenv">2.1. Getting a connection via environment variables</a></li>
 </ul>
 </li>
-<li><a href="#_distribution">4. Distribution</a>
+<li><a href="#_distribution">3. Distribution</a>
 <ul class="sectlevel2">
-<li><a href="#_driver_modules_and_dependencies">4.1. Driver modules and dependencies</a></li>
-<li><a href="#available_bundles">4.2. Available bundles</a></li>
+<li><a href="#_driver_modules_and_dependencies">3.1. Driver modules and dependencies</a></li>
+<li><a href="#available_bundles">3.2. Available bundles</a></li>
 </ul>
 </li>
-<li><a href="#_configuration">5. Configuration</a>
+<li><a href="#_configuration">4. Configuration</a>
 <ul class="sectlevel2">
-<li><a href="#_driver_class_name">5.1. Driver class name</a></li>
-<li><a href="#_url_and_connection_properties">5.2. URL and connection properties</a></li>
-<li><a href="#_getting_a_driver_or_a_connection_instance">5.3. Getting a driver or a connection instance</a></li>
-<li><a href="#_securing_your_connection_by_using_ssl">5.4. Securing your connection by using SSL</a></li>
+<li><a href="#_driver_class_name">4.1. Driver class name</a></li>
+<li><a href="#_causal_clustering_and_bookmarks">4.2. Causal clustering and bookmarks</a></li>
+<li><a href="#_neo4j_transactional_metadata">4.3. Neo4j transactional metadata</a></li>
+<li><a href="#_url_and_connection_properties">4.4. URL and connection properties</a></li>
+<li><a href="#_getting_a_driver_or_a_connection_instance">4.5. Getting a driver or a connection instance</a></li>
+<li><a href="#_securing_your_connection_by_using_ssl">4.6. Securing your connection by using SSL</a></li>
 </ul>
 </li>
-<li><a href="#_metadata">6. Metadata</a>
+<li><a href="#_metadata">5. Metadata</a>
 <ul class="sectlevel2">
-<li><a href="#_catalog_and_schema">6.1. Catalog and schema</a></li>
-<li><a href="#_labels_to_tables">6.2. Labels to tables</a></li>
+<li><a href="#_catalog_and_schema">5.1. Catalog and schema</a></li>
+<li><a href="#_labels_to_tables">5.2. Labels to tables</a></li>
+<li><a href="#_primary_keys">5.3. Primary keys</a></li>
 </ul>
 </li>
-<li><a href="#_sql_to_cypher_translation">7. SQL to Cypher translation</a>
+<li><a href="#s2c_introduction">6. SQL to Cypher translation</a>
 <ul class="sectlevel2">
-<li><a href="#s2c_introduction">7.1. Introduction</a></li>
-<li><a href="#_translating_sql_to_cypher">7.2. Translating SQL to Cypher</a></li>
-<li><a href="#s2c">7.3. Using the default translator</a></li>
+<li><a href="#_introduction_2">6.1. Introduction</a></li>
+<li><a href="#_translating_sql_to_cypher">6.2. Translating SQL to Cypher</a></li>
+<li><a href="#s2c">6.3. Using the default translator</a></li>
 </ul>
 </li>
+<li><a href="#text2cypher">7. text2cypher</a></li>
 <li><a href="#_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</a>
 <ul class="sectlevel2">
-<li><a href="#_data_types_for_fixed_point_arithmetic">A.1. Data types for Fixed-point arithmetic</a></li>
+<li><a href="#_data_types_for_fixed_point_arithmetic">A.1. Data types for fixed-point arithmetic</a></li>
 <li><a href="#_sql_date_time_and_timestamps">A.2. SQL Date, Time and Timestamps</a></li>
 </ul>
 </li>
@@ -612,35 +611,10 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div class="paragraph">
 <p>This is the manual for the official Neo4j JDBC Driver.</p>
 </div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-The Neo4j JDBC Driver is in Early Access Preview (EAP) and might break unexpectedly.
-Being in EAP means that you have the opportunity to provide feedback on the implementation of the driver.
-The functionality and behaviour released in the GA release may differ from those available in the EAP.
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
 <p>This driver is officially supported and endorsed by Neo4j.
 It is a standalone driver, independent of and <strong>not</strong> built on top of the <a href="https://github.com/neo4j/neo4j-java-driver">common Neo4j Java Driver</a>.
 While the latter provides a Neo4j-idiomatic way to access Neo4j from Java, the JDBC driver adheres to <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/package-summary.html">JDBC 4.3</a>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_introduction">1. Introduction</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The JDBC acronym stands for "Java Database Connectivity" and as such is not bound exclusively to relational databases.
-Nevertheless, JDBC is highly influenced by the SQL standard and existing, relational databases, in regard to terms, definitions and behaviour defined.
-Neo4j is a graph database with quite a different paradigm than relational and a non-standardized behaviour in some areas.
-There might be some details that don&#8217;t map 100% in each place, and we make sure to educate you about these in this documentation</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -649,22 +623,42 @@ There might be some details that don&#8217;t map 100% in each place, and we make
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Inside this documentation we will refer to <strong>this</strong> driver as the <em>Neo4j JDBC Driver</em> and to the idiomatic Neo4j driver as the <em>common Neo4j Java Driver</em>.
+This documentation refers to <strong>this</strong> driver as the <em>Neo4j JDBC Driver</em> and to the idiomatic Neo4j driver as the <em>common Neo4j Java Driver</em>.
 </td>
 </tr>
 </table>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>The Neo4j JDBC Driver requires JDK 17 on the client side and a minimum version of Neo4j 5.5 on the server side.
-To use it against a Neo4j cluster, server-side routing must be enabled on the cluster.</p>
+<p>JDBC stands for "Java Database Connectivity" and is thus not bound exclusively to relational databases.
+Nevertheless, JDBC&#8217;s terms, definitions, and behavior are highly influenced by SQL and relational databases.
+As Neo4j is a graph database with quite a different paradigm than relational and a non-standardized behaviour in some areas, there might be some details that don&#8217;t map 100% in each place, and we make sure to educate you about these in this documentation.</p>
+</div>
+<div class="paragraph">
+<p>This documentation focuses on install, use, and configure the Neo4j JDBC Driver, as well as discussing the driver&#8217;s design choices.
+While we do provide runnable examples showing how to use JDBC with Neo4j, this is not a documentation about how to correctly use JDBC as an API.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The Neo4j JDBC Driver requires JDK 17 on the client side and Neo4j 5.5+ on the server side.
+To use it with a Neo4j cluster, server-side routing must be enabled on the cluster.
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_features">1.1. Features</h3>
 <div class="ulist">
 <ul>
-<li>
-<p>JDK 17 baseline</p>
-</li>
 <li>
 <p>Fully supports the Java module system</p>
 </li>
@@ -689,23 +683,8 @@ To use it against a Neo4j cluster, server-side routing must be enabled on the cl
 </ul>
 </div>
 <div class="paragraph">
-<p>The absence of any connection pooling and transaction management is actually an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
+<p>The absence of any connection pooling and transaction management is an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
 It allows to pick and choose any database connection pooling system such as <a href="https://github.com/brettwooldridge/HikariCP">HikariCP</a> and transaction management such as <a href="https://jakarta.ee/specifications/transactions/">Jakarta Transactions</a>.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The default SQL to Cypher translation implementation is based on <a href="https://www.jooq.org">jOOQ</a> by <a href="https://www.datageekery.com">Datageekery</a>.
-We are a long-time fans of how Lukas Eder—inventor of jOOQ—has bridged the gap between Java and database querying.
-It even inspired the <a href="https://github.com/neo4j-contrib/cypher-dsl">Cypher-DSL</a>, providing the other half of our translation layer.
-We are grateful for kick-starting the original Sql2Cypher project together in early 2023, on which we can build now.
-</td>
-</tr>
-</table>
 </div>
 </div>
 <div class="sect2">
@@ -713,41 +692,38 @@ We are grateful for kick-starting the original Sql2Cypher project together in ea
 <div class="ulist">
 <ul>
 <li>
-<p>The database metadata is retrieved on a best effort base, using existing schema methods of Neo4j, such as <code>db.labels</code>, <code>db.schema.nodeTypeProperties()</code></p>
+<p>The database metadata is retrieved using Neo4j&#8217;s schema methods, such as <code>db.labels</code>, <code>db.schema.nodeTypeProperties()</code>, which may not always be accurate</p>
 </li>
 <li>
-<p>While single label nodes map naturally to table names, Nodes with multiple labels don&#8217;t</p>
+<p>While single label nodes map naturally to table names, nodes with multiple labels don&#8217;t</p>
 </li>
 <li>
-<p>There is no reliable way to always determine the datatype for properties on nodes without reading all of them (which this driver does not do)</p>
+<p>There is no reliable way to always determine the datatype for properties on nodes, as it would require reading all of them (which this driver does not do)</p>
 </li>
 <li>
-<p>Some JDBC features are not yet supported (such as the <code>CallableStatement</code>), some feature won&#8217;t ever be supported</p>
+<p>Some JDBC features are not supported yet (such as the <code>CallableStatement</code>); some feature will never be supported</p>
 </li>
 <li>
-<p>The SQL to Cypher translator does only support a limited subset of clauses and SQL constructs that can be semantically equivalent translated to Cypher (See <a href="#s2c_supported_statements">Section 7.3.3</a>)</p>
+<p>The SQL to Cypher translator supports only a limited subset of clauses and SQL constructs that can be equivalently translated to Cypher (See <a href="#s2c_supported_statements">Supported statements</a>)</p>
 </li>
 <li>
-<p>There is no "right" way to map <code>JOIN</code> statements to relations, so your mileage may vary</p>
+<p>There is no "right" way to map <code>JOIN</code> statements to relationships, so your mileage may vary</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_when_to_use_the_neo4j_jdbc_driver">1.3. When to use the Neo4j JDBC Driver?</h3>
-<div class="paragraph">
-<p>This driver has been developed with the following use-cases in mind:</p>
-</div>
 <div class="ulist">
 <ul>
 <li>
 <p>Integration with ETL and ELT tools that don&#8217;t offer an integration based on the common Neo4j Java driver</p>
 </li>
 <li>
-<p>An easier on-ramp towards Neo4j for teams that are familiar with JDBC and want to keep on using that API, but with Cypher and Neo4j</p>
+<p>An easier on-ramp towards Neo4j for people familiar with JDBC, who want to keep using that API, but with Cypher and Neo4j</p>
 </li>
 <li>
-<p>Integration for ecosystems like Jakarta EE whose transaction management will directly support any compliant JDBC driver</p>
+<p>Integration for ecosystems like Jakarta EE whose transaction management directly supports any JDBC-compliant driver</p>
 </li>
 <li>
 <p>Integration with database migration tools such as Flyway</p>
@@ -755,80 +731,97 @@ We are grateful for kick-starting the original Sql2Cypher project together in ea
 </ul>
 </div>
 <div class="paragraph">
-<p>There is <strong>no need</strong> to redesign an application that is build on the common Neo4j Java Driver to use this driver.
+<p><strong>There is no need to redesign an application that is built on the common Neo4j Java Driver to migrate to this driver.</strong>
 If your ecosystem already provides a higher-level integration based on the common Neo4j Java Driver, such as <a href="https://github.com/spring-projects/spring-data-neo4j">Spring Data Neo4j (SDN)</a> for <a href="https://spring.io/projects/spring-boot/">Spring</a>, there is no need to switch to something else.
-In case of <a href="https://quarkus.io">Quarkus</a> the Neo4j JDBC Driver is an option to consider: While we do provide an integration for the <a href="https://github.com/quarkiverse/quarkus-neo4j">common Neo4j Java Driver</a>, this integration does not support Quarkus' transaction systems in contrast to this driver.</p>
+In case of <a href="https://quarkus.io">Quarkus</a>, the Neo4j JDBC Driver is an option to consider: although we do provide an integration for the <a href="https://github.com/quarkiverse/quarkus-neo4j">common Neo4j Java Driver</a>, this integration does not support Quarkus' transaction systems in contrast to this driver.</p>
 </div>
 <div class="paragraph">
-<p>While there is little incentive to use this driver with Hibernate (<a href="https://github.com/neo4j/neo4j-ogm">Neo4j-OGM</a> or SDN are the better alternatives for Neo4j), it might be worth giving <a href="https://spring.io/projects/spring-data-jdbc/">Spring Data JDBC</a> a try.</p>
+<p>As there is little incentive to use this driver with Hibernate (<a href="https://github.com/neo4j/neo4j-ogm">Neo4j-OGM</a> or SDN are the best alternatives for Neo4j), it might be worth giving <a href="https://spring.io/projects/spring-data-jdbc/">Spring Data JDBC</a> a try.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_differences_to_the_previous_versions_of_this_driver_and_other_jdbc_drivers_for_neo4j">1.4. Differences to the previous versions of this driver and other JDBC drivers for Neo4j</h3>
+<h3 id="_differences_with_the_previous_versions_of_this_driver_and_other_jdbc_drivers_for_neo4j">1.4. Differences with the previous versions of this driver and other JDBC drivers for Neo4j</h3>
 <div class="paragraph">
-<p>Several other JDBC drivers exists for Neo4j, most notably the previous versions 4 and 5 of this driver, originally developed by <a href="http://larus-ba.it/">Larus BA, Italy</a> for Neo4j.
-Most—if not all of them—do wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.
-This comes with a bunch of problems:</p>
+<p>Several other JDBC drivers exists for Neo4j, most notably the previous versions 4 and 5 of this driver.
+Most (if not all) of them wrap the common Neo4j Java Driver and implement the JDBC spec on top of that.
+This comes with a number of issues:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>The common Neo4j Java Driver manages a connection pool; JDBC drivers on the other hand delegate this task to dedicated pooling solutions: If you take the above-mentioned driver into a standard container, you will eventually end up with a pool of pools</p>
+<p>You end up with a <em>pool of connection pools</em>, because the common Neo4j Java Driver manages a connection pool, whereas JDBC drivers delegate this task to dedicated pooling solutions.</p>
 </li>
 <li>
-<p>The transaction management of the common Neo4j Java Driver is not exactly aligned with the way JDBC thinks about transactions, it&#8217;s usually hard to get this exactly right</p>
+<p>The transaction management of the common Neo4j Java Driver is not aligned with the way JDBC manages transactions.</p>
 </li>
 <li>
-<p>Additionally, the original JDBC driver from Larus shades a couple of dependencies, such as Jackson as well as additional logging frameworks which takes a toll on the classpath and in case of logging, does actually lead to runtime problems</p>
+<p>Older versions of the Neo4j JDBC driver shade a few dependencies, such as <code>Jackson</code> as well as additional logging frameworks.
+This takes a toll on the classpath and, in case of logging, it leads to runtime problems.</p>
 </li>
 <li>
-<p>Existing drivers with a SQL to Cypher translation layer are "read-only" and don&#8217;t support write statements</p>
+<p>Existing drivers with an SQL-to-Cypher translation layer are "read-only" and don&#8217;t support write statements, so they cannot be used for ETL use-cases aiming to ingest data into Neo4j.</p>
 </li>
 </ul>
 </div>
-<div class="paragraph">
-<p>There are some drivers available that provide a SQL to Cypher translation layer as well.
-Those however are read-only and cannot be used for ETL use-cases aiming to ingest data into Neo4j.</p>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+This driver does not support automatic reshaping or flattening of the result sets, as the previous versions do.
+If you query for nodes, relationships, paths, or maps, you should use <code>getObject</code> on the result sets and cast them to the appropriate type (you find all of them inside the package <code>org.neo4j.jdbc.values</code>).
+However, the default SQL-to-Cypher translator will (when connected to a database) figure out what properties nodes have and turn the asterisk (<code>*</code>) into individual columns of nodes and relationships, just like what you would expect when running a <code>SELECT *</code> statement.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>One feature that this driver does not provide is automatic reshaping or flattening of the result-sets, as the previous incarnation does:
-If you query for objects such as nodes, relationships, paths or maps you can and should use <code>getObject</code> on the result-sets and cast to the appropriate type (you find all of them inside the package <code>org.neo4j.jdbc.values</code>).
-However, the default SQL to Cypher translator will—when connected to a database—figure out what properties labels have and turn the asterisk (<code>*</code>) into individual columns of nodes and relationships, just like what you would expect when running a <code>SELECT *</code> statement.</p>
+<p>For information on upgrade/migration from other drivers to this one, see <a href="#">Neo4j JDBC Driver</a>.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_about_this_documentation">2. About this documentation</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>In this documentation we will focus on getting and configuring the Neo4j JDBC Driver and enabling optional features.
-We will discuss the design choices made in the metadata retrieval and how we map Neo4j labels to tables as well as our opinionated choices with regards the automatic SQL to Cypher translation.</p>
-</div>
-<div class="paragraph">
-<p>While we do provide runnable examples that due to their nature will show how to use JDBC in general, this is not a documentation about how to correctly use JDBC as an API.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_quickstart">3. Quickstart</h2>
+<h2 id="_usage">2. Usage</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Add the JDBC driver to your application, for example as a Gradle dependency:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 1. Using the full bundle as a runtime dependency inside a Gradle based project</div>
+<div class="title">Listing 1. Using the full bundle as a runtime dependency inside a Gradle-based project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="kotlin">dependencies {
-    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.0.0-SNAPSHOT)
+    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.1.3) <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The coordinates are the same for a Maven project.</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
-<p>With that in place, you can use the JDBC driver for Neo4j as you would do with any other JDBC driver.</p>
+<p>You can then use the Neo4j JDBC driver as you would do with any other JDBC driver:</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+In case any tooling asks you for the name of the concrete driver class, it is <code>org.neo4j.jdbc.Neo4jDriver</code>.
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 2. Acquire a connection using the JDBC driver and execute a query</div>
+<div class="title">Listing 2. Acquire a connection and execute a query</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
@@ -848,7 +841,7 @@ We will discuss the design choices made in the metadata retrieval and how we map
         <span class="type">var</span> password = <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>;
 
         <span class="keyword">try</span> (<span class="type">var</span> con = <span class="predefined-type">DriverManager</span>.getConnection(url, username, password); <i class="conum" data-value="1"></i><b>(1)</b>
-                <span class="type">var</span> stmt = con.createStatement(); <i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="type">var</span> stmt = con.createStatement();  <i class="conum" data-value="2"></i><b>(2)</b>
                 <span class="type">var</span> result = stmt.executeQuery(query)) { <i class="conum" data-value="3"></i><b>(3)</b>
 
             <span class="keyword">while</span> (result.next()) { <i class="conum" data-value="4"></i><b>(4)</b>
@@ -862,7 +855,6 @@ We will discuss the design choices made in the metadata retrieval and how we map
             <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(ex);
         }
     }
-
 }</code></pre>
 </div>
 </div>
@@ -870,36 +862,36 @@ We will discuss the design choices made in the metadata retrieval and how we map
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Get a JDBC connection, no need to do any class loading beforehand, the driver will be automatically registered</td>
+<td>Instantiate a JDBC connection. There&#8217;s no need to do any class loading beforehand, the driver will be automatically registered</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Create a reusable statement</td>
+<td>Create a (reusable) statement</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>Immediate execute a query on it</td>
+<td>Execute a query</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>Iterate the results like you would do with any other JDBC result set</td>
+<td>Iterate over the results, as with any other JDBC result set</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="5"></i><b>5</b></td>
-<td>JDBC is index 1 based</td>
+<td>JDBC&#8217;s indexing starts at 1</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="6"></i><b>6</b></td>
-<td>JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complexe objects such as lists</td>
+<td>JDBC also allows retrieval of result columns by name; the Neo4j JDBC driver also supports complex objects, such as lists</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>In the example above we used Neo4j&#8217;s lingua franca, <a href="https://neo4j.com/docs/getting-started/cypher-intro/">Cypher</a>, to query Neo4j.
+<p>In the example above we used Neo4j&#8217;s <em>lingua franca</em>, <a href="https://neo4j.com/docs/getting-started/cypher-intro/">Cypher</a>, to query the database.
 The Neo4j JDBC Driver has limited support for using SQL as well.
-It will do so automatically or on a case by case basis.
-For the latter you can use <code>java.sql.Connection#nativeSQL(String)</code> and use the result in your queries
-For automatic translation instantiate the driver using an additional URL parameter, <code>sql2cypher</code> set to <code>true</code>.
+It can do so automatically or on a case-by-case basis.
+To translate a single, call <code>java.sql.Connection#nativeSQL(String)</code> and use the result in your queries.
+For automatic translation, instantiate the driver setting the optional URL parameter <code>sql2cypher</code> to <code>true</code>.
 The following example shows how:</p>
 </div>
 <div class="listingblock">
@@ -931,29 +923,17 @@ The following example shows how:</p>
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>This SQL query will be translated into the same Cypher query shown before, the remainder of the method is identical to before.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-In case any tooling asks you for the name of the concrete driver class, it is: <code>org.neo4j.jdbc.Neo4jDriver</code>.
-</td>
+<td>This SQL query will be translated into the same Cypher query of the previous example.
+The remainder of the method is identical to before.</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>We will cover the SQL to Cypher translation in detail later in this manual.</p>
+<p>For more information, see <a href="#s2c_introduction">SQL to Cypher translation</a>.</p>
 </div>
 <div class="paragraph">
-<p>The JDBC Spec does not support named parameters, only index based parameters.
-Indexes start at <code>1</code> in SQL.
-So for all <code>PreparedStatement</code> instances you would want to specify your parameters like this:</p>
+<p>The JDBC specification does not support named parameters, only index-based parameters, starting at <code>1</code>.
+So for all <code>PreparedStatement</code> instances you need to specify parameters like this:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 4. Using parameters with a <code>PreparedStatement</code></div>
@@ -967,7 +947,7 @@ So for all <code>PreparedStatement</code> instances you would want to specify yo
 </div>
 </div>
 <div class="paragraph">
-<p>This is independent of the SQL to Cypher translation mechanism:</p>
+<p>This is independent of the SQL-to-Cypher translation mechanism:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 5. Using parameters with a <code>PreparedStatement</code> (SQL variant)</div>
@@ -981,11 +961,10 @@ So for all <code>PreparedStatement</code> instances you would want to specify yo
 </div>
 </div>
 <div class="paragraph">
-<p>You can downcast the <code>PreparedStatement</code> to <code>Neo4jPreparedStatement</code>.
-This JDBC extension will let you use named parameters:</p>
+<p>To use named parameters, downcast the <code>PreparedStatement</code> to <code>Neo4jPreparedStatement</code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 6. Using named parameters with the <code>Neo4jPreparedStatement</code></div>
+<div class="title">Listing 6. Using named parameters with a <code>Neo4jPreparedStatement</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> match = <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (n:Movie {title: $title}) RETURN n.title AS title</span><span class="delimiter">&quot;</span></span>;
 <span class="keyword">try</span> (<span class="type">var</span> con = <span class="predefined-type">DriverManager</span>.getConnection(url, username, password);
@@ -1000,12 +979,12 @@ This JDBC extension will let you use named parameters:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_getting_a_connection_via_environment_variables">3.1. Getting a connection via environment variables</h3>
+<h3 id="connect-dotenv">2.1. Getting a connection via environment variables</h3>
 <div class="paragraph">
 <p>If you are happy to depend directly on <code>org.neo4j.jdbc.Neo4jDriver</code> and want to get a connection as easy as possible, you might want to use <code>fromEnv</code>:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 7. Get a connection from the environment.</div>
+<div class="title">Listing 7. Get a connection from environment variables</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="comment">// import org.neo4j.jdbc.Neo4jDriver;</span>
 
@@ -1024,44 +1003,43 @@ This JDBC extension will let you use named parameters:</p>
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Notice how we directly use the concrete driver class here and how the methods returns an optional: If we don&#8217;t find the required properties, we can&#8217;t create a connection.</td>
+<td>Notice how we directly use the concrete driver class here and how the methods return an optional: no connection can be created if the required connection variables are not found.</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The <code>fromEnv</code> looks for a couple of specific system environment variables and it will be true to the principles of the <a href="https://12factor.net">12 factor app</a> while doing so:</p>
+<p>The <code>fromEnv</code> method looks for a few specific system environment variables and it adheres to the <a href="https://12factor.net">12 factor app</a> principles:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>It will look in the System environment first</p>
+<p>First, it looks in the system environment</p>
 </li>
 <li>
-<p>It will then look for a file named <code>.env</code> in the current working directory</p>
+<p>Second, it looks for a file named <code>.env</code> in the current working directory. There are overloads that let you configure the directory and the filename to look for.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>There are overloads that let you configure the directory and the filename to look for.
-The properties we support are as follows:</p>
+<p>The supported variables are:</p>
 </div>
 <div class="dlist">
 <dl>
 <dt class="hdlist1"><code>NEO4J_URI</code></dt>
 <dd>
-<p>The address or URI of the instance to connect to&lt;/li&gt;</p>
+<p>The address or URI of the instance to connect to.</p>
 </dd>
 <dt class="hdlist1"><code>NEO4J_USERNAME</code></dt>
 <dd>
-<p>Optional username</p>
+<p>(Optional) Username.</p>
 </dd>
 <dt class="hdlist1"><code>NEO4J_PASSWORD</code></dt>
 <dd>
-<p>Optional password</p>
+<p>(Optional) Password.</p>
 </dd>
 <dt class="hdlist1"><code>NEO4J_SQL_TRANSLATION_ENABLED</code></dt>
 <dd>
-<p>Optional flag to enable full SQL to Cypher translation, defaults to <code>false</code></p>
+<p>(Optional) Whether to enable full SQL-to-Cypher translation, defaults to <code>false</code>.</p>
 </dd>
 </dl>
 </div>
@@ -1072,14 +1050,16 @@ The properties we support are as follows:</p>
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Information from both the System environment and the .env files are combined. If for example <code>NEO4J_SQL_TRANSLATION_ENABLED</code> is in the System environment but not in the .env file, it will still be picked up.
+Information from both the system environment and the .env files are combined.
+If for example <code>NEO4J_SQL_TRANSLATION_ENABLED</code> is in the system environment but not in the .env file, it will still be picked up.
+Given the order of priority, information in the system environment always has precedence over the .env file.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
 <p>This feature is especially useful with Neo4j AuraDB.
-When creating a new AuraDB instance you are required to download an <code>.env</code> file and you can directly use it with the Neo4j JDBC Driver like this:</p>
+When creating a new AuraDB instance, you download a <code>.env</code> file that you can directly use with the Neo4j JDBC Driver:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 8. Using a .env file from AuraDB</div>
@@ -1100,10 +1080,10 @@ When creating a new AuraDB instance you are required to download an <code>.env</
 </div>
 </div>
 <div class="sect1">
-<h2 id="_distribution">4. Distribution</h2>
+<h2 id="_distribution">3. Distribution</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_driver_modules_and_dependencies">4.1. Driver modules and dependencies</h3>
+<h3 id="_driver_modules_and_dependencies">3.1. Driver modules and dependencies</h3>
 <div class="paragraph">
 <p>The driver consists of 3 modules:</p>
 </div>
@@ -1115,11 +1095,12 @@ When creating a new AuraDB instance you are required to download an <code>.env</
 </dd>
 <dt class="hdlist1">neo4j-jdbc-translator-spi</dt>
 <dd>
-<p>This is the SPI for the default SQL to Cypher translation implementation and for any further or custom implementation.</p>
+<p>This is the SPI for the default SQL-to-Cypher translation implementation and for any further or custom implementation.</p>
 </dd>
 <dt class="hdlist1">neo4j-jdbc-translator-impl</dt>
 <dd>
-<p>This is the <strong>optional</strong> default implementation of a SQL to Cypher translator.</p>
+<p>This is the default and <strong>optional</strong> implementation of an SQL-to-Cypher translator.
+It provides a somewhat opinionated approach of translating SQL statements into semantically equivalent Cypher statements.</p>
 </dd>
 </dl>
 </div>
@@ -1130,37 +1111,39 @@ When creating a new AuraDB instance you are required to download an <code>.env</
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-If you just want to use the Neo4j JDBC Driver for running Cypher statements, the only module you need to think about is <code>org.neo4j:neo4j-jdbc</code>, and in case you are developing in an environment with proper dependency management, this is all you need to declare.
+If you just want to use the Neo4j JDBC Driver to run Cypher statements, you only need the module <code>org.neo4j:neo4j-jdbc</code>. As long as you are developing in an environment with proper dependency management, this is all you need to declare.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>While the translator SPI is a required dependency and pulled in via Maven or Gradle, the actual implementation is not.
-This allows for</p>
+<p>While the translator SPI is a required dependency and gets pulled in via Maven or Gradle, the actual implementation is not.
+This allows for:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>The possibility to opt-out of having additional dependencies in all cases you are not using SQL to Cypher translation</p>
+<p>Opting out of having additional dependencies if you don&#8217;t need the SQL-to-Cypher translation</p>
 </li>
 <li>
 <p>Requiring different JDK baselines or licensing modules for our implementations</p>
 </li>
 <li>
-<p>Allowing you to create alternative ways of creating a translator</p>
+<p>Allowing you to create alternative translators</p>
 </li>
 </ul>
 </div>
 <div class="sect3">
-<h4 id="_dependencies">4.1.1. Dependencies</h4>
+<h4 id="_dependencies">3.1.1. Dependencies</h4>
 <div class="paragraph">
-<p>We offer two "dependency free" modules, that shade everything into one binary artifact.
-Those bundles should cover a lot of tooling, and we discuss those bundles below in <a href="#available_bundles">Available bundles</a>.
-In case you are interested in the actual dependencies of the driver, those are the direct, compile-time dependencies of the driver:</p>
+<p>There are two "dependency-free" modules, which shade everything into one binary artifact each.
+Those bundles cover a lot of tooling (see <a href="#available_bundles">Available bundles</a>).</p>
+</div>
+<div class="paragraph">
+<p>The driver&#8217;s direct, compile-time dependencies are listed below:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 9. Dependency tree of the core driver.</div>
+<div class="title">Listing 9. Dependency tree of the core driver</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="text">org.neo4j:neo4j-jdbc
 +- io.github.cdimascio:dotenv-java
@@ -1178,14 +1161,13 @@ In case you are interested in the actual dependencies of the driver, those are t
 </div>
 </div>
 <div class="sect2">
-<h3 id="available_bundles">4.2. Available bundles</h3>
+<h3 id="available_bundles">3.2. Available bundles</h3>
 <div class="paragraph">
 <p>All bundles of the Neo4j JDBC Driver are distributed on Maven Central.
-The bundles have different characteristics that we will explain the following sections.
-Depending on your use-case or your environment you pick one or the other bundle, but not several at once.</p>
+The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not both at once.</p>
 </div>
 <div class="sect3">
-<h4 id="_individual_components">4.2.1. Individual components</h4>
+<h4 id="_individual_components">3.2.1. Individual components</h4>
 <div class="paragraph">
 <p>Pick this distribution if you have an application that uses dependencies management in which you don&#8217;t have to care about dealing with binary artifacts yourself.</p>
 </div>
@@ -1202,7 +1184,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 </table>
 </div>
 <div class="paragraph">
-<p>For Maven you will want to use this dependency declaration:</p>
+<p>For Maven, use this dependency declaration:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 10. Maven dependency for the core Neo4j JDBC Driver artifact</div>
@@ -1210,7 +1192,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.0.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.1.3<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1221,12 +1203,12 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 11. Neo4j JDBC Driver as Gradle runtime dependency</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.0.0-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.1.3</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If you want to use the SQL to Cypher translation from Neo4j, you need to add the following dependency in your Maven build:</p>
+<p>If you want to use the SQL-to-Cypher translation from Neo4j, you need to add the following dependency in your Maven build:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 12. Maven dependency for the default SQL to Cypher translator</div>
@@ -1234,7 +1216,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-translator-impl<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.0.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.1.3<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1245,20 +1227,20 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 13. Gradle dependency for the default SQL to Cypher translator</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.0.0-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.1.3</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
 </div>
 <div class="sect3">
-<h4 id="small_bundle">4.2.2. Small bundle</h4>
+<h4 id="small_bundle">3.2.2. Small bundle</h4>
 <div class="paragraph">
-<p>Pick this distribution if you work with ETL tools or tooling for relational databases that allow adding JDBC driver only as single artifacts or that make it unnecessary hard to add additional jars.
-This bundle does not contain the default SQL to Cypher translator!
+<p>Pick this distribution if you work with ETL tools or tooling for relational databases that allow adding the JDBC driver only as single artifacts or that make it unnecessary hard to add additional jars.
+This bundle does not contain the default SQL-to-Cypher translator!
 The coordinates of this bundle are <code>org.neo4j:neo4j-jdbc-bundle</code> and you can download it from Maven central:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-bundle-6.0.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-bundle-6.0.0-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.1.3/neo4j-jdbc-bundle-6.1.3.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.1.3/neo4j-jdbc-bundle-6.1.3.jar</a></p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1267,34 +1249,47 @@ The coordinates of this bundle are <code>org.neo4j:neo4j-jdbc-bundle</code> and 
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-All bundles can certainly be used as a normal project dependency as well. This might be useful for example if your project depends on another, potentially conflicting Netty version.
+All bundles can be used as normal project dependencies as well.
+This might be useful for example if your project depends on a different, potentially conflicting Netty version.
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_full_bundle">4.2.3. Full bundle</h4>
+<h4 id="_full_bundle">3.2.3. Full bundle</h4>
 <div class="paragraph">
-<p>This bundle contains the default SQL to Cypher translator.
+<p>This bundle contains the default SQL-to-Cypher translator.
 Otherwise, it is identical to the <a href="#small_bundle">small bundle</a>.
-Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can download it from central here:</p>
+Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can download it from Maven central here:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.0.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.0.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.0.0-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.1.3/neo4j-jdbc-full-bundle-6.1.3.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.1.3/neo4j-jdbc-full-bundle-6.1.3.jar</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="text2cypher_bundle">3.2.4. text2cypher bundle</h4>
+<div class="paragraph">
+<p>We also ship a very experimental bundle that we call <code>text2cypher</code>:</p>
+</div>
+<div class="paragraph">
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.1.3/neo4j-jdbc-text2cypher-bundle-6.1.3.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.1.3/neo4j-jdbc-text2cypher-bundle-6.1.3.jar</a></p>
+</div>
+<div class="paragraph">
+<p>See <a href="#">Neo4j JDBC Driver</a> more information.</p>
 </div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_configuration">5. Configuration</h2>
+<h2 id="_configuration">4. Configuration</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_driver_class_name">5.1. Driver class name</h3>
+<h3 id="_driver_class_name">4.1. Driver class name</h3>
 <div class="paragraph">
 <p>The Neo4j JDBC Driver is <code>org.neo4j.jdbc.Neo4jDriver</code>.
-In modern Java tools you should not have to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
+With modern Java tools, you should not need to touch this class directly, but there are some connection pools and front-ends that will ask you for this.
 The class is public API.</p>
 </div>
 <div class="paragraph">
@@ -1302,7 +1297,88 @@ The class is public API.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_url_and_connection_properties">5.2. URL and connection properties</h3>
+<h3 id="_causal_clustering_and_bookmarks">4.2. Causal clustering and bookmarks</h3>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency in all Neo4j deployments.
+Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver, so all connections spawned by one instance will partake in the same causal chain of transactions.
+Connections from different driver instances will not use the same set of bookmarks and there is no built-in machinery that would enable this.
+If you want or need this, you can directly access the <code>Neo4jDriver</code> type to retrieve the current set of known bookmarks and pass them to another driver instance.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_neo4j_transactional_metadata">4.3. Neo4j transactional metadata</h3>
+<div class="paragraph">
+<p>Neo4j supports attaching metadata to transactions, see <a href="https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions"><code>SHOW TRANSACTIONS</code></a>.
+As there is no explicit transaction object in the JDBC specification, the Neo4j JDBC driver needs another mechanism to make these configurable.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC driver provides the extension interface <code>Neo4jMetadataWriter</code>.
+Our driver, the connection implementation, and all statement variants can be unwrapped accordingly.
+The configuration is additive: metadata configured for a driver instance will be used for all connections spawned from that driver, connections can add further metadata, and  statements can also add their own metadata.
+Metadata added on a statement has precedence over connection metadata which in turn has precedence over driver metadata:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 14. Configuring transactional metadata</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
+<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+<span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
+<span class="keyword">import</span> <span class="include">java.sql.Statement</span>;
+<span class="keyword">import</span> <span class="include">java.util.Map</span>;
+<span class="keyword">import</span> <span class="include">java.util.Properties</span>;
+<span class="keyword">import</span> <span class="include">java.util.logging.Level</span>;
+<span class="keyword">import</span> <span class="include">java.util.logging.Logger</span>;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDriver</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jMetadataWriter</span>;
+
+<span class="directive">public</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">TransactionMetadata</span> {
+
+    <span class="directive">private</span> <span class="directive">static</span> <span class="directive">final</span> <span class="predefined-type">Logger</span> LOGGER = <span class="predefined-type">Logger</span>.getLogger(TransactionMetadata.class.getPackageName());
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">SQLException</span> {
+        <span class="type">var</span> url = <span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687</span><span class="delimiter">&quot;</span></span>;
+
+        <span class="type">var</span> driver = (Neo4jDriver) <span class="predefined-type">DriverManager</span>.getDriver(url);
+        driver.withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_driver</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v1</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">irrelevant</span><span class="delimiter">&quot;</span></span>));
+
+        <span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
+        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">password</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
+
+        <span class="keyword">try</span> (
+            <span class="type">var</span> con = driver.connect(url, properties)
+                .unwrap(Neo4jMetadataWriter.class)
+                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_connection</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v2</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">xxx</span><span class="delimiter">&quot;</span></span>))
+                .unwrap(<span class="predefined-type">Connection</span>.class);
+            <span class="type">var</span> statement = con.createStatement()
+                .unwrap(Neo4jMetadataWriter.class)
+                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_stmt</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v3</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v4</span><span class="delimiter">&quot;</span></span>))
+                .unwrap(<span class="predefined-type">Statement</span>.class)
+        ) {
+            <span class="keyword">try</span> (<span class="type">var</span> result = statement.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="content">SHOW TRANSACTIONS YIELD metaData</span><span class="delimiter">&quot;</span></span>)) {
+                <span class="keyword">while</span> (result.next()) {
+                    <span class="type">var</span> metaData = result.getObject(<span class="string"><span class="delimiter">&quot;</span><span class="content">metaData</span><span class="delimiter">&quot;</span></span>, <span class="predefined-type">Map</span>.class);
+                    LOGGER.log(<span class="predefined-type">Level</span>.INFO, <span class="string"><span class="delimiter">&quot;</span><span class="content">{0}</span><span class="delimiter">&quot;</span></span>, metaData);
+                }
+            }
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output will be similar to this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="text">Juli 17, 2024 1:18:16 PM org.neo4j.jdbc.docs.TransactionMetadata main
+INFORMATION: {md_from_driver=v1, md_from_connection=v2, md_from_stmt=v3, will_be_overwritten=v4}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_url_and_connection_properties">4.4. URL and connection properties</h3>
 <div class="paragraph">
 <p>The canonical URL format for the Neo4j JDBC Driver is</p>
 </div>
@@ -1312,10 +1388,13 @@ The class is public API.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The database name and any query parameters are optional and can be omitted.
-All configuration arguments, except username and password, can be passed either as query parameters or via a <code>java.util.Properties</code> object.
-The latter is sometimes defined by tooling for you.
-With regard to authentication we follow the JDBC spec, which discourages using any form of URL authentication for tokens.</p>
+<p>The database name and all query parameters are optional and can be omitted.
+All configuration arguments can be passed either as query parameters or via a <code>java.util.Properties</code> object.
+The latter is sometimes defined by tooling for you.</p>
+</div>
+<div class="paragraph">
+<p>With regard to authentication, we recommend to follow the JDBC specification, which discourages using any form of URL authentication.
+All query parameters must be <a href="https://en.wikipedia.org/wiki/Percent-encoding">percent-encoded</a> if they contain special characters, e.g. <code>&#8230;&#8203;?param1=space%20separated</code>.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1324,17 +1403,31 @@ With regard to authentication we follow the JDBC spec, which discourages using a
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-There is no need to specify <code>bolt</code> or other additional prefixes in the URL, as a matter of fact: The driver does not support this.
-     It does however support adding details about the transport being used:
-    <br>
-     <code>neo4j+s</code> enables encryption and only accepts SSL certificates from the server that are signed by a known certificate authority.
-     <code>neo4j+ssc</code> enables encryption and accepts self-signed certificates (which must be added to the certificate store).
+<div class="paragraph">
+<p>The driver supports the following URI schemes, which tweak the security configuration:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>neo4j</code> - No encryption.</p>
+</li>
+<li>
+<p><code>neo4j+s</code> - Enables encryption and only accepts SSL certificates from the server that are signed by a known Certificate Authority.</p>
+</li>
+<li>
+<p><code>neo4j+ssc</code> - Enables encryption and accepts self-signed certificates (which must be added to the certificate store).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><code>bolt</code> URI schemes are not supported.</p>
+</div>
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The driver accepts the following configuration arguments, either properties or as URL query parameters:</p>
+<p>The driver accepts the following configuration arguments, either as properties or as URL query parameters:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 1. Configuration arguments</caption>
@@ -1368,38 +1461,88 @@ There is no need to specify <code>bolt</code> or other additional prefixes in th
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>enableSQLTranslation</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that enables automatic translation from SQL to Cypher (requires a translator on the classpath)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that enables automatic translation from SQL-to-Cypher (requires a translator on the classpath)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>cacheSQLTranslations</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that enables caching of translations. SQL translations are not "free", parsing of SQL costs a bit of time, and so does Cypher rendering. In addition, we might up look up metadata to be able to project individual properties. If this takes to long, any translation might be cached.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that enables caching of translations. SQL translations are not "free": parsing of SQL costs a bit of time, and so does Cypher rendering. In addition, we might up look up metadata to be able to project individual properties. If this takes too long, translations may be cached.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>false</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>rewritePlaceholders</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that allows you to use <code>?</code> as placeholders in <strong>Cypher</strong> statements (as required by JDBC). These will automatically be rewritten into <code>$1</code>, <code>$2</code> … <code>$n</code>, starting at 1, so that the numbering matches the 1-based JDBC index.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Defaults to <code>true</code> when <code>enableSQLTranslation</code> is <code>false</code>, <code>false</code> otherwise</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that allows you to use <code>?</code> as placeholder in <strong>Cypher</strong> statements (as required by JDBC). These will automatically be rewritten into <code>$1</code>, <code>$2</code> … <code>$n</code>, starting at 1, so that the numbering matches the 1-based JDBC index.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> when <code>enableSQLTranslation</code> is <code>false</code>, <code>false</code> otherwise</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ssl</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">An optional flag that is an alternative to <code>neo4j+s</code>. It can be used for example to programmatically enable the full SSL chain.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional flag, alternative to <code>neo4j+s</code>. It can be used for example to programmatically enable the full SSL chain.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>sslMode</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>Enum&lt;SSLMode&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">An optional configuration for fine-grained control over SSL configuration. Allowed values are <code>disable</code>, <code>require</code>, <code>verify-full</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional configuration for fine-grained control over SSL configuration. Allowed values are <code>disable</code>, <code>require</code>, <code>verify-full</code>. See &lt;ssl_mode, Understanding the SSL mode&gt;&gt;.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>user</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The username (principal) to use for authentication. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>neo4j</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>password</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The password (credentials) to use for authentication. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>password</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>authRealm</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The realm to use for authentication. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>authScheme</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>The authentication scheme to use. <strong>NOT RECOMMENDED</strong> as URL query parameter for security reasons. Currently supported values are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>basic</code> (default) for basic authentication.</p>
+</li>
+<li>
+<p><code>bearer</code> for bearer authentication (SSO). <code>password</code> should be set to the bearer token; <code>user</code> and <code>authRealm</code> have no effect.</p>
+</li>
+<li>
+<p><code>kerberos</code> for kerberos authentication. Requires <code>password</code> to be set to the kerberos ticket; <code>user</code> and <code>authRealm</code> have no effect.</p>
+</li>
+<li>
+<p><code>none</code> if authentication is disabled on the server. The properties <code>user</code>, <code>password</code>, <code>authRealm</code> have no effect.</p>
+</li>
+</ul>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>basic</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>useBookmarks</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>boolean</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enables bookmark management for full causal cluster support. This is enabled by default and the recommended setting for all scenarios that use a connection pool.
+If you disable it, it will only be disabled for the specific connection.
+Other connections retrieved from the driver instance to the same or to other databases are not affected, and the individual connections will still manage their bookmarks.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_getting_a_driver_or_a_connection_instance">5.3. Getting a driver or a connection instance</h3>
+<h3 id="_getting_a_driver_or_a_connection_instance">4.5. Getting a driver or a connection instance</h3>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -1407,7 +1550,7 @@ There is no need to specify <code>bolt</code> or other additional prefixes in th
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-This section most likely only applies if you use the Neo4j JDBC Driver as part of application development in contrast to using it as part of front-end tool such as <a href="https://dbeaver.io">DBeaver</a>, <a href="https://www.jetbrains.com/datagrip/">DataGrip</a> or UI-based ETL tools.
+This section likely only applies if you use the Neo4j JDBC Driver as part of application development in contrast to using it as part of front-end tool such as <a href="https://dbeaver.io">DBeaver</a>, <a href="https://www.jetbrains.com/datagrip/">DataGrip</a> or UI-based ETL tools.
 </td>
 </tr>
 </table>
@@ -1416,7 +1559,7 @@ This section most likely only applies if you use the Neo4j JDBC Driver as part o
 <p>The easiest way to acquire a connection is directly through the <code>java.sql.DriverManager</code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 14. Acquiring a JDBC connection towards Neo4j</div>
+<div class="title">Listing 15. Acquiring a JDBC connection to a Neo4j server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
@@ -1436,16 +1579,16 @@ This section most likely only applies if you use the Neo4j JDBC Driver as part o
 </div>
 </div>
 <div class="paragraph">
-<p>While our connection implementation is thread-safe, it does—as dictated by the JDBC Spec—only allow one concurrent transaction per connection.
-For a multi-thread application you want to use a connection pool.
-There&#8217;s <a href="https://github.com/brettwooldridge/HikariCP">HikariCP</a>, but usually application server and containers or frameworks bring their own.
-It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do internal pooling.</p>
+<p>While our connection implementation is thread-safe, it allows only one concurrent transaction per connection (as dictated by the JDBC specification).
+For a multi-thread application, use a connection pool.
+There&#8217;s <a href="https://github.com/brettwooldridge/HikariCP">HikariCP</a>, but usually application server and containers/frameworks bring their own.
+It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does no internal pooling.</p>
 </div>
 <div class="paragraph">
 <p>If you need access to an instance of the Neo4j driver itself, you can use the following approach:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. Acquiring an instance of the Neo4j JDBC Driver</div>
+<div class="title">Listing 16. Acquiring an instance of the Neo4j JDBC Driver</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
@@ -1469,30 +1612,29 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does not do interna
 </div>
 </div>
 <div class="sect2">
-<h3 id="_securing_your_connection_by_using_ssl">5.4. Securing your connection by using SSL</h3>
+<h3 id="_securing_your_connection_by_using_ssl">4.6. Securing your connection by using SSL</h3>
 <div class="paragraph">
-<p>The Neo4j JDBC Driver supports the same SSL option as the common Java driver does, with the same URL protocols, using <code>+s</code> or <code>+ssc</code> as additional indicators for the level of security that is required.</p>
+<p>The Neo4j JDBC Driver supports the same SSL option of the common Java driver, with the same URL protocols, using <code>+s</code> or <code>+ssc</code> as additional indicators for the required level of security.</p>
 </div>
 <div class="paragraph">
 <p>The same configuration can also be achieved with a URL query parameter or an entry in the properties passed to the <code>DriverManager</code> or driver instance when asking for a connection.
 As long as you don&#8217;t specify contradicting values, it&#8217;s fine to combine both approaches.</p>
 </div>
 <div class="sect3">
-<h4 id="_understanding_the_ssl_mode">5.4.1. Understanding the SSL mode</h4>
+<h4 id="ssl-mode">4.6.1. Understanding the SSL mode</h4>
 <div class="paragraph">
-<p>The possible settings are best explained using the available SSL modes.
-The following list is ordered by ascending security:</p>
+<p>The following list is ordered by ascending security:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>disable</code> default, "I don’t care about security and don’t want to pay the overhead for encryption"</p>
+<p><code>disable</code>&#8201;&#8212;&#8201;(default), "I don&#8217;t care about security and don&#8217;t want to pay the overhead for encryption."</p>
 </li>
 <li>
-<p><code>require</code> "I want my data to be encrypted, and I accept the overhead. I trust that the network will make sure I always connect to the server I want." (Server must support encryption, no hostname / CA validation is done, this is only secure on private networks, without going through the "hassle" of proper certificates and should not really be used over public internet)</p>
+<p><code>require</code>&#8201;&#8212;&#8201;"I want my data to be encrypted, and I accept the overhead. I trust that the network will make sure I always connect to the server I want." (Server must support encryption, no hostname/CA validation is done. This saves the hassle of proper certificates and is only secure on private networks; it should not really be used over public networks.)</p>
 </li>
 <li>
-<p><code>verify-full</code> "I want my data encrypted, and I accept the overhead. I want to be sure that I connect to a server I trust, and that it’s the one I specify."</p>
+<p><code>verify-full</code>&#8201;&#8212;&#8201;"I want my data encrypted, and I accept the overhead. I want to be sure that I connect to a server I trust, and that it&#8217;s the one I specify."</p>
 </li>
 </ul>
 </div>
@@ -1509,12 +1651,12 @@ The Neo4j JDBC Driver does not include revocation checks.
 </table>
 </div>
 <div class="paragraph">
-<p>The most secure option can also be enabled by just using <code>ssl=true</code> either as query parameter or as property entry passed to the <code>DriverManager</code>.
+<p>The most secure option can also be enabled by setting <code>ssl=true</code> either as query parameter or as property entry passed to the <code>DriverManager</code>.
 This option corresponds to <code>neo4j+s</code>.
-<code>require</code> on the other hand corresponds to <code>neo4j+ssc</code>.</p>
+On the other hand, <code>require</code> corresponds to <code>neo4j+ssc</code>.</p>
 </div>
 <div class="paragraph">
-<p>You might wonder why using the additional enum: We might support additional modes in the future, such as letting the service decide about SSL, or being able to express a preference towards SSL without requiring it.</p>
+<p>The additional enum allows us to possibly support additional modes in the future, such as letting the service decide about SSL, or being able to express a preference towards SSL without requiring it.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1523,16 +1665,16 @@ This option corresponds to <code>neo4j+s</code>.
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-Neo4j cluster can offer both plain bolt connections and encrypted SSL connection or just one of them. So just because you can connect using <code>neo4j+s</code> does not mean that you cannot connect using just <code>neo4j</code> or vice versa. This is dependent on the setup of your database. Neo4js managed offering, <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j AuraDB</a>, only supports encrypted connection, so you <em>must</em> use <code>+s</code>, <code>ssl=true</code> or <code>sslMode=verify-full</code>.
+Neo4j servers can offer both plain Bolt connections and encrypted SSL connection, or just one of them. The fact that you can connect using <code>neo4j+s</code> does not mean that you cannot connect using just <code>neo4j</code>, or viceversa. This is dependent on the server setup. <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j Aura</a>, Neo4j&#8217;s managed cloud service, only supports encrypted connections, so you <em>must</em> use <code>+s</code>, <code>ssl=true</code>, or <code>sslMode=verify-full</code>.
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_valid_urls">5.4.2. Valid URLs</h4>
+<h4 id="_valid_urls">4.6.2. Valid URLs</h4>
 <div class="paragraph">
-<p>The following URLs are all valid</p>
+<p>The following URLs are all valid:</p>
 </div>
 <div class="dlist">
 <dl>
@@ -1563,42 +1705,48 @@ Neo4j cluster can offer both plain bolt connections and encrypted SSL connection
 </dl>
 </div>
 <div class="paragraph">
-<p>We only refuse contradicting values when you use several configuration mechanism:</p>
+<p>The driver only refuses contradicting configurations, such as:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>+s</code> with <code>ssl=false</code> or <code>sslMode</code> set to <code>disable</code></p>
+<p><code>+s</code> with <code>ssl=false</code>, or <code>sslMode</code> set to <code>disable</code></p>
 </li>
 <li>
-<p><code>+ssc</code> with <code>ssl=false</code> or any <code>sslmode</code> not equal to <code>require</code></p>
+<p><code>+ssc</code> with <code>ssl=false</code>, or any <code>sslmode</code> not equal to <code>require</code></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>In essence, you cannot express to use SSL and not use it at the same time.
-The reason to offer several mechanism is that we want you to be able to use a fixed URL with dynamic query parameters or dynamic URLs or whatever way of configuring you prefer in a programmatic way.</p>
+<p>Basically, you cannot ask to use SSL and not use it at the same time.
+The driver offers several mechanism so that you can use a fixed URL with dynamic query parameters, or dynamic URLs, or whatever way of configuring you prefer in a programmatic way.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_using_dotenv_files">5.4.3. Using .dotenv files</h4>
+<h4 id="_using_dotenv_files">4.6.3. Using .dotenv files</h4>
 <div class="paragraph">
-<p>When you sign up for <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j AuraDB</a> and create a database, you will be asked to download a text-file named similar to <code>Neo4j-9df57663-Created-2023-06-12.txt</code>. This is essentially a <a href="https://www.dotenv.org">.dotenv</a> file containing all necessary information required to connect to an aura Database.</p>
+<p>When you create a <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j Aura</a> instance, you will be asked to download a text-file named similar to <code>Neo4j-9df57663-Created-2023-06-12.txt</code>.
+This is essentially a <a href="https://www.dotenv.org">.dotenv</a> file containing the information required to connect to the database.</p>
 </div>
 <div class="paragraph">
-<p>These files can be directly used via <code>Neo4jDriver.fromEnv()</code>. This method exists in several overloads, which let you configure both filename and directory. Additionally, the builder behind it let&#8217;s you configure options that are not usually contained in the files from AuraDB.</p>
+<p>These files can be directly used via <code>Neo4jDriver.fromEnv()</code> (see <a href="#connect-dotenv">Getting a connection via environment variables</a>).
+This method exists in several overloads, which let you configure both filename and directory.
+Additionally, the builder lets you configure options that are not contained in the files from Aura.</p>
 </div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_metadata">6. Metadata</h2>
+<h2 id="_metadata">5. Metadata</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_catalog_and_schema">6.1. Catalog and schema</h3>
+<h3 id="_catalog_and_schema">5.1. Catalog and schema</h3>
 <div class="paragraph">
 <p>All the methods on connection level dealing with metadata and information about the available content provide information in terms that are defined in the SQL standard, including catalogs and schemas.</p>
+</div>
+<div class="paragraph">
+<p>In most relational databases, a catalog is equivalent to a specific database on a server or cluster, and the schema refers to the collection of tables, views and procedures in that catalog.</p>
 </div>
 <div class="paragraph">
 <p>From the SQL 1992 standard (find an archived copy <a href="http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">here</a>):</p>
@@ -1606,18 +1754,13 @@ The reason to offer several mechanism is that we want you to be able to use a fi
 <div class="quoteblock">
 <blockquote>
 <div class="paragraph">
-<p>(4.12) Catalogs are named collections of schemas in an SQL-environment. An
-SQL-environment contains zero or more catalogs. A catalog con-
-tains one or more schemas, but always contains a schema named
-INFORMATION_SCHEMA that contains the views and domains of the
-Information Schema.</p>
+<p>(4.12) Catalogs are named collections of schemas in an SQL-environment. An SQL-environment contains zero or more catalogs. A catalog contains one or more schemas, but always contains a schema named INFORMATION_SCHEMA that contains the views and domains of the Information Schema.</p>
 </div>
 </blockquote>
 </div>
 <div class="paragraph">
-<p>We decided in <a href="https://github.com/neo4j/neo4j-jdbc/discussions/55">55</a> to not support catalogs at the beginning, so any metadata result set will return literal <code>null</code> when asked for the catalog of a database object.
-No metadata method does support filtering on a non-null catalog parameter and no catalog specifier can be used in a query.
-Future developments might use catalogs to describe composite databases, in essence listing the constituents of the composite database defined in the connection.</p>
+<p>This driver only supports a single catalog, which is equal to the Neo4j database to which the driver is connected to.
+Filtering on a catalog pattern is not supported in metadata queries, all values except literal <code>null</code>, the empty or blank string or the name of the current database will lead to an exception.</p>
 </div>
 <div class="paragraph">
 <p>The same standard defines schemas as follows:</p>
@@ -1650,14 +1793,14 @@ We support querying for objects in any schema, however only literal <code>null</
 <p>Labels will be reported as table objects with the <code>TABLE_TYPE</code> being literal <code>TABLE</code>.</p>
 </div>
 <div class="sect3">
-<h4 id="_summary">6.1.1. Summary</h4>
+<h4 id="_summary">5.1.1. Summary</h4>
 <div class="ulist">
 <ul>
 <li>
-<p>Catalog: Always <code>null</code>, trying to filter on anything non-null does not yield results</p>
+<p>Catalog: Always equals to the current database; filtering on anything else except an empty string will error.</p>
 </li>
 <li>
-<p>Schema: Always <code>public</code>, filtering on <code>public</code> and literal will yield result, anything else won&#8217;t.</p>
+<p>Schema: Always <code>public</code>; filtering on <code>public</code> and literal <code>null</code> will yield result, anything else won&#8217;t.</p>
 </li>
 <li>
 <p>Table descriptors: Reported as <code>TABLE</code> in the <code>TABLE_TYPE</code> column.</p>
@@ -1667,9 +1810,9 @@ We support querying for objects in any schema, however only literal <code>null</
 </div>
 </div>
 <div class="sect2">
-<h3 id="_labels_to_tables">6.2. Labels to tables</h3>
+<h3 id="_labels_to_tables">5.2. Labels to tables</h3>
 <div class="paragraph">
-<p>The CLG and Langstar groups speak about "Node type combinations" and gravitates towards "open node type semantics" in the GQL standard:</p>
+<p>The CLG and Langstar groups speak about "Node type combinations" and gravitate towards "open node type semantics" in the GQL standard:</p>
 </div>
 <div class="quoteblock">
 <blockquote>
@@ -1679,10 +1822,10 @@ We support querying for objects in any schema, however only literal <code>null</
 </blockquote>
 </div>
 <div class="paragraph">
-<p>An example for their proposal can be seen <a href="https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19">here</a>.</p>
+<p>An example for their proposal can be found <a href="https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19">here</a>.</p>
 </div>
 <div class="paragraph">
-<p>We therefor compute node types in a similar way:</p>
+<p>This driver therefore compute node types in a similar way:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1691,38 +1834,47 @@ We support querying for objects in any schema, however only literal <code>null</
 <div class="ulist">
 <ul>
 <li>
-<p>The label name will be taken as is and will be case-sensitive. So if you have three labels <code>Movie</code>, <code>movie</code>, <code>MOVIE</code> you will see three tables in the meta-data</p>
+<p>The label name will be taken as is and will be case-sensitive. The labels <code>Movie</code>, <code>movie</code>, <code>MOVIE</code> will result in three tables in the metadata</p>
 </li>
 <li>
-<p>This is in-line with the default SQL to Cypher translation</p>
+<p>This is in line with the default SQL-to-Cypher translation</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>Node type combinations will map to table names composed as <code>label1_label2</code>, sorting the labels alphabetically, so that it is independent of the way Neo4j will return those</p>
+<p>Node type combinations will map to table names composed as <code>label1_label2</code>, sorting the labels alphabetically to make them independent of the order Neo4j returns them</p>
 </li>
 <li>
-<p>Property sets for these Node type combinations will then be computed</p>
+<p>Property sets for these node type combinations will then be computed</p>
 </li>
 </ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_primary_keys">5.3. Primary keys</h3>
+<div class="paragraph">
+<p>The driver uses available constraint information and will figure out if there is a single, unique constraint on a label.
+If that&#8217;s the case, the constrained property will be assumed to be the primary key.
+This will also work for unique constraints over multiple properties, in SQL lingo composite primary keys.
+If there is no unique constraint or more than one, we assume the <code>v$id</code> virtual columns for the <code>elementId</code> value to be primary keys.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_sql_to_cypher_translation">7. SQL to Cypher translation</h2>
+<h2 id="s2c_introduction">6. SQL to Cypher translation</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="s2c_introduction">7.1. Introduction</h3>
+<h3 id="_introduction_2">6.1. Introduction</h3>
 <div class="paragraph">
-<p>The translation from SQL queries to Cypher is an optional feature of this driver that consists of two parts:</p>
+<p>The translation of queries from SQL to Cypher is an optional feature of this driver and it consists of two parts:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>The translator SPI, which you find in the module <code>org.neo4j:neo4j-jdbc-translator-spi</code>.
-It consists of two interfaces, <code>SqlTranslatorFactory</code> and the actual <code>SqlTranslator</code>.</p>
+<p>The translator SPI, located in the module <code>org.neo4j:neo4j-jdbc-translator-spi</code>.
+It consists of two interfaces: <code>SqlTranslatorFactory</code> and the actual <code>SqlTranslator</code>.</p>
 </li>
 <li>
 <p>A concrete implementation of this SPI, published as <code>org.neo4j:neo4j-jdbc-translator-impl</code>.</p>
@@ -1730,19 +1882,19 @@ It consists of two interfaces, <code>SqlTranslatorFactory</code> and the actual 
 </ul>
 </div>
 <div class="paragraph">
-<p>The latter is covered in "<a href="#s2c">Using the default translator</a>" and bundled as the "full bundle", described in <a href="#available_bundles">Section 4.2</a>.
-The former is provided for two reasons: It allows us to distribute the driver with and without the bundled, default translator and can be an option for you to run your custom translator.</p>
+<p>The latter is covered in "<a href="#s2c">Using the default translator</a>" and available in the "full bundle", described in <a href="#available_bundles">Available bundles</a>.
+The former is provided for two reasons: it allows us to distribute the driver with and without the bundled, default translator and allows you to run your custom translator.</p>
 </div>
 <div class="paragraph">
-<p>Translators can be chained, and you can have as many translators on the classpath as you want.
-They will be ordered by a configurable precedence with our default implementation having the lowest precedence.
-Thus, you can have for example a custom translator that takes care of a fixed set of queries, and if it cannot translate another, it will just be passed down to our implementation.</p>
+<p>Translators can be chained, and there can be as many translators on the classpath as you want.
+Their precedence is configurable, with our default implementation having the lowest precedence.
+Thus, you can for example have a custom translator that takes care of a fixed set of queries and, if it receives a query it cannot translate, it will pass it down to our implementation.</p>
 </div>
 <div class="paragraph">
-<p>Translating arbitrary SQL queries to Cypher is an opinionated task as there is no right way to map table names to objects in the graph: A table name can be used as is as a label, you might want to transform it to a singular form etc. And then we haven&#8217;t even started how to map relationships: Do you want to have relationship types derived from a join table, a join column (in that case, which one?) or the name of a foreign key?</p>
+<p>Translating arbitrary SQL queries to Cypher is an opinionated task, as there is no right way to map table names to graph objects: a table name can be used as-is as a label, or may be transformed into a singular form, etc. Mapping relationships is even trickier: should relationship types derive from a join table, a join column (in that case, which one?), or a foreign key?</p>
 </div>
 <div class="paragraph">
-<p>We made some assumptions that we find to match various use cases and instead of providing configuration and more code to cater for all scenarios, we offer the possibility to write your own translation layer.
+<p>We believe our assumptions are appropriate for various use cases and instead of providing configuration to cater for all scenarios, we offer the possibility to write your own translation layer.
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.</p>
 </div>
 <div class="admonitionblock note">
@@ -1752,35 +1904,34 @@ The driver will use the standard Java service loader mechanism to find an implem
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Some tools like Tableau use a class-loader that won&#8217;t let the driver use the standard Java service loader mechanism.
-For these scenarios we provide an additional configuration property named <code>translatorFactory</code>.
-Set this to <code>DEFAULT</code> for directly loading our default implementation or to a fully-qualified classname for any other factory.
-Be aware that either our default implementation or your custom one needs to be on the classpath nevertheless.
+Some tools (like Tableau) use a class-loader that won&#8217;t let the driver use the standard Java service loader mechanism.
+For these scenarios, we provide an additional configuration property named <code>translatorFactory</code>.
+Set this to <code>DEFAULT</code> to directly load our default implementation or to a fully-qualified classname for any other factory.
+<strong>Be aware</strong> that either our default implementation or your custom one must be on the classpath.
 </td>
 </tr>
 </table>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_translating_sql_to_cypher">7.2. Translating SQL to Cypher</h3>
+<h3 id="_translating_sql_to_cypher">6.2. Translating SQL to Cypher</h3>
 <div class="paragraph">
-<p>There&#8217;s only one requirement to enable SQL to Cypher translation:
-You have to have one module implementing the SPI on the classpath.
-This is <strong>automatically</strong> the case if you use the full-bundle under those coordinates: <code>org.neo4j:neo4j-jdbc-full-bundle</code>.
-In that case, you <strong>don&#8217;t</strong> need to add any other dependencies.
-If you use the individual distribution or the "small" bundle <code>org.neo4j:neo4j-jdbc-bundle</code> you must add the following artifact: <code>org.neo4j:neo4j-jdbc-translator-impl</code>.</p>
+<p>There&#8217;s only one requirement to enable the SQL-to-Cypher translation: you have to have one module implementing the SPI on the classpath.
+This is <strong>automatically</strong> the case if you use the full-bundle (<code>org.neo4j:neo4j-jdbc-full-bundle</code>).
+In that case, you <strong>don&#8217;t</strong> need to add any other dependency.
+If you use the individual distribution or the "small" bundle <code>org.neo4j:neo4j-jdbc-bundle</code>, you must add the artifact <code>org.neo4j:neo4j-jdbc-translator-impl</code>.</p>
 </div>
 <div class="paragraph">
 <p>The implementation will be automatically loaded.
-If you use the translation on a case-by-case basis, it will be lazily loaded, that is: No additional classes are touched or loaded into memory.
+If you use the translation on a case-by-case basis, it will be lazily loaded (i.e no additional classes are touched or loaded into memory).
 If you configure automatic translation for all statements, the implementation will be eagerly loaded.
-There are no further configuration option with regard to loading the implementation.</p>
+There are no further configuration options with regard to loading the implementation.</p>
 </div>
 <div class="sect3">
-<h4 id="_on_a_case_by_case_basis">7.2.1. On a case-by-case basis</h4>
+<h4 id="_on_a_case_by_case_basis">6.2.1. On a case-by-case basis</h4>
 <div class="paragraph">
 <p>The translator can be used on a case-by-case basis through the official JDBC API <code>nativeSQL</code>, which you find on the <code>java.sql.Connection</code> class.
-With the following imports</p>
+With the following imports:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1805,10 +1956,10 @@ With the following imports</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_for_all_queries">7.2.2. For all queries</h4>
+<h4 id="_for_all_queries">6.2.2. For all queries</h4>
 <div class="paragraph">
-<p>If you open the connection to your Neo4j instance using <code>enableSQLTranslation=true</code> either as URL parameter or configuration property, all statements will be translated from SQL to Cypher on your behalf.
-If you configure the driver in that way, the translator will be eagerly loaded</p>
+<p>If you open the connection to your Neo4j instance using <code>enableSQLTranslation=true</code> either as URL parameter or configuration property, all statements will be translated from SQL to Cypher.
+If you configure the driver in this way, the translator will be eagerly loaded.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1823,10 +1974,8 @@ If you configure the driver in that way, the translator will be eagerly loaded</
 </div>
 </div>
 <div class="paragraph">
-<p>Sometimes it maybe is necessary to fall back to Cypher for some statements.
-You might want to use some constructs that you cannot express with SQL or our default translator cannot handle the SQL necessary.
-We offer a special comment that you can use as a hint in your statement that will stop automatic translation: <code>/*+ NEO4J FORCE_CYPHER */</code>.
-Use it like this:</p>
+<p>Sometimes you may need to fall back to Cypher for some statements, either to use constructs that you cannot express with SQL, or because our default translator cannot handle your query.
+We offer a special comment that you can use as a hint in your statement to stop automatic translation: <code>/*+ NEO4J FORCE_CYPHER */</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1850,28 +1999,28 @@ Use it like this:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_possible_error_scenarios">7.2.3. Possible error scenarios</h4>
+<h4 id="_possible_error_scenarios">6.2.3. Possible error scenarios</h4>
 <div class="paragraph">
-<p>A <code>NoSuchElementException</code> with a message of <code>No SQL translators available</code> will be thrown when there is no implementation of the SQL to Cypher translator available, and you either use <code>java.sql.Connection.nativeSQL</code> or enable automatic translation. The exception will be thrown when you access the method or eagerly on opening a connection in the latter case.</p>
+<p>A <code>NoSuchElementException</code> with a message of <code>No SQL translators available</code> will be thrown when there is no implementation of the SQL to Cypher translator available, and you either used <code>java.sql.Connection.nativeSQL</code> or enabled automatic translation. The exception will be thrown when you access the method or eagerly on opening a connection in the latter case.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="s2c">7.3. Using the default translator</h3>
+<h3 id="s2c">6.3. Using the default translator</h3>
 <div class="sect3">
-<h4 id="_supported_sql_dialects">7.3.1. Supported SQL dialects</h4>
+<h4 id="_supported_sql_dialects">6.3.1. Supported SQL dialects</h4>
 <div class="paragraph">
 <p>Our default translator uses the OSS parser from <a href="https://www.jooq.org">jOOQ</a>, which supports a broad spectrum of SQL dialects already.
 We picked the generic, default dialect of jOOQ as our default dialect, but you can overwrite this in the SQL to Cypher configuration using the parameter <code>s2c.sqlDialect</code> with one of the supported dialects listed in <a href="#s2c_configuration">configuration below</a>.
-<code>POSTGRES</code> might be a good choice for several integrations.</p>
+<code>POSTGRES</code> can be a good choice for several integrations.</p>
 </div>
 <div class="paragraph">
-<p>Bear in mind though that any shortcomings in the translation are probably not due to the lack of parser support, but due to the lack of an obvious, semantically equivalent Cypher construct.
+<p>Bear in mind though that any shortcomings in the translation are probably not due to a lack in the parser, but due to the lack of an obvious, semantically equivalent Cypher construct.
 That means we might be able to parse a certain piece of SQL, but are unable to translate in into something meaningful that Neo4j can understand without additional, contextual information.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="s2c_configuration">7.3.2. Configuration</h4>
+<h4 id="s2c_configuration">6.3.2. Configuration</h4>
 <div class="paragraph">
 <p>The default implementation provides a number of configuration settings.
 They must be prefixed with <code>s2c</code> in the URL or config options:</p>
@@ -1892,41 +2041,41 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>parseNameCase</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to parse table names as is or not</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">As is</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to parse table names as is or not.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>tableToLabelMappings</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A map from table names to labels</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A map from table names to labels.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">An empty map</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>joinColumnsToTypeMappings</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A map from column names to relationship type names</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A map from column names to relationship types.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">An empty map</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>prettyPrint</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to format the generated Cypher or not</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to format the generated Cypher or not.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>alwaysEscapeNames</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to always escape names</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unless explicitly configured <code>false</code> when pretty printing is on, otherwise true</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Whether to always escape names.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unless explicitly configured <code>false</code> when pretty printing is on, otherwise <code>true</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>sqlDialect</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Which dialect to use when parsing, supported values are <code>POSTGRES</code>, <code>SQLITE</code>, <code>MYSQL</code>, <code>H2</code>, <code>HSQLDB</code>, <code>DERBY</code> and <code>DEFAULT</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Which dialect to use when parsing. Supported values are <code>POSTGRES</code>, <code>SQLITE</code>, <code>MYSQL</code>, <code>H2</code>, <code>HSQLDB</code>, <code>DERBY</code> and <code>DEFAULT</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>DEFAULT</code></p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Here are a couple of examples (Note that we are using the <code>properties</code> config to avoid terrible long URLs in this documentation, however, all the attributes can be specified via URL, too):</p>
+<p>The next few examples use the <code>properties</code> config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Disable pretty printing, only escape if necessary, configure dedicated table mappings</div>
+<div class="title">Listing 17. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -1948,11 +2097,8 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 }</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>In the next example we parse the table names into upper case, which might be helpful in some situations:</p>
-</div>
 <div class="listingblock">
-<div class="title">Listing 17. Upper case parsing</div>
+<div class="title">Listing 18. Parse table names into upper case</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -1971,10 +2117,11 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 <div class="paragraph">
-<p>Here we change the prefix of parameters (they are still going only by index in SQL) and add mappings for join columns:</p>
+<p>Named parameter syntax in the SQL parser defaults to <code>:name</code> (such as supported by Oracle, JPA, Spring, a colon followed by a name).
+The following example changes that prefix to <code>$</code> (the same prefix that Cypher uses):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Disable pretty printing, only escape if necessary, configure dedicated table mappings</div>
+<div class="title">Listing 19. Change parameters prefix and add mappings for join columns</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -1999,18 +2146,22 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 }</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>This is helpful when a tool generates names like that and does not allow customization.</p>
+</div>
 </div>
 <div class="sect3">
-<h4 id="s2c_supported_statements">7.3.3. Supported statements</h4>
+<h4 id="s2c_supported_statements">6.3.3. Supported statements</h4>
 <div class="paragraph">
 <p>The following statements are all under tests and describe what you can expect from the default translation layer:</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_translation_concepts">6.3.4. Translation concepts</h4>
 <div class="sect4">
-<h5 id="_translation_concepts">Translation concepts</h5>
-<div class="sect5">
-<h6 id="_table_names_to_labels">Table names to labels</h6>
+<h5 id="_table_names_to_labels">Table names to labels</h5>
 <div class="paragraph">
-<p>The most simple select statement to translate is a statement without the <code>FROM</code> clause, such as:</p>
+<p>The most simple <code>SELECT</code> statement to translate is one without <code>FROM</code> clause, such as:</p>
 </div>
 <div id="t1_1" class="listingblock">
 <div class="content">
@@ -2018,7 +2169,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 <div class="paragraph">
-<p>It is equivalent without loss to the following Cypher:</p>
+<p>It is equivalent to a Cypher <code>RETURN</code>:</p>
 </div>
 <div id="t1_1_expected" class="listingblock">
 <div class="content">
@@ -2026,19 +2177,19 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 <div class="paragraph">
-<p><code>SELECT</code> statements without further <code>JOIN</code> clauses are pretty straight forward to translate.
-The hardest challenge here is how to map the table name to labels:</p>
+<p><code>SELECT</code> statements without <code>JOIN</code> clauses are pretty straightforward to translate.
+The challenge here is how to map the table name to labels:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>We parse the SQL Statement case-sensitive by default</p>
+<p>We parse the SQL statement case-sensitive by default</p>
 </li>
 <li>
-<p>Table names will be mapped to node labels</p>
+<p>Table names are mapped to node labels</p>
 </li>
 <li>
-<p>Table aliases will be used as identifiable symbolic names</p>
+<p>Table aliases are used as identifiable symbolic names</p>
 </li>
 </ul>
 </div>
@@ -2058,7 +2209,7 @@ The hardest challenge here is how to map the table name to labels:</p>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The table alias will become the node-alias</td>
+<td>The table alias will become the node alias</td>
 </tr>
 </table>
 </div>
@@ -2073,13 +2224,14 @@ RETURN t.a, t.b</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We recommend using table aliases, but the translations works without them as well.</p>
+<p>Table aliases are optional, if you omit them, we derive aliases from the labels and types.
+If you inspect the translated queries, we recommend using aliases, as this makes the queries better readable.</p>
 </div>
 </div>
-<div class="sect5">
-<h6 id="s2c_star_selects">Star-Selects</h6>
+<div class="sect4">
+<h5 id="s2c_star_selects">Star-Selects</h5>
 <div class="paragraph">
-<p>A star- or <code>*</code> select comes in different forms:</p>
+<p>A star- or <code>*</code>- select comes in different forms:</p>
 </div>
 <div class="dlist">
 <dl>
@@ -2097,12 +2249,12 @@ RETURN t.a, t.b</code></pre>
 <p>And a variant, selecting the relation itself: <code>SELECT t FROM table t</code>.</p>
 </div>
 <div class="paragraph">
-<p>We make use of this fact to give users a way to decide whether they want to return Neo4j nodes and relationships as entities, maps or flattened to individual columns.
-The latter however requires our translator to have access to the schema of the underlying Neo4j database.
-The following sections will describe the use-cases:</p>
+<p>We make use of this to let you decide whether you want to return Neo4j nodes and relationships as entities, maps, or flattened to individual columns.
+The latter requires our translator to have access to the schema of the underlying Neo4j database.
+The following sections describe the use-cases.</p>
 </div>
-<div class="sect6">
-<h7 id="_projecting_individual_properties">Projecting individual properties</h7>
+<div class="sect5">
+<h6 id="_projecting_individual_properties">Projecting individual properties</h6>
 <div class="paragraph">
 <p>Don&#8217;t use a star-select but enumerate the properties:</p>
 </div>
@@ -2112,7 +2264,7 @@ The following sections will describe the use-cases:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The table alias will be used as a symbolic name</p>
+<p>The table alias will be used as a symbolic name:</p>
 </div>
 <div id="star_1_expected" class="listingblock">
 <div class="content">
@@ -2120,6 +2272,7 @@ The following sections will describe the use-cases:</p>
 RETURN m.title;</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
 <p>You can omit the table alias:</p>
 </div>
@@ -2137,9 +2290,10 @@ RETURN m.title;</code></pre>
 RETURN movie.title;</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>If you access your JDBC columns by name, this might lead to code that is hard to maintain
-You might want to alias the column, then:</p>
+<p>Accessing JDBC columns by name leads to code that is hard to maintain, as column renamings impact code as well.
+To avoid this, alias the column:</p>
 </div>
 <div id="star_3" class="listingblock">
 <div class="content">
@@ -2156,32 +2310,32 @@ RETURN movie.title AS title;</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_projecting_all_properties">Projecting all properties</h7>
+<div class="sect5">
+<h6 id="_projecting_all_properties">Projecting all properties</h6>
 <div class="paragraph">
-<p>If you run a</p>
+<p>A <code>SELECT *</code> statement gets translated differently depending on whether the connection to the Neo4j database is available.</p>
 </div>
 <div id="star_5" class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Movie m</code></pre>
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Person p</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>you will get the following Cypher statement in case you run the translation offline:</p>
+<p>If you are offline, you will get the following Cypher statement:</p>
 </div>
 <div id="star_5_expected" class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movie) RETURN *</code></pre>
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person) RETURN *</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The above query will return one column ("m"), which is a Neo4j node.
-This is usually not what is expected in the relational world.
+<p>The above query will return one column (<code>p</code>) containing a Neo4j node.
+This is usually not what you expect in the relational world.
 If you run the translation online and Neo4j metadata can be retrieved,
-it will generate a statement that flattens the properties of each node and relationship plus their element ids:</p>
+you will get a statement that flattens the properties of each node and relationship, plus their element IDs:</p>
 </div>
 <div class="paragraph">
-<p>In case the <code>Person</code> node has properties <code>born</code> and <code>name</code></p>
+<p>In case the <code>Person</code> node has properties <code>born</code> and <code>name</code>,</p>
 </div>
 <div id="star_6" class="listingblock">
 <div class="content">
@@ -2194,30 +2348,27 @@ it will generate a statement that flattens the properties of each node and relat
 <div id="star_6_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>This works well with multiple tables as well (<code>Movie</code> has properties <code>title</code> and <code>released</code>)</p>
+<p>This works well with multiple tables as well (<code>Movie</code> has properties <code>title</code> and <code>released</code>):</p>
 </div>
 <div id="star_7" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Person p <span class="keyword">JOIN</span> Movie m <span class="keyword">ON</span> m.id = p.acted_in</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Properties will be delivered as requested:</p>
-</div>
 <div id="star_7_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)-[acted_in:ACTED_IN]-&gt;(m:Movie)
-RETURN elementId(p) AS element_id, p.born AS born, p.name AS name,
-       elementId(m) AS element_id1, m.title AS title, m.released AS released</code></pre>
+RETURN elementId(p) AS `v$id`, p.born AS born, p.name AS name,
+       elementId(m) AS `v$id1`, m.title AS title, m.released AS released</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We add increasing numbers to column names if they clash (we duplicated the <code>name</code> property and added a <code>remark</code> to the metadata):</p>
+<p>We append increasing numbers to column names to clashing ones (ex. with <code>name</code> and <code>remark</code> properties both in <code>Movie</code> and <code>Person</code>):</p>
 </div>
 <div id="star_8" class="listingblock">
 <div class="content">
@@ -2230,14 +2381,15 @@ RETURN elementId(p) AS element_id, p.born AS born, p.name AS name,
 <div id="star_8_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)-[acted_in:ACTED_IN]-&gt;(m:Movie)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name, p.remark AS remark,
-       elementId(m) AS element_id1,
+       elementId(m) AS `v$id1`,
        m.name AS name1, m.released AS released, m.remark AS remark1</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>The following example uses a join-table to access relationships (we explain this later in this manual), but the flattening of properties works there as well:</p>
+<p>The following example uses a join-table to access relationships (we explain this later in this manual <a href="#joinin-relationships">when discussing joins</a>), and the flattening of properties works here as well:</p>
 </div>
 <div id="star_9" class="listingblock">
 <div class="content">
@@ -2250,35 +2402,34 @@ RETURN elementId(p) AS element_id,
 <div id="star_9_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)-[r:ACTED_IN]-&gt;(m:Movie)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name,
-       elementId(r) AS element_id1, r.role AS role,
-       elementId(m) AS element_id2,
+       elementId(p) AS `v$person_id`,
+       elementId(r) AS `v$id1`, r.role AS role,
+       elementId(m) AS `v$movie_id`,
+       elementId(m) AS `v$id2`,
        m.title AS title, m.released AS released</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Ordering without specifying a table alias does work as expected:</p>
-</div>
+<hr>
 <div id="star_6b" class="listingblock">
+<div class="title">Listing 20. Ordering without specifying a table alias</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Person p <span class="keyword">ORDER</span> <span class="keyword">BY</span> name <span class="directive">ASC</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>you will get this Cypher statement</p>
-</div>
 <div id="star_6b_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)
-RETURN elementId(p) AS element_id,
+RETURN elementId(p) AS `v$id`,
        p.born AS born, p.name AS name
 ORDER BY p.name</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
 <p>A qualified alias can be used as well.
-In case without meta-data it will return a map of properties of the node or relationship in question:</p>
+If no Neo4j metadata is available, you will get a map of properties of the node/relationship:</p>
 </div>
 <div id="star_4" class="listingblock">
 <div class="content">
@@ -2288,7 +2439,7 @@ In case without meta-data it will return a map of properties of the node or rela
 </div>
 </div>
 <div class="paragraph">
-<p>The corresponding columns must be downcast to a Map in JDBC:</p>
+<p>The corresponding columns must be downcast to a map in JDBC:</p>
 </div>
 <div id="star_4_expected" class="listingblock">
 <div class="content">
@@ -2296,8 +2447,9 @@ In case without meta-data it will return a map of properties of the node or rela
 RETURN m{.*} AS m, p{.*} AS p</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>If we add meta-data (here <code>born</code> and <code>name</code> to <code>Person</code>), the qualified star will project all those:</p>
+<p>If we add more data (ex. <code>born</code> and <code>name</code> to <code>Person</code>), the qualified star will project all of them (note how we also project one single, known column from the <code>Movie</code> table):</p>
 </div>
 <div id="star_4a" class="listingblock">
 <div class="content">
@@ -2306,18 +2458,15 @@ RETURN m{.*} AS m, p{.*} AS p</code></pre>
 <span class="keyword">JOIN</span> Movie m <span class="keyword">ON</span> m.id = p.acted_in</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Note how we also projected one single, known property from the <code>Movie</code> node:</p>
-</div>
 <div id="star_4a_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)-[acted_in:ACTED_IN]-&gt;(m:Movie)
-RETURN elementId(p) AS element_id, p.born AS born, p.name AS name, m.title AS title</code></pre>
+RETURN elementId(p) AS `v$id`, p.born AS born, p.name AS name, m.title AS title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_returning_nodes_and_relationships">Returning nodes and relationships</h7>
+<div class="sect5">
+<h6 id="_returning_nodes_and_relationships">Returning nodes and relationships</h6>
 <div class="paragraph">
 <p>A statement that projects a table alias such as</p>
 </div>
@@ -2335,16 +2484,14 @@ RETURN elementId(p) AS element_id, p.born AS born, p.name AS name, m.title AS ti
 RETURN m;</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>A node can be alias as well:</p>
+<p>A node can be aliased as well:</p>
 </div>
 <div id="star_n2" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> m <span class="keyword">AS</span> node <span class="keyword">FROM</span> Movie m</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>will result in a Cypher statement returning the matched node as node.</p>
 </div>
 <div id="star_n2_expected" class="listingblock">
 <div class="content">
@@ -2352,8 +2499,9 @@ RETURN m;</code></pre>
 RETURN m AS node;</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>Unaliased tables can be used as well:</p>
+<p>Un-aliased tables can be used as well:</p>
 </div>
 <div id="star_n3" class="listingblock">
 <div class="content">
@@ -2366,8 +2514,9 @@ RETURN m AS node;</code></pre>
 RETURN movie;</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>And multiple entities are supported, too:</p>
+<p>Multiple entities are supported, too:</p>
 </div>
 <div id="star_10" class="listingblock">
 <div class="content">
@@ -2383,19 +2532,19 @@ RETURN movie;</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_comparing_sql_with_cypher_examples">Comparing SQL with Cypher examples</h6>
+<div class="sect4">
+<h5 id="_comparing_sql_with_cypher_examples">Comparing SQL with Cypher examples</h5>
 <div class="paragraph">
-<p>Sources of the following examples are from <a href="https://neo4j.com/developer/cypher/guide-sql-to-cypher/">Comparing SQL with Cypher</a>.</p>
+<p>The source of the following examples is: <a href="https://neo4j.com/developer/cypher/guide-sql-to-cypher/">Comparing SQL with Cypher</a>.</p>
 </div>
-<div class="sect6">
-<h7 id="_find_all_products">Find all Products</h7>
+<div class="sect5">
+<h6 id="_find_all_products">Find all Products</h6>
 
 </div>
-<div class="sect6">
-<h7 id="_select_and_return_records">Select and Return Records</h7>
+<div class="sect5">
+<h6 id="_select_and_return_records">Select and Return Records</h6>
 <div class="paragraph">
-<p>Easy in SQL, just select everything from the <code>products</code> table.</p>
+<p>Select everything from the <code>products</code> table.</p>
 </div>
 <div id="t2_0" class="listingblock">
 <div class="content">
@@ -2404,7 +2553,7 @@ RETURN movie;</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Similarly, in Cypher, you just <strong>match</strong> a simple pattern: all nodes with the <strong>label</strong> <code>:Product</code> and <code>RETURN</code> them.</p>
+<p>Similarly, in Cypher, you just <code>MATCH</code> a simple pattern: all nodes with the <strong>label</strong> <code>Product</code> and <code>RETURN</code> them.</p>
 </div>
 <div id="t2_0_expected" class="listingblock">
 <div class="content">
@@ -2412,18 +2561,16 @@ RETURN movie;</code></pre>
 RETURN p{.*} AS p</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
 <p>The above query will project all properties of the matched node.
-If you want to select the node itself, just select it without using the asterisk:</p>
+If you want to return the node itself, select it without using the asterisk:</p>
 </div>
 <div id="t2_0a" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> p
 <span class="keyword">FROM</span> products <span class="keyword">as</span> p</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>It will be translated into a query that returns nodes:</p>
 </div>
 <div id="t2_0a_expected" class="listingblock">
 <div class="content">
@@ -2432,11 +2579,12 @@ RETURN p</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_field_access_ordering_and_paging">Field Access, Ordering and Paging</h7>
+<div class="sect5">
+<h6 id="_field_access_ordering_and_paging">Field Access, Ordering and Paging</h6>
 <div class="paragraph">
-<p><strong>More efficient is to return only a subset of attributes</strong>, like <code>ProductName</code> and <code>UnitPrice</code>.
-And while we&#8217;re on it, let&#8217;s also order by price and only return the 10 most expensive items.</p>
+<p><strong>It is more efficient to return only a subset of attributes</strong>, like <code>ProductName</code> and <code>UnitPrice</code>.
+And while we are at it, let&#8217;s also order by price and only return the 10 most expensive items.
+(Remember that labels, relationship-types and property-names are <strong>case sensitive</strong> in Neo4j.)</p>
 </div>
 <div id="t2_1" class="listingblock">
 <div class="content">
@@ -2446,18 +2594,15 @@ And while we&#8217;re on it, let&#8217;s also order by price and only return the
 LIMIT <span class="integer">10</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>You can copy and paste the changes from SQL to Cypher, it&#8217;s thankfully unsurprising.
-But remember that labels, relationship-types and property-names are <strong>case sensitive</strong> in Neo4j.</p>
-</div>
 <div id="t2_1_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Product)
 RETURN p.productName, p.unitPrice ORDER BY p.unitPrice DESC LIMIT 10</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>Default order direction will be translated as is:</p>
+<p>The default order direction will be translated as is:</p>
 </div>
 <div id="t2_2" class="listingblock">
 <div class="content">
@@ -2471,17 +2616,66 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
+<div class="sect5">
+<h6 id="_distinct_projections"><code>DISTINCT</code> projections</h6>
+<div class="paragraph">
+<p>The <code>DISTINCT</code> keyword for projections is handled:</p>
 </div>
+<div id="t3_1" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="keyword">DISTINCT</span> m.released <span class="keyword">FROM</span> Movies m</code></pre>
+</div>
+</div>
+<div id="t3_1_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movies)
+RETURN DISTINCT m.released</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It works with <code>*</code> projections as well:</p>
+</div>
+<div id="t3_2" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="keyword">DISTINCT</span> m.* <span class="keyword">FROM</span> Movies m</code></pre>
+</div>
+</div>
+<div id="t3_2_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movies)
+RETURN DISTINCT m {.*} AS m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>However, as the qualified asterisks will use metadata if available, the translation with a database connection is different:</p>
+</div>
+<div id="t3_3" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="keyword">DISTINCT</span> m.* <span class="keyword">FROM</span> Movies m</code></pre>
+</div>
+</div>
+<div id="t3_3_expected" class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:Movies)
+RETURN DISTINCT elementId(m) AS `v$id`, m.title AS title, m.released AS released</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that each row includes the Neo4j element ID, making each row unique.
+This being said, the <code>DISCTINCT</code> clause is of limited use with the asterisk.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_expressions">6.3.5. Expressions</h4>
+<div class="paragraph">
+<p>Most SQL expressions have corresponding Cypher expressions and can be translated straightforward.</p>
 </div>
 <div class="sect4">
-<h5 id="_expressions">Expressions</h5>
+<h5 id="_literal_values">Literal Values</h5>
 <div class="paragraph">
-<p>Most SQL expressions will have a corresponding Cypher expression and can be translated straigt forward:</p>
-</div>
-<div class="sect5">
-<h6 id="_literal_values">Literal Values</h6>
-<div class="paragraph">
-<p>Literal values are usually 1:1 translations:</p>
+<p>Literal values are 1:1 translations.</p>
 </div>
 <div id="e0_0" class="listingblock">
 <div class="content">
@@ -2489,19 +2683,16 @@ RETURN * ORDER BY m.title</code></pre>
     <span class="integer">1</span>, <span class="predefined-constant">TRUE</span>, <span class="predefined-constant">FALSE</span>, <span class="predefined-constant">NULL</span>, <span class="string"><span class="delimiter">'</span><span class="content">a</span><span class="delimiter">'</span></span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>become</p>
-</div>
 <div id="e0_0_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">RETURN 1, TRUE, FALSE, NULL, 'a'</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_arithmetic_expressions">Arithmetic expressions</h6>
+<div class="sect4">
+<h5 id="_arithmetic_expressions">Arithmetic expressions</h5>
 <div class="paragraph">
-<p>So are the arithmetic expressions:</p>
+<p>Arithmetic expressions are 1:1 translations.</p>
 </div>
 <div id="e1_0" class="listingblock">
 <div class="content">
@@ -2514,7 +2705,7 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Note that the underlying tech of the default translator uses <a href="https://github.com/neo4j-contrib/cypher-dsl">Cypher-DSL</a> internally, which will wrap arithmetic (and logical expressions) with parentheses:</p>
+<p>Note that the underlying tech of the default translator uses <a href="https://github.com/neo4j-contrib/cypher-dsl">Cypher-DSL</a> internally, which will wrap arithmetic (and logical) expressions with parentheses:</p>
 </div>
 <div id="e1_0_expected" class="listingblock">
 <div class="content">
@@ -2527,12 +2718,12 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_functions">Functions</h5>
 <div class="sect5">
-<h6 id="_functions">Functions</h6>
-<div class="sect6">
-<h7 id="_numeric_functions">Numeric functions</h7>
+<h6 id="_numeric_functions">Numeric functions</h6>
 <div class="paragraph">
-<p>We can translate all numeric functions that are supported by Neo4j&#8217;s Cypher implementation: <a href="https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/">Mathematical functions - numeric</a>:</p>
+<p>We can translate all numeric functions that are supported by Neo4j&#8217;s Cypher implementation: <a href="https://neo4j.com/docs/cypher-manual/current/functions/mathematical-numeric/">Mathematical functions - Numeric</a>:</p>
 </div>
 <div id="e2_0" class="listingblock">
 <div class="content">
@@ -2560,10 +2751,10 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_logarithmic_functions">Logarithmic functions</h7>
+<div class="sect5">
+<h6 id="_logarithmic_functions">Logarithmic functions</h6>
 <div class="paragraph">
-<p>Neo4j supports a brought range of <a href="https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/">logarithmic functions</a> and the input</p>
+<p>Neo4j supports a broad range of <a href="https://neo4j.com/docs/cypher-manual/current/functions/mathematical-logarithmic/">logarithmic functions</a>.</p>
 </div>
 <div id="e3_0" class="listingblock">
 <div class="content">
@@ -2589,8 +2780,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_trigonometric_functions">Trigonometric functions</h7>
+<div class="sect5">
+<h6 id="_trigonometric_functions">Trigonometric functions</h6>
 <div class="paragraph">
 <p>Calls to trigonometric functions</p>
 </div>
@@ -2630,8 +2821,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_string_functions">String functions</h7>
+<div class="sect5">
+<h6 id="_string_functions">String functions</h6>
 <div class="paragraph">
 <p>The following string manipulations are guaranteed to work:</p>
 </div>
@@ -2677,8 +2868,8 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_scalar_functions">Scalar functions</h7>
+<div class="sect5">
+<h6 id="_scalar_functions">Scalar functions</h6>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2699,7 +2890,7 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>will be translated to (Compare <a href="https://neo4j.com/docs/cypher-manual/current/functions/scalar/">Scalar functions</a>):</p>
+<p>will be translated to (see <a href="https://neo4j.com/docs/cypher-manual/current/functions/scalar/">Scalar functions</a>):</p>
 </div>
 <div id="e6_0_expected" class="listingblock">
 <div class="content">
@@ -2719,13 +2910,13 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_query_expressions">Query expressions</h6>
+<div class="sect4">
+<h5 id="_query_expressions">Query expressions</h5>
 <div class="paragraph">
-<p>Several advanced SQL expressions are supported as well, such as</p>
+<p>Several advanced SQL expressions are supported as well.</p>
 </div>
-<div class="sect6">
-<h7 id="_case_simple"><code>CASE</code> simple</h7>
+<div class="sect5">
+<h6 id="_case_simple"><code>CASE</code> simple</h6>
 <div class="paragraph">
 <p>The simple <code>CASE</code> expressions</p>
 </div>
@@ -2738,19 +2929,19 @@ RETURN * ORDER BY m.title</code></pre>
     <span class="keyword">CASE</span> <span class="integer">1</span> <span class="keyword">WHEN</span> <span class="integer">2</span> <span class="keyword">THEN</span> <span class="integer">3</span> <span class="keyword">WHEN</span> <span class="integer">4</span> <span class="keyword">THEN</span> <span class="integer">5</span> <span class="keyword">ELSE</span> <span class="integer">6</span> <span class="keyword">END</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>which will be translated to</p>
-</div>
 <div id="e7_0_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">RETURN CASE 1 WHEN 2 THEN 3 END, CASE 1 WHEN 2 THEN 3 ELSE 4 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 END, CASE 1 WHEN 2 THEN 3 WHEN 4 THEN 5 ELSE 6 END</code></pre>
 </div>
 </div>
-</div>
-<div class="sect6">
-<h7 id="_case_advanced"><code>CASE</code> advanced</h7>
 <div class="paragraph">
-<p>And <code>CASE</code> statement using a search (See <a href="https://neo4j.com/docs/cypher-manual/current/syntax/expressions">expressions</a> for more information):</p>
+<p>See <a href="https://neo4j.com/docs/cypher-manual/current/queries/case/">Cypher &#8594; Conditional expressions (CASE)</a> for more information.</p>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_case_advanced"><code>CASE</code> advanced</h6>
+<div class="paragraph">
+<p>And <code>CASE</code> statement using a search:</p>
 </div>
 <div id="e7_1" class="listingblock">
 <div class="content">
@@ -2773,9 +2964,12 @@ RETURN * ORDER BY m.title</code></pre>
     CASE WHEN 1 = 2 THEN 3 WHEN 4 = 5 THEN 6 ELSE 7 END</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>See <a href="https://neo4j.com/docs/cypher-manual/current/queries/case/">Cypher &#8594; Conditional expressions (CASE)</a> for more information.</p>
 </div>
-<div class="sect6">
-<h7 id="_case_abbreviations_which_arent_coalesce_or_nvl"><code>CASE</code> abbreviations (which aren&#8217;t <code>COALESCE</code> or <code>NVL</code>)</h7>
+</div>
+<div class="sect5">
+<h6 id="_case_abbreviations_which_are_not_coalesce_or_nvl"><code>CASE</code> abbreviations (which are not <code>COALESCE</code> or <code>NVL</code>)</h6>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2799,23 +2993,20 @@ RETURN * ORDER BY m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_predicates">Predicates</h5>
+<div class="sect3">
+<h4 id="_predicates">6.3.6. Predicates</h4>
 <div class="paragraph">
-<p>As with expressions a lot of logical SQL expressions and conditions used as predicates can be translated into straight forward into Cypher predicates.</p>
+<p>As with expressions a lot of logical SQL expressions and conditions used as predicates can be translated straightforward into Cypher predicates.</p>
 </div>
-<div class="sect5">
-<h6 id="_conjunctions_and_disjunctions">Conjunctions and disjunctions.</h6>
+<div class="sect4">
+<h5 id="_conjunctions_and_disjunctions">Conjunctions and disjunctions</h5>
 <div class="paragraph">
-<p>Logical conjunctions and disjunctions are all supported:</p>
+<p>Logical conjunctions and disjunctions are all supported.</p>
 </div>
 <div id="p1_0" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> <span class="integer">1</span> <span class="keyword">FROM</span> p <span class="keyword">WHERE</span> <span class="integer">1</span> = <span class="integer">1</span> <span class="keyword">AND</span> <span class="integer">2</span> = <span class="integer">2</span> <span class="keyword">OR</span> <span class="integer">3</span> = <span class="integer">3</span></code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>will be translated to</p>
 </div>
 <div id="p1_0_expected" class="listingblock">
 <div class="content">
@@ -2826,6 +3017,7 @@ WHERE ((1 = 1
 RETURN 1</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2846,10 +3038,10 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_operators">Operators</h5>
 <div class="sect5">
-<h6 id="_operators">Operators</h6>
-<div class="sect6">
-<h7 id="_arithmetic_operators">Arithmetic operators</h7>
+<h6 id="_arithmetic_operators">Arithmetic operators</h6>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2874,8 +3066,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_between">Between</h7>
+<div class="sect5">
+<h6 id="_between">Between</h6>
 <div class="paragraph">
 <p>Between in SQL is inclusive</p>
 </div>
@@ -2894,8 +3086,9 @@ WHERE (1 &lt;= 2) AND (2 &lt;= 3)
 RETURN 1</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>SQL has a <code>SYMMETRIC</code> keyword for the <code>BETWEEN</code> clause, to indicate that you do not care whouch bound of the range is larger than the other:</p>
+<p>SQL has a <code>SYMMETRIC</code> keyword for the <code>BETWEEN</code> clause, to indicate that you do not care which bound of the range is larger:</p>
 </div>
 <div id="p2_2" class="listingblock">
 <div class="content">
@@ -2914,8 +3107,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_logical_row_value_expressions">Logical row value expressions</h6>
+<div class="sect4">
+<h5 id="_logical_row_value_expressions">Logical row value expressions</h5>
 <div class="paragraph">
 <p>The above examples are based on scalar expressions.
 Row value expressions will be translated as well:</p>
@@ -2948,10 +3141,10 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_null_handling">Null Handling</h5>
 <div class="sect5">
-<h6 id="_null_handling">Null Handling</h6>
-<div class="sect6">
-<h7 id="_for_scalar_expressions">For scalar expressions</h7>
+<h6 id="_for_scalar_expressions">For scalar expressions</h6>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2972,8 +3165,8 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_for_row_value_expressions">For row value expressions</h7>
+<div class="sect5">
+<h6 id="_for_row_value_expressions">For row value expressions</h6>
 <div class="paragraph">
 <p>The input</p>
 </div>
@@ -2996,14 +3189,14 @@ RETURN 1</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_like_operator"><code>LIKE</code> operator</h6>
+<div class="sect4">
+<h5 id="_like_operator"><code>LIKE</code> operator</h5>
 <div class="paragraph">
 <p>The <code>LIKE</code> operator</p>
 </div>
 <div id="p5_0" class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> movies m <span class="keyword">WHERE</span> m.title <span class="keyword">LIKE</span> <span class="string"><span class="delimiter">'</span><span class="content">%Matrix%</span><span class="delimiter">'</span></span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> movies m <span class="keyword">WHERE</span> m.title <span class="keyword">LIKE</span> <span class="string"><span class="delimiter">'</span><span class="content">%Matrix%</span><span class="delimiter">'</span></span> <span class="keyword">OR</span> m.title <span class="keyword">LIKE</span> <span class="string"><span class="delimiter">'</span><span class="content">M_trix</span><span class="delimiter">'</span></span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3011,38 +3204,39 @@ RETURN 1</code></pre>
 </div>
 <div id="p5_0_expected" class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:`movies`) WHERE m.title =~ '.*Matrix.*'
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:`movies`) WHERE m.title CONTAINS 'Matrix' OR m.title =~ 'M.trix'
 RETURN *</code></pre>
 </div>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_using_joins_to_map_relationships">Using joins to map relationships</h5>
+<div class="sect3">
+<h4 id="joinin-relationships">6.3.7. Using joins to map relationships</h4>
 <div class="paragraph">
-<p>On the surface joins are relationships materialized in SQL (Foreign keys are not).
-Sadly, it&#8217;s not as straight forward to map.
-There are several options and possibilities to handle things:</p>
+<p>On the surface, joins are relationships materialized in SQL (foreign keys are not).
+Sadly, it&#8217;s not as straightforward to map to Cypher.
+There are several implementation options:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>When joining two tables on a column, taking the left hand table column, use its name as relationship type and treat it as outgoing from left to right</p>
+<p>When joining two tables on a column, take the left hand table column, use its name as relationship type, and treat it as outgoing from left to right.</p>
 </li>
 <li>
-<p>When joining two tables with an intersection table (which you usually model in SQL for m:n relationships with attributes), use the name of that intersection table as relationship type</p>
+<p>When joining two tables with an intersection table (which it&#8217;s usually modeled in SQL for <code>m:n</code> relationships with attributes), use the name of that intersection table as relationship type.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>We implemented some variants thereof, however we don&#8217;t claim their absolute usefulness in all cases</p>
+<p>We implemented some variants thereof, however we don&#8217;t claim their absolute usefulness in all cases.</p>
 </div>
+<div class="sect4">
+<h5 id="_1n_joins">1:n joins</h5>
 <div class="sect5">
-<h6 id="_1n_joins">1:n joins</h6>
-<div class="sect6">
-<h7 id="_natural_joins">Natural joins</h7>
+<h6 id="_natural_joins">Natural joins</h6>
 <div class="paragraph">
-<p>SQL <code>NATURAL</code> joins are the easiest way to denote relationship names without having todo any mapping.</p>
+<p>SQL <code>NATURAL</code> joins are the easiest way to denote relationship names without having to do any mapping.
+A one-hope <code>NATURAL JOIN</code> will translate to an anonymous, wildcard relationship.</p>
 </div>
 <div id="nj1" class="listingblock">
 <div class="content">
@@ -3050,39 +3244,35 @@ There are several options and possibilities to handle things:</p>
 NATURAL <span class="keyword">JOIN</span> Movie m</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>A one-hope <code>NATURAL JOIN</code> will resolve to an anonymous, wildcard relationship:</p>
-</div>
 <div id="nj1_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)--&gt;(m:Movie) RETURN p, m</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p><code>NATURAL</code> joins can be chained like this, the connecting join table does not need to exist:</p>
+<p><code>NATURAL</code> joins can be chained, and the connecting join table does not need to exist.
+This will be turned into a Neo4j relationship:</p>
 </div>
 <div id="nj2" class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> p.name, r.role, m.* <span class="keyword">FROM</span> Person p
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> p.name, r.roles, m.* <span class="keyword">FROM</span> Person p
 NATURAL <span class="keyword">JOIN</span> ACTED_IN r
 NATURAL <span class="keyword">JOIN</span> Movie m</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>It will be turned into a Neo4j relation:</p>
-</div>
 <div id="nj2_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:Person)-[r:ACTED_IN]-&gt;(m:Movie)
-RETURN p.name, r.role,
-       elementId(m) AS element_id, m.title AS title, m.released AS released</code></pre>
+RETURN p.name, r.roles,
+       elementId(m) AS `v$id`, m.title AS title, m.released AS released</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_simple_join">Simple join</h7>
+<div class="sect5">
+<h6 id="_simple_join">Simple join</h6>
 <div class="paragraph">
-<p>We configured the translator use the following table mapping:</p>
+<p>Assume we configured the translator to use the following table mapping:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -3136,10 +3326,10 @@ RETURN p.name, m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect6">
-<h7 id="_using_the_on_clause">Using the <code>ON</code> clause</h7>
+<div class="sect5">
+<h6 id="_using_the_on_clause">Using the <code>ON</code> clause</h6>
 <div class="paragraph">
-<p>We used backticks here for the table- and column names and no mapping.</p>
+<p>We used backticks here for the table and column names and no mapping.</p>
 </div>
 <div id="r1_0" class="listingblock">
 <div class="content">
@@ -3149,7 +3339,7 @@ RETURN p.name, m.title</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The translation yields in the same result as before</p>
+<p>The translation is same as before:</p>
 </div>
 <div id="r1_0_expected" class="listingblock">
 <div class="content">
@@ -3159,15 +3349,14 @@ RETURN p.name, m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_mn_joins">m:n joins</h6>
+<div class="sect4">
+<h5 id="_mn_joins">m:n joins</h5>
 <div class="paragraph">
-<p>An intersection table is a table that contains references to two other tables in the form of at least two columns—hopefully with foreign keys and therefor indexes defined on them.
-This construct is usually required in the relational model to create an m:n relationship.
-Sometimes the intersection table also spots additional columns.
-Of course, such an auxiliary construct is not necessary in Neo4j.
-We can model as many outgoing and incoming relationships from one label to another as we desire and they can also have properties.
-We can hover use that construct for our translator</p>
+<p>An intersection table is a table that contains references to two other tables in the form of at least two columns.
+This construct is usually required in the relational model to create an <code>m:n</code> relationship.
+Such an auxiliary construct is not necessary in Neo4j.
+We can model as many outgoing and incoming relationships from one label to another, and they can also have properties.
+We can thus use that construct for our translator.</p>
 </div>
 <div class="paragraph">
 <p>The following example uses a configured mapping as follows:</p>
@@ -3197,7 +3386,7 @@ We can hover use that construct for our translator</p>
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The driving table from which we map outgoing relationships</td>
+<td>The table from which to map outgoing relationships</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
@@ -3205,12 +3394,12 @@ We can hover use that construct for our translator</p>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>The final join clause</td>
+<td>The final <code>JOIN</code> clause</td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>We don&#8217;t do semantic analysis, the order of the joins matter and will lead to the following query:</p>
+<p>We do no semantic analysis: the order of the joins matter, and will lead to the following query:</p>
 </div>
 <div id="r2_0_expected" class="listingblock">
 <div class="content">
@@ -3231,9 +3420,6 @@ RETURN p.name, m.title</code></pre>
  <span class="keyword">JOIN</span> people d <span class="keyword">ON</span> r2.person_id = d.id</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>as demonstrated by</p>
-</div>
 <div id="r2_1_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (p:`Person`)-[r:`ACTED_IN`]-&gt;(m:`Movie`)&lt;-[r2:`DIRECTED`]-(d:`Person`)
@@ -3245,25 +3431,24 @@ RETURN p.name AS actor, d.name AS director, m.title</code></pre>
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_dml_statements">DML statements</h5>
+<div class="sect3">
+<h4 id="_dml_statements">6.3.8. DML statements</h4>
 <div class="paragraph">
-<p>In this section we list the supported Data-Manipulation-Language (DML) statements.
-While a <code>SELECT</code> statement is technically DML as well, as it is used to project existing relations into new relations, it has been covered previously.</p>
+<p>This section lists the supported Data-Manipulation-Language (DML) statements.
+Although a <code>SELECT</code> statement is technically DML as well, it is covered in <a href="#">Neo4j JDBC Driver</a>.</p>
 </div>
-<div class="sect5">
-<h6 id="_deleting_nodes">Deleting nodes</h6>
+<div class="sect4">
+<h5 id="_deleting_nodes">Deleting nodes</h5>
 <div class="paragraph">
-<p>Nodes can be deleted via the SQL <code>DELETE</code> statement.
-This can happen unconditionally:</p>
+<p>Nodes can be deleted via the SQL <code>DELETE</code> statement.</p>
+</div>
+<div class="paragraph">
+<p>For example, to unconditionally delete all <code>person</code> nodes:</p>
 </div>
 <div id="d0_0" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">DELETE</span> <span class="keyword">FROM</span> person</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>which will delete all <code>person</code> nodes:</p>
 </div>
 <div id="d0_0_expected" class="listingblock">
 <div class="content">
@@ -3272,16 +3457,13 @@ DELETE person</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>A <code>WHERE</code> clause can be added to prevent this and all conditions can be used:</p>
+<p>A <code>WHERE</code> clause can be added to prevent this:</p>
 </div>
 <div id="d0_1" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">DELETE</span> <span class="keyword">FROM</span> person
 <span class="keyword">WHERE</span> person.id = <span class="integer">1</span></code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>so that only the <code>person</code> node with a matching property is deleted.</p>
 </div>
 <div id="d0_1_expected" class="listingblock">
 <div class="content">
@@ -3290,17 +3472,15 @@ WHERE person.id = 1
 DELETE person</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>If you want to delete everything, but your tooling is complaining, just add a conditions that is always <code>true</code>:</p>
+<p>If you want to delete everything, but your tooling complains, just add a conditions that is always <code>true</code>:</p>
 </div>
 <div id="d0_1b" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">DELETE</span> <span class="keyword">FROM</span> person
 <span class="keyword">WHERE</span> <span class="predefined-constant">true</span></code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>Your data is gone, either way:</p>
 </div>
 <div id="d0_1b_expected" class="listingblock">
 <div class="content">
@@ -3309,17 +3489,15 @@ WHERE true
 DELETE person</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>This is safer, but also pointless:</p>
+<p>Of, the condition can also be that always evaluates to <code>false</code>, never deleting anything:</p>
 </div>
 <div id="d0_1c" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">DELETE</span> <span class="keyword">FROM</span> person
 <span class="keyword">WHERE</span> <span class="predefined-constant">false</span></code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>Your data is gone, either way:</p>
 </div>
 <div id="d0_1c_expected" class="listingblock">
 <div class="content">
@@ -3328,16 +3506,14 @@ WHERE false
 DELETE person</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>Tables can be aliased</p>
+<p>Tables can be aliased, and the alias will be used in Cypher, too:</p>
 </div>
 <div id="d0_2" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">DELETE</span> <span class="keyword">FROM</span> person p</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>and the alias will be used in Cypher, too:</p>
 </div>
 <div id="d0_2_expected" class="listingblock">
 <div class="content">
@@ -3346,7 +3522,7 @@ DELETE p</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Alias tables is also support in combination with specifying the label to which the table name is mapped.
+<p>Aliasing tables is also supported in combination with specifying the label to which the table name is mapped.
 Using the same query with <code>table_mappings=person:Person</code> configured,</p>
 </div>
 <div id="d0_3" class="listingblock">
@@ -3364,10 +3540,10 @@ DELETE p</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_deleting_nodes_and_their_related_nodes">Deleting nodes and their related nodes</h6>
+<div class="sect4">
+<h5 id="_deleting_nodes_and_their_related_nodes">Deleting nodes and their related nodes</h5>
 <div class="paragraph">
-<p>You can use SQL <code>TRUNCATE</code> to detach delete nodes.</p>
+<p>You can use SQL <code>TRUNCATE</code> to <a href="https://neo4j.com/docs/cypher-manual/current/clauses/delete/#delete-a-node-with-all-its-relationships"><code>DETACH DELETE</code> nodes</a>.</p>
 </div>
 <div id="d0_4" class="listingblock">
 <div class="content">
@@ -3384,8 +3560,8 @@ DETACH DELETE people</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_inserting_data">Inserting data</h6>
+<div class="sect4">
+<h5 id="_inserting_data">Inserting data</h5>
 <div class="paragraph">
 <p>A single list of values with explicit columns and constant values can be inserted with a simple <code>INSERT</code> statement:</p>
 </div>
@@ -3394,32 +3570,28 @@ DETACH DELETE people</code></pre>
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> People (first_name, last_name, born) <span class="keyword">VALUES</span> (<span class="string"><span class="delimiter">'</span><span class="content">Helge</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Schneider</span><span class="delimiter">'</span></span>, <span class="integer">1955</span>)</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>which will be translated to:</p>
-</div>
 <div id="d1_0_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">CREATE (people:`Person` {first_name: 'Helge', last_name: 'Schneider', born: 1955})</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>All expressions, including parameters, are supported:</p>
+<p>All expressions, including parameters, are supported.
+Parameters will be named from 1 on upwards in Cypher.</p>
 </div>
 <div id="d1_1" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> People (first_name, last_name, born) <span class="keyword">VALUES</span> (<span class="error">?</span>, <span class="error">?</span>, <span class="error">?</span>)</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Parameters will be named from 0 on upwards in Cypher:</p>
-</div>
 <div id="d1_1_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">CREATE (people:`Person` {first_name: $1, last_name: $2, born: $3})</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>If you omit the columns names on the insertion target, we generate names:</p>
+<p>If you omit the column names on the insertion target, we generate names:</p>
 </div>
 <div id="d1_2" class="listingblock">
 <div class="content">
@@ -3427,15 +3599,16 @@ DETACH DELETE people</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Note the <code>unknown field xxx</code> graph properties created:</p>
+<p>Note the <code>unknown field xxx</code> property names:</p>
 </div>
 <div id="d1_2_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">CREATE (people:`Person` {`unknown field 0`: 'Helge', `unknown field 1`: 'Schneider', `unknown field 2`: 1955})</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>The SQL <code>VALUES</code> clause actually supports list of values:</p>
+<p>The SQL <code>VALUES</code> clause actually supports lists of values:</p>
 </div>
 <div id="d1_3" class="listingblock">
 <div class="content">
@@ -3445,7 +3618,7 @@ DETACH DELETE people</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Those values will be translated into a Cypher array to be unwind in the Cypher statement.
+<p>Those values will be translated into a Cypher array to be unwound in the Cypher statement.
 This is a great solution for batching inserts:</p>
 </div>
 <div id="d1_3_expected" class="listingblock">
@@ -3458,16 +3631,14 @@ CREATE (people:`Person`)
 SET people = properties</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>A returning clause is supported as well, so that</p>
+<p>A returning clause is supported as well:</p>
 </div>
 <div id="d1_4" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> People p (name) <span class="keyword">VALUES</span> (<span class="error">?</span>) RETURNING elementId(p)</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>is translated into</p>
 </div>
 <div id="d1_4_expected" class="listingblock">
 <div class="content">
@@ -3475,52 +3646,43 @@ SET people = properties</code></pre>
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_upserts">Upserts</h6>
+<div class="sect4">
+<h5 id="_upserts">Upserts</h5>
 <div class="paragraph">
 <p>We support a restricted range of "upserts" via the non-standard but pretty common <code>ON DUPLICATE</code> and <code>ON CONFLICT</code> SQL clauses.
-Upserts will generally be translated to <code>MERGE</code> statements.
-While they tend to work without constraints, you really should but unique-constraints on the node properties you merge on.
-Otherwise, Neo4j create duplicates due to locking issues.
-Read me more about the latter <a href="https://neo4j.com/developer/kb/understanding-how-merge-works/">here</a>.</p>
+Upserts are translated into <code>MERGE</code> statements.
+While they work without constraints, you should really have uniqueness-constraints on the node properties you merge on, or Neo4j may create duplicates (see <a href="https://neo4j.com/developer/kb/understanding-how-merge-works/">Understanding how merge works</a>).</p>
 </div>
 <div class="paragraph">
-<p>Two options are possible to merge on all columns inserted via <code>ON DUPLICATE KEY IGNORE</code> and <code>ON CONFLICT IGNORE</code>.</p>
+<p>Upserts on all columns can happen via either <code>ON DUPLICATE KEY IGNORE</code> or <code>ON CONFLICT IGNORE</code>.
+While <code>ON DUPLICATE KEY</code> does offer upgrade options, it assumes the primary (or unique) key being violated to be known.
+Although this is most certainly the case in a relational system, this translation layer that runs without a database connection doesn&#8217;t know.</p>
 </div>
 <div id="upsert1" class="listingblock">
+<div class="title">Listing 21. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Movie(title, released) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> DUPLICATE <span class="type">KEY</span> IGNORE</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>will be translated to:</p>
 </div>
 <div id="upsert1_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MERGE (movie:`Movie` {title: $1, released: $2})</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>The same goes for <code>ON CONFLICT DO NOTHING</code>.
-In the example we configured a table mapping:</p>
-</div>
 <div id="upsert2" class="listingblock">
+<div class="title">Listing 22. Upsert with <code>ON CONFLICT IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> actors(name, firstname) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> CONFLICT DO NOTHING</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>will be translated to:</p>
 </div>
 <div id="upsert2_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MERGE (actors:`Actor` {name: $1, firstname: $2})</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>If you want to define an action, you must use <code>ON CONFLICT</code> specifying the key you want to merge on.
-While <code>ON DUPLICATE KEY</code> does offer upgrade options, it assumes the primary (or unique) key being violated to be known.
-This is most certainly the case in a relational system, but not in this translation layer, that does run without a database connection:</p>
+<p>If you want to define an action, you must use <code>ON CONFLICT</code> and specify the key you want to merge on.</p>
 </div>
 <div id="upsert3" class="listingblock">
 <div class="content">
@@ -3529,7 +3691,7 @@ This is most certainly the case in a relational system, but not in this translat
 </div>
 </div>
 <div class="paragraph">
-<p>Take note how the special reference <code>EXCLUDED</code> can be used to refer to the values of columns that have not been part of the key.
+<p>Note how the special reference <code>EXCLUDED</code> can be used to refer to the values of columns that have not been part of the key.
 They will be reused with their values in the <code>ON MATCH SET</code> clause.</p>
 </div>
 <div id="upsert3_expected" class="listingblock">
@@ -3548,9 +3710,6 @@ ON MATCH SET tbl.j = 0, tbl.k = (2 * 700)</code></pre>
 <span class="keyword">ON</span> CONFLICT (i) DO <span class="class">UPDATE</span> <span class="class">SET</span> j = EXCLUDED.k</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Same result, but referring to the parameter:</p>
-</div>
 <div id="upsert4_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MERGE (tbl:`tbl` {i: 1})
@@ -3558,8 +3717,10 @@ ON CREATE SET tbl.j = 2, tbl.k = $1
 ON MATCH SET tbl.j = $1</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
-<p>If you just want to specify a concrete merge column instead of merging on all columns, this possible too:</p>
+<p>It&#8217;s possible to just specify a concrete merge column instead of merging on all columns as well.
+It will be translated with <code>ON CREATE</code>:</p>
 </div>
 <div id="upsert3b" class="listingblock">
 <div class="content">
@@ -3567,15 +3728,13 @@ ON MATCH SET tbl.j = $1</code></pre>
 <span class="keyword">ON</span> CONFLICT (i) DO NOTHING</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>will be using <code>ON CREATE</code> only:</p>
-</div>
 <div id="upsert3b_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MERGE (tbl:`tbl` {i: 1})
 ON CREATE SET tbl.j = 40, tbl.k = 700</code></pre>
 </div>
 </div>
+<hr>
 <div class="paragraph">
 <p>Using <code>ON CONFLICT</code> and specifying a key is the only way to insert multiple rows with a <code>MERGE</code> statement:</p>
 </div>
@@ -3602,23 +3761,180 @@ ON MATCH SET people.born = properties['born']</code></pre>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="text2cypher">7. text2cypher</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is an experimental translator inspired by the Neo4j Labs project <a href="https://github.com/neo4j-labs/text2cypher">text2cypher</a>.</p>
+</div>
+<div class="paragraph">
+<p>If you add this translator to the classpath or use the <a href="#text2cypher_bundle">text2cypher bundle</a>, all queries that start with</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">🤖,</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will be treated as <em>natural language</em> queries written in <strong>plain english</strong>.
+The driver will strip the prefix, and use <a href="https://openai.com">OpenAI</a> to translate the input into a Cypher statement.
+The driver will augment the generation of the query by passing the current graph schema along with the input question.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The following data will be sent to an external API:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Your database schema, including label names</p>
+</li>
+<li>
+<p>Any natural language query</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Don&#8217;t use this translator if you don&#8217;t want the above, or are not allowed to do so.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This module requires one additional configuration: the OpenAI API key.
+You can use either a URL parameter, a JDBC property entry, or an environment variable:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>URL parameter/property name is <code>openAIApiKey</code></p>
+</li>
+<li>
+<p>Environment variable name is <code>OPEN_AI_API_KEY</code></p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Listing 23. Example of a valid URL</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Additional configuration properties are</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">property name</th>
+<th class="tableblock halign-left valign-top">default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">openAIBaseUrl</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://api.openai.com/v1" class="bare">https://api.openai.com/v1</a> (defined by langchain4j)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">openAIModelName</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gpt-4-turbo</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">openAITemperature</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.0</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>With that in place, a query such as the following can be translated into Cypher:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">🤖, How was The Da Vinci Code rated?</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The outcome of the LLM is not deterministic and is likely to vary.
+While you can execute it directly, we strongly recommend to use <code>Connection#nativeSQL</code> to retrieve the Cypher statement, inspect it, and then run it separately.
+In our test runs, the above questions was most often correctly translated to</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="text">MATCH (m:`Movie` {
+  title: 'The Da Vinci Code'
+})&lt;-[r:`REVIEWED`]-(p:`Person`)
+RETURN r.rating AS Rating, p.name AS ReviewerName</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Other times the result was a syntactically correct statement, but it would only return the reviewers and the movie itself.
+Also note that while a human likely recognizes that you are actually thinking about the average rating, the LLM does not infer this.
+Making the question more explicit gives better results:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="txt">🤖, How was The Da Vinci Code rated on average?</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>is translated more accurately to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:`Movie` {
+  title: 'The Da Vinci Code'
+})&lt;-[:`REVIEWED`]-(p:`Person`)
+RETURN avg(p.rating) AS AverageRating</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Once a natural language query gets translated into Cypher, the result will be cached and further invocations of that query will use the cached result.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>All that statements that do not start with 🤖 will be used as-is and treated as Cypher.</p>
+</div>
+<div class="paragraph">
+<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.1.3/neo4j-jdbc-text2cypher-bundle-6.1.3.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.1.3/neo4j-jdbc-text2cypher-bundle-6.1.3.jar</a>. More information in <a href="#available_bundles">Available bundles</a>.</p>
+</div>
+</div>
 </div>
 <div class="sect1">
 <h2 id="_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Neo4j does not offer all types used in the relational world.
-For some of them we offer conversions that used to be helpful in frameworks such as <a href="https://github.com/spring-projects/spring-data-neo4j">Spring Data Neo4j (SDN)</a> and we implement here in the exact same way, so you could use both SDN and this driver interchangeable.</p>
+<p>Neo4j does not support all types used in the relational world.
+For some of them we offer conversions that are also available in frameworks such as <a href="https://github.com/spring-projects/spring-data-neo4j">Spring Data Neo4j (SDN)</a>.
+Those conversions are available in this driver as well, so you could use both SDN and this driver interchangeably.</p>
 </div>
 <div class="sect2">
-<h3 id="_data_types_for_fixed_point_arithmetic">A.1. Data types for Fixed-point arithmetic</h3>
+<h3 id="_data_types_for_fixed_point_arithmetic">A.1. Data types for fixed-point arithmetic</h3>
 <div class="paragraph">
 <p>Neo4j does not support <code>BigInteger</code> and <code>BigDecimal</code>.
-The only way to store them is as String and read them back into the corresponding type.
-This is inline with SDN and OGM.</p>
+The only way to store them is as <code>String</code>, and to read them back into the corresponding type.
+This is in line with SDN and OGM.</p>
 </div>
 <div class="paragraph">
-<p>So any parameter of those types passed to <code>PreparedStatement</code> or <code>CallableStatement</code> will be stored as String, but can be equally read back through corresponding methods on the resultsets.</p>
+<p>Any parameter of those types passed to <code>PreparedStatement</code> or <code>CallableStatement</code> will be stored as <code>String</code>, but can be read back through corresponding methods on the result sets.</p>
 </div>
 </div>
 <div class="sect2">
@@ -3640,7 +3956,10 @@ This is inline with SDN and OGM.</p>
 </dl>
 </div>
 <div class="paragraph">
-<p>For more precise mapping use a Neo4j <code>Value</code> instance with the appropriate type and <code>setObject</code> respectively <code>getObject</code>.</p>
+<p>For information on Cypher date types, see <a href="https://neo4j.com/docs/cypher-manual/current/values-and-types/temporal/">Temporal types</a>.</p>
+</div>
+<div class="paragraph">
+<p>For more precise a mapping, use a Neo4j <a href="https://neo4j.com/docs/api/java-driver/current/org.neo4j.driver/org/neo4j/driver/Value.html"><code>Value</code></a> instance with the appropriate type and its methods <code>setObject</code> and <code>getObject</code>.</p>
 </div>
 </div>
 </div>
@@ -3656,7 +3975,7 @@ This is inline with SDN and OGM.</p>
 <div class="sect3">
 <h4 id="_general_syntax">B.1.1. General syntax</h4>
 <div class="paragraph">
-<p>You can invoke stored procedures as follows</p>
+<p>You can invoke stored procedures as follows:</p>
 </div>
 <div class="dlist">
 <dl>
@@ -3682,18 +4001,18 @@ This is inline with SDN and OGM.</p>
 <div class="sect3">
 <h4 id="_named_parameters">B.1.2. Named parameters</h4>
 <div class="paragraph">
-<p>Our callable statement implementation (<code>org.neo4j.jdbc.Neo4jCallableStatement</code>) does support named parameters. As per JDBC spec those are not named placeholders in a query- or statement-string, but the actual, formal parameter for the stored procedures to be called.
-We support both the <code>$</code> and the colon syntax, that is you might use either <code>$name</code> or <code>:name</code>.</p>
+<p>Our callable statement implementation (<code>org.neo4j.jdbc.Neo4jCallableStatement</code>) does support named parameters. As per the JDBC specification, those are not named placeholders in a query- or statement-string, but the actual, formal parameters for the stored procedures to be called.
+We support both the <code>$</code> and the colon syntax (i.e. either <code>$name</code> or <code>:name</code>).</p>
 </div>
 <div class="paragraph">
-<p>The assigment <code>{? = call xxx()}</code> will be rewritten into <code>call xxx() yield *</code>, and <code>{$x = call xxx()}</code> will be rewritten as <code>call xxx() yield x</code>.</p>
+<p>The assigment <code>{? = call xxx()}</code> will be rewritten to <code>call xxx() yield *</code>, and <code>{$x = call xxx()}</code> will be rewritten to <code>call xxx() yield x</code>.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_result_sets_of_callable_statements">B.1.3. Result sets of callable statements</h4>
 <div class="paragraph">
-<p>When you execute a callable statement via ´executeQuery`, you must use the result set returned.
-If you just use <code>execute</code>, we assume that the underlying procedure does only return one row and you use the getters on the statement itself.</p>
+<p>When you execute a callable statement via <code>executeQuery</code>, you must use the result set returned.
+If you just use <code>execute</code>, we assume that the underlying procedure returns only one row and that you use the getters on the statement itself.</p>
 </div>
 </div>
 </div>
@@ -3705,12 +4024,12 @@ If you just use <code>execute</code>, we assume that the underlying procedure do
 <div class="paragraph">
 <p>There are some other JDBC drivers for Neo4j, under various licenses and with varying features and capabilities.
 In the following we outline possible migration processes.
-The basic usage patterns for all JDBC drivers for Neo4j are very similar, in the end it&#8217;s "just" using a JDBC compliant driver, and you would use it as described in the original <a href="https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html">Java tutorial about JDBC</a>.</p>
+The basic usage patterns for all JDBC drivers for Neo4j are very similar: in the end, it&#8217;s "just" about using a JDBC compliant driver, and you would use it as described in the original <a href="https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html">Java tutorial about JDBC</a>.</p>
 </div>
 <div class="sect2">
 <h3 id="_migrating_from_version_4_or_5_of_this_driver">C.1. Migrating from version 4 or 5 of this driver</h3>
 <div class="paragraph">
-<p>Version 5 and 4 of the Neo4j JDBC Driver have been mainly developed by <a href="http://larus-ba.it/">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j. Thank you so much for all your work.</p>
+<p>Version 5 and 4 of the Neo4j JDBC Driver have been mainly developed by <a href="http://larus-ba.it/">Larus BA, Italy</a>, a certified consulting and integration solutions partner for Neo4j.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -3762,7 +4081,7 @@ The most important change that you need to make is removing the dependency on <c
 </ul>
 </div>
 <div class="paragraph">
-<p>The following configuration properties are <strong>not</strong> supported and have no other replacement:</p>
+<p>The following configuration properties are <strong>not</strong> supported and have no replacement:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -3775,21 +4094,14 @@ The most important change that you need to make is removing the dependency on <c
 <li>
 <p><code>usebookmarks</code></p>
 </li>
-</ul>
-</div>
-<div class="paragraph">
-<p>We don&#8217;t offer any build-in retry mechanism, so the corresponding setting don&#8217;t have an effect:</p>
-</div>
-<div class="ulist">
-<ul>
 <li>
-<p><code>max.transaction.retry.time</code></p>
+<p><code>max.transaction.retry.time</code> (this driver has no built-in retry mechanism)</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>As with any persistent database connection you want to cater for failed transactions.
-We made good experience with <a href="https://resilience4j.readme.io">resilience4j</a> which does fit in well with common Java frameworks, such as Spring Boot.</p>
+We made good experience with <a href="https://resilience4j.readme.io">resilience4j</a> which fits in well with common Java frameworks, such as Spring Boot.</p>
 </div>
 <div class="paragraph">
 <p>The following properties can be achieved with standardized JDBC settings:</p>
@@ -3797,15 +4109,16 @@ We made good experience with <a href="https://resilience4j.readme.io">resilience
 <div class="ulist">
 <ul>
 <li>
-<p><code>encryption</code>: Use the appropriate transport scheme (<code>neo4j</code>, <code>neo4j+s</code> or <code>neo4j+ssc</code>)</p>
+<p><code>encryption</code>&#8201;&#8212;&#8201;Use the appropriate transport scheme (<code>neo4j</code>, <code>neo4j+s</code> or <code>neo4j+ssc</code>)</p>
 </li>
 <li>
-<p><code>autocommit</code>: Use <code>java.sql.Connection.setAutoCommit</code></p>
+<p><code>autocommit</code>&#8201;&#8212;&#8201;Use <code>java.sql.Connection.setAutoCommit</code></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Connection pooling can be achieved with any JDBC compliant connection pool, the following properties don&#8217;t have an effect:</p>
+<p>Connection pooling can be achieved with any JDBC-compliant connection pool.
+The following properties have no effect:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -3833,27 +4146,30 @@ We made good experience with <a href="https://resilience4j.readme.io">resilience
 <div class="ulist">
 <ul>
 <li>
-<p><code>database</code> is now part of the URL, instead of specifying <code>jdbc:neo4j:neo4j+s://foobar.io:7687?database=abc</code> you would use the database name as path segment in the url, such as: <code>jdbc:neo4j+s://foobar.io:7687/abc</code></p>
+<p><code>database</code> is now part of the URL: instead of specifying <code>jdbc:neo4j:neo4j+s://foobar.io:7687?database=abc</code> you would use the database name as path segment in the url, such as: <code>jdbc:neo4j+s://foobar.io:7687/abc</code></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>In case your tooling requires to use a concrete driver class: This JDBC driver has only <code>org.neo4j.jdbc.Neo4jDriver</code>.
+<p>If your tooling requires to use a concrete driver class, this JDBC driver has only <code>org.neo4j.jdbc.Neo4jDriver</code>.
 If you depend on a <code>javax.sql.DataSource</code>, we provide <code>org.neo4j.jdbc.Neo4jDataSource</code>.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_flattening">C.1.2. Flattening</h4>
 <div class="paragraph">
-<p>While the Neo4j JDBC Driver does not support <code>flatten</code> option, it can emulate its effect.
-<code>flatten</code> did unnest returned nodes and relationships by providing all their properties as individual columns.</p>
+<p>While the Neo4j JDBC Driver does not support the <code>flatten</code> option, it can emulate its effect.
+<code>flatten</code> un-nests returned nodes and relationships by providing all their properties as individual columns.</p>
 </div>
 <div class="paragraph">
-<p>If you enable automatic SQL to Cypher translation (See <a href="#s2c_introduction">Section 7.1</a>), any <code>*</code>-select will inspect whether it affects nodes or relationship and will unnest their properties, so that a <code>SELECT * FROM Movie m</code> will effectively become <code>MATCH (m:Movie) RETURN m.title AS title, m.released AS released</code>. Read more about this topic in <a href="#s2c_star_selects">Section 7.3.3.1.2</a>).</p>
+<p>If you enable automatic <a href="#s2c_introduction">SQL to Cypher translation</a>, any <code>*</code>-select will inspect whether it affects nodes or relationships and will un-nest their properties, so that a <code>SELECT * FROM Movie m</code> will effectively become <code>MATCH (m:Movie) RETURN m.title AS title, m.released AS released</code>.
+For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div class="paragraph">
-<p>In case you want to access the actual node, return the whole table alias or just use Cypher.
-The Neo4j JDBC Driver does support complex object types as return types.</p>
+<p>In case you want to access the actual node, return the whole table alias or just use Cypher.</p>
+</div>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver supports complex object types as return types.</p>
 </div>
 </div>
 </div>
@@ -3862,8 +4178,7 @@ The Neo4j JDBC Driver does support complex object types as return types.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 6.0.0-SNAPSHOT 7a09ab7<br>
-Last updated 2024-03-13 18:44:45 UTC
+Last updated 2025-02-25 14:50:58 +0100
 </div>
 </div>
 </body>
