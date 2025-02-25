@@ -3,9 +3,9 @@
      <head>
          <title>Redirecting...</title>
          <meta charset="utf-8" />
-         <meta http-equiv="refresh" content="0; URL=/neo4j-jdbc/${current}/" />
+         <meta http-equiv="refresh" content="0; URL=https://neo4j.com/docs/jdbc-manual/current/" />
      </head>
      <body>
-         <p>Please follow <a href="/neo4j-jdbc/${current}/">this link</a>.</p>
+         <p>Please follow <a href="https://neo4j.com/docs/jdbc-manual/current/">this link</a>, the Neo4j-JDBC driver is an official Neo4j product.</p>
      </body>
- </html> 
+ </html>
