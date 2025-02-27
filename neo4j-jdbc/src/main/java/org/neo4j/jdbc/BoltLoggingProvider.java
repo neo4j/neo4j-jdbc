@@ -16,33 +16,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.values;
+package org.neo4j.jdbc;
 
-/**
- * Representation of a Neo4j relationship.
- *
- * @author Neo4j Drivers Team
- * @since 6.0.0
- */
-public final class RelationshipValue extends AbstractEntityValue<Relationship> {
+import java.util.logging.Logger;
 
-	RelationshipValue(Relationship adapted) {
-		super(adapted);
+import org.neo4j.driver.internal.bolt.api.LoggingProvider;
+
+final class BoltLoggingProvider implements LoggingProvider {
+
+	@Override
+	public System.Logger getLog(Class<?> cls) {
+		return new DelegatingSystemLogger(Logger.getLogger(Neo4jConnection.class.getCanonicalName()));
 	}
 
 	@Override
-	BoltValue asBoltValue() {
-		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.RELATIONSHIP);
-	}
-
-	@Override
-	public Relationship asRelationship() {
-		return asEntity();
-	}
-
-	@Override
-	public Type type() {
-		return Type.RELATIONSHIP;
+	public System.Logger getLog(String name) {
+		return new DelegatingSystemLogger(Logger.getLogger(name));
 	}
 
 }

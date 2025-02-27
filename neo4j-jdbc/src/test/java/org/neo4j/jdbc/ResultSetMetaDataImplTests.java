@@ -27,8 +27,6 @@ import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.Type;

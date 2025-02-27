@@ -31,6 +31,8 @@ import java.util.function.Function;
 
 abstract class AbstractValue extends AbstractMapAccessorWithDefaultValue implements Value {
 
+	abstract BoltValue asBoltValue();
+
 	@Override
 	public boolean hasType(Type type) {
 		return type.isTypeOf(this);

@@ -36,6 +36,11 @@ public final class DurationValue extends AbstractObjectValue<IsoDuration> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.DURATION);
+	}
+
+	@Override
 	public IsoDuration asIsoDuration() {
 		return asObject();
 	}

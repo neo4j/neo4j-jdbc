@@ -35,6 +35,11 @@ public final class NullValue extends AbstractValue {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.NULL);
+	}
+
+	@Override
 	public boolean isNull() {
 		return true;
 	}

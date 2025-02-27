@@ -53,6 +53,11 @@ public final class ListValue extends AbstractValue {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.LIST);
+	}
+
+	@Override
 	public List<Object> asList() {
 		return list(this.values, Values.ofObject());
 	}

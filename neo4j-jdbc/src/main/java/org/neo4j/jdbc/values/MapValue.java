@@ -66,6 +66,11 @@ public final class MapValue extends AbstractValue {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.MAP);
+	}
+
+	@Override
 	public boolean containsKey(String key) {
 		return this.val.containsKey(key);
 	}

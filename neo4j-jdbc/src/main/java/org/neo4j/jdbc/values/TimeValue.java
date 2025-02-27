@@ -40,6 +40,11 @@ public final class TimeValue extends AbstractObjectValue<OffsetTime> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.TIME);
+	}
+
+	@Override
 	public OffsetTime asOffsetTime() {
 		return asObject();
 	}

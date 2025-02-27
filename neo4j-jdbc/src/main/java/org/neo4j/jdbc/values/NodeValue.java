@@ -31,6 +31,11 @@ public final class NodeValue extends AbstractEntityValue<Node> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.NODE);
+	}
+
+	@Override
 	public Node asNode() {
 		return asEntity();
 	}

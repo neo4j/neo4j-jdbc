@@ -63,6 +63,11 @@ public abstract sealed class BooleanValue extends AbstractValue {
 		}
 
 		@Override
+		BoltValue asBoltValue() {
+			return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.BOOLEAN);
+		}
+
+		@Override
 		public boolean isTrue() {
 			return true;
 		}
@@ -95,6 +100,11 @@ public abstract sealed class BooleanValue extends AbstractValue {
 		@Override
 		public boolean asBoolean() {
 			return false;
+		}
+
+		@Override
+		BoltValue asBoltValue() {
+			return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.BOOLEAN);
 		}
 
 		@Override

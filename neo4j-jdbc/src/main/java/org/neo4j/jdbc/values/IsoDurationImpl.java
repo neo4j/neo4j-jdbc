@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-final class IsoDurationImpl implements IsoDuration {
+final class IsoDurationImpl implements IsoDuration, org.neo4j.driver.internal.bolt.api.values.IsoDuration {
 
 	private static final long NANOS_PER_SECOND = 1_000_000_000;
 

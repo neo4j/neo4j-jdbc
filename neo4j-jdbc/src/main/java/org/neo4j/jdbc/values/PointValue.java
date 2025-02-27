@@ -31,6 +31,11 @@ public final class PointValue extends AbstractObjectValue<Point> {
 	}
 
 	@Override
+	BoltValue asBoltValue() {
+		return new BoltValue(this, org.neo4j.driver.internal.bolt.api.values.Type.POINT);
+	}
+
+	@Override
 	public Point asPoint() {
 		return asObject();
 	}
