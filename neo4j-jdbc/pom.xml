@@ -67,7 +67,7 @@
 		<dependency>
 			<groupId>org.neo4j.driver</groupId>
 			<artifactId>neo4j-bolt-api-netty</artifactId>
-			<version>5.27-SNAPSHOT</version>
+			<version>${neo4j-bolt-connection.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.stefanbirkner</groupId>
