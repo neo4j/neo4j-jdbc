@@ -139,7 +139,7 @@
 		<checkstyle.version>10.21.3</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
-		<cypher-v5-antlr-parser.version>5.26.2</cypher-v5-antlr-parser.version>
+		<cypher-v5-antlr-parser.version>5.26.3</cypher-v5-antlr-parser.version>
 		<docker-maven-plugin.version>0.45.1</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
