@@ -53,7 +53,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
 		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
-	private static final Logger LOGGER = Logger.getLogger(Neo4jStatement.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.statement");
 
 	static final int DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS = 4096;
 	static final Charset DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM = StandardCharsets.ISO_8859_1;

@@ -64,7 +64,7 @@ import org.neo4j.jdbc.values.Values;
 sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPreparedStatement
 		permits CallableStatementImpl {
 
-	private static final Logger LOGGER = Logger.getLogger(Neo4jPreparedStatement.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.prepared-statement");
 
 	private static final Pattern SQL_PLACEHOLDER_PATTERN = Pattern.compile("\\?(?=[^\"]*(?:\"[^\"]*\"[^\"]*)*$)");
 

@@ -49,6 +49,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.neo4j.jdbc.internal.bolt.response.PullResponse;
 import org.neo4j.jdbc.internal.bolt.response.RunResponse;
@@ -57,7 +59,9 @@ import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.UncoercibleException;
 import org.neo4j.jdbc.values.Value;
 
-final class ResultSetImpl implements ResultSet {
+final class ResultSetImpl implements Neo4jResultSet {
+
+	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.result-set");
 
 	/**
 	 * A constant for the only holdability we support.
@@ -130,6 +134,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public boolean next() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "next");
 		this.beforeFirst.compareAndSet(true, false);
 		var result = next0();
 		if (result) {
@@ -169,6 +174,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public void close() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Closing");
 		if (this.closed) {
 			return;
 		}
@@ -183,6 +189,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public boolean wasNull() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting was null state");
 		assertIsOpen();
 		if (this.value == null) {
 			throw new SQLException("No column has been read prior to this call");
@@ -190,74 +197,96 @@ final class ResultSetImpl implements ResultSet {
 		return Type.NULL.isTypeOf(this.value);
 	}
 
+	void logGet(String type, int columnIndex) {
+		LOGGER.log(Level.FINEST, () -> "Getting %s at %d".formatted(type, columnIndex));
+	}
+
+	void logGet(String type, String columnLabel) {
+		LOGGER.log(Level.FINEST, () -> "Getting %s at `%s`".formatted(type, columnLabel));
+	}
+
 	@Override
 	public String getString(int columnIndex) throws SQLException {
+		logGet("String", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> mapToString(value, this.maxFieldSize));
 	}
 
 	@Override
 	public boolean getBoolean(int columnIndex) throws SQLException {
+		logGet("Boolean", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToBoolean);
 	}
 
 	@Override
 	public byte getByte(int columnIndex) throws SQLException {
+		logGet("Byte", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToByte);
 	}
 
 	@Override
 	public short getShort(int columnIndex) throws SQLException {
+		logGet("Short", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToShort);
 	}
 
 	@Override
 	public int getInt(int columnIndex) throws SQLException {
+		logGet("Int", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToInteger);
 	}
 
 	@Override
 	public long getLong(int columnIndex) throws SQLException {
+		logGet("Int", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToLong);
 	}
 
 	@Override
 	public float getFloat(int columnIndex) throws SQLException {
+		logGet("Int", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToFloat);
 	}
 
 	@Override
 	public double getDouble(int columnIndex) throws SQLException {
+		logGet("Int", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToDouble);
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
 	public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
+		LOGGER.log(Level.FINEST, () -> "Getting %s at %d with scale %d".formatted("BigDecimal", columnIndex, scale));
 		return getValueByColumnIndex(columnIndex, v -> mapToBigDecimal(v, scale));
 	}
 
 	@Override
 	public byte[] getBytes(int columnIndex) throws SQLException {
+		logGet("Bytes", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> mapToBytes(value, this.maxFieldSize));
 	}
 
 	@Override
 	public Date getDate(int columnIndex) throws SQLException {
+		logGet("Date", columnIndex);
 		return getValueByColumnIndex(columnIndex, Neo4jConversions::asDate);
 	}
 
 	@Override
 	public Time getTime(int columnIndex) throws SQLException {
+		logGet("Time", columnIndex);
 		return getValueByColumnIndex(columnIndex, Neo4jConversions::asTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
+		logGet("Timestamp", columnIndex);
 		return getValueByColumnIndex(columnIndex, Neo4jConversions::asTimestamp);
 	}
 
 	@Override
 	public InputStream getAsciiStream(int columnIndex) throws SQLException {
+		logGet("AsciiStream", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> mapToAsciiStream(value, this.maxFieldSize));
 	}
 
@@ -269,77 +298,92 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getBinaryStream(int columnIndex) throws SQLException {
+		logGet("UnicodeStream", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> mapToBinaryStream(value, this.maxFieldSize));
 	}
 
 	@Override
 	public String getString(String columnLabel) throws SQLException {
+		logGet("String", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> mapToString(value, this.maxFieldSize));
 	}
 
 	@Override
 	public boolean getBoolean(String columnLabel) throws SQLException {
+		logGet("Boolean", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToBoolean);
 	}
 
 	@Override
 	public byte getByte(String columnLabel) throws SQLException {
+		logGet("Byte", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToByte);
 	}
 
 	@Override
 	public short getShort(String columnLabel) throws SQLException {
+		logGet("Short", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToShort);
 	}
 
 	@Override
 	public int getInt(String columnLabel) throws SQLException {
+		logGet("Int", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToInteger);
 	}
 
 	@Override
 	public long getLong(String columnLabel) throws SQLException {
+		logGet("Long", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToLong);
 	}
 
 	@Override
 	public float getFloat(String columnLabel) throws SQLException {
+		logGet("Float", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToFloat);
 	}
 
 	@Override
 	public double getDouble(String columnLabel) throws SQLException {
+		logGet("Double", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToDouble);
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
 	public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
+		LOGGER.log(Level.FINEST, () -> "Getting %s at `%s` with scale %d".formatted("BigDecimal", columnLabel, scale));
 		return getValueByColumnLabel(columnLabel, v -> mapToBigDecimal(v, scale));
 	}
 
 	@Override
 	public byte[] getBytes(String columnLabel) throws SQLException {
+		logGet("Bytes", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> mapToBytes(value, this.maxFieldSize));
 	}
 
 	@Override
 	public Date getDate(String columnLabel) throws SQLException {
+		logGet("Date", columnLabel);
 		return getValueByColumnLabel(columnLabel, Neo4jConversions::asDate);
 	}
 
 	@Override
 	public Time getTime(String columnLabel) throws SQLException {
+		logGet("Time", columnLabel);
 		return getValueByColumnLabel(columnLabel, Neo4jConversions::asTime);
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel) throws SQLException {
+		logGet("Timestamp", columnLabel);
 		return getValueByColumnLabel(columnLabel, Neo4jConversions::asTimestamp);
 	}
 
 	@Override
 	public InputStream getAsciiStream(String columnLabel) throws SQLException {
+		logGet("AsciiStream", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> mapToAsciiStream(value, this.maxFieldSize));
 	}
 
@@ -351,6 +395,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public InputStream getBinaryStream(String columnLabel) throws SQLException {
+		logGet("BinaryStream", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> mapToBinaryStream(value, this.maxFieldSize));
 	}
 
@@ -372,22 +417,26 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public ResultSetMetaData getMetaData() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting meta data");
 		var connection = this.statement.getConnection();
 		return new ResultSetMetaDataImpl(connection.getSchema(), connection.getCatalog(), this.keys, this.firstRecord);
 	}
 
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
+		logGet("Object", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> mapToObject(value, this.maxFieldSize));
 	}
 
 	@Override
 	public Object getObject(String columnLabel) throws SQLException {
+		logGet("Object", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> mapToObject(value, this.maxFieldSize));
 	}
 
 	@Override
 	public int findColumn(String columnLabel) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Finding column with label `%s`".formatted(columnLabel));
 		assertIsOpen();
 		var index = this.keys.indexOf(columnLabel);
 		if (index == -1) {
@@ -398,41 +447,49 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
+		logGet("CharacterStream", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> mapToReader(value, this.maxFieldSize));
 	}
 
 	@Override
 	public Reader getCharacterStream(String columnLabel) throws SQLException {
+		logGet("CharacterStream", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> mapToReader(value, this.maxFieldSize));
 	}
 
 	@Override
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
+		logGet("BigDecimal", columnIndex);
 		return getValueByColumnIndex(columnIndex, v -> mapToBigDecimal(v, null));
 	}
 
 	@Override
 	public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
+		logGet("BigDecimal", columnLabel);
 		return getValueByColumnLabel(columnLabel, v -> mapToBigDecimal(v, null));
 	}
 
 	@Override
 	public boolean isBeforeFirst() {
+		LOGGER.log(Level.FINER, () -> "Getting before first state");
 		return this.beforeFirst.get();
 	}
 
 	@Override
 	public boolean isAfterLast() {
+		LOGGER.log(Level.FINER, () -> "Getting after last state");
 		return this.afterLast.get();
 	}
 
 	@Override
 	public boolean isFirst() {
+		LOGGER.log(Level.FINER, () -> "Getting first state");
 		return Boolean.TRUE.equals(this.first.get());
 	}
 
 	@Override
 	public boolean isLast() {
+		LOGGER.log(Level.FINER, () -> "Getting last state");
 		return this.last.get();
 	}
 
@@ -478,6 +535,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public void setFetchDirection(int direction) throws SQLException {
+		LOGGER.log(Level.WARNING, () -> "Setting fetch direction to %d (ignored)".formatted(direction));
 		assertIsOpen();
 		if (direction != SUPPORTED_FETCH_DIRECTION) {
 			throw new SQLException("Only forward fetching is supported");
@@ -486,26 +544,31 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public int getFetchDirection() {
+		LOGGER.log(Level.FINER, () -> "Getting fetch direction");
 		return SUPPORTED_FETCH_DIRECTION;
 	}
 
 	@Override
 	public void setFetchSize(int rows) {
+		LOGGER.log(Level.FINER, () -> "Setting fetch size to %d".formatted(rows));
 		this.fetchSize = (rows > 0) ? rows : Neo4jStatement.DEFAULT_FETCH_SIZE;
 	}
 
 	@Override
 	public int getFetchSize() {
+		LOGGER.log(Level.FINER, () -> "Getting fetch size");
 		return this.fetchSize;
 	}
 
 	@Override
 	public int getType() {
+		LOGGER.log(Level.FINER, () -> "Getting type");
 		return SUPPORTED_TYPE;
 	}
 
 	@Override
 	public int getConcurrency() {
+		LOGGER.log(Level.FINER, () -> "Getting concurrency");
 		return SUPPORTED_CONCURRENCY;
 	}
 
@@ -751,6 +814,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Statement getStatement() {
+		LOGGER.log(Level.FINER, () -> "Getting statement");
 		return this.statement;
 	}
 
@@ -806,41 +870,49 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+		logGet("Date", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asDate(value, cal));
 	}
 
 	@Override
 	public Date getDate(String columnLabel, Calendar cal) throws SQLException {
+		logGet("Date", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asDate(value, cal));
 	}
 
 	@Override
 	public Time getTime(int columnIndex, Calendar cal) throws SQLException {
+		logGet("Time", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asTime(value, cal));
 	}
 
 	@Override
 	public Time getTime(String columnLabel, Calendar cal) throws SQLException {
+		logGet("Time", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asTime(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+		logGet("Timestamp", columnIndex);
 		return getValueByColumnIndex(columnIndex, value -> Neo4jConversions.asTimestamp(value, cal));
 	}
 
 	@Override
 	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+		logGet("Timestamp", columnLabel);
 		return getValueByColumnLabel(columnLabel, value -> Neo4jConversions.asTimestamp(value, cal));
 	}
 
 	@Override
 	public URL getURL(int columnIndex) throws SQLException {
+		logGet("URL", columnIndex);
 		return getValueByColumnIndex(columnIndex, ResultSetImpl::mapToUrl);
 	}
 
 	@Override
 	public URL getURL(String columnLabel) throws SQLException {
+		logGet("URL", columnLabel);
 		return getValueByColumnLabel(columnLabel, ResultSetImpl::mapToUrl);
 	}
 
@@ -906,11 +978,13 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public int getHoldability() {
+		LOGGER.log(Level.FINER, () -> "Getting holdability");
 		return SUPPORTED_HOLDABILITY;
 	}
 
 	@Override
 	public boolean isClosed() {
+		LOGGER.log(Level.FINER, () -> "Getting closed state");
 		return this.closed;
 	}
 
@@ -1126,6 +1200,7 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+		logGet("Object", columnIndex);
 		return getValueByColumnIndex(columnIndex, valueMapperFor(type));
 	}
 
@@ -1144,12 +1219,14 @@ final class ResultSetImpl implements ResultSet {
 
 	@Override
 	public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-
+		logGet("Object", columnLabel);
 		return getValueByColumnLabel(columnLabel, valueMapperFor(type));
 	}
 
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
+		LOGGER.log(Level.FINER,
+				() -> "Unwrapping `%s` into `%s`".formatted(getClass().getCanonicalName(), iface.getCanonicalName()));
 		if (iface.isAssignableFrom(getClass())) {
 			return iface.cast(this);
 		}

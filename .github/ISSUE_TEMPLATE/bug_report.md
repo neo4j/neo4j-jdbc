@@ -17,7 +17,7 @@ A clear and concise description of what you expected to happen.
 
 ### To Reproduce
 
-In general, ff you can, please provide:
+In general, if you can, please provide:
 
 * The query
 * The configuration of the driver (such as timeouts, translation settings etc.)
@@ -46,7 +46,7 @@ In case you are using the JDBC driver in a tool such as
 * Tableau
 * dbt
 
-etc. please provide the exact name and version of the tool and if it is not in the list or unknown, a documentation or download link
+etc. please provide the exact name and version of the tool and if it is not in the list, a documentation or download link would be helpful to have.
 
 ### Any additional context
 

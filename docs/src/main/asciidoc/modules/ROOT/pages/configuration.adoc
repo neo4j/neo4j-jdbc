@@ -238,7 +238,8 @@ java.util.logging.ConsoleHandler.level=FINEST
 
 # Enables all Logging for the JDBC Driver
 org.neo4j.jdbc.level=ALL
-# But reduces the noise on the network
+# But reduces the noise on the network and the result set
+org.neo4j.jdbc.result-set.level=WARNING
 org.neo4j.jdbc.network.level=WARNING
 # This is an example how to configure the outbound and inbound messages
 org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
@@ -276,6 +277,7 @@ java.util.logging.FileHandler.pattern=jdbc.log
 org.neo4j.jdbc.handlers=java.util.logging.FileHandler
 # Keep the rest as above
 org.neo4j.jdbc.level=ALL
+org.neo4j.jdbc.result-set.level=WARNING
 org.neo4j.jdbc.network.level=WARNING
 org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
 org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
@@ -296,7 +298,8 @@ The following configuration is equivalent to the one above:
 [source,bash]
 .Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file
 ----
-logging.level.org.neo4j.jdbc=debug
+logging.level.org.neo4j.jdbc=trace
+logging.level.org.neo4j.jdbc.result-set=warn
 logging.level.org.neo4j.jdbc.network=warn
 logging.level.org.neo4j.jdbc.network.OutboundMessageHandler=debug
 logging.level.org.neo4j.jdbc.network.InboundMessageHandler=debug
@@ -311,7 +314,9 @@ The following configuration is equivalent to the ones above:
 [source,bash]
 .Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file
 ----
-quarkus.log.category."org.neo4j.jdbc".level=DEBUG
+quarkus.log.category."org.neo4j.jdbc".min-level=TRACE
+quarkus.log.category."org.neo4j.jdbc".level=TRACE
+quarkus.log.category."org.neo4j.jdbc.result-set".level=DEBUG
 quarkus.log.category."org.neo4j.jdbc.network".level=WARNING
 quarkus.log.category."org.neo4j.jdbc.network.OutboundMessageHandler".level=DEBUG
 quarkus.log.category."org.neo4j.jdbc.network.InboundMessageHandler".level=DEBUG

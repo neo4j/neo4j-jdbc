@@ -79,7 +79,7 @@ import org.neo4j.jdbc.translator.spi.Translator;
  */
 final class ConnectionImpl implements Neo4jConnection {
 
-	private static final Logger LOGGER = Logger.getLogger(Neo4jConnection.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.connection");
 
 	private static final int TRANSLATION_CACHE_SIZE = 128;
 

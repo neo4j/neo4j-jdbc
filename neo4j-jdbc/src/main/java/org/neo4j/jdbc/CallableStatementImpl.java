@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 
 final class CallableStatementImpl extends PreparedStatementImpl implements Neo4jCallableStatement {
 
-	private static final Logger LOGGER = Logger.getLogger(Neo4jCallableStatement.class.getCanonicalName());
+	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.callable-statement");
 
 	private ParameterType parameterType;
 
