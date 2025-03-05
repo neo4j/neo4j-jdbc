@@ -208,12 +208,14 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String nativeSQL(String sql) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Translating `%s` into native SQL".formatted(sql));
 		assertIsOpen();
 		return getTranslator(true, this.warnings).apply(sql);
 	}
 
 	@Override
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting auto commit to %s".formatted(autoCommit));
 		assertIsOpen();
 		if (this.autoCommit == autoCommit) {
 			return;
@@ -233,12 +235,14 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public boolean getAutoCommit() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting auto commit");
 		assertIsOpen();
 		return this.autoCommit;
 	}
 
 	@Override
 	public void commit() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Commiting");
 		assertIsOpen();
 		if (this.transaction == null) {
 			throw new SQLException("There is no transaction to commit");
@@ -251,6 +255,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void rollback() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Rolling back");
 		assertIsOpen();
 		if (this.transaction == null) {
 			throw new SQLException("There is no transaction to rollback");
@@ -263,6 +268,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void close() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Closing");
 		if (isClosed()) {
 			return;
 		}
@@ -296,11 +302,13 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public boolean isClosed() {
+		LOGGER.log(Level.FINER, () -> "Getting closed state");
 		return this.closed;
 	}
 
 	@Override
 	public DatabaseMetaData getMetaData() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting metadata");
 		assertIsOpen();
 		return new DatabaseMetadataImpl(this, (additionalMetadata) -> getTransaction(additionalMetadata, false),
 				this.enableSqlTranslation, this.relationshipSampleSize);
@@ -308,6 +316,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setReadOnly(boolean readOnly) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting read only to %s".formatted(readOnly));
 		assertIsOpen();
 		if (this.transaction != null && this.transaction.isOpen()) {
 			throw new SQLException("Updating read only setting during an unfinished transaction is not permitted");
@@ -317,12 +326,14 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting read only state");
 		assertIsOpen();
 		return this.readOnly;
 	}
 
 	@Override
 	public void setCatalog(String catalog) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting catalog to `%s`".formatted(catalog));
 		assertIsOpen();
 		var databaseName = this.getDatabaseName();
 		if (databaseName == null || !databaseName.equalsIgnoreCase(catalog)) {
@@ -332,6 +343,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String getCatalog() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting catalog");
 		assertIsOpen();
 		return this.getDatabaseName();
 	}
@@ -343,18 +355,21 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public int getTransactionIsolation() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting transaction isolation");
 		assertIsOpen();
 		return Connection.TRANSACTION_READ_COMMITTED;
 	}
 
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting warnings");
 		assertIsOpen();
 		return this.warnings.get();
 	}
 
 	@Override
 	public void clearWarnings() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Clearing warnings");
 		assertIsOpen();
 		this.warnings.clear();
 	}
@@ -390,6 +405,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Map<String, Class<?>> getTypeMap() {
+		LOGGER.log(Level.FINER, () -> "Getting type map");
 		return Map.of();
 	}
 
@@ -400,6 +416,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setHoldability(int holdability) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting holdability to %d".formatted(holdability));
 		if (holdability != ResultSetImpl.SUPPORTED_HOLDABILITY) {
 			throw new SQLFeatureNotSupportedException();
 		}
@@ -407,6 +424,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public int getHoldability() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting holdability");
 		assertIsOpen();
 		return ResultSetImpl.SUPPORTED_HOLDABILITY;
 	}
@@ -434,6 +452,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
 			throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Creating statement with with type %d, concurrency %d and holdability %d"
+			.formatted(resultSetType, resultSetConcurrency, resultSetHoldability));
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
@@ -445,6 +465,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
 			int resultSetHoldability) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Preparing statement `%s` with type %d, concurrency %d and holdability %d"
+			.formatted(sql, resultSetType, resultSetConcurrency, resultSetHoldability));
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
@@ -466,6 +488,8 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
 			int resultSetHoldability) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Preparing call `%s` with type %d, concurrency %d and holdability %d"
+			.formatted(sql, resultSetType, resultSetConcurrency, resultSetHoldability));
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
@@ -483,6 +507,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+		LOGGER.log(Level.FINER,
+				() -> "Trying to prepare statement with auto generated keys %d".formatted(autoGeneratedKeys));
 		if (autoGeneratedKeys != Statement.NO_GENERATED_KEYS) {
 			throw new SQLFeatureNotSupportedException();
 		}
@@ -522,6 +548,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public boolean isValid(int timeout) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Checking validity with timeout %d".formatted(timeout));
 		if (timeout < 0) {
 			throw new SQLException("Negative timeout is not supported");
 		}
@@ -573,6 +600,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setClientInfo(String name, String value) throws SQLClientInfoException {
+		LOGGER.log(Level.FINER, () -> "Setting client info `%s` to `%s`".formatted(name, value));
 		if (this.closed) {
 			throw new SQLClientInfoException("The connection is closed", Collections.emptyMap());
 		}
@@ -604,6 +632,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setClientInfo(Properties properties) throws SQLClientInfoException {
+		LOGGER.log(Level.FINER, () -> "Setting client info via properties");
 		if (this.closed) {
 			throw new SQLClientInfoException("The connection is closed", Collections.emptyMap());
 		}
@@ -628,12 +657,14 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String getClientInfo(String name) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting client info `%s`".formatted(name));
 		assertIsOpen();
 		return this.clientInfo.get(name);
 	}
 
 	@Override
 	public Properties getClientInfo() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting client info");
 		assertIsOpen();
 		var result = new Properties();
 		result.putAll(this.clientInfo);
@@ -657,12 +688,14 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String getSchema() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting schema");
 		assertIsOpen();
 		return "public";
 	}
 
 	@Override
 	public void abort(Executor ignored) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Trying to abort the current transaction");
 		if (this.closed) {
 			return;
 		}
@@ -688,6 +721,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting network timeout %d milliseconds".formatted(milliseconds));
 		assertIsOpen();
 		if (milliseconds < 0) {
 			throw new SQLException("The network timeout must not be negative");
@@ -707,11 +741,14 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public int getNetworkTimeout() {
+		LOGGER.log(Level.FINER, () -> "Getting network timeout");
 		return this.networkTimeout;
 	}
 
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
+		LOGGER.log(Level.FINER,
+				() -> "Unwrapping `%s` into `%s`".formatted(getClass().getCanonicalName(), iface.getCanonicalName()));
 		if (iface.isAssignableFrom(getClass())) {
 			return iface.cast(this);
 		}
@@ -770,6 +807,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void flushTranslationCache() {
+		LOGGER.log(Level.FINER, () -> "Flushing translation cache");
 		synchronized (this) {
 			this.l2cache.flush();
 			this.translators.resolve().forEach(Translator::flushCache);
@@ -778,6 +816,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public String getDatabaseName() {
+		LOGGER.log(Level.FINER, () -> "Getting database name");
 		return this.boltConnection.getDatabaseName();
 	}
 
@@ -823,6 +862,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public Neo4jConnection withMetadata(Map<String, Object> metadata) {
+		LOGGER.log(Level.FINER, () -> "Adding new transaction metadata");
 		if (metadata != null) {
 			this.transactionMetadata.putAll(metadata);
 		}
