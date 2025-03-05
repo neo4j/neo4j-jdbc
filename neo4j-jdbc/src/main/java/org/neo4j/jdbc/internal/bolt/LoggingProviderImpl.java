@@ -35,14 +35,20 @@ import org.neo4j.jdbc.Neo4jConnection;
  */
 final class LoggingProviderImpl implements LoggingProvider {
 
+	private static final String PREFIX = "org.neo4j.jdbc.network";
+
 	@Override
 	public System.Logger getLog(Class<?> cls) {
-		return new JULBridge(Logger.getLogger(Neo4jConnection.class.getCanonicalName()));
+		return new JULBridge(getLogger(cls.getSimpleName()));
 	}
 
 	@Override
 	public System.Logger getLog(String name) {
-		return new JULBridge(Logger.getLogger(name));
+		return new JULBridge(getLogger(name));
+	}
+
+	private static Logger getLogger(String name) {
+		return Logger.getLogger("%s.%s".formatted(PREFIX, name));
 	}
 
 	static final class JULBridge implements System.Logger {
@@ -76,7 +82,7 @@ final class LoggingProviderImpl implements LoggingProvider {
 		private void log0(Level level, ResourceBundle bundle, String format, Throwable thrown, Object... params) {
 			this.logger.log(map(level), thrown, () -> {
 				var formatOrMsg = getString(bundle, format);
-				return MessageFormat.format(formatOrMsg, params);
+				return MessageFormat.format(formatOrMsg, params).formatted(params);
 			});
 		}
 
