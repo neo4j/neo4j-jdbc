@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-02-25T14:24:50Z</span>
+<span id="revdate">2025-03-05T12:35:47Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -561,6 +561,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_url_and_connection_properties">4.4. URL and connection properties</a></li>
 <li><a href="#_getting_a_driver_or_a_connection_instance">4.5. Getting a driver or a connection instance</a></li>
 <li><a href="#_securing_your_connection_by_using_ssl">4.6. Securing your connection by using SSL</a></li>
+<li><a href="#_logging">4.7. Logging</a></li>
 </ul>
 </li>
 <li><a href="#_metadata">5. Metadata</a>
@@ -601,7 +602,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>&#169; Copyright 2023-2024 the original authors.</p>
+<p>&#169; Copyright 2023-2025 the original authors.</p>
 </div>
 </div>
 </div>
@@ -1735,6 +1736,128 @@ Additionally, the builder lets you configure options that are not contained in t
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_logging">4.7. Logging</h3>
+<div class="sect3">
+<h4 id="_via_standard_java_settings">4.7.1. Via standard Java settings</h4>
+<div class="paragraph">
+<p>To generate a useful and detailed log, you must configure <code>java.util.logging</code>. This can be done either through a configuration file or programmatically.
+The following section includes an example configuration that sets the global logging level to <code>INFO</code>, Neo4j JDBC Driver itself to <code>DEBUG</code> and everything that is network related to <code>WARN</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 17. Logging configuration for the Neo4j JDBC Driver that logs all informations</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
+handlers=java.util.logging.ConsoleHandler
+
+# The handler must be configured for the lowest level it should catch
+java.util.logging.ConsoleHandler.level=FINEST
+
+# Enables all Logging for the JDBC Driver
+org.neo4j.jdbc.level=ALL
+# But reduces the noise on the network
+org.neo4j.jdbc.network.level=WARNING
+# This is an example how to configure the outbound and inbound messages
+org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
+org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
+
+# This produces a date, followed by the level, 3 dashes, the message and the source of the log if available
+java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Such a file must be passed to the running Java program as a system property to Java itself with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">java -Djava.util.logging.config.file=docs/src/main/resources/logging-to-console.properties &lt;your program&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Capturing logs to a file requires to change the handler:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 18. Logging configuration for the Neo4j JDBC Driver that writes all JDBC logs to a file</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
+handlers=java.util.logging.ConsoleHandler
+
+# Keep everything by default at INFO
+java.util.logging.ConsoleHandler.level=INFO
+
+# The handler must be configured for the lowest level it should catch
+java.util.logging.FileHandler.level=FINEST
+java.util.logging.FileHandler.pattern=jdbc.log
+# XML Format by default
+# java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
+
+# Change the handler for JDBC
+org.neo4j.jdbc.handlers=java.util.logging.FileHandler
+# Keep the rest as above
+org.neo4j.jdbc.level=ALL
+org.neo4j.jdbc.network.level=WARNING
+org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
+org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
+
+java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The diagnosability features of the JDBC driver are based on the standard <code>java.util.logging</code> framework. Configuration of that framework itself is out of scope for this documentation.
+      For a complete overview you might want to start at <a href="https://docs.oracle.com/en/java/javase/17/core/java-logging-overview.html">"Java Logging Overview"</a>.
+      The formatter Java uses is the <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Formatter.html#dt"><code>java.util.Formatter</code>.</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inside_a_spring_boot_application">4.7.2. Inside a Spring Boot application</h4>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver will integrate itself into the Spring Boot logging configuration and take all relevant format and other settings from there.
+The levels can be configured with the levels Spring does understand.
+The following configuration is equivalent to the one above:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 19. Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">logging.level.org.neo4j.jdbc=debug
+logging.level.org.neo4j.jdbc.network=warn
+logging.level.org.neo4j.jdbc.network.OutboundMessageHandler=debug
+logging.level.org.neo4j.jdbc.network.InboundMessageHandler=debug</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inside_a_quarkus_application">4.7.3. Inside a Quarkus application</h4>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver will integrate itself into the Quarkus logging configuration and take all relevant format and other settings from there.
+The levels can be configured with the levels Quarkus does understand.
+The following configuration is equivalent to the ones above:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 20. Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">quarkus.log.category.&quot;org.neo4j.jdbc&quot;.level=DEBUG
+quarkus.log.category.&quot;org.neo4j.jdbc.network&quot;.level=WARNING
+quarkus.log.category.&quot;org.neo4j.jdbc.network.OutboundMessageHandler&quot;.level=DEBUG
+quarkus.log.category.&quot;org.neo4j.jdbc.network.InboundMessageHandler&quot;.level=DEBUG</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_sql_translations">4.7.4. SQL Translations</h4>
+<div class="paragraph">
+<p>The SQL translators use the logger <code>org.neo4j.jdbc.translator</code>.</p>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -2075,7 +2198,7 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <p>The next few examples use the <code>properties</code> config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
+<div class="title">Listing 21. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2098,7 +2221,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Parse table names into upper case</div>
+<div class="title">Listing 22. Parse table names into upper case</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2121,7 +2244,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 The following example changes that prefix to <code>$</code> (the same prefix that Cypher uses):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Change parameters prefix and add mappings for join columns</div>
+<div class="title">Listing 23. Change parameters prefix and add mappings for join columns</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2413,7 +2536,7 @@ RETURN elementId(p) AS `v$id`,
 </div>
 <hr>
 <div id="star_6b" class="listingblock">
-<div class="title">Listing 20. Ordering without specifying a table alias</div>
+<div class="title">Listing 24. Ordering without specifying a table alias</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Person p <span class="keyword">ORDER</span> <span class="keyword">BY</span> name <span class="directive">ASC</span></code></pre>
 </div>
@@ -3659,7 +3782,7 @@ While <code>ON DUPLICATE KEY</code> does offer upgrade options, it assumes the p
 Although this is most certainly the case in a relational system, this translation layer that runs without a database connection doesn&#8217;t know.</p>
 </div>
 <div id="upsert1" class="listingblock">
-<div class="title">Listing 21. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
+<div class="title">Listing 25. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Movie(title, released) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> DUPLICATE <span class="type">KEY</span> IGNORE</code></pre>
 </div>
@@ -3670,7 +3793,7 @@ Although this is most certainly the case in a relational system, this translatio
 </div>
 </div>
 <div id="upsert2" class="listingblock">
-<div class="title">Listing 22. Upsert with <code>ON CONFLICT IGNORE</code></div>
+<div class="title">Listing 26. Upsert with <code>ON CONFLICT IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> actors(name, firstname) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> CONFLICT DO NOTHING</code></pre>
 </div>
@@ -3822,7 +3945,7 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. Example of a valid URL</div>
+<div class="title">Listing 27. Example of a valid URL</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
 </div>
@@ -4178,7 +4301,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-25 14:24:57 UTC
+Last updated 2025-03-05 12:35:51 UTC
 </div>
 </div>
 </body>
