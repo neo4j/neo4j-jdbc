@@ -46,11 +46,15 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 final class CallableStatementImpl extends PreparedStatementImpl implements Neo4jCallableStatement {
+
+	private static final Logger LOGGER = Logger.getLogger(Neo4jCallableStatement.class.getCanonicalName());
 
 	private ParameterType parameterType;
 
@@ -113,10 +117,14 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void registerOutParameter(int parameterIndex, int sqlType) {
+		LOGGER.log(Level.WARNING,
+				() -> "Registering out parameter %d with type %d (ignored)".formatted(parameterIndex, sqlType));
 	}
 
 	@Override
 	public void registerOutParameter(int parameterIndex, int sqlType, int scale) {
+		LOGGER.log(Level.WARNING, () -> "Registering out parameter %d with type %d and scale %d (ignored)"
+			.formatted(parameterIndex, sqlType, scale));
 	}
 
 	@SuppressWarnings("resource")
@@ -265,18 +273,26 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public void registerOutParameter(int parameterIndex, int sqlType, String typeName) {
+		LOGGER.log(Level.WARNING, () -> "Registering out parameter %d with type %d and type %s (ignored)"
+			.formatted(parameterIndex, sqlType, typeName));
 	}
 
 	@Override
 	public void registerOutParameter(String parameterName, int sqlType) {
+		LOGGER.log(Level.WARNING,
+				() -> "Registering out parameter `%s`with type %d (ignored)".formatted(parameterName, sqlType));
 	}
 
 	@Override
 	public void registerOutParameter(String parameterName, int sqlType, int scale) {
+		LOGGER.log(Level.WARNING, () -> "Registering out parameter `%s`with type %d and scale %d (ignored)"
+			.formatted(parameterName, sqlType, scale));
 	}
 
 	@Override
 	public void registerOutParameter(String parameterName, int sqlType, String typeName) {
+		LOGGER.log(Level.WARNING, () -> "Registering out parameter `%s` with type %d and type %s (ignored)"
+			.formatted(parameterName, sqlType, typeName));
 	}
 
 	@Override
