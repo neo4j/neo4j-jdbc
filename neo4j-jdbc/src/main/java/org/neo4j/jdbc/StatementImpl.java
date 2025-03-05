@@ -133,6 +133,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int executeUpdate(String sql) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Executing update `%s`".formatted(sql));
 		return executeUpdate0(sql, true, Map.of());
 	}
 
@@ -163,6 +164,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public void close() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Closing");
 		if (this.closed) {
 			return;
 		}
@@ -172,12 +174,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int getMaxFieldSize() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting max field size");
 		assertIsOpen();
 		return this.maxFieldSize;
 	}
 
 	@Override
 	public void setMaxFieldSize(int max) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting max field size to %d".formatted(max));
 		assertIsOpen();
 		if (max < 0) {
 			throw new SQLException("Max field size can not be negative");
@@ -187,12 +191,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int getMaxRows() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting max rows");
 		assertIsOpen();
 		return this.maxRows;
 	}
 
 	@Override
 	public void setMaxRows(int max) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting max rows to %d".formatted(max));
 		assertIsOpen();
 		if (max < 0) {
 			throw new SQLException("Max rows can not be negative");
@@ -202,17 +208,20 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public void setEscapeProcessing(boolean ignored) throws SQLException {
+		LOGGER.log(Level.WARNING, () -> "Setting escape processing to %s (ignored)".formatted(ignored));
 		assertIsOpen();
 	}
 
 	@Override
 	public int getQueryTimeout() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting query timeout");
 		assertIsOpen();
 		return this.queryTimeout;
 	}
 
 	@Override
 	public void setQueryTimeout(int seconds) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting query timeout to %d seconds".formatted(seconds));
 		assertIsOpen();
 		if (seconds < 0) {
 			throw new SQLException("Query timeout can not be negative");
@@ -227,12 +236,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting warnings");
 		assertIsOpen();
 		return this.warnings.get();
 	}
 
 	@Override
 	public void clearWarnings() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Clearing warnings");
 		assertIsOpen();
 		this.warnings.clear();
 	}
@@ -244,21 +255,19 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public boolean execute(String sql) throws SQLException {
-		return execute0(sql, true, Map.of());
+		LOGGER.log(Level.FINER, () -> "Executing `%s`".formatted(sql));
+		return execute0(sql, Map.of());
 	}
 
-	protected final boolean execute0(String sql, boolean applyProcessor, Map<String, Object> parameters)
-			throws SQLException {
+	protected final boolean execute0(String sql, Map<String, Object> parameters) throws SQLException {
 		assertIsOpen();
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = true;
-		if (applyProcessor) {
-			sql = processSQL(sql);
-		}
 		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
+		var runAndPull = transaction.runAndPull(processSQL(sql), getParameters(parameters), fetchSize,
+				this.queryTimeout);
 		var pullResponse = runAndPull.pullResponse();
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse, this.fetchSize,
 				this.maxRows, this.maxFieldSize);
@@ -301,6 +310,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public ResultSet getResultSet() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting result set");
 		assertIsOpen();
 		if (!this.resultSetAcquired.compareAndSet(false, true)) {
 			throw new SQLException("Result set has already been acquired");
@@ -310,12 +320,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int getUpdateCount() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting update count");
 		assertIsOpen();
 		return (this.multipleResultsApi) ? this.updateCount : -1;
 	}
 
 	@Override
 	public boolean getMoreResults() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting more results state");
 		assertIsOpen();
 		if (this.multipleResultsApi) {
 			closeResultSet();
@@ -326,18 +338,20 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public void setFetchDirection(int direction) throws SQLException {
+		LOGGER.log(Level.WARNING, () -> "Setting fetch direction to %d (ignored)".formatted(direction));
 		assertIsOpen();
-		// this hint is not supported
 	}
 
 	@Override
 	public int getFetchDirection() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting fetch direction");
 		assertIsOpen();
 		return ResultSet.FETCH_FORWARD;
 	}
 
 	@Override
 	public void setFetchSize(int rows) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting fetch size to %d".formatted(rows));
 		assertIsOpen();
 		if (rows < 0) {
 			throw new SQLException("Fetch size can not be negative");
@@ -347,18 +361,21 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int getFetchSize() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting fetch size");
 		assertIsOpen();
 		return this.fetchSize;
 	}
 
 	@Override
 	public int getResultSetConcurrency() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting result set concurrency");
 		assertIsOpen();
 		return ResultSet.CONCUR_READ_ONLY;
 	}
 
 	@Override
 	public int getResultSetType() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting result set type");
 		assertIsOpen();
 		return ResultSet.TYPE_FORWARD_ONLY;
 	}
@@ -380,6 +397,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public Connection getConnection() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting connection");
 		assertIsOpen();
 		return this.connection;
 	}
@@ -396,7 +414,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-
+		LOGGER.log(Level.FINER,
+				() -> "Trying to prepare update with auto generated keys set to %d".formatted(autoGeneratedKeys));
 		if (autoGeneratedKeys != Statement.NO_GENERATED_KEYS) {
 			throw new SQLFeatureNotSupportedException();
 		}
@@ -416,6 +435,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
+		LOGGER.log(Level.FINER,
+				() -> "Trying to prepare execution with auto generated keys set to %d".formatted(autoGeneratedKeys));
 		if (autoGeneratedKeys != Statement.NO_GENERATED_KEYS) {
 			throw new SQLFeatureNotSupportedException();
 		}
@@ -435,41 +456,49 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public int getResultSetHoldability() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting result set holdability");
 		assertIsOpen();
 		return ResultSet.CLOSE_CURSORS_AT_COMMIT;
 	}
 
 	@Override
 	public boolean isClosed() {
+		LOGGER.log(Level.FINER, () -> "Getting closed state");
 		return this.closed;
 	}
 
 	@Override
 	public void setPoolable(boolean poolable) throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting poolable to %s".formatted(poolable));
 		assertIsOpen();
 		this.poolable = poolable;
 	}
 
 	@Override
 	public boolean isPoolable() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting poolable state");
 		assertIsOpen();
 		return this.poolable;
 	}
 
 	@Override
 	public void closeOnCompletion() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Setting close on completion to %s".formatted(true));
 		assertIsOpen();
 		this.closeOnCompletion = true;
 	}
 
 	@Override
 	public boolean isCloseOnCompletion() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting close on completion state");
 		assertIsOpen();
 		return this.closeOnCompletion;
 	}
 
 	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
+		LOGGER.log(Level.FINER,
+				() -> "Unwrapping `%s` into `%s`".formatted(getClass().getCanonicalName(), iface.getCanonicalName()));
 		if (iface.isAssignableFrom(getClass())) {
 			return iface.cast(this);
 		}
@@ -485,6 +514,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
+		LOGGER.log(Level.FINER,
+				() -> "Enquoting identifier `%s` with always quoting set to %s".formatted(identifier, alwaysQuote));
 		return SchemaNames.sanitize(identifier, alwaysQuote)
 			.orElseThrow(() -> new SQLException("Cannot quote identifier " + identifier));
 	}
@@ -530,6 +561,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public Neo4jStatement withMetadata(Map<String, Object> metadata) {
+		LOGGER.log(Level.FINER, () -> "Adding new transaction metadata");
 		if (metadata != null) {
 			this.transactionMetadata.putAll(metadata);
 		}

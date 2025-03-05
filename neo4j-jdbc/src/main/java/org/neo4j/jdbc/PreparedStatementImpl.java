@@ -563,7 +563,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public boolean execute() throws SQLException {
-		return super.execute0(this.sql, true, getCurrentBatch());
+		return super.execute0(this.sql, getCurrentBatch());
 	}
 
 	@Override
