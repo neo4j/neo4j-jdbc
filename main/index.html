@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-03-05T14:54:25Z</span>
+<span id="revdate">2025-03-05T15:50:15Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -1755,7 +1755,8 @@ java.util.logging.ConsoleHandler.level=FINEST
 
 # Enables all Logging for the JDBC Driver
 org.neo4j.jdbc.level=ALL
-# But reduces the noise on the network
+# But reduces the noise on the network and the result set
+org.neo4j.jdbc.result-set.level=WARNING
 org.neo4j.jdbc.network.level=WARNING
 # This is an example how to configure the outbound and inbound messages
 org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
@@ -1795,6 +1796,7 @@ java.util.logging.FileHandler.pattern=jdbc.log
 org.neo4j.jdbc.handlers=java.util.logging.FileHandler
 # Keep the rest as above
 org.neo4j.jdbc.level=ALL
+org.neo4j.jdbc.result-set.level=WARNING
 org.neo4j.jdbc.network.level=WARNING
 org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
 org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
@@ -1827,7 +1829,8 @@ The following configuration is equivalent to the one above:</p>
 <div class="listingblock">
 <div class="title">Listing 19. Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="bash">logging.level.org.neo4j.jdbc=debug
+<pre class="CodeRay highlight"><code data-lang="bash">logging.level.org.neo4j.jdbc=trace
+logging.level.org.neo4j.jdbc.result-set=warn
 logging.level.org.neo4j.jdbc.network=warn
 logging.level.org.neo4j.jdbc.network.OutboundMessageHandler=debug
 logging.level.org.neo4j.jdbc.network.InboundMessageHandler=debug</code></pre>
@@ -1844,7 +1847,9 @@ The following configuration is equivalent to the ones above:</p>
 <div class="listingblock">
 <div class="title">Listing 20. Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="bash">quarkus.log.category.&quot;org.neo4j.jdbc&quot;.level=DEBUG
+<pre class="CodeRay highlight"><code data-lang="bash">quarkus.log.category.&quot;org.neo4j.jdbc&quot;.min-level=TRACE
+quarkus.log.category.&quot;org.neo4j.jdbc&quot;.level=TRACE
+quarkus.log.category.&quot;org.neo4j.jdbc.result-set&quot;.level=DEBUG
 quarkus.log.category.&quot;org.neo4j.jdbc.network&quot;.level=WARNING
 quarkus.log.category.&quot;org.neo4j.jdbc.network.OutboundMessageHandler&quot;.level=DEBUG
 quarkus.log.category.&quot;org.neo4j.jdbc.network.InboundMessageHandler&quot;.level=DEBUG</code></pre>
@@ -4301,7 +4306,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-05 14:54:30 UTC
+Last updated 2025-03-05 15:50:22 UTC
 </div>
 </div>
 </body>
