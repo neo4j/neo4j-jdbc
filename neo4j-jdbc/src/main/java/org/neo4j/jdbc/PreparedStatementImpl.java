@@ -102,6 +102,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public ResultSet executeQuery() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Executing query");
 		assertIsOpen();
 		return super.executeQuery0(this.sql, true, getCurrentBatch());
 	}
@@ -112,6 +113,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public int executeUpdate() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Executing update");
 		assertIsOpen();
 		return super.executeUpdate0(this.sql, true, getCurrentBatch());
 	}
@@ -138,18 +140,21 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public void addBatch() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Adding batch");
 		assertIsOpen();
 		this.parameters.addLast(new HashMap<>());
 	}
 
 	@Override
 	public void clearParameters() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Clearing parameters");
 		assertIsOpen();
 		getCurrentBatch().clear();
 	}
 
 	@Override
 	public int[] executeBatch() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Executing batch");
 		assertIsOpen();
 		// Apply any SQL to Cypher transformation upfront and assume a simple
 		// CREATE statement provided and not something that already does an unwind.
@@ -200,12 +205,29 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public void clearBatch() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Clearing batch");
 		assertIsOpen();
 		this.parameters.clear();
 		this.parameters.add(new HashMap<>());
 	}
 
 	final void setParameter(String key, Object value) {
+		Object valueLogged;
+		String type;
+		if (value != null) {
+			valueLogged = "******";
+			if (value instanceof Value hlp) {
+				type = hlp.type().name();
+			}
+			else {
+				type = value.getClass().getName();
+			}
+		}
+		else {
+			valueLogged = "(literal) null";
+			type = Void.class.getName();
+		}
+		LOGGER.log(Level.FINER, () -> "Setting parameter `%s` to `%s` (%s)".formatted(key, valueLogged, type));
 		getCurrentBatch().put(Objects.requireNonNull(key), value);
 	}
 
@@ -563,6 +585,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public boolean execute() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Executing");
 		return super.execute0(this.sql, getCurrentBatch());
 	}
 
@@ -609,6 +632,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	@SuppressWarnings("resource")
 	@Override
 	public ResultSetMetaData getMetaData() throws SQLException {
+		LOGGER.log(Level.FINER, () -> "Getting meta data");
 		assertCallAndPositionAtFirstRow();
 		return super.resultSet.getMetaData();
 	}
@@ -662,6 +686,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public ParameterMetaData getParameterMetaData() {
+		LOGGER.log(Level.FINER, () -> "Getting parameter meta data");
 		return new ParameterMetaDataImpl();
 	}
 
