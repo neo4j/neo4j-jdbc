@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
+import org.neo4j.jdbc.internal.bolt.Logging;
 import org.neo4j.jdbc.internal.bolt.internal.connection.ChannelAttributes;
 import org.neo4j.jdbc.internal.bolt.internal.connection.inbound.ConnectionReadTimeoutHandler;
 import org.neo4j.jdbc.internal.bolt.internal.connection.inbound.InboundMessageDispatcher;
@@ -37,7 +38,7 @@ import org.neo4j.jdbc.internal.bolt.internal.messaging.Message;
 
 public final class NetworkConnection implements Connection {
 
-	private static final Logger LOGGER = Logger.getLogger(NetworkConnection.class.getCanonicalName());
+	private static final Logger LOGGER = Logging.getLog(NetworkConnection.class);
 
 	private final Channel channel;
 

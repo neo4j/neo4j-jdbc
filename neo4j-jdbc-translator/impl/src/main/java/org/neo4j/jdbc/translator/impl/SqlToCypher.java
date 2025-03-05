@@ -113,8 +113,6 @@ final class SqlToCypher implements Translator {
 
 	private static final Map<String, String> FUNCTION_MAPPING = Map.of("strpos", "apoc.text.indexOf");
 
-	static final Logger LOGGER = Logger.getLogger(SqlToCypher.class.getName());
-
 	private static final int STATEMENT_CACHE_SIZE = 64;
 
 	static Translator defaultTranslator() {

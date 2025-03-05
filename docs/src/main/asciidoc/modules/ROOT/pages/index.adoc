@@ -23,7 +23,7 @@ ifdef::site-gen-antora[]
 :examplesDir: examples$
 endif::[]
 
-:copyright: Copyright 2023-2024 the original authors.
+:copyright: Copyright 2023-2025 the original authors.
 
 (C) {copyright}
 

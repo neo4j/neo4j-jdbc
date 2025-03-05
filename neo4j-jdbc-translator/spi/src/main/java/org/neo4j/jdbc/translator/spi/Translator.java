@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.translator.spi;
 
 import java.sql.DatabaseMetaData;
+import java.util.logging.Logger;
 
 /**
  * This is an SPI interface to be implemented by tooling that is able to translate queries
@@ -53,6 +54,11 @@ import java.sql.DatabaseMetaData;
  */
 @FunctionalInterface
 public interface Translator {
+
+	/**
+	 * Shared logger for all translators.
+	 */
+	Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.translator");
 
 	/**
 	 * Useful constant for the highest precedence value.

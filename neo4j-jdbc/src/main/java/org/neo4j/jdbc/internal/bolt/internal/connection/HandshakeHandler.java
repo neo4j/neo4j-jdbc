@@ -30,6 +30,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.ReplayingDecoder;
 import org.neo4j.jdbc.internal.bolt.BoltMessageExchange;
+import org.neo4j.jdbc.internal.bolt.Logging;
 import org.neo4j.jdbc.internal.bolt.exception.BoltException;
 import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.internal.bolt.internal.BoltProtocol;
@@ -41,9 +42,9 @@ import org.neo4j.jdbc.internal.bolt.internal.util.ErrorUtil;
 
 public final class HandshakeHandler extends ReplayingDecoder<Void> {
 
-	private static final Logger LOGGER = Logger.getLogger(HandshakeHandler.class.getCanonicalName());
+	private static final Logger LOGGER = Logging.getLog(HandshakeHandler.class);
 
-	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logging.getLog(BoltMessageExchange.class);
 
 	private final ChannelPipelineBuilder pipelineBuilder;
 

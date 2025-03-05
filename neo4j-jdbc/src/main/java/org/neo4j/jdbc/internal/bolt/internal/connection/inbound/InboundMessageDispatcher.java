@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.netty.channel.Channel;
-import org.neo4j.jdbc.internal.bolt.BoltMessageExchange;
+import org.neo4j.jdbc.internal.bolt.Logging;
 import org.neo4j.jdbc.internal.bolt.exception.MessageIgnoredException;
 import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.internal.bolt.internal.handler.ResponseHandler;
@@ -36,7 +36,7 @@ import org.neo4j.jdbc.values.Value;
 
 public final class InboundMessageDispatcher implements ResponseMessageHandler {
 
-	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logging.getLog(InboundMessageHandler.class);
 
 	private final Channel channel;
 

@@ -219,3 +219,104 @@ This is essentially a https://www.dotenv.org[.dotenv] file containing the inform
 These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:usage.adoc#connect-dotenv[Getting a connection via environment variables]).
 This method exists in several overloads, which let you configure both filename and directory.
 Additionally, the builder lets you configure options that are not contained in the files from Aura.
+
+== Logging
+
+=== Via standard Java settings
+
+To generate a useful and detailed log, you must configure `java.util.logging`. This can be done either through a configuration file or programmatically.
+The following section includes an example configuration that sets the global logging level to `INFO`, Neo4j JDBC Driver itself to `DEBUG` and everything that is network related to `WARN`:
+
+[source,properties]
+.Logging configuration for the Neo4j JDBC Driver that logs all informations
+----
+.level = INFO
+handlers=java.util.logging.ConsoleHandler
+
+# The handler must be configured for the lowest level it should catch
+java.util.logging.ConsoleHandler.level=FINEST
+
+# Enables all Logging for the JDBC Driver
+org.neo4j.jdbc.level=ALL
+# But reduces the noise on the network
+org.neo4j.jdbc.network.level=WARNING
+# This is an example how to configure the outbound and inbound messages
+org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
+org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
+
+# This produces a date, followed by the level, 3 dashes, the message and the source of the log if available
+java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n
+----
+
+Such a file must be passed to the running Java program as a system property to Java itself with:
+
+[source,bash]
+----
+java -Djava.util.logging.config.file=docs/src/main/resources/logging-to-console.properties <your program>
+----
+
+Capturing logs to a file requires to change the handler:
+
+[source,properties]
+.Logging configuration for the Neo4j JDBC Driver that writes all JDBC logs to a file
+----
+.level = INFO
+handlers=java.util.logging.ConsoleHandler
+
+# Keep everything by default at INFO
+java.util.logging.ConsoleHandler.level=INFO
+
+# The handler must be configured for the lowest level it should catch
+java.util.logging.FileHandler.level=FINEST
+java.util.logging.FileHandler.pattern=jdbc.log
+# XML Format by default
+# java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
+
+# Change the handler for JDBC
+org.neo4j.jdbc.handlers=java.util.logging.FileHandler
+# Keep the rest as above
+org.neo4j.jdbc.level=ALL
+org.neo4j.jdbc.network.level=WARNING
+org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
+org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
+
+java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n
+----
+
+NOTE: The diagnosability features of the JDBC driver are based on the standard `java.util.logging` framework. Configuration of that framework itself is out of scope for this documentation.
+      For a complete overview you might want to start at https://docs.oracle.com/en/java/javase/17/core/java-logging-overview.html["Java Logging Overview"].
+      The formatter Java uses is the https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Formatter.html#dt[`java.util.Formatter`.]
+
+=== Inside a Spring Boot application
+
+The Neo4j JDBC Driver will integrate itself into the Spring Boot logging configuration and take all relevant format and other settings from there.
+The levels can be configured with the levels Spring does understand.
+The following configuration is equivalent to the one above:
+
+[source,bash]
+.Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file
+----
+logging.level.org.neo4j.jdbc=debug
+logging.level.org.neo4j.jdbc.network=warn
+logging.level.org.neo4j.jdbc.network.OutboundMessageHandler=debug
+logging.level.org.neo4j.jdbc.network.InboundMessageHandler=debug
+----
+
+=== Inside a Quarkus application
+
+The Neo4j JDBC Driver will integrate itself into the Quarkus logging configuration and take all relevant format and other settings from there.
+The levels can be configured with the levels Quarkus does understand.
+The following configuration is equivalent to the ones above:
+
+[source,bash]
+.Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file
+----
+quarkus.log.category."org.neo4j.jdbc".level=DEBUG
+quarkus.log.category."org.neo4j.jdbc.network".level=WARNING
+quarkus.log.category."org.neo4j.jdbc.network.OutboundMessageHandler".level=DEBUG
+quarkus.log.category."org.neo4j.jdbc.network.InboundMessageHandler".level=DEBUG
+----
+
+=== SQL Translations
+
+The SQL translators use the logger `org.neo4j.jdbc.translator`.

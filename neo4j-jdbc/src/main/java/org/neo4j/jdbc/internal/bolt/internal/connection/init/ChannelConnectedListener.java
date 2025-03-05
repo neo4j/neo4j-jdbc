@@ -26,13 +26,14 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelPromise;
 import org.neo4j.jdbc.internal.bolt.BoltMessageExchange;
 import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
+import org.neo4j.jdbc.internal.bolt.Logging;
 import org.neo4j.jdbc.internal.bolt.exception.BoltException;
 import org.neo4j.jdbc.internal.bolt.internal.connection.HandshakeHandler;
 import org.neo4j.jdbc.internal.bolt.internal.util.BoltProtocolUtil;
 
 public final class ChannelConnectedListener implements ChannelFutureListener {
 
-	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logging.getLog(BoltMessageExchange.class);
 
 	private final BoltServerAddress address;
 

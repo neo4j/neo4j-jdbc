@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -42,8 +41,6 @@ import org.neo4j.jdbc.translator.spi.Translator;
  * @author Gerrit Meier
  */
 final class Text2Cypher implements Translator {
-
-	private static final Logger LOGGER = Logger.getLogger(Text2Cypher.class.getCanonicalName());
 
 	private static final String PREFIX = "🤖, ";
 

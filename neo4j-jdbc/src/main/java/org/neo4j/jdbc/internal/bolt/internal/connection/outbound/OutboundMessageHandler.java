@@ -25,14 +25,14 @@ import java.util.logging.Logger;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.MessageToMessageEncoder;
-import org.neo4j.jdbc.internal.bolt.BoltMessageExchange;
+import org.neo4j.jdbc.internal.bolt.Logging;
 import org.neo4j.jdbc.internal.bolt.internal.messaging.Message;
 import org.neo4j.jdbc.internal.bolt.internal.messaging.MessageFormat;
 import org.neo4j.jdbc.internal.bolt.internal.util.BoltProtocolUtil;
 
 public final class OutboundMessageHandler extends MessageToMessageEncoder<Message> {
 
-	private static final Logger boltLogger = Logger.getLogger(BoltMessageExchange.class.getCanonicalName());
+	private static final Logger boltLogger = Logging.getLog(OutboundMessageHandler.class);
 
 	public static final String NAME = OutboundMessageHandler.class.getSimpleName();
 
