@@ -19,7 +19,6 @@
 package org.neo4j.jdbc.internal.bolt.internal.connection;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
@@ -28,22 +27,19 @@ import org.neo4j.jdbc.internal.bolt.internal.connection.inbound.InboundMessageDi
 
 public final class ChannelAttributes {
 
-	private static final AttributeKey<String> CONNECTION_ID = AttributeKey.newInstance("connectionId");
+	private static final AttributeKey<String> CONNECTION_ID = AttributeKey.valueOf("connectionId");
 
-	private static final AttributeKey<BoltProtocolVersion> PROTOCOL_VERSION = AttributeKey
-		.newInstance("protocolVersion");
+	private static final AttributeKey<BoltProtocolVersion> PROTOCOL_VERSION = AttributeKey.valueOf("protocolVersion");
 
-	private static final AttributeKey<CompletionStage<Void>> HELLO_STAGE = AttributeKey.newInstance("helloStage");
-
-	private static final AttributeKey<String> SERVER_AGENT = AttributeKey.newInstance("serverAgent");
+	private static final AttributeKey<String> SERVER_AGENT = AttributeKey.valueOf("serverAgent");
 
 	private static final AttributeKey<InboundMessageDispatcher> MESSAGE_DISPATCHER = AttributeKey
-		.newInstance("messageDispatcher");
+		.valueOf("messageDispatcher");
 
-	private static final AttributeKey<String> TERMINATION_REASON = AttributeKey.newInstance("terminationReason");
+	private static final AttributeKey<String> TERMINATION_REASON = AttributeKey.valueOf("terminationReason");
 
 	// configuration hints provided by the server
-	private static final AttributeKey<Long> CONNECTION_READ_TIMEOUT = AttributeKey.newInstance("connectionReadTimeout");
+	private static final AttributeKey<Long> CONNECTION_READ_TIMEOUT = AttributeKey.valueOf("connectionReadTimeout");
 
 	public static BoltProtocolVersion protocolVersion(Channel channel) {
 		return get(channel, PROTOCOL_VERSION);
