@@ -1549,14 +1549,9 @@ class ResultSetImplTests {
 			var name = method.getName();
 			return (name.startsWith("update") && !"updateRow".equals(name)) || name.matches("row.*ed");
 		});
-		var rowUpdates = testSupplier
-			.apply(method -> Set
-				.of("beforeFirst", "first", "last", "getRow", "absolute", "relative", "previous", "moveToCurrentRow",
-						"afterLast")
+		var positional = testSupplier
+			.apply(method -> Set.of("insertRow", "updateRow", "deleteRow", "refreshRow", "cancelRowUpdates")
 				.contains(method.getName()));
-		var positional = testSupplier.apply(method -> Set
-			.of("insertRow", "updateRow", "deleteRow", "refreshRow", "cancelRowUpdates", "moveToInsertRow")
-			.contains(method.getName()));
 		var getters = testSupplier.apply(method -> Set
 			.of("getRef", "getBlob", "getClob", "getNClob", "getSQLXML", "getNString", "getNCharacterStream",
 					"getArray", "getRowId", "getUnicodeStream", "getCursorName")
@@ -1565,7 +1560,6 @@ class ResultSetImplTests {
 						&& method.getParameterTypes()[1].isAssignableFrom(Map.class));
 
 		return Stream.of(DynamicContainer.dynamicContainer("updates", updates),
-				DynamicContainer.dynamicContainer("rowUpdates", rowUpdates),
 				DynamicContainer.dynamicContainer("positional", positional),
 				DynamicContainer.dynamicContainer("some getters", getters));
 	}

@@ -632,7 +632,7 @@ class ConnectionImplTests {
 					.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("RETURN pi()",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
-				Arguments.of((ConnectionMethodRunner) connection -> connection.setTypeMap(Collections.emptyMap()),
+				Arguments.of((ConnectionMethodRunner) connection -> connection.setTypeMap(Map.of("a", Integer.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection
 					.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT), SQLFeatureNotSupportedException.class),

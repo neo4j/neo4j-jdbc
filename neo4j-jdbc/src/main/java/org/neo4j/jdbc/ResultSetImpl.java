@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -105,6 +106,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private Record currentRecord;
 
+	private final AtomicInteger currentRow = new AtomicInteger(0);
+
 	private Value value;
 
 	private boolean closed;
@@ -160,6 +163,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		}
 		if (this.recordsBatchIterator.hasNext()) {
 			this.currentRecord = this.recordsBatchIterator.next();
+			this.currentRow.incrementAndGet();
 			decrementRemainingRowAllowance();
 			return true;
 		}
@@ -495,42 +499,75 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public void beforeFirst() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		LOGGER.log(Level.FINER, () -> "Moving before first");
+		if (this.beforeFirst.compareAndSet(false, false)) {
+			throw new SQLException(
+					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support beforeFirst after it has been iterated"
+						.formatted(SUPPORTED_TYPE));
+		}
 	}
 
+	@SuppressWarnings("StatementWithEmptyBody")
 	@Override
 	public void afterLast() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		LOGGER.log(Level.FINER, () -> "Moving after first");
+		while (this.next()) {
+			// Discard everything
+		}
 	}
 
 	@Override
 	public boolean first() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		LOGGER.log(Level.FINER, () -> "Moving to first");
+		if (this.beforeFirst.compareAndSet(false, false)) {
+			throw new SQLException(
+					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support first after it has been iterated"
+						.formatted(SUPPORTED_TYPE));
+		}
+		return next();
 	}
 
 	@Override
 	public boolean last() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		LOGGER.log(Level.FINER, () -> "Moving to last");
+		if (this.afterLast.compareAndSet(true, true)) {
+			throw new SQLException(
+					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support last after it has been fully iterated"
+						.formatted(SUPPORTED_TYPE));
+		}
+		var lastRecord = this.currentRecord;
+		while (next()) {
+			lastRecord = this.currentRecord;
+		}
+		this.currentRecord = lastRecord;
+		return true;
 	}
 
 	@Override
-	public int getRow() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+	public int getRow() {
+		LOGGER.log(Level.FINER, () -> "Getting row");
+		return this.currentRow.get();
 	}
 
 	@Override
 	public boolean absolute(int row) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw new SQLException(
+				"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support absolute scrolling"
+					.formatted(SUPPORTED_TYPE));
 	}
 
 	@Override
 	public boolean relative(int rows) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw new SQLException(
+				"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support relative scrolling"
+					.formatted(SUPPORTED_TYPE));
 	}
 
 	@Override
 	public boolean previous() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw new SQLException(
+				"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support previous scrolling"
+					.formatted(SUPPORTED_TYPE));
 	}
 
 	@Override
@@ -804,12 +841,16 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public void moveToInsertRow() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw new SQLException(
+				"This result sets concurrency is of type CONCUR_READ_ONLY (%d) and does not support moving to insert row"
+					.formatted(SUPPORTED_CONCURRENCY));
 	}
 
 	@Override
 	public void moveToCurrentRow() throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		throw new SQLException(
+				"This result sets concurrency is of type CONCUR_READ_ONLY (%d) and does not support moving to current row"
+					.formatted(SUPPORTED_CONCURRENCY));
 	}
 
 	@Override

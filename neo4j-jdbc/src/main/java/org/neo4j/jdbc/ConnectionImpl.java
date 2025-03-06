@@ -411,7 +411,10 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		LOGGER.log(Level.FINER, () -> "Setting type map");
+		if (!map.isEmpty()) {
+			throw new SQLFeatureNotSupportedException();
+		}
 	}
 
 	@Override
