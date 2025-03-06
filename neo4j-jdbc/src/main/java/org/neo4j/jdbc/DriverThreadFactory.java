@@ -22,7 +22,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 
 final class DriverThreadFactory extends DefaultThreadFactory {
 
-	private static final String THREAD_NAME_PREFIX = "Neo4jDriverIO";
+	private static final String THREAD_NAME_PREFIX = "Neo4jJDBCDriverIO";
 
 	private static final int THREAD_PRIORITY = Thread.MAX_PRIORITY;
 
