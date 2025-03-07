@@ -103,7 +103,7 @@ jobs:
     needs: build
     steps:
       - name: 'Setup GraalVM'
-        uses: graalvm/setup-graalvm@v1
+        uses: graalvm/setup-graalvm@v1.3.3
         with:
           distribution: 'graalvm-community'
           java-version: '17'
