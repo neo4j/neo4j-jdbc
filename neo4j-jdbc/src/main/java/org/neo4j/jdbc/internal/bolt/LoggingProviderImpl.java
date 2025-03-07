@@ -25,7 +25,6 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import org.neo4j.driver.internal.bolt.api.LoggingProvider;
-import org.neo4j.jdbc.Neo4jConnection;
 
 /**
  * Adapts JUL logging to System.Logger, which is what is required by the Bolt-Connection
