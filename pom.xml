@@ -388,6 +388,11 @@
 								<rule>APPROVE</rule>
 								<value>MIT License</value>
 							</dependencyPolicy>
+							<dependencyPolicy>
+								<type>LICENSE_NAME</type>
+								<rule>APPROVE</rule>
+								<value>MIT</value>
+							</dependencyPolicy>
 							<!-- Testing only -->
 							<dependencyPolicy>
 								<type>LICENSE_NAME</type>
