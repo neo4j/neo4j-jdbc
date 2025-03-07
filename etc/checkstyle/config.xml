@@ -45,6 +45,7 @@
 					com.github.stefanbirkner.systemlambda.SystemLambda.*,
                     com.tngtech.archunit.base.DescribedPredicate.*,
                     com.tngtech.archunit.core.domain.JavaClass.Predicates.*,
+                    com.tngtech.archunit.lang.conditions.ArchPredicates.*,
                     com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
                 "
 			/>

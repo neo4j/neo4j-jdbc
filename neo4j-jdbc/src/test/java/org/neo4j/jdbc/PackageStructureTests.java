@@ -26,12 +26,14 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.values.Value;
 
 import static com.tngtech.archunit.base.DescribedPredicate.describe;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.equivalentTo;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideOutsideOfPackages;
+import static com.tngtech.archunit.lang.conditions.ArchPredicates.are;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.theClass;
@@ -39,34 +41,12 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.theClass;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PackageStructureTests {
 
-	private final DescribedPredicate<JavaClass> jdbcModuleClasses = resideInAPackage("..jdbc");
-
 	private JavaClasses allClasses;
 
 	@BeforeAll
 	void importAllClasses() {
 		this.allClasses = new ClassFileImporter().withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
 			.importPackages("org.neo4j.jdbc..");
-	}
-
-	@Test
-	void boltInternalsShouldOnlyBeUsedFromBoltApi() {
-		var rule = classes().that()
-			.resideInAPackage("..jdbc.internal.bolt.internal..")
-			.should()
-			.onlyBeAccessed()
-			.byAnyPackage("..jdbc.internal.bolt..");
-		rule.check(this.allClasses);
-	}
-
-	@Test
-	void jdbcModuleClassesMustNotBeUsedFromBoltInternals() {
-
-		var rule = noClasses().that()
-			.resideInAPackage("..jdbc.internal..")
-			.should()
-			.dependOnClassesThat(this.jdbcModuleClasses);
-		rule.check(this.allClasses);
 	}
 
 	@Test
@@ -87,6 +67,18 @@ class PackageStructureTests {
 			.should()
 			.dependOnClassesThat(resideOutsideOfPackages("java..", packageUnderTest)
 				.and(describe("are not primitives", not(arePrimitives()))));
+		rule.check(this.allClasses);
+	}
+
+	@Test
+	void allBoltAdaptersShouldBePrivate() {
+
+		var packageUnderTest = BoltAdapters.class.getPackageName();
+		var rule = classes().that()
+			.resideInAPackage(packageUnderTest)
+			.and(are(not(equivalentTo(BoltAdapters.class))))
+			.should()
+			.bePackagePrivate();
 		rule.check(this.allClasses);
 	}
 
