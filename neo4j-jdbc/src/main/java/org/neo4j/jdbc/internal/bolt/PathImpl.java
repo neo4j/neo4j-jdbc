@@ -33,7 +33,7 @@ import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
-final class PathImpl implements Path, AsValue, org.neo4j.driver.internal.bolt.api.values.Path {
+final class PathImpl implements Path, AsValue, org.neo4j.bolt.connection.values.Path {
 
 	@SuppressWarnings("deprecation")
 	private static boolean isEndpoint(Node node, Relationship relationship) {
@@ -195,7 +195,7 @@ final class PathImpl implements Path, AsValue, org.neo4j.driver.internal.bolt.ap
 	}
 
 	record SelfContainedSegment(Node start, Relationship relationship,
-			Node end) implements Segment, org.neo4j.driver.internal.bolt.api.values.Segment {
+			Node end) implements Segment, org.neo4j.bolt.connection.values.Segment {
 
 		@Override
 		public int hashCode() {

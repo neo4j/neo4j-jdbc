@@ -127,7 +127,7 @@
 									<include>io.netty:*</include>
 									<include>io.r2dbc:*</include>
 									<include>org.jooq:*</include>
-									<include>org.neo4j.driver:*</include>
+									<include>org.neo4j.bolt:*</include>
 									<include>org.neo4j:neo4j-cypher-dsl</include>
 									<include>org.neo4j:neo4j-cypher-dsl-schema-name-support</include>
 									<include>org.neo4j:neo4j-jdbc-translator-spi:*</include>
@@ -154,7 +154,7 @@
 									<shadedPattern>org.neo4j.jdbc.internal.shaded.jooq</shadedPattern>
 								</relocation>
 								<relocation>
-									<pattern>org.neo4j.driver.internal.bolt</pattern>
+									<pattern>org.neo4j.bolt.connection</pattern>
 									<shadedPattern>org.neo4j.jdbc.internal.shaded.bolt</shadedPattern>
 								</relocation>
 								<relocation>
@@ -206,7 +206,7 @@
 									</excludes>
 								</filter>
 								<filter>
-									<artifact>org.neo4j.driver:*</artifact>
+									<artifact>org.neo4j.bolt:*</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
 										<exclude>module-info.class</exclude>

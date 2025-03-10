@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import org.neo4j.driver.internal.bolt.api.values.IsoDuration;
-import org.neo4j.driver.internal.bolt.api.values.Point;
-import org.neo4j.driver.internal.bolt.api.values.Type;
-import org.neo4j.driver.internal.bolt.api.values.Value;
+import org.neo4j.bolt.connection.values.IsoDuration;
+import org.neo4j.bolt.connection.values.Point;
+import org.neo4j.bolt.connection.values.Type;
+import org.neo4j.bolt.connection.values.Value;
 import org.neo4j.jdbc.values.AsValue;
 
 final class ValueImpl implements Value, AsValue {
@@ -131,12 +131,12 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public org.neo4j.driver.internal.bolt.api.values.Value get(String key) {
+	public org.neo4j.bolt.connection.values.Value get(String key) {
 		return ValueFactoryImpl.asBoltValue(this.value.get(key));
 	}
 
 	@Override
-	public Iterable<org.neo4j.driver.internal.bolt.api.values.Value> values() {
+	public Iterable<org.neo4j.bolt.connection.values.Value> values() {
 		var value = this.value;
 		return () -> new Iterator<>() {
 			private final Iterator<org.neo4j.jdbc.values.Value> iterator = value.values().iterator();

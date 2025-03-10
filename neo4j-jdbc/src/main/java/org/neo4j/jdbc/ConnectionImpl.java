@@ -61,11 +61,11 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.neo4j.driver.internal.bolt.api.AccessMode;
-import org.neo4j.driver.internal.bolt.api.BasicResponseHandler;
-import org.neo4j.driver.internal.bolt.api.BoltConnection;
-import org.neo4j.driver.internal.bolt.api.exception.BoltConnectionReadTimeoutException;
-import org.neo4j.driver.internal.bolt.api.exception.BoltFailureException;
+import org.neo4j.bolt.connection.AccessMode;
+import org.neo4j.bolt.connection.BasicResponseHandler;
+import org.neo4j.bolt.connection.BoltConnection;
+import org.neo4j.bolt.connection.exception.BoltConnectionReadTimeoutException;
+import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;

@@ -25,7 +25,7 @@ import org.neo4j.jdbc.values.Node;
 import org.neo4j.jdbc.values.Value;
 
 @SuppressWarnings("squid:S2160") // Not overriding equals is fine here
-final class NodeImpl extends AbstractEntity implements Node, org.neo4j.driver.internal.bolt.api.values.Node {
+final class NodeImpl extends AbstractEntity implements Node, org.neo4j.bolt.connection.values.Node {
 
 	private final Collection<String> labels;
 

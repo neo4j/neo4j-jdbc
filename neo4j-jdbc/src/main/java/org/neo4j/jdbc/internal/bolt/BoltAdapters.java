@@ -23,11 +23,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.neo4j.driver.internal.bolt.api.BoltAgent;
-import org.neo4j.driver.internal.bolt.api.LoggingProvider;
-import org.neo4j.driver.internal.bolt.api.SummaryCounters;
-import org.neo4j.driver.internal.bolt.api.values.Value;
-import org.neo4j.driver.internal.bolt.api.values.ValueFactory;
+import org.neo4j.bolt.connection.BoltAgent;
+import org.neo4j.bolt.connection.LoggingProvider;
+import org.neo4j.bolt.connection.SummaryCounters;
+import org.neo4j.bolt.connection.values.Value;
+import org.neo4j.bolt.connection.values.ValueFactory;
 import org.neo4j.jdbc.values.Values;
 
 /**

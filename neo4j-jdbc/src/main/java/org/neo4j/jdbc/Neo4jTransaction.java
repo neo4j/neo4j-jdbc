@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.neo4j.driver.internal.bolt.api.SummaryCounters;
+import org.neo4j.bolt.connection.SummaryCounters;
 import org.neo4j.jdbc.values.Record;
 
 /**

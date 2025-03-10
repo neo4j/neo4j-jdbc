@@ -31,8 +31,8 @@ module org.neo4j.jdbc {
 	requires io.netty.handler;
 	requires io.netty.resolver;
 	requires io.netty.transport;
-	requires org.neo4j.bolt.api;
-	requires org.neo4j.bolt.netty;
+	requires org.neo4j.bolt.connection;
+	requires org.neo4j.bolt.connection.netty;
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies

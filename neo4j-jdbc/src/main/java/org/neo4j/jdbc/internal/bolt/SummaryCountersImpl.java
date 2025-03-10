@@ -18,7 +18,7 @@
  */
 package org.neo4j.jdbc.internal.bolt;
 
-import org.neo4j.driver.internal.bolt.api.SummaryCounters;
+import org.neo4j.bolt.connection.SummaryCounters;
 
 record SummaryCountersImpl(int nodesCreated, int nodesDeleted, int relationshipsCreated, int relationshipsDeleted,
 		int propertiesSet, int labelsAdded, int labelsRemoved, int indexesAdded, int indexesRemoved,

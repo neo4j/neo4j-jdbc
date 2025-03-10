@@ -25,7 +25,7 @@ import org.neo4j.jdbc.values.Value;
 
 @SuppressWarnings("squid:S2160") // Not overriding equals is fine here
 final class RelationshipImpl extends AbstractEntity
-		implements Relationship, org.neo4j.driver.internal.bolt.api.values.Relationship {
+		implements Relationship, org.neo4j.bolt.connection.values.Relationship {
 
 	private long start;
 

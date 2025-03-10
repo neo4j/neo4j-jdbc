@@ -50,12 +50,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
-import org.neo4j.driver.internal.bolt.api.AccessMode;
-import org.neo4j.driver.internal.bolt.api.BoltConnection;
-import org.neo4j.driver.internal.bolt.api.DatabaseNameUtil;
-import org.neo4j.driver.internal.bolt.api.ResponseHandler;
-import org.neo4j.driver.internal.bolt.api.TransactionType;
-import org.neo4j.driver.internal.bolt.api.exception.BoltException;
+import org.neo4j.bolt.connection.AccessMode;
+import org.neo4j.bolt.connection.BoltConnection;
+import org.neo4j.bolt.connection.DatabaseNameUtil;
+import org.neo4j.bolt.connection.ResponseHandler;
+import org.neo4j.bolt.connection.TransactionType;
+import org.neo4j.bolt.connection.exception.BoltException;
 import org.neo4j.jdbc.ConnectionImpl.TranslatorChain;
 import org.neo4j.jdbc.translator.spi.Translator;
 
