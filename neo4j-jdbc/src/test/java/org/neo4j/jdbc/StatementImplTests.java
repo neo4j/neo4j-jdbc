@@ -34,11 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.neo4j.jdbc.internal.bolt.response.DiscardResponse;
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
-import org.neo4j.jdbc.internal.bolt.response.SummaryCounters;
+import org.neo4j.bolt.connection.SummaryCounters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,8 +55,8 @@ class StatementImplTests {
 	void shouldExecuteQuery() throws SQLException {
 		// given
 		var query = "query";
-		var runResponse = mock(RunResponse.class);
-		var pullResponse = mock(PullResponse.class);
+		var runResponse = mock(Neo4jTransaction.RunResponse.class);
+		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
 		var transaction = mock(Neo4jTransaction.class);
 		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
@@ -85,13 +81,13 @@ class StatementImplTests {
 	void shouldExecuteUpdate() throws SQLException {
 		// given
 		var query = "query";
-		var discardResponse = mock(DiscardResponse.class);
+		var discardResponse = mock(Neo4jTransaction.DiscardResponse.class);
 		var transactionSupplier = mock(Neo4jTransactionSupplier.class);
 		var transaction = mock(Neo4jTransaction.class);
 		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
 		given(transaction.isAutoCommit()).willReturn(true);
 		given(transaction.runAndDiscard(query, Collections.emptyMap(), 0, true)).willReturn(discardResponse);
-		var response = mock(ResultSummary.class);
+		var response = mock(Neo4jTransaction.ResultSummary.class);
 		given(discardResponse.resultSummary()).willReturn(Optional.of(response));
 		var counters = mock(SummaryCounters.class);
 		given(response.counters()).willReturn(counters);
@@ -118,12 +114,12 @@ class StatementImplTests {
 		var transaction = mock(Neo4jTransaction.class);
 		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
 		given(transaction.isAutoCommit()).willReturn(true);
-		var runResponse = mock(RunResponse.class);
-		var pullResponse = mock(PullResponse.class);
+		var runResponse = mock(Neo4jTransaction.RunResponse.class);
+		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(transaction.runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0))
 			.willReturn(new Neo4jTransaction.RunAndPullResponses(runResponse, pullResponse));
 		given(transaction.isRunnable()).willReturn(true);
-		var resultSummary = mock(ResultSummary.class);
+		var resultSummary = mock(Neo4jTransaction.ResultSummary.class);
 		given(pullResponse.resultSummary()).willReturn(Optional.of(resultSummary));
 		var summaryCounters = mock(SummaryCounters.class);
 		given(resultSummary.counters()).willReturn(summaryCounters);
@@ -163,12 +159,12 @@ class StatementImplTests {
 		var transaction = mock(Neo4jTransaction.class);
 		given(transactionSupplier.getTransaction(any())).willReturn(transaction);
 		given(transaction.isAutoCommit()).willReturn(true);
-		var runResponse = mock(RunResponse.class);
-		var pullResponse = mock(PullResponse.class);
+		var runResponse = mock(Neo4jTransaction.RunResponse.class);
+		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(transaction.runAndPull(query, Collections.emptyMap(), StatementImpl.DEFAULT_FETCH_SIZE, 0))
 			.willReturn(new Neo4jTransaction.RunAndPullResponses(runResponse, pullResponse));
 		given(transaction.isRunnable()).willReturn(true);
-		var resultSummary = mock(ResultSummary.class);
+		var resultSummary = mock(Neo4jTransaction.ResultSummary.class);
 		given(pullResponse.resultSummary()).willReturn(Optional.of(resultSummary));
 		var summaryCounters = mock(SummaryCounters.class);
 		given(resultSummary.counters()).willReturn(summaryCounters);

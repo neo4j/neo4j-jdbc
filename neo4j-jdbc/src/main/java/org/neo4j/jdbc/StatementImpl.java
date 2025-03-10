@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
-import org.neo4j.jdbc.internal.bolt.response.ResultSummary;
+import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.values.Values;
 
 non-sealed class StatementImpl implements Neo4jStatement {

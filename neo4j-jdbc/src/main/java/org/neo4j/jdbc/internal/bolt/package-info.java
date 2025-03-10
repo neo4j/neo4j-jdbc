@@ -16,4 +16,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Adapters for the Bolt Connection API.
+ */
 package org.neo4j.jdbc.internal.bolt;

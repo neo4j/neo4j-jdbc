@@ -27,6 +27,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.neo4j.jdbc.values.IsoDuration;
+import org.neo4j.jdbc.values.PointValue;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -141,6 +143,28 @@ public class Neo4jDriverIT {
 		var driver = DriverManager.getDriver(url);
 		try (var connection = driver.connect(url, new Properties()); var stmt = connection.createStatement()) {
 			stmt.executeQuery("RETURN 1").close();
+		}
+		assertThat(((Neo4jDriver) driver).getCurrentBookmarks(url)).isNotEmpty();
+	}
+
+	@Test
+	void typesThatHadSpecialHandling() throws SQLException {
+
+		var url = computeUrl();
+		var driver = DriverManager.getDriver(url);
+		try (var connection = driver.connect(url, new Properties());
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery(
+						"RETURN point({latitude: toFloat('13.43'), longitude: toFloat('56.21')}) AS p1, duration('P14DT16H12M') AS theDuration")) {
+			assertThat(rs.next()).isTrue();
+			var point = rs.getObject("p1", PointValue.class).asPoint();
+			assertThat(point.x()).isEqualTo(56.21);
+			assertThat(point.y()).isEqualTo(13.43);
+			assertThat(point.srid()).isEqualTo(4326);
+
+			var duration = rs.getObject("theDuration", IsoDuration.class);
+			assertThat(duration.days()).isEqualTo(14);
+			assertThat(duration.seconds()).isEqualTo(16 * 60 * 60 + 12 * 60);
 		}
 		assertThat(((Neo4jDriver) driver).getCurrentBookmarks(url)).isNotEmpty();
 	}

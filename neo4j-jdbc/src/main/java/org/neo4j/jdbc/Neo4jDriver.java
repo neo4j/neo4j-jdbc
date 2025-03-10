@@ -45,6 +45,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -54,13 +55,21 @@ import java.util.regex.Pattern;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import org.neo4j.jdbc.internal.bolt.AuthTokens;
-import org.neo4j.jdbc.internal.bolt.BoltAgent;
-import org.neo4j.jdbc.internal.bolt.BoltConnectionProvider;
-import org.neo4j.jdbc.internal.bolt.BoltConnectionProviders;
-import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
-import org.neo4j.jdbc.internal.bolt.SecurityPlan;
-import org.neo4j.jdbc.internal.bolt.SecurityPlans;
+import org.neo4j.bolt.connection.AccessMode;
+import org.neo4j.bolt.connection.AuthToken;
+import org.neo4j.bolt.connection.AuthTokens;
+import org.neo4j.bolt.connection.BoltConnection;
+import org.neo4j.bolt.connection.BoltConnectionProvider;
+import org.neo4j.bolt.connection.BoltProtocolVersion;
+import org.neo4j.bolt.connection.BoltServerAddress;
+import org.neo4j.bolt.connection.DatabaseNameUtil;
+import org.neo4j.bolt.connection.DefaultDomainNameResolver;
+import org.neo4j.bolt.connection.NotificationConfig;
+import org.neo4j.bolt.connection.RoutingContext;
+import org.neo4j.bolt.connection.SecurityPlan;
+import org.neo4j.bolt.connection.SecurityPlans;
+import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
@@ -209,11 +218,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 */
 	public static final String PROPERTY_SSL_MODE = "sslMode";
 
-	private static final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(new DriverThreadFactory());
+	private static final EventLoopGroup DEFAULT_EVENT_LOOP_GROUP = new NioEventLoopGroup(new DriverThreadFactory());
 
 	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	private static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
+
+	private static final BoltProtocolVersion MIN_BOLT_VERSION = new BoltProtocolVersion(5, 1);
 
 	/*
 	 * This is the recommended - and AFAIK - required way to register a new driver the
@@ -315,7 +326,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
-		this(BoltConnectionProviders.netty(eventLoopGroup, Clock.systemUTC()));
+		this(new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
+				DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
+				BoltAdapters.getValueFactory(), null));
 	}
 
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
@@ -336,21 +349,18 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var password = (driverConfig.password == null || driverConfig.password.isBlank()) ? "" : driverConfig.password;
 		var authRealm = (driverConfig.authRealm == null || driverConfig.authRealm.isBlank()) ? null
 				: driverConfig.authRealm;
+		var valueFactory = BoltAdapters.getValueFactory();
 		var authToken = switch (driverConfig.authScheme) {
-			case NONE -> AuthTokens.none();
-			case BASIC -> AuthTokens.basic(user, password, authRealm);
-			case BEARER -> AuthTokens.bearer(password);
-			case KERBEROS -> AuthTokens.kerberos(password);
+			case NONE -> AuthTokens.none(valueFactory);
+			case BASIC -> AuthTokens.basic(user, password, authRealm, valueFactory);
+			case BEARER -> AuthTokens.bearer(password, valueFactory);
+			case KERBEROS -> AuthTokens.kerberos(password, valueFactory);
 		};
-
-		var boltAgent = BoltAgent.of(ProductVersion.getValue());
 		var userAgent = driverConfig.agent;
 		var connectTimeoutMillis = driverConfig.timeout;
 
-		var boltConnection = this.boltConnectionProvider
-			.connect(address, securityPlan, databaseName, authToken, boltAgent, userAgent, connectTimeoutMillis)
-			.toCompletableFuture()
-			.join();
+		var boltConnection = establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan,
+				databaseName, authToken);
 
 		var enableSqlTranslation = driverConfig.enableSQLTranslation;
 		var enableTranslationCaching = driverConfig.enableTranslationCaching;
@@ -367,7 +377,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new ConnectionImpl(driverConfig.toUrl(), boltConnection,
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize());
+				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName);
+	}
+
+	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
+			int connectTimeoutMillis, SecurityPlan securityPlan, String databaseName, AuthToken authToken) {
+		return this.boltConnectionProvider
+			.connect(address, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
+					connectTimeoutMillis, securityPlan, DatabaseNameUtil.database(databaseName),
+					() -> CompletableFuture.completedStage(authToken), AccessMode.WRITE, Collections.emptySet(), null,
+					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), (ignored) -> {
+					}, Collections.emptyMap())
+			.toCompletableFuture()
+			.join();
 	}
 
 	static String getDefaultUserAgent() {
@@ -516,7 +538,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return switch (sslProperties.sslMode) {
 			case REQUIRE -> {
 				try {
-					yield SecurityPlans.forAllCertificates();
+					yield SecurityPlans.encryptedForAnyCertificate();
 				}
 				catch (GeneralSecurityException ex) {
 					throw new SQLException(ex);
@@ -524,13 +546,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			}
 			case VERIFY_FULL -> {
 				try {
-					yield SecurityPlans.forSystemCASignedCertificates();
+					yield SecurityPlans.encryptedForSystemCASignedCertificates();
 				}
 				catch (GeneralSecurityException | IOException ex) {
 					throw new SQLException(ex);
 				}
 			}
-			case DISABLE -> SecurityPlans.insecure();
+			case DISABLE -> SecurityPlans.unencrypted();
 		};
 	}
 

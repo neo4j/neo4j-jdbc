@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,17 +35,21 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.neo4j.jdbc.internal.bolt.AuthToken;
-import org.neo4j.jdbc.internal.bolt.AuthTokens;
-import org.neo4j.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.jdbc.internal.bolt.BoltConnectionProvider;
-import org.neo4j.jdbc.internal.bolt.BoltServerAddress;
+import org.mockito.ArgumentMatcher;
+import org.neo4j.bolt.connection.AuthToken;
+import org.neo4j.bolt.connection.AuthTokens;
+import org.neo4j.bolt.connection.BoltConnection;
+import org.neo4j.bolt.connection.BoltConnectionProvider;
+import org.neo4j.bolt.connection.BoltServerAddress;
+import org.neo4j.bolt.connection.DatabaseNameUtil;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -63,7 +69,8 @@ class Neo4jDriverUrlParsingTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), any(), any(), anyInt()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+				any(), any(), any(), any(), any(), any()))
 			.willReturn(mockedFuture);
 	}
 
@@ -85,7 +92,8 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress(host, port)), any(), any(), any(), any(), any(), anyInt());
+			.connect(eq(new BoltServerAddress(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+					any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -96,11 +104,12 @@ class Neo4jDriverUrlParsingTests {
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
+		var database = DatabaseNameUtil.database("database");
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), any(), any(), any(),
-					anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -112,11 +121,12 @@ class Neo4jDriverUrlParsingTests {
 		props.put("username", "test");
 		props.put("password", "password");
 		props.put("database", "ThisShouldBeOverriden");
+		var database = DatabaseNameUtil.database("database");
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), any(), any(), any(),
-					anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -128,11 +138,12 @@ class Neo4jDriverUrlParsingTests {
 		props.put("username", "test");
 		props.put("password", "password");
 		props.put("database", "database");
+		var database = DatabaseNameUtil.database("database");
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), any(), any(), any(),
-					anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -143,11 +154,12 @@ class Neo4jDriverUrlParsingTests {
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
+		var database = DatabaseNameUtil.database("neo4j");
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("neo4j"), any(), any(), any(),
-					anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@ParameterizedTest
@@ -195,11 +207,12 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect("jdbc:neo4j://host?user=correctUser&password=correctPassword", props);
 
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), eq(expectedAuthToken), any(),
-					any(), anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
+					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -212,11 +225,12 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect("jdbc:neo4j://host:1000?user=correctUser&password=correctPassword", props);
 
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), eq(expectedAuthToken), any(), any(),
-					anyInt());
+			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(), any(), any(),
+					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -229,11 +243,12 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect("jdbc:neo4j://host:1000/database?user=correctUser&password=correctPassword", props);
 
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", 1000)), any(), eq("database"), eq(expectedAuthToken), any(),
-					any(), anyInt());
+			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(), any(), any(),
+					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -246,11 +261,12 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect("jdbc:neo4j://host/database?user=correctUser&password=correctPassword", props);
 
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), eq(expectedAuthToken),
-					any(), any(), anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
+					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -259,11 +275,11 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect("jdbc:neo4j://host?user=user%3D&password=%26pass%3D%20word%3F", new Properties());
 
-		var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?");
+		var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?", null, BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), eq(expectedAuthToken), any(),
-					any(), anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
+					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -276,11 +292,12 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect("jdbc:neo4j://host/database", props);
 
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword");
+		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), eq("database"), eq(expectedAuthToken),
-					any(), any(), anyInt());
+			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
+					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -532,7 +549,8 @@ class Neo4jDriverUrlParsingTests {
 		driver.connect("jdbc:neo4j://host:1000/database", props);
 
 		then(this.boltConnectionProvider).should()
-			.connect(any(), any(), any(), eq(expectedAuthToken), any(), any(), anyInt());
+			.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any(),
+					any(), any());
 	}
 
 	@Test
@@ -557,27 +575,55 @@ class Neo4jDriverUrlParsingTests {
 	private static Stream<Arguments> authSchemeProvider() {
 		var propsNone = new Properties();
 		propsNone.put("authScheme", "none");
-		var tokenNone = AuthTokens.none();
+		var tokenNone = AuthTokens.none(BoltAdapters.getValueFactory());
 
 		var propsBasic = new Properties();
 		propsBasic.put("authScheme", "basic");
 		propsBasic.put("user", "user1");
 		propsBasic.put("password", "user1Password");
 		propsBasic.put("authRealm", "user1Realm");
-		var tokenBasic = AuthTokens.basic("user1", "user1Password", "user1Realm");
+		var tokenBasic = AuthTokens.basic("user1", "user1Password", "user1Realm", BoltAdapters.getValueFactory());
 
 		var propsKerberos = new Properties();
 		propsKerberos.put("authScheme", "kerberos");
 		propsKerberos.put("password", "myTicket");
-		var tokenKerberos = AuthTokens.kerberos("myTicket");
+		var tokenKerberos = AuthTokens.kerberos("myTicket", BoltAdapters.getValueFactory());
 
 		var propsBearer = new Properties();
 		propsBearer.put("authScheme", "bearer");
 		propsBearer.put("password", "myToken");
-		var tokenBearer = AuthTokens.bearer("myToken");
+		var tokenBearer = AuthTokens.bearer("myToken", BoltAdapters.getValueFactory());
 
 		return Stream.of(Arguments.of(propsBasic, tokenBasic), Arguments.of(propsNone, tokenNone),
 				Arguments.of(propsKerberos, tokenKerberos), Arguments.of(propsBearer, tokenBearer));
+	}
+
+	private static AuthTokenMatcher matches(AuthToken authToken) {
+		return new AuthTokenMatcher(authToken);
+	}
+
+	private static class AuthTokenMatcher implements ArgumentMatcher<Supplier<CompletionStage<AuthToken>>> {
+
+		private final AuthToken expectedAuthToken;
+
+		AuthTokenMatcher(AuthToken expectedAuthToken) {
+			this.expectedAuthToken = expectedAuthToken;
+		}
+
+		@Override
+		public boolean matches(Supplier<CompletionStage<AuthToken>> completionStageSupplier) {
+			try {
+				return this.expectedAuthToken.equals(completionStageSupplier.get().toCompletableFuture().get());
+			}
+			catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+			}
+			catch (ExecutionException ex) {
+				throw new RuntimeException(ex);
+			}
+			return false;
+		}
+
 	}
 
 }
