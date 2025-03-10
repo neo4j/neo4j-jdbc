@@ -198,7 +198,7 @@
 		<spring-boot.version>3.4.3</spring-boot.version>
 		<spring-javaformat.version>0.0.43</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
-		<testcontainers.version>1.20.5</testcontainers.version>
+		<testcontainers.version>1.20.6</testcontainers.version>
 	</properties>
 
 	<dependencyManagement>
