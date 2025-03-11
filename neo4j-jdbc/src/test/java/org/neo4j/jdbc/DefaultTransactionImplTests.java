@@ -66,7 +66,8 @@ class DefaultTransactionImplTests {
 	void shouldHaveExpectedDefaults(boolean autoCommit) {
 		var boltConnection = mock(BoltConnection.class);
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autoCommit,
-				AccessMode.WRITE, null, "aBeautifulDatabase");
+				AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
+				});
 
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.NEW);
 		assertThat(this.transaction.isRunnable()).isEqualTo(true);
@@ -86,7 +87,8 @@ class DefaultTransactionImplTests {
 	void shouldRunAndPull() throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, null, "aBeautifulDatabase");
+				AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
+				});
 		var query = "query";
 		var fetchSize = 5;
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
@@ -123,7 +125,8 @@ class DefaultTransactionImplTests {
 	void shouldRunAndDiscard(boolean commit) throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, null, "aBeautifulDatabase");
+				AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
+				});
 		var query = "query";
 		var fetchSize = 5;
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
@@ -161,7 +164,8 @@ class DefaultTransactionImplTests {
 	void shouldPull() throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase");
+				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
+				});
 		var fetchSize = 5;
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 		var runResponse = mock(Neo4jTransaction.RunResponse.class);
@@ -192,7 +196,8 @@ class DefaultTransactionImplTests {
 	void shouldCommit() throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase");
+				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
+				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 		given(boltConnection.commit()).willReturn(connectionFuture);
 		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
@@ -218,7 +223,8 @@ class DefaultTransactionImplTests {
 	void shouldRollback() throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase");
+				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
+				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 		given(boltConnection.rollback()).willReturn(connectionFuture);
 		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
@@ -253,7 +259,8 @@ class DefaultTransactionImplTests {
 	void shouldFail(boolean autoCommit) throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autoCommit,
-				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase");
+				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
+				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 		given(boltConnection.rollback()).willReturn(connectionFuture);
 		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
@@ -283,7 +290,8 @@ class DefaultTransactionImplTests {
 	void shouldRollbackToFailed() throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, false,
-				AccessMode.WRITE, Neo4jTransaction.State.OPEN_FAILED, "aBeautifulDatabase");
+				AccessMode.WRITE, Neo4jTransaction.State.OPEN_FAILED, "aBeautifulDatabase", (state) -> {
+				});
 		this.transaction.rollback();
 
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
@@ -301,7 +309,8 @@ class DefaultTransactionImplTests {
 	void shouldThrowInInvalidState(boolean autocommit, Neo4jTransaction.State state, TransactionMethodRunner runner) {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autocommit,
-				AccessMode.WRITE, state, "aBeautifulDatabase");
+				AccessMode.WRITE, state, "aBeautifulDatabase", (failureState) -> {
+				});
 
 		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(SQLException.class);
 		assertThat(this.transaction.getState()).isEqualTo(state);
@@ -420,7 +429,8 @@ class DefaultTransactionImplTests {
 	@EnumSource(Neo4jTransaction.State.class)
 	void shouldDetermineIsRunnable(Neo4jTransaction.State state) {
 		this.transaction = new DefaultTransactionImpl(mockBoltConnection(), null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, state, "aBeautifulDatabase");
+				AccessMode.WRITE, state, "aBeautifulDatabase", (failureState) -> {
+				});
 
 		var runnable = switch (state) {
 			case NEW, READY -> true;
@@ -434,7 +444,8 @@ class DefaultTransactionImplTests {
 	@EnumSource(Neo4jTransaction.State.class)
 	void shouldDetermineIsOpen(Neo4jTransaction.State state) {
 		this.transaction = new DefaultTransactionImpl(mockBoltConnection(), null, null, NOOP_HANDLER, false, true,
-				AccessMode.WRITE, state, "aBeautifulDatabase");
+				AccessMode.WRITE, state, "aBeautifulDatabase", (failureState) -> {
+				});
 		var open = switch (state) {
 			case NEW, READY, OPEN_FAILED -> true;
 			case FAILED, COMMITTED, ROLLEDBACK -> false;
@@ -449,7 +460,8 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		var fatalExceptionHandler = mock(DefaultTransactionImpl.FatalExceptionHandler.class);
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, false,
-				autoCommit, AccessMode.WRITE, null, "aBeautifulDatabase");
+				autoCommit, AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
+				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 
 		var query = "query";
@@ -483,7 +495,8 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		var fatalExceptionHandler = mock(DefaultTransactionImpl.FatalExceptionHandler.class);
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, false,
-				autoCommit, AccessMode.WRITE, null, "aBeautifulDatabase");
+				autoCommit, AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
+				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 
 		var query = "query";
@@ -523,7 +536,8 @@ class DefaultTransactionImplTests {
 		given(boltConnection.rollback()).willReturn(connectionFuture);
 
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, true, true,
-				AccessMode.WRITE, null, "aBeautifulDatabase");
+				AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
+				});
 
 		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(SQLException.class);
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
@@ -538,7 +552,8 @@ class DefaultTransactionImplTests {
 	void shouldDiscardOpenCursorsOnClose(boolean commit) throws SQLException {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, false,
-				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase");
+				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
+				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 
 		var query = "query";

@@ -41,6 +41,7 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -92,7 +94,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final ReferenceQueue<Statement> trackedStatementReferenceQueue = new ReferenceQueue<>();
 
-	private final Lazy<List<Translator>> translators;
+	private final Lazy<List<Translator>, RuntimeException> translators;
 
 	private final boolean enableSqlTranslation;
 
@@ -128,9 +130,9 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final int relationshipSampleSize;
 
-	private volatile Boolean apocAvailable;
-
 	private final String databaseName;
+
+	private final AtomicBoolean resetNeeded = new AtomicBoolean(false);
 
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
@@ -248,26 +250,31 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void commit() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Commiting");
 		assertIsOpen();
-		if (this.transaction == null) {
-			throw new SQLException("There is no transaction to commit");
+		if (this.transaction == null || State.COMMITTED.equals(this.transaction.getState())) {
+			LOGGER.log(Level.INFO, "There is no active transaction that can be committed, ignoring");
+			return;
 		}
 		if (this.transaction.isAutoCommit()) {
 			throw new SQLException("Auto commit transaction may not be managed explicitly");
 		}
 		this.transaction.commit();
+		this.transaction = null;
 	}
 
 	@Override
 	public void rollback() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Rolling back");
 		assertIsOpen();
-		if (this.transaction == null) {
-			throw new SQLException("There is no transaction to rollback");
+		if (this.transaction == null || !this.transaction.isRunnable()) {
+			LOGGER.log(Level.INFO, "There is no active transaction that can be rolled back, ignoring");
+			this.transaction = null;
+			return;
 		}
 		if (this.transaction.isAutoCommit()) {
 			throw new SQLException("Auto commit transaction may not be managed explicitly");
 		}
 		this.transaction.rollback();
+		this.transaction = null;
 	}
 
 	@Override
@@ -314,8 +321,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public DatabaseMetaData getMetaData() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Getting metadata");
 		assertIsOpen();
-		return new DatabaseMetadataImpl(this, (additionalMetadata) -> getTransaction(additionalMetadata, false),
-				this.enableSqlTranslation, this.relationshipSampleSize);
+		return new DatabaseMetadataImpl(this, this.enableSqlTranslation, this.relationshipSampleSize);
 	}
 
 	@Override
@@ -790,33 +796,28 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata) throws SQLException {
-		return getTransaction(additionalTransactionMetadata, true);
-	}
-
-	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata, boolean autoCommitCheck)
-			throws SQLException {
 		assertIsOpen();
 		if (this.fatalException != null) {
 			throw this.fatalException;
 		}
 		if (this.transaction != null && this.transaction.isOpen()) {
-			if (autoCommitCheck && this.transaction.isAutoCommit()) {
+			if (this.transaction.isAutoCommit()) {
 				throw new SQLException("Only a single autocommit transaction is supported");
 			}
+			return this.transaction;
 		}
-		else {
-			var resetNeeded = this.transaction != null && State.FAILED.equals(this.transaction.getState());
-			Map<String, Object> combinedTransactionMetadata = new HashMap<>(
-					this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
-			combinedTransactionMetadata.putAll(this.transactionMetadata);
-			combinedTransactionMetadata.putAll(additionalTransactionMetadata);
-			if (!combinedTransactionMetadata.containsKey("app")) {
-				combinedTransactionMetadata.put("app", this.getApp());
-			}
-			this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
-					combinedTransactionMetadata, this::handleFatalException, resetNeeded, this.autoCommit,
-					getAccessMode(), null, this.databaseName);
+
+		Map<String, Object> combinedTransactionMetadata = new HashMap<>(
+				this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
+		combinedTransactionMetadata.putAll(this.transactionMetadata);
+		combinedTransactionMetadata.putAll(additionalTransactionMetadata);
+		if (!combinedTransactionMetadata.containsKey("app")) {
+			combinedTransactionMetadata.put("app", this.getApp());
 		}
+		this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
+				combinedTransactionMetadata, this::handleFatalException, this.resetNeeded.getAndSet(false),
+				this.autoCommit, getAccessMode(), null, this.databaseName, state -> this.resetNeeded
+					.compareAndSet(false, EnumSet.of(State.FAILED, State.OPEN_FAILED).contains(state)));
 		return this.transaction;
 	}
 

@@ -32,6 +32,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.neo4j.bolt.connection.AccessMode;
@@ -59,6 +60,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private final BookmarkManager bookmarkManager;
 
+	private final Consumer<State> onFailedCallback;
+
 	private final Set<String> usedBookmarks;
 
 	private final List<RunResponse> openResults = new ArrayList<>();
@@ -69,12 +72,14 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	DefaultTransactionImpl(BoltConnection boltConnection, BookmarkManager bookmarkManager,
 			Map<String, Object> transactionMetadata, FatalExceptionHandler fatalExceptionHandler, boolean resetNeeded,
-			boolean autoCommit, AccessMode accessMode, State state, String databaseName) {
+			boolean autoCommit, AccessMode accessMode, State state, String databaseName,
+			Consumer<State> onFailedCallback) {
 
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
 
 		this.bookmarkManager = Objects.requireNonNullElseGet(bookmarkManager, VoidBookmarkManagerImpl::new);
+		this.onFailedCallback = onFailedCallback;
 		this.usedBookmarks = this.bookmarkManager.getBookmarks(Function.identity());
 
 		this.autoCommit = autoCommit;
@@ -218,6 +223,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertRunnableState();
 		this.exception = exception;
 		this.state = this.autoCommit ? State.FAILED : State.OPEN_FAILED;
+		this.onFailedCallback.accept(this.state);
 	}
 
 	private <T> T execute(CompletableFuture<T> future, int timeout) throws SQLException {

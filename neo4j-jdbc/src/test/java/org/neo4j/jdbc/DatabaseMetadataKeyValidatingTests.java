@@ -18,22 +18,28 @@
  */
 package org.neo4j.jdbc;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 class DatabaseMetadataKeyValidatingTests {
 
 	static DatabaseMetadataImpl newDatabaseMetadata() throws SQLException {
-		var connection = mock(Connection.class);
+		var connection = mock(ConnectionImpl.class);
 		given(connection.getCatalog()).willReturn("someCatalog");
-		return new DatabaseMetadataImpl(connection, (s) -> mock(Neo4jTransaction.class), false, 1000);
+		try {
+			given(connection.getTransaction(any())).willReturn(mock(Neo4jTransaction.class));
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException(ex);
+		}
+		return new DatabaseMetadataImpl(connection, false, 1000);
 	}
 
 	@Test

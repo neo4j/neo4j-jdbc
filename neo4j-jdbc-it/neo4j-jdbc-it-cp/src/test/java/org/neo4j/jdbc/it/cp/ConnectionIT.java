@@ -19,8 +19,13 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,24 +33,63 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ConnectionIT extends IntegrationTestBase {
 
 	@Test
 	void shouldCheckTXStateBeforeCommit() throws SQLException {
+		var handler = new CapturingHandler();
+		Logger.getLogger("org.neo4j.jdbc.connection").addHandler(handler);
 		try (var connection = getConnection()) {
-			assertThatExceptionOfType(SQLException.class).isThrownBy(connection::commit)
-				.withMessage("There is no transaction to commit");
+			assertThatNoException().isThrownBy(connection::commit);
+			assertThat(handler.messages).contains("There is no active transaction that can be committed, ignoring");
+		}
+		finally {
+			Logger.getLogger("org.neo4j.jdbc.connection").removeHandler(handler);
+		}
+	}
+
+	@Test
+	void shouldCheckTXStateBeforeCommitWhenAutoCommitted() throws SQLException {
+		var handler = new CapturingHandler();
+		Logger.getLogger("org.neo4j.jdbc.connection").addHandler(handler);
+		try (var connection = getConnection(); var stmt = connection.createStatement()) {
+			stmt.executeUpdate("RETURN 1");
+			assertThatNoException().isThrownBy(connection::commit);
+			assertThat(handler.messages).contains("There is no active transaction that can be committed, ignoring");
+		}
+		finally {
+			Logger.getLogger("org.neo4j.jdbc.connection").removeHandler(handler);
 		}
 	}
 
 	@Test
 	void shouldCheckTXStateBeforeRollback() throws SQLException {
+		var handler = new CapturingHandler();
+		Logger.getLogger("org.neo4j.jdbc.connection").addHandler(handler);
 		try (var connection = getConnection()) {
-			assertThatExceptionOfType(SQLException.class).isThrownBy(connection::rollback)
-				.withMessage("There is no transaction to rollback");
+			assertThatNoException().isThrownBy(connection::rollback);
+			assertThat(handler.messages).contains("There is no active transaction that can be rolled back, ignoring");
+		}
+		finally {
+			Logger.getLogger("org.neo4j.jdbc.connection").removeHandler(handler);
+		}
+	}
+
+	@Test
+	void shouldCheckTXStateBeforeRollbackWhenAutoRolledBack() throws SQLException {
+		var handler = new CapturingHandler();
+		Logger.getLogger("org.neo4j.jdbc.connection").addHandler(handler);
+		try (var connection = getConnection(); var stmt = connection.createStatement()) {
+			assertThatThrownBy(() -> stmt.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
+				.isExactlyInstanceOf(SQLException.class);
+			assertThatNoException().isThrownBy(connection::rollback);
+			assertThat(handler.messages).contains("There is no active transaction that can be rolled back, ignoring");
+		}
+		finally {
+			Logger.getLogger("org.neo4j.jdbc.connection").removeHandler(handler);
 		}
 	}
 
@@ -246,6 +290,27 @@ public class ConnectionIT extends IntegrationTestBase {
 			var neo4jConnection = connection.unwrap(Neo4jConnection.class);
 			assertThat(neo4jConnection.getDatabaseName()).isNotBlank();
 		}
+	}
+
+	static class CapturingHandler extends Handler {
+
+		List<String> messages = new ArrayList<>();
+
+		@Override
+		public void publish(LogRecord record) {
+			this.messages.add(record.getMessage());
+		}
+
+		@Override
+		public void flush() {
+
+		}
+
+		@Override
+		public void close() throws SecurityException {
+
+		}
+
 	}
 
 }

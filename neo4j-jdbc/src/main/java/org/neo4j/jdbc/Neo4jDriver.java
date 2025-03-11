@@ -222,7 +222,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
-	private static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
+	/**
+	 * The URL pattern that this driver supports.
+	 * @since 6.2.0
+	 */
+	public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
 
 	private static final BoltProtocolVersion MIN_BOLT_VERSION = new BoltProtocolVersion(5, 1);
 

@@ -18,27 +18,31 @@
  */
 package org.neo4j.jdbc;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
  * Utility class for lazily and thread safe resolving a supplier of things.
  *
  * @param <T> the type of things to be resolved
+ * @param <E> the type of the throwable
  * @author Michael J. Simons
  * @since 6.0.0
  */
-final class Lazy<T> {
+final class Lazy<T, E extends Throwable> {
 
-	private final Supplier<T> supplier;
+	private final ThrowingSupplier<T, E> supplier;
 
 	private volatile T resolved;
 
-	static <T> Lazy<T> of(Supplier<T> supplier) {
-		return new Lazy<>(Objects.requireNonNull(supplier));
+	static <T> Lazy<T, RuntimeException> of(Supplier<T> supplier) {
+		return new Lazy<>(supplier::get);
 	}
 
-	private Lazy(Supplier<T> supplier) {
+	static <T, E extends Throwable> Lazy<T, E> of(ThrowingSupplier<T, E> supplier) {
+		return new Lazy<>(supplier);
+	}
+
+	private Lazy(ThrowingSupplier<T, E> supplier) {
 		this.supplier = supplier;
 	}
 
@@ -46,7 +50,7 @@ final class Lazy<T> {
 	 * Lazily resolves the value of the original {@link Supplier} and memorizes it.
 	 * @return the resolved value
 	 */
-	T resolve() {
+	T resolve() throws E {
 
 		T result = this.resolved;
 		if (result == null) {

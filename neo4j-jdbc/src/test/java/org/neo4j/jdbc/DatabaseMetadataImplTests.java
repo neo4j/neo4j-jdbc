@@ -276,8 +276,14 @@ class DatabaseMetadataImplTests {
 	}
 
 	static DatabaseMetadataImpl newDatabaseMetadata() {
-		var connection = Mockito.mock(Connection.class);
-		return new DatabaseMetadataImpl(connection, (s) -> mock(Neo4jTransaction.class), false, 1000);
+		var connection = Mockito.mock(ConnectionImpl.class);
+		try {
+			given(connection.getTransaction(any())).willReturn(mock(Neo4jTransaction.class));
+		}
+		catch (SQLException ex) {
+			throw new RuntimeException(ex);
+		}
+		return new DatabaseMetadataImpl(connection, false, 1000);
 	}
 
 }

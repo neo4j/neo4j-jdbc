@@ -240,37 +240,50 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final Connection connection;
 
-	private final Neo4jTransactionSupplier transactionSupplier;
-
 	private final boolean automaticSqlTranslation;
 
 	private final int relationshipSampleSize;
 
-	private volatile Boolean apocAvailable;
+	private final Lazy<Boolean, RuntimeException> apocAvailable;
+
+	private final Lazy<String, SQLException> userName;
+
+	private final Lazy<Boolean, SQLException> readOnly;
 
 	private final Map<GetTablesCacheKey, GetTablesCacheValue> getTablesResults = new ConcurrentHashMap<>();
 
-	DatabaseMetadataImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			boolean automaticSqlTranslation, int relationshipSampleSize) {
+	DatabaseMetadataImpl(Connection connection, boolean automaticSqlTranslation, int relationshipSampleSize) {
 		this.connection = connection;
-		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.automaticSqlTranslation = automaticSqlTranslation;
 		this.relationshipSampleSize = relationshipSampleSize;
+
+		this.apocAvailable = Lazy.<Boolean, RuntimeException>of(() -> {
+			try {
+				var response = doQueryForPullResponse(new Request(
+						"SHOW FUNCTIONS YIELD name WHERE name = 'apoc.version' RETURN count(*) >= 1 AS available",
+						Map.of()));
+				var records = response.records();
+				return records.size() == 1 && records.get(0).get("available").asBoolean();
+			}
+			catch (SQLException ex) {
+				return false;
+			}
+		});
+		// Those queries use administrative commands that do not compose with normal
+		// queries, so we cache it here and hope for the best they don't interfer with
+		// other queries.
+		this.userName = Lazy.of((ThrowingSupplier<String, SQLException>) () -> {
+			var response = doQueryForPullResponse(getRequest("getUserName"));
+			return response.records().get(0).get(0).asString();
+		});
+		this.readOnly = Lazy.of((ThrowingSupplier<Boolean, SQLException>) () -> {
+			var response = doQueryForPullResponse(getRequest("isReadOnly", "name", this.getSingleCatalog()));
+			return response.records().get(0).get(0).asBoolean();
+		});
 	}
 
 	boolean isApocAvailable() {
-
-		Boolean result = this.apocAvailable;
-		if (result == null) {
-			synchronized (ProductVersion.class) {
-				result = this.apocAvailable;
-				if (result == null) {
-					this.apocAvailable = isApocAvailable0();
-					result = this.apocAvailable;
-				}
-			}
-		}
-		return result;
+		return this.apocAvailable.resolve();
 	}
 
 	private boolean isApocAvailable0() {
@@ -331,14 +344,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	@Override
 	public String getUserName() throws SQLException {
-		var response = doQueryForPullResponse(getRequest("getUserName"));
-		return response.records().get(0).get(0).asString();
+		return this.userName.resolve();
 	}
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
-		var response = doQueryForPullResponse(getRequest("isReadOnly", "name", this.getSingleCatalog()));
-		return response.records().get(0).get(0).asBoolean();
+		return this.readOnly.resolve();
 	}
 
 	// Wrt ordering see
@@ -1672,12 +1683,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean locatorsUpdateCopy() throws SQLException {
+	public boolean locatorsUpdateCopy() {
 		return true;
 	}
 
 	@Override
-	public boolean supportsStatementPooling() throws SQLException {
+	public boolean supportsStatementPooling() {
 		return false;
 	}
 
@@ -1898,12 +1909,15 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {
-		var transaction = this.transactionSupplier.getTransaction(Map.of());
+		boolean oldAutoCommit = this.connection.getAutoCommit();
+		this.connection.setAutoCommit(false);
+		var transaction = this.connection.unwrap(ConnectionImpl.class).getTransaction(Map.of());
 		var newTransaction = State.NEW.equals(transaction.getState());
 		var responses = transaction.runAndPull(request.query, request.args, -1, 0);
 		if (newTransaction) {
-			transaction.rollback();
+			this.connection.rollback();
 		}
+		this.connection.setAutoCommit(oldAutoCommit);
 		return new QueryAndRunResponse(responses.pullResponse(),
 				CompletableFuture.completedFuture(responses.runResponse()));
 	}
