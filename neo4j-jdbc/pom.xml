@@ -35,7 +35,6 @@
 	<description>Implementation of the Neo4j JDBC driver.</description>
 
 	<properties>
-		<japicmp.skip>true</japicmp.skip>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 

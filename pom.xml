@@ -764,6 +764,10 @@
 						</newVersion>
 						<parameter>
 							<ignoreMissingOldVersion>true</ignoreMissingOldVersion>
+							<ignoreMissingClassesByRegularExpressions>
+								<!-- Prior to shared Bolt, have been internal anyway, see below. -->
+								<ignoreMissingClassesByRegularExpression>org.neo4j.jdbc.internal.bolt.response.*</ignoreMissingClassesByRegularExpression>
+							</ignoreMissingClassesByRegularExpressions>
 							<breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
 							<overrideCompatibilityChangeParameters>
 								<overrideCompatibilityChangeParameter>
@@ -777,6 +781,8 @@
 							<excludes>
 								<!-- This is not public API -->
 								<exclude>org.neo4j.jdbc.internal.bolt</exclude>
+								<!-- This is not even a public interface -->
+								<exclude>org.neo4j.jdbc.Neo4jTransaction</exclude>
 								<!-- This is shady stuff -->
 								<exclude>org.neo4j.jdbc.translator.sparkcleaner.internal.shaded</exclude>
 							</excludes>
