@@ -62,7 +62,6 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
-import org.neo4j.jdbc.internal.bolt.exception.Neo4jException;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
@@ -96,7 +95,6 @@ class PreparedStatementIT extends IntegrationTestBase {
 				var statement = connection.prepareStatement("CREATE (n:BatchTestSimple {idx: ?})")) {
 			statement.setInt(1, 4711);
 			assertThatExceptionOfType(SQLException.class).isThrownBy(statement::executeUpdate)
-				.withCauseInstanceOf(Neo4jException.class)
 				.withStackTraceContaining("Invalid input '?'");
 		}
 	}

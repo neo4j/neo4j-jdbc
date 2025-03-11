@@ -30,8 +30,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.neo4j.jdbc.internal.bolt.BoltConnection;
-import org.neo4j.jdbc.internal.bolt.BoltConnectionProvider;
+import org.neo4j.bolt.connection.BoltConnection;
+import org.neo4j.bolt.connection.BoltConnectionProvider;
 import org.neo4j.jdbc.values.Type;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +52,8 @@ class DatabaseMetadataImplTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), any(), any(), anyInt()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+				any(), any(), any(), any(), any(), any()))
 			.willReturn(mockedFuture);
 	}
 

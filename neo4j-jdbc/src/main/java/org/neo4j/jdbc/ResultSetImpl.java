@@ -53,8 +53,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.neo4j.jdbc.internal.bolt.response.PullResponse;
-import org.neo4j.jdbc.internal.bolt.response.RunResponse;
+import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
+import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.UncoercibleException;

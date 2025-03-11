@@ -33,8 +33,6 @@ class DatabaseMetadataKeyValidatingTests {
 	static DatabaseMetadataImpl newDatabaseMetadata() throws SQLException {
 		var connection = mock(Connection.class);
 		given(connection.getCatalog()).willReturn("someCatalog");
-		// given(connection.unwrap(Neo4jConnection.class)).willReturn(((Neo4jConnection)
-		// connection));
 		return new DatabaseMetadataImpl(connection, (s) -> mock(Neo4jTransaction.class), false, 1000);
 	}
 
