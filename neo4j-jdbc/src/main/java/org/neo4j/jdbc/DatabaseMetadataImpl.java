@@ -48,7 +48,6 @@ import java.util.logging.Logger;
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
-import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -240,8 +239,6 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final Connection connection;
 
-	private final Neo4jTransactionSupplier transactionSupplier;
-
 	private final boolean automaticSqlTranslation;
 
 	private final int relationshipSampleSize;
@@ -250,10 +247,8 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final Map<GetTablesCacheKey, GetTablesCacheValue> getTablesResults = new ConcurrentHashMap<>();
 
-	DatabaseMetadataImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			boolean automaticSqlTranslation, int relationshipSampleSize) {
+	DatabaseMetadataImpl(Connection connection, boolean automaticSqlTranslation, int relationshipSampleSize) {
 		this.connection = connection;
-		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.automaticSqlTranslation = automaticSqlTranslation;
 		this.relationshipSampleSize = relationshipSampleSize;
 	}
@@ -262,7 +257,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		Boolean result = this.apocAvailable;
 		if (result == null) {
-			synchronized (ProductVersion.class) {
+			synchronized (this) {
 				result = this.apocAvailable;
 				if (result == null) {
 					this.apocAvailable = isApocAvailable0();
@@ -1672,12 +1667,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	@Override
-	public boolean locatorsUpdateCopy() throws SQLException {
+	public boolean locatorsUpdateCopy() {
 		return true;
 	}
 
 	@Override
-	public boolean supportsStatementPooling() throws SQLException {
+	public boolean supportsStatementPooling() {
 		return false;
 	}
 
@@ -1898,12 +1893,12 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {
-		var transaction = this.transactionSupplier.getTransaction(Map.of());
-		var newTransaction = State.NEW.equals(transaction.getState());
+		boolean oldAutoCommit = this.connection.getAutoCommit();
+		this.connection.setAutoCommit(false);
+		var transaction = this.connection.unwrap(ConnectionImpl.class).getTransaction(Map.of());
 		var responses = transaction.runAndPull(request.query, request.args, -1, 0);
-		if (newTransaction) {
-			transaction.rollback();
-		}
+		this.connection.rollback();
+		this.connection.setAutoCommit(oldAutoCommit);
 		return new QueryAndRunResponse(responses.pullResponse(),
 				CompletableFuture.completedFuture(responses.runResponse()));
 	}

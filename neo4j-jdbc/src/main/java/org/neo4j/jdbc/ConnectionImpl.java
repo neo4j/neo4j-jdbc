@@ -128,8 +128,6 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final int relationshipSampleSize;
 
-	private volatile Boolean apocAvailable;
-
 	private final String databaseName;
 
 	/**
@@ -314,8 +312,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public DatabaseMetaData getMetaData() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Getting metadata");
 		assertIsOpen();
-		return new DatabaseMetadataImpl(this, (additionalMetadata) -> getTransaction(additionalMetadata, false),
-				this.enableSqlTranslation, this.relationshipSampleSize);
+		return new DatabaseMetadataImpl(this, this.enableSqlTranslation, this.relationshipSampleSize);
 	}
 
 	@Override
@@ -790,33 +787,28 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata) throws SQLException {
-		return getTransaction(additionalTransactionMetadata, true);
-	}
-
-	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata, boolean autoCommitCheck)
-			throws SQLException {
 		assertIsOpen();
 		if (this.fatalException != null) {
 			throw this.fatalException;
 		}
 		if (this.transaction != null && this.transaction.isOpen()) {
-			if (autoCommitCheck && this.transaction.isAutoCommit()) {
+			if (this.transaction.isAutoCommit()) {
 				throw new SQLException("Only a single autocommit transaction is supported");
 			}
+			return this.transaction;
 		}
-		else {
-			var resetNeeded = this.transaction != null && State.FAILED.equals(this.transaction.getState());
-			Map<String, Object> combinedTransactionMetadata = new HashMap<>(
-					this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
-			combinedTransactionMetadata.putAll(this.transactionMetadata);
-			combinedTransactionMetadata.putAll(additionalTransactionMetadata);
-			if (!combinedTransactionMetadata.containsKey("app")) {
-				combinedTransactionMetadata.put("app", this.getApp());
-			}
-			this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
-					combinedTransactionMetadata, this::handleFatalException, resetNeeded, this.autoCommit,
-					getAccessMode(), null, this.databaseName);
+
+		var resetNeeded = this.transaction != null && State.FAILED.equals(this.transaction.getState());
+		Map<String, Object> combinedTransactionMetadata = new HashMap<>(
+				this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
+		combinedTransactionMetadata.putAll(this.transactionMetadata);
+		combinedTransactionMetadata.putAll(additionalTransactionMetadata);
+		if (!combinedTransactionMetadata.containsKey("app")) {
+			combinedTransactionMetadata.put("app", this.getApp());
 		}
+		this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
+				combinedTransactionMetadata, this::handleFatalException, resetNeeded, this.autoCommit, getAccessMode(),
+				null, this.databaseName);
 		return this.transaction;
 	}
 
