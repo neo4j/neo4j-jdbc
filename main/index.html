@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-03-11T21:33:50Z</span>
+<span id="revdate">2025-03-12T16:07:19Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -2410,12 +2410,12 @@ RETURN m.title;</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The lower-cased table name will be the symbolic name:</p>
+<p>The lower-cased table name will be the symbolic name, and when it&#8217;s only one label to be matched, aliased so that it can be easily retrieved by that name.</p>
 </div>
 <div id="star_2_expected" class="listingblock">
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (movie:Movie)
-RETURN movie.title;</code></pre>
+RETURN movie.title AS title;</code></pre>
 </div>
 </div>
 <hr>
@@ -4306,7 +4306,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-11 21:33:56 UTC
+Last updated 2025-03-12 16:07:25 UTC
 </div>
 </div>
 </body>
