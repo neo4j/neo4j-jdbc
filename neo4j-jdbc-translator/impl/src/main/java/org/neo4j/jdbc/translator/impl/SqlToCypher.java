@@ -69,6 +69,7 @@ import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.ExposesRelationships;
 import org.neo4j.cypherdsl.core.ExposesReturning;
 import org.neo4j.cypherdsl.core.Expression;
+import org.neo4j.cypherdsl.core.Finish;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.NodeLabel;
 import org.neo4j.cypherdsl.core.PatternElement;
@@ -85,6 +86,7 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.SymbolicName;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
+import org.neo4j.cypherdsl.core.renderer.GeneralizedRenderer;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
@@ -157,6 +159,9 @@ final class SqlToCypher implements Translator {
 			DSLContext dsl = createDSLContext();
 			Parser parser = dsl.parser();
 			query = parser.parseQuery(sql);
+			if (query == null && sql != null && sql.trim().startsWith("//")) {
+				return Renderer.getRenderer(this.rendererConfig, GeneralizedRenderer.class).render(Finish.create());
+			}
 		}
 		catch (ParserException pe) {
 			throw new IllegalArgumentException(pe);
@@ -528,7 +533,7 @@ final class SqlToCypher implements Translator {
 				var theField = (s instanceof QOM.FieldAlias<?> fa) ? fa.$aliased() : s;
 				Expression col;
 				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
-					col = findTableFieldInTables(tf, true);
+					col = findTableFieldInTables(tf, true, !(s instanceof QOM.FieldAlias<?>));
 				}
 				else {
 					col = expression(s);
@@ -663,7 +668,7 @@ final class SqlToCypher implements Translator {
 				}
 				catch (IllegalArgumentException ex) {
 					if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
-						col = findTableFieldInTables(tf, false);
+						col = findTableFieldInTables(tf, false, false);
 					}
 					if (s instanceof QOM.FieldAlias<?> fa && col != null) {
 						col = col.as(fa.$alias().last());
@@ -683,10 +688,11 @@ final class SqlToCypher implements Translator {
 		 * @param tf the table field to reify
 		 * @param fallbackToFieldName set to {@literal true} to fall back to the plain
 		 * field name
+		 * @param doAlias if we can use the field name as alias
 		 * @return the Cypher column that was determined
 		 */
 		@SuppressWarnings("squid:S3776") // Yep, this is complex.
-		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName) {
+		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName, boolean doAlias) {
 			Expression col = null;
 			if (this.tables.size() == 1) {
 				var propertyContainer = (PropertyContainer) resolveTableOrJoinf(this.tables.get(0)).get(0);
@@ -701,10 +707,13 @@ final class SqlToCypher implements Translator {
 						return makeId(rel.getRight(), tf.getName());
 					}
 				}
-				col = propertyContainer.getSymbolicName()
-					.filter(f -> !f.getValue().equals(tf.getName()))
-					.map(__ -> propertyContainer.property(tf.getName()))
-					.orElse(null);
+				col = propertyContainer.getSymbolicName().filter(f -> !f.getValue().equals(tf.getName())).map(__ -> {
+					var property = propertyContainer.property(tf.getName());
+					if (doAlias) {
+						return property.as(tf.getName());
+					}
+					return property;
+				}).orElse(null);
 			}
 			else if (this.databaseMetaData != null) {
 				var isId = isElementId(tf);
@@ -769,7 +778,7 @@ final class SqlToCypher implements Translator {
 			}
 			else if (f instanceof TableField<?, ?> tf) {
 				if (tf.getTable() == null) {
-					var tableField = findTableFieldInTables(tf, turnUnknownIntoNames);
+					var tableField = findTableFieldInTables(tf, turnUnknownIntoNames, false);
 					if (tableField == null) {
 						throw unsupported(tf);
 					}
@@ -1064,6 +1073,9 @@ final class SqlToCypher implements Translator {
 			}
 			else if (f instanceof QOM.ArrayGet<?> g && g.$arg1() instanceof TableField<?, ?> tf) {
 				return Cypher.valueAt(expression(tf), expression(g.$arg2()));
+			}
+			else if (f instanceof QOM.CurrentTimestamp<?>) {
+				return Cypher.localdatetime();
 			}
 			else {
 				throw unsupported(f);

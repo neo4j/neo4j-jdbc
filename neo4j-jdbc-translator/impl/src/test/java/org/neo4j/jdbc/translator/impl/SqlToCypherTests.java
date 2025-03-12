@@ -85,6 +85,19 @@ class SqlToCypherTests {
 	}
 
 	@Test
+	void singleTable() {
+		var cypher = NON_PRETTY_PRINTING_TRANSLATOR.translate(
+				"""
+						SELECT "installed_rank","version","description","type","script","checksum","installed_on","installed_by","execution_time","success"
+						FROM "public"."flyway_schema_history"
+						WHERE "installed_rank" > ?
+						ORDER BY "installed_rank"
+						""");
+		assertThat(cypher).isEqualTo(
+				"MATCH (flyway_schema_history:flyway_schema_history) WHERE flyway_schema_history.installed_rank > $1 RETURN flyway_schema_history.installed_rank AS installed_rank, flyway_schema_history.version AS version, flyway_schema_history.description AS description, flyway_schema_history.type AS type, flyway_schema_history.script AS script, flyway_schema_history.checksum AS checksum, flyway_schema_history.installed_on AS installed_on, flyway_schema_history.installed_by AS installed_by, flyway_schema_history.execution_time AS execution_time, flyway_schema_history.success AS success ORDER BY flyway_schema_history.installed_rank");
+	}
+
+	@Test
 	void selectNShouldWork() {
 		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT 1")).isEqualTo("RETURN 1");
 	}
@@ -198,7 +211,21 @@ class SqlToCypherTests {
 	void projectingRandomColumnsFromTable() {
 
 		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT name, born FROM Person"))
-			.isEqualTo("MATCH (person:Person) RETURN person.name, person.born");
+			.isEqualTo("MATCH (person:Person) RETURN person.name AS name, person.born AS born");
+	}
+
+	@Test
+	void projectingRandomColumnsFromTable2() {
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT name, born FROM Person p"))
+			.isEqualTo("MATCH (p:Person) RETURN p.name AS name, p.born AS born");
+	}
+
+	@Test
+	void projectingRandomColumnsFromTable3() {
+
+		assertThat(NON_PRETTY_PRINTING_TRANSLATOR.translate("SELECT p.name, p.born FROM Person p"))
+			.isEqualTo("MATCH (p:Person) RETURN p.name, p.born");
 	}
 
 	@Test
@@ -269,11 +296,18 @@ class SqlToCypherTests {
 			.isEqualTo("MATCH (a:Actor) WHERE id(a) = 4711 SET a.name = 'Foo'");
 	}
 
+	@Test
+	void emptyStatementShouldNotFail() {
+
+		var cypher = SqlToCypher.defaultTranslator().translate("   // test");
+		assertThat(cypher).isEqualTo("FINISH");
+	}
+
 	@ParameterizedTest
 	@CsvSource(delimiterString = "|", textBlock = """
-			SELECT name, count(*) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name, count(*)
-			SELECT name, max(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name, max(p.age)
-			SELECT name, min(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name, min(p.age)
+			SELECT name, count(*) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name AS name, count(*)
+			SELECT name, max(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name AS name, max(p.age)
+			SELECT name, min(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name AS name, min(p.age)
 			SELECT sum(age) FROM People p GROUP BY name|MATCH (p:People) RETURN sum(p.age)
 			SELECT avg(age) FROM People p GROUP BY name|MATCH (p:People) RETURN avg(p.age)
 			SELECT percentileCont(age) FROM People p GROUP BY name|MATCH (p:People) RETURN percentileCont(p.age)
@@ -310,7 +344,7 @@ class SqlToCypherTests {
 
 		assertThat(NON_PRETTY_PRINTING_TRANSLATOR
 			.translate("select distinct \"NAME\" from \"Pgm\" where \"snapshotId\" = ?"))
-			.isEqualTo("MATCH (pgm:Pgm) WHERE pgm.snapshotId = $1 RETURN DISTINCT pgm.NAME");
+			.isEqualTo("MATCH (pgm:Pgm) WHERE pgm.snapshotId = $1 RETURN DISTINCT pgm.NAME AS NAME");
 	}
 
 	@ParameterizedTest

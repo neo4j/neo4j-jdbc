@@ -87,12 +87,12 @@ You can omit the table alias:
 SELECT title FROM Movie
 ----
 
-The lower-cased table name will be the symbolic name:
+The lower-cased table name will be the symbolic name, and when it's only one label to be matched, aliased so that it can be easily retrieved by that name.
 
 [source,cypher,id=star_2_expected]
 ----
 MATCH (movie:Movie)
-RETURN movie.title;
+RETURN movie.title AS title;
 ----
 
 '''
