@@ -90,6 +90,10 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final BoltConnection boltConnection;
 
+	private final Lazy<BoltConnection, RuntimeException> boltConnectionForMetaData;
+
+	private final Lazy<DatabaseMetaData, RuntimeException> databaseMetadData;
+
 	private final Set<Reference<Statement>> trackedStatementReferences = new HashSet<>();
 
 	private final ReferenceQueue<Statement> trackedStatementReferenceQueue = new ReferenceQueue<>();
@@ -140,12 +144,16 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final Map<String, String> clientInfo = new ConcurrentHashMap<>();
 
-	ConnectionImpl(URI databaseUrl, BoltConnection boltConnection, Supplier<List<Translator>> translators,
-			boolean enableSQLTranslation, boolean enableTranslationCaching, boolean rewriteBatchedStatements,
-			boolean rewritePlaceholders, BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata,
-			int relationshipSampleSize, String databaseName) {
+	ConnectionImpl(URI databaseUrl, Supplier<BoltConnection> boltConnectionSupplier,
+			Supplier<List<Translator>> translators, boolean enableSQLTranslation, boolean enableTranslationCaching,
+			boolean rewriteBatchedStatements, boolean rewritePlaceholders, BookmarkManager bookmarkManager,
+			Map<String, Object> transactionMetadata, int relationshipSampleSize, String databaseName) {
+
+		Objects.requireNonNull(boltConnectionSupplier);
+
 		this.databaseUrl = Objects.requireNonNull(databaseUrl);
-		this.boltConnection = Objects.requireNonNull(boltConnection);
+		this.boltConnection = boltConnectionSupplier.get();
+		this.boltConnectionForMetaData = Lazy.of(boltConnectionSupplier);
 		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
 		this.enableTranslationCaching = enableTranslationCaching;
@@ -155,6 +163,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.transactionMetadata.putAll(Objects.requireNonNullElseGet(transactionMetadata, Map::of));
 		this.relationshipSampleSize = relationshipSampleSize;
 		this.databaseName = Objects.requireNonNull(databaseName);
+		this.databaseMetadData = Lazy.of((Supplier<DatabaseMetaData>) () -> new DatabaseMetadataImpl(this,
+				this.enableSqlTranslation, this.relationshipSampleSize));
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
@@ -296,6 +306,11 @@ final class ConnectionImpl implements Neo4jConnection {
 
 		try {
 			this.boltConnection.close().toCompletableFuture().get();
+			synchronized (this.boltConnectionForMetaData) {
+				if (this.boltConnectionForMetaData.isResolved()) {
+					this.boltConnectionForMetaData.resolve().close();
+				}
+			}
 		}
 		catch (Exception ex) {
 			if (ex instanceof InterruptedException) {
@@ -321,7 +336,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public DatabaseMetaData getMetaData() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Getting metadata");
 		assertIsOpen();
-		return new DatabaseMetadataImpl(this, this.enableSqlTranslation, this.relationshipSampleSize);
+		return this.databaseMetadData.resolve().unwrap(Neo4jDatabaseMetaData.class).flush();
 	}
 
 	@Override
@@ -795,6 +810,14 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 	}
 
+	/**
+	 * Gets the current transactions or creates a new one.
+	 * @param additionalTransactionMetadata any additional metadata that should be
+	 * attached to the transaction
+	 * @return a transaction
+	 * @throws SQLException if there's already an open transaction and the connection is
+	 * using auto commit mode
+	 */
 	Neo4jTransaction getTransaction(Map<String, Object> additionalTransactionMetadata) throws SQLException {
 		assertIsOpen();
 		if (this.fatalException != null) {
@@ -807,6 +830,32 @@ final class ConnectionImpl implements Neo4jConnection {
 			return this.transaction;
 		}
 
+		var combinedTransactionMetadata = getCombinedTransactionMetadata(additionalTransactionMetadata);
+		this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
+				combinedTransactionMetadata, this::handleFatalException, this.resetNeeded.getAndSet(false),
+				this.autoCommit, getAccessMode(), null, this.databaseName, state -> this.resetNeeded
+					.compareAndSet(false, EnumSet.of(State.FAILED, State.OPEN_FAILED).contains(state)));
+		return this.transaction;
+	}
+
+	/**
+	 * Creates a new transaction that is not yet attached to this connection and might
+	 * never will.
+	 * @param additionalTransactionMetadata any additional metadata that should be
+	 * attached to the transaction
+	 * @return a transaction
+	 * @throws SQLException if {@link #getApp()} fails to retrieve client info
+	 */
+	Neo4jTransaction newMetadataTransaction(Map<String, Object> additionalTransactionMetadata) throws SQLException {
+		var combinedTransactionMetadata = getCombinedTransactionMetadata(additionalTransactionMetadata);
+		return new DefaultTransactionImpl(this.boltConnectionForMetaData.resolve(), this.bookmarkManager,
+				combinedTransactionMetadata, this::handleFatalException, false, this.autoCommit, getAccessMode(), null,
+				this.databaseName, state -> {
+				});
+	}
+
+	private Map<String, Object> getCombinedTransactionMetadata(Map<String, Object> additionalTransactionMetadata)
+			throws SQLException {
 		Map<String, Object> combinedTransactionMetadata = new HashMap<>(
 				this.transactionMetadata.size() + additionalTransactionMetadata.size() + 1);
 		combinedTransactionMetadata.putAll(this.transactionMetadata);
@@ -814,11 +863,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		if (!combinedTransactionMetadata.containsKey("app")) {
 			combinedTransactionMetadata.put("app", this.getApp());
 		}
-		this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
-				combinedTransactionMetadata, this::handleFatalException, this.resetNeeded.getAndSet(false),
-				this.autoCommit, getAccessMode(), null, this.databaseName, state -> this.resetNeeded
-					.compareAndSet(false, EnumSet.of(State.FAILED, State.OPEN_FAILED).contains(state)));
-		return this.transaction;
+		return combinedTransactionMetadata;
 	}
 
 	private AccessMode getAccessMode() {

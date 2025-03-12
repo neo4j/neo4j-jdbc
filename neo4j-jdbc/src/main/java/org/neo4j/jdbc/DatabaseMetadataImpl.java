@@ -48,7 +48,6 @@ import java.util.logging.Logger;
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
-import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -74,7 +73,7 @@ import org.neo4j.jdbc.values.Values;
  * @author Conor Watson
  * @since 6.0.0
  */
-final class DatabaseMetadataImpl implements DatabaseMetaData {
+final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private static final Properties QUERIES;
 
@@ -250,7 +249,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 	private final Lazy<Boolean, SQLException> readOnly;
 
-	private final Map<GetTablesCacheKey, GetTablesCacheValue> getTablesResults = new ConcurrentHashMap<>();
+	private final Map<GetTablesCacheKey, GetTablesCacheValue> tablesCache = new ConcurrentHashMap<>();
 
 	DatabaseMetadataImpl(Connection connection, boolean automaticSqlTranslation, int relationshipSampleSize) {
 		this.connection = connection;
@@ -1010,7 +1009,7 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 
 		try {
 			var key = new GetTablesCacheKey(catalog, schemaPattern, tableNamePattern, types);
-			var result = this.getTablesResults.computeIfAbsent(key, this::getTables0);
+			var result = this.tablesCache.computeIfAbsent(key, this::getTables0);
 			// We cannot cache the result set, as any proper usage would close it for
 			// good, and it's much harder to dig down into the implementation and prevent
 			// closing it on a case base case basis than just recreating it
@@ -1909,17 +1908,17 @@ final class DatabaseMetadataImpl implements DatabaseMetaData {
 	}
 
 	private QueryAndRunResponse doQuery(Request request) throws SQLException {
-		boolean oldAutoCommit = this.connection.getAutoCommit();
-		this.connection.setAutoCommit(false);
-		var transaction = this.connection.unwrap(ConnectionImpl.class).getTransaction(Map.of());
-		var newTransaction = State.NEW.equals(transaction.getState());
+		var transaction = this.connection.unwrap(ConnectionImpl.class).newMetadataTransaction(Map.of());
 		var responses = transaction.runAndPull(request.query, request.args, -1, 0);
-		if (newTransaction) {
-			this.connection.rollback();
-		}
-		this.connection.setAutoCommit(oldAutoCommit);
+		transaction.commit();
 		return new QueryAndRunResponse(responses.pullResponse(),
 				CompletableFuture.completedFuture(responses.runResponse()));
+	}
+
+	@Override
+	public DatabaseMetaData flush() {
+		this.tablesCache.clear();
+		return this;
 	}
 
 	private record Request(String query, Map<String, Object> args) {

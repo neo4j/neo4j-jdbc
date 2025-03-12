@@ -363,9 +363,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var userAgent = driverConfig.agent;
 		var connectTimeoutMillis = driverConfig.timeout;
 
-		var boltConnection = establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan,
-				databaseName, authToken);
-
 		var enableSqlTranslation = driverConfig.enableSQLTranslation;
 		var enableTranslationCaching = driverConfig.enableTranslationCaching;
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
@@ -378,7 +375,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
-		return new ConnectionImpl(driverConfig.toUrl(), boltConnection,
+		return new ConnectionImpl(driverConfig.toUrl(),
+				() -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan, databaseName,
+						authToken),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName);

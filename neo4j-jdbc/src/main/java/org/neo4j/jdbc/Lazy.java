@@ -65,4 +65,13 @@ final class Lazy<T, E extends Throwable> {
 		return result;
 	}
 
+	/**
+	 * This method is not synchronized and must be used in a {@code synchronized} block on
+	 * this {@link Lazy}.
+	 * @return true if this instance has been resolved
+	 */
+	boolean isResolved() {
+		return this.resolved != null;
+	}
+
 }
