@@ -115,15 +115,15 @@ class ResultSetImplTests {
 								supplier -> assertThat(supplier.get()).isEqualTo("testing"))),
 				// null handling
 				Arguments.of(Values.NULL,
-						Named.<VerificationLogic<Boolean>>of("verify returns null",
+						Named.<VerificationLogic<String>>of("verify returns null",
 								supplier -> assertThat(supplier.get()).isNull())),
 				// other types handling
 				Arguments.of(Values.value(0),
-						Named.<VerificationLogic<Boolean>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+						Named.<VerificationLogic<String>>of("verify throws exception",
+								supplier -> assertThat(supplier.get()).isEqualTo("0"))),
 				Arguments.of(Values.value(true),
-						Named.<VerificationLogic<Boolean>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))))
+						Named.<VerificationLogic<String>>of("verify throws exception",
+								supplier -> assertThat(supplier.get()).isEqualTo("true"))))
 			// map each set of arguments to both index and label access methods
 			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
 	}

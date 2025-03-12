@@ -43,6 +43,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,9 @@ final class ResultSetImpl implements Neo4jResultSet {
 	 * A constant for the only fetch direction we support.
 	 */
 	static final int SUPPORTED_FETCH_DIRECTION = ResultSet.FETCH_FORWARD;
+
+	static final EnumSet<Type> NO_TO_STRING_SUPPORT = EnumSet.of(Type.NODE, Type.RELATIONSHIP, Type.PATH, Type.MAP,
+			Type.LIST);
 
 	private final StatementImpl statement;
 
@@ -1339,7 +1343,16 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to String", value.type()));
+
+		try {
+			if (NO_TO_STRING_SUPPORT.stream().anyMatch(t -> t.isTypeOf(value))) {
+				throw new UncoercibleException(value.type().name(), "String");
+			}
+			return value.asObject().toString();
+		}
+		catch (UncoercibleException ex) {
+			throw new SQLException(String.format("%s value can not be mapped to String", value.type()));
+		}
 	}
 
 	private static URL mapToUrl(Value value) throws SQLException {
