@@ -1443,6 +1443,15 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return 0;
 		}
+		if (Type.STRING.isTypeOf(value)) {
+			try {
+				return Integer.parseInt(value.asString());
+			}
+			catch (NumberFormatException ex) {
+				throw new SQLException(
+						String.format("%s value can not be mapped to int: %s", value.type(), ex.getMessage()));
+			}
+		}
 		throw new SQLException(String.format("%s value can not be mapped to int", value.type()));
 	}
 
@@ -1452,6 +1461,15 @@ final class ResultSetImpl implements Neo4jResultSet {
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return 0L;
+		}
+		if (Type.STRING.isTypeOf(value)) {
+			try {
+				return Long.parseLong(value.asString());
+			}
+			catch (NumberFormatException ex) {
+				throw new SQLException(
+						String.format("%s value can not be mapped to long: %s", value.type(), ex.getMessage()));
+			}
 		}
 		throw new SQLException(String.format("%s value can not be mapped to long", value.type()));
 	}
