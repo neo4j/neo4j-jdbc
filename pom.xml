@@ -326,7 +326,7 @@
 					<configuration>
 						<licenseSets>
 							<licenseSet>
-								<header>etc/license.tpl</header>
+								<header>${maven.multiModuleProjectDirectory}/etc/license.tpl</header>
 								<properties>
 									<year>2025</year>
 								</properties>
