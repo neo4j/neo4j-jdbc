@@ -81,7 +81,7 @@
 						</goals>
 						<phase>generate-sources</phase>
 						<configuration>
-							<executable>bin/remove-shaded-dependencies-from-module-info.sh</executable>
+							<executable>${maven.multiModuleProjectDirectory}/bin/remove-shaded-dependencies-from-module-info.sh</executable>
 							<arguments>
 								<argument>${project.basedir}/../../neo4j-jdbc/src/main/java/module-info.java</argument>
 								<argument>${project.build.directory}/jpms/module-info.java</argument>
