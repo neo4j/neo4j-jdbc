@@ -1,3 +1,247 @@
+# 6.1.5
+
+## 🐛 Bug Fixes
+- c36ae21 fix(build): Add another way to spell MIT license to the license check.
+- bc5e0de fix: Make driver more resilient agains already existing attribute keys for Netty channels. (#869)
+
+## 🔄️ Refactorings
+- 0e1882e refactor: Support row movement as much as possible in the `ResultSetImpl` and throw the appropriate exception otherwise.
+- 0de6261 refactor: Trace usage of all result set interface methods.
+- d3184c9 refactor: Trace usage of all callable statement interface methods.
+- 9357d4e refactor: Trace usage of all prepared statement interface methods.
+- f7e05d7 refactor: Trace usage of all statement interface methods.
+- 0c9743a refactor: Trace usage of all connection interface methods.
+
+## 📝 Documentation
+- ffb06b2 docs: Add issue template.
+- db3e3f0 docs: Document logging configuration.
+- cdd1351 docs: Point GitHub pages always to the offical Neo4j manual.
+
+## 🧹 Housekeeping
+- 8aaaeb3 Bump quarkus.platform.version from 3.18.4 to 3.19.1 (#862)
+- f7aca53 Bump org.codehaus.mojo:flatten-maven-plugin (#868)
+- 4a1c289 Bump org.neo4j:cypher-v5-antlr-parser from 5.26.2 to 5.26.3 (#867)
+- f9cfe1b Bump org.apache.maven.plugins:maven-deploy-plugin (#865)
+- 013e29e Bump org.neo4j:neo4j-cypher-dsl-bom (#864)
+- 050c220 Bump slf4j.version from 2.0.16 to 2.0.17 (#863)
+- 16ea18e Bump org.openapitools:openapi-generator-maven-plugin (#861)
+- 48e0863 Bump org.jreleaser:jreleaser-maven-plugin (#860)
+- 9b4842e Bump io.netty:netty-bom from 4.1.118.Final to 4.1.119.Final (#859)
+
+
+# 6.1.4
+
+## 🐛 Bug Fixes
+- e9d87c2 fix: Remove tests for unsupported features that are now supported.
+
+## 🔄️ Refactorings
+- 1daa556 refactor(metadata): More work on adding support for JDBC / SQL features.
+- 2678d37 refactor: Replace several more unnessary usages of `SQLFeatureNotSupportedException`.
+
+## 🧹 Housekeeping
+- 3df0055 Bump org.jooq:jooq from 3.19.18 to 3.19.20 (#858)
+- 70ff7b0 Bump spring-boot.version from 3.4.2 to 3.4.3 (#857)
+- 6e89852 Bump quarkus.platform.version from 3.18.3 to 3.18.4 (#856)
+- f068a19 Bump org.apache.maven.plugins:maven-compiler-plugin (#855)
+- ce60c12 Bump org.hibernate.orm:hibernate-platform (#854)
+- ff850fc Bump com.puppycrawl.tools:checkstyle (#853)
+- d7df38d Bump io.github.cdimascio:dotenv-java from 3.1.0 to 3.2.0 (#852)
+- 745c67b Bump org.junit:junit-bom from 5.11.4 to 5.12.0 (#851)
+- edbca02 Bump org.testcontainers:testcontainers-bom (#850)
+
+
+# 6.1.3
+
+## 🚀 Features
+- a42da59 feat(metadata): Cache the result of `getTables` per metadata instance as it is used during columns computations, too.
+- 2de971b feat(metadata): Use `apoc.meta.schema` if available for computing tables and relationships.
+- 404bd0f feat(metadata): Make sampling size for relationships configurable.
+
+## 🐛 Bug Fixes
+- 93abb1a fix(test): Disable reflection based test in native image. (#844)
+- 3bb7ab7 fix(build): The default of `structuredMessage` is `false`.
+
+## 🔄️ Refactorings
+- de2b3d3 refactor(meta): Sanitize sampling size and ensure it works for both apoc and Cypher solutions.
+
+## 🧹 Housekeeping
+- 080ce04 Bump quarkus.platform.version from 3.18.2 to 3.18.3 (#849)
+- 14ee32f Bump org.hibernate.orm:hibernate-platform (#848)
+- c0ccfad Bump org.neo4j:neo4j-cypher-dsl-bom (#847)
+- 08c1b3d build(deps-dev): Bump com.tngtech.archunit:archunit from 1.3.0 to 1.4.0 (#846)
+- d7aefaf Bump org.jdbi:jdbi3-bom from 3.47.0 to 3.48.0 (#845)
+
+## 🛠 Build
+- 3a03ce1 build: Use default values for announcer.
+- 34e7cad build: Exclude shaded dependencies from semver check.
+- b8523fb build: Enable announcer on release only.
+
+
+# 6.1.2
+
+## 🚀 Features
+- ce3e888 feat: Avoid throwing any `SQLFeatureNotSupportedException` from `DatabaseMetaData`.
+- dacb98f feat: Add support for `isReadOnly` in database metadata.
+- bbcb487 feat: Add support for `getURL` in database metadata.
+- d42f893 feat: Provide proper schema and catalog names from within `ResultSetMetaData`.
+- b0416d8 feat(translator): Provide a module containing a translator aiming specifically at Spark generated queries.
+
+## 🔄️ Refactorings
+- 69ee1a3 refactor: Use constants for metadata column names.
+- 2fc53c4 refactor: Address some overly complex methods. (#843)
+- b1e3435 refactor(translator): Optimize `LIKE` queries to not always use `=~`.
+- 0a691b2 refactor: Allow translator factories to return `null` to indicate that no translator has been created.
+
+## 🧹 Housekeeping
+- b8bc487 Bump io.netty:netty-bom from 4.1.117.Final to 4.1.118.Final
+- 175b19d Bump quarkus.platform.version from 3.18.1 to 3.18.2 (#842)
+- 7b4189f Bump org.graalvm.buildtools:native-maven-plugin (#841)
+- 7112adb Bump org.neo4j:cypher-v5-antlr-parser from 5.26.1 to 5.26.2 (#840)
+- f39448b Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#839)
+- 5c75faa Bump org.hibernate.orm:hibernate-platform (#838)
+- 896f02f Bump quarkus.platform.version from 3.17.8 to 3.18.1 (#837)
+- 32051be Bump com.puppycrawl.tools:checkstyle (#836)
+- a6b6686 Bump quarkus.platform.version from 3.17.7 to 3.17.8 (#835)
+- 1480297 Bump org.openapitools:openapi-generator-maven-plugin (#834)
+- bf9b12b Bump spring-boot.version from 3.4.1 to 3.4.2 (#833)
+- 03bc391 Bump org.hibernate.orm:hibernate-platform (#831)
+- 5fc86b8 Bump quarkus.platform.version from 3.17.6 to 3.17.7 (#830)
+- 1d7b0d7 Bump org.assertj:assertj-core from 3.27.2 to 3.27.3 (#828)
+- ac32b32 Bump io.netty:netty-bom from 4.1.116.Final to 4.1.117.Final (#827)
+- 789a95f Bump org.jooq:jooq from 3.19.17 to 3.19.18 (#829)
+- 96e0910 Bump cookie and express in /etc/antora (#825)
+
+## 🛠 Build
+- ede26b1 build: Add release announcements.
+
+
+# 6.1.1
+
+## 🚀 Features
+- e98cab4 feat: Indicate that all open result sets will be closed when autocommit fails. [metadata]
+- 791e4f2 feat: Add `app` string to transactional metadata and unify with BoltAgent.
+- f1baf87 feat: Indicate in metadata which client info properties are supported. [metadata]
+- 9d179b1 feat: Add support for `getTypeInfo`. [metadata]
+- d6b2183 feat: Show all catalogs. [metadata]
+- 34bbb15 feat: In `LIKE` also translate `_` to `.`. [translator].
+- 8b771b9 feat: Derive primary keys from unique constraints.
+
+## 🐛 Bug Fixes
+- 46ef2c5 fix: Don’t swallow exception and don’t overwrite previous valid translation when a later translator fails.
+- d4ee5f1 fix: Allow matching on multiple patterns, check target nodes in relationships. [translator] (#819)
+- 245cd93 fix: Transaction must not jump back from committed to ready.
+- 7e02077 fix: Use correct target for elementId. [translator]
+
+## 🔄️ Refactorings
+- b3e3a73 refactor: Still create a relationship pattern despite an expected empty result [translator]
+- 77e52f4 refactor: Align both overloads of `getSchemas` to support querying the schema and returning the current catalog.
+- 895d416 refactor: Rework catalog support.
+
+## 📝 Documentation
+- 6e799ab docs: Add screenshot from 6.1.0 release notes.
+
+## 🧰 Tasks
+- 1c1562b chore: Extend license header to 2025.
+
+## 🧹 Housekeeping
+- 01b9528 Bump quarkus.platform.version from 3.17.5 to 3.17.6 (#824)
+- 9160d22 Bump org.jooq:jooq from 3.19.16 to 3.19.17 (#823)
+- d6abf3e Bump com.github.siom79.japicmp:japicmp-maven-plugin (#822)
+- 805f8bf Bump com.opencsv:opencsv from 5.9 to 5.10 (#821)
+- fcfb7d2 Bump org.hibernate.orm:hibernate-platform (#808)
+- 89169c7 Bump quarkus.platform.version from 3.17.4 to 3.17.5 (#809)
+- 2c1f2e6 Bump org.mockito:mockito-bom from 5.14.2 to 5.15.2 (#816)
+- 6cb0502 Bump org.jreleaser:jreleaser-maven-plugin (#817)
+- 76692f2 Bump org.assertj:assertj-core from 3.26.3 to 3.27.2 (#818)
+- 8f758aa Bump spring-boot.version from 3.4.0 to 3.4.1 (#812)
+- d1e2c56 Bump io.netty:netty-bom from 4.1.115.Final to 4.1.116.Final (#810)
+- cd90d65 Bump org.neo4j:neo4j-cypher-dsl-bom (#813)
+- 202c80e Bump com.puppycrawl.tools:checkstyle (#815)
+- 0220639 Bump org.junit:junit-bom from 5.11.3 to 5.11.4 (#807)
+- c8c4f1b Bump org.jooq:jooq from 3.19.15 to 3.19.16 (#806)
+- fea2623 Bump com.puppycrawl.tools:checkstyle (#805)
+- 0d263f0 Bump io.github.cdimascio:dotenv-java from 3.0.2 to 3.1.0 (#804)
+- fc18b14 Bump quarkus.platform.version from 3.17.3 to 3.17.4 (#803)
+- 41abb65 Bump neo4j-cypher-dsl.version from 2024.3.1 to 2024.3.2
+
+## 🛠 Build
+- d53805b build: Allow the swagger generated stuff to compile with JDK23.
+
+
+# 6.1.0
+
+> [!TIP]
+> This minor release bump is fully API compatible with 6.0.1, we bumped the version for two reasons:
+> The virtual column `element_id` has been renamed to `v$id` and consistently shows now in the database metadata as "generated column". The naming has been chosen on purpose to avoid any clash with nodes that have an actual property of that name (No, the `elementId()` of a node is a function call, just like `id()` was, it is not a property).
+> The second reason is for the fix in behaviour of `executeUpdate` which now returns the estimated number of updated rows instead of the cumulative updates in a statement. This is in align with the JDBC Spec. 
+
+The most exciting new feature of this release is the introduction of virtual tables for relationships. The metadata does now some sampling of the graph (Similar to what is done in the [schema introspection PoC](https://github.com/neo4j/graph-schema-introspector) or Apoc Meta) and lists relationships between labels as `label1_TYPE_label2` in the data dictionary, with a `v$id` column for the relationship, and `v$label1_id` and `v$label2_id` so that ETL tools can actual join those with the labels.
+
+Those virtual tables are fully queryable, so that you can do a `SELECT * FROM Person_ACTED_IN_Movie`, which will return the element ids of the relationship and the start and end nodes and all relationship properties and they do partake of course proper in joins.
+
+Using the standard `JOIN` syntax,  the driver will translate the query to a simple pattern match, so that 
+
+```sql
+SELECT p."v$person_id", name, title, roles 
+FROM Person p
+JOIN Person_ACTED_IN_Movie pm ON pm.v$person_id = p.v$id
+JOIN Movie m ON m.v$id = pm.v$movie_id 
+WHERE title = 'The Matrix'
+ORDER BY title, name
+```
+
+becomes
+
+```cypher
+MATCH (p:Person) -[r:ACTED_IN]->(m:Movie)
+WHERE m.title = 'The Matrix'
+RETURN elementId(p), p.name AS name, m.title AS title, r.roles AS roles
+ORDER BY m.title, p.name
+```
+
+When you enumerate the tables in the `FROM` clause and join inside `WHERE`, the driver will match start and end nodes separately and then join on ids as well. We might change this in a future optimisation.
+
+![image](https://github.com/user-attachments/assets/b1acf323-c090-44c7-b6c7-7e634fc3d026)
+
+## 🚀 Features
+- 1b7d520 feat: Implement left and right joins on virtual tables.
+- f8ed74d feat: Add support for parsing array expressions [translator].
+
+## 🐛 Bug Fixes
+- fef8468 fix: Make `executeUpdate` return only the number of modified rows. (#780)
+
+## 🔄️ Refactorings
+- f3bd2de refactor: Improve metadata support.
+
+## 📝 Documentation
+- 5623382 docs: Store changelog with the repository.
+- 52133da docs: Add example how to turn Node into Map.
+
+## 🧹 Housekeeping
+- 860c969 build: Bump version.
+- 785a93a Bump org.apache.maven.plugins:maven-javadoc-plugin (#802)
+- 3f22be0 Bump org.graalvm.buildtools:native-maven-plugin (#801)
+- 57ca1b5 Bump quarkus.platform.version from 3.17.2 to 3.17.3 (#800)
+- a782b29 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#798)
+- 98e50da Bump com.puppycrawl.tools:checkstyle (#797)
+- bfc5e23 Bump quarkus.platform.version from 3.16.4 to 3.17.2 (#796)
+- 4e03283 Bump org.testcontainers:testcontainers-bom (#795)
+- 2696970 Bump org.openapitools:openapi-generator-maven-plugin (#794)
+- e8fd41b Bump org.hibernate.orm:hibernate-platform (#793)
+- 70a6c3c Bump dev.langchain4j:langchain4j-bom from 0.36.0 to 0.36.2 (#792)
+- 8f551b7 Bump spring-boot.version from 3.3.5 to 3.4.0 (#791)
+- 35da2f6 Bump quarkus.platform.version from 3.16.3 to 3.16.4 (#790)
+- 8b5c5f1 Bump org.hibernate.orm:hibernate-platform (#789)
+- 4239005 Bump dev.langchain4j:langchain4j-bom from 0.35.0 to 0.36.0 (#788)
+- 528843d Bump org.asciidoctor:asciidoctor-maven-plugin (#787)
+- 238de8b Bump quarkus.platform.version from 3.16.2 to 3.16.3 (#786)
+- 7a72201 Bump io.netty:netty-bom from 4.1.114.Final to 4.1.115.Final (#785)
+- 75d41a8 Bump org.jooq:jooq from 3.19.14 to 3.19.15 (#781)
+- deb9e9b Bump com.puppycrawl.tools:checkstyle (#784)
+- 7f24cb1 Bump quarkus.platform.version from 3.16.1 to 3.16.2 (#783)
+- e882122 Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#782)
+
+
 # 6.0.1
 
 ## 🚀 Features
