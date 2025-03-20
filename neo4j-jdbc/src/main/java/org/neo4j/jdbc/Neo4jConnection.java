@@ -22,6 +22,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
+import org.neo4j.jdbc.events.ConnectionListener;
+
 /**
  * A Neo4j specific extension of {@link Connection}. It may be referred to for use with
  * {@link #unwrap(Class)} to access specific Neo4j functionality.
@@ -86,5 +88,13 @@ public sealed interface Neo4jConnection extends Connection, Neo4jMetadataWriter 
 	 * @return the name of the database for this connection
 	 */
 	String getDatabaseName();
+
+	/**
+	 * Adds a listener to this connection that gets notified when statements are created
+	 * and closed.
+	 * @param connectionListener the listener to add, must not be {@literal null}
+	 * @since 6.3.0
+	 */
+	void addListener(ConnectionListener connectionListener);
 
 }

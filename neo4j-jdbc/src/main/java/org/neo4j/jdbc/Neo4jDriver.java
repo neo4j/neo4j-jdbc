@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,6 +70,9 @@ import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
+import org.neo4j.jdbc.events.ConnectionClosedEvent;
+import org.neo4j.jdbc.events.ConnectionOpenedEvent;
+import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
@@ -254,6 +258,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
+	private final List<DriverListener> listeners = new CopyOnWriteArrayList<>();
+
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
@@ -375,12 +381,18 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
-		return new ConnectionImpl(driverConfig.toUrl(),
+		var connection = new ConnectionImpl(driverConfig.toUrl(),
 				() -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan, databaseName,
 						authToken),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName);
+				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
+				(aborted) -> {
+					var event = new ConnectionClosedEvent(aborted);
+					Events.notify(this.listeners, driverListener -> driverListener.connectionClosed(event));
+				});
+		Events.notify(this.listeners, driverListener -> driverListener.connectionOpened(new ConnectionOpenedEvent()));
+		return connection;
 	}
 
 	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
@@ -754,6 +766,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (bm != null) {
 			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
 		}
+	}
+
+	@Override
+	public void addListener(DriverListener driverListener) {
+		this.listeners.add(Objects.requireNonNull(driverListener));
 	}
 
 	@Override

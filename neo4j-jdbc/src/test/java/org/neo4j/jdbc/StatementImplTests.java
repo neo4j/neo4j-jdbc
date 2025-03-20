@@ -48,7 +48,7 @@ class StatementImplTests {
 	private StatementImpl statement;
 
 	static StatementImpl newStatement(Connection connection, Neo4jTransactionSupplier transactionSupplier) {
-		return new StatementImpl(connection, transactionSupplier, UnaryOperator.identity(), null);
+		return new StatementImpl(connection, transactionSupplier, UnaryOperator.identity(), null, null);
 	}
 
 	@Test

@@ -123,7 +123,7 @@ class PreparedStatementImplTests {
 
 	private static PreparedStatementImpl newStatement(Connection connection,
 			Neo4jTransactionSupplier transactionSupplier, String query) {
-		return new PreparedStatementImpl(connection, transactionSupplier, null, null, false, query);
+		return new PreparedStatementImpl(connection, transactionSupplier, null, null, null, false, query);
 	}
 
 	@Test

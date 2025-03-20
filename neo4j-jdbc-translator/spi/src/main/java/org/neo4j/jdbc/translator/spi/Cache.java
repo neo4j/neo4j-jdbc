@@ -77,4 +77,8 @@ public interface Cache<K, V> {
 	 */
 	void flush();
 
+	default int size() {
+		throw new UnsupportedOperationException();
+	}
+
 }

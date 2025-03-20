@@ -75,7 +75,7 @@ abstract class IntegrationTestBase {
 
 	@BeforeEach
 	void clearDatabase() throws SQLException {
-		try (var stmt = this.getConnection().createStatement()) {
+		try (var connection = this.getConnection(); var stmt = connection.createStatement()) {
 			stmt.execute("""
 					MATCH (n)
 					CALL {
