@@ -309,6 +309,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			synchronized (this.boltConnectionForMetaData) {
 				if (this.boltConnectionForMetaData.isResolved()) {
 					this.boltConnectionForMetaData.resolve().close();
+					this.boltConnection.clear();
 				}
 			}
 		}

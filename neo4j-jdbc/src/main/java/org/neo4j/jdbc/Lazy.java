@@ -74,4 +74,12 @@ final class Lazy<T, E extends Throwable> {
 		return this.resolved != null;
 	}
 
+	/**
+	 * Forgets the resolved value. This method is not synchronized and must be used in a
+	 * {@code synchronized} block on this {@link Lazy}.
+	 */
+	void forget() {
+		this.resolved = null;
+	}
+
 }
