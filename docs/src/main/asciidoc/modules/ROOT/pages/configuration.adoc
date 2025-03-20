@@ -325,3 +325,18 @@ quarkus.log.category."org.neo4j.jdbc.network.InboundMessageHandler".level=DEBUG
 === SQL Translations
 
 The SQL translators use the logger `org.neo4j.jdbc.translator`.
+
+== Metrics
+
+The Neo4j JDBC Driver will publish metrics via https://micrometer.io[Micrometer].
+If you put Micrometer on your classpath, no further configuration is necessary.
+This is for example automatically the case with https://docs.spring.io/spring-boot/reference/actuator/metrics.html[Spring Boot Actuator] or https://quarkus.io/guides/telemetry-micrometer[Micrometer for Quarkus].
+To make best use of this feature, you will additionally configure your https://docs.micrometer.io/micrometer/reference/implementations.html[monitoring system].
+
+The Neo4j JDBC Driver does publish the following metrics:
+
+`org.neo4j.jdbc.connections`:: a gauge representing the number of open connections, tagged with `url` to which the driver is connected
+`org.neo4j.jdbc.statements`:: a gauge representing the number of open connections, tagged with both  the `url` to which the statement is opened and the JDBC type of the statement (either `Statement`, `PreparedStatement` or `CallableStatement`
+)
+`org.neo4j.jdbc.queries`:: a composite meter containing the counts of successful and failed queries and a timer measuring the duration of queries
+`org.neo4j.jdbc.cached-translations`:: a gauge representing the number of cached SQL to cypher translations

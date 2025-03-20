@@ -45,6 +45,7 @@ class TranslationIT extends IntegrationTestBase {
 		properties.put("password", this.neo4j.getAdminPassword());
 		properties.put("translatorFactory", "default");
 		properties.put("enableSQLTranslation", "true");
+		properties.put("cacheSQLTranslations", "true");
 
 		try (var con = driver.connect(url, properties);
 				var stmt = con.createStatement();

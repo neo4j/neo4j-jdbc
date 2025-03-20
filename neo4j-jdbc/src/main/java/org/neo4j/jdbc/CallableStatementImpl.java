@@ -24,7 +24,6 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
-import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.Date;
@@ -34,6 +33,7 @@ import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
+import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -58,8 +59,9 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	private ParameterType parameterType;
 
-	static CallableStatement prepareCall(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			boolean rewriteBatchedStatements, String sql) throws SQLException {
+	static CallableStatementImpl prepareCall(Connection connection, Neo4jTransactionSupplier transactionSupplier,
+			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql)
+			throws SQLException {
 
 		// We should cache the descriptor if this gets widely used.
 
@@ -94,13 +96,13 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 		// We can always store the descriptor with the statement to check for yielded /
 		// return values if wished / needed
-		return new CallableStatementImpl(connection, transactionSupplier, rewriteBatchedStatements,
+		return new CallableStatementImpl(connection, transactionSupplier, onClose, rewriteBatchedStatements,
 				descriptor.toCypher(parameterOrder));
 	}
 
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			boolean rewriteBatchedStatements, String sql) {
-		super(connection, transactionSupplier, UnaryOperator.identity(), null, rewriteBatchedStatements, sql);
+			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql) {
+		super(connection, transactionSupplier, UnaryOperator.identity(), null, onClose, rewriteBatchedStatements, sql);
 	}
 
 	@Override

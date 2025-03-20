@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Properties;
 
+import org.neo4j.jdbc.events.DriverListener;
+
 /**
  * Neo4j specific extensions to a {@link Driver}.
  *
@@ -86,5 +88,13 @@ public sealed interface Neo4jDriverExtensions extends Driver, Neo4jMetadataWrite
 	 * @throws SQLException in all error cases
 	 */
 	void addBookmarks(String url, Properties info, Collection<Bookmark> bookmarks) throws SQLException;
+
+	/**
+	 * Adds a listener to this driver instance that gets notified when connections are
+	 * opened and closed.
+	 * @param driverListener the listener to add, must not be {@literal null}
+	 * @since 6.3.0
+	 */
+	void addListener(DriverListener driverListener);
 
 }

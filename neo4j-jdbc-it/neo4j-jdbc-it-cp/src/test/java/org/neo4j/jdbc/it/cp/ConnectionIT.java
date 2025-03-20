@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ConnectionIT extends IntegrationTestBase {
+class ConnectionIT extends IntegrationTestBase {
 
 	@Test
 	void shouldCheckTXStateBeforeCommit() throws SQLException {

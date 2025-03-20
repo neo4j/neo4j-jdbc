@@ -501,7 +501,7 @@ class Neo4jDriverUrlParsingTests {
 
 		var url = config.toUrl().toString();
 		assertThat(url).isEqualTo(
-				"jdbc:neo4j+ssc://host:1234/customDb?authScheme=BASIC&user=user1&authRealm=myRealm&agent=baby%27s-first-agent%2F1.2.3&timeout=2000&enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true&customProperty=foo&customQuery=bar&relationshipSampleSize=4711&s2c.alwaysEscapeNames=true&s2c.enableCache=true&s2c.prettyPrint=true");
+				"jdbc:neo4j+ssc://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true");
 	}
 
 	@Test
@@ -549,8 +549,8 @@ class Neo4jDriverUrlParsingTests {
 		driver.connect("jdbc:neo4j://host:1000/database", props);
 
 		then(this.boltConnectionProvider).should()
-			.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any(),
-					any(), any());
+			.connect(any(), any(), any(), any(), anyInt(), any(), any(), argThat(matches(expectedAuthToken)), any(),
+					any(), any(), any(), any(), any(), any());
 	}
 
 	@Test

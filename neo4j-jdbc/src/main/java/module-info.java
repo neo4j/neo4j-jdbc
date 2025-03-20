@@ -22,6 +22,7 @@
 @SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
 module org.neo4j.jdbc {
 	requires transitive java.sql;
+	requires static micrometer.core;
 
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;
@@ -40,6 +41,7 @@ module org.neo4j.jdbc {
 	// requires jdk.unsupported;
 
 	exports org.neo4j.jdbc;
+	exports org.neo4j.jdbc.events;
 	exports org.neo4j.jdbc.values;
 
 	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;

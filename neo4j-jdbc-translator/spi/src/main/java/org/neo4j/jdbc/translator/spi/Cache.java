@@ -77,4 +77,13 @@ public interface Cache<K, V> {
 	 */
 	void flush();
 
+	/**
+	 * This is an unsupported operation by default, override this to indicate the size of
+	 * the cache.
+	 * @return the current size of the cache
+	 */
+	default int size() {
+		throw new UnsupportedOperationException();
+	}
+
 }
