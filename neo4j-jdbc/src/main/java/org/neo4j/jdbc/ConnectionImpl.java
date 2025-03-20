@@ -305,13 +305,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 
 		try {
-			this.boltConnection.close().toCompletableFuture().get();
-			synchronized (this.boltConnectionForMetaData) {
-				if (this.boltConnectionForMetaData.isResolved()) {
-					this.boltConnectionForMetaData.resolve().close();
-					this.boltConnection.clear();
-				}
-			}
+			closeBoltConnections();
 		}
 		catch (Exception ex) {
 			if (ex instanceof InterruptedException) {
@@ -324,6 +318,16 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		finally {
 			this.closed = true;
+		}
+	}
+
+	private void closeBoltConnections() throws InterruptedException, ExecutionException {
+		this.boltConnection.close().toCompletableFuture().get();
+		synchronized (this.boltConnectionForMetaData) {
+			if (this.boltConnectionForMetaData.isResolved()) {
+				this.boltConnectionForMetaData.resolve().close();
+				this.boltConnection.clear();
+			}
 		}
 	}
 
@@ -741,7 +745,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.transaction.fail(this.fatalException);
 		}
 		try {
-			this.boltConnection.close().toCompletableFuture().get();
+			closeBoltConnections();
 		}
 		catch (InterruptedException | ExecutionException ex) {
 			if (ex instanceof InterruptedException) {
