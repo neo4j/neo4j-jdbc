@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -33,7 +34,7 @@ final class Events {
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.events");
 
-	static <T> void notify(List<T> listeners, Consumer<T> consumer) {
+	static <T> void notify(Collection<T> listeners, Consumer<T> consumer) {
 		listeners.forEach(listener -> {
 			try {
 				consumer.accept(listener);

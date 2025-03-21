@@ -52,6 +52,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +74,7 @@ import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.StatementClosedEvent;
 import org.neo4j.jdbc.events.StatementCreatedEvent;
+import org.neo4j.jdbc.events.StatementListener;
 import org.neo4j.jdbc.events.TranslationCachedEvent;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
@@ -154,7 +156,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final Consumer<Boolean> onClose;
 
-	private final List<ConnectionListener> listeners = new CopyOnWriteArrayList<>();
+	private final Set<ConnectionListener> listeners = new CopyOnWriteArraySet<>();
 
 	ConnectionImpl(URI databaseUrl, Supplier<BoltConnection> boltConnectionSupplier,
 			Supplier<List<Translator>> translators, boolean enableSQLTranslation, boolean enableTranslationCaching,
@@ -923,6 +925,12 @@ final class ConnectionImpl implements Neo4jConnection {
 	private <T extends StatementImpl> T trackStatement(T statement) {
 		purgeClearedStatementReferences();
 		this.trackedStatementReferences.add(new WeakReference<>(statement, this.trackedStatementReferenceQueue));
+
+		this.listeners.forEach(listener -> {
+			if (listener instanceof StatementListener statementListener) {
+				statement.addListener(statementListener);
+			}
+		});
 
 		Class<? extends Statement> type = statement.getType();
 		var statementCreatedEvent = new StatementCreatedEvent(type);

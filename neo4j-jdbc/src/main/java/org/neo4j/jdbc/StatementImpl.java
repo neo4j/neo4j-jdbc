@@ -40,8 +40,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
@@ -110,7 +112,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final Runnable onClose;
 
-	private final List<StatementListener> listeners = new CopyOnWriteArrayList<>();
+	private final Set<StatementListener> listeners = new CopyOnWriteArraySet<>();
 
 	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, Warnings localWarnings, Runnable onClose) {
@@ -146,10 +148,11 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		return recordEvent(sql, ExecutionType.QUERY, () -> {
 			this.updateCount = -1;
 			this.multipleResultsApi = false;
+			var processedSQL = applyProcessor ? processSQL(sql) : sql;
 			var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 			var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-			var runAndPull = transaction.runAndPull(applyProcessor ? processSQL(sql) : sql, getParameters(parameters),
-					fetchSize, this.queryTimeout);
+			var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), fetchSize,
+					this.queryTimeout);
 			this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
 					this.fetchSize, this.maxRows, this.maxFieldSize);
 			this.resultSetAcquired.set(false);
@@ -170,10 +173,10 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		return recordEvent(sql, ExecutionType.UPDATE, () -> {
 			this.updateCount = -1;
 			this.multipleResultsApi = false;
+			var processedSQL = applyProcessor ? processSQL(sql) : sql;
 			var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 			return transaction
-				.runAndDiscard(applyProcessor ? processSQL(sql) : sql, getParameters(parameters), this.queryTimeout,
-						transaction.isAutoCommit())
+				.runAndDiscard(processedSQL, getParameters(parameters), this.queryTimeout, transaction.isAutoCommit())
 				.resultSummary()
 				.map(ResultSummary::counters)
 				.map(c -> {

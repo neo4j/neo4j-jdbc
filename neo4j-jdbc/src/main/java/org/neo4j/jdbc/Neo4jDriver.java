@@ -48,6 +48,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -329,9 +330,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
-	private final List<DriverListener> listeners = new CopyOnWriteArrayList<>();
+	private final Set<DriverListener> listeners = new CopyOnWriteArraySet<>();
 
-	private final MeterRegistry meterRegistry;
+	private final MetricsCollector metricsCollector;
 
 	/**
 	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is
@@ -359,11 +360,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				() -> new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
 						DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
 						BoltAdapters.getValueFactory(), null));
-		if (meterRegistryProvider.get() instanceof MeterRegistry potentialRegistry) {
-			this.meterRegistry = potentialRegistry;
+		if (Objects.requireNonNullElse(meterRegistryProvider, () -> null)
+			.get() instanceof MeterRegistry potentialRegistry) {
+			this.metricsCollector = MetricsCollector.of(potentialRegistry);
 		}
-		else
-			this.meterRegistry = null;
+		else {
+			this.metricsCollector = MetricsCollector.noop();
+		}
+		this.addListener(this.metricsCollector);
 	}
 
 	@Override
@@ -412,6 +416,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					var event = new ConnectionClosedEvent(aborted);
 					Events.notify(this.listeners, driverListener -> driverListener.connectionClosed(event));
 				});
+		connection.addListener(this.metricsCollector);
 		Events.notify(this.listeners, driverListener -> driverListener.connectionOpened(new ConnectionOpenedEvent()));
 		return connection;
 	}
