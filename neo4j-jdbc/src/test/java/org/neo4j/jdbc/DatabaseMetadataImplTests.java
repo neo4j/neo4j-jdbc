@@ -267,7 +267,7 @@ class DatabaseMetadataImplTests {
 	private Connection newConnection() throws SQLException {
 		var url = "jdbc:neo4j://host";
 
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");

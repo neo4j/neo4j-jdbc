@@ -22,6 +22,7 @@
 @SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
 module org.neo4j.jdbc {
 	requires transitive java.sql;
+	requires static micrometer.core;
 
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;

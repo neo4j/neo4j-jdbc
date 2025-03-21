@@ -78,14 +78,14 @@ class Neo4jDriverUrlParsingTests {
 	@ValueSource(strings = { "jdbc:neo4j://host", "jdbc:neo4j://host:1000", "jdbc:neo4j://host:1000/database",
 			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database" })
 	void driverMustAcceptValidUrl(String url) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		assertThat(driver.acceptsURL(url)).isTrue();
 	}
 
 	@ParameterizedTest
 	@MethodSource("jdbcURLProvider")
 	void driverMustConnectWithValidUrl(String url, String host, int port) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -100,7 +100,7 @@ class Neo4jDriverUrlParsingTests {
 	void driverMustPullDatabaseOutOfUrl() throws SQLException {
 		var url = "jdbc:neo4j://host/database";
 
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -116,7 +116,7 @@ class Neo4jDriverUrlParsingTests {
 	void driverMustPullDatabaseOutOfUrlEvenIfSpecifiedInProperties() throws SQLException {
 		var url = "jdbc:neo4j://host/database";
 
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -133,7 +133,7 @@ class Neo4jDriverUrlParsingTests {
 	void driverMustUseDatabaseInPropertiesIfUrlDatabaseIsBlank() throws SQLException {
 		var url = "jdbc:neo4j://host";
 
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -150,7 +150,7 @@ class Neo4jDriverUrlParsingTests {
 	void driverMustUseNeo4jIfDatabaseIsUnspecifiedInPropertiesAndUrl() throws SQLException {
 		var url = "jdbc:neo4j://host";
 
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -165,7 +165,7 @@ class Neo4jDriverUrlParsingTests {
 	@ParameterizedTest
 	@ValueSource(strings = { "jdbc:neo4j:ThisIsWrong://host", "jdbc:neo4j+all-turns-to-crap://host" })
 	void driverMustThrowIfInvalidUrlPassed(String url) {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -175,7 +175,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustThrowIfNoUrlPassed() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
@@ -185,21 +185,21 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustThrowIfNoUrlAndInfoPassed() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(null, null));
 	}
 
 	@Test
 	void driverMustThrowIfNoInfoPassed() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect("jdbc:neo4j://host", null));
 	}
 
 	@Test
 	void driverMustParseUrlParamsWithJustHost() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("username", "incorrectUser");
@@ -217,7 +217,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustParseUrlParamsWithHostAndPort() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("username", "incorrectUser");
@@ -235,7 +235,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustParseUrlParamsWithHostAndPortAndDatabase() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("username", "incorrectUser");
@@ -253,7 +253,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustParseUrlParamsWithHostAndDatabase() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("username", "incorrectUser");
@@ -271,7 +271,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustUnescapeURL() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		driver.connect("jdbc:neo4j://host?user=user%3D&password=%26pass%3D%20word%3F", new Properties());
 
@@ -284,7 +284,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void driverMustUsePropsIfUrlParamsEmpty() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("user", "correctUser");
@@ -302,7 +302,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void testMinimalGetPropertyInfo() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 
@@ -369,7 +369,7 @@ class Neo4jDriverUrlParsingTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldUnifyProperties(boolean value) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb?cacheSQLTranslations=%s".formatted(value),
@@ -382,7 +382,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void testGetPropertyInfoPropertyOverrides() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("user", "user1");
@@ -506,7 +506,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void testWronglyTypePropertyIsIgnored() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		Properties props = new Properties();
 		props.put("user", 1);
@@ -524,7 +524,7 @@ class Neo4jDriverUrlParsingTests {
 	@ParameterizedTest
 	@MethodSource("authSchemeProvider")
 	void testAuthSchemesInfo(Properties props) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
 
@@ -544,7 +544,7 @@ class Neo4jDriverUrlParsingTests {
 	@MethodSource("authSchemeProvider")
 	void driverMustParseUrlParamsWithHostAndPortAndDatabase(Properties props, AuthToken expectedAuthToken)
 			throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		driver.connect("jdbc:neo4j://host:1000/database", props);
 
@@ -555,7 +555,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@Test
 	void testUnknownAuthSchemeInfo() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(this.boltConnectionProvider, () -> null);
 
 		var props = new Properties();
 		props.put("authScheme", "foobar");

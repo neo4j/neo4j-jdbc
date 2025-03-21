@@ -54,6 +54,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.neo4j.bolt.connection.AccessMode;
@@ -250,16 +252,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
-	private final BoltConnectionProvider boltConnectionProvider;
-
-	private volatile List<TranslatorFactory> sqlTranslatorFactories;
-
-	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
-
-	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
-
-	private final List<DriverListener> listeners = new CopyOnWriteArrayList<>();
-
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
@@ -329,6 +321,18 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new BuilderImpl(false, Map.of()).fromEnv(directory, filename);
 	}
 
+	private final BoltConnectionProvider boltConnectionProvider;
+
+	private volatile List<TranslatorFactory> sqlTranslatorFactories;
+
+	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
+
+	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
+
+	private final List<DriverListener> listeners = new CopyOnWriteArrayList<>();
+
+	private final MeterRegistry meterRegistry;
+
 	/**
 	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is
 	 * able to provide connections. The public constructor is provided mainly for tooling
@@ -336,13 +340,30 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
-		this(new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
-				DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
-				BoltAdapters.getValueFactory(), null));
+		this(() -> {
+			try {
+				return Metrics.globalRegistry;
+			}
+			catch (NoClassDefFoundError ex) {
+				return null;
+			}
+		});
 	}
 
-	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
-		this.boltConnectionProvider = boltConnectionProvider;
+	public Neo4jDriver(Supplier<Object> meterRegistryProvider) {
+		this(null, meterRegistryProvider);
+	}
+
+	Neo4jDriver(BoltConnectionProvider boltConnectionProvider, Supplier<Object> meterRegistryProvider) {
+		this.boltConnectionProvider = Objects.requireNonNullElseGet(boltConnectionProvider,
+				() -> new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
+						DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
+						BoltAdapters.getValueFactory(), null));
+		if (meterRegistryProvider.get() instanceof MeterRegistry potentialRegistry) {
+			this.meterRegistry = potentialRegistry;
+		}
+		else
+			this.meterRegistry = null;
 	}
 
 	@Override
