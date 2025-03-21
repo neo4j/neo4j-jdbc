@@ -30,12 +30,14 @@ public interface DriverListener {
 	 * Will be called on any newly opened connection.
 	 * @param event the corresponding event
 	 */
-	void connectionOpened(ConnectionOpenedEvent event);
+	default void connectionOpened(ConnectionOpenedEvent event) {
+	}
 
 	/**
 	 * Will be called when a connection is closed or aborted.
 	 * @param event the corresponding event
 	 */
-	void connectionClosed(ConnectionClosedEvent event);
+	default void connectionClosed(ConnectionClosedEvent event) {
+	}
 
 }

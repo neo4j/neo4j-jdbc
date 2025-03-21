@@ -30,18 +30,21 @@ public interface ConnectionListener {
 	 * Will be called when a new statement is opened.
 	 * @param event the corresponding event
 	 */
-	void statementCreated(StatementCreatedEvent event);
+	default void statementCreated(StatementCreatedEvent event) {
+	}
 
 	/**
 	 * Will be called when a statement is closed.
 	 * @param event the corresponding event
 	 */
-	void statementClosed(StatementClosedEvent event);
+	default void statementClosed(StatementClosedEvent event) {
+	}
 
 	/**
 	 * Will be called when a translation has been cached.
 	 * @param event the corresponding event
 	 */
-	void translationCached(TranslationCachedEvent event);
+	default void translationCached(TranslationCachedEvent event) {
+	}
 
 }

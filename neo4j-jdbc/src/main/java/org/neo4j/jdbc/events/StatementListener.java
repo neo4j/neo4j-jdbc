@@ -30,13 +30,15 @@ public interface StatementListener {
 	 * Will be called when the execution of a statement is about to start.
 	 * @param event the corresponding event
 	 */
-	void executionStarted(ExecutionStartedEvent event);
+	default void executionStarted(ExecutionStartedEvent event) {
+	}
 
 	/**
 	 * Will be called when the execution of a statement has finished (after bolt run,
 	 * before any full materializing of a result set).
 	 * @param event the corresponding event
 	 */
-	void executionEnded(ExecutionEndedEvent event);
+	default void executionEnded(ExecutionEndedEvent event) {
+	}
 
 }
