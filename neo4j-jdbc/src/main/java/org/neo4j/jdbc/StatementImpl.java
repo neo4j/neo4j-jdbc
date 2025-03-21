@@ -264,10 +264,10 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		closeResultSet();
 		this.updateCount = -1;
 		this.multipleResultsApi = true;
+		var processedSQL = processSQL(sql);
 		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
 		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(processSQL(sql), getParameters(parameters), fetchSize,
-				this.queryTimeout);
+		var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), fetchSize, this.queryTimeout);
 		var pullResponse = runAndPull.pullResponse();
 		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse, this.fetchSize,
 				this.maxRows, this.maxFieldSize);
