@@ -157,7 +157,7 @@
 		<junit-jupiter.version>5.12.1</junit-jupiter.version>
 		<kotlin-stdlib-jdk8.version>2.1.10</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>0.36.2</langchain4j.version>
-		<license-maven-plugin.version>4.6</license-maven-plugin.version>
+		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
