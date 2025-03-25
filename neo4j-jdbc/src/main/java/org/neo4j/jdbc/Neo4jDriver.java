@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,7 +48,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -328,7 +328,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
-	private final Set<DriverListener> listeners = new CopyOnWriteArraySet<>();
+	private final Set<DriverListener> listeners = new HashSet<>();
 
 	/**
 	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is

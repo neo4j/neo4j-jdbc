@@ -51,7 +51,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -155,7 +154,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final Consumer<Boolean> onClose;
 
-	private final Set<ConnectionListener> listeners = new CopyOnWriteArraySet<>();
+	private final Set<ConnectionListener> listeners = new HashSet<>();
 
 	ConnectionImpl(URI databaseUrl, Supplier<BoltConnection> boltConnectionSupplier,
 			Supplier<List<Translator>> translators, boolean enableSQLTranslation, boolean enableTranslationCaching,

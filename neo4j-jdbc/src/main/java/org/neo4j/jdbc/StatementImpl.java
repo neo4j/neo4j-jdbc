@@ -35,13 +35,13 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -111,7 +111,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final Consumer<Class<? extends Statement>> onClose;
 
-	private final Set<StatementListener> listeners = new CopyOnWriteArraySet<>();
+	private final Set<StatementListener> listeners = new HashSet<>();
 
 	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> sqlProcessor, Warnings localWarnings, Consumer<Class<? extends Statement>> onClose) {
