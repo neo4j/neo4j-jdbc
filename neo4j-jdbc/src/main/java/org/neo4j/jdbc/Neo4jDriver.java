@@ -71,6 +71,7 @@ import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
 import org.neo4j.jdbc.events.ConnectionClosedEvent;
+import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.ConnectionOpenedEvent;
 import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
@@ -329,8 +330,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Set<DriverListener> listeners = new CopyOnWriteArraySet<>();
 
-	private final MetricsCollector metricsCollector;
-
 	/**
 	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is
 	 * able to provide connections. The public constructor is provided mainly for tooling
@@ -338,16 +337,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
-		this(null);
+		this(new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
+				DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
+				BoltAdapters.getValueFactory(), null));
 	}
 
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
-		this.boltConnectionProvider = Objects.requireNonNullElseGet(boltConnectionProvider,
-				() -> new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
-						DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
-						BoltAdapters.getValueFactory(), null));
-		this.metricsCollector = MetricsCollector.tryGlobal();
-		this.addListener(this.metricsCollector);
+		this.boltConnectionProvider = Objects.requireNonNull(boltConnectionProvider);
+		MetricsCollector.tryGlobal().ifPresent(this::addListener);
 	}
 
 	@Override
@@ -394,11 +391,17 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
-				this.metricsCollector, (aborted) -> {
+				(aborted) -> {
 					var event = new ConnectionClosedEvent(targetUrl, aborted);
 					Events.notify(this.listeners, driverListener -> driverListener.connectionClosed(event));
 				});
-		connection.addListener(this.metricsCollector);
+
+		this.listeners.forEach(listener -> {
+			if (listener instanceof ConnectionListener connectionListener) {
+				connection.addListener(connectionListener);
+			}
+		});
+
 		Events.notify(this.listeners,
 				driverListener -> driverListener.connectionOpened(new ConnectionOpenedEvent(targetUrl)));
 		return connection;

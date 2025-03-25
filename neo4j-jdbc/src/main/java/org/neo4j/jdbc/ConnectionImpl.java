@@ -73,6 +73,7 @@ import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.StatementClosedEvent;
 import org.neo4j.jdbc.events.StatementCreatedEvent;
+import org.neo4j.jdbc.events.StatementListener;
 import org.neo4j.jdbc.events.TranslationCachedEvent;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
@@ -154,15 +155,13 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final Consumer<Boolean> onClose;
 
-	private final MetricsCollector metricsCollector;
-
 	private final Set<ConnectionListener> listeners = new CopyOnWriteArraySet<>();
 
 	ConnectionImpl(URI databaseUrl, Supplier<BoltConnection> boltConnectionSupplier,
 			Supplier<List<Translator>> translators, boolean enableSQLTranslation, boolean enableTranslationCaching,
 			boolean rewriteBatchedStatements, boolean rewritePlaceholders, BookmarkManager bookmarkManager,
 			Map<String, Object> transactionMetadata, int relationshipSampleSize, String databaseName,
-			MetricsCollector metricsCollector, Consumer<Boolean> onClose) {
+			Consumer<Boolean> onClose) {
 		Objects.requireNonNull(boltConnectionSupplier);
 
 		this.databaseUrl = Objects.requireNonNull(databaseUrl);
@@ -179,9 +178,6 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.databaseName = Objects.requireNonNull(databaseName);
 		this.databaseMetadData = Lazy.of((Supplier<DatabaseMetaData>) () -> new DatabaseMetadataImpl(this,
 				this.enableSqlTranslation, this.relationshipSampleSize));
-
-		this.metricsCollector = Objects.requireNonNull(metricsCollector);
-		this.listeners.add(this.metricsCollector);
 		this.onClose = Objects.requireNonNullElse(onClose, (aborted) -> {
 		});
 	}
@@ -927,14 +923,22 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private <T extends StatementImpl> T trackStatement(T statement) {
 		purgeClearedStatementReferences();
+
 		this.trackedStatementReferences.add(new WeakReference<>(statement, this.trackedStatementReferenceQueue));
 
-		statement.addListener(this.metricsCollector);
+		if (!this.listeners.isEmpty()) {
+			this.listeners.forEach(listener -> {
+				if (listener instanceof StatementListener statementListener) {
+					statement.addListener(statementListener);
+				}
+			});
 
-		Class<? extends Statement> type = statement.getType();
-		var statementCreatedEvent = new StatementCreatedEvent(this.databaseUrl, type);
+			Class<? extends Statement> type = statement.getType();
+			var statementCreatedEvent = new StatementCreatedEvent(this.databaseUrl, type);
+			Events.notify(this.listeners,
+					connectionListener -> connectionListener.statementCreated(statementCreatedEvent));
+		}
 
-		Events.notify(this.listeners, connectionListener -> connectionListener.statementCreated(statementCreatedEvent));
 		return statement;
 	}
 

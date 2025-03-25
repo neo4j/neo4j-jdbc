@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc;
 
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,27 +38,21 @@ interface MetricsCollector extends DriverListener, ConnectionListener, Statement
 
 	/**
 	 * Tries to create a metrics collector based on the global Micrometer registry.
-	 * @return a metrics collector based on the global Micrometer instance or a noop
-	 * version.
+	 * @return a metrics collector based on the global Micrometer instance if available
 	 */
 	@SuppressWarnings("CastCanBeRemovedNarrowingVariableType")
-	static MetricsCollector tryGlobal() {
+	static Optional<MetricsCollector> tryGlobal() {
 		Object globalRegistry;
 		try {
 			globalRegistry = Metrics.globalRegistry;
 		}
 		catch (Throwable ex) {
 			Logger.getLogger("org.neo4j.jdbc").log(Level.INFO, "Metrics are not available");
-			return MetricsCollector.noop();
+			return Optional.empty();
 		}
 		// Avoid touching the class that actually is dependent on MeterRegistry as long as
 		// we didn't make sure it's there.
-		return MetricsCollectorImpl.of((MeterRegistry) globalRegistry);
-	}
-
-	static MetricsCollector noop() {
-		return new MetricsCollector() {
-		};
+		return Optional.of(MetricsCollectorImpl.of((MeterRegistry) globalRegistry));
 	}
 
 }

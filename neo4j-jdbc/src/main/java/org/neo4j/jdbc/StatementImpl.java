@@ -313,6 +313,11 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private <T> T recordEvent(String statement, ExecutionMode executionType, SqlCallable<T> callable)
 			throws SQLException {
+
+		if (this.listeners.isEmpty()) {
+			return callable.call();
+		}
+
 		var id = statementId();
 		var s = System.nanoTime();
 		var databaseURL = this.connection.unwrap(Neo4jConnection.class).getDatabaseURL();
