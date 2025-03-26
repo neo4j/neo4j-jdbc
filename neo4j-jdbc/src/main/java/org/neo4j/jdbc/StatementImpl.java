@@ -25,17 +25,26 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.time.Duration;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +52,10 @@ import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
+import org.neo4j.jdbc.events.ExecutionEndedEvent;
+import org.neo4j.jdbc.events.ExecutionMode;
+import org.neo4j.jdbc.events.ExecutionStartedEvent;
+import org.neo4j.jdbc.events.StatementListener;
 import org.neo4j.jdbc.values.Values;
 
 non-sealed class StatementImpl implements Neo4jStatement {
@@ -55,8 +68,14 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.statement");
 
+	private static final Map<String, AtomicLong> ID_GENERATORS = new ConcurrentHashMap<>();
+
 	static final int DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS = 4096;
 	static final Charset DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM = StandardCharsets.ISO_8859_1;
+
+	private static final HexFormat HEX_FORMAT = HexFormat.of();
+
+	private static final Base64.Encoder ENCODER = Base64.getEncoder();
 
 	private final Connection connection;
 
@@ -90,12 +109,18 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
+	private final Consumer<Class<? extends Statement>> onClose;
+
+	private final Set<StatementListener> listeners = new HashSet<>();
+
 	StatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> sqlProcessor, Warnings localWarnings) {
+			UnaryOperator<String> sqlProcessor, Warnings localWarnings, Consumer<Class<? extends Statement>> onClose) {
 		this.connection = Objects.requireNonNull(connection);
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.sqlProcessor = Objects.requireNonNullElseGet(sqlProcessor, UnaryOperator::identity);
 		this.warnings = Objects.requireNonNullElseGet(localWarnings, Warnings::new);
+		this.onClose = Objects.requireNonNullElse(onClose, (type) -> {
+		});
 	}
 
 	/**
@@ -106,6 +131,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		this.transactionSupplier = null;
 		this.sqlProcessor = UnaryOperator.identity();
 		this.warnings = new Warnings();
+		this.onClose = (type) -> {
+		};
 	}
 
 	@Override
@@ -117,18 +144,19 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
-		this.updateCount = -1;
-		this.multipleResultsApi = false;
-		if (applyProcessor) {
-			sql = processSQL(sql);
-		}
-		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
-		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(sql, getParameters(parameters), fetchSize, this.queryTimeout);
-		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
-				this.fetchSize, this.maxRows, this.maxFieldSize);
-		this.resultSetAcquired.set(false);
-		return this.resultSet;
+		return recordEvent(sql, ExecutionMode.QUERY, () -> {
+			this.updateCount = -1;
+			this.multipleResultsApi = false;
+			var processedSQL = applyProcessor ? processSQL(sql) : sql;
+			var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
+			var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
+			var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), fetchSize,
+					this.queryTimeout);
+			this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), runAndPull.pullResponse(),
+					this.fetchSize, this.maxRows, this.maxFieldSize);
+			this.resultSetAcquired.set(false);
+			return this.resultSet;
+		});
 	}
 
 	@Override
@@ -141,25 +169,26 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
-		this.updateCount = -1;
-		this.multipleResultsApi = false;
-		if (applyProcessor) {
-			sql = processSQL(sql);
-		}
-		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
-		return transaction.runAndDiscard(sql, getParameters(parameters), this.queryTimeout, transaction.isAutoCommit())
-			.resultSummary()
-			.map(ResultSummary::counters)
-			.map(c -> {
-				var rowCount = c.nodesCreated() + c.nodesDeleted() + c.relationshipsCreated()
-						+ c.relationshipsDeleted();
-				if (rowCount == 0 && c.containsUpdates()) {
-					var labelsAndProperties = c.labelsAdded() + c.labelsRemoved() + c.propertiesSet();
-					rowCount = (labelsAndProperties > 0) ? 1 : 0;
-				}
-				return rowCount;
-			})
-			.orElse(0);
+		return recordEvent(sql, ExecutionMode.UPDATE, () -> {
+			this.updateCount = -1;
+			this.multipleResultsApi = false;
+			var processedSQL = applyProcessor ? processSQL(sql) : sql;
+			var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
+			return transaction
+				.runAndDiscard(processedSQL, getParameters(parameters), this.queryTimeout, transaction.isAutoCommit())
+				.resultSummary()
+				.map(ResultSummary::counters)
+				.map(c -> {
+					var rowCount = c.nodesCreated() + c.nodesDeleted() + c.relationshipsCreated()
+							+ c.relationshipsDeleted();
+					if (rowCount == 0 && c.containsUpdates()) {
+						var labelsAndProperties = c.labelsAdded() + c.labelsRemoved() + c.propertiesSet();
+						rowCount = (labelsAndProperties > 0) ? 1 : 0;
+					}
+					return rowCount;
+				})
+				.orElse(0);
+		});
 	}
 
 	@Override
@@ -170,6 +199,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		}
 		closeResultSet();
 		this.closed = true;
+		this.onClose.accept(this.getType());
 	}
 
 	@Override
@@ -262,20 +292,57 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	protected final boolean execute0(String sql, Map<String, Object> parameters) throws SQLException {
 		assertIsOpen();
 		closeResultSet();
-		this.updateCount = -1;
-		this.multipleResultsApi = true;
-		var processedSQL = processSQL(sql);
-		var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
-		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), fetchSize, this.queryTimeout);
-		var pullResponse = runAndPull.pullResponse();
-		this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse, this.fetchSize,
-				this.maxRows, this.maxFieldSize);
-		this.updateCount = pullResponse.resultSummary()
-			.map(summary -> summary.counters().totalCount())
-			.filter(count -> count > 0)
-			.orElse(-1);
-		return this.updateCount == -1;
+		return recordEvent(sql, ExecutionMode.PLAIN, () -> {
+			this.updateCount = -1;
+			this.multipleResultsApi = true;
+			var processedSQL = processSQL(sql);
+			var transaction = this.transactionSupplier.getTransaction(this.transactionMetadata);
+			var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
+			var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), fetchSize,
+					this.queryTimeout);
+			var pullResponse = runAndPull.pullResponse();
+			this.resultSet = new ResultSetImpl(this, transaction, runAndPull.runResponse(), pullResponse,
+					this.fetchSize, this.maxRows, this.maxFieldSize);
+			this.updateCount = pullResponse.resultSummary()
+				.map(summary -> summary.counters().totalCount())
+				.filter(count -> count > 0)
+				.orElse(-1);
+			return this.updateCount == -1;
+		});
+	}
+
+	private <T> T recordEvent(String statement, ExecutionMode executionType, SqlCallable<T> callable)
+			throws SQLException {
+
+		if (this.listeners.isEmpty()) {
+			return callable.call();
+		}
+
+		var id = statementId();
+		var s = System.nanoTime();
+		var databaseURL = this.connection.unwrap(Neo4jConnection.class).getDatabaseURL();
+		var startEvent = new ExecutionStartedEvent(id, databaseURL, statement, executionType);
+		Events.notify(this.listeners, listener -> listener.executionStarted(startEvent));
+
+		var state = ExecutionEndedEvent.State.FAILED;
+		try {
+			var result = callable.call();
+			state = ExecutionEndedEvent.State.SUCCESSFUL;
+			return result;
+		}
+		finally {
+			final long e = System.nanoTime();
+			var endEvent = new ExecutionEndedEvent(id, databaseURL, state, executionType, Duration.ofNanos(e - s));
+			Events.notify(this.listeners, listener -> listener.executionEnded(endEvent));
+		}
+	}
+
+	private String statementId() {
+		var type = getType().getSimpleName();
+		return type + "@"
+				+ HEX_FORMAT.formatHex(ENCODER.encode(Long
+					.toString(ID_GENERATORS.computeIfAbsent(type, ignored -> new AtomicLong(0)).getAndIncrement())
+					.getBytes(StandardCharsets.UTF_8)));
 	}
 
 	private static Map<String, Object> getParameters(Map<String, Object> parameters) throws SQLException {
@@ -566,6 +633,33 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			this.transactionMetadata.putAll(metadata);
 		}
 		return this;
+	}
+
+	@Override
+	public void addListener(StatementListener statementListener) {
+		this.listeners.add(Objects.requireNonNull(statementListener));
+	}
+
+	Class<? extends Statement> getType() {
+		if (this instanceof CallableStatement) {
+			return CallableStatement.class;
+		}
+		else if (this instanceof PreparedStatement) {
+			return PreparedStatement.class;
+		}
+		return Statement.class;
+	}
+
+	@FunctionalInterface
+	interface SqlCallable<V> {
+
+		/**
+		 * Computes a result, or throws an exception if unable to do so.
+		 * @return computed result
+		 * @throws SQLException if unable to compute a result
+		 */
+		V call() throws SQLException;
+
 	}
 
 }

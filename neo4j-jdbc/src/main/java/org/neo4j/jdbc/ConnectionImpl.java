@@ -69,6 +69,11 @@ import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.exception.BoltConnectionReadTimeoutException;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.jdbc.Neo4jTransaction.State;
+import org.neo4j.jdbc.events.ConnectionListener;
+import org.neo4j.jdbc.events.StatementClosedEvent;
+import org.neo4j.jdbc.events.StatementCreatedEvent;
+import org.neo4j.jdbc.events.StatementListener;
+import org.neo4j.jdbc.events.TranslationCachedEvent;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
 
@@ -144,11 +149,18 @@ final class ConnectionImpl implements Neo4jConnection {
 	 */
 	private final Map<String, String> clientInfo = new ConcurrentHashMap<>();
 
+	/**
+	 * Callback from the owning driver.
+	 */
+	private final Consumer<Boolean> onClose;
+
+	private final Set<ConnectionListener> listeners = new HashSet<>();
+
 	ConnectionImpl(URI databaseUrl, Supplier<BoltConnection> boltConnectionSupplier,
 			Supplier<List<Translator>> translators, boolean enableSQLTranslation, boolean enableTranslationCaching,
 			boolean rewriteBatchedStatements, boolean rewritePlaceholders, BookmarkManager bookmarkManager,
-			Map<String, Object> transactionMetadata, int relationshipSampleSize, String databaseName) {
-
+			Map<String, Object> transactionMetadata, int relationshipSampleSize, String databaseName,
+			Consumer<Boolean> onClose) {
 		Objects.requireNonNull(boltConnectionSupplier);
 
 		this.databaseUrl = Objects.requireNonNull(databaseUrl);
@@ -165,6 +177,13 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.databaseName = Objects.requireNonNull(databaseName);
 		this.databaseMetadData = Lazy.of((Supplier<DatabaseMetaData>) () -> new DatabaseMetadataImpl(this,
 				this.enableSqlTranslation, this.relationshipSampleSize));
+		this.onClose = Objects.requireNonNullElse(onClose, (aborted) -> {
+		});
+	}
+
+	void notifyStatementListeners(Class<? extends Statement> type) {
+		var event = new StatementClosedEvent(this.databaseUrl, type);
+		Events.notify(this.listeners, listener -> listener.statementClosed(event));
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
@@ -193,6 +212,8 @@ final class ConnectionImpl implements Neo4jConnection {
 					else {
 						var translation = sqlTranslator.apply(sql);
 						this.l2cache.put(sql, translation);
+						var event = new TranslationCachedEvent(this.l2cache.size());
+						Events.notify(this.listeners, listener -> listener.translationCached(event));
 						return translation;
 					}
 				}
@@ -318,6 +339,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		finally {
 			this.closed = true;
+			this.onClose.accept(false);
 		}
 	}
 
@@ -491,8 +513,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
 		var localWarnings = new Warnings();
-		return trackStatement(
-				new StatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings));
+		return trackStatement(new StatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings,
+				this::notifyStatementListeners));
 	}
 
 	@Override
@@ -515,7 +537,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			decoratedTranslator = translator;
 		}
 		return trackStatement(new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator, localWarnings,
-				this.rewriteBatchedStatements, sql));
+				this::notifyStatementListeners, this.rewriteBatchedStatements, sql));
 	}
 
 	@Override
@@ -526,8 +548,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
-		return trackStatement(
-				CallableStatementImpl.prepareCall(this, this::getTransaction, this.rewriteBatchedStatements, sql));
+		return trackStatement(CallableStatementImpl.prepareCall(this, this::getTransaction,
+				this::notifyStatementListeners, this.rewriteBatchedStatements, sql));
 	}
 
 	private static void assertValidResultSetHoldability(int resultSetHoldability) throws SQLException {
@@ -753,7 +775,10 @@ final class ConnectionImpl implements Neo4jConnection {
 			}
 			this.fatalException.addSuppressed(ex);
 		}
-		this.closed = true;
+		finally {
+			this.closed = true;
+			this.onClose.accept(true);
+		}
 	}
 
 	@Override
@@ -890,9 +915,29 @@ final class ConnectionImpl implements Neo4jConnection {
 		return this.databaseName;
 	}
 
-	private <T extends Statement> T trackStatement(T statement) {
+	@Override
+	public void addListener(ConnectionListener connectionListener) {
+		this.listeners.add(Objects.requireNonNull(connectionListener));
+	}
+
+	private <T extends StatementImpl> T trackStatement(T statement) {
 		purgeClearedStatementReferences();
+
 		this.trackedStatementReferences.add(new WeakReference<>(statement, this.trackedStatementReferenceQueue));
+
+		if (!this.listeners.isEmpty()) {
+			this.listeners.forEach(listener -> {
+				if (listener instanceof StatementListener statementListener) {
+					statement.addListener(statementListener);
+				}
+			});
+
+			Class<? extends Statement> type = statement.getType();
+			var statementCreatedEvent = new StatementCreatedEvent(this.databaseUrl, type);
+			Events.notify(this.listeners,
+					connectionListener -> connectionListener.statementCreated(statementCreatedEvent));
+		}
+
 		return statement;
 	}
 
@@ -966,7 +1011,8 @@ final class ConnectionImpl implements Neo4jConnection {
 					.orElseGet(ProductVersion::getValue));
 	}
 
-	URI getDatabaseURL() {
+	@Override
+	public URI getDatabaseURL() {
 		return this.databaseUrl;
 	}
 

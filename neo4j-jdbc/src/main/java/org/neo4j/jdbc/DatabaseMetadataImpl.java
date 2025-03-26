@@ -338,7 +338,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	@Override
 	public String getURL() throws SQLException {
-		return this.connection.unwrap(ConnectionImpl.class).getDatabaseURL().toString();
+		return this.connection.unwrap(Neo4jConnection.class).getDatabaseURL().toString();
 	}
 
 	@Override

@@ -39,6 +39,7 @@ import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
+import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayDeque;
@@ -52,6 +53,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,8 +94,9 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	}
 
 	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			UnaryOperator<String> translator, Warnings localWarnings, boolean rewriteBatchedStatements, String sql) {
-		super(connection, transactionSupplier, translator, localWarnings);
+			UnaryOperator<String> translator, Warnings localWarnings, Consumer<Class<? extends Statement>> onClose,
+			boolean rewriteBatchedStatements, String sql) {
+		super(connection, transactionSupplier, translator, localWarnings, onClose);
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.sql = sql;
 		this.poolable = true;

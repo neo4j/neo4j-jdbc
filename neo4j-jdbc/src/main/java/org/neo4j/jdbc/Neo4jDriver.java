@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -69,6 +70,10 @@ import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
+import org.neo4j.jdbc.events.ConnectionClosedEvent;
+import org.neo4j.jdbc.events.ConnectionListener;
+import org.neo4j.jdbc.events.ConnectionOpenedEvent;
+import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
@@ -246,14 +251,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
-	private final BoltConnectionProvider boltConnectionProvider;
-
-	private volatile List<TranslatorFactory> sqlTranslatorFactories;
-
-	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
-
-	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
-
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
@@ -323,6 +320,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new BuilderImpl(false, Map.of()).fromEnv(directory, filename);
 	}
 
+	private final BoltConnectionProvider boltConnectionProvider;
+
+	private volatile List<TranslatorFactory> sqlTranslatorFactories;
+
+	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
+
+	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
+
+	private final Set<DriverListener> listeners = new HashSet<>();
+
 	/**
 	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is
 	 * able to provide connections. The public constructor is provided mainly for tooling
@@ -336,7 +343,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
-		this.boltConnectionProvider = boltConnectionProvider;
+		this.boltConnectionProvider = Objects.requireNonNull(boltConnectionProvider);
+		MetricsCollector.tryGlobal().ifPresent(this::addListener);
 	}
 
 	@Override
@@ -375,12 +383,28 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
-		return new ConnectionImpl(driverConfig.toUrl(),
+
+		var targetUrl = driverConfig.toUrl();
+		var connection = new ConnectionImpl(targetUrl,
 				() -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan, databaseName,
 						authToken),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
-				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName);
+				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
+				(aborted) -> {
+					var event = new ConnectionClosedEvent(targetUrl, aborted);
+					Events.notify(this.listeners, driverListener -> driverListener.connectionClosed(event));
+				});
+
+		this.listeners.forEach(listener -> {
+			if (listener instanceof ConnectionListener connectionListener) {
+				connection.addListener(connectionListener);
+			}
+		});
+
+		Events.notify(this.listeners,
+				driverListener -> driverListener.connectionOpened(new ConnectionOpenedEvent(targetUrl)));
+		return connection;
 	}
 
 	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
@@ -757,6 +781,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	@Override
+	public void addListener(DriverListener driverListener) {
+		this.listeners.add(Objects.requireNonNull(driverListener));
+	}
+
+	@Override
 	public Neo4jDriver withMetadata(Map<String, Object> metadata) {
 		if (metadata != null) {
 			this.transactionMetadata.putAll(metadata);
@@ -963,21 +992,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var sslProperties = this.sslProperties();
 			var result = new StringBuilder("jdbc:neo4j%s://%s:%s/%s?".formatted(sslProperties.protocolSuffix(),
 					this.host(), this.port(), this.database()));
-			append(result, PROPERTY_AUTH_SCHEME, this.authScheme()).append("&");
-			append(result, PROPERTY_USER, this.user()).append("&");
-			append(result, PROPERTY_AUTH_REALM, this.authRealm()).append("&");
-			append(result, PROPERTY_USER_AGENT, this.agent()).append("&");
-			append(result, PROPERTY_TIMEOUT, this.timeout()).append("&");
 			append(result, PROPERTY_SQL_TRANSLATION_ENABLED, this.enableSQLTranslation()).append("&");
 			append(result, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, this.enableTranslationCaching()).append("&");
 			append(result, PROPERTY_REWRITE_BATCHED_STATEMENTS, this.rewriteBatchedStatements()).append("&");
 			append(result, PROPERTY_REWRITE_PLACEHOLDERS, this.rewriteBatchedStatements()).append("&");
 			append(result, PROPERTY_USE_BOOKMARKS, this.useBookmarks()).append("&");
-			this.misc()
-				.entrySet()
-				.stream()
-				.sorted(Map.Entry.comparingByKey())
-				.forEach(e -> append(result, e.getKey(), e.getValue()).append("&"));
 			return URI.create(result.substring(0, result.length() - 1));
 		}
 

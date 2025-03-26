@@ -21,11 +21,12 @@ package org.neo4j.jdbc.it.sb;
 import java.util.List;
 import java.util.Map;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.MetricsEndpoint;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureJdbc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Import;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(Neo4jTestConfig.class)
+@AutoConfigureJdbc
 public class ApplicationIT {
 
 	@BeforeAll
@@ -55,7 +57,7 @@ public class ApplicationIT {
 
 		var moviesResponse = restTemplate.exchange(RequestEntity.get("/movies").build(), listOfMoviesType);
 		assertThat(moviesResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-		Assertions.assertThat(moviesResponse.getBody()).isEmpty();
+		assertThat(moviesResponse.getBody()).isEmpty();
 
 		var title = "Alita: Battle Angel";
 		var movieCreateOrUpdatedResponse = restTemplate
@@ -68,7 +70,27 @@ public class ApplicationIT {
 
 		moviesResponse = restTemplate.exchange(RequestEntity.get("/movies").build(), listOfMoviesType);
 		assertThat(moviesResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-		Assertions.assertThat(moviesResponse.getBody()).containsExactly(new Movie(title));
+		assertThat(moviesResponse.getBody()).containsExactly(new Movie(title));
+
+		var metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.connections",
+				MetricsEndpoint.MetricDescriptor.class);
+		assertThat(metrics.getMeasurements()).hasSize(1);
+		assertThat(metrics.getMeasurements().get(0).getValue()).isGreaterThanOrEqualTo(6.0);
+
+		metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.cached-translations",
+				MetricsEndpoint.MetricDescriptor.class);
+		assertThat(metrics.getMeasurements()).hasSize(1);
+		assertThat(metrics.getMeasurements().get(0).getValue()).isGreaterThanOrEqualTo(2);
+
+		metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.statements",
+				MetricsEndpoint.MetricDescriptor.class);
+		assertThat(metrics.getMeasurements()).hasSize(1);
+		assertThat(metrics.getMeasurements().get(0).getValue()).isZero();
+
+		metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.queries?tag=state:successful",
+				MetricsEndpoint.MetricDescriptor.class);
+		assertThat(metrics.getMeasurements()).hasSize(1);
+		assertThat(metrics.getMeasurements().get(0).getValue()).isEqualTo(5);
 	}
 
 }
