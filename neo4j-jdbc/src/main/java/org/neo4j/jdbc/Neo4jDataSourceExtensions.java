@@ -101,6 +101,14 @@ public sealed interface Neo4jDataSourceExtensions extends DataSource permits Neo
 	void setTransportProtocol(String transportProtocol);
 
 	/**
+	 * Configures the URL to connect to, overriding any other configuration via properties
+	 * above.
+	 * @param url the Neo4j connection URL
+	 * @since 6.3.0
+	 */
+	void setUrl(String url);
+
+	/**
 	 * Sets a connection property on the data source.
 	 * @param name the name of the connection property to be set
 	 * @param value the value of the connection property to be set

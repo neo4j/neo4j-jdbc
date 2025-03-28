@@ -77,6 +77,8 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	 */
 	private int loginTimeout = 1;
 
+	private String url;
+
 	/**
 	 * A log writer, which we currently don't use.
 	 */
@@ -152,7 +154,19 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 		this.transportProtocol = transportProtocol;
 	}
 
+	@Override
+	public void setUrl(String url) {
+		if (url != null && !url.isBlank() && !Neo4jDriver.URL_PATTERN.matcher(url).matches()) {
+			throw new IllegalArgumentException("Invalid URL:  " + url);
+		}
+		this.url = url;
+	}
+
 	String getUrl() {
+		if (this.url != null && !this.url.isBlank()) {
+			return this.url.trim();
+		}
+
 		return "jdbc:neo4j%s://%s:%d/%s?timeout=%d".formatted(
 				Optional.ofNullable(this.transportProtocol)
 					.map(String::trim)
