@@ -152,7 +152,7 @@
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
 		<jdbi3.version>3.48.0</jdbi3.version>
-		<jooq.version>3.19.21</jooq.version>
+		<jooq.version>3.20.1</jooq.version>
 		<jreleaser-maven-plugin.version>1.17.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.12.1</junit-jupiter.version>
 		<kotlin-stdlib-jdk8.version>2.1.20</kotlin-stdlib-jdk8.version>
@@ -456,7 +456,7 @@
 							<requireMavenVersion>
 								<version>${maven.version}</version>
 							</requireMavenVersion>
-							<DependencyConvergence />
+							<DependencyConvergence/>
 						</rules>
 					</configuration>
 				</plugin>
@@ -1049,42 +1049,42 @@
 									<categories>
 										<category>
 											<key>features</key>
-											<title>&#x1f680; Features</title>
+											<title>🚀 Features</title>
 											<labels>feat</labels>
 											<order>10</order>
 										</category>
 										<category>
 											<key>fixes</key>
-											<title>&#x1f41b; Bug Fixes</title>
+											<title>🐛 Bug Fixes</title>
 											<labels>fix</labels>
 											<order>20</order>
 										</category>
 										<category>
 											<key>changes</key>
-											<title>&#x1f504;️ Refactorings</title>
+											<title>🔄️ Refactorings</title>
 											<labels>refactor</labels>
 											<order>25</order>
 										</category>
 										<category>
 											<key>docs</key>
-											<title>&#x1f4dd; Documentation</title>
+											<title>📝 Documentation</title>
 											<labels>docs</labels>
 											<order>30</order>
 										</category>
 										<category>
 											<key>tasks</key>
-											<title>&#x1f9f0; Tasks</title>
+											<title>🧰 Tasks</title>
 											<labels>chore</labels>
 											<order>35</order>
 										</category>
 										<category>
-											<title>&#x1f9f9; Housekeeping</title>
+											<title>🧹 Housekeeping</title>
 											<labels>dependabot</labels>
 											<order>70</order>
 										</category>
 										<category>
 											<key>build</key>
-											<title>&#x1f6e0; Build</title>
+											<title>🛠 Build</title>
 											<order>80</order>
 										</category>
 										<category>
