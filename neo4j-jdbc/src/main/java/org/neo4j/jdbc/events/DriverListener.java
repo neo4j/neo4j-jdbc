@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc.events;
 
+import java.net.URI;
+
 /**
  * Defines a listener on relevant {@link org.neo4j.jdbc.Neo4jDriver} events.
  *
@@ -30,14 +32,33 @@ public interface DriverListener {
 	 * Will be called on any newly opened connection.
 	 * @param event the corresponding event
 	 */
-	default void connectionOpened(ConnectionOpenedEvent event) {
+	default void onConnectionOpened(ConnectionOpenedEvent event) {
 	}
 
 	/**
 	 * Will be called when a connection is closed or aborted.
 	 * @param event the corresponding event
 	 */
-	default void connectionClosed(ConnectionClosedEvent event) {
+	default void onConnectionClosed(ConnectionClosedEvent event) {
+	}
+
+	/**
+	 * Will be fired when a new connection has been opened.
+	 *
+	 * @param uri The URL of the Neo4j instance towards the connection has been opened
+	 * too.
+	 */
+	record ConnectionOpenedEvent(URI uri) {
+	}
+
+	/**
+	 * This event will be fired when a connection has been closed, either normally or
+	 * aborted with the appropriate flag set to {@literal true}.
+	 *
+	 * @param uri the URL of the connection that was closed.
+	 * @param aborted will be {@literal true} when the connection has been aborted.
+	 */
+	record ConnectionClosedEvent(URI uri, boolean aborted) {
 	}
 
 }

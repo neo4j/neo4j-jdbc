@@ -70,10 +70,11 @@ import org.neo4j.bolt.connection.exception.BoltConnectionReadTimeoutException;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.events.ConnectionListener;
-import org.neo4j.jdbc.events.StatementClosedEvent;
-import org.neo4j.jdbc.events.StatementCreatedEvent;
+import org.neo4j.jdbc.events.ConnectionListener.StatementClosedEvent;
+import org.neo4j.jdbc.events.ConnectionListener.StatementCreatedEvent;
+import org.neo4j.jdbc.events.ConnectionListener.TranslationCachedEvent;
 import org.neo4j.jdbc.events.StatementListener;
-import org.neo4j.jdbc.events.TranslationCachedEvent;
+import org.neo4j.jdbc.tracing.Neo4jTracer;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
 
@@ -183,7 +184,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	void notifyStatementListeners(Class<? extends Statement> type) {
 		var event = new StatementClosedEvent(this.databaseUrl, type);
-		Events.notify(this.listeners, listener -> listener.statementClosed(event));
+		Events.notify(this.listeners, listener -> listener.onStatementClosed(event));
 	}
 
 	UnaryOperator<String> getTranslator(Consumer<SQLWarning> warningConsumer) throws SQLException {
@@ -213,7 +214,7 @@ final class ConnectionImpl implements Neo4jConnection {
 						var translation = sqlTranslator.apply(sql);
 						this.l2cache.put(sql, translation);
 						var event = new TranslationCachedEvent(this.l2cache.size());
-						Events.notify(this.listeners, listener -> listener.translationCached(event));
+						Events.notify(this.listeners, listener -> listener.onTranslationCached(event));
 						return translation;
 					}
 				}
@@ -933,9 +934,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			});
 
 			Class<? extends Statement> type = statement.getType();
-			var statementCreatedEvent = new StatementCreatedEvent(this.databaseUrl, type);
-			Events.notify(this.listeners,
-					connectionListener -> connectionListener.statementCreated(statementCreatedEvent));
+			var statementCreatedEvent = new StatementCreatedEvent(this.databaseUrl, type, statement);
+			Events.notify(this.listeners, listener -> listener.onStatementCreated(statementCreatedEvent));
 		}
 
 		return statement;
@@ -1014,6 +1014,16 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public URI getDatabaseURL() {
 		return this.databaseUrl;
+	}
+
+	@Override
+	public Neo4jConnection withTracer(Neo4jTracer tracer) {
+		if (tracer == null
+				|| this.listeners.stream().anyMatch(l -> l instanceof Tracing t && t.usingSameTracer(tracer))) {
+			return this;
+		}
+		this.addListener(new Tracing(tracer, this));
+		return this;
 	}
 
 	static class TranslatorChain implements UnaryOperator<String> {

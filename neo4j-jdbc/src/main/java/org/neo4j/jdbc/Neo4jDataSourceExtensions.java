@@ -20,6 +20,8 @@ package org.neo4j.jdbc;
 
 import javax.sql.DataSource;
 
+import org.neo4j.jdbc.tracing.Neo4jTracer;
+
 /**
  * Neo4j specific extensions to a {@link DataSource}.
  *
@@ -114,5 +116,17 @@ public sealed interface Neo4jDataSourceExtensions extends DataSource permits Neo
 	 * @param value the value of the connection property to be set
 	 */
 	void setConnectionProperty(String name, String value);
+
+	/**
+	 * Configures a {@link Neo4jTracer tracer} to be used with this datasource. When using
+	 * a non-null value both the execution of queries and the iteration of result-sets
+	 * will be traced. Be aware that statements will be part of the spans tags, so to make
+	 * sure that you are using parameterized statements for all queries that might contain
+	 * sensitive parameters (parameters are never part of any span).
+	 * @param tracer the tracer to be used, maybe {@literal null}, in which case no
+	 * tracing will be used
+	 * @since 6.3.0
+	 */
+	void setTracer(Neo4jTracer tracer);
 
 }

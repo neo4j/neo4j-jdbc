@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -43,6 +45,24 @@ final class Events {
 						() -> "Could not notify listener %s".formatted(listener.getClass().getCanonicalName()));
 			}
 		});
+	}
+
+	/**
+	 * Strips parameters away from the URL.
+	 * @param jdbcUrl the URL to clean
+	 * @return a parameter free URI
+	 */
+	static URI cleanURL(URI jdbcUrl) {
+		var hlp = URI.create(jdbcUrl.getSchemeSpecificPart());
+		try {
+			var port = hlp.getPort();
+			return new URI("jdbc",
+					"%s://%s:%d%s".formatted(hlp.getScheme(), hlp.getHost(), (port != -1) ? port : 7687, hlp.getPath()),
+					jdbcUrl.getFragment());
+		}
+		catch (URISyntaxException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
 	private Events() {

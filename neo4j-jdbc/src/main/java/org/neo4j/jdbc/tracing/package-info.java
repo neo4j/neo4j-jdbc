@@ -16,16 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.events;
-
-import java.net.URI;
-
 /**
- * Will be fired when a new connection has been opened.
- *
- * @param uri The URL of the Neo4j instance towards the connection has been opened too.
- * @author Michael J. Simons
- * @since 6.3.0
+ * This contains the SPI for the tracing mechanism the Neo4j JDBC driver offers.
  */
-public record ConnectionOpenedEvent(URI uri) {
-}
+package org.neo4j.jdbc.tracing;

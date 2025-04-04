@@ -16,27 +16,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+package org.neo4j.jdbc.tracing;
 
-import java.sql.ResultSet;
-
-import org.neo4j.jdbc.events.ResultSetListener;
+import java.util.Map;
 
 /**
- * A Neo4j specific extension of a {@link ResultSet}. It may be referred to for use with
- * {@link #unwrap(Class)} to access specific Neo4j functionality.
+ * This interface is meant to be a small abstraction over spans, with enough functionality
+ * needed in the core of the driver. A span is meant to be started through
+ * {@link Neo4jTracer#start(String, Map)}. The span must be active and in scope until
+ * {@link #end()} has been called on the span. This shall remove this span from scope and
+ * end it.
  *
  * @author Michael J. Simons
  * @since 6.3.0
  */
-public sealed interface Neo4jResultSet extends ResultSet permits ResultSetImpl {
+public interface Neo4jSpan {
 
 	/**
-	 * Adds a listener to this statement that gets notified on starts and finish of
-	 * iteration and whenever a new batch is pulled from the database.
-	 * @param resultSetListener the lister to add to this result set
-	 * @since 6.3.0
+	 * Annotates a point in time on this span.
+	 * @param name the name of the event pointing to in the new annotation
 	 */
-	void addListener(ResultSetListener resultSetListener);
+	void annotate(String name);
+
+	/**
+	 * Removes the span from scope and ends it.
+	 */
+	void end();
 
 }

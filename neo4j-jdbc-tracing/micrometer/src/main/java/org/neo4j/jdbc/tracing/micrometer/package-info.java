@@ -16,18 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.events;
-
-import java.net.URI;
-import java.sql.Statement;
-
 /**
- * Will be fired when a statement has been closed.
- *
- * @param uri the URL of the statement that was closed.
- * @param statementType the actual type of the statement as defined in the JDBC spec.
- * @author Michael J. Simons
- * @since 6.3.0
+ * A tracing implementation that uses Micrometer tracing.
  */
-public record StatementClosedEvent(URI uri, Class<? extends Statement> statementType) {
-}
+package org.neo4j.jdbc.tracing.micrometer;

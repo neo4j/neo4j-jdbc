@@ -44,10 +44,12 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,6 +58,10 @@ import java.util.logging.Logger;
 
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
+import org.neo4j.jdbc.events.Neo4jEvent;
+import org.neo4j.jdbc.events.ResultSetListener;
+import org.neo4j.jdbc.events.ResultSetListener.IterationDoneEvent;
+import org.neo4j.jdbc.events.ResultSetListener.IterationStartedEvent;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.UncoercibleException;
@@ -124,6 +130,12 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private final AtomicBoolean afterLast = new AtomicBoolean(false);
 
+	private final Set<ResultSetListener> listeners = new HashSet<>();
+
+	private boolean openedEventFired = false;
+
+	private boolean closedEventFired = false;
+
 	ResultSetImpl(StatementImpl statement, Neo4jTransaction transaction, RunResponse runResponse,
 			PullResponse batchPullResponse, int fetchSize, int maxRowLimit, int maxFieldSize) {
 		this.statement = Objects.requireNonNull(statement);
@@ -140,9 +152,18 @@ final class ResultSetImpl implements Neo4jResultSet {
 	}
 
 	@Override
+	public void addListener(ResultSetListener resultSetListener) {
+		this.listeners.add(Objects.requireNonNull(resultSetListener));
+	}
+
+	@Override
 	public boolean next() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "next");
-		this.beforeFirst.compareAndSet(true, false);
+		if (this.beforeFirst.compareAndSet(true, false) && !this.openedEventFired) {
+			Events.notify(this.listeners, listener -> listener
+				.onIterationStarted(new IterationStartedEvent(Long.toString(System.identityHashCode(this)))));
+			this.openedEventFired = true;
+		}
 		var result = next0();
 		if (result) {
 			if (!this.first.compareAndSet(null, true)) {
@@ -153,7 +174,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 		else {
 			this.first.compareAndSet(true, false);
 			this.last.compareAndSet(true, false);
-			this.afterLast.compareAndSet(false, true);
+			if (this.afterLast.compareAndSet(false, true) && this.openedEventFired && !this.closedEventFired) {
+				Events.notify(this.listeners, listener -> listener
+					.onIterationDone(new IterationDoneEvent(Long.toString(System.identityHashCode(this)), true)));
+				this.closedEventFired = true;
+			}
 		}
 		return result;
 	}
@@ -173,6 +198,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 		}
 		if (this.batchPullResponse.hasMore()) {
 			this.batchPullResponse = this.transaction.pull(this.runResponse, calculateFetchSize());
+			Events.notify(this.listeners, listener -> listener.on(new Neo4jEvent(Neo4jEvent.Type.PULLED_NEXT_BATCH,
+					Map.of("source", this.getClass(), "id", Long.toString(System.identityHashCode(this))))));
 			this.recordsBatchIterator = this.batchPullResponse.records().iterator();
 			return next();
 		}
@@ -188,6 +215,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 		}
 		if (this.transaction.isAutoCommit() && this.transaction.isRunnable()) {
 			this.transaction.commit();
+		}
+		if (this.openedEventFired && !this.closedEventFired) {
+			Events.notify(this.listeners, listener -> listener.onIterationDone(
+					new IterationDoneEvent(Long.toString(System.identityHashCode(this)), this.isAfterLast())));
+			this.closedEventFired = true;
 		}
 		this.closed = true;
 		if (this.statement.isCloseOnCompletion()) {

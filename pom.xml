@@ -105,6 +105,7 @@
 	<modules>
 		<module>neo4j-jdbc-bom</module>
 		<module>neo4j-jdbc-translator</module>
+		<module>neo4j-jdbc-tracing</module>
 		<module>neo4j-jdbc</module>
 		<module>neo4j-jdbc-it</module>
 		<module>bundles/neo4j-jdbc-bundle</module>
@@ -175,6 +176,7 @@
 		<maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
+		<micrometer-tracing.version>1.4.4</micrometer-tracing.version>
 		<micrometer.version>1.14.5</micrometer.version>
 		<mockito.version>5.16.1</mockito.version>
 		<moditect-maven-plugin.version>1.2.2.Final</moditect-maven-plugin.version>
@@ -209,6 +211,13 @@
 				<groupId>io.micrometer</groupId>
 				<artifactId>micrometer-bom</artifactId>
 				<version>${micrometer.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-tracing-bom</artifactId>
+				<version>${micrometer-tracing.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

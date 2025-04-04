@@ -16,18 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.events;
-
-import java.net.URI;
-
 /**
- * This event will be fired when a connection has been closed, either normally or aborted
- * with the appropriate flag set to {@literal true}.
- *
- * @param uri the URL of the connection that was closed.
- * @param aborted will be {@literal true} when the connection has been aborted.
- * @author Michael J. Simons
- * @since 6.3.0
+ * Defines the public surface of the tracing SPI when run on the module path.
  */
-public record ConnectionClosedEvent(URI uri, boolean aborted) {
+@SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
+module org.neo4j.jdbc.tracing.micrometer {
+
+	requires transitive org.neo4j.jdbc;
+	requires transitive micrometer.tracing;
+
+	exports org.neo4j.jdbc.tracing.micrometer;
 }

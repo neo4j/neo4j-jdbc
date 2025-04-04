@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import org.neo4j.jdbc.tracing.Neo4jTracer;
+
 /**
  * A Neo4j specific extension of {@link DataSource}. It may be referred to for use with
  * {@link #unwrap(Class)} to access specific Neo4j functionality.
@@ -85,6 +87,8 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	private PrintWriter logWriter = new PrintWriter(System.out);
 
 	private final Properties connectionProperties = new Properties();
+
+	private Neo4jTracer tracer;
 
 	/**
 	 * Creates a new {@link DataSource} which is not yet usable without further
@@ -157,9 +161,17 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	@Override
 	public void setUrl(String url) {
 		if (url != null && !url.isBlank() && !Neo4jDriver.URL_PATTERN.matcher(url).matches()) {
-			throw new IllegalArgumentException("Invalid URL:  " + url);
+			throw new IllegalArgumentException("Invalid URL: " + url);
 		}
 		this.url = url;
+	}
+
+	public void setDriverClassName(String driverClassName) {
+		if (driverClassName != null && !Neo4jDriver.class.getCanonicalName().equals(driverClassName)) {
+			throw new IllegalArgumentException("Unsupported driver clas name: " + driverClassName);
+		}
+
+		// Ignored anyway, we have only one driver class, which we check above
 	}
 
 	String getUrl() {
@@ -184,6 +196,7 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 
 	@Override
 	public Connection getConnection(String username, String password) throws SQLException {
+
 		var newProperties = new Properties();
 		this.connectionProperties.stringPropertyNames()
 			.forEach(k -> newProperties.put(k, this.connectionProperties.getProperty(k)));
@@ -193,7 +206,16 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 			newProperties.setProperty("password", password);
 		}
 
-		return DriverManager.getConnection(getUrl(), newProperties);
+		var connection = DriverManager.getConnection(getUrl(), newProperties).unwrap(Neo4jConnection.class);
+		if (this.tracer != null) {
+			connection.addListener(new Tracing(this.tracer, connection));
+		}
+		return connection;
+	}
+
+	@Override
+	public void setTracer(Neo4jTracer tracer) {
+		this.tracer = tracer;
 	}
 
 	@Override

@@ -70,11 +70,12 @@ import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
-import org.neo4j.jdbc.events.ConnectionClosedEvent;
 import org.neo4j.jdbc.events.ConnectionListener;
-import org.neo4j.jdbc.events.ConnectionOpenedEvent;
 import org.neo4j.jdbc.events.DriverListener;
+import org.neo4j.jdbc.events.DriverListener.ConnectionClosedEvent;
+import org.neo4j.jdbc.events.DriverListener.ConnectionOpenedEvent;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
+import org.neo4j.jdbc.tracing.Neo4jTracer;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
@@ -330,6 +331,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Set<DriverListener> listeners = new HashSet<>();
 
+	private Neo4jTracer tracer;
+
 	/**
 	 * Creates a new instance of the {@link Neo4jDriver}. The instance is usable and is
 	 * able to provide connections. The public constructor is provided mainly for tooling
@@ -393,7 +396,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
 				(aborted) -> {
 					var event = new ConnectionClosedEvent(targetUrl, aborted);
-					Events.notify(this.listeners, driverListener -> driverListener.connectionClosed(event));
+					Events.notify(this.listeners, listener -> listener.onConnectionClosed(event));
 				});
 
 		this.listeners.forEach(listener -> {
@@ -402,8 +405,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			}
 		});
 
-		Events.notify(this.listeners,
-				driverListener -> driverListener.connectionOpened(new ConnectionOpenedEvent(targetUrl)));
+		if (this.tracer != null) {
+			connection.addListener(new Tracing(this.tracer, connection));
+		}
+
+		Events.notify(this.listeners, listener -> listener.onConnectionOpened(new ConnectionOpenedEvent(targetUrl)));
 		return connection;
 	}
 
@@ -783,6 +789,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public void addListener(DriverListener driverListener) {
 		this.listeners.add(Objects.requireNonNull(driverListener));
+	}
+
+	@Override
+	public Neo4jDriver withTracer(Neo4jTracer tracer) {
+		this.tracer = tracer;
+		return this;
 	}
 
 	@Override

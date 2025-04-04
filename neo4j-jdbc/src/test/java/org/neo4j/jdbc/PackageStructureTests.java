@@ -26,6 +26,8 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.values.Value;
 
@@ -62,13 +64,11 @@ class PackageStructureTests {
 		rule.check(this.allClasses);
 	}
 
-	@Test
-	void jdbcModuleClassesMustNotBeUsedFromEvents() {
+	@ParameterizedTest
+	@ValueSource(strings = { "..jdbc.events..", "..jdbc.tracing.." })
+	void jdbcModuleClassesMustNotBeUsedFromHelperPackages(String helper) {
 
-		var rule = noClasses().that()
-			.resideInAPackage("..jdbc.events..")
-			.should()
-			.dependOnClassesThat(this.jdbcModuleClasses);
+		var rule = noClasses().that().resideInAPackage(helper).should().dependOnClassesThat(this.jdbcModuleClasses);
 		rule.check(this.allClasses);
 	}
 

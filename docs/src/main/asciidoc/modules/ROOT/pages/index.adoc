@@ -37,6 +37,9 @@ For information on upgrade/migration from other drivers to this one, see xref:mi
 
 
 ifndef::site-gen-antora[]
+
+:imagesdir: ../images/
+
 include::usage.adoc[leveloffset=+1]
 
 include::distribution.adoc[leveloffset=+1]

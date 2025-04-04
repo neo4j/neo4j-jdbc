@@ -19,7 +19,6 @@
 package org.neo4j.jdbc;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +28,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import org.neo4j.jdbc.events.ConnectionClosedEvent;
-import org.neo4j.jdbc.events.ConnectionOpenedEvent;
-import org.neo4j.jdbc.events.ExecutionEndedEvent;
-import org.neo4j.jdbc.events.StatementClosedEvent;
-import org.neo4j.jdbc.events.StatementCreatedEvent;
-import org.neo4j.jdbc.events.TranslationCachedEvent;
 
 /**
  * Collects various metrics per driver instance.
@@ -77,31 +70,13 @@ final class MetricsCollectorImpl implements MetricsCollector {
 		}
 	}
 
-	/**
-	 * Strips parameters away from the URL.
-	 * @param jdbcUrl the URL to clean
-	 * @return a parameter free URL
-	 */
-	static URI cleanURL(URI jdbcUrl) {
-		var hlp = URI.create(jdbcUrl.getSchemeSpecificPart());
-		try {
-			var port = hlp.getPort();
-			return new URI("jdbc",
-					"%s://%s:%d%s".formatted(hlp.getScheme(), hlp.getHost(), (port != -1) ? port : 7687, hlp.getPath()),
-					jdbcUrl.getFragment());
-		}
-		catch (URISyntaxException ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-
 	@Override
-	public void connectionOpened(ConnectionOpenedEvent event) {
-		var counter = this.openConnections.computeIfAbsent(cleanURL(event.uri()), url -> {
+	public void onConnectionOpened(ConnectionOpenedEvent event) {
+		var counter = this.openConnections.computeIfAbsent(Events.cleanURL(event.uri()), uri -> {
 			var newCounter = new AtomicInteger();
 			Gauge.builder("org.neo4j.jdbc.connections", newCounter::get)
 				.description("The number of currently open connections")
-				.tags("url", url.toString())
+				.tags("uri", uri.toString())
 				.register(this.meterRegistry);
 			return newCounter;
 		});
@@ -109,21 +84,21 @@ final class MetricsCollectorImpl implements MetricsCollector {
 	}
 
 	@Override
-	public void connectionClosed(ConnectionClosedEvent event) {
-		var counter = this.openConnections.get(cleanURL(event.uri()));
+	public void onConnectionClosed(ConnectionClosedEvent event) {
+		var counter = this.openConnections.get(Events.cleanURL(event.uri()));
 		if (counter != null) {
 			counter.decrementAndGet();
 		}
 	}
 
 	@Override
-	public void statementCreated(StatementCreatedEvent event) {
+	public void onStatementCreated(StatementCreatedEvent event) {
 		var counter = this.openStatements
-			.computeIfAbsent(new StatementKey(cleanURL(event.uri()), event.statementType()), key -> {
+			.computeIfAbsent(new StatementKey(Events.cleanURL(event.uri()), event.statementType()), key -> {
 				var newCounter = new AtomicInteger();
 				Gauge.builder("org.neo4j.jdbc.statements", newCounter::get)
 					.description("The number of currently open statements")
-					.tags("url", key.uri().toString(), "type", key.type().getSimpleName())
+					.tags("uri", key.uri().toString(), "type", key.type().getSimpleName())
 					.register(this.meterRegistry);
 				return newCounter;
 			});
@@ -131,35 +106,35 @@ final class MetricsCollectorImpl implements MetricsCollector {
 	}
 
 	@Override
-	public void statementClosed(StatementClosedEvent event) {
-		var counter = this.openStatements.get(new StatementKey(cleanURL(event.uri()), event.statementType()));
+	public void onStatementClosed(StatementClosedEvent event) {
+		var counter = this.openStatements.get(new StatementKey(Events.cleanURL(event.uri()), event.statementType()));
 		if (counter != null) {
 			counter.decrementAndGet();
 		}
 	}
 
 	@Override
-	public void translationCached(TranslationCachedEvent event) {
+	public void onTranslationCached(TranslationCachedEvent event) {
 		this.cachedTranslations.set(event.cacheSize());
 	}
 
 	@Override
-	public void executionEnded(ExecutionEndedEvent event) {
-		var queryMetrics = this.queryMetrics.computeIfAbsent(cleanURL(event.uri()), url -> {
+	public void onExecutionEnded(ExecutionEndedEvent event) {
+		var queryMetrics = this.queryMetrics.computeIfAbsent(Events.cleanURL(event.uri()), uri -> {
 			var queries = "org.neo4j.jdbc.queries";
-			var urlString = url.toString();
+			var uriString = uri.toString();
 			return new QueryMetrics(
 					Counter.builder(queries)
 						.description("The total number of successful queries run")
-						.tags("url", urlString, "state", "successful")
+						.tags("uri", uriString, "state", "successful")
 						.register(this.meterRegistry),
 					Counter.builder(queries)
 						.description("The total number of queries that failed to run")
-						.tags("url", urlString, "state", "failed")
+						.tags("uri", uriString, "state", "failed")
 						.register(this.meterRegistry),
 					Timer.builder(queries)
 						.description("Duration of the queries being run")
-						.tags("url", urlString)
+						.tags("uri", uriString)
 						.register(this.meterRegistry));
 		});
 		if (event.state() == ExecutionEndedEvent.State.SUCCESSFUL) {
