@@ -16,14 +16,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.events;
+package org.neo4j.jdbc.tracing.micrometer;
 
-/**
- * This event will be fired when a translation has been cached.
- *
- * @param cacheSize the size of the cache
- * @author Michael J. Simons
- * @since 6.3.0
- */
-public record TranslationCachedEvent(int cacheSize) {
+import java.util.Map;
+
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.Tracer;
+import org.neo4j.jdbc.tracing.Neo4jSpan;
+import org.neo4j.jdbc.tracing.Neo4jTracer;
+
+final class Neo4jTracerImpl implements Neo4jTracer {
+
+	private final Tracer tracer;
+
+	Neo4jTracerImpl(Tracer tracer) {
+		this.tracer = tracer;
+	}
+
+	@Override
+	public Neo4jSpan start(String name, Map<String, String> tags) {
+		var builder = this.tracer.spanBuilder().name(name).kind(Span.Kind.CLIENT);
+		if (tags != null) {
+			tags.forEach(builder::tag);
+		}
+		var span = builder.start();
+		return new Neo4jSpanImpl(span, this.tracer.withSpan(span));
+	}
+
 }

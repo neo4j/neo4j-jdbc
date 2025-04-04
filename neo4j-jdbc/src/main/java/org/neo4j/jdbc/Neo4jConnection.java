@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
 import org.neo4j.jdbc.events.ConnectionListener;
+import org.neo4j.jdbc.tracing.Neo4jTracer;
 
 /**
  * A Neo4j specific extension of {@link Connection}. It may be referred to for use with
@@ -104,5 +105,14 @@ public sealed interface Neo4jConnection extends Connection, Neo4jMetadataWriter 
 	 * @since 6.3.0
 	 */
 	URI getDatabaseURL();
+
+	/**
+	 * A call with a {@code tracer} that is not {@literal null} will enable tracing for
+	 * this connection.
+	 * @param tracer the tracer to use, {@literal null} safe
+	 * @return this connection
+	 * @since 6.3.0
+	 */
+	Neo4jConnection withTracer(Neo4jTracer tracer);
 
 }

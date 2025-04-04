@@ -37,7 +37,7 @@ class MetricsCollectorImplTests {
 					jdbc:neo4j+ssc://localhost/aDatabase#whatever,jdbc:neo4j+ssc://localhost:7687/aDatabase#whatever
 					""")
 	void urlCleanerShouldWork(URI in, URI expected) {
-		assertThat(MetricsCollectorImpl.cleanURL(in)).isEqualTo(expected);
+		assertThat(Events.cleanURL(in)).isEqualTo(expected);
 	}
 
 }

@@ -18,16 +18,9 @@
  */
 package org.neo4j.jdbc.events;
 
-import java.net.URI;
-import java.sql.Statement;
+public interface Neo4jEventListener {
 
-/**
- * This event will be fired when a statement has been created.
- *
- * @param uri The URL of the Neo4j instance towards the statement has been opened too.
- * @param statementType the actual type of the statement as defined in the JDBC spec.
- * @author Michael J. Simons
- * @since 6.3.0
- */
-public record StatementCreatedEvent(URI uri, Class<? extends Statement> statementType) {
+	default void on(Neo4jEvent event) {
+	}
+
 }

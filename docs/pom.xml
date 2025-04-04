@@ -71,6 +71,11 @@
 				<filtering>true</filtering>
 				<directory>src/main/resources</directory>
 			</resource>
+			<resource>
+				<targetPath>../generated-docs/images</targetPath>
+				<filtering>false</filtering>
+				<directory>src/main/asciidoc/modules/ROOT/images</directory>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>

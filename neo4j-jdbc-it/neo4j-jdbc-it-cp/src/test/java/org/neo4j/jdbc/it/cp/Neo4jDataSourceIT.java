@@ -28,6 +28,7 @@ import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -57,6 +58,33 @@ class Neo4jDataSourceIT {
 			assertThat(result.getInt(1)).isOne();
 
 		}
+	}
+
+	@Test
+	void datasourceShouldProvideConnectionViaUrl() throws SQLException {
+
+		var ds = new Neo4jDataSource();
+		ds.setServerName("example.com");
+		ds.setPortNumber(4711);
+		ds.setPassword("falsch");
+		ds.setConnectionProperty("enableSQLTranslation", "false");
+
+		ds.setUrl("jdbc:neo4j://%s:%d?userName=%s&password=%s&enableSQLTranslation=true".formatted(this.neo4j.getHost(),
+				this.neo4j.getMappedPort(7687), "neo4j", this.neo4j.getAdminPassword()));
+
+		try (var connection = ds.getConnection();
+				var stmt = connection.createStatement();
+				var result = stmt.executeQuery("SELECT 1")) {
+			assertThat(result.next()).isTrue();
+			assertThat(result.getInt(1)).isOne();
+
+		}
+	}
+
+	@Test
+	void shouldRejectInvalidUrl() {
+		var ds = new Neo4jDataSource();
+		assertThatIllegalArgumentException().isThrownBy(() -> ds.setUrl("jdbc:foor"));
 	}
 
 }

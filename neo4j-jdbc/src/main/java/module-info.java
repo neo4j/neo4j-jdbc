@@ -42,6 +42,7 @@ module org.neo4j.jdbc {
 
 	exports org.neo4j.jdbc;
 	exports org.neo4j.jdbc.events;
+	exports org.neo4j.jdbc.tracing;
 	exports org.neo4j.jdbc.values;
 
 	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;

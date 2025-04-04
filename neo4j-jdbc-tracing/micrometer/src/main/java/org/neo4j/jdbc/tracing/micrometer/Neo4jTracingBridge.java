@@ -16,28 +16,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.events;
+package org.neo4j.jdbc.tracing.micrometer;
+
+import io.micrometer.tracing.Tracer;
+import org.neo4j.jdbc.tracing.Neo4jTracer;
 
 /**
- * The mode how a statement is executed (plain, without any immediate visible results or
- * updates, as a query or as an update statement).
+ * This is a factory class for bridging Neo4j tracing into Micrometer tracing.
  *
  * @author Michael J. Simons
  * @since 6.3.0
  */
-public enum ExecutionMode {
+public final class Neo4jTracingBridge {
 
 	/**
-	 * Used with {@link java.sql.Statement#execute(String)} and overloads.
+	 * Creates a new {@link Neo4jTracer tracer} delegating to a Micrometer tracer.
+	 * @param tracer the Micrometer tracer to delegate to
+	 * @return a new Neo4j tracer
 	 */
-	PLAIN,
-	/**
-	 * Used with {@link java.sql.Statement#executeQuery(String)} and overloads.
-	 */
-	QUERY,
-	/**
-	 * Used with {@link java.sql.Statement#executeUpdate(String)} and overloads.
-	 */
-	UPDATE
+	public static Neo4jTracer to(Tracer tracer) {
+		return new Neo4jTracerImpl(tracer);
+	}
+
+	private Neo4jTracingBridge() {
+	}
 
 }

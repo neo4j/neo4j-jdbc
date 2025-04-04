@@ -16,22 +16,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc.events;
+package org.neo4j.jdbc.tracing.micrometer;
 
-import java.net.URI;
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.Tracer;
+import org.neo4j.jdbc.tracing.Neo4jSpan;
 
-/**
- * Will be fired before the execution of a statement happens.
- *
- * @param id a generated id to correlate this event to the corresponding
- * {@link ExecutionEndedEvent end event}
- * @param uri The URL of the Neo4j instance that was queried
- * @param statement the statement to be executed. This will always the original statement
- * passed to execute, not a potentially translated one.
- * @param executionMode the mode of the execution
- * @author Michael J. Simons
- * @since 6.3.0
- */
-public record ExecutionStartedEvent(String id, URI uri, String statement, ExecutionMode executionMode) {
+final class Neo4jSpanImpl implements Neo4jSpan {
+
+	private final Span span;
+
+	private final Tracer.SpanInScope scope;
+
+	Neo4jSpanImpl(Span span, Tracer.SpanInScope scope) {
+		this.span = span;
+		this.scope = scope;
+	}
+
+	@Override
+	public void end() {
+		this.scope.close();
+		this.span.end();
+	}
+
+	@Override
+	public void annotate(String name) {
+		this.span.event(name);
+	}
 
 }
