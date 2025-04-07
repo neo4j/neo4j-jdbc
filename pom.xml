@@ -136,7 +136,7 @@
 		<asciidoctorj.version>3.0.0</asciidoctorj.version>
 		<assertj.version>3.27.3</assertj.version>
 		<build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
-		<checkstyle.version>10.21.4</checkstyle.version>
+		<checkstyle.version>10.23.0</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cypher-v5-antlr-parser.version>5.26.4</cypher-v5-antlr-parser.version>
