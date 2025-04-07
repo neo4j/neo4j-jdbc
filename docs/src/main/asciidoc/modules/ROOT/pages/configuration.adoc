@@ -482,7 +482,7 @@ class TracingTestConfiguration {
 
 Bring `org.springframework.boot:spring-boot-starter-actuator` onto your class path too, and it will configure Micrometer for you.
 
-TIP: The setup of your data source stays the same, no change is required here for the following to examples to work, as our Tracing API will automatically pick the correct tracer through Micrometer!
+TIP: The setup of your data source stays the same: no change is required here for the following examples to work, as our Tracing API will automatically pick the correct tracer through Micrometer!
 
 ==== Exporting to Zipkin
 
