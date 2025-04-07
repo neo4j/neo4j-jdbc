@@ -53,6 +53,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-jdbc-tracing-micrometer</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.neo4j</groupId>
 				<artifactId>neo4j-jdbc-translator-impl</artifactId>
 				<version>${project.version}</version>
 			</dependency>

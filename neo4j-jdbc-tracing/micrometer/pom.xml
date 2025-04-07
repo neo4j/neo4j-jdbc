@@ -24,21 +24,30 @@
 
 	<parent>
 		<groupId>org.neo4j</groupId>
-		<artifactId>neo4j-jdbc-translator</artifactId>
+		<artifactId>neo4j-jdbc-tracing</artifactId>
 		<version>6.3.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>neo4j-jdbc-translator-spi</artifactId>
+	<artifactId>neo4j-jdbc-tracing-micrometer</artifactId>
 
 	<packaging>jar</packaging>
-	<name>Neo4j JDBC Driver (SQL Translator SPI)</name>
-	<description>SPI to be implemented by any SQL to Cypher translation service.</description>
+	<name>Neo4j JDBC Driver (Micrometer based tracing)</name>
+	<description>A tracer implementation for the Neo4j JDBC Driver based on Micrometer tracing.</description>
 
 	<properties>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-jdbc</artifactId>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
@@ -47,6 +56,11 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

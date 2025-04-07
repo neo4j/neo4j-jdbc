@@ -340,3 +340,201 @@ The Neo4j JDBC Driver does publish the following metrics:
 )
 `org.neo4j.jdbc.queries`:: a composite meter containing the counts of successful and failed queries and a timer measuring the duration of queries
 `org.neo4j.jdbc.cached-translations`:: a gauge representing the number of cached SQL to cypher translations
+
+== Tracing
+
+The Neo4j JDBC Driver supports tracing and will provide traces spans for the following operations on JDBC `Statement` instances:
+
+* `#execute`
+* `#executeQuery`
+* `#executeUpdate`
+
+and all overloads thereof and in all inheriting types.
+In addition, when using a JDBC `ResultSet`, it will open a span when the result set is first moved from being before the first row until it is either moved beyond the last row or actively closed.
+Spans will contain various events, such as when a query has been actually executed by the Neo4j database or when a batch of records has been pulled from the database.
+
+The feature is optional: when you want to use it, you have to bring in additional dependencies.
+This applies to all distributed versions, including the full bundles, so that an optional feature doesn't make the bundles bigger.
+For Maven, use this additional dependency declaration:
+
+[source,xml,subs="verbatim,attributes"]
+.Maven dependency that allows you to configure tracing
+----
+<dependency>
+    <groupId>{group-id}</groupId>
+    <artifactId>neo4j-jdbc-tracing-micrometer</artifactId>
+    <version>{version}</version>
+</dependency>
+----
+
+And for Gradle you would want to declare the following runtime dependency:
+
+[source,groovy,subs="verbatim,attributes"]
+.Gradle dependency that allows you to configure tracing
+----
+dependencies {
+    runtimeOnly '{group-id}:neo4j-jdbc-tracing-micrometer:{version}'
+}
+----
+
+This dependency brings in https://docs.micrometer.io/tracing/reference/[Micrometer Tracing].
+Micrometer Tracing allows you to bind to various tracers and exporters, such as Zipkin or OpenTelemetry.
+
+Once you have a Micrometer Tracer, you can configure a `Neo4jDataSource` like this:
+
+[source,java, tabsize=4, indent=0]
+.A `Neo4jDataSource` spawning connections that trace their usage
+----
+import javax.sql.DataSource;
+
+import org.neo4j.jdbc.Neo4jDataSource;
+import org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge;
+
+import io.micrometer.tracing.Tracer;
+
+public class TracingExampleSetup {
+
+    DataSource neo4jDataSource() {
+
+        Tracer tracer = Tracer.NOOP; // <.>
+        var neo4jDataSource = new Neo4jDataSource();
+        neo4jDataSource.setUrl("jdbc:neo4j://yourhost:7687");
+        neo4jDataSource.setPassword("neo4j");
+        neo4jDataSource.setUser("verysecret");
+        neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer)); // <.>
+        return neo4jDataSource;
+    }
+}
+----
+<.> In most scenarios, your application framework will provide a Micrometer tracer instance for you
+<.> With this call you enable tracing in the data source and all connections spawned from it
+
+You can also enable tracing on individual connections by unwrapping them into the `Neo4jConnection` extension like this:
+
+[source,java, tabsize=4, indent=0]
+.Enable tracing for an individual connection
+----
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+import org.neo4j.jdbc.Neo4jConnection;
+import org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge;
+
+import io.micrometer.tracing.Tracer;
+
+public class TracingExampleSetup {
+
+    Connection connection() {
+
+        Tracer tracer = Tracer.NOOP;
+        return DriverManager.getConnection("jdbc:neo4j://yourhost:7687", "neo4j", "verysecret")
+            .unwrap(Neo4jConnection.class) // <.>
+            .withTracer(Neo4jTracingBridge.to(tracer));
+    }
+}
+----
+<.> Unwrap the connection into our extension so that you can configure the tracer.
+
+=== Using tracing with Spring Boot
+
+The tracing implementation that is provided by the Neo4j JDBC Driver utilizes Micrometer Tracing, which is well accepted in the Spring Boot ecosystem, but also in Quarkus, Micronaut and others.
+We provide a few examples, but refer to your frameworks documentation on how to configure tracing.
+
+==== Configuring the tracing datasource
+
+Usually, Spring Boot configures a `HikariDataSource` based on you driver.
+Hikari provides connection pooling, and you should not ditch that.
+There's no need to create your own data source properties for all configuration values, you can just inject it like this:
+
+[source,java, tabsize=4, indent=0]
+.Configure a tracing and pooled data source with Spring Boot
+----
+import javax.sql.DataSource;
+
+import org.neo4j.jdbc.Neo4jDataSource;
+import org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import io.micrometer.tracing.Tracer;
+
+@Configuration
+class TracingTestConfiguration {
+
+    @Bean
+    DataSource neo4jDataSource(Tracer tracer, DataSourceProperties dataSourceProperties) {
+
+        var neo4jDataSource = new Neo4jDataSource();
+        neo4jDataSource.setUrl(dataSourceProperties.getUrl());
+        neo4jDataSource.setPassword(dataSourceProperties.getPassword());
+        neo4jDataSource.setUser(dataSourceProperties.getUsername());
+        neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer));
+
+        var cfg = new HikariConfig();
+        cfg.setDataSource(neo4jDataSource);
+        return new HikariDataSource(cfg);
+    }
+}
+----
+
+Bring `org.springframework.boot:spring-boot-starter-actuator` onto your class path too, and it will configure Micrometer for you.
+
+TIP: The setup of your data source stays the same: no change is required here for the following examples to work, as our Tracing API will automatically pick the correct tracer through Micrometer!
+
+==== Exporting to Zipkin
+
+To export your traces to Zipkin, add `io.micrometer:micrometer-tracing-bridge-brave` and `io.zipkin.reporter2:zipkin-reporter-brave` and set `management.zipkin.tracing.export.enabled` to `true` in your Spring application.
+
+You should see spans like this:
+
+image::zipkintracing.jpg[]
+
+==== Exporting via OpenTelemetry
+
+https://opentelemetry.io[OpenTelemetry] allows to export not only traces, but metrics and logging too.
+
+Here's an example how to use https://www.dash0.com[Dash0] via OpenTelemetry.
+The exporter should work the same for other services.
+OpenTelemetry has split its SDK into several modules, hence you will first import their BOM into your build file. Here's an example for Maven:
+
+[source,xml]
+.Snippet from a Maven build file to include the OpenTelemetry BOM
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-bom</artifactId>
+    <version>1.47.0</version>
+    <type>pom</type>
+    <scope>import</scope>
+</dependency>
+----
+
+First you need to bring in the bridge from Micrometer to OpenTelemetry via: `io.micrometer:micrometer-tracing-bridge-otel`, so that Micrometer pushes into that SDK.
+Next, bring in the following dependencies so that Spring Boot can configure the exporter:
+
+* `io.opentelemetry:opentelemetry-sdk`
+* `io.opentelemetry:opentelemetry-exporter-common`
+* `io.opentelemetry:opentelemetry-exporter-otlp`
+* `io.opentelemetry:opentelemetry-exporter-sender-jdk`
+
+In the case of Dashß, the application configuration will look similar to this:
+
+[source,properties]
+.Using the OpenTelemetry exporter in Spring Boot towards Dash0
+----
+management.otlp.tracing.export.enabled=true
+management.otlp.tracing.endpoint=https://ingress.eu-west-1.aws.dash0.com/v1/traces
+management.otlp.tracing.headers.Authorization=Bearer auth_XX_your_token_XX
+
+management.otlp.metrics.export.step=30s
+management.otlp.metrics.export.enabled=true
+management.otlp.metrics.export.url=https://ingress.eu-west-1.aws.dash0.com/v1/metrics
+management.otlp.metrics.export.headers.Authorization=Bearer auth_XX_your_token_XX
+----
+
+The trace from our Movie application looks like this:
+
+image::dash0tracing.jpg[]
