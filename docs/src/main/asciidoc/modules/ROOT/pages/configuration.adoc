@@ -383,7 +383,7 @@ Micrometer Tracing allows you to bind to various tracers and exporters, such as 
 Once you have a Micrometer Tracer, you can configure a `Neo4jDataSource` like this:
 
 [source,java, tabsize=4, indent=0]
-.Configuring a `Neo4jDataSource` that spawns connections that trace their usage
+.A `Neo4jDataSource` spawning connections that trace their usage
 ----
 import javax.sql.DataSource;
 
