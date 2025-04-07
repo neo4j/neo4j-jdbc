@@ -520,7 +520,7 @@ Next, bring in the following dependencies so that Spring Boot can configure the 
 * `io.opentelemetry:opentelemetry-exporter-otlp`
 * `io.opentelemetry:opentelemetry-exporter-sender-jdk`
 
-In the case of Dashß, the application configuration will look similar to this:
+In the case of Dash0, the application configuration will look similar to this:
 
 [source,properties]
 .Using the OpenTelemetry exporter in Spring Boot towards Dash0
