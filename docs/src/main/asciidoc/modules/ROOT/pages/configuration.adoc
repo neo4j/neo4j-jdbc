@@ -499,7 +499,7 @@ https://opentelemetry.io[OpenTelemetry] allows to export not only traces, but me
 
 Here's an example how to use https://www.dash0.com[Dash0] via OpenTelemetry.
 The exporter should work the same for other services.
-OpenTelemetry has split it's SDK into several modules, hence you will first import their BOM into your build file. Here's an example for Maven:
+OpenTelemetry has split its SDK into several modules, hence you will first import their BOM into your build file. Here's an example for Maven:
 
 [source,xml]
 .Snippet from a Maven build file to include the OpenTelemetry BOM
