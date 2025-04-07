@@ -353,7 +353,7 @@ and all overloads thereof and in all inheriting types.
 In addition, when using a JDBC `ResultSet`, it will open a span when the result set is first moved from being before the first row until it is either moved beyond the last row or actively closed.
 Spans will contain various events, such as when a query has been actually executed by the Neo4j database or when a batch of records has been pulled from the database.
 
-The feature is optional, when you want to use it, you have to bring in additional dependencies.
+The feature is optional: when you want to use it, you have to bring in additional dependencies.
 This applies to all distributed versions, including the full bundles, so that an optional feature doesn't make the bundles bigger.
 For Maven, use this additional dependency declaration:
 
