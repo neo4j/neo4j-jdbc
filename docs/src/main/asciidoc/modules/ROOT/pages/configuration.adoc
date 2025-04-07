@@ -438,7 +438,7 @@ public class TracingExampleSetup {
 === Using tracing with Spring Boot
 
 The tracing implementation that is provided by the Neo4j JDBC Driver utilizes Micrometer Tracing, which is well accepted in the Spring Boot ecosystem, but also in Quarkus, Micronaut and others.
-Generally, you would refer to your frameworks documentation on how to configure that, but we also have a few examples.
+We provide a few examples, but refer to your frameworks documentation on how to configure tracing.
 
 ==== Configuring the tracing datasource
 
