@@ -19,6 +19,7 @@
 package org.neo4j.jdbc;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +37,8 @@ import org.neo4j.jdbc.events.StatementListener;
  */
 interface MetricsCollector extends DriverListener, ConnectionListener, StatementListener {
 
+	AtomicBoolean GLOBAL_REGISTRY_HAS_BEEN_TRIED = new AtomicBoolean(false);
+
 	/**
 	 * Tries to create a metrics collector based on the global Micrometer registry.
 	 * @return a metrics collector based on the global Micrometer instance if available
@@ -47,7 +50,9 @@ interface MetricsCollector extends DriverListener, ConnectionListener, Statement
 			globalRegistry = Metrics.globalRegistry;
 		}
 		catch (Throwable ex) {
-			Logger.getLogger("org.neo4j.jdbc").log(Level.INFO, "Metrics are not available");
+			if (GLOBAL_REGISTRY_HAS_BEEN_TRIED.compareAndSet(false, true)) {
+				Logger.getLogger("org.neo4j.jdbc").log(Level.INFO, "Metrics are not available");
+			}
 			return Optional.empty();
 		}
 		// Avoid touching the class that actually is dependent on MeterRegistry as long as
