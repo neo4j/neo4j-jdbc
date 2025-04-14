@@ -215,22 +215,24 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	}
 
 	final void setParameter(String key, Object value) {
-		Object valueLogged;
-		String type;
-		if (value != null) {
-			valueLogged = "******";
-			if (value instanceof Value hlp) {
-				type = hlp.type().name();
+		LOGGER.log(Level.FINER, () -> {
+			Object valueLogged;
+			String type;
+			if (value != null) {
+				valueLogged = "******";
+				if (value instanceof Value hlp) {
+					type = hlp.type().name();
+				}
+				else {
+					type = value.getClass().getName();
+				}
 			}
 			else {
-				type = value.getClass().getName();
+				valueLogged = "(literal) null";
+				type = Void.class.getName();
 			}
-		}
-		else {
-			valueLogged = "(literal) null";
-			type = Void.class.getName();
-		}
-		LOGGER.log(Level.FINER, () -> "Setting parameter `%s` to `%s` (%s)".formatted(key, valueLogged, type));
+			return "Setting parameter `%s` to `%s` (%s)".formatted(key, valueLogged, type);
+		});
 		getCurrentBatch().put(Objects.requireNonNull(key), value);
 	}
 
@@ -629,7 +631,38 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	@Override
 	public void setArray(int parameterIndex, Array x) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		assertIsOpen();
+		assertValidParameterIndex(parameterIndex);
+		setArray0(computeParameterName(parameterIndex), x);
+	}
+
+	@Override
+	public void setArray(String parameterName, Array x) throws SQLException {
+		assertIsOpen();
+		Objects.requireNonNull(parameterName);
+		setArray0(parameterName, x);
+	}
+
+	private void setArray0(String parameterName, Array x) throws SQLException {
+		if (x == null) {
+			setParameter(parameterName, Values.NULL);
+			return;
+		}
+
+		Value value;
+		if ("BYTES".equals(x.getBaseTypeName())) {
+			value = Values.value(x.getArray());
+		}
+		else {
+			var hlp = new ArrayList<Value>();
+			try (var rs = x.getResultSet()) {
+				while (rs.next()) {
+					hlp.add(rs.getObject(2, Value.class));
+				}
+			}
+			value = Values.value(hlp);
+		}
+		setParameter(parameterName, value);
 	}
 
 	@SuppressWarnings("resource")

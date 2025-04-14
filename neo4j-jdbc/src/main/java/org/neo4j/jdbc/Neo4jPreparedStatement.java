@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -199,5 +200,15 @@ public sealed interface Neo4jPreparedStatement extends PreparedStatement permits
 	 * @see #setBytes(int, byte[])
 	 */
 	void setBytes(String parameterName, byte[] bytes) throws SQLException;
+
+	/**
+	 * Named-parameter version of {@link #setArray(int, Array)}.
+	 * @param parameterName the parameter name
+	 * @param value the parameter value
+	 * @throws SQLException when a connection or database error occurs
+	 * @since 6.4.0
+	 * @see #setArray(int, Array)
+	 */
+	void setArray(String parameterName, Array value) throws SQLException;
 
 }

@@ -966,6 +966,18 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		throw newIllegalMethodInvocation();
 	}
 
+	@Override
+	public void setArray(int parameterIndex, Array x) throws SQLException {
+		assertParameterType(ParameterType.ORDINAL);
+		super.setArray(parameterIndex, x);
+	}
+
+	@Override
+	public void setArray(String parameterName, Array x) throws SQLException {
+		assertParameterType(ParameterType.NAMED);
+		super.setArray(parameterName, x);
+	}
+
 	private enum ParameterType {
 
 		ORDINAL, NAMED
