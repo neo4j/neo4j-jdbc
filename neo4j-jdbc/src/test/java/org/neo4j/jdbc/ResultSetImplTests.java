@@ -1562,12 +1562,11 @@ class ResultSetImplTests {
 		var positional = testSupplier
 			.apply(method -> Set.of("insertRow", "updateRow", "deleteRow", "refreshRow", "cancelRowUpdates")
 				.contains(method.getName()));
-		var getters = testSupplier.apply(method -> Set
-			.of("getRef", "getBlob", "getClob", "getNClob", "getSQLXML", "getNString", "getNCharacterStream",
-					"getArray", "getRowId", "getUnicodeStream", "getCursorName")
-			.contains(method.getName())
-				|| "getObject".equals(method.getName()) && method.getParameterTypes().length == 2
-						&& method.getParameterTypes()[1].isAssignableFrom(Map.class));
+		var getters = testSupplier.apply(
+				method -> Set
+					.of("getRef", "getBlob", "getClob", "getNClob", "getSQLXML", "getNString", "getNCharacterStream",
+							"getRowId", "getUnicodeStream", "getCursorName")
+					.contains(method.getName()));
 
 		return Stream.of(DynamicContainer.dynamicContainer("updates", updates),
 				DynamicContainer.dynamicContainer("positional", positional),

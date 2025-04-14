@@ -77,6 +77,7 @@ import org.neo4j.jdbc.events.StatementListener;
 import org.neo4j.jdbc.tracing.Neo4jTracer;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
+import org.neo4j.jdbc.values.Type;
 
 /**
  * A Neo4j specific implementation of {@link Connection}.
@@ -465,9 +466,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Setting type map");
-		if (!map.isEmpty()) {
-			throw new SQLFeatureNotSupportedException();
-		}
+		Neo4jConversions.assertTypeMap(map);
 	}
 
 	@Override
@@ -731,9 +730,21 @@ final class ConnectionImpl implements Neo4jConnection {
 		return result;
 	}
 
+	/**
+	 * Please see {@link Connection#createArrayOf(String, Object[])} for the full
+	 * documentation. The Neo4j implementation here as special requirements for the type
+	 * name.
+	 * @param typeName supported names are defined by Neo4j types {@link Type}.
+	 * @param elements the elements that populate the returned object
+	 * @return a new Array object
+	 * @throws SQLException if a database error occurs, the JDBC type is not * appropriate
+	 * for the typeName and the conversion is not supported, the typeName is null or this
+	 * method is called on a closed connection
+	 * @see Connection#createArrayOf(String, Object[])
+	 */
 	@Override
 	public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		return ArrayImpl.of(this, typeName, elements);
 	}
 
 	@Override

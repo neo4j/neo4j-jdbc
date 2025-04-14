@@ -28,7 +28,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -271,6 +273,24 @@ final class Neo4jConversions {
 			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Date", value.type()));
 		}
 		return Date.valueOf(zonedDateTime.toLocalDate());
+	}
+
+	/**
+	 * Asserts that the type map is supported. As of 6.4.0 will always throw an exception
+	 * on a non-null and not-empty map.
+	 * @param map the map to assert
+	 * @throws SQLException with SQL state 22N11 if the map is a non-empty map
+	 */
+	static void assertTypeMap(Map<String, Class<?>> map) throws SQLException {
+		if (!(map == null || map.isEmpty())) {
+			var mapValue = map.entrySet()
+				.stream()
+				.sorted(Map.Entry.comparingByKey())
+				.map(e -> "%s = %s".formatted(e.getKey(), e.getValue()))
+				.collect(Collectors.joining(", "));
+			throw new GQLException(GQLException.ErrorCode.GQL_22N11,
+					"Invalid argument: cannot process non-empty type map %s".formatted(mapValue));
+		}
 	}
 
 }

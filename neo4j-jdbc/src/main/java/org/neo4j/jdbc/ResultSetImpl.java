@@ -897,7 +897,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		Neo4jConversions.assertTypeMap(map);
+		return getObject(columnIndex);
 	}
 
 	@Override
@@ -917,12 +918,14 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public Array getArray(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		logGet("Array", columnIndex);
+		return getValueByColumnIndex(columnIndex, v -> ArrayImpl.of(this.statement.getConnection(), v));
 	}
 
 	@Override
 	public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		Neo4jConversions.assertTypeMap(map);
+		return getObject(columnLabel);
 	}
 
 	@Override
@@ -942,7 +945,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public Array getArray(String columnLabel) throws SQLException {
-		throw new SQLFeatureNotSupportedException();
+		logGet("Array", columnLabel);
+		return getValueByColumnLabel(columnLabel, v -> ArrayImpl.of(this.statement.getConnection(), v));
 	}
 
 	@Override

@@ -315,8 +315,6 @@ class CallableStatementImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setClob(1, mock(Clob.class)),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setArray(1, mock(Array.class)),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRowId(1, mock(RowId.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setNClob(1, mock(NClob.class)),
@@ -459,7 +457,7 @@ class CallableStatementImplTests {
 		assertThatThrownBy(() -> secondSetter.run(this.statement)).isInstanceOf(SQLException.class);
 	}
 
-	static Stream<Arguments> shouldNotAllowMixingParameterTypesArgs() {
+	static Stream<Arguments> shouldNotAllowMixingParameterTypesArgs() throws SQLException {
 		Map<Class<?>, Object> typeToValue = new HashMap<>();
 		typeToValue.put(boolean.class, false);
 		typeToValue.put(byte.class, (byte) 1);
@@ -481,7 +479,7 @@ class CallableStatementImplTests {
 		typeToValue.put(Calendar.class, Calendar.getInstance());
 		typeToValue.put(BigDecimal.class, BigDecimal.ONE);
 		typeToValue.put(SQLType.class, mock(SQLType.class));
-		typeToValue.put(Array.class, mock(Array.class));
+		typeToValue.put(Array.class, ArrayImpl.of(mock(Connection.class), "ANY", null));
 		typeToValue.put(SQLXML.class, mock(SQLXML.class));
 		typeToValue.put(Blob.class, mock(Blob.class));
 		typeToValue.put(Clob.class, mock(Clob.class));

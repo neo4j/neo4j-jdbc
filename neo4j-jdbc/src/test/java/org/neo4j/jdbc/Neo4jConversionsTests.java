@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
@@ -289,6 +290,29 @@ class Neo4jConversionsTests {
 	void shouldNotFailOnSuddenNewNeo4jTypesThatDontMapToModernOnes() {
 		assertThat(Neo4jConversions.oldCypherTypesToNew("whatever")).isEqualTo("OTHER");
 		assertThat(Neo4jConversions.oldCypherTypesToNew("Null")).isEqualTo("NULL");
+	}
+
+	static Stream<Arguments> assertTypeMapShouldWork() {
+		return Stream.of(null, Map.of()).map(Arguments::of);
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void assertTypeMapShouldWork(Map<String, Class<?>> map) {
+		assertThatNoException().isThrownBy(() -> Neo4jConversions.assertTypeMap(map));
+	}
+
+	static Stream<Arguments> assertTypeNonEmptyMapShouldWork() {
+		return Stream.of(Map.of("BIGINT", String.class, "VARCHAR", Integer.class)).map(Arguments::of);
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void assertTypeNonEmptyMapShouldWork(Map<String, Class<?>> map) {
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> Neo4jConversions.assertTypeMap(map))
+			.matches(ex -> ex.getErrorCode() == 0 && "22N11".equals(ex.getSQLState()))
+			.withMessage(
+					"Invalid argument: cannot process non-empty type map BIGINT = class java.lang.String, VARCHAR = class java.lang.Integer");
 	}
 
 }

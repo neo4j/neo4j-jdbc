@@ -25,7 +25,6 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -311,8 +310,6 @@ class PreparedStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(Blob.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setClob(1, mock(Clob.class)),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.setArray(1, mock(Array.class)),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRowId(1, mock(RowId.class)),
 						SQLFeatureNotSupportedException.class),

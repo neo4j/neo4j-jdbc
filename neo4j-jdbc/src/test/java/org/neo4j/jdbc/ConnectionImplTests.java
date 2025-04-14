@@ -671,7 +671,7 @@ class ConnectionImplTests {
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("RETURN pi()",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setTypeMap(Map.of("a", Integer.class)),
-						SQLFeatureNotSupportedException.class),
+						GQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection
 					.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) Connection::setSavepoint, SQLFeatureNotSupportedException.class),
@@ -713,8 +713,6 @@ class ConnectionImplTests {
 				Arguments.of((ConnectionMethodRunner) Connection::createBlob, SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) Connection::createNClob, SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) Connection::createSQLXML, SQLFeatureNotSupportedException.class),
-				Arguments.of((ConnectionMethodRunner) connection -> connection.createArrayOf("ignored", new String[0]),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.createStruct("ignored", new Object[0]),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setShardingKeyIfValid(null, null, 0),
