@@ -403,16 +403,20 @@ class StatementIT extends IntegrationTestBase {
 		// integer.
 		try (var connection = getConnection();
 				var stmt = connection.createStatement();
-				var rs = stmt.executeQuery("RETURN 1 AS i, 2147483648 AS l")) {
+				var rs = stmt.executeQuery("RETURN 1 AS i, 2147483647 AS ml, 2147483648 AS l")) {
 			assertThat(rs.next()).isTrue();
 			var meta = rs.getMetaData();
 			assertThat(meta.getColumnType(1)).isEqualTo(Types.INTEGER);
-			assertThat(meta.getPrecision(1)).isEqualTo(String.valueOf(Long.MAX_VALUE).length());
+			assertThat(meta.getPrecision(1)).isEqualTo(String.valueOf(Integer.MAX_VALUE).length());
 			assertThat(meta.getColumnType(2)).isEqualTo(Types.INTEGER);
-			assertThat(meta.getPrecision(2)).isEqualTo(String.valueOf(Long.MAX_VALUE).length());
+			assertThat(meta.getPrecision(2)).isEqualTo(String.valueOf(Integer.MAX_VALUE).length());
+			assertThat(meta.getColumnType(3)).isEqualTo(Types.BIGINT);
+			assertThat(meta.getPrecision(3)).isEqualTo(String.valueOf(Long.MAX_VALUE).length());
 			var o = rs.getObject(1);
 			assertThat(o).isInstanceOf(Long.class).isEqualTo(1L);
 			o = rs.getObject(2);
+			assertThat(o).isInstanceOf(Long.class).isEqualTo(2147483647L);
+			o = rs.getObject(3);
 			assertThat(o).isInstanceOf(Long.class).isEqualTo(2147483648L);
 		}
 	}

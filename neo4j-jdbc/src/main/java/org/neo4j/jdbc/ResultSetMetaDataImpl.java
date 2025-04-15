@@ -34,6 +34,7 @@ import org.neo4j.jdbc.values.IntegerValue;
 import org.neo4j.jdbc.values.ListValue;
 import org.neo4j.jdbc.values.LocalDateTimeValue;
 import org.neo4j.jdbc.values.LocalTimeValue;
+import org.neo4j.jdbc.values.LossyCoercion;
 import org.neo4j.jdbc.values.MapValue;
 import org.neo4j.jdbc.values.NodeValue;
 import org.neo4j.jdbc.values.NullValue;
@@ -152,7 +153,18 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 			return Types.NULL;
 		}
 		int adjustedIndex = column - 1;
-		var recordType = this.firstRecord.get(adjustedIndex).type();
+		var value = this.firstRecord.get(adjustedIndex);
+		var recordType = value.type();
+		if (recordType == Type.INTEGER) {
+			// See if it could fit into an INTEGER
+			try {
+				value.asInt();
+				return Types.INTEGER;
+			}
+			catch (LossyCoercion ex) {
+				// Nope, not the case
+			}
+		}
 		return Neo4jConversions.toSqlType(recordType);
 	}
 

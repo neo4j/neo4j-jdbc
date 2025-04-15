@@ -1055,11 +1055,14 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	}
 
 	static Value getMaxPrecision(int type) {
-		if (type == Types.INTEGER) {
+		if (type == Types.BIGINT) {
 			// 64bit;
 			return Values.value(19);
 		}
-		if (type == Types.FLOAT) {
+		if (type == Types.INTEGER) {
+			return Values.value(10);
+		}
+		if (type == Types.DOUBLE) {
 			// 64bit double,
 			// https://stackoverflow.com/questions/322749/retain-precision-with-double-in-java
 			// Neo4j has no fixed point arithmetic, so it's kinda guess work.

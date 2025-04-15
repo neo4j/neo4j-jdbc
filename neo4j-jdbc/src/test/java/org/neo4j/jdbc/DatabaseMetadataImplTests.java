@@ -205,7 +205,7 @@ class DatabaseMetadataImplTests {
 				var type = Type.valueOf(rs.getString("TYPE_NAME"));
 				assertThat(rs.getInt("DATA_TYPE")).isEqualTo(Neo4jConversions.toSqlType(type));
 				var mp = switch (type) {
-					case INTEGER -> 19;
+					case NUMBER, INTEGER -> 19;
 					case FLOAT -> 15;
 					default -> 0;
 				};

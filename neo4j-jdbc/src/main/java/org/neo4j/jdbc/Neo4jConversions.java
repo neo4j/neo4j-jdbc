@@ -95,9 +95,8 @@ final class Neo4jConversions {
 			case BOOLEAN -> Types.BOOLEAN;
 			case BYTES -> Types.BLOB;
 			case STRING -> Types.VARCHAR;
-			case NUMBER -> Types.BIGINT;
-			case INTEGER -> Types.INTEGER;
-			case FLOAT -> Types.FLOAT;
+			case NUMBER, INTEGER -> Types.BIGINT;
+			case FLOAT -> Types.DOUBLE;
 			case LIST -> Types.ARRAY;
 			case MAP, POINT, PATH, RELATIONSHIP, NODE -> Types.STRUCT;
 			case DATE -> Types.DATE;
