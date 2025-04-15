@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -94,7 +95,7 @@ class ResultSetMetaDataImplTests {
 	void testResultSetMetadataGetInteger() throws SQLException {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.value(2)))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.INTEGER));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Types.INTEGER);
 		}
 	}
 
@@ -142,7 +143,7 @@ class ResultSetMetaDataImplTests {
 
 		try (var resultSet = setupWithValues(List.of(Values.value(1), Values.value("String")))) {
 			var rsMetadata = resultSet.getMetaData();
-			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Neo4jConversions.toSqlType(Type.INTEGER));
+			Assertions.assertThat(rsMetadata.getColumnType(1)).isEqualTo(Types.INTEGER);
 		}
 	}
 

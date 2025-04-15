@@ -788,7 +788,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			assertThat(columnType).isEqualTo("INTEGER");
 
 			var sqlType = rs.getInt("DATA_TYPE");
-			assertThat(sqlType).isEqualTo(Types.INTEGER);
+			assertThat(sqlType).isEqualTo(Types.BIGINT);
 
 			var tableName = rs.getString("TABLE_NAME");
 			assertThat(tableName).isEqualTo("Test");
@@ -815,7 +815,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			assertThat(columnType).isEqualTo("FLOAT");
 
 			var sqlType = rs.getInt("DATA_TYPE");
-			assertThat(sqlType).isEqualTo(Types.FLOAT);
+			assertThat(sqlType).isEqualTo(Types.DOUBLE);
 
 			var tableName = rs.getString("TABLE_NAME");
 			assertThat(tableName).isEqualTo("Test");
