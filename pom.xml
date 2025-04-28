@@ -140,6 +140,7 @@
 		<checkstyle.version>10.21.4</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
+		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
 		<cypher-v5-antlr-parser.version>5.26.5</cypher-v5-antlr-parser.version>
 		<docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
@@ -814,6 +815,15 @@
 						</execution>
 					</executions>
 				</plugin>
+				<plugin>
+					<groupId>org.cyclonedx</groupId>
+					<artifactId>cyclonedx-maven-plugin</artifactId>
+					<version>${cyclonedx-maven-plugin.version}</version>
+					<configuration>
+						<skipNotDeployed>true</skipNotDeployed>
+						<classifier>sbom-cyclonedx</classifier>
+					</configuration>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -934,6 +944,18 @@
 						<goals>
 							<goal>jar</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.cyclonedx</groupId>
+				<artifactId>cyclonedx-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>makeAggregateBom</goal>
+						</goals>
+						<phase>package</phase>
 					</execution>
 				</executions>
 			</plugin>
@@ -1184,6 +1206,7 @@
 			<properties>
 				<asciidoctor.skip>true</asciidoctor.skip>
 				<checkstyle.skip>true</checkstyle.skip>
+				<cyclonedx.skip>true</cyclonedx.skip>
 				<docker.skip>true</docker.skip>
 				<invoker.skip>true</invoker.skip>
 				<jacoco.skip>true</jacoco.skip>
