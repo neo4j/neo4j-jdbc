@@ -53,7 +53,7 @@ class ConnectionIT extends IntegrationTestBase {
 	void shouldThrowOnBeginTimeout() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			connection.setNetworkTimeout(null, 100);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -64,7 +64,7 @@ class ConnectionIT extends IntegrationTestBase {
 	void shouldThrowOnRunTimeout() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			connection.setNetworkTimeout(null, 100);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -75,7 +75,7 @@ class ConnectionIT extends IntegrationTestBase {
 	void shouldThrowOnPullTimeout() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			connection.setNetworkTimeout(null, 100);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -91,7 +91,7 @@ class ConnectionIT extends IntegrationTestBase {
 			while (result.next()) {
 				assertThat(result.getInt(1)).isEqualTo(1);
 			}
-			assertThatThrownBy(statement::close).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(statement::close).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -107,7 +107,7 @@ class ConnectionIT extends IntegrationTestBase {
 			while (result.next()) {
 				assertThat(result.getInt(1)).isEqualTo(1);
 			}
-			assertThatThrownBy(connection::rollback).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(connection::rollback).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -131,7 +131,7 @@ class ConnectionIT extends IntegrationTestBase {
 	@StubScript(path = "hint/timeout/writer_tx_with_begin_2_delay.script")
 	void shouldThrowOnBeginTimeoutWithHint() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -141,7 +141,7 @@ class ConnectionIT extends IntegrationTestBase {
 	@StubScript(path = "hint/timeout/writer_tx_with_run_2_delay.script")
 	void shouldThrowOnRunTimeoutWithHint() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -151,7 +151,7 @@ class ConnectionIT extends IntegrationTestBase {
 	@StubScript(path = "hint/timeout/writer_tx_with_pull_2_delay.script")
 	void shouldThrowOnPullTimeoutWithHint() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -166,7 +166,7 @@ class ConnectionIT extends IntegrationTestBase {
 			while (result.next()) {
 				assertThat(result.getInt(1)).isEqualTo(1);
 			}
-			assertThatThrownBy(statement::close).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(statement::close).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -181,7 +181,7 @@ class ConnectionIT extends IntegrationTestBase {
 			while (result.next()) {
 				assertThat(result.getInt(1)).isEqualTo(1);
 			}
-			assertThatThrownBy(connection::rollback).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(connection::rollback).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -211,7 +211,7 @@ class ConnectionIT extends IntegrationTestBase {
 				assertThat(result.getInt(1)).isEqualTo(1);
 			}
 			connection.setNetworkTimeout(null, 0);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
 		}
 
 		verifyStubServer();
@@ -233,7 +233,7 @@ class ConnectionIT extends IntegrationTestBase {
 			result.next();
 			assertThat(result.getInt(1)).isEqualTo(1);
 
-			assertThatThrownBy(result::next).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(result::next).isInstanceOf(SQLException.class);
 			assertThat(result.isClosed()).isTrue();
 			assertThat(statement.isClosed()).isTrue();
 			assertThat(preparedStatement.isClosed()).isTrue();

@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
@@ -155,7 +156,7 @@ final class Neo4jConversions {
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Time.valueOf(value.asLocalDateTime().toLocalTime());
 		}
-		throw new SQLException(String.format("%s value cannot be mapped to java.sql.Time", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.sql.Time"));
 	}
 
 	static Time asTime(Value value, Calendar calendar) throws SQLException {
@@ -178,7 +179,7 @@ final class Neo4jConversions {
 			offsetTime = value.asLocalDateTime().toLocalTime().atOffset(targetOffset);
 		}
 		else {
-			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Time", value.type()));
+			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.sql.Time"));
 		}
 		return Time.valueOf(offsetTime.toLocalTime());
 	}
@@ -204,7 +205,7 @@ final class Neo4jConversions {
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Timestamp.valueOf(value.asLocalDateTime());
 		}
-		throw new SQLException(String.format("%s value cannot be mapped to java.sql.Timestamp", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.sql.Timestamp"));
 	}
 
 	static Timestamp asTimestamp(Value value, Calendar calendar) throws SQLException {
@@ -221,7 +222,8 @@ final class Neo4jConversions {
 			hlp = value.asLocalDateTime().atZone(zonedDateTime);
 		}
 		else {
-			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Timestamp", value.type()));
+			throw new Neo4jException(
+					GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.sql.Timestamp"));
 		}
 		return Timestamp.valueOf(hlp.toLocalDateTime());
 	}
@@ -250,7 +252,7 @@ final class Neo4jConversions {
 		if (Type.LOCAL_DATE_TIME.isTypeOf(value)) {
 			return Date.valueOf(value.asLocalDateTime().toLocalDate());
 		}
-		throw new SQLException(String.format("%s value cannot be mapped to java.sql.Date", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.sql.Date"));
 	}
 
 	static Date asDate(Value value, Calendar calendar) throws SQLException {
@@ -270,7 +272,7 @@ final class Neo4jConversions {
 			zonedDateTime = value.asLocalDateTime().atZone(targetZone);
 		}
 		else {
-			throw new SQLException(String.format("%s value cannot be mapped to java.sql.Date", value.type()));
+			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.sql.Date"));
 		}
 		return Date.valueOf(zonedDateTime.toLocalDate());
 	}
@@ -288,8 +290,7 @@ final class Neo4jConversions {
 				.sorted(Map.Entry.comparingByKey())
 				.map(e -> "%s = %s".formatted(e.getKey(), e.getValue()))
 				.collect(Collectors.joining(", "));
-			throw new GQLException(GQLException.ErrorCode.GQL_22N11,
-					"Invalid argument: cannot process non-empty type map %s".formatted(mapValue));
+			throw new Neo4jException(GQLError.$22N11.withTemplatedMessage("non-empty type map %s".formatted(mapValue)));
 		}
 	}
 

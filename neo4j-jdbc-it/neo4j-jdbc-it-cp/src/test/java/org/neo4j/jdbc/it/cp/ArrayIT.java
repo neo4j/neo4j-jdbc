@@ -59,7 +59,8 @@ class ArrayIT extends IntegrationTestBase {
 			}
 			assertThatExceptionOfType(SQLException.class).isThrownBy(callable)
 				.matches(ex -> ex.getErrorCode() == 0 && "22N01".equals(ex.getSQLState()))
-				.withMessage("Expected the value 1 to be of type LIST, but was of type INTEGER");
+				.withMessage(
+						"data exception - Invalid type, expected the value 1 to be of type LIST, but was of type INTEGER");
 		}
 	}
 
@@ -79,7 +80,7 @@ class ArrayIT extends IntegrationTestBase {
 			}
 			assertThatExceptionOfType(SQLException.class).isThrownBy(callable)
 				.matches(ex -> ex.getErrorCode() == 0 && "22G03".equals(ex.getSQLState()))
-				.withMessage("invalid value type");
+				.withMessage("data exception - Invalid value type");
 		}
 	}
 
@@ -217,12 +218,19 @@ class ArrayIT extends IntegrationTestBase {
 	}
 
 	static Stream<Arguments> sliceWithInvalidBoundsShouldFail() {
-		return Stream.of(Arguments.of(1, -1, "Invalid argument: cannot process getArray(1, -1) for array with size 5"),
-				Arguments.of(-1, 1, "Invalid argument: cannot process getArray(-1, 1) for array with size 5"),
-				Arguments.of(0, 1, "Invalid argument: cannot process getArray(0, 1) for array with size 5"),
-				Arguments.of(6, 1, "Invalid argument: cannot process getArray(6, 1) for array with size 5"),
-				Arguments.of(1, 6, "Invalid argument: cannot process getArray(1, 6) for array with size 5"),
-				Arguments.of(5, 2, "Invalid argument: cannot process getArray(5, 2) for array with size 5"));
+		return Stream.of(
+				Arguments.of(1, -1,
+						"data exception - Invalid argument, cannot process getArray(1, -1) for array with size 5"),
+				Arguments.of(-1, 1,
+						"data exception - Invalid argument, cannot process getArray(-1, 1) for array with size 5"),
+				Arguments.of(0, 1,
+						"data exception - Invalid argument, cannot process getArray(0, 1) for array with size 5"),
+				Arguments.of(6, 1,
+						"data exception - Invalid argument, cannot process getArray(6, 1) for array with size 5"),
+				Arguments.of(1, 6,
+						"data exception - Invalid argument, cannot process getArray(1, 6) for array with size 5"),
+				Arguments.of(5, 2,
+						"data exception - Invalid argument, cannot process getArray(5, 2) for array with size 5"));
 	}
 
 	@ParameterizedTest
@@ -350,7 +358,7 @@ class ArrayIT extends IntegrationTestBase {
 			var array = rs.getArray(1);
 			array.free();
 			assertThatExceptionOfType(SQLException.class).isThrownBy(array::getArray)
-				.withMessage("Array has been already freed");
+				.withMessage("general processing exception - Array has been already freed");
 		}
 	}
 

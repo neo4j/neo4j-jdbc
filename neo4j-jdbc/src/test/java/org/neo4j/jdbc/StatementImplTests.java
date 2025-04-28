@@ -270,9 +270,10 @@ class StatementImplTests {
 		return Stream.of(Arguments.of((StatementMethodRunner) Statement::cancel, SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setCursorName("name"),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) statement -> statement.addBatch("query"), SQLException.class),
-				Arguments.of((StatementMethodRunner) Statement::clearBatch, SQLException.class),
-				Arguments.of((StatementMethodRunner) Statement::executeBatch, SQLException.class),
+				Arguments.of((StatementMethodRunner) statement -> statement.addBatch("query"),
+						SQLFeatureNotSupportedException.class),
+				Arguments.of((StatementMethodRunner) Statement::clearBatch, SQLFeatureNotSupportedException.class),
+				Arguments.of((StatementMethodRunner) Statement::executeBatch, SQLFeatureNotSupportedException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
 						SQLFeatureNotSupportedException.class),

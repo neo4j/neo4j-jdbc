@@ -70,6 +70,7 @@ import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.events.DriverListener.ConnectionClosedEvent;
@@ -78,6 +79,9 @@ import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.tracing.Neo4jTracer;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
+
+import static org.neo4j.jdbc.Neo4jException.withInternal;
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 /**
  * The main entry point for the Neo4j JDBC driver. There is usually little need to use
@@ -455,7 +459,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public boolean acceptsURL(String url) throws SQLException {
 		if (url == null) {
-			throw new SQLException("url cannot be null");
+			throw new Neo4jException(GQLError.$22000.withMessage("url cannot be null"));
 		}
 
 		return URL_PATTERN.matcher(url).matches();
@@ -574,7 +578,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					yield SecurityPlans.encryptedForAnyCertificate();
 				}
 				catch (GeneralSecurityException ex) {
-					throw new SQLException(ex);
+					throw new Neo4jException(withInternal(ex));
 				}
 			}
 			case VERIFY_FULL -> {
@@ -582,7 +586,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					yield SecurityPlans.encryptedForSystemCASignedCertificates();
 				}
 				catch (GeneralSecurityException | IOException ex) {
-					throw new SQLException(ex);
+					throw new Neo4jException(withInternal(ex));
 				}
 			}
 			case DISABLE -> SecurityPlans.unencrypted();
@@ -611,7 +615,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var sslString = info.get(PROPERTY_SSL);
 		if (sslString != null) {
 			if (!sslString.equals("true") && !sslString.equals("false")) {
-				throw new SQLException("Invalid SSL option, accepts true or false");
+				throw new Neo4jException(GQLError.$22N11.withMessage("Invalid SSL option, accepts true or false"));
 			}
 
 			ssl = Boolean.parseBoolean(sslString);
@@ -620,8 +624,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (transport != null) {
 			if (transport.equals("s")) {
 				if (ssl != null && !ssl) {
-					throw new SQLException(
-							"Invalid transport option +s when ssl option set to false, accepted ssl option is true");
+					throw new Neo4jException(GQLError.$22N11.withMessage(
+							"Invalid transport option +s when ssl option set to false, accepted ssl option is true"));
 				}
 
 				ssl = true;
@@ -631,15 +635,15 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				}
 				else {
 					if (sslMode == SSLMode.DISABLE) {
-						throw new SQLException(
-								"Invalid SSLMode %s for +s transport option, accepts verify-ca, verify-full, require");
+						throw new Neo4jException(GQLError.$22N11.withMessage(
+								"Invalid SSLMode %s for +s transport option, accepts verify-ca, verify-full, require"));
 					}
 				}
 			}
 			else if (transport.equals("ssc")) {
 				if (ssl != null && !ssl) {
-					throw new SQLException(
-							"Invalid transport option +ssc when ssl option set to false, accepted ssl option is true");
+					throw new Neo4jException(GQLError.$22N11.withMessage(
+							"Invalid transport option +ssc when ssl option set to false, accepted ssl option is true"));
 				}
 				ssl = true;
 
@@ -647,11 +651,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					sslMode = SSLMode.REQUIRE;
 				}
 				else if (sslMode != SSLMode.REQUIRE) {
-					throw new SQLException("Invalid SSLMode %s for +scc transport option, accepts 'require' only");
+					throw new Neo4jException(GQLError.$22N11
+						.withMessage("Invalid SSLMode %s for +scc transport option, accepts 'require' only"));
 				}
 			}
 			else if (!transport.isEmpty()) {
-				throw new SQLException("Invalid Transport section of the URL, accepts +s or +scc");
+				throw new Neo4jException(
+						GQLError.$22N11.withMessage("Invalid Transport section of the URL, accepts +s or +scc"));
 			}
 		}
 
@@ -673,14 +679,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		// Validation
 		if (ssl) {
 			if (sslMode != SSLMode.VERIFY_FULL && sslMode != SSLMode.REQUIRE) {
-				throw new SQLException(
-						String.format("Invalid sslMode %s when ssl = true, accepts verify-full and require", sslMode));
+				throw new Neo4jException(GQLError.$22N11.withMessage(
+						"Invalid sslMode %s when ssl = true, accepts verify-full and require".formatted(sslMode)));
 			}
 		}
 		else {
 			if (sslMode != SSLMode.DISABLE) {
-				throw new SQLException(String
-					.format("Invalid sslMode %s when ssl = false, accepts disable, allow and prefer", sslMode));
+				throw new Neo4jException(GQLError.$22N11.withMessage(
+						"Invalid sslMode %s when ssl = false, accepts disable, allow and prefer".formatted(sslMode)));
 
 			}
 		}
@@ -754,7 +760,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	static SQLException noTranslatorsAvailableException() {
-		return new SQLException("No translators available");
+		return new Neo4jException(withReason("No translators available"));
 	}
 
 	private static List<Translator> sortedListOfTranslators(Map<String, ?> config, List<TranslatorFactory> factories) {
@@ -811,7 +817,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 
@@ -924,14 +930,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		static DriverConfig of(String url, Properties info) throws SQLException {
-			if (url == null || info == null) {
-				throw new SQLException("url and info cannot be null");
+			if (url == null) {
+				throw new Neo4jException(GQLError.$22N06.withTemplatedMessage("url"));
 			}
-
+			if (info == null) {
+				throw new Neo4jException(GQLError.$22N06.withTemplatedMessage("info"));
+			}
 			var matcher = URL_PATTERN.matcher(url);
 
 			if (!matcher.matches()) {
-				throw new SQLException("Invalid url");
+				throw new Neo4jException(GQLError.$22N11.withTemplatedMessage(url));
 			}
 
 			var urlParams = splitUrlParams(matcher.group("urlParams"));
@@ -978,7 +986,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var relationshipSampleSize = Integer
 				.parseInt(config.getOrDefault(PROPERTY_RELATIONSHIP_SAMPLE_SIZE, "1000"));
 			if (relationshipSampleSize < -1) {
-				throw new SQLException("Sample size for relationships must be greater than or equal -1");
+				throw new Neo4jException(
+						GQLError.$22N02.withMessage("Sample size for relationships must be greater than or equal -1"));
 			}
 
 			return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
@@ -996,7 +1005,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
 			}
 			catch (IllegalArgumentException ignored) {
-				throw new IllegalArgumentException(String.format("%s is not a valid option for authScheme", scheme));
+				throw new IllegalArgumentException("%s is not a valid option for authScheme".formatted(scheme));
 			}
 		}
 

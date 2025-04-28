@@ -53,6 +53,8 @@ import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
+import static org.neo4j.jdbc.Neo4jException.withReason;
+
 /**
  * Internal implementation for providing Neo4j specific database metadata.
  * <p>
@@ -1835,7 +1837,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 
@@ -1879,15 +1881,15 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private static void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
 		if (schemaPattern != null && !"public".equalsIgnoreCase(schemaPattern)) {
-			throw new SQLException("Schema must be public or null (was '%s')".formatted(schemaPattern));
+			throw new Neo4jException(withReason("Schema must be public or null (was '%s')".formatted(schemaPattern)));
 		}
 	}
 
 	private void assertCatalogIsNullOrEmpty(String catalog) throws SQLException {
 		if (catalog != null && !(catalog.isBlank() || catalog.trim().equalsIgnoreCase(getSingleCatalog()))) {
-			throw new SQLException(
+			throw new Neo4jException(withReason(
 					"Catalog '%s' is not available in this Neo4j instance, please leave blank or specify the current database name"
-						.formatted(catalog));
+						.formatted(catalog)));
 		}
 	}
 

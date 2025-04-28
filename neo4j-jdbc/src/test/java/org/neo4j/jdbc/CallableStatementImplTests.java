@@ -291,7 +291,7 @@ class CallableStatementImplTests {
 	void shouldThrowUnsupported(StatementMethodRunner consumer, Class<? extends SQLException> exceptionType) {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
 				false, TEST_STATEMENT);
-		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(exceptionType);
+		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(exceptionType);
 	}
 
 	@SuppressWarnings("deprecation")

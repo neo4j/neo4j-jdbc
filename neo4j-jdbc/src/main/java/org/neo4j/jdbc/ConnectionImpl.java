@@ -68,6 +68,7 @@ import org.neo4j.bolt.connection.BasicResponseHandler;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.exception.BoltConnectionReadTimeoutException;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.ConnectionListener.StatementClosedEvent;
@@ -78,6 +79,10 @@ import org.neo4j.jdbc.tracing.Neo4jTracer;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.values.Type;
+
+import static org.neo4j.jdbc.Neo4jException.withCause;
+import static org.neo4j.jdbc.Neo4jException.withInternal;
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 /**
  * A Neo4j specific implementation of {@link Connection}.
@@ -262,7 +267,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 		if (this.transaction != null) {
 			if (State.OPEN_FAILED == this.transaction.getState()) {
-				throw new SQLException("The existing transaction must be rolled back explicitly");
+				throw new Neo4jException(withReason("The existing transaction must be rolled back explicitly"));
 			}
 			if (this.transaction.isRunnable()) {
 				this.transaction.commit();
@@ -288,7 +293,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			return;
 		}
 		if (this.transaction.isAutoCommit()) {
-			throw new SQLException("Auto commit transaction may not be managed explicitly");
+			throw new Neo4jException(
+					GQLError.$2DN01.withTemplatedMessage("Auto commit transaction may not be managed explicitly"));
 		}
 		this.transaction.commit();
 		this.transaction = null;
@@ -304,7 +310,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			return;
 		}
 		if (this.transaction.isAutoCommit()) {
-			throw new SQLException("Auto commit transaction may not be managed explicitly");
+			throw new Neo4jException(
+					GQLError.$40N01.withTemplatedMessage("Auto commit transaction may not be managed explicitly"));
 		}
 		this.transaction.rollback();
 		this.transaction = null;
@@ -337,7 +344,8 @@ final class ConnectionImpl implements Neo4jConnection {
 			if (exceptionDuringRollback != null) {
 				ex.addSuppressed(exceptionDuringRollback);
 			}
-			throw new SQLException("An error occurred while closing connection", ex);
+			throw new Neo4jException(
+					GQLError.$08000.causedBy(ex).withMessage("An error occurred while closing connection"));
 		}
 		finally {
 			this.closed = true;
@@ -373,7 +381,8 @@ final class ConnectionImpl implements Neo4jConnection {
 		LOGGER.log(Level.FINER, () -> "Setting read only to %s".formatted(readOnly));
 		assertIsOpen();
 		if (this.transaction != null && this.transaction.isOpen()) {
-			throw new SQLException("Updating read only setting during an unfinished transaction is not permitted");
+			throw new Neo4jException(
+					withReason("Updating read only setting during an unfinished transaction is not permitted"));
 		}
 		this.readOnly = readOnly;
 	}
@@ -391,7 +400,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertIsOpen();
 		var databaseName = this.getDatabaseName();
 		if (databaseName == null || !databaseName.equalsIgnoreCase(catalog)) {
-			throw new SQLException("Changing the catalog is not implemented");
+			throw new SQLFeatureNotSupportedException("Changing the catalog is not implemented");
 		}
 	}
 
@@ -404,7 +413,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	@Override
 	public void setTransactionIsolation(int level) throws SQLException {
-		throw new SQLException("Setting transaction isolation level is not supported");
+		throw new SQLFeatureNotSupportedException("Setting transaction isolation level is not supported");
 	}
 
 	@Override
@@ -444,10 +453,10 @@ final class ConnectionImpl implements Neo4jConnection {
 	private static void assertValidResultSetTypeAndConcurrency(int resultSetType, int resultSetConcurrency)
 			throws SQLException {
 		if (resultSetType != ResultSetImpl.SUPPORTED_TYPE) {
-			throw new SQLException("Unsupported result set type: " + resultSetType);
+			throw new SQLFeatureNotSupportedException("Unsupported result set type: " + resultSetType);
 		}
 		if (resultSetConcurrency != ResultSetImpl.SUPPORTED_CONCURRENCY) {
-			throw new SQLException("Unsupported result set concurrency: " + resultSetConcurrency);
+			throw new SQLFeatureNotSupportedException("Unsupported result set concurrency: " + resultSetConcurrency);
 		}
 	}
 
@@ -554,7 +563,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private static void assertValidResultSetHoldability(int resultSetHoldability) throws SQLException {
 		if (resultSetHoldability != ResultSetImpl.SUPPORTED_HOLDABILITY) {
-			throw new SQLException(
+			throw new SQLFeatureNotSupportedException(
 					"Unsupported result set holdability, result sets will always be closed when the underlying transaction is closed: "
 							+ resultSetHoldability);
 		}
@@ -605,7 +614,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public boolean isValid(int timeout) throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Checking validity with timeout %d".formatted(timeout));
 		if (timeout < 0) {
-			throw new SQLException("Negative timeout is not supported");
+			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("timeout", timeout));
 		}
 		if (this.closed) {
 			return false;
@@ -642,7 +651,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			throw new SQLException("The thread has been interrupted.", ex);
+			throw new Neo4jException(withInternal(ex, "The thread has been interrupted."));
 		}
 		catch (ExecutionException ex) {
 			var cause = ex.getCause();
@@ -650,8 +659,9 @@ final class ConnectionImpl implements Neo4jConnection {
 				cause = ex;
 			}
 			if (!(cause instanceof BoltFailureException)) {
-				this.fatalException = new SQLException("The connection is no longer valid.", ex);
-				handleFatalException(this.fatalException, new SQLException(cause));
+				this.fatalException = new Neo4jException(
+						GQLError.$08000.withMessage("The connection is no longer valid"));
+				handleFatalException(this.fatalException, new Neo4jException(withCause(cause)));
 			}
 			return false;
 		}
@@ -774,7 +784,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			this.closed = true;
 			return;
 		}
-		this.fatalException = new SQLException("The connection has been explicitly aborted.");
+		this.fatalException = new Neo4jException(withReason("The connection has been explicitly aborted."));
 		if (this.transaction != null && this.transaction.isRunnable()) {
 			this.transaction.fail(this.fatalException);
 		}
@@ -798,7 +808,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		LOGGER.log(Level.FINER, () -> "Setting network timeout to %d milliseconds".formatted(milliseconds));
 		assertIsOpen();
 		if (milliseconds < 0) {
-			throw new SQLException("The network timeout must not be negative");
+			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("network timeout", milliseconds));
 		}
 		this.networkTimeout = milliseconds;
 		if (milliseconds == 0) {
@@ -810,7 +820,7 @@ final class ConnectionImpl implements Neo4jConnection {
 				this.boltConnection.setReadTimeout(null).toCompletableFuture().get();
 			}
 			catch (ExecutionException | InterruptedException ex) {
-				throw new SQLException("Failed to set read timeout", ex);
+				throw new Neo4jException(withInternal(ex, "Failed to set read timeout"));
 			}
 		}
 		else {
@@ -818,7 +828,7 @@ final class ConnectionImpl implements Neo4jConnection {
 				this.boltConnection.setReadTimeout(Duration.ofMillis(this.networkTimeout)).toCompletableFuture().get();
 			}
 			catch (ExecutionException | InterruptedException ex) {
-				throw new SQLException("Failed to set read timeout", ex);
+				throw new Neo4jException(withInternal(ex, "Failed to set read timeout"));
 			}
 		}
 	}
@@ -837,7 +847,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 
@@ -848,7 +858,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private void assertIsOpen() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("The connection is closed");
+			throw new Neo4jException(GQLError.$08000.withMessage("The connection is closed"));
 		}
 	}
 
@@ -867,7 +877,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		}
 		if (this.transaction != null && this.transaction.isOpen()) {
 			if (this.transaction.isAutoCommit()) {
-				throw new SQLException("Only a single autocommit transaction is supported");
+				throw new SQLFeatureNotSupportedException("Only a single autocommit transaction is supported");
 			}
 			return this.transaction;
 		}

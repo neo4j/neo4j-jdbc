@@ -67,7 +67,9 @@ class ThrowingTransactionImplTests {
 		tx.commit();
 		assertThat(tx.getState()).isEqualTo(Neo4jTransaction.State.COMMITTED);
 		assertThatExceptionOfType(SQLException.class).isThrownBy(tx::commit)
-			.withMessage("Cannot commit in COMMITTED state");
+			.withMessage(
+					"invalid transaction termination - Failed to commit transaction: Cannot commit in COMMITTED state")
+			.matches(ex -> "2DN01".equals(ex.getSQLState()));
 	}
 
 	@Test
@@ -83,7 +85,8 @@ class ThrowingTransactionImplTests {
 		tx.commit();
 		assertThat(tx.getState()).isEqualTo(Neo4jTransaction.State.COMMITTED);
 		assertThatExceptionOfType(SQLException.class).isThrownBy(tx::rollback)
-			.withMessage("Cannot rollback in COMMITTED state");
+			.withMessage("transaction rollback - Failed to rollback transaction: Cannot rollback in COMMITTED state")
+			.matches(ex -> "40N01".equals(ex.getSQLState()));
 	}
 
 	static Stream<Arguments> mustThrowOnAllOtherMethods() {

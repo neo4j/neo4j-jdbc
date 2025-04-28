@@ -175,12 +175,12 @@ class DatabaseMetadataImplTests {
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", null, null, null))
 			.withMessage(
-					"Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
+					"general processing exception - Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
 
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> connection.getMetaData().getTables("NotNull", "public", null, null))
 			.withMessage(
-					"Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
+					"general processing exception - Catalog 'NotNull' is not available in this Neo4j instance, please leave blank or specify the current database name");
 	}
 
 	@Test

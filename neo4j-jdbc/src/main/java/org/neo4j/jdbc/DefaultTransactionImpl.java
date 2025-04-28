@@ -44,6 +44,7 @@ import org.neo4j.bolt.connection.TransactionType;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.bolt.connection.summary.PullSummary;
 import org.neo4j.bolt.connection.values.Value;
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Values;
@@ -144,8 +145,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	public PullResponse pull(RunResponse runResponse, long request) throws SQLException {
 		assertNoException();
 		if (!State.READY.equals(this.state)) {
-			throw new SQLException(
-					String.format("The requested action is not supported in %s transaction state", this.state));
+			throw new Neo4jException(Neo4jException.withReason(
+					String.format("The requested action is not supported in %s transaction state", this.state)));
 		}
 		var handler = new BasicResponseHandler();
 		var responseFuture = this.boltConnection.pull(runResponse.queryId(), request)
@@ -231,25 +232,27 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			return (timeout > 0) ? future.get(timeout, TimeUnit.SECONDS) : future.get();
 		}
 		catch (TimeoutException ignored) {
-			fail(new SQLException("The transaction is no longer valid"));
+			fail(new Neo4jException(GQLError.$25N02.withMessage("The transaction is no longer valid")));
 			throw new SQLTimeoutException("The query timeout has been exceeded");
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			fail(new SQLException("The transaction is no longer valid"));
-			throw new SQLException("The thread has been interrupted", ex);
+			fail(new Neo4jException(GQLError.$25N02.withMessage("The transaction is no longer valid")));
+			throw new Neo4jException(Neo4jException.withInternal(ex, "The thread has been interrupted."));
 		}
 		catch (ExecutionException ex) {
 			var cause = ex.getCause();
 			if (cause == null) {
 				cause = ex;
 			}
-			var sqlException = new SQLException("An error occurred while handling request", cause);
+
+			var sqlException = new Neo4jException(Neo4jException.of("An error occurred while handling request", cause));
+
 			if (cause instanceof BoltFailureException) {
-				fail(new SQLException("The transaction is no longer valid"));
+				fail(new Neo4jException(GQLError.$25N02.withMessage("The transaction is no longer valid")));
 			}
 			else {
-				fail(new SQLException("The connection is no longer valid"));
+				fail(new Neo4jException(GQLError.$08000.withMessage("The connection is no longer valid")));
 				this.fatalExceptionHandler.handle(this.exception, sqlException);
 			}
 			throw sqlException;
@@ -272,8 +275,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 
 	private void assertRunnableState() throws SQLException {
 		if (!isRunnable()) {
-			throw new SQLException(
-					String.format("The requested action is not supported in %s transaction state", this.state));
+			throw new Neo4jException(Neo4jException.withReason(
+					String.format("The requested action is not supported in %s transaction state", this.state)));
 		}
 	}
 

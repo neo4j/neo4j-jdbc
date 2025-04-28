@@ -32,6 +32,7 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,8 @@ class Neo4jConversionsTests {
 
 		if (expexctedExceptionType != null) {
 			assertThatExceptionOfType(expexctedExceptionType).isThrownBy(() -> Neo4jConversions.asTime(value))
-				.withMessage("DATE value cannot be mapped to java.sql.Time");
+				.withMessageMatching(Pattern.quote("data exception - Cannot coerce DATE '") + ".+"
+						+ Pattern.quote("' (DATE) to java.sql.Time"));
 		}
 		else {
 			var time = Neo4jConversions.asTime(value);
@@ -121,7 +123,8 @@ class Neo4jConversionsTests {
 
 		if (expectedExceptionType != null) {
 			assertThatExceptionOfType(expectedExceptionType).isThrownBy(() -> Neo4jConversions.asTime(value, cal))
-				.withMessage("DATE value cannot be mapped to java.sql.Time");
+				.withMessageMatching(Pattern.quote("data exception - Cannot coerce DATE '") + ".+"
+						+ Pattern.quote("' (DATE) to java.sql.Time"));
 		}
 		else {
 			var time = Neo4jConversions.asTime(value, cal);
@@ -158,7 +161,8 @@ class Neo4jConversionsTests {
 
 		if (expexctedExceptionType != null) {
 			assertThatExceptionOfType(expexctedExceptionType).isThrownBy(() -> Neo4jConversions.asDate(value))
-				.withMessage("LOCAL_TIME value cannot be mapped to java.sql.Date");
+				.withMessageMatching(Pattern.quote("data exception - Cannot coerce TIME ") + ".+"
+						+ Pattern.quote(" (LOCAL_TIME) to java.sql.Date"));
 		}
 		else {
 			var date = Neo4jConversions.asDate(value);
@@ -189,7 +193,8 @@ class Neo4jConversionsTests {
 
 		if (expectedExceptionType != null) {
 			assertThatExceptionOfType(expectedExceptionType).isThrownBy(() -> Neo4jConversions.asDate(value, cal))
-				.withMessage("LOCAL_TIME value cannot be mapped to java.sql.Date");
+				.withMessageMatching(Pattern.quote("data exception - Cannot coerce TIME '") + ".+"
+						+ Pattern.quote("' (LOCAL_TIME) to java.sql.Date"));
 		}
 		else {
 			var date = Neo4jConversions.asDate(value, cal);
@@ -226,7 +231,8 @@ class Neo4jConversionsTests {
 
 		if (expexctedExceptionType != null) {
 			assertThatExceptionOfType(expexctedExceptionType).isThrownBy(() -> Neo4jConversions.asTimestamp(value))
-				.withMessage("DATE value cannot be mapped to java.sql.Timestamp");
+				.withMessageMatching(Pattern.quote("data exception - Cannot coerce DATE '") + ".+"
+						+ Pattern.quote("' (DATE) to java.sql.Timestamp"));
 		}
 		else {
 			var time = Neo4jConversions.asTimestamp(value);
@@ -257,7 +263,8 @@ class Neo4jConversionsTests {
 
 		if (expectedExceptionType != null) {
 			assertThatExceptionOfType(expectedExceptionType).isThrownBy(() -> Neo4jConversions.asTimestamp(value, cal))
-				.withMessage("DATE value cannot be mapped to java.sql.Timestamp");
+				.withMessageMatching(Pattern.quote("data exception - Cannot coerce DATE '") + ".+"
+						+ Pattern.quote("' (DATE) to java.sql.Timestamp"));
 		}
 		else {
 			var time = Neo4jConversions.asTimestamp(value, cal);
@@ -312,7 +319,7 @@ class Neo4jConversionsTests {
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> Neo4jConversions.assertTypeMap(map))
 			.matches(ex -> ex.getErrorCode() == 0 && "22N11".equals(ex.getSQLState()))
 			.withMessage(
-					"Invalid argument: cannot process non-empty type map BIGINT = class java.lang.String, VARCHAR = class java.lang.Integer");
+					"data exception - Invalid argument, cannot process non-empty type map BIGINT = class java.lang.String, VARCHAR = class java.lang.Integer");
 	}
 
 }

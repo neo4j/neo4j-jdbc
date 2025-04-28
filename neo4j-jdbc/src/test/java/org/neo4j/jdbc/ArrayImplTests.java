@@ -50,7 +50,7 @@ class ArrayImplTests {
 		var type = "null".equals(typeContent) ? null : typeContent;
 		var elements = new Object[0];
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> ArrayImpl.of(null, type, elements))
-			.withMessage("Typename is required");
+			.withMessage("data exception - Invalid argument, typename is required");
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class ArrayImplTests {
 		var elements = new String[] { "test" };
 
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> ArrayImpl.of(null, "asd", elements))
-			.withMessage("Invalid type name asd");
+			.withMessage("data exception - Invalid type name asd");
 	}
 
 	@Test
@@ -79,7 +79,7 @@ class ArrayImplTests {
 		var elements = new String[] { "test" };
 
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> ArrayImpl.of(null, typeName, elements))
-			.withMessage("Cannot satisfy type INTEGER with the elements provided");
+			.withMessage("data exception - Cannot satisfy type INTEGER with the elements provided");
 	}
 
 	@Test

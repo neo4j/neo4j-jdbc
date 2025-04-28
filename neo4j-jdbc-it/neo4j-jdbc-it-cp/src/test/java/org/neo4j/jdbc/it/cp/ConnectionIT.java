@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -84,7 +85,7 @@ class ConnectionIT extends IntegrationTestBase {
 		Logger.getLogger("org.neo4j.jdbc.connection").addHandler(handler);
 		try (var connection = getConnection(); var stmt = connection.createStatement()) {
 			assertThatThrownBy(() -> stmt.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
-				.isExactlyInstanceOf(SQLException.class);
+				.isInstanceOf(SQLException.class);
 			assertThatNoException().isThrownBy(connection::rollback);
 			assertThat(handler.messages).contains("There is no active transaction that can be rolled back, ignoring");
 		}
@@ -98,7 +99,7 @@ class ConnectionIT extends IntegrationTestBase {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			// tx1 should fail
 			assertThatThrownBy(() -> statement.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
-				.isExactlyInstanceOf(SQLException.class);
+				.isInstanceOf(SQLException.class);
 			// tx2 should succeed
 			var resultSet = statement.executeQuery("RETURN 1");
 			assertThat(resultSet.next()).isTrue();
@@ -112,9 +113,9 @@ class ConnectionIT extends IntegrationTestBase {
 			connection.setAutoCommit(false);
 			// tx1 should fail
 			assertThatThrownBy(() -> statement.executeQuery("UNWIND [1, 1, 1, 1, 0] AS x RETURN 1/x"))
-				.isExactlyInstanceOf(SQLException.class);
+				.isInstanceOf(SQLException.class);
 			// tx1 should remain failed
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1")).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1")).isInstanceOf(SQLException.class);
 			// tx1 should finish
 			connection.rollback();
 			// tx2 should succeed
@@ -140,7 +141,8 @@ class ConnectionIT extends IntegrationTestBase {
 			// begin tx
 			var resultSet1 = statement1.executeQuery();
 			// attempt to begin another tx should fail
-			assertThatThrownBy(() -> statement2.executeQuery()).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement2.executeQuery())
+				.isExactlyInstanceOf(SQLFeatureNotSupportedException.class);
 			// commit tx
 			resultSet1.close();
 
@@ -226,9 +228,9 @@ class ConnectionIT extends IntegrationTestBase {
 
 			resultSet.next();
 			resultSet.next();
-			assertThatThrownBy(resultSet::next).isExactlyInstanceOf(SQLException.class);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1")).isExactlyInstanceOf(SQLException.class);
-			assertThatThrownBy(() -> connection.getMetaData().getUserName()).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(resultSet::next).isInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> statement.executeQuery("RETURN 1")).isInstanceOf(SQLException.class);
+			assertThatThrownBy(() -> connection.getMetaData().getUserName()).isInstanceOf(SQLException.class);
 		}
 	}
 
@@ -249,7 +251,7 @@ class ConnectionIT extends IntegrationTestBase {
 
 			// then
 			resultSet.next();
-			assertThatThrownBy(resultSet::next).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(resultSet::next).isInstanceOf(SQLException.class);
 		}
 
 		try (var varificationConnection = getConnection();
@@ -268,7 +270,7 @@ class ConnectionIT extends IntegrationTestBase {
 			var resultSet = statement.executeQuery("UNWIND [1, 1, 0] AS x CREATE (n {val: 1/x}) RETURN n");
 			assertThat(resultSet.next()).isTrue();
 			assertThat(resultSet.next()).isTrue();
-			assertThatThrownBy(resultSet::close).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(resultSet::close).isInstanceOf(SQLException.class);
 		}
 	}
 
@@ -280,7 +282,7 @@ class ConnectionIT extends IntegrationTestBase {
 			var resultSet = statement.executeQuery("UNWIND [1, 1, 0] AS x CREATE (n {val: 1/x}) RETURN n");
 			assertThat(resultSet.next()).isTrue();
 			assertThat(resultSet.next()).isTrue();
-			assertThatThrownBy(statement::close).isExactlyInstanceOf(SQLException.class);
+			assertThatThrownBy(statement::close).isInstanceOf(SQLException.class);
 		}
 	}
 

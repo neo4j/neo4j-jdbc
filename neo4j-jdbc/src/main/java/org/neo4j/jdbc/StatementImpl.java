@@ -51,6 +51,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.Neo4jTransaction.RunAndPullResponses;
 import org.neo4j.jdbc.events.Neo4jEvent;
@@ -60,6 +61,9 @@ import org.neo4j.jdbc.events.StatementListener.ExecutionEndedEvent;
 import org.neo4j.jdbc.events.StatementListener.ExecutionStartedEvent;
 import org.neo4j.jdbc.events.StatementListener.ExecutionStartedEvent.ExecutionMode;
 import org.neo4j.jdbc.values.Values;
+
+import static org.neo4j.jdbc.Neo4jException.withCause;
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 non-sealed class StatementImpl implements Neo4jStatement {
 
@@ -241,7 +245,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		LOGGER.log(Level.FINER, () -> "Setting max field size to %d".formatted(max));
 		assertIsOpen();
 		if (max < 0) {
-			throw new SQLException("Max field size can not be negative");
+			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("max field size", max));
 		}
 		this.maxFieldSize = max;
 	}
@@ -258,7 +262,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		LOGGER.log(Level.FINER, () -> "Setting max rows to %d".formatted(max));
 		assertIsOpen();
 		if (max < 0) {
-			throw new SQLException("Max rows can not be negative");
+			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("max rows", max));
 		}
 		this.maxRows = max;
 	}
@@ -281,7 +285,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		LOGGER.log(Level.FINER, () -> "Setting query timeout to %d seconds".formatted(seconds));
 		assertIsOpen();
 		if (seconds < 0) {
-			throw new SQLException("Query timeout can not be negative");
+			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("query timeout", seconds));
 		}
 		this.queryTimeout = seconds;
 	}
@@ -388,7 +392,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 					entry.setValue(Values.value(buf.toString()));
 				}
 				catch (IOException ex) {
-					throw new SQLException(ex);
+					throw new Neo4jException(Neo4jException.withInternal(ex));
 				}
 			}
 			else if (entry.getValue() instanceof InputStream inputStream) {
@@ -397,7 +401,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 					entry.setValue(Values.value(out.toByteArray()));
 				}
 				catch (IOException ex) {
-					throw new SQLException(ex);
+					throw new Neo4jException(withCause(ex));
 				}
 			}
 		}
@@ -409,7 +413,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		LOGGER.log(Level.FINER, () -> "Getting result set");
 		assertIsOpen();
 		if (!this.resultSetAcquired.compareAndSet(false, true)) {
-			throw new SQLException("Result set has already been acquired");
+			throw new Neo4jException(withReason("Result set has already been acquired"));
 		}
 		return (this.multipleResultsApi && this.updateCount == -1) ? this.resultSet : null;
 	}
@@ -450,7 +454,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		LOGGER.log(Level.FINER, () -> "Setting fetch size to %d".formatted(rows));
 		assertIsOpen();
 		if (rows < 0) {
-			throw new SQLException("Fetch size can not be negative");
+			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("fetch size", rows));
 		}
 		this.fetchSize = (rows > 0) ? rows : DEFAULT_FETCH_SIZE;
 	}
@@ -478,17 +482,17 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	@Override
 	public void addBatch(String sql) throws SQLException {
-		throw new SQLException("Not supported");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void clearBatch() throws SQLException {
-		throw new SQLException("Not supported");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public int[] executeBatch() throws SQLException {
-		throw new SQLException("Not supported");
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -599,7 +603,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 
@@ -613,12 +617,12 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		LOGGER.log(Level.FINER,
 				() -> "Enquoting identifier `%s` with always quoting set to %s".formatted(identifier, alwaysQuote));
 		return SchemaNames.sanitize(identifier, alwaysQuote)
-			.orElseThrow(() -> new SQLException("Cannot quote identifier " + identifier));
+			.orElseThrow(() -> new Neo4jException(withReason("Cannot quote identifier " + identifier)));
 	}
 
 	protected void assertIsOpen() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("The statement set is closed");
+			throw new Neo4jException(withReason("The statement set is closed"));
 		}
 	}
 
@@ -640,7 +644,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			return processedSQL;
 		}
 		catch (IllegalArgumentException | IllegalStateException ex) {
-			throw new SQLException(Optional.ofNullable(ex.getCause()).orElse(ex));
+			throw new Neo4jException(withCause(Optional.ofNullable(ex.getCause()).orElse(ex)));
 		}
 	}
 

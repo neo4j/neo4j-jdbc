@@ -80,7 +80,8 @@ class CallableStatementIT extends IntegrationTestBase {
 		try (var connection = getConnection()) {
 			assertThatExceptionOfType(SQLException.class)
 				.isThrownBy(() -> connection.prepareCall("CALL dbms.cluster.routing.getRoutingTable($database, $foo)"))
-				.withMessage("Procedure `dbms.cluster.routing.getRoutingTable` does not have a named parameter `foo`");
+				.withMessage(
+						"syntax error or access rule violation - Procedure `dbms.cluster.routing.getRoutingTable` does not have a named parameter `foo`");
 		}
 	}
 

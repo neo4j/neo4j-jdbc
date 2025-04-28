@@ -81,7 +81,7 @@ class ConnectionImplTests {
 
 		var connection = makeConnection(mock(BoltConnection.class));
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> connection.nativeSQL("M"))
-			.withMessage("No translators available");
+			.withMessage("general processing exception - No translators available");
 	}
 
 	@Test
@@ -224,7 +224,7 @@ class ConnectionImplTests {
 
 		ConnectionMethodRunner methodRunner = rollback ? Connection::rollback : Connection::commit;
 
-		assertThatThrownBy(() -> methodRunner.run(connection)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> methodRunner.run(connection)).isExactlyInstanceOf(Neo4jException.class);
 
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		then(boltConnection).should()
@@ -372,7 +372,7 @@ class ConnectionImplTests {
 		@SuppressWarnings("unused")
 		var transaction = connection.getTransaction(Map.of());
 
-		assertThatThrownBy(() -> connection.setReadOnly(true)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> connection.setReadOnly(true)).isExactlyInstanceOf(Neo4jException.class);
 	}
 
 	@Test
@@ -430,7 +430,7 @@ class ConnectionImplTests {
 		var connection = makeConnection(mock(BoltConnection.class));
 
 		assertThatThrownBy(() -> connection.prepareStatement("sql", type, ResultSet.CONCUR_READ_ONLY))
-			.isExactlyInstanceOf(SQLException.class);
+			.isExactlyInstanceOf(SQLFeatureNotSupportedException.class);
 	}
 
 	@Test
@@ -439,7 +439,7 @@ class ConnectionImplTests {
 
 		assertThatThrownBy(
 				() -> connection.prepareStatement("sql", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE))
-			.isExactlyInstanceOf(SQLException.class);
+			.isExactlyInstanceOf(SQLFeatureNotSupportedException.class);
 	}
 
 	@Test
@@ -453,7 +453,7 @@ class ConnectionImplTests {
 	void shouldThrowOnValidatingWithNegativeTimeout() {
 		var connection = makeConnection(mock(BoltConnection.class));
 
-		assertThatThrownBy(() -> connection.isValid(-1)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> connection.isValid(-1)).isExactlyInstanceOf(Neo4jException.class);
 	}
 
 	@ParameterizedTest
@@ -611,7 +611,7 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		connection.close();
 		assertThat(connection.isClosed()).isTrue();
-		assertThatThrownBy(() -> consumer.run(connection)).isExactlyInstanceOf(exceptionType);
+		assertThatThrownBy(() -> consumer.run(connection)).isInstanceOf(exceptionType);
 	}
 
 	static Stream<Arguments> getThrowingMethodExecutorsWhenClosed() {
@@ -661,17 +661,20 @@ class ConnectionImplTests {
 	@MethodSource("getUnsupportedMethodExecutors")
 	void shouldThrowUnsupported(ConnectionMethodRunner consumer, Class<? extends SQLException> exceptionType) {
 		var connection = makeConnection(mock(BoltConnection.class));
-		assertThatThrownBy(() -> consumer.run(connection)).isExactlyInstanceOf(exceptionType);
+		assertThatThrownBy(() -> consumer.run(connection)).isInstanceOf(exceptionType);
 	}
 
 	static Stream<Arguments> getUnsupportedMethodExecutors() {
 		return Stream.of(
 				Arguments.of((ConnectionMethodRunner) connection -> connection
-					.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
-				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("RETURN pi()",
-						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE), SQLException.class),
+					.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE),
+						SQLFeatureNotSupportedException.class),
+				Arguments.of(
+						(ConnectionMethodRunner) connection -> connection.prepareCall("RETURN pi()",
+								ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE),
+						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setTypeMap(Map.of("a", Integer.class)),
-						GQLException.class),
+						SQLException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection
 					.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) Connection::setSavepoint, SQLFeatureNotSupportedException.class),
@@ -681,27 +684,28 @@ class ConnectionImplTests {
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.releaseSavepoint(mock(Savepoint.class)),
 						SQLFeatureNotSupportedException.class),
-				Arguments
-					.of((ConnectionMethodRunner) connection -> connection.createStatement(ResultSet.TYPE_FORWARD_ONLY,
-							ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT), SQLException.class),
+				Arguments.of(
+						(ConnectionMethodRunner) connection -> connection.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+								ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT),
+						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT),
-						SQLException.class),
+						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
 						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
-						ResultSet.CLOSE_CURSORS_AT_COMMIT), SQLException.class),
+						ResultSet.CLOSE_CURSORS_AT_COMMIT), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT),
-						SQLException.class),
+						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.HOLD_CURSORS_OVER_COMMIT),
-						SQLException.class),
+						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
 						ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
-						ResultSet.CLOSE_CURSORS_AT_COMMIT), SQLException.class),
+						ResultSet.CLOSE_CURSORS_AT_COMMIT), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT),
-						SQLException.class),
+						SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
 						Statement.RETURN_GENERATED_KEYS), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored", new int[0]),
@@ -724,8 +728,10 @@ class ConnectionImplTests {
 				Arguments.of((ConnectionMethodRunner) connection -> connection.setShardingKey(null),
 						SQLFeatureNotSupportedException.class),
 				// other
-				Arguments.of((ConnectionMethodRunner) connection -> connection
-					.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED), SQLException.class));
+				Arguments.of(
+						(ConnectionMethodRunner) connection -> connection
+							.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED),
+						SQLFeatureNotSupportedException.class));
 	}
 
 	@ParameterizedTest
@@ -817,7 +823,7 @@ class ConnectionImplTests {
 
 		// when & then
 		assertThatThrownBy(() -> connection.setNetworkTimeout(mock(Executor.class), -1))
-			.isExactlyInstanceOf(SQLException.class);
+			.isExactlyInstanceOf(Neo4jException.class);
 		assertThat(connection.getNetworkTimeout()).isEqualTo(0);
 	}
 

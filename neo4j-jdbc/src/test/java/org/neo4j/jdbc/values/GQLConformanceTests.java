@@ -70,7 +70,9 @@ class GQLConformanceTests {
 								"DATETIME '2024-01-03T15:52:00+01:00'")),
 				newContainer("Duration and periods",
 						new Holder(Values.value(Duration.ofDays(23).plusHours(23)), "DURATION 'PT575H'"),
-						new Holder(Values.value(Period.ofMonths(3).plusDays(1)), "P3M1D")),
+						new Holder(Values.value(Duration.ofSeconds(150)), "DURATION 'PT2M30S'"),
+						new Holder(Values.value(Period.ofMonths(3).plusDays(1)), "P3M1D"),
+						new Holder(Values.value(Period.ofMonths(12)), "P1Y")),
 				newContainer("Collections", new Holder(Values.value(List.of(1, 2, 3, 4)), "[1, 2, 3, 4]")),
 				newContainer("Strings", new Holder(Values.value("test"), "\"test\"")));
 	}

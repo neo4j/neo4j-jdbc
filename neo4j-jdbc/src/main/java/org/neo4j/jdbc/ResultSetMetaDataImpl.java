@@ -24,6 +24,7 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Objects;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.values.BooleanValue;
 import org.neo4j.jdbc.values.BytesValue;
 import org.neo4j.jdbc.values.DateTimeValue;
@@ -46,6 +47,8 @@ import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
+
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 final class ResultSetMetaDataImpl implements ResultSetMetaData {
 
@@ -265,7 +268,7 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 			}
 		}
 
-		throw new SQLException("Unknown type");
+		throw new Neo4jException(GQLError.$22G03.withTemplatedMessage());
 	}
 
 	@Override
@@ -274,7 +277,7 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 

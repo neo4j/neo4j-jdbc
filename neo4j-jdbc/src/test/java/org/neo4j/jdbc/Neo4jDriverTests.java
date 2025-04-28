@@ -58,7 +58,7 @@ class Neo4jDriverTests {
 
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(() -> Neo4jDriver.getSqlTranslatorSupplier(true, Map.of(), List::of))
-			.withMessage("No translators available");
+			.withMessage("general processing exception - No translators available");
 	}
 
 	@Test

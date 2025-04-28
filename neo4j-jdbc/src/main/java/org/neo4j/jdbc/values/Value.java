@@ -576,4 +576,13 @@ public interface Value extends MapAccessorWithDefaultValue {
 	@Override
 	String toString();
 
+	/**
+	 * A utility method to enhance {@link #toString()} with the type information.
+	 * @return string representation including the type
+	 * @since 6.4.0
+	 */
+	default String toDisplayString() {
+		return "%s (%s)".formatted(this, this.type());
+	}
+
 }
