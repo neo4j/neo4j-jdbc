@@ -92,6 +92,14 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.cyclonedx</groupId>
+				<artifactId>cyclonedx-maven-plugin</artifactId>
+				<configuration combine.self="append">
+					<!-- Everything is shaded, so the artifact is a component on its own, therefore we exclude the whole compile scope -->
+					<includeCompileScope>false</includeCompileScope>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
 				<executions>

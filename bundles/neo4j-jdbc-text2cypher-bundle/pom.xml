@@ -79,6 +79,14 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.cyclonedx</groupId>
+				<artifactId>cyclonedx-maven-plugin</artifactId>
+				<configuration combine.self="append">
+					<!-- Everything is shaded, so the artifact is a component on its own, therefore we exclude the whole compile scope -->
+					<includeCompileScope>false</includeCompileScope>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
 				<executions>
@@ -95,6 +103,7 @@
 										<exclude>META-INF/LICENSE</exclude>
 										<exclude>META-INF/LICENSE.txt</exclude>
 										<exclude>META-INF/MANIFEST.MF</exclude>
+										<exclude>META-INF/NOTICE</exclude>
 										<exclude>META-INF/native-image/**</exclude>
 										<exclude>META-INF/io.netty.versions.properties</exclude>
 										<exclude>META-INF/okio.kotlin_module</exclude>

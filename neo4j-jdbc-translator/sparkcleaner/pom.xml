@@ -71,6 +71,13 @@
 				<artifactId>japicmp-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.cyclonedx</groupId>
+				<artifactId>cyclonedx-maven-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+			<plugin>
 				<!-- First shade the things we won't definitely not have as dependency -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
