@@ -68,6 +68,7 @@ import org.neo4j.bolt.connection.BasicResponseHandler;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.exception.BoltConnectionReadTimeoutException;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
+import org.neo4j.bolt.connection.message.Messages;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.events.ConnectionListener;
@@ -358,7 +359,6 @@ final class ConnectionImpl implements Neo4jConnection {
 		synchronized (this.boltConnectionForMetaData) {
 			if (this.boltConnectionForMetaData.isResolved()) {
 				this.boltConnectionForMetaData.resolve().close();
-				this.boltConnection.clear();
 			}
 		}
 	}
@@ -634,8 +634,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 		try {
 			var handler = new BasicResponseHandler();
-			var future = this.boltConnection.reset()
-				.thenCompose(conn -> conn.flush(handler))
+			var future = this.boltConnection.writeAndFlush(handler, Messages.reset())
 				.thenCompose(ignored -> handler.summaries())
 				.toCompletableFuture();
 			if (timeout > 0) {

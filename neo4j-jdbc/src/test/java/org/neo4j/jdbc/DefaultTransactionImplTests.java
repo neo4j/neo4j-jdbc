@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -31,13 +32,22 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.BoltConnection;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
 import org.neo4j.bolt.connection.ResponseHandler;
 import org.neo4j.bolt.connection.TransactionType;
 import org.neo4j.bolt.connection.exception.BoltException;
+import org.neo4j.bolt.connection.message.BeginMessage;
+import org.neo4j.bolt.connection.message.CommitMessage;
+import org.neo4j.bolt.connection.message.DiscardMessage;
+import org.neo4j.bolt.connection.message.Message;
+import org.neo4j.bolt.connection.message.PullMessage;
+import org.neo4j.bolt.connection.message.ResetMessage;
+import org.neo4j.bolt.connection.message.RollbackMessage;
+import org.neo4j.bolt.connection.message.RunMessage;
 import org.neo4j.bolt.connection.summary.CommitSummary;
 import org.neo4j.bolt.connection.summary.DiscardSummary;
 import org.neo4j.bolt.connection.summary.PullSummary;
@@ -47,8 +57,7 @@ import org.neo4j.bolt.connection.summary.RunSummary;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -75,11 +84,14 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.isAutoCommit()).isEqualTo(autoCommit);
 
 		var transactionType = autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		var transactionMode = autoCommit ? "IMPLICIT" : null;
 
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(transactionType), any(), any(), eq(transactionMode), any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(argumentCaptor.capture());
+		var beginMessage = (BeginMessage) argumentCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -92,15 +104,13 @@ class DefaultTransactionImplTests {
 		var query = "query";
 		var fetchSize = 5;
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
-
-		given(boltConnection.run(query, Collections.emptyMap())).willReturn(connectionFuture);
-		given(boltConnection.pull(-1, fetchSize)).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class))))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		var response = this.transaction.runAndPull(query, Collections.emptyMap(), fetchSize, 5);
 
@@ -111,12 +121,21 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.READY);
 		assertThat(this.transaction.isRunnable()).isEqualTo(true);
 		assertThat(this.transaction.isOpen()).isEqualTo(true);
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.UNCONSTRAINED), any(), any(), eq("IMPLICIT"), any());
-		then(boltConnection).should().run(eq("query"), any());
-		then(boltConnection).should().pull(anyLong(), anyLong());
-		then(boltConnection).should().flush(any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.UNCONSTRAINED);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		var messages = runMessagesCaptor.getValue();
+		assertThat(messages.get(0)).isInstanceOf(RunMessage.class);
+		var runMessage = (RunMessage) messages.get(0);
+		assertThat(runMessage.query()).isEqualTo("query");
+		assertThat(messages.get(1)).isInstanceOf(PullMessage.class);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -131,17 +150,13 @@ class DefaultTransactionImplTests {
 		var fetchSize = 5;
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
 
-		given(boltConnection.run(query, Collections.emptyMap())).willReturn(connectionFuture);
-		given(boltConnection.discard(eq(-1L), anyLong())).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
-		if (commit) {
-			given(boltConnection.commit()).willReturn(connectionFuture);
-		}
+		given(boltConnection.writeAndFlush(any(), anyList()))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		var response = this.transaction.runAndDiscard(query, Collections.emptyMap(), fetchSize, commit);
 
@@ -150,13 +165,23 @@ class DefaultTransactionImplTests {
 			.isEqualTo(commit ? Neo4jTransaction.State.COMMITTED : Neo4jTransaction.State.READY);
 		assertThat(this.transaction.isRunnable()).isEqualTo(!commit);
 		assertThat(this.transaction.isOpen()).isEqualTo(!commit);
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.UNCONSTRAINED), any(), any(), eq("IMPLICIT"), any());
-		then(boltConnection).should().run(eq("query"), any());
-		then(boltConnection).should().discard(eq(-1L), anyLong());
-		then(boltConnection).should(times(commit ? 1 : 0)).commit();
-		then(boltConnection).should().flush(any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.UNCONSTRAINED);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		var messages = runMessagesCaptor.getValue();
+		assertThat(messages).hasSize(commit ? 3 : 2);
+		var runMessage = (RunMessage) messages.get(0);
+		var discardMessage = (DiscardMessage) messages.get(1);
+		if (commit) {
+			assertThat(messages.get(2)).isInstanceOf(CommitMessage.class);
+		}
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -171,12 +196,12 @@ class DefaultTransactionImplTests {
 		var runResponse = mock(Neo4jTransaction.RunResponse.class);
 		given(runResponse.queryId()).willReturn(-1L);
 
-		given(boltConnection.pull(-1, fetchSize)).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), any(PullMessage.class)))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		var response = this.transaction.pull(runResponse, fetchSize);
 
@@ -184,11 +209,16 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.READY);
 		assertThat(this.transaction.isRunnable()).isEqualTo(true);
 		assertThat(this.transaction.isOpen()).isEqualTo(true);
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.UNCONSTRAINED), any(), any(), eq("IMPLICIT"), any());
-		then(boltConnection).should().pull(anyLong(), anyLong());
-		then(boltConnection).should().flush(any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.UNCONSTRAINED);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		var pullMessageCaptor = ArgumentCaptor.forClass(Message.class);
+		then(boltConnection).should().writeAndFlush(any(), pullMessageCaptor.capture());
+		assertThat(pullMessageCaptor.getValue()).isInstanceOf(PullMessage.class);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -199,23 +229,31 @@ class DefaultTransactionImplTests {
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
 				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
-		given(boltConnection.commit()).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), anyList()))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		this.transaction.commit();
 
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.COMMITTED);
 		assertThat(this.transaction.isRunnable()).isEqualTo(false);
 		assertThat(this.transaction.isOpen()).isEqualTo(false);
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.UNCONSTRAINED), any(), any(), eq("IMPLICIT"), any());
-		then(boltConnection).should().commit();
-		then(boltConnection).should().flush(any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.UNCONSTRAINED);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> commitMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().writeAndFlush(any(), commitMessagesCaptor.capture());
+		var messages = commitMessagesCaptor.getValue();
+		assertThat(messages).hasSize(1);
+		assertThat(messages.get(0)).isInstanceOf(CommitMessage.class);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -226,31 +264,41 @@ class DefaultTransactionImplTests {
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
 				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
-		given(boltConnection.rollback()).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), anyList()))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		this.transaction.rollback();
 
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.ROLLEDBACK);
 		assertThat(this.transaction.isRunnable()).isEqualTo(false);
 		assertThat(this.transaction.isOpen()).isEqualTo(false);
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.UNCONSTRAINED), any(), any(), eq("IMPLICIT"), any());
-		then(boltConnection).should().rollback();
-		then(boltConnection).should().flush(any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.UNCONSTRAINED);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> rollbackMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().writeAndFlush(any(), rollbackMessagesCaptor.capture());
+		var messages = rollbackMessagesCaptor.getValue();
+		assertThat(messages).hasSize(1);
+		assertThat(messages.get(0)).isInstanceOf(RollbackMessage.class);
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
 	private static BoltConnection mockBoltConnection() {
 		var boltConnection = mock(BoltConnection.class);
-		given(boltConnection.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE),
-				any(), eq(Collections.emptySet()), any(TransactionType.class), any(), any(), any(), any()))
-			.willReturn(CompletableFuture.completedStage(boltConnection));
+		given(boltConnection.write(ArgumentMatchers.<List<Message>>argThat(argument -> {
+			var beginMessage = (BeginMessage) argument.get(0);
+			return "aBeautifulDatabase".equals(beginMessage.databaseName().orElse(null))
+					&& AccessMode.WRITE.equals(beginMessage.accessMode()) && beginMessage.bookmarks().isEmpty();
+		}))).willReturn(CompletableFuture.completedStage(null));
 		return boltConnection;
 	}
 
@@ -262,12 +310,12 @@ class DefaultTransactionImplTests {
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", (state) -> {
 				});
 		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
-		given(boltConnection.rollback()).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), anyList()))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		var exception = mock(SQLException.class);
 
@@ -279,10 +327,13 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.isOpen()).isEqualTo(!autoCommit);
 
 		var transactionType = autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		var transactionMode = autoCommit ? "IMPLICIT" : null;
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(transactionType), any(), any(), eq(transactionMode), any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -298,9 +349,14 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.isRunnable()).isEqualTo(false);
 		assertThat(this.transaction.isOpen()).isEqualTo(false);
 
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.DEFAULT), any(), any(), eq(null), any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.DEFAULT);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -316,9 +372,15 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.getState()).isEqualTo(state);
 		var transactionType = autocommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		var transactionMode = autocommit ? "IMPLICIT" : null;
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(transactionType), any(), any(), eq(transactionMode), any());
+
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
+		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -467,25 +529,39 @@ class DefaultTransactionImplTests {
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
 		var fetchSize = 5;
-		given(boltConnection.run(query, Collections.emptyMap())).willReturn(connectionFuture);
-		given(boltConnection.pull(-1L, fetchSize)).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), anyList()))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
+				return CompletableFuture.completedFuture(null);
+			});
 
 		var transactionType = autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		var transactionMode = autoCommit ? "IMPLICIT" : null;
-		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(transactionType), any(), any(), eq(transactionMode), any());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
+		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		assertThatThrownBy(() -> this.transaction.runAndPull(query, parameters, fetchSize, 1))
 			.isExactlyInstanceOf(SQLTimeoutException.class);
 		assertThat(this.transaction.getState())
 			.isEqualTo(autoCommit ? Neo4jTransaction.State.FAILED : Neo4jTransaction.State.OPEN_FAILED);
 		assertThat(this.transaction.isRunnable()).isFalse();
 		assertThat(this.transaction.isOpen()).isEqualTo(!autoCommit);
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		var messages = runMessagesCaptor.getValue();
+		var runMessage = (RunMessage) messages.get(0);
+		assertThat(runMessage.query()).isEqualTo(query);
+		assertThat(runMessage.parameters()).isEqualTo(parameters);
+		var pullMessage = (PullMessage) messages.get(1);
+		assertThat(pullMessage.qid()).isEqualTo(-1L);
+		assertThat(pullMessage.request()).isEqualTo(fetchSize);
 		then(fatalExceptionHandler).shouldHaveNoMoreInteractions();
 	}
 
@@ -501,16 +577,25 @@ class DefaultTransactionImplTests {
 
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
-		given(boltConnection.run(query, Collections.emptyMap())).willReturn(connectionFuture);
-		given(boltConnection.discard(eq(-1L), anyLong())).willReturn(connectionFuture);
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
-			return CompletableFuture.completedFuture(null);
-		});
+		given(boltConnection.writeAndFlush(any(), anyList()))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
+				invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
+				return CompletableFuture.completedFuture(null);
+			});
 
 		assertThatThrownBy(() -> this.transaction.runAndDiscard(query, parameters, 1, false))
 			.isExactlyInstanceOf(SQLTimeoutException.class);
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		var messages = runMessagesCaptor.getValue();
+		assertThat(messages).hasSize(2);
+		var runMessage = (RunMessage) messages.get(0);
+		assertThat(runMessage.query()).isEqualTo(query);
+		assertThat(runMessage.parameters()).isEqualTo(parameters);
+		var discardMessage = (DiscardMessage) messages.get(1);
+		assertThat(discardMessage.qid()).isEqualTo(-1L);
 		assertThat(this.transaction.getState())
 			.isEqualTo(autoCommit ? Neo4jTransaction.State.FAILED : Neo4jTransaction.State.OPEN_FAILED);
 		assertThat(this.transaction.isRunnable()).isFalse();
@@ -523,16 +608,16 @@ class DefaultTransactionImplTests {
 	void shouldNotifyExceptionHandlerOnFatalException(TransactionMethodRunner runner) {
 		var boltConnection = mockBoltConnection();
 		var fatalExceptionHandler = mock(DefaultTransactionImpl.FatalExceptionHandler.class);
-		var connectionFuture = CompletableFuture.completedFuture(boltConnection);
+		var writeFuture = CompletableFuture.<Void>completedFuture(null);
 		var exception = new BoltException("Defunct connection");
 
-		given(boltConnection.reset()).willReturn(CompletableFuture.failedFuture(exception));
-		given(boltConnection.run(any(), any())).willReturn(connectionFuture);
-		given(boltConnection.pull(anyLong(), anyLong())).willReturn(connectionFuture);
-		given(boltConnection.discard(anyLong(), anyLong())).willReturn(connectionFuture);
-		given(boltConnection.discard(anyLong(), anyLong())).willReturn(connectionFuture);
-		given(boltConnection.commit()).willReturn(connectionFuture);
-		given(boltConnection.rollback()).willReturn(connectionFuture);
+		given(boltConnection.writeAndFlush(any(), any(ResetMessage.class)))
+			.willReturn(CompletableFuture.failedFuture(exception));
+		given(boltConnection.writeAndFlush(any(), any(RunMessage.class))).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(PullMessage.class))).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(DiscardMessage.class))).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(CommitMessage.class))).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(RollbackMessage.class))).willReturn(writeFuture);
 
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, true, true,
 				AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
@@ -556,27 +641,30 @@ class DefaultTransactionImplTests {
 
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
-		given(boltConnection.run(query, Collections.emptyMap())).willReturn(connectionFuture);
-
-		given(boltConnection.pull(eq(-1L), anyLong())).willReturn(connectionFuture);
-		given(boltConnection.discard(anyLong(), anyLong())).willReturn(connectionFuture);
 		var counter = new AtomicInteger();
-		given(boltConnection.flush(any())).willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
-			invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
-			var pullSummary = mock(PullSummary.class);
-			given(pullSummary.hasMore()).willReturn(counter.compareAndSet(0, 1));
-			invocation.<ResponseHandler>getArgument(0).onPullSummary(pullSummary);
-			invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
-			invocation.<ResponseHandler>getArgument(0).onComplete();
-			return CompletableFuture.completedFuture(null);
-		});
-
-		if (commit) {
-			given(boltConnection.commit()).willReturn(connectionFuture);
-		}
-		else {
-			given(boltConnection.rollback()).willReturn(connectionFuture);
-		}
+		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class))))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
+				var pullSummary = mock(PullSummary.class);
+				given(pullSummary.hasMore()).willReturn(counter.compareAndSet(0, 1));
+				invocation.<ResponseHandler>getArgument(0).onPullSummary(pullSummary);
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
+		given(boltConnection.writeAndFlush(any(),
+				messageTypeMatcher(
+						List.of(DiscardMessage.class, commit ? CommitMessage.class : RollbackMessage.class))))
+			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
+				invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
+				if (commit) {
+					invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
+				}
+				else {
+					invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
+				}
+				invocation.<ResponseHandler>getArgument(0).onComplete();
+				return CompletableFuture.completedFuture(null);
+			});
 
 		this.transaction.runAndPull(query, parameters, 1, 0);
 		this.transaction.runAndPull(query, parameters, 1, 0);
@@ -588,18 +676,38 @@ class DefaultTransactionImplTests {
 			this.transaction.rollback();
 		}
 
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(beginMessagesCaptor.capture());
+		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
+		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
+		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
+		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.DEFAULT);
+		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		then(boltConnection).should(times(2))
+			.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class)));
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should(times(3)).writeAndFlush(any(), runMessagesCaptor.capture());
+		var messages = runMessagesCaptor.getAllValues().get(0);
+		var runMessage = (RunMessage) messages.get(0);
+		assertThat(runMessage.query()).isEqualTo(query);
+		assertThat(runMessage.parameters()).isEqualTo(parameters);
+		var pullMessage = (PullMessage) messages.get(1);
+		assertThat(pullMessage.qid()).isEqualTo(-1L);
 		then(boltConnection).should()
-			.beginTransaction(eq(DatabaseNameUtil.database("aBeautifulDatabase")), eq(AccessMode.WRITE), any(),
-					eq(Collections.emptySet()), eq(TransactionType.DEFAULT), any(), any(), any(), any());
-		then(boltConnection).should(times(2)).run(query, Collections.emptyMap());
-		then(boltConnection).should(times(2)).pull(anyLong(), anyLong());
-		then(boltConnection).should().discard(anyLong(), anyLong());
-		then(boltConnection).should(times(3)).flush(any());
+			.writeAndFlush(any(), messageTypeMatcher(
+					List.of(DiscardMessage.class, commit ? CommitMessage.class : RollbackMessage.class)));
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> finishingMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should(times(3)).writeAndFlush(any(), finishingMessagesCaptor.capture());
+		var finishMessages = finishingMessagesCaptor.getAllValues().get(2);
+		assertThat(finishMessages.get(0)).isInstanceOf(DiscardMessage.class);
 		if (commit) {
-			then(boltConnection).should().commit();
+			assertThat(finishMessages.get(1)).isInstanceOf(CommitMessage.class);
 		}
 		else {
-			then(boltConnection).should().rollback();
+			assertThat(finishMessages.get(1)).isInstanceOf(RollbackMessage.class);
 		}
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
@@ -614,6 +722,23 @@ class DefaultTransactionImplTests {
 						Collections.emptyMap(), -1, false)),
 				Arguments.of((TransactionMethodRunner) Neo4jTransaction::commit),
 				Arguments.of((TransactionMethodRunner) Neo4jTransaction::rollback));
+	}
+
+	private static List<Message> messageTypeMatcher(List<Class<? extends Message>> messageTypes) {
+		return ArgumentMatchers.argThat(messages -> {
+			var matches = messages != null && messages.size() == messageTypes.size();
+			if (matches) {
+				for (var i = 0; i < messageTypes.size(); i++) {
+					var message = messages.get(i);
+					var messageType = messageTypes.get(i);
+					if (!messageType.isAssignableFrom(message.getClass())) {
+						matches = false;
+						break;
+					}
+				}
+			}
+			return matches;
+		});
 	}
 
 	interface TransactionMethodRunner {
