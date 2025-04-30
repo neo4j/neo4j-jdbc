@@ -68,7 +68,7 @@ class TranslationIT extends IntegrationTestBase {
 		properties.put("enableSQLTranslation", "true");
 
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(url, properties))
-			.withMessage("No translators available");
+			.withMessage("general processing exception - No translators available");
 
 	}
 
@@ -269,7 +269,7 @@ class TranslationIT extends IntegrationTestBase {
 			assertThatExceptionOfType(SQLException.class).isThrownBy(stmt::execute)
 				.withCauseInstanceOf(ParserException.class)
 				.withMessageStartingWith(
-						"org.jooq.impl.ParserException: FUNCTION, GENERATOR, GLOBAL TEMPORARY TABLE, INDEX, OR ALTER, OR REPLACE, PROCEDURE, SCHEMA, SEQUENCE, TABLE, TEMPORARY TABLE, TRIGGER, TYPE, UNIQUE INDEX, or VIEW expected");
+						"general processing exception - FUNCTION, GENERATOR, GLOBAL TEMPORARY TABLE, INDEX, OR ALTER, OR REPLACE, PROCEDURE, SCHEMA, SEQUENCE, TABLE, TEMPORARY TABLE, TRIGGER, TYPE, UNIQUE INDEX, or VIEW expected");
 		}
 
 	}

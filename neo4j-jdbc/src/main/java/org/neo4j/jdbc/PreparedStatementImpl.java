@@ -59,9 +59,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.ValueException;
 import org.neo4j.jdbc.values.Values;
+
+import static org.neo4j.jdbc.Neo4jException.withInternal;
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPreparedStatement
 		permits CallableStatementImpl {
@@ -429,8 +433,8 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	private static void assertValidStreamLength(String name, int parameterIndex, int length) throws SQLException {
 		if (length < 0) {
-			throw new SQLException(
-					"Invalid length %d for %s stream at index %d".formatted(length, name, parameterIndex));
+			throw new Neo4jException(GQLError.$22N02
+				.withMessage("Invalid length %d for %s stream at index %d".formatted(length, name, parameterIndex)));
 		}
 	}
 
@@ -440,7 +444,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 			bytes = in.readNBytes(length);
 		}
 		catch (IOException ex) {
-			throw new SQLException(ex);
+			throw new Neo4jException(withInternal(ex));
 		}
 		setParameter(parameterName, Values.value(new String(bytes, DEFAULT_ASCII_CHARSET_FOR_INCOMING_STREAM)));
 	}
@@ -465,7 +469,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 			bytes = in.readNBytes(length);
 		}
 		catch (IOException ex) {
-			throw new SQLException(ex);
+			throw new Neo4jException(withInternal(ex));
 		}
 		setParameter(parameterName, Values.value(bytes));
 	}
@@ -583,7 +587,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 				setParameter(parameterName, Values.value(value));
 			}
 			catch (ValueException ex) {
-				throw new SQLException(ex);
+				throw new Neo4jException(withInternal(ex));
 			}
 		}
 	}
@@ -609,7 +613,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 			lengthRead = in.read(charBuffer, 0, length);
 		}
 		catch (IOException ex) {
-			throw new SQLException(ex);
+			throw new Neo4jException(withInternal(ex));
 		}
 		setParameter(parameterName, Values.value((lengthRead != -1) ? new String(charBuffer, 0, lengthRead) : ""));
 	}
@@ -795,7 +799,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	static int getLengthAsInt(long length) throws SQLException {
 		var lengthAsInt = (int) length;
 		if (lengthAsInt != length) {
-			throw new SQLException("length larger than integer max value is not supported");
+			throw new Neo4jException(GQLError.$22003.withTemplatedMessage(length));
 		}
 		return lengthAsInt;
 	}
@@ -864,7 +868,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	protected final ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
 		if (resultSet == null) {
-			throw new SQLException("#execute has not been called");
+			throw new Neo4jException(withReason("#execute has not been called"));
 		}
 		if (this.cursorMoved.compareAndSet(false, true)) {
 			this.resultSet.next();
@@ -877,12 +881,12 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	}
 
 	static SQLException newIllegalMethodInvocation() {
-		return new SQLException("This method must not be called on PreparedStatement");
+		return new Neo4jException(withReason("This method must not be called on PreparedStatement"));
 	}
 
 	private static void assertValidParameterIndex(int index) throws SQLException {
 		if (index < 1) {
-			throw new SQLException("Parameter index must be equal or more than 1");
+			throw new Neo4jException(GQLError.$22003.withMessage("Parameter index must be equal or more than 1"));
 		}
 	}
 

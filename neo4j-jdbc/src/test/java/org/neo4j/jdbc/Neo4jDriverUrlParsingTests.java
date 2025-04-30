@@ -430,7 +430,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThatExceptionOfType(SQLException.class)
 			.isThrownBy(
 					() -> Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?relationshipSampleSize=-2", properties))
-			.withMessage("Sample size for relationships must be greater than or equal -1");
+			.withMessage("data exception - Sample size for relationships must be greater than or equal -1");
 	}
 
 	@Test

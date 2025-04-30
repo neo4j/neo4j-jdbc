@@ -85,7 +85,7 @@ public final class IntegerValue extends AbstractNumberValue<Long> {
 
 	@Override
 	public int hashCode() {
-		return (int) (this.val ^ (this.val >>> 32));
+		return Long.hashCode(this.val);
 	}
 
 	@Override

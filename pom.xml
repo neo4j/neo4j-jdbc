@@ -186,7 +186,7 @@
 		<neo4j-cypher-dsl.version>2024.5.1</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.3.1</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
-		<neo4j.version>5.26.0</neo4j.version>
+		<neo4j.version>5.26.5</neo4j.version>
 		<netty.version>4.1.119.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.13.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.10</opencsv.version>

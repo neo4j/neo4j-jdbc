@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
 import org.neo4j.jdbc.events.Neo4jEvent;
@@ -66,6 +67,8 @@ import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.UncoercibleException;
 import org.neo4j.jdbc.values.Value;
+
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 final class ResultSetImpl implements Neo4jResultSet {
 
@@ -185,7 +188,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private boolean next0() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("This result set is closed");
+			throw new Neo4jException(withReason("This result set is closed"));
 		}
 		if (this.remainingRowAllowance == 0) {
 			return false;
@@ -232,7 +235,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		LOGGER.log(Level.FINER, () -> "Getting was null state");
 		assertIsOpen();
 		if (this.value == null) {
-			throw new SQLException("No column has been read prior to this call");
+			throw new Neo4jException(withReason("No column has been read prior to this call"));
 		}
 		return Type.NULL.isTypeOf(this.value);
 	}
@@ -480,7 +483,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		assertIsOpen();
 		var index = this.keys.indexOf(columnLabel);
 		if (index == -1) {
-			throw new SQLException("No such column is present");
+			throw new Neo4jException(GQLError.$22N63.withTemplatedMessage(columnLabel));
 		}
 		return ++index;
 	}
@@ -537,7 +540,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 	public void beforeFirst() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Moving before first");
 		if (this.beforeFirst.compareAndSet(false, false)) {
-			throw new SQLException(
+			throw new SQLFeatureNotSupportedException(
 					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support beforeFirst after it has been iterated"
 						.formatted(SUPPORTED_TYPE));
 		}
@@ -556,7 +559,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 	public boolean first() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Moving to first");
 		if (this.beforeFirst.compareAndSet(false, false)) {
-			throw new SQLException(
+			throw new SQLFeatureNotSupportedException(
 					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support first after it has been iterated"
 						.formatted(SUPPORTED_TYPE));
 		}
@@ -567,7 +570,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 	public boolean last() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Moving to last");
 		if (this.afterLast.compareAndSet(true, true)) {
-			throw new SQLException(
+			throw new SQLFeatureNotSupportedException(
 					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support last after it has been fully iterated"
 						.formatted(SUPPORTED_TYPE));
 		}
@@ -587,21 +590,21 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public boolean absolute(int row) throws SQLException {
-		throw new SQLException(
+		throw new SQLFeatureNotSupportedException(
 				"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support absolute scrolling"
 					.formatted(SUPPORTED_TYPE));
 	}
 
 	@Override
 	public boolean relative(int rows) throws SQLException {
-		throw new SQLException(
+		throw new SQLFeatureNotSupportedException(
 				"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support relative scrolling"
 					.formatted(SUPPORTED_TYPE));
 	}
 
 	@Override
 	public boolean previous() throws SQLException {
-		throw new SQLException(
+		throw new SQLFeatureNotSupportedException(
 				"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support previous scrolling"
 					.formatted(SUPPORTED_TYPE));
 	}
@@ -611,7 +614,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		LOGGER.log(Level.WARNING, () -> "Setting fetch direction to %d (ignored)".formatted(direction));
 		assertIsOpen();
 		if (direction != SUPPORTED_FETCH_DIRECTION) {
-			throw new SQLException("Only forward fetching is supported");
+			throw new SQLFeatureNotSupportedException("Only forward fetching is supported");
 		}
 	}
 
@@ -877,14 +880,14 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	@Override
 	public void moveToInsertRow() throws SQLException {
-		throw new SQLException(
+		throw new SQLFeatureNotSupportedException(
 				"This result sets concurrency is of type CONCUR_READ_ONLY (%d) and does not support moving to insert row"
 					.formatted(SUPPORTED_CONCURRENCY));
 	}
 
 	@Override
 	public void moveToCurrentRow() throws SQLException {
-		throw new SQLException(
+		throw new SQLFeatureNotSupportedException(
 				"This result sets concurrency is of type CONCUR_READ_ONLY (%d) and does not support moving to current row"
 					.formatted(SUPPORTED_CONCURRENCY));
 	}
@@ -1294,7 +1297,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (type.isInstance(obj)) {
 				return type.cast(obj);
 			}
-			throw new SQLException(new UncoercibleException(obj.getClass().getName(), type.getName()));
+			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(obj.getClass().getName(), type.getName()));
 		};
 	}
 
@@ -1312,7 +1315,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 
@@ -1323,25 +1326,25 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private void assertCurrentRecordIsNotNull() throws SQLException {
 		if (this.currentRecord == null) {
-			throw new SQLException("Invalid cursor position");
+			throw new Neo4jException(withReason("Invalid cursor position"));
 		}
 	}
 
 	private void assertIsOpen() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("The result set is closed");
+			throw new Neo4jException(withReason("The result set is closed"));
 		}
 	}
 
 	private void assertColumnIndexIsPresent(int columnIndex) throws SQLException {
 		if (columnIndex < 1 || columnIndex > this.currentRecord.size()) {
-			throw new SQLException("Invalid column index value");
+			throw new Neo4jException(withReason("Invalid column index value"));
 		}
 	}
 
 	private void assertColumnLabelIsPresent(String columnLabel) throws SQLException {
 		if (!this.currentRecord.containsKey(columnLabel)) {
-			throw new SQLException("Invalid column label value");
+			throw new Neo4jException(withReason("Invalid column label value"));
 		}
 	}
 
@@ -1387,7 +1390,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 			return value.asObject().toString();
 		}
 		catch (UncoercibleException ex) {
-			throw new SQLException(String.format("%s value can not be mapped to String", value.type()));
+			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "String"));
 		}
 	}
 
@@ -1397,13 +1400,14 @@ final class ResultSetImpl implements Neo4jResultSet {
 				return new URL(value.asString());
 			}
 			catch (MalformedURLException ex) {
-				throw new SQLException(ex);
+				throw new Neo4jException(
+						GQLError.$22N37.causedBy(ex).withTemplatedMessage(value.toDisplayString(), "URL"));
 			}
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to URL", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "URL"));
 	}
 
 	private static boolean mapToBoolean(Value value) throws SQLException {
@@ -1422,7 +1426,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 				return true;
 			}
 			else {
-				throw new SQLException("Number values can not be mapped to boolean aside from 0 and 1 values");
+				throw new Neo4jException(GQLError.$22N37
+					.withMessage("Number values can not be mapped to boolean aside from 0 and 1 values"));
 			}
 		}
 		if (Type.STRING.isTypeOf(value)) {
@@ -1434,10 +1439,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 				return true;
 			}
 			else {
-				throw new SQLException("String values can not be mapped to boolean aside from '0' and '1' values");
+				throw new Neo4jException(GQLError.$22N37
+					.withMessage("String values can not be mapped to boolean aside from '0' and '1' values"));
 			}
 		}
-		throw new SQLException(String.format("%s value can not be mapped to boolean", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "boolean"));
 	}
 
 	private static Byte mapToByte(Value value) throws SQLException {
@@ -1446,12 +1452,12 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (longValue >= Byte.MIN_VALUE && longValue <= Byte.MAX_VALUE) {
 				return (byte) longValue;
 			}
-			throw new SQLException("The number is out of byte range");
+			throw new Neo4jException(GQLError.$22003.withTemplatedMessage(longValue));
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return (byte) 0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to byte", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "byte"));
 	}
 
 	private static Short mapToShort(Value value) throws SQLException {
@@ -1460,12 +1466,12 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (longValue >= Short.MIN_VALUE && longValue <= Short.MAX_VALUE) {
 				return (short) longValue;
 			}
-			throw new SQLException("The number is out of short range");
+			throw new Neo4jException(GQLError.$22003.withTemplatedMessage(longValue));
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return (short) 0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to short", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "short"));
 	}
 
 	private static int mapToInteger(Value value) throws SQLException {
@@ -1474,7 +1480,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
 				return (int) longValue;
 			}
-			throw new SQLException("The number is out of int range");
+			throw new Neo4jException(GQLError.$22003.withTemplatedMessage(longValue));
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return 0;
@@ -1484,11 +1490,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 				return Integer.parseInt(value.asString());
 			}
 			catch (NumberFormatException ex) {
-				throw new SQLException(
-						String.format("%s value can not be mapped to int: %s", value.type(), ex.getMessage()));
+				throw new Neo4jException(
+						GQLError.$22N37.causedBy(ex).withTemplatedMessage(value.toDisplayString(), "int"));
 			}
 		}
-		throw new SQLException(String.format("%s value can not be mapped to int", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "int"));
 	}
 
 	private static long mapToLong(Value value) throws SQLException {
@@ -1503,11 +1509,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 				return Long.parseLong(value.asString());
 			}
 			catch (NumberFormatException ex) {
-				throw new SQLException(
-						String.format("%s value can not be mapped to long: %s", value.type(), ex.getMessage()));
+				throw new Neo4jException(
+						GQLError.$22N37.causedBy(ex).withTemplatedMessage(value.toDisplayString(), "long"));
 			}
 		}
-		throw new SQLException(String.format("%s value can not be mapped to long", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "long"));
 	}
 
 	private static float mapToFloat(Value value) throws SQLException {
@@ -1517,12 +1523,12 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (Double.compare(doubleValue, floatValue) == 0) {
 				return floatValue;
 			}
-			throw new SQLException("The number is out of float range");
+			throw new Neo4jException(GQLError.$22003.withTemplatedMessage(value));
 		}
 		if (Type.NULL.isTypeOf(value)) {
 			return 0.0f;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to float", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "float"));
 	}
 
 	private static double mapToDouble(Value value) throws SQLException {
@@ -1532,7 +1538,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return 0.0;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to double", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "double"));
 	}
 
 	@SuppressWarnings("squid:S1168")
@@ -1543,7 +1549,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.BYTES.isTypeOf(value)) {
 			return truncate(value.asByteArray(), maxFieldSize);
 		}
-		throw new SQLException(String.format("%s value can not be mapped to byte array", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "byte array"));
 	}
 
 	private static Reader mapToReader(Value value, int maxFieldSize) throws SQLException {
@@ -1553,30 +1559,31 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to Reader", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "a reader"));
 	}
 
 	@SuppressWarnings("BigDecimalMethodWithoutRoundingCalled")
 	private static BigDecimal mapToBigDecimal(Value value, Integer scale) throws SQLException {
 
-		var result = switch (value.type()) {
-			case STRING -> new BigDecimal(value.asString());
-			case INTEGER -> BigDecimal.valueOf(value.asLong());
-			case FLOAT -> BigDecimal.valueOf(value.asDouble());
-			case NULL -> null;
-			default -> throw new SQLException(
-					String.format("%s value can not be mapped to java.math.BigDecimal", value.type()));
-		};
+		try {
+			var result = switch (value.type()) {
+				case STRING -> new BigDecimal(value.asString());
+				case INTEGER -> BigDecimal.valueOf(value.asLong());
+				case FLOAT -> BigDecimal.valueOf(value.asDouble());
+				case NULL -> null;
+				default -> throw new Neo4jException(
+						GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.math.BigDecimal"));
+			};
 
-		if (result != null && scale != null) {
-			try {
+			if (result != null && scale != null) {
 				return result.setScale(scale);
 			}
-			catch (ArithmeticException ae) {
-				throw new SQLException(ae);
-			}
+			return result;
 		}
-		return result;
+		catch (NumberFormatException | ArithmeticException ex) {
+			throw new Neo4jException(
+					GQLError.$22N37.causedBy(ex).withTemplatedMessage(value.toDisplayString(), "java.math.BigDecimal"));
+		}
 	}
 
 	private static InputStream mapToAsciiStream(Value value, int maxFieldSize) throws SQLException {
@@ -1587,7 +1594,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to java.io.InputStream", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.io.InputStream"));
 	}
 
 	private static InputStream mapToBinaryStream(Value value, int maxFieldSize) throws SQLException {
@@ -1600,7 +1607,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (Type.NULL.isTypeOf(value)) {
 			return null;
 		}
-		throw new SQLException(String.format("%s value can not be mapped to java.io.InputStream", value.type()));
+		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "java.io.InputStream"));
 	}
 
 	private static Object mapToObject(Value value, int maxFieldSize) {

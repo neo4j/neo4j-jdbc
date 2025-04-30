@@ -312,7 +312,7 @@ class DefaultTransactionImplTests {
 				AccessMode.WRITE, state, "aBeautifulDatabase", (failureState) -> {
 				});
 
-		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(Neo4jException.class);
 		assertThat(this.transaction.getState()).isEqualTo(state);
 		var transactionType = autocommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		var transactionMode = autocommit ? "IMPLICIT" : null;
@@ -520,7 +520,6 @@ class DefaultTransactionImplTests {
 
 	@ParameterizedTest
 	@MethodSource("getNetworkTransactionMethodRunners")
-	@SuppressWarnings("unchecked")
 	void shouldNotifyExceptionHandlerOnFatalException(TransactionMethodRunner runner) {
 		var boltConnection = mockBoltConnection();
 		var fatalExceptionHandler = mock(DefaultTransactionImpl.FatalExceptionHandler.class);
@@ -539,14 +538,13 @@ class DefaultTransactionImplTests {
 				AccessMode.WRITE, null, "aBeautifulDatabase", (state) -> {
 				});
 
-		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(Neo4jException.class);
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
 		assertThat(this.transaction.isRunnable()).isFalse();
 		assertThat(this.transaction.isOpen()).isEqualTo(false);
 		then(fatalExceptionHandler).should().handle(any(SQLException.class), any(SQLException.class));
 	}
 
-	@SuppressWarnings("unchecked")
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldDiscardOpenCursorsOnClose(boolean commit) throws SQLException {

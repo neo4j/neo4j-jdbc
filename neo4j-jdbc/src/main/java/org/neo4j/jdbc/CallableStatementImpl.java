@@ -53,6 +53,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
+
 final class CallableStatementImpl extends PreparedStatementImpl implements Neo4jCallableStatement {
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.callable-statement");
@@ -88,8 +90,8 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 			}
 			for (String value : descriptor.parameterList.namedParameters().values()) {
 				if (!parameterOrder.containsKey(value)) {
-					throw new SQLException(
-							"Procedure `" + descriptor.fqn() + "` does not have a named parameter `" + value + "`");
+					throw new Neo4jException(GQLError.$42N51.withMessage(
+							"Procedure `" + descriptor.fqn() + "` does not have a named parameter `" + value + "`"));
 				}
 			}
 		}
@@ -950,8 +952,8 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		}
 		else {
 			if (this.parameterType != parameterType) {
-				throw new SQLException(String.format("%s parameter can not be mixed with %s parameter(s)",
-						parameterType, this.parameterType));
+				throw new Neo4jException(GQLError.$42N51.withMessage(String
+					.format("%s parameter can not be mixed with %s parameter(s)", parameterType, this.parameterType)));
 			}
 		}
 	}

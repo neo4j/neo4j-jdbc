@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
 
+import static org.neo4j.jdbc.Neo4jException.withReason;
+
 /**
  * This is intended as almost a no-op implementation of a statement that we mainly return
  * from metadata calls.
@@ -82,7 +84,7 @@ final class LocalStatementImpl extends StatementImpl {
 	public ResultSet getResultSet() throws SQLException {
 
 		if (!this.resultSetAcquired.compareAndSet(false, true)) {
-			throw new SQLException("Result set has already been acquired");
+			throw new Neo4jException(withReason("Result set has already been acquired"));
 		}
 		return new ResultSetImpl(this, new ThrowingTransactionImpl(), this.runResponse, this.pullResponse, -1, -1, -1);
 	}
@@ -187,7 +189,7 @@ final class LocalStatementImpl extends StatementImpl {
 
 	protected void assertIsOpen() throws SQLException {
 		if (this.closed) {
-			throw new SQLException("The statement set is closed");
+			throw new Neo4jException(withReason("The statement set is closed"));
 		}
 	}
 

@@ -22,6 +22,8 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Map;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
+
 /**
  * Will throw on anything modifying run and pull responses, default to no-op for
  * commiting, failing and rollback.
@@ -52,7 +54,8 @@ final class ThrowingTransactionImpl implements Neo4jTransaction {
 	@Override
 	public void commit() throws SQLException {
 		if (this.state != State.READY) {
-			throw new SQLException("Cannot commit in %s state".formatted(this.state));
+			throw new Neo4jException(
+					GQLError.$2DN01.withTemplatedMessage("Cannot commit in %s state".formatted(this.state)));
 		}
 		this.state = State.COMMITTED;
 	}
@@ -60,7 +63,8 @@ final class ThrowingTransactionImpl implements Neo4jTransaction {
 	@Override
 	public void rollback() throws SQLException {
 		if (this.state != State.READY) {
-			throw new SQLException("Cannot rollback in %s state".formatted(this.state));
+			throw new Neo4jException(
+					GQLError.$40N01.withTemplatedMessage("Cannot rollback in %s state".formatted(this.state)));
 		}
 		this.state = State.ROLLEDBACK;
 	}
@@ -68,7 +72,8 @@ final class ThrowingTransactionImpl implements Neo4jTransaction {
 	@Override
 	public void fail(SQLException exception) throws SQLException {
 		if (this.state != State.READY) {
-			throw new SQLException("Cannot fail in %s state".formatted(this.state));
+			throw new Neo4jException(
+					GQLError.$2DN03.withTemplatedMessage("Cannot fail in %s state".formatted(this.state)));
 		}
 		this.state = State.FAILED;
 	}

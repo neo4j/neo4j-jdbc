@@ -1471,9 +1471,9 @@ class ResultSetImplTests {
 		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
 			resultSet.next();
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt(-23))
-				.withMessage("Invalid column index value");
+				.withMessage("general processing exception - Invalid column index value");
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt(42))
-				.withMessage("Invalid column index value");
+				.withMessage("general processing exception - Invalid column index value");
 		}
 	}
 
@@ -1482,7 +1482,7 @@ class ResultSetImplTests {
 		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
 			resultSet.next();
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt("42"))
-				.withMessage("Invalid column label value");
+				.withMessage("general processing exception - Invalid column label value");
 		}
 	}
 
@@ -1491,8 +1491,7 @@ class ResultSetImplTests {
 		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
 			resultSet.next();
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getObject(1, Float.class))
-				.withMessage(
-						"org.neo4j.jdbc.values.UncoercibleException: Cannot coerce java.lang.String to java.lang.Float");
+				.withMessage("data exception - Cannot coerce java.lang.String to java.lang.Float");
 		}
 	}
 
@@ -1501,7 +1500,7 @@ class ResultSetImplTests {
 		var resultSet = emptyResultSet();
 		resultSet.close();
 		assertThatExceptionOfType(SQLException.class).isThrownBy(resultSet::next)
-			.withMessage("This result set is closed");
+			.withMessage("general processing exception - This result set is closed");
 	}
 
 	@SuppressWarnings("deprecation")
@@ -1512,7 +1511,8 @@ class ResultSetImplTests {
 
 			assertThat(resultSet.getBigDecimal(1, 2)).isEqualTo(new BigDecimal("1.25"));
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getBigDecimal(1, 1))
-				.withMessage("java.lang.ArithmeticException: Rounding necessary");
+				.withMessage("data exception - Cannot coerce 1.25 (FLOAT) to java.math.BigDecimal")
+				.withStackTraceContaining("java.lang.ArithmeticException: Rounding necessary");
 		}
 	}
 

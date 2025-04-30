@@ -32,12 +32,15 @@ import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
+import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
+
+import static org.neo4j.jdbc.Neo4jException.withReason;
 
 /**
  * Array implementation working on a list of {@link Value values}. Byte array has a
@@ -55,7 +58,7 @@ class ArrayImpl implements Array {
 
 	static Array of(Connection connection, String typeName, Object[] elements) throws SQLException {
 		if (typeName == null || typeName.isBlank()) {
-			throw new SQLException("Typename is required");
+			throw new Neo4jException(GQLError.$22N11.withMessage("Invalid argument, typename is required"));
 		}
 		try {
 			var type = Type.valueOf(typeName);
@@ -77,13 +80,14 @@ class ArrayImpl implements Array {
 			}
 			theArray = (ArrayImpl) of(connection, Values.value(allValues));
 			if (type != theArray.arrayType) {
-				throw new SQLException("Cannot satisfy type %s with the elements provided".formatted(typeName));
+				throw new Neo4jException(GQLError.$22000
+					.withMessage("Cannot satisfy type %s with the elements provided".formatted(typeName)));
 			}
 
 			return theArray;
 		}
 		catch (IllegalArgumentException ex) {
-			throw new SQLException("Invalid type name %s".formatted(typeName));
+			throw new Neo4jException(GQLError.$22000.withMessage("Invalid type name %s".formatted(typeName)));
 		}
 	}
 
@@ -98,8 +102,7 @@ class ArrayImpl implements Array {
 		}
 
 		if (!value.hasType(Type.LIST)) {
-			throw new GQLException(GQLException.ErrorCode.GQL_22N01,
-					"Expected the value %s to be of type LIST, but was of type %s".formatted(value, value.type()));
+			throw new Neo4jException(GQLError.$22N01.withTemplatedMessage(value, "LIST", value.type()));
 		}
 
 		List<Value> values = value.asList(Function.identity());
@@ -112,7 +115,7 @@ class ArrayImpl implements Array {
 		else {
 			arrayType = values.stream().map(Value::type).filter(v -> v != Type.NULL).findFirst().orElse(Type.NULL);
 			if (values.stream().anyMatch(v -> !(v.hasType(arrayType) || v.hasType(Type.NULL)))) {
-				throw new GQLException(GQLException.ErrorCode.GQL_22G03, "invalid value type");
+				throw new Neo4jException(GQLError.$22G03.withTemplatedMessage());
 			}
 			containsNulls = values.stream().anyMatch(v -> v.hasType(Type.NULL));
 		}
@@ -238,20 +241,19 @@ class ArrayImpl implements Array {
 		}
 	}
 
-	private static void assertSlice(Slice slice, int length) throws GQLException {
+	private static void assertSlice(Slice slice, int length) throws SQLException {
 		var count = slice.count;
 		var index = slice.index;
 
 		if (count < 0 || index < 1 || index - 1 + count > length) {
-			throw new GQLException(GQLException.ErrorCode.GQL_22N11,
-					"Invalid argument: cannot process getArray(%d, %d) for array with size %d".formatted(index, count,
-							length));
+			throw new Neo4jException(GQLError.$22N11
+				.withTemplatedMessage("getArray(%d, %d) for array with size %d".formatted(index, count, length)));
 		}
 	}
 
 	private void assertNotFreed() throws SQLException {
 		if (this.freed.get()) {
-			throw new SQLException("Array has been already freed");
+			throw new Neo4jException(withReason("Array has been already freed"));
 		}
 	}
 
@@ -269,7 +271,7 @@ class ArrayImpl implements Array {
 		};
 	}
 
-	private PullResponse toPullResponse(Slice slice) throws GQLException {
+	private PullResponse toPullResponse(Slice slice) throws SQLException {
 
 		int length;
 		Function<Integer, Value> recordValueSupplier;

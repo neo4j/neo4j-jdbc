@@ -22,6 +22,8 @@ import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import static org.neo4j.jdbc.Neo4jException.withReason;
+
 class ParameterMetaDataImpl implements ParameterMetaData {
 
 	@Override
@@ -75,7 +77,7 @@ class ParameterMetaDataImpl implements ParameterMetaData {
 			return iface.cast(this);
 		}
 		else {
-			throw new SQLException("This object does not implement the given interface");
+			throw new Neo4jException(withReason("This object does not implement the given interface"));
 		}
 	}
 

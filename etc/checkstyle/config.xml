@@ -46,7 +46,8 @@
                     com.tngtech.archunit.base.DescribedPredicate.*,
                     com.tngtech.archunit.core.domain.JavaClass.Predicates.*,
                     com.tngtech.archunit.lang.conditions.ArchPredicates.*,
-                    com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*
+                    com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*,
+                    org.neo4j.jdbc.Neo4jException.*
                 "
 			/>
 		</module>

@@ -289,7 +289,7 @@ class PreparedStatementImplTests {
 			throws SQLException {
 		this.statement = newStatement(StatementImplTests.mockConnection(), mock(Neo4jTransactionSupplier.class),
 				"query");
-		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(exceptionType);
+		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(exceptionType);
 	}
 
 	static Stream<Arguments> getShouldThrowUnsupportedArgs() {
@@ -338,7 +338,7 @@ class PreparedStatementImplTests {
 	void shouldThrowOnExplicitlyProhibitedMethods(StatementMethodRunner consumer) throws SQLException {
 		this.statement = newStatement(StatementImplTests.mockConnection(), mock(Neo4jTransactionSupplier.class),
 				"query");
-		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(Neo4jException.class);
 	}
 
 	static Stream<Arguments> getShouldThrowOnExplicitlyProhibitedMethodsArgs() {
@@ -367,7 +367,7 @@ class PreparedStatementImplTests {
 	void shouldThrowOnInvalidParameterIndex(StatementMethodRunner consumer) throws SQLException {
 		this.statement = newStatement(StatementImplTests.mockConnection(), mock(Neo4jTransactionSupplier.class),
 				"query");
-		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(SQLException.class);
+		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(Neo4jException.class);
 	}
 
 	static Stream<Arguments> getShouldThrowOnInvalidParameterIndexArgs() {
