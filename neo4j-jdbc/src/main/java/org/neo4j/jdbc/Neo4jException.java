@@ -20,8 +20,10 @@ package org.neo4j.jdbc;
 
 import java.io.Serial;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.neo4j.bolt.connection.exception.BoltGqlErrorException;
 
@@ -34,7 +36,7 @@ import org.neo4j.bolt.connection.exception.BoltGqlErrorException;
  * @author Michael J. Simons
  * @since 6.4.0
  */
-final class Neo4jException extends SQLException {
+final class Neo4jException extends SQLException implements GqlStatusObject {
 
 	@Serial
 	private static final long serialVersionUID = 4192957098450787651L;
@@ -136,7 +138,7 @@ final class Neo4jException extends SQLException {
 	 * @return the exception to be thrown
 	 */
 	static Args withCause(Throwable cause) {
-		return of(null, cause);
+		return withMessageAndCause(null, cause);
 	}
 
 	/**
@@ -147,19 +149,21 @@ final class Neo4jException extends SQLException {
 	 * @param cause the cause to check for "real" GQL errors
 	 * @return the exception to be thrown
 	 */
-	static Args of(String message, Throwable cause) {
+	static Args withMessageAndCause(String message, Throwable cause) {
 		if (cause instanceof BoltGqlErrorException gqlErrorException && gqlErrorException.gqlStatus() != null) {
 			var sqlState = gqlErrorException.gqlStatus();
 			String reason;
 			// Those are general processing exceptions with really not helpful status
-			// message, so we add the original cause
+			// message, so we add the message of the original cause
 			if (GQLError.isCatchAll(gqlErrorException)) {
 				reason = String.format("%s (%s)", gqlErrorException.statusDescription(), cause.getMessage());
 			}
 			else {
 				reason = gqlErrorException.statusDescription();
 			}
-			return new Args(reason, sqlState, null);
+
+			return new Args(reason, sqlState, cause, GqlStatusObjectImpl.adaptDiagnosticRecord(gqlErrorException),
+					gqlErrorException.gqlCause().map(GqlStatusObjectImpl::of).orElse(null));
 		}
 
 		return GQLError.$50N42.causedBy(cause).withMessage((message != null) ? message : cause.getMessage());
@@ -182,11 +186,44 @@ final class Neo4jException extends SQLException {
 		return GQLError.$50N42.withMessage(reason);
 	}
 
+	private final HashMap<String, String> diagnosticRecord;
+
+	private final GqlStatusObject gqlCause;
+
 	Neo4jException(Args args) {
 		super(args.reason(), args.sqlState(), args.cause());
+
+		this.diagnosticRecord = (args.diagnosticRecord() instanceof HashMap<String, String> hm) ? hm
+				: new HashMap<>(args.diagnosticRecord());
+		this.gqlCause = args.gqlCause();
 	}
 
-	record Args(String reason, String sqlState, Throwable cause) {
+	@Override
+	public String gqlStatus() {
+		return super.getSQLState();
+	}
+
+	@Override
+	public String statusDescription() {
+		return super.getMessage();
+	}
+
+	@Override
+	public Map<String, String> diagnosticRecord() {
+		return Map.copyOf(this.diagnosticRecord);
+	}
+
+	@Override
+	public Optional<GqlStatusObject> cause() {
+		return Optional.ofNullable(this.gqlCause);
+	}
+
+	record Args(String reason, String sqlState, Throwable cause, Map<String, String> diagnosticRecord,
+			GqlStatusObject gqlCause) {
+
+		Args(String reason, String sqlState, Throwable cause) {
+			this(reason, sqlState, cause, Map.of(), null);
+		}
 	}
 
 }

@@ -21,6 +21,7 @@ package org.neo4j.jdbc.it.cp;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
+import org.neo4j.jdbc.GqlStatusObject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -34,7 +35,14 @@ class GQLCodesIT extends IntegrationTestBase {
 
 			assertThatExceptionOfType(SQLException.class)
 				.isThrownBy(() -> stmt.executeQuery("RETURN date('123456789')"))
-				.matches(ex -> ex.getErrorCode() == 0 && "22007".equals(ex.getSQLState()))
+				.matches(ex -> {
+					if (ex.getErrorCode() == 0 && "22007".equals(ex.getSQLState())
+							&& ex instanceof GqlStatusObject gqlStatus) {
+						return !gqlStatus.diagnosticRecord().isEmpty()
+								&& gqlStatus.cause().filter(cause -> cause.gqlStatus().equals("22N36")).isPresent();
+					}
+					return false;
+				})
 				.withMessage("error: data exception - invalid date, time, or datetime format");
 		}
 	}

@@ -246,7 +246,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 				cause = ex;
 			}
 
-			var sqlException = new Neo4jException(Neo4jException.of("An error occurred while handling request", cause));
+			var sqlException = new Neo4jException(
+					Neo4jException.withMessageAndCause("An error occurred while handling request", cause));
 
 			if (cause instanceof BoltFailureException) {
 				fail(new Neo4jException(GQLError.$25N02.withMessage("The transaction is no longer valid")));
