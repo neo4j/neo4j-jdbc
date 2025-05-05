@@ -28,9 +28,17 @@ package org.neo4j.jdbc.events;
  */
 public interface ResultSetListener extends Neo4jEventListener {
 
+	/**
+	 * Will be called when the iteration of a result set is about to start.
+	 * @param event the event carrying the necessary details
+	 */
 	default void onIterationStarted(IterationStartedEvent event) {
 	}
 
+	/**
+	 * Will be called when the iteration of a result set is done.
+	 * @param event the event carrying the necessary details
+	 */
 	default void onIterationDone(IterationDoneEvent event) {
 	}
 

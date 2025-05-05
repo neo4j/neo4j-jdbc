@@ -353,10 +353,24 @@ public final class SqlToCypherConfig {
 		return this.precedence;
 	}
 
+	/**
+	 * Converts this configuration into jOOQ settings.
+	 * @return jOOQ Settings
+	 * @deprecated No replacement, not to be used externally
+	 */
+	@SuppressWarnings("DeprecatedIsStillUsed")
+	@Deprecated(forRemoval = true, since = "6.4.0")
 	public Settings asSettings() {
 		return asSettings(ParseWithMetaLookups.IGNORE_ON_FAILURE);
 	}
 
+	/**
+	 * Converts this configuration into jOOQ settings.
+	 * @param withMetaLookups wether to use configurable lookups or not
+	 * @return jOOQ Settings
+	 * @deprecated No replacement, not to be used externally
+	 */
+	@Deprecated(forRemoval = true, since = "6.4.0")
 	public Settings asSettings(ParseWithMetaLookups withMetaLookups) {
 		return new DefaultConfiguration().settings()
 			.withParseNameCase(getParseNameCase())

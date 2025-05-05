@@ -166,6 +166,12 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 		this.url = url;
 	}
 
+	/**
+	 * Added for compatibility with some frameworks that look for method named
+	 * {@code setDriverClassName}. It's a no-op function in our case.
+	 * @param driverClassName the driver name, only allowed and legal value is
+	 * {@literal "org.neo4j.jdbc.Neo4jDriver"}
+	 */
 	public void setDriverClassName(String driverClassName) {
 		if (driverClassName != null && !Neo4jDriver.class.getCanonicalName().equals(driverClassName)) {
 			throw new IllegalArgumentException("Unsupported driver clas name: " + driverClassName);

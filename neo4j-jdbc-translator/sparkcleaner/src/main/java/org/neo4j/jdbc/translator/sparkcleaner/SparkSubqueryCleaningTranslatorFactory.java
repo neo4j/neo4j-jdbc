@@ -33,6 +33,13 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
  */
 public final class SparkSubqueryCleaningTranslatorFactory implements TranslatorFactory {
 
+	/**
+	 * Creates a default instance of this {@link TranslatorFactory}, required for the
+	 * service loader machinery to work.
+	 */
+	public SparkSubqueryCleaningTranslatorFactory() {
+	}
+
 	@Override
 	public Translator create(Map<String, ?> config) {
 

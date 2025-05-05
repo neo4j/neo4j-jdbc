@@ -30,6 +30,13 @@ import org.neo4j.jdbc.translator.spi.TranslatorFactory;
  */
 public class Text2CypherTranslatorFactory implements TranslatorFactory {
 
+	/**
+	 * Creates a default instance of this {@link TranslatorFactory}, required for the
+	 * service loader machinery to work.
+	 */
+	public Text2CypherTranslatorFactory() {
+	}
+
 	@Override
 	public Translator create(Map<String, ?> properties) {
 		return new Text2Cypher(properties);

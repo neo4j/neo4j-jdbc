@@ -18,8 +18,20 @@
  */
 package org.neo4j.jdbc.events;
 
+/**
+ * Defines a listener that can react to very detailed events, such as when a batch of
+ * records has been pulled from the database. It's well suited to build tracing and
+ * similar features
+ *
+ * @author Michael J. Simons
+ * @since 6.3.0
+ */
 public interface Neo4jEventListener {
 
+	/**
+	 * Reacts on a generic {@link Neo4jEvent}, which will carry all relevant details.
+	 * @param event the event to react on
+	 */
 	default void on(Neo4jEvent event) {
 	}
 

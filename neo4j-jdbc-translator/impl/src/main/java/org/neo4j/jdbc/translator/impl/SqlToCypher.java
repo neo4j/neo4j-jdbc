@@ -183,6 +183,8 @@ final class SqlToCypher implements Translator {
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private DSLContext createDSLContext() {
 
+		@SuppressWarnings("removal") // Deprecated only to inform users that this method
+										// is going to be package private at some point.
 		var settings = this.config.asSettings();
 		Optional.ofNullable(this.config.getParseNamedParamPrefix())
 			.filter(Predicate.not(String::isBlank))

@@ -359,6 +359,7 @@
 									<exclude>**/*.script</exclude>
 									<exclude>**/*.tpl</exclude>
 									<exclude>**/.env</exclude>
+									<exclude>**/.snyk</exclude>
 									<exclude>**/org.mockito.plugins.MockMaker</exclude>
 									<exclude>LICENSE.txt</exclude>
 									<exclude>**/README</exclude>

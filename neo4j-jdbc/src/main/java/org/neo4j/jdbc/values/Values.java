@@ -53,7 +53,10 @@ public final class Values {
 
 	/**
 	 * The value instance of an empty map.
+	 * @deprecated No replacement, please create an empty map the same way if you need a
+	 * static instance.
 	 */
+	@Deprecated(forRemoval = true, since = "6.4.0")
 	public static final Value EmptyMap = value(Collections.emptyMap());
 
 	/**
