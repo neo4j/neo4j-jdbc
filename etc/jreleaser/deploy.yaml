@@ -19,6 +19,8 @@
 
 project:
   name: neo4j-jdbc-driver
+  java:
+    groupId: org.neo4j
 
 signing:
   active: ALWAYS
@@ -30,6 +32,6 @@ deploy:
       sonatype:
         active: ALWAYS
         url: https://central.sonatype.com/api/v1/publisher
+        namespace: org.neo4j
         stagingRepositories:
           - target/artifacts
-          -
