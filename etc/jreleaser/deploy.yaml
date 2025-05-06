@@ -25,7 +25,9 @@ project:
 
 signing:
   active: ALWAYS
-  armored: true
+  mode: COMMAND
+  command:
+    homeDir: '~/.gnupg'
 
 deploy:
   maven:
