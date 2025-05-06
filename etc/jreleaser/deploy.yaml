@@ -19,8 +19,9 @@
 
 project:
   name: neo4j-jdbc-driver
-  java:
-    groupId: org.neo4j
+  languages:
+    java:
+      groupId: org.neo4j
 
 signing:
   active: ALWAYS
@@ -29,9 +30,11 @@ signing:
 deploy:
   maven:
     mavenCentral:
-      sonatype:
+      neo4j_jdbc:
         active: ALWAYS
         url: https://central.sonatype.com/api/v1/publisher
         namespace: org.neo4j
+        verifyPom: false
+        applyMavenCentralRules: true
         stagingRepositories:
           - target/artifacts
