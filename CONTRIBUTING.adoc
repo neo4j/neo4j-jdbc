@@ -56,7 +56,7 @@ This will create a staging repository in the parent projects target folder named
 export JRELEASER_PROJECT_VERSION=X.Y.Z
 
 export JRELEASER_MAVENCENTRAL_USERNAME=007Schneider
-export JRELEASER_MAVENCENTRAL_TOKEN=BonbonbAusWurst
+export JRELEASER_MAVENCENTRAL_TOKEN=BonbonAusWurst
 
 export JRELEASER_GPG_PASSPHRASE="Käsebrot ist ein gutes Brot"
 
