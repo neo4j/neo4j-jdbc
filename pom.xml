@@ -131,7 +131,6 @@
 	<properties>
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
 		<archunit.version>1.4.0</archunit.version>
-		<artifactsDir>${project.build.directory}</artifactsDir>
 		<asciidoctor-maven-plugin.version>3.2.0</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 		<asciidoctorj.version>3.0.0</asciidoctorj.version>
@@ -704,6 +703,7 @@
 								<executable>bin/prepare-release.sh</executable>
 								<arguments>
 									<argument>${project.version}</argument>
+									<!--suppress MavenModelInspection -->
 									<argument>${isDryRun}</argument>
 								</arguments>
 							</configuration>
@@ -995,6 +995,7 @@
 					<releaseProfiles>release</releaseProfiles>
 					<tagNameFormat>@{project.version}</tagNameFormat>
 					<goals>deploy</goals>
+					<!--suppress MavenModelInspection -->
 					<arguments>-Drelease -Dgpg.skip=${skipSigning} -DskipTests=${skipTestsDuringRelease} -DisDryRun=${dryRun} -Dsort.skip</arguments>
 					<preparationGoals>clean exec:exec@prepare-release verify</preparationGoals>
 					<completionGoals>compile exec:exec@release-prepared</completionGoals>
@@ -1220,6 +1221,55 @@
 				<sort.skip>true</sort.skip>
 				<spring-javaformat.skip>true</spring-javaformat.skip>
 			</properties>
+		</profile>
+		<profile>
+			<id>deploy_to_central</id>
+			<activation>
+				<property>
+					<name>deploy_to_central</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jreleaser</groupId>
+						<artifactId>jreleaser-maven-plugin</artifactId>
+						<configuration combine.self="append">
+							<skip>false</skip>
+							<jreleaser>
+								<project>
+									<!-- Setting this explicitly to the JReleaser env variables spares us from checking out the tag. -->
+									<!--suppress MavenModelInspection -->
+									<version>${env.JRELEASER_PROJECT_VERSION}</version>
+								</project>
+								<signing>
+									<active>ALWAYS</active>
+									<mode>COMMAND</mode>
+									<command>
+										<homeDir>~/.gnupg</homeDir>
+									</command>
+								</signing>
+								<deploy>
+									<maven>
+										<mavenCentral>
+											<neo4j_jdbc>
+												<active>ALWAYS</active>
+												<url>https://central.sonatype.com/api/v1/publisher</url>
+												<namespace>org.neo4j</namespace>
+												<verifyPom>false</verifyPom>
+												<applyMavenCentralRules>true</applyMavenCentralRules>
+												<stagingRepositories>
+													<stagingRepository>${project.build.directory}/artifacts</stagingRepository>
+												</stagingRepositories>
+											</neo4j_jdbc>
+										</mavenCentral>
+									</maven>
+								</deploy>
+							</jreleaser>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 </project>

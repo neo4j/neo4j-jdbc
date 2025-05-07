@@ -23,6 +23,56 @@ If the cluster integration test is flaky or does not work at all in your build, 
 ./mvnw -DskipClusterIT verify
 ----
 
+== Deploying to Maven central and creating GitHub release notes
+
+NOTE: This task can of course be done only from within the Neo4j organisation.
+
+We do use a mixture of the Maven release plugin and https://jreleaser.org[JReleaser].
+Using the deploy-plugin is more complicated in a CI pipeline, as it requires writing down credentials to Maven central somewhere in a `settings.xml` file.
+JReleaser is configurable completely via environmental properties and does all the orchestration for us.
+We neither use the Maven GPG plugin, as JReleaser offers the ability to also sign our artifacts via GPG as part of the deploy-step, thus avoiding another medium break.
+
+The release itself and the staging of the artifacts is done via the release plugin:
+
+[source,bash]
+----
+./mvnw -e --no-transfer-progress --batch-mode \
+  -DskipTestsDuringRelease \
+  -Dtag=X.Y.Z \
+  -DreleaseVersion=X.Y.Z \
+  -DdevelopmentVersion=X.Y.Z+1-SNAPSHOT \
+  release:prepare
+./mvnw -e --no-transfer-progress --batch-mode \
+  -DskipTestsDuringRelease \
+  -DskipSigning \
+  -DstagingRepository=releases::file:///`pwd`/target/artifacts \
+  release:stage
+----
+
+This will create a staging repository in the parent projects target folder named `artifacts`, which can be deployed to Maven central as follows, given the existence of a valid authentication and GPG passphrase. Take note that the repetition of the release version is required, to avoid checking out the tag created by the release plugin:
+
+[source,bash]
+----
+export JRELEASER_PROJECT_VERSION=X.Y.Z
+
+export JRELEASER_MAVENCENTRAL_USERNAME=007Schneider
+export JRELEASER_MAVENCENTRAL_TOKEN=BonbonbAusWurst
+
+export JRELEASER_GPG_PASSPHRASE="Käsebrot ist ein gutes Brot"
+
+./mvnw -e --no-transfer-progress --batch-mode \
+  -Dfast \
+  -Ddeploy_to_central \
+  -pl org.neo4j:neo4j-jdbc-parent \
+  jreleaser:deploy
+----
+
+Deploying usually takes about 30 minutes, so please be patient.
+
+Doing the GitHub release requires the tag to be checked out and must be run via GitHub actions.
+The workflow is configured in link:.github/workflows/release.yml[release.yml] and essentially calls `./mvnw -Dfast --no-transfer-progress package jreleaser:full-release`, which builds the zip distribution and also creates the release notes.
+
+
 == Tasks
 
 === Keep the build descriptor (`pom.xml`) sorted
