@@ -1,3 +1,162 @@
+# 6.4.1
+
+This release does neither include changes nor dependency updates, but addresses the issue of the missing SBOMs in Maven central:
+
+They are now available and look like this (for the core module): [neo4j-jdbc-6.4.1-sbom-cyclonedx.json](https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc/6.4.1/neo4j-jdbc-6.4.1-sbom-cyclonedx.json).
+
+
+# 6.4.0
+
+(Note: Publishing SBOMs failed, but they can be created and will be in the next release)
+
+## 🚀 Features
+- 38dae9f feat: Provide access to GQL Status objects.
+- b72778b feat: Propagate GQL error codes as SQL state. (#932)
+- d631b45 feat: Generate and attach CycloneDX SBOMs for all relevant artifacts. (#931)
+- bbd7f29 feat: Add support for `java.sql.Array`.
+
+## 🐛 Bug Fixes
+- 47032b6 fix: Neo4j FLOAT is a SQL Double, INTEGER is BIGINT.
+
+## 🔄️ Refactorings
+- d2f03d9 refactor: Polish some JavaDocs, deprecate methods and fields that should never have been public.
+
+## 🧹 Housekeeping
+- b0011ef Bump org.jooq:jooq from 3.19.22 to 3.19.23 (#936)
+- 8735bbd Bump com.opencsv:opencsv from 5.10 to 5.11 (#938)
+- 7b977c1 Bump org.jreleaser:jreleaser-maven-plugin (#937)
+- bbd328f Bump quarkus.platform.version from 3.21.4 to 3.22.1 (#935)
+- ba830c7 Bump org.jdbi:jdbi3-bom from 3.49.2 to 3.49.3 (#934)
+- 104261a Bump org.openapitools:openapi-generator-maven-plugin (#929)
+- a5e13b5 Bump org.jdbi:jdbi3-bom from 3.49.0 to 3.49.2 (#927)
+- dad329b Bump org.testcontainers:testcontainers-bom (#926)
+- dc44d00 Bump quarkus.platform.version from 3.21.2 to 3.21.4 (#925)
+- 35d5103 Bump spring-boot.version from 3.4.4 to 3.4.5 (#924)
+- 2b4d929 Bump io.micrometer:micrometer-tracing-bom (#922)
+- 28d0206 Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#930)
+
+
+# 6.3.1
+
+## 🐛 Bug Fixes
+- 57c0045 fix: Remove superflous config in test.
+- 8648243 fix: typo in docs (Dashß -> Dash0) (#911)
+
+## 🔄️ Refactorings
+- fe529de refactor: Avoid logging about the available more than once in the same class loader.
+
+## 🧹 Housekeeping
+- 5b3041a Bump org.junit:junit-bom from 5.12.1 to 5.12.2 (#919)
+- 3233cf2 Bump org.mockito:mockito-bom from 5.16.1 to 5.17.0 (#916)
+- 80d3199 Bump io.fabric8:docker-maven-plugin from 0.45.1 to 0.46.0 (#918)
+- 3ccbf62 Bump quarkus.platform.version from 3.21.0 to 3.21.2 (#917)
+- 1101e4b Bump io.micrometer:micrometer-bom from 1.14.5 to 1.14.6 (#915)
+
+## 🛠 Build
+- 4a64753 build: Use specific commits for none enterprise actions. (#920)
+- c7cc502 build: Test against Java 24. (#912)
+
+
+# 6.3.0
+
+This is big feature release including support for both Metrics and Tracing.
+Metrics will be enabled automatically if you use the Neo4j JDBC Driver within an application that has [Micrometer](https://micrometer.io) on the class path. 
+
+Tracing can be enabled via the `Neo4jDataSource` and putting Micrometer Tracing on the class path and choosing a registry and reporter that fits your needs. We tested both the Zipkin Brave registry with Zipkin, and the [OpenTelemetry](https://opentelemetry.io) registry together with the Otel sender against Dash0.
+
+Please read our docs how to configure this: [Configuring tracing for the JDBC driver](https://neo4j.com/docs/jdbc-manual/current/configuration/#_using_tracing_with_spring_boot).
+
+## 🚀 Features
+- 2025829 feat: Add support for tracing. (#904)
+- 74466d8 feat: Allow the full URL to be configured on the datasource.
+- e00bdae feat: Add events and metrics to the driver. (#895)
+
+## 🧹 Housekeeping
+- 6c71310 Bump org.jooq:jooq from 3.19.21 to 3.19.22 (#909)
+- 07bc0c4 Bump org.neo4j:cypher-v5-antlr-parser from 5.26.4 to 5.26.5 (#908)
+- 87ab869 Bump org.jacoco:jacoco-maven-plugin from 0.8.12 to 0.8.13 (#907)
+- 6c99932 Bump org.hibernate.orm:hibernate-platform (#906)
+- 3a74dce Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#902)
+- 21ebae1 Bump org.apache.maven.plugins:maven-failsafe-plugin (#901)
+- 9da5b81 Bump org.jdbi:jdbi3-bom from 3.48.0 to 3.49.0 (#900)
+- 608578b Bump org.apache.maven.plugins:maven-surefire-plugin (#899)
+- 2ee1c4e Bump quarkus.platform.version from 3.19.4 to 3.21.0 (#898)
+
+
+# 6.2.1
+
+## 🐛 Bug Fixes
+- 99b78bf fix: SQL processing attempt must be made before transaction acquisition.
+
+## 🔄️ Refactorings
+- 86a67c5 refactor: Make sure all bolt connections are closed during abort, too.
+- e20469e refactor: Restrict the output of `dbms.components()` to `'Neo4j Kernel'`.
+- 26dc5e3 refactor: Clear out bolt-connection for database metadata on close.
+
+## 🧹 Housekeeping
+- 859c255 Bump org.neo4j.bolt:neo4j-bolt-connection-bom to 1.1.1
+- 780b89a Bump org.neo4j:neo4j-cypher-dsl-bom (#894)
+- c0e5e2f Bump quarkus.platform.version from 3.19.3 to 3.19.4 (#893)
+- b9afe9e Bump org.asciidoctor:asciidoctor-maven-plugin (#892)
+- 1f0c1d1 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#891)
+- e8669cf Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#890)
+- 39ec25d Bump spring-boot.version from 3.4.3 to 3.4.4 (#889)
+- 209538f Bump com.mycila:license-maven-plugin from 4.6 to 5.0.0 (#888)
+- 221654b Bump org.junit:junit-bom from 5.12.0 to 5.12.1 (#887)
+- 0758b9c Bump org.mockito:mockito-bom from 5.16.0 to 5.16.1 (#886)
+- b4b6398 Bump quarkus.platform.version from 3.19.2 to 3.19.3 (#885)
+- 1c43629 Bump org.graalvm.buildtools:native-maven-plugin (#884)
+- 9209dbf Bump org.hibernate.orm:hibernate-platform (#883)
+- 3e650b7 Bump org.jooq:jooq from 3.19.20 to 3.19.21 (#882)
+- 85b8318 Bump org.neo4j:cypher-v5-antlr-parser from 5.26.3 to 5.26.4 (#881)
+
+## 🛠 Build
+- c1beca4 build: Add a `Lazy`-test.
+- b5aadb5 test: Use `Neo4jContainer.getHost()` in ITs instead of `localhost` (#880)
+- 629e287 build: Update license-maven-plugin configuration to include full path to `license.tpl`. (#878)
+- 410513d Update exec-maven-plugin configuration to include full path (#879)
+
+
+# 6.2.0
+
+This is quite a big release, as from 6.2.0 onwards both the Neo4j JDBC Driver and the Neo4j Java driver will use the exact same network stack, so both drivers will equally benefit from enhancements there.
+
+> [!TIP]
+> This minor release bump is fully API compatible with 6.1.5, we bumped the version for the following reasons:
+> 
+> The SQL Translator now aliases projected column in such a way that they can be retrieved like they have been originally project:
+> `SELECT title FROM Movie` will now be translated into `MATCH (movie:Movie) RETURN movie.title AS title`
+> This is in line with the asterisk projection, too, but only available if there's only one relation in the FROM clause.
+> 
+> The `ResultSet` implementation is more lenient when being asked for `String` values and follows the JDBC spec that 
+> will just use the Java representation of a non-string projection.
+> 
+> The `Connection` implementation is more lenient on commit and rollback, so that these operations are idempotent in case 
+> there is no ongoing transaction or a transaction that is either already committed or rolled back.
+
+## 🐛 Bug Fixes
+- 27b8c76 fix(build): Reenable semver check. (#876)
+
+## 🔄️ Refactorings
+- b1db4b2 refactor: Try to convert strings to integers and floats if possible.
+- c7ee637 refactor: Try to use Java `toString` representation on non-string results when using `getString()`.
+- e06311f refactor(translator): Use `AS` to give results same name if there’s a single source table and no qualified names are expected.
+- 0d27cd4 refactor(metadata): Use separate (bolt) connection for metadata.
+- c9bb99c refactor(metadata): Improve transaction handling in metadata. (#877)
+- 0306bf1 refactor: Replace custom bolt stack with shared bolt connection module. (#832)
+
+## 📝 Documentation
+- 27b6734 docs: Update local changelog.
+
+## 🧹 Housekeeping
+- 60b9604 Bump org.testcontainers:testcontainers-bom (#875)
+- a1fa305 Bump quarkus.platform.version from 3.19.1 to 3.19.2 (#874)
+- 9da051b Bump org.mockito:mockito-bom from 5.15.2 to 5.16.0 (#873)
+- e00d760 Bump org.apache.maven.plugins:maven-install-plugin (#872)
+- 5bb8953 Bump org.hibernate.orm:hibernate-platform (#871)
+- 7842b2a Bump com.puppycrawl.tools:checkstyle (#870)
+
+
 # 6.1.5
 
 ## 🐛 Bug Fixes
@@ -173,13 +332,13 @@
 > [!TIP]
 > This minor release bump is fully API compatible with 6.0.1, we bumped the version for two reasons:
 > The virtual column `element_id` has been renamed to `v$id` and consistently shows now in the database metadata as "generated column". The naming has been chosen on purpose to avoid any clash with nodes that have an actual property of that name (No, the `elementId()` of a node is a function call, just like `id()` was, it is not a property).
-> The second reason is for the fix in behaviour of `executeUpdate` which now returns the estimated number of updated rows instead of the cumulative updates in a statement. This is in align with the JDBC Spec. 
+> The second reason is for the fix in behaviour of `executeUpdate` which now returns the estimated number of updated rows instead of the cumulative updates in a statement. This is in align with the JDBC Spec.
 
 The most exciting new feature of this release is the introduction of virtual tables for relationships. The metadata does now some sampling of the graph (Similar to what is done in the [schema introspection PoC](https://github.com/neo4j/graph-schema-introspector) or Apoc Meta) and lists relationships between labels as `label1_TYPE_label2` in the data dictionary, with a `v$id` column for the relationship, and `v$label1_id` and `v$label2_id` so that ETL tools can actual join those with the labels.
 
 Those virtual tables are fully queryable, so that you can do a `SELECT * FROM Person_ACTED_IN_Movie`, which will return the element ids of the relationship and the start and end nodes and all relationship properties and they do partake of course proper in joins.
 
-Using the standard `JOIN` syntax,  the driver will translate the query to a simple pattern match, so that 
+Using the standard `JOIN` syntax,  the driver will translate the query to a simple pattern match, so that
 
 ```sql
 SELECT p."v$person_id", name, title, roles 
