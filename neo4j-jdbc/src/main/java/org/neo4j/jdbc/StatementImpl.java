@@ -645,7 +645,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			}
 			return processedSQL;
 		}
-		catch (IllegalArgumentException | IllegalStateException ex) {
+		catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException ex) {
 			throw new Neo4jException(withCause(Optional.ofNullable(ex.getCause()).orElse(ex)));
 		}
 	}

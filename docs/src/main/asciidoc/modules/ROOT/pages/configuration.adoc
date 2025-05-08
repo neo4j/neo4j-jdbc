@@ -139,6 +139,11 @@ If you disable it, it will only be disabled for the specific connection.
 Other connections retrieved from the driver instance to the same or to other databases are not affected, and the individual connections will still manage their bookmarks.
 |`true`
 
+|`viewDefinitions`
+|`String`
+|A file, http or https URL pointing to a valid JSON file containing definitions for xref:cypher_backed_views.adoc[Cypher-backed views].
+|`null`
+
 |===
 
 == Getting a driver or a connection instance

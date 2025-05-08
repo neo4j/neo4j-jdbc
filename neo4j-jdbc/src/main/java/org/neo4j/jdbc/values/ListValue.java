@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -36,10 +37,7 @@ public final class ListValue extends AbstractValue {
 	private final Value[] values;
 
 	ListValue(Value... values) {
-		if (values == null) {
-			throw new IllegalArgumentException("Cannot construct ListValue from null");
-		}
-		this.values = values;
+		this.values = Objects.requireNonNull(values, "Cannot construct ListValue from null");
 	}
 
 	@Override

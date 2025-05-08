@@ -1,0 +1,46 @@
+{
+    "Schemas":
+    [
+        {
+            "Name": "WineData",
+            "Hidden": false,
+            "Views":
+            [
+                {
+                    "Name": "CountryCountsView",
+                    "CypherQuery": "MATCH (n:Country)-[]-(:Province)-[]-(:Region)-[]-(:Winery)-[]-(w:Wine) RETURN DISTINCT n.country AS countries, COUNT(DISTINCT w) AS numWines, elementId(n)",
+                    "Columns":
+                    [
+                        {
+                            "Name": "_NodeId_",
+                            "SourceName": "elementId(n)",
+                            "Neo4jType":
+                            [
+                                "String"
+                            ],
+                            "Mandatory": true,
+                            "Hidden": false
+                        },
+                        {
+                            "Name": "Country",
+                            "SourceName": "countries",
+                            "Neo4jType":
+                            [
+                                "String"
+                            ],
+                            "Mandatory": false,
+                            "Hidden": false
+                        },
+                        {
+                            "Name": "numWines",
+                            "SourceName": "numWines",
+                            "Neo4jType": "Integer",
+                            "Mandatory": false,
+                            "Hidden": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

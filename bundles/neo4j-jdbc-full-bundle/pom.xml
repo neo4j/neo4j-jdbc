@@ -25,7 +25,7 @@
 	<parent>
 		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-parent</artifactId>
-		<version>6.4.2-SNAPSHOT</version>
+		<version>6.5.0-SNAPSHOT</version>
 		<relativePath>../../</relativePath>
 	</parent>
 
@@ -131,6 +131,7 @@
 						<configuration>
 							<artifactSet>
 								<includes>
+									<include>com.fasterxml.jackson.*:*</include>
 									<include>io.github.cdimascio:dotenv-java</include>
 									<include>io.netty:*</include>
 									<include>io.r2dbc:*</include>
@@ -145,6 +146,10 @@
 								</includes>
 							</artifactSet>
 							<relocations>
+								<relocation>
+									<pattern>com.fasterxml.jackson</pattern>
+									<shadedPattern>org.neo4j.jdbc.internal.shaded.jackson</shadedPattern>
+								</relocation>
 								<relocation>
 									<pattern>io.github.cdimascio.dotenv</pattern>
 									<shadedPattern>org.neo4j.jdbc.internal.shaded.dotenv</shadedPattern>
@@ -183,6 +188,15 @@
 							</transformers>
 							<filters>
 								<filter>
+									<artifact>com.fasterxml.jackson.*:*</artifact>
+									<excludes>
+										<exclude>META-INF/LICENSE</exclude>
+										<exclude>META-INF/MANIFEST.MF</exclude>
+										<exclude>META-INF/NOTICE</exclude>
+										<exclude>META-INF/**/module-info.class</exclude>
+									</excludes>
+								</filter>
+								<filter>
 									<artifact>io.github.cdimascio:*</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
@@ -203,6 +217,7 @@
 									<artifact>io.r2dbc:*</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
+										<exclude>META-INF/NOTICE</exclude>
 									</excludes>
 								</filter>
 								<filter>

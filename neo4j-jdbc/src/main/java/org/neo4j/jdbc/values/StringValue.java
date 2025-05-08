@@ -31,10 +31,7 @@ public final class StringValue extends AbstractValue {
 	private final String val;
 
 	StringValue(String val) {
-		if (val == null) {
-			throw new IllegalArgumentException("Cannot construct StringValue from null");
-		}
-		this.val = val;
+		this.val = Objects.requireNonNull(val, "Cannot construct StringValue from null");
 	}
 
 	@Override

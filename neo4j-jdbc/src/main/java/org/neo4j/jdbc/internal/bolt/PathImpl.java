@@ -60,7 +60,7 @@ final class PathImpl implements Path, AsValue, org.neo4j.bolt.connection.values.
 		var index = 0;
 		for (var entity : alternatingNodeAndRel) {
 			if (entity == null) {
-				throw new IllegalArgumentException("Path entities cannot be null");
+				throw new NullPointerException("Path entities cannot be null");
 			}
 			if (index % 2 == 0) {
 				// even index - this should be a node

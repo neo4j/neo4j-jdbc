@@ -20,6 +20,7 @@ package org.neo4j.jdbc.values;
 
 import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.Objects;
 
 /**
  * Representing a byte-array. Note that in Cypher byte arrays cannot be directly used.
@@ -35,10 +36,7 @@ public final class BytesValue extends AbstractValue {
 	private static final HexFormat FORMATTER = HexFormat.of().withUpperCase();
 
 	BytesValue(byte[] val) {
-		if (val == null) {
-			throw new IllegalArgumentException("Cannot construct BytesValue from null");
-		}
-		this.val = val;
+		this.val = Objects.requireNonNull(val, "Cannot construct BytesValue from null");
 	}
 
 	@Override

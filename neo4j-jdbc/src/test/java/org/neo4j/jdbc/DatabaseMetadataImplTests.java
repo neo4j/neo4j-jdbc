@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -113,7 +114,7 @@ class DatabaseMetadataImplTests {
 				tableTypes.add(rs.getString("TABLE_TYPE"));
 			}
 		}
-		assertThat(tableTypes).containsExactlyInAnyOrder("TABLE", "RELATIONSHIP");
+		assertThat(tableTypes).containsExactlyInAnyOrder("CBV", "TABLE", "RELATIONSHIP");
 	}
 
 	@Test
@@ -283,7 +284,7 @@ class DatabaseMetadataImplTests {
 		catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
-		return new DatabaseMetadataImpl(connection, false, 1000);
+		return new DatabaseMetadataImpl(connection, false, 1000, Set.of());
 	}
 
 }

@@ -1,0 +1,39 @@
+[
+  {
+    "name": "v_movie_actors",
+    "query": "MATCH (n:Movie)<-[:ACTED_IN]-(p:Person) RETURN elementId(n) AS id, n.title AS title, n.released AS released, collect(p.name) AS actors",
+    "columns": [
+      {
+        "name": "id",
+        "type": "STRING"
+      },
+      {
+        "name": "title",
+        "type": "STRING"
+      },
+      {
+        "name": "released",
+        "type": "INTEGER"
+      },
+      {
+        "name": "actors",
+        "type": "LIST"
+      }
+    ]
+  },
+  {
+    "name": "v_people",
+    "query": "MATCH (n:Person) RETURN id(n) AS id, n",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "propertyName": "n.name",
+        "type": "STRING"
+      }
+    ]
+  }
+]

@@ -48,23 +48,29 @@ public final class SqlToCypherConfig {
 
 	/**
 	 * A constant property name to make the translator always escape literal names.
+	 * @deprecated no replacement
 	 */
+	@Deprecated(forRemoval = true, since = "6.5.0")
 	public static final String PROPERTY_ALWAYS_ESCAPE_NAMES = "s2c.alwaysEscapeNames";
 
 	/**
 	 * A constant property name for enabling pretty formatted Cypher statements.
+	 * @deprecated no replacement
 	 */
+	@Deprecated(forRemoval = true, since = "6.5.0")
 	public static final String PROPERTY_PRETTY_PRINT_CYPHER = "s2c.prettyPrint";
 
 	/**
 	 * A constant property name for enabling the local translator cache.
+	 * @deprecated no replacement
 	 */
+	@Deprecated(forRemoval = true, since = "6.5.0")
 	public static final String PROPERTY_ENABLE_CACHE = "s2c.enableCache";
 
 	private static final SqlToCypherConfig DEFAULT_CONFIG = SqlToCypherConfig.builder().build();
 
-	private static Map<String, String> DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING = Map.of("cacheSQLTranslations",
-			PROPERTY_ENABLE_CACHE);
+	private static final Map<String, String> DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING = Map.of("cacheSQLTranslations",
+			"s2c.enableCache", "viewDefinitions", "s2c.viewDefinitions");
 
 	/**
 	 * Derives a configuration for {@code Sql2Cypher} based from the properties given.
@@ -106,6 +112,7 @@ public final class SqlToCypherConfig {
 				case "parseNamedParamPrefix" -> builder.withParseNamedParamPrefix(toString(v));
 				case "enableCache" -> builder.withCacheEnabled(toBoolean(v));
 				case "precedence" -> builder.withPrecedence(toInteger(v));
+				case "viewDefinitions" -> builder.withViewDefinitions(toString(v));
 				default -> {
 					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;
@@ -183,7 +190,7 @@ public final class SqlToCypherConfig {
 			}
 		}
 		else if (val == null) {
-			throw new IllegalArgumentException("Unsupported Integer representation null");
+			throw new NullPointerException("Unsupported Integer representation null");
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported Integer representation " + val.getClass());
@@ -242,6 +249,8 @@ public final class SqlToCypherConfig {
 
 	private final Integer precedence;
 
+	private final String viewDefinitions;
+
 	private SqlToCypherConfig(Builder builder) {
 
 		this.parseNameCase = builder.parseNameCase;
@@ -255,6 +264,7 @@ public final class SqlToCypherConfig {
 		this.parseNamedParamPrefix = builder.parseNamedParamPrefix;
 		this.cacheEnabled = builder.enableCache;
 		this.precedence = builder.precedence;
+		this.viewDefinitions = builder.viewDefinitions;
 	}
 
 	/**
@@ -354,6 +364,15 @@ public final class SqlToCypherConfig {
 	}
 
 	/**
+	 * Optional resource pointing to a valid view definition file in JSON format.
+	 * @return an optional resource containing view definitions in JSON format
+	 * @since 6.5.0
+	 */
+	public String getViewDefinitions() {
+		return this.viewDefinitions;
+	}
+
+	/**
 	 * Converts this configuration into jOOQ settings.
 	 * @return jOOQ Settings
 	 * @deprecated No replacement, not to be used externally
@@ -408,21 +427,23 @@ public final class SqlToCypherConfig {
 
 		private Integer precedence;
 
+		private String viewDefinitions;
+
 		private Builder() {
 			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, false, false,
-					null, false, Translator.LOWEST_PRECEDENCE);
+					null, false, Translator.LOWEST_PRECEDENCE, null);
 		}
 
 		private Builder(SqlToCypherConfig config) {
 			this(config.parseNameCase, config.renderNameCase, config.jooqDiagnosticLogging, config.tableToLabelMappings,
 					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint, config.alwaysEscapeNames,
-					config.parseNamedParamPrefix, config.cacheEnabled, config.precedence);
+					config.parseNamedParamPrefix, config.cacheEnabled, config.precedence, config.viewDefinitions);
 		}
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
 				SQLDialect sqlDialect, boolean prettyPrint, boolean alwaysEscapeNames, String parseNamedParamPrefix,
-				boolean enableCache, Integer precedence) {
+				boolean enableCache, Integer precedence, String viewDefinitions) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
 			this.jooqDiagnosticLogging = jooqDiagnosticLogging;
@@ -434,6 +455,7 @@ public final class SqlToCypherConfig {
 			this.parseNamedParamPrefix = parseNamedParamPrefix;
 			this.enableCache = enableCache;
 			this.precedence = precedence;
+			this.viewDefinitions = viewDefinitions;
 		}
 
 		/**
@@ -554,6 +576,18 @@ public final class SqlToCypherConfig {
 		 */
 		public Builder withPrecedence(Integer newPrecedence) {
 			this.precedence = newPrecedence;
+			return this;
+		}
+
+		/**
+		 * Configures the view definitions to use.
+		 * @param viewDefinitions the view definitions to use, {@literal null} disables
+		 * view resolution
+		 * @return this builder
+		 * @since 6.5.0
+		 */
+		public Builder withViewDefinitions(String viewDefinitions) {
+			this.viewDefinitions = viewDefinitions;
 			return this;
 		}
 

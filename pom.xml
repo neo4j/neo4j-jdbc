@@ -24,7 +24,7 @@
 
 	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-jdbc-parent</artifactId>
-	<version>6.4.2-SNAPSHOT</version>
+	<version>6.5.0-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver</name>
@@ -148,6 +148,7 @@
 		<flatten-maven-plugin.version>1.7.0</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
+		<jackson-jr.version>2.18.1</jackson-jr.version>
 		<jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
 		<japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
@@ -269,6 +270,11 @@
 				<version>${testcontainers.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.jr</groupId>
+				<artifactId>jackson-jr-objects</artifactId>
+				<version>${jackson-jr.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.stefanbirkner</groupId>

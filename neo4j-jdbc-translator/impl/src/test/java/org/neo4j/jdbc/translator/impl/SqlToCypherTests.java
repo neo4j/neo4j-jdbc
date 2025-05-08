@@ -57,6 +57,7 @@ import org.neo4j.jdbc.translator.spi.Translator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
@@ -151,6 +152,7 @@ class SqlToCypherTests {
 	void inClauseWithConstantsJoinWithmeta() throws SQLException {
 
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+		given(databaseMetaData.getTables(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
 		var resultSet = makeColumns("title");
 		given(databaseMetaData.getColumns(null, null, "Movie", null)).willReturn(resultSet);
 		resultSet = makeColumns("foobar");
@@ -180,6 +182,7 @@ class SqlToCypherTests {
 	void plainColumnsEverywhere() throws SQLException {
 
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
+		given(databaseMetaData.getTables(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
 		var resultSet1 = makeColumns("title", "released");
 		var resultSet2 = makeColumns("title", "released");
 		var resultSet3 = makeColumns("title", "released");
@@ -499,6 +502,12 @@ class SqlToCypherTests {
 					String metaData = (String) sqlBlock.getAttribute("metaData");
 
 					databaseMetaData = mock(DatabaseMetaData.class);
+					try {
+						given(databaseMetaData.getTables(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
+					}
+					catch (SQLException ex) {
+						throw new RuntimeException(ex);
+					}
 					for (String m : metaData.split(";")) {
 						var endIndex = m.indexOf(":");
 						String label = m.substring(0, endIndex);

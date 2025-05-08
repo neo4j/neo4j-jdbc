@@ -1,0 +1,144 @@
+[#cbv_introduction]
+= Cypher-backed views
+
+== Introduction
+
+Cypher-backed views are a way to create virtual views inside the JDBC client application that are backed by an arbitrary Cypher query.
+They allow your Neo4j database to be utilized the best way possible and make use of all Cypher constructs, including everyone for which the JDBC driver can offer a direct SQL to Cypher translation.
+Cypher-backed views will appear in the database metadata of the JDBC connection, incl
+
+Cypher-backed views are defined client-side and consisted of
+
+* a name
+* a Cypher query
+* the list of columns
+
+The name must be unique and will be the name under which the view as queryable and appear in the database metadata.
+Only the enumerated columns will appear in the database metadata.
+
+== Requirements
+
+Cypher-backed views requires xref:sql2cypher.adoc#s2c_introduction[SQL translations] to be enabled and xref:sql2cypher.adoc#s2c[the default translator] on the classpath, hence you must add the corresponding dependency in your application or use xref:distribution.adoc#full_bunde[the full bundle].
+If you fail to enable SQL translation or a missing the standard translator, your Cypher-backed views will still be loaded, contribute to the database metadata, but you cannot query them.
+
+WARNING: While you can use any valid Cypher query in a view definition, we highly recommend not using Cypher statements that do updates to the graph. We don't parse the Cypher, and we won't prevent a `SELECT *` statement that casually deletes your graph with a view definition such as `MATCH (n) DETACH DELETE`. We do prevent Cypher-backed views from being used in update statements, though.
+
+The Cypher query can basically have any shape, but it must be a query that is valid inside a `CALL {}` subquery.
+While we could just execute the query as-is, you wouldn't be able to query more than one Cypher-backed view at a time otherwise.
+Check "xref:#_restrictions[]" below for more information.
+
+== Configuration and view definition format
+
+Cypher-backed views are represented as JSON.
+The native format is defined by the following https://json-schema.org[schema]:
+
+[source,json]
+.JSON Schema for Cypher-backed views
+----
+include::cypher-backed-views.schema.json[]
+----
+
+The JDBC driver is able to load resources from
+
+* the file system
+* or via http(s)
+
+and the resources must be configured the connection property `viewDefinitions`.
+That property goes either as a query parameter into the JDBC url or as a JDBC property.
+Here are a bunch of examples that uses a query parameter as part of a JDBC url:
+
+NOTE: Please be aware that we are strict with https://en.wikipedia.org/wiki/File_URI_scheme[File URI scheme] with regard to the number of slashes: `file:` is the protocol, the slashes are not part of it. Either use exactly one slash (`/`) meaning no hostname, or three slashes (`///`) meaning an empty hostname (effectively the same) after it. We don't guess about the meaning of two slashes and don't support hostnames for reading files.
+
+`jdbc:neo4j://localhost:7687?viewDefinitions=file:/my/views/foobar.json`:: Here the view definition resides in a folder `/my/views/` on the same machine named `foobar.json`
+`jdbc:neo4j://localhost:7687?viewDefinitions=file:///my/views/foobar.json`:: This is equivalent to the URL above
+`jdbc:neo4j://localhost:7687?viewDefinitions=https://myorg.com/movies.json`:: View definitions hosted on a secure webserver
+
+WARNING: Make sure you only load view definitions from trusted sources. As stated above, there's nothing that prevents a writing Cypher query being used as a view definition and you don't want to have them injected into your application from an unknown or untrusted source.
+
+A simple example looks like this:
+
+[source,json]
+.A Cypher-backed view that returns all movies and their actors.
+----
+[
+  {
+    "name": "v_movie_actors",
+    "query": "MATCH (n:Movie)<-[:ACTED_IN]-(p:Person) RETURN elementId(n) AS id, n.title AS title, n.released AS released, collect(p.name) AS actors",
+    "columns": [
+      {
+        "name": "id",
+        "type": "STRING"
+      },
+      {
+        "name": "title",
+        "type": "STRING"
+      },
+      {
+        "name": "released",
+        "type": "INTEGER"
+      },
+      {
+        "name": "actors",
+        "type": "LIST"
+      }
+    ]
+  }
+]
+----
+
+In the above example, all columns are projected in the Cypher `RETURN` clause and named to match the column-names in the list of columns to follow via `AS`.
+The view can be queried as follows, with ordering and predicates being pushed down into the actual query:
+
+[source,sql]
+.Querying `v_movie_actors`
+----
+SELECT * FROM v_movie_actors ORDER BY title
+----
+
+The `propertyName` attribute of the `columnType` object can be used to refer to properties of a Cypher entity (either a node or relationship) as shown in the following example:
+
+[source,json]
+.Defining a view that uses a virtual column (the id function) and an entity returned by the Cypher query
+----
+[
+  {
+    "name": "people",
+    "query": "MATCH (n:Person) RETURN id(n) AS id, n",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "propertyName": "n.name",
+        "type": "STRING"
+      }
+    ]
+  }
+]
+----
+
+Which can now be queried as
+
+[source,sql]
+.Querying `v_people`
+----
+SELECT * FROM v_people WHERE name LIKE 'A%' ORDER BY name
+----
+
+As with the `ORDER BY` clause in the `v_movie_actors` example, the predicate and the order clause will be pushed down into the actual Cypher that is passed to the Neo4j DBMS.
+
+
+Additionally, we support the same format as the _Magnitude Simba Neo4j Data Connector for Business Intelligence Tools" in version 1.0.10 as of January 2022 does.
+All schema information will however be ignored (schema names and whether a view is hidden or not).
+
+[#_restrictions]
+== Restrictions
+
+Cypher-backed views can of course only be read from, not modified (neither updated nor deleted).
+Cypher-backed views cannot be mixed with regular "tables", that is tables that are treated as labels and then matched on.
+If you want to query multiple Cypher-backed views at once, you need to enumerate them in the `FROM` clause, such as `view1, view2, view2` and as appropriate join in the `WHERE` clause with a predicate like this `view1.x = view2.y`.
+You cannot use the `JOIN`, `LEFT OUTER` or any other JOIN clause, as we cannot derive any meaningful relationship from a Cypher-backed view, which we would attempt in such cases.
+
+These restrictions should not matter much, as you can express arbitrary complex expressions inside the query that makes up the view so that your ETL tool or any other program can harness Cypher's full capabilities.
