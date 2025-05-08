@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -90,6 +91,7 @@ import org.neo4j.cypherdsl.core.renderer.GeneralizedRenderer;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
+import org.neo4j.jdbc.translator.spi.View;
 
 /**
  * A jOOQ/Cypher-DSL based SQL to Cypher translator and the default translator for the
@@ -149,6 +151,14 @@ final class SqlToCypher implements Translator {
 	@Override
 	public int getOrder() {
 		return Optional.ofNullable(this.config.getPrecedence()).orElseGet(Translator.super::getOrder);
+	}
+
+	@Override
+	public Set<View> getViews() {
+		System.out.println("remove me again, fix me with actual view reading");
+		return Set.of(
+				new View("cbv1", "whatever", List.of(new View.Column("a", "STRING"), new View.Column("c1", "FLOAT"))),
+				new View("cbv2", "whatever", List.of(new View.Column("b", "LONG"), new View.Column("c2", "BOOLEAN"))));
 	}
 
 	@Override

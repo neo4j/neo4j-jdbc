@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.translator.spi;
 
 import java.sql.DatabaseMetaData;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -124,6 +125,20 @@ public interface Translator {
 	 */
 	default int getOrder() {
 		return LOWEST_PRECEDENCE;
+	}
+
+	/**
+	 * A translator might support a set of Cypher-backed views (CBVs), that the translator
+	 * is able to recognize in statements that it can translate. How the views are
+	 * configured inside the translator is up to each implementation, they might be
+	 * static, they might be configurable via external resources. All views of all
+	 * translators configured will be taken into account for {@link DatabaseMetaData},
+	 * hence view names must be unique for an instance of the Neo4j-JDBC driver.
+	 * @return a set of {@link View views} that are supported by this translator
+	 * @since 6.5.0
+	 */
+	default Set<View> getViews() {
+		return Set.of();
 	}
 
 }

@@ -49,6 +49,7 @@ import org.neo4j.jdbc.Neo4jPreparedStatement;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.fail;
 
 abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
@@ -961,6 +962,10 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		assertThat(labels.getString("TABLE_NAME")).isEqualTo("A");
 		assertThat(labels.next()).isTrue();
 		assertThat(labels.getString("TABLE_NAME")).isEqualTo("B");
+		assertThat(labels.next()).isTrue();
+		assertThat(labels.getString("TABLE_NAME")).isEqualTo("cbv1");
+		assertThat(labels.next()).isTrue();
+		assertThat(labels.getString("TABLE_NAME")).isEqualTo("cbv2");
 		assertThat(labels.next()).isFalse();
 	}
 
@@ -992,6 +997,54 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		}
 
 		assertThat(tableNames).containsExactly("Test");
+	}
+
+	@Test
+	void getTablesWithStrictPatternShouldFilterCBVs() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Testa {three:3, four:4})");
+		}
+
+		ResultSet labels = this.connection.getMetaData().getTables(null, null, "cbv1", null);
+
+		assertThat(labels).isNotNull();
+		List<String> tableNames = new ArrayList<>();
+
+		while (labels.next()) {
+			var tableName = labels.getString("TABLE_NAME");
+			tableNames.add(tableName);
+			if (tableName.startsWith("cbv")) {
+				assertThat(labels.getString("TABLE_TYPE")).isEqualTo("CBV");
+			}
+		}
+
+		assertThat(tableNames).containsExactly("cbv1");
+	}
+
+	@Test
+	void getTablesWithStrictPatternShouldFilterCBVType() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:Test {one:1, two:2})");
+			statement.execute("create (b:Testa {three:3, four:4})");
+		}
+
+		ResultSet labels = this.connection.getMetaData().getTables(null, null, null, new String[] { "CBV" });
+
+		assertThat(labels).isNotNull();
+		List<String> tableNames = new ArrayList<>();
+
+		while (labels.next()) {
+			var tableName = labels.getString("TABLE_NAME");
+			tableNames.add(tableName);
+			if (tableName.startsWith("cbv")) {
+				assertThat(labels.getString("TABLE_TYPE")).isEqualTo("CBV");
+			}
+		}
+
+		assertThat(tableNames).containsExactly("cbv1", "cbv2");
 	}
 
 	@Test
@@ -1031,7 +1084,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			tableNames.add(labels.getString("TABLE_NAME"));
 		}
 
-		assertThat(tableNames).containsExactlyInAnyOrder("Foo", "Bar");
+		assertThat(tableNames).containsExactlyInAnyOrder("Foo", "Bar", "cbv1", "cbv2");
 	}
 
 	@Test
@@ -1051,7 +1104,63 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			columnNames.add(columns.getString("COLUMN_NAME"));
 		}
 
-		assertThat(columnNames).containsOnly("v$id", "one", "two", "three", "four");
+		assertThat(columnNames).containsOnly("v$id", "one", "two", "three", "four", "a", "b", "c1", "c2");
+	}
+
+	@Test
+	void getCBVColumnsForTableWildCard() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:A {one:1, two:2})");
+			statement.execute("create (b:B {three:3, four:4})");
+		}
+
+		ResultSet columns = this.connection.getMetaData().getColumns(null, null, "cbv%", null);
+
+		assertThat(columns).isNotNull();
+		List<String> columnNames = new ArrayList<>();
+
+		while (columns.next()) {
+			columnNames.add(columns.getString("COLUMN_NAME"));
+		}
+
+		assertThat(columnNames).containsOnly("a", "b", "c1", "c2");
+	}
+
+	@Test
+	void getCBVColumnsForColumnWildCard() throws SQLException {
+
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("create (a:A {one:1, two:2})");
+			statement.execute("create (b:B {three:3, four:4})");
+		}
+
+		ResultSet columns = this.connection.getMetaData().getColumns(null, null, null, "c%");
+
+		assertThat(columns).isNotNull();
+		List<String> columnNames = new ArrayList<>();
+
+		while (columns.next()) {
+			var columnName = columns.getString("COLUMN_NAME");
+			columnNames.add(columnName);
+
+			switch (columnName) {
+				case "c1":
+					assertThat(columns.getString("TABLE_NAME")).isEqualTo("cbv1");
+					assertThat(columns.getString("TYPE_NAME")).isEqualTo("FLOAT");
+					assertThat(columns.getInt("DATA_TYPE")).isEqualTo(Types.DOUBLE);
+					break;
+				case "c2":
+					assertThat(columns.getString("TABLE_NAME")).isEqualTo("cbv2");
+					assertThat(columns.getString("TYPE_NAME")).isEqualTo("BOOLEAN");
+					assertThat(columns.getInt("DATA_TYPE")).isEqualTo(Types.BOOLEAN);
+					break;
+				default:
+					fail("Unexpected column name " + columnName);
+			}
+		}
+
+		assertThat(columnNames).containsOnly("c1", "c2");
 	}
 
 	@Test

@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -48,13 +49,15 @@ class DatabaseMetadataImplTests {
 	@BeforeEach
 	void beforeEach() {
 		this.boltConnectionProvider = mock();
-		CompletionStage<BoltConnection> mockedFuture = mock();
-		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
-		given(boltConnectionCompletableFuture.join()).willReturn(mock());
-		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
+
+		BoltConnection boltConnection = mock();
+		given(boltConnection.close()).willReturn(CompletableFuture.completedFuture(null));
+		given(boltConnection.reset()).willReturn(CompletableFuture.completedFuture(null));
+
+		CompletionStage<BoltConnection> boltConnectionFuture = CompletableFuture.completedStage(boltConnection);
 		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
 				any(), any(), any(), any(), any(), any()))
-			.willReturn(mockedFuture);
+			.willReturn(boltConnectionFuture);
 	}
 
 	@Test
@@ -113,7 +116,7 @@ class DatabaseMetadataImplTests {
 				tableTypes.add(rs.getString("TABLE_TYPE"));
 			}
 		}
-		assertThat(tableTypes).containsExactlyInAnyOrder("TABLE", "RELATIONSHIP");
+		assertThat(tableTypes).containsExactlyInAnyOrder("CBV", "TABLE", "RELATIONSHIP");
 	}
 
 	@Test
@@ -162,10 +165,19 @@ class DatabaseMetadataImplTests {
 
 	@Test
 	void getAllTablesShouldErrorIfYouPassNonPublicSchema() throws SQLException {
-		var connection = newConnection();
+		try (var connection = newConnection()) {
 
-		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(() -> connection.getMetaData().getTables(null, "NotNull", null, null));
+			assertThatExceptionOfType(SQLException.class)
+				.isThrownBy(() -> connection.getMetaData().getTables(null, "NotNull", null, null));
+		}
+	}
+
+	@Test
+	void getAllTablesShouldContainViews() throws SQLException {
+
+		try (var connection = newConnection()) {
+			connection.getMetaData().getTables(null, null, null, new String[] { "CBV" });
+		}
 	}
 
 	@Test
@@ -283,7 +295,7 @@ class DatabaseMetadataImplTests {
 		catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
-		return new DatabaseMetadataImpl(connection, false, 1000);
+		return new DatabaseMetadataImpl(connection, false, 1000, Set.of());
 	}
 
 }

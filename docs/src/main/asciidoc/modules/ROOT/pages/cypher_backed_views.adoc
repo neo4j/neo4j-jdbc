@@ -1,0 +1,11 @@
+[#cbv_introduction]
+= Cypher-backed views
+
+== Introduction
+
+TODO
+
+== Requirements
+
+Cypher-backed views requires xref:sql2cypher.adoc#s2c_introduction[SQL translations] to be enabled and xref:sql2cypher.adoc#s2c[the default translator] on the classpath, hence you must add the corresponding dependency in your application or use xref:distribution.adoc#full_bunde[the full bundle].
+If you fail to enable SQL translation or a missing the standard translator, your Cypher-backed views will still be loaded, contribute to the database metadata, but you cannot query them.
