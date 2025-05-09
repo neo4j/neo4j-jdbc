@@ -38,10 +38,11 @@ import java.util.function.Function;
 import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.BasicResponseHandler;
 import org.neo4j.bolt.connection.BoltConnection;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
 import org.neo4j.bolt.connection.NotificationConfig;
 import org.neo4j.bolt.connection.TransactionType;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
+import org.neo4j.bolt.connection.message.Message;
+import org.neo4j.bolt.connection.message.Messages;
 import org.neo4j.bolt.connection.summary.PullSummary;
 import org.neo4j.bolt.connection.values.Value;
 import org.neo4j.jdbc.Neo4jException.GQLError;
@@ -86,15 +87,16 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		this.autoCommit = autoCommit;
 		this.state = Objects.requireNonNullElse(state, State.NEW);
 
-		var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		var resetStage = resetNeeded ? this.boltConnection.reset()
-				: CompletableFuture.completedStage(this.boltConnection);
-		this.beginPipelinedStage = resetStage
-			.thenCompose(conn -> conn.beginTransaction(DatabaseNameUtil.database(databaseName), accessMode, null,
-					this.bookmarkManager.getBookmarks(Function.identity()), txType, null,
-					BoltAdapters.adaptMap(transactionMetadata), this.autoCommit ? "IMPLICIT" : null,
-					NotificationConfig.defaultConfig()))
-			.thenApply(ignored -> null);
+		this.beginPipelinedStage = CompletableFuture.completedFuture(null).thenCompose(ignored -> {
+			var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
+			var messages = new ArrayList<Message>(2);
+			if (resetNeeded) {
+				messages.add(Messages.reset());
+			}
+			messages.add(Messages.beginTransaction(databaseName, accessMode, null, this.usedBookmarks, txType, null,
+					BoltAdapters.adaptMap(transactionMetadata), NotificationConfig.defaultConfig()));
+			return this.boltConnection.write(messages);
+		});
 	}
 
 	@Override
@@ -104,10 +106,11 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertRunnableState();
 
 		var handler = new BasicResponseHandler();
-		var responsesFuture = this.beginPipelinedStage
-			.thenCompose(ignored -> this.boltConnection.run(query, BoltAdapters.adaptMap(parameters)))
-			.thenCompose(conn -> conn.pull(-1, fetchSize))
-			.thenCompose(conn -> conn.flush(handler))
+		var responsesFuture = this.beginPipelinedStage.thenCompose(ignored -> {
+			var messages = List.of(Messages.run(query, BoltAdapters.adaptMap(parameters)),
+					Messages.pull(-1, fetchSize));
+			return this.boltConnection.writeAndFlush(handler, messages);
+		})
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(DefaultTransactionImpl::asRunAndPullResponses)
 			.toCompletableFuture();
@@ -126,11 +129,15 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertRunnableState();
 
 		var handler = new BasicResponseHandler();
-		var responsesFuture = this.beginPipelinedStage
-			.thenCompose(ignored -> this.boltConnection.run(query, BoltAdapters.adaptMap(parameters)))
-			.thenCompose(conn -> conn.discard(-1, -1))
-			.thenCompose(conn -> commit ? conn.commit() : CompletableFuture.completedStage(conn))
-			.thenCompose(conn -> conn.flush(handler))
+		var responsesFuture = this.beginPipelinedStage.thenCompose(ignored -> {
+			var messages = new ArrayList<Message>(3);
+			messages.add(Messages.run(query, BoltAdapters.adaptMap(parameters)));
+			messages.add(Messages.discard(-1, -1));
+			if (commit) {
+				messages.add(Messages.commit());
+			}
+			return this.boltConnection.writeAndFlush(handler, messages);
+		})
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(DefaultTransactionImpl::asDiscardResponse)
 			.toCompletableFuture();
@@ -149,8 +156,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 					String.format("The requested action is not supported in %s transaction state", this.state)));
 		}
 		var handler = new BasicResponseHandler();
-		var responseFuture = this.boltConnection.pull(runResponse.queryId(), request)
-			.thenCompose(conn -> conn.flush(handler))
+		var responseFuture = this.boltConnection.writeAndFlush(handler, Messages.pull(runResponse.queryId(), request))
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(summaries -> asPullResponse(runResponse.keys(), summaries.valuesList(), summaries.pullSummary()))
 			.toCompletableFuture();
@@ -167,10 +173,11 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertRunnableState();
 
 		var handler = new BasicResponseHandler();
-		var responsesFuture = this.beginPipelinedStage.thenApply(ignored -> this.boltConnection)
-			.thenCompose(this::pipelineDiscards)
-			.thenCompose(BoltConnection::commit)
-			.thenCompose(conn -> conn.flush(handler))
+		var messages = new ArrayList<Message>(this.openResults.size() + 1);
+		appendDiscards(messages);
+		messages.add(Messages.commit());
+		var responsesFuture = this.beginPipelinedStage
+			.thenCompose(ignored -> this.boltConnection.writeAndFlush(handler, messages))
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(BasicResponseHandler.Summaries::commitSummary)
 			.whenComplete((response, error) -> {
@@ -197,10 +204,11 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		assertRunnableState();
 
 		var handler = new BasicResponseHandler();
-		var responsesFuture = this.beginPipelinedStage.thenApply(ignored -> this.boltConnection)
-			.thenCompose(this::pipelineDiscards)
-			.thenCompose(BoltConnection::rollback)
-			.thenCompose(conn -> conn.flush(handler))
+		var messages = new ArrayList<Message>(this.openResults.size() + 1);
+		appendDiscards(messages);
+		messages.add(Messages.rollback());
+		var responsesFuture = this.beginPipelinedStage
+			.thenCompose(ignored -> this.boltConnection.writeAndFlush(handler, messages))
 			.thenCompose(ignored -> handler.summaries())
 			.toCompletableFuture();
 
@@ -260,12 +268,10 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		}
 	}
 
-	private CompletionStage<BoltConnection> pipelineDiscards(BoltConnection boltConnection) {
-		var pipelineStage = CompletableFuture.completedStage(boltConnection);
+	private void appendDiscards(List<Message> messages) {
 		for (var runResponse : this.openResults) {
-			pipelineStage = pipelineStage.thenCompose(conn -> conn.discard(runResponse.queryId(), -1));
+			messages.add(Messages.discard(runResponse.queryId(), -1));
 		}
-		return pipelineStage;
 	}
 
 	private void assertNoException() throws SQLException {
