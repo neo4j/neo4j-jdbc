@@ -42,6 +42,6 @@ public record View(String name, String query, List<Column> columns) {
 	// as to pointing back in the result of the statement,
 	// TODO and also handle Neo4jType as alias for type and when adding the property name,
 	// SourceName as alias
-	public record Column(String name, String type) {
+	public record Column(String name, String propertyName, String type) {
 	};
 }

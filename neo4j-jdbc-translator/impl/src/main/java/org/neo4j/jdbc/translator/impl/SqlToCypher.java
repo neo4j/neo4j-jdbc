@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -82,6 +83,7 @@ import org.neo4j.cypherdsl.core.ResultStatement;
 import org.neo4j.cypherdsl.core.SortItem;
 import org.neo4j.cypherdsl.core.Statement;
 import org.neo4j.cypherdsl.core.StatementBuilder;
+import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.SymbolicName;
@@ -155,10 +157,14 @@ final class SqlToCypher implements Translator {
 
 	@Override
 	public Set<View> getViews() {
+
 		System.out.println("remove me again, fix me with actual view reading");
 		return Set.of(
-				new View("cbv1", "whatever", List.of(new View.Column("a", "STRING"), new View.Column("c1", "FLOAT"))),
-				new View("cbv2", "whatever", List.of(new View.Column("b", "LONG"), new View.Column("c2", "BOOLEAN"))));
+				new View("cbv1", "MATCH (n:Movie) RETURN *",
+						List.of(new View.Column("a", "n.title", "STRING"),
+								new View.Column("c1", "n.released", "FLOAT"))),
+				new View("cbv2", "whatever",
+						List.of(new View.Column("b", null, "LONG"), new View.Column("c2", null, "BOOLEAN"))));
 	}
 
 	@Override
@@ -187,7 +193,9 @@ final class SqlToCypher implements Translator {
 
 	private String translate0(Query query, DatabaseMetaData databaseMetaData) {
 
-		return render(ContextAwareStatementBuilder.build(this.config, databaseMetaData, query));
+		System.out.println("TODO remove this too, make views part of config");
+		var views = this.getViews().stream().collect(Collectors.toMap(View::name, Function.identity()));
+		return render(ContextAwareStatementBuilder.build(this.config, databaseMetaData, query, views));
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -264,34 +272,43 @@ final class SqlToCypher implements Translator {
 
 		private final AtomicBoolean useAliasForVColumn = new AtomicBoolean(true);
 
-		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query) {
+		private final Map<String, View> views;
+
+		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query,
+				Map<String, View> views) {
 			if (query instanceof Select<?> s) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(s);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(s);
 			}
 			else if (query instanceof QOM.Delete<?> d) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(d);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(d);
 			}
 			else if (query instanceof QOM.Truncate<?> t) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(t);
 			}
 			else if (query instanceof QOM.Insert<?> t) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(t);
 			}
 			else if (query instanceof QOM.InsertReturning<?> t) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t.$insert(),
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(t.$insert(),
 						t.$returning());
 			}
 			else if (query instanceof QOM.Update<?> u) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(u);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(u);
 			}
 			else {
 				throw unsupported(query);
 			}
 		}
 
-		ContextAwareStatementBuilder(SqlToCypherConfig config, DatabaseMetaData databaseMetaData) {
+		ContextAwareStatementBuilder(SqlToCypherConfig config, DatabaseMetaData databaseMetaData,
+				Map<String, View> views) {
 			this.config = config;
 			this.databaseMetaData = databaseMetaData;
+			this.views = views;
+		}
+
+		private boolean ownsView(String name) {
+			return this.views.containsKey(name);
 		}
 
 		private static IllegalArgumentException unsupported(QueryPart p) {
@@ -357,10 +374,44 @@ final class SqlToCypher implements Translator {
 				return Cypher.returning(resultColumnsSupplier.get()).build();
 			}
 
-			OngoingReadingWithoutWhere m1 = Cypher
-				.match(x.$from().stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
-			OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
-					: (OngoingReadingWithWhere) m1;
+			// Retrieve all Cypher-backed views
+			var allCbvs = new HashSet<String>();
+			try (var resultSet = this.databaseMetaData.getTables(null, null, null, new String[] { "CBV" })) {
+				if (resultSet.next()) {
+					allCbvs.add(resultSet.getString("TABLE_NAME"));
+				}
+			}
+			catch (SQLException ignored) {
+			}
+
+			boolean useCbv = false;
+			Table<?> cbv = null;
+			for (var table : this.tables) {
+				if (allCbvs.contains(table.getName()) && ownsView(table.getName())) {
+					if (cbv == null) {
+						cbv = table;
+					}
+					else {
+						throw new UnsupportedOperationException("Only own Cypher-backed view per query is supported");
+					}
+				}
+			}
+
+			OngoingReading m2;
+			if (cbv != null) {
+				var view = this.views.get(cbv.getName());
+				var projection = Cypher.mapOf(view.columns()
+					.stream()
+					.flatMap(column -> Stream.of(column.name(), Cypher.raw(column.propertyName())))
+					.toArray());
+				var m1 = Cypher.callRawCypher(view.query()).with(projection.as(view.name()));
+				m2 = (x.$where() != null) ? m1.where(condition(x.$where())) : m1;
+			}
+			else {
+				OngoingReadingWithoutWhere m1 = Cypher
+					.match(x.$from().stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
+				m2 = (x.$where() != null) ? m1.where(condition(x.$where())) : (OngoingReadingWithWhere) m1;
+			}
 
 			var intermediate = x.$distinct() ? m2.returningDistinct(resultColumnsSupplier.get())
 					: m2.returning(resultColumnsSupplier.get());
@@ -620,7 +671,9 @@ final class SqlToCypher implements Translator {
 		private List<Expression> findProperties(String tableName, PropertyContainer pc) {
 			List<Expression> properties = new ArrayList<>();
 			try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
-				properties.add(makeId(pc, null));
+				if (!this.views.containsKey(tableName)) {
+					properties.add(makeId(pc, null));
+				}
 				while (columns.next()) {
 					var columnName = columns.getString("COLUMN_NAME");
 					if ("YES".equalsIgnoreCase(columns.getString("IS_GENERATEDCOLUMN"))) {

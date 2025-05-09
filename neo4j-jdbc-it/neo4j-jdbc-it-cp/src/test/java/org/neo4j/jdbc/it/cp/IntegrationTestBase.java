@@ -34,6 +34,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class IntegrationTestBase {
 
+	protected boolean clearBeforeEach = true;
+
 	IntegrationTestBase() {
 		this.neo4j = TestUtils.getNeo4jContainer();
 	}
@@ -75,6 +77,9 @@ abstract class IntegrationTestBase {
 
 	@BeforeEach
 	void clearDatabase() throws SQLException {
+		if (!this.clearBeforeEach) {
+			return;
+		}
 		try (var connection = this.getConnection(); var stmt = connection.createStatement()) {
 			stmt.execute("""
 					MATCH (n)
