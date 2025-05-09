@@ -258,18 +258,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		this.automaticSqlTranslation = automaticSqlTranslation;
 		this.relationshipSampleSize = relationshipSampleSize;
 
-		this.apocAvailable = Lazy.<Boolean, RuntimeException>of(() -> {
-			try {
-				var response = doQueryForPullResponse(new Request(
-						"SHOW FUNCTIONS YIELD name WHERE name = 'apoc.version' RETURN count(*) >= 1 AS available",
-						Map.of()));
-				var records = response.records();
-				return records.size() == 1 && records.get(0).get("available").asBoolean();
-			}
-			catch (SQLException ex) {
-				return false;
-			}
-		});
+		this.apocAvailable = Lazy.<Boolean, RuntimeException>of(this::isApocAvailable0);
 		// Those queries use administrative commands that do not compose with normal
 		// queries, so we cache it here and hope for the best they don't interfer with
 		// other queries.

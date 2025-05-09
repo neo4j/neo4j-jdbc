@@ -324,7 +324,7 @@ quarkus.log.category."org.neo4j.jdbc.network.InboundMessageHandler".level=DEBUG
 
 === SQL Translations
 
-The SQL translators use the logger `org.neo4j.jdbc.translator`.
+The SQL translators use the logger `org.neo4j.jdbc.translator`, processed SQL and its original sources is logged at level `FINE` on `org.neo4j.jdbc.statement.SQL`.
 
 == Metrics
 
