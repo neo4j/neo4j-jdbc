@@ -75,6 +75,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.statement");
 
+	private static final Logger SQL_LOGGER = Logger.getLogger("org.neo4j.jdbc.statement.SQL");
+
 	private static final Map<String, AtomicLong> ID_GENERATORS = new ConcurrentHashMap<>();
 
 	static final int DEFAULT_BUFFER_SIZE_FOR_INCOMING_STREAMS = 4096;
@@ -638,8 +640,8 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		try {
 			var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
 			var processedSQL = processor.apply(sql);
-			if (LOGGER.isLoggable(Level.FINE) && !processedSQL.equals(sql)) {
-				LOGGER.log(Level.FINE, "Processed ''{0}'' into ''{1}''", new Object[] { sql, processedSQL });
+			if (SQL_LOGGER.isLoggable(Level.FINE) && !processedSQL.equals(sql)) {
+				SQL_LOGGER.log(Level.FINE, "Processed ''{0}'' into ''{1}''", new Object[] { sql, processedSQL });
 			}
 			return processedSQL;
 		}
