@@ -307,7 +307,7 @@ final class SqlToCypher implements Translator {
 			this.tables.clear();
 			this.tables.add(d.$from());
 
-			Node e = (Node) resolveTableOrJoinf(this.tables.get(0)).get(0);
+			Node e = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
 			OngoingReadingWithoutWhere m1 = Cypher.match(e);
 			OngoingReadingWithWhere m2 = (d.$where() != null) ? m1.where(condition(d.$where()))
 					: (OngoingReadingWithWhere) m1;
@@ -318,7 +318,7 @@ final class SqlToCypher implements Translator {
 			this.tables.clear();
 			this.tables.addAll(t.$table());
 
-			Node e = (Node) resolveTableOrJoinf(this.tables.get(0)).get(0);
+			Node e = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
 			return Cypher.match(e).detachDelete(e.asExpression()).build();
 		}
 
@@ -348,7 +348,7 @@ final class SqlToCypher implements Translator {
 			}
 
 			OngoingReadingWithoutWhere m1 = Cypher
-				.match(x.$from().stream().flatMap(t -> resolveTableOrJoinf(t).stream()).toList());
+				.match(x.$from().stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
 			OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
 					: (OngoingReadingWithWhere) m1;
 
@@ -375,7 +375,7 @@ final class SqlToCypher implements Translator {
 			this.tables.clear();
 			this.tables.add(insert.$into());
 
-			var node = (Node) this.resolveTableOrJoinf(this.tables.get(0)).get(0);
+			var node = (Node) this.resolveTableOrJoin(this.tables.get(0)).get(0);
 			var rows = insert.$values();
 
 			var hasMergeProperties = !insert.$onConflict().isEmpty();
@@ -511,7 +511,7 @@ final class SqlToCypher implements Translator {
 			this.tables.clear();
 			this.tables.add(update.$table());
 
-			var node = (Node) this.resolveTableOrJoinf(this.tables.get(0)).get(0);
+			var node = (Node) this.resolveTableOrJoin(this.tables.get(0)).get(0);
 			var updates = new ArrayList<Expression>();
 			update.$set().forEach((c, v) -> {
 				updates.add(node.property(((Field<?>) c).getName()));
@@ -554,7 +554,7 @@ final class SqlToCypher implements Translator {
 				}
 				return properties.stream();
 			}
-			else if (t instanceof QualifiedAsterisk q && resolveTableOrJoinf(q.$table()).get(0) instanceof Node node) {
+			else if (t instanceof QualifiedAsterisk q && resolveTableOrJoin(q.$table()).get(0) instanceof Node node) {
 
 				var properties = new ArrayList<Expression>();
 				for (var table : this.tables) {
@@ -585,7 +585,7 @@ final class SqlToCypher implements Translator {
 				return properties;
 			}
 			for (Table<?> table : from) {
-				var pc = (PropertyContainer) resolveTableOrJoinf(table).get(0);
+				var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
 				var tableName = labelOrType(table);
 				if (!(pc instanceof Relationship rel)) {
 					properties.addAll(findProperties(tableName, pc));
@@ -697,7 +697,7 @@ final class SqlToCypher implements Translator {
 		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName, boolean doAlias) {
 			Expression col = null;
 			if (this.tables.size() == 1) {
-				var propertyContainer = (PropertyContainer) resolveTableOrJoinf(this.tables.get(0)).get(0);
+				var propertyContainer = (PropertyContainer) resolveTableOrJoin(this.tables.get(0)).get(0);
 				if (isElementId(tf)) {
 					return makeId(propertyContainer, tf.getName());
 				}
@@ -725,11 +725,11 @@ final class SqlToCypher implements Translator {
 
 					// Figure out virtual columns
 					if (isId) {
-						var pc = (PropertyContainer) resolveTableOrJoinf(table).get(0);
+						var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
 						return makeId(pc, tf.getName());
 					}
 					if (tableName.equalsIgnoreCase(prefix)) {
-						var pc = (PropertyContainer) resolveTableOrJoinf(table).get(0);
+						var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
 						return makeId(pc, tf.getName());
 					}
 
@@ -737,7 +737,7 @@ final class SqlToCypher implements Translator {
 						while (columns.next()) {
 							var columnName = columns.getString("COLUMN_NAME");
 							if (columnName.equals(tf.getName())) {
-								var pc = (PropertyContainer) resolveTableOrJoinf(table).get(0);
+								var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
 								col = pc.property(tf.getName());
 							}
 						}
@@ -787,7 +787,7 @@ final class SqlToCypher implements Translator {
 					return tableField;
 				}
 
-				var pe = resolveTableOrJoinf(tf.getTable()).get(0);
+				var pe = resolveTableOrJoin(tf.getTable()).get(0);
 				if (pe instanceof PropertyContainer pc) {
 					var m = ELEMENT_ID_PATTERN.matcher(tf.getName());
 					if (m.matches()) {
@@ -1261,7 +1261,7 @@ final class SqlToCypher implements Translator {
 			return result;
 		}
 
-		private List<PatternElement> resolveTableOrJoinf(Table<?> t) {
+		private List<PatternElement> resolveTableOrJoin(Table<?> t) {
 			var relationship = this.resolvedRelationships.get(Cypher.name(t.getName()));
 			if (relationship != null) {
 				return List.of(relationship);
@@ -1272,7 +1272,7 @@ final class SqlToCypher implements Translator {
 			}
 
 			if (t instanceof TableAlias<?> ta) {
-				var patternElements = resolveTableOrJoinf(ta.$aliased());
+				var patternElements = resolveTableOrJoin(ta.$aliased());
 				var resolved = (patternElements.size() == 1) ? patternElements.get(0) : null;
 				if ((resolved instanceof Node || resolved instanceof Relationship) && !ta.$alias().empty()) {
 					return List.of(nodeOrPattern(ta.$aliased(), ta.$alias().last()));
@@ -1325,9 +1325,9 @@ final class SqlToCypher implements Translator {
 
 			Table<?> t1 = joinTable.$table1();
 			if (t1 instanceof QOM.JoinTable<?, ? extends Table<?>> lhsJoin) {
-				lhs = resolveTableOrJoinf(lhsJoin.$table1()).get(0);
+				lhs = resolveTableOrJoin(lhsJoin.$table1()).get(0);
 				var eqJoin2 = JoinDetails.of(lhsJoin);
-				var relationship = tryToIntegrateNodeAndVirtualTable(lhs, resolveTableOrJoinf(lhsJoin.$table2()).get(0),
+				var relationship = tryToIntegrateNodeAndVirtualTable(lhs, resolveTableOrJoin(lhsJoin.$table2()).get(0),
 						eqJoin2.eq);
 				if (relationship != null) {
 					lhs = relationship;
@@ -1340,14 +1340,14 @@ final class SqlToCypher implements Translator {
 				}
 			}
 			else if (join.eq != null) {
-				lhs = resolveTableOrJoinf(t1).get(0);
+				lhs = resolveTableOrJoin(t1).get(0);
 				relType = type(t1, join.eq.$arg2());
 			}
 			else if (join.join != null && join.join.$using().isEmpty()) {
 				throw unsupported(joinTable);
 			}
 			else {
-				lhs = resolveTableOrJoinf(t1).get(0);
+				lhs = resolveTableOrJoin(t1).get(0);
 				relType = (join.join != null) ? type(t1, join.join.$using().get(0)) : null;
 			}
 
@@ -1355,7 +1355,7 @@ final class SqlToCypher implements Translator {
 				relSymbolicName = symbolicName(relType);
 			}
 
-			PatternElement rhs = resolveTableOrJoinf(joinTable.$table2()).get(0);
+			PatternElement rhs = resolveTableOrJoin(joinTable.$table2()).get(0);
 
 			if (lhs instanceof ExposesRelationships<?> from && rhs instanceof Node to) {
 				var relationship = tryToIntegrateNodeAndVirtualTable(lhs, rhs, join.eq);
@@ -1371,7 +1371,7 @@ final class SqlToCypher implements Translator {
 				while (leftMost instanceof QOM.JoinTable<?, ?> tab) {
 					leftMost = tab.$table1();
 				}
-				var hlp = resolveTableOrJoinf(leftMost).get(0);
+				var hlp = resolveTableOrJoin(leftMost).get(0);
 				// We have one single previous relationship, the left most node matching
 				// the leftmost table and the previous table is a join table.
 				// Future safety check might actually be comparing the equals operators,
