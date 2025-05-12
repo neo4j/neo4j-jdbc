@@ -130,7 +130,7 @@
 
 	<properties>
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
-		<archunit.version>1.4.0</archunit.version>
+		<archunit.version>1.4.1</archunit.version>
 		<asciidoctor-maven-plugin.version>3.2.0</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 		<asciidoctorj.version>3.0.0</asciidoctorj.version>
