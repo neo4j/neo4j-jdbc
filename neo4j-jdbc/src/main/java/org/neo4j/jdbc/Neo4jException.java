@@ -46,6 +46,8 @@ final class Neo4jException extends SQLException implements GqlStatusObject {
 	 * <a href="https://neo4j.com/docs/status-codes/current/errors/gql-errors/">GQLStatus
 	 * error codes</a>.
 	 */
+	@SuppressWarnings("squid:S115") // The enum values are purposefully named after the
+									// error codes
 	enum GQLError {
 
 		$08000(""), $22000(""), $22003("The numeric value %s is outside the required range"),

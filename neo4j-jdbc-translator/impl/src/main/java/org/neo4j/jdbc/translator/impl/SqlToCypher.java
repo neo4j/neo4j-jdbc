@@ -341,17 +341,17 @@ final class SqlToCypher implements Translator {
 			return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
 		}
 
+		@SuppressWarnings("squid:S1854") // This is about useless assignments, which I
+											// don't think apply to m1 and m2.
 		private Statement statement(QOM.Delete<?> d) {
 			this.tables.clear();
 			this.tables.add(d.$from());
 
 			assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", this.tables.get(0));
 
-			Node e = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
-			OngoingReadingWithoutWhere m1 = Cypher.match(e);
-			OngoingReadingWithWhere m2 = (d.$where() != null) ? m1.where(condition(d.$where()))
-					: (OngoingReadingWithWhere) m1;
-			return m2.delete(e.asExpression()).build();
+			var m1 = Cypher.match(resolveTableOrJoin(this.tables.get(0)).get(0));
+			var m2 = (d.$where() != null) ? m1.where(condition(d.$where())) : (OngoingReadingWithWhere) m1;
+			return m2.delete(((Node) resolveTableOrJoin(this.tables.get(0)).get(0)).asExpression()).build();
 		}
 
 		private Statement statement(QOM.Truncate<?> t) {
@@ -362,8 +362,9 @@ final class SqlToCypher implements Translator {
 				assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", table);
 			}
 
-			Node e = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
-			return Cypher.match(e).detachDelete(e.asExpression()).build();
+			@SuppressWarnings("squid:S1854")
+			var node = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
+			return Cypher.match(node).detachDelete(node.asExpression()).build();
 		}
 
 		private ResultStatement statement(Select<?> incoming) {
@@ -450,6 +451,8 @@ final class SqlToCypher implements Translator {
 			return buildableStatement.build();
 		}
 
+		@SuppressWarnings("squid:S108") // The empty and already stated to be ignored
+										// catch block
 		private Set<String> loadCypherBackedViews() {
 			if (this.databaseMetaData == null) {
 				return Set.of();

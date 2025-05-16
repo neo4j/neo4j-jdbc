@@ -201,6 +201,8 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	}
 
 	@Override
+	@SuppressWarnings("squid:S2095") // The whole point of this method is to provide an
+										// _open_ connection
 	public Connection getConnection(String username, String password) throws SQLException {
 
 		var newProperties = new Properties();

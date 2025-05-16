@@ -206,7 +206,6 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(autoCommit);
 		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		var transactionMode = connection.getAutoCommit() ? "IMPLICIT" : null;
 
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
 		var transaction = connection.getTransaction(Map.of());
@@ -230,7 +229,6 @@ class ConnectionImplTests {
 	void shouldThrowOnManagingAutoCommitTransaction(boolean rollback) throws SQLException {
 		var boltConnection = mock(BoltConnection.class);
 		var connection = makeConnection(boltConnection);
-		var transactionMode = connection.getAutoCommit() ? "IMPLICIT" : null;
 
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
 		var transaction = connection.getTransaction(Map.of());
@@ -598,7 +596,7 @@ class ConnectionImplTests {
 		assertThat(infoException.getFailedProperties().size()).isEqualTo(properties.size());
 		properties.keySet()
 			.stream()
-			.map(key -> (String) key)
+			.map(String.class::cast)
 			.forEach(key -> assertThat(infoException.getFailedProperties().get(key))
 				.isEqualTo(ClientInfoStatus.REASON_UNKNOWN_PROPERTY));
 	}

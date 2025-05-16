@@ -240,11 +240,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 		return Type.NULL.isTypeOf(this.value);
 	}
 
-	void logGet(String type, int columnIndex) {
+	static void logGet(String type, int columnIndex) {
 		LOGGER.log(Level.FINEST, () -> "Getting %s at %d".formatted(type, columnIndex));
 	}
 
-	void logGet(String type, String columnLabel) {
+	static void logGet(String type, String columnLabel) {
 		LOGGER.log(Level.FINEST, () -> "Getting %s at `%s`".formatted(type, columnLabel));
 	}
 

@@ -79,7 +79,7 @@ class ArrayImpl implements Array {
 				}
 			}
 			theArray = (ArrayImpl) of(connection, Values.value(allValues));
-			if (type != theArray.arrayType) {
+			if (type != Optional.ofNullable(theArray).map(a -> a.arrayType).orElse(Type.NULL)) {
 				throw new Neo4jException(GQLError.$22000
 					.withMessage("Cannot satisfy type %s with the elements provided".formatted(typeName)));
 			}
