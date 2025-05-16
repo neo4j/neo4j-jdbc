@@ -5,9 +5,9 @@
 
 Cypher-backed views are a way to create virtual views inside the JDBC client application that are backed by an arbitrary Cypher query.
 They allow your Neo4j database to be utilized the best way possible and make use of all Cypher constructs, including everyone for which the JDBC driver can offer a direct SQL to Cypher translation.
-Cypher-backed views will appear in the database metadata of the JDBC connection, incl
 
-Cypher-backed views are defined client-side and consisted of
+Cypher-backed views will appear in the database metadata of the JDBC connection and are defined on the client-side.
+They consist of
 
 * a name
 * a Cypher query
@@ -21,7 +21,7 @@ Only the enumerated columns will appear in the database metadata.
 Cypher-backed views requires xref:sql2cypher.adoc#s2c_introduction[SQL translations] to be enabled and xref:sql2cypher.adoc#s2c[the default translator] on the classpath, hence you must add the corresponding dependency in your application or use xref:distribution.adoc#full_bunde[the full bundle].
 If you fail to enable SQL translation or are missing the standard translator, your Cypher-backed views will still be loaded, contribute to the database metadata, but you cannot query them.
 
-WARNING: While you can use any valid Cypher query in a view definition, we highly recommend not using Cypher statements that do updates to the graph. We don't parse the Cypher, and we won't prevent a `SELECT *` statement that casually deletes your graph with a view definition such as `MATCH (n) DETACH DELETE`. We do prevent Cypher-backed views from being used in update statements, though.
+WARNING: While you can use any valid Cypher query in a view definition, we highly recommend not using Cypher statements that do updates to the graph. We don't parse the Cypher, and we won't prevent a `SELECT *` statement that casually deletes your graph with a view definition such as `MATCH (n) DETACH DELETE`. We do prevent Cypher-backed views from being used in a SQL update statements, such as `INSERT`, `DELETE` or `UPDATE`, though.
 
 The Cypher query can basically have any shape, but it must be a query that is valid inside a `CALL {}` subquery.
 While we could just execute the query as-is, you wouldn't be able to query more than one Cypher-backed view at a time otherwise.
@@ -43,7 +43,7 @@ The JDBC driver is able to load resources from
 * the file system
 * or via http(s)
 
-and the resources must be configured the connection property `viewDefinitions`.
+and the resources must be configured through a connection property named `viewDefinitions`.
 That property goes either as a query parameter into the JDBC URL or as a JDBC property.
 Here are a bunch of examples that uses a query parameter as part of a JDBC URL:
 
