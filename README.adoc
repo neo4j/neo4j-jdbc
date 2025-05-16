@@ -166,6 +166,7 @@ To use it with a Neo4j cluster, server-side routing must be enabled on the clust
 * Implements `DatabaseMetaData` and `ResultSetMetaData` as fully as possible with a nearly schemaless database and general very flexible result sets, allowing for automatic metadata retrieval from ETL and ELT tools
 * Provides an https://en.wikipedia.org/wiki/Service_provider_interface[SPI] to hook in translators from SQL to Cypher
 * Provides an optional default implementation to translate many SQL statements into semantically similar Cypher statements
+* Supports client-side Cypher-backed views
 * Can be safely used with JDBC connection pools as opposed to the common Neo4j Java Driver or any JDBC driver based on that, as it doesn't do internal connection pooling and transaction management otherwise than dictated by the JDBC Spec
 
 The absence of any connection pooling and transaction management is an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
