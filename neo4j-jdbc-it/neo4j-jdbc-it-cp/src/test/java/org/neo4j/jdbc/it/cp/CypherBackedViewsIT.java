@@ -196,8 +196,13 @@ class CypherBackedViewsIT extends IntegrationTestBase {
 	@Test
 	void shouldReadHttpDefinitions() throws IOException, SQLException {
 		HttpServer server = null;
+		int port = 0;
 		try (ServerSocket serverSocket = new ServerSocket(0)) {
-			server = HttpServer.create(new InetSocketAddress("localhost", serverSocket.getLocalPort()), 0);
+			port = serverSocket.getLocalPort();
+		}
+
+		try {
+			server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
 			server.createContext("/views.json", exchange -> {
 				var outputStream = exchange.getResponseBody();
 
@@ -214,7 +219,7 @@ class CypherBackedViewsIT extends IntegrationTestBase {
 
 			server.start();
 			try (var connection = getConnection(true, false, "s2c.viewDefinitions",
-					"http://localhost:%d/views.json".formatted(serverSocket.getLocalPort()))) {
+					"http://localhost:%d/views.json".formatted(port))) {
 				var meta = connection.getMetaData();
 				try (var cbvs = meta.getTables(null, null, null, new String[] { "CBV" })) {
 					assertThat(cbvs.next()).isTrue();
