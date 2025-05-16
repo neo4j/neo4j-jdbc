@@ -40,7 +40,7 @@ class ViewDefinitionReaderTests {
 	@ValueSource(strings = { "ftp://foo:bar@bazbar:4711/foo.json", "git://github.com:neo4j/neo4j-jdbc.git", "foobar" })
 	void shouldThrowOnInvalidScheme(String input) {
 		assertThatIllegalArgumentException().isThrownBy(() -> ViewDefinitionReader.of(input))
-			.withMessageMatching("Unsupported scheme: .+, supported schemes are \\[file, http, https]");
+			.withMessageMatching("Unsupported scheme: .+, supported schemes are \\[file, http, https, resource]");
 	}
 
 	@ParameterizedTest

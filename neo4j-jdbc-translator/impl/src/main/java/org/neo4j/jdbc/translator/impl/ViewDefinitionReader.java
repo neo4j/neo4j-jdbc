@@ -47,7 +47,7 @@ import org.neo4j.jdbc.translator.spi.View;
 final class ViewDefinitionReader {
 
 	private static final Set<String> SUPPORTED_SCHEMES = Collections
-		.unmodifiableSet(new TreeSet<>(Set.of("file", "http", "https")));
+		.unmodifiableSet(new TreeSet<>(Set.of("file", "http", "https", "resource")));
 
 	static ViewDefinitionReader of(String url) {
 		URI uri;

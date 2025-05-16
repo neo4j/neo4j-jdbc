@@ -1,0 +1,12 @@
+[
+  {
+    "name": "org.neo4j.jdbc.translator.spi.View",
+    "allDeclaredConstructors" : true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.neo4j.jdbc.translator.spi.View$Column",
+    "allDeclaredConstructors" : true,
+    "allDeclaredMethods": true
+  }
+]
