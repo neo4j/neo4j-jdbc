@@ -13,13 +13,13 @@ Cypher-backed views are defined client-side and consisted of
 * a Cypher query
 * the list of columns
 
-The name must be unique and will be the name under which the view as queryable and appear in the database metadata.
+The name must be unique and will be the name under which the view is queryable and appear in the database metadata.
 Only the enumerated columns will appear in the database metadata.
 
 == Requirements
 
 Cypher-backed views requires xref:sql2cypher.adoc#s2c_introduction[SQL translations] to be enabled and xref:sql2cypher.adoc#s2c[the default translator] on the classpath, hence you must add the corresponding dependency in your application or use xref:distribution.adoc#full_bunde[the full bundle].
-If you fail to enable SQL translation or a missing the standard translator, your Cypher-backed views will still be loaded, contribute to the database metadata, but you cannot query them.
+If you fail to enable SQL translation or are missing the standard translator, your Cypher-backed views will still be loaded, contribute to the database metadata, but you cannot query them.
 
 WARNING: While you can use any valid Cypher query in a view definition, we highly recommend not using Cypher statements that do updates to the graph. We don't parse the Cypher, and we won't prevent a `SELECT *` statement that casually deletes your graph with a view definition such as `MATCH (n) DETACH DELETE`. We do prevent Cypher-backed views from being used in update statements, though.
 
@@ -44,8 +44,8 @@ The JDBC driver is able to load resources from
 * or via http(s)
 
 and the resources must be configured the connection property `viewDefinitions`.
-That property goes either as a query parameter into the JDBC url or as a JDBC property.
-Here are a bunch of examples that uses a query parameter as part of a JDBC url:
+That property goes either as a query parameter into the JDBC URL or as a JDBC property.
+Here are a bunch of examples that uses a query parameter as part of a JDBC URL:
 
 NOTE: Please be aware that we are strict with https://en.wikipedia.org/wiki/File_URI_scheme[File URI scheme] with regard to the number of slashes: `file:` is the protocol, the slashes are not part of it. Either use exactly one slash (`/`) meaning no hostname, or three slashes (`///`) meaning an empty hostname (effectively the same) after it. We don't guess about the meaning of two slashes and don't support hostnames for reading files.
 
@@ -129,7 +129,6 @@ SELECT * FROM v_people WHERE name LIKE 'A%' ORDER BY name
 
 As with the `ORDER BY` clause in the `v_movie_actors` example, the predicate and the order clause will be pushed down into the actual Cypher that is passed to the Neo4j DBMS.
 
-
 Additionally, we support the same format as the _Magnitude Simba Neo4j Data Connector for Business Intelligence Tools" in version 1.0.10 as of January 2022 does.
 All schema information will however be ignored (schema names and whether a view is hidden or not).
 
@@ -138,7 +137,7 @@ All schema information will however be ignored (schema names and whether a view 
 
 Cypher-backed views can of course only be read from, not modified (neither updated nor deleted).
 Cypher-backed views cannot be mixed with regular "tables", that is tables that are treated as labels and then matched on.
-If you want to query multiple Cypher-backed views at once, you need to enumerate them in the `FROM` clause, such as `view1, view2, view2` and as appropriate join in the `WHERE` clause with a predicate like this `view1.x = view2.y`.
+If you want to query multiple Cypher-backed views at once, you need to enumerate them in the `FROM` clause, such as `view1, view2, view3` and as appropriate join in the `WHERE` clause with a predicate like this `view1.x = view2.y`.
 You cannot use the `JOIN`, `LEFT OUTER` or any other JOIN clause, as we cannot derive any meaningful relationship from a Cypher-backed view, which we would attempt in such cases.
 
 These restrictions should not matter much, as you can express arbitrary complex expressions inside the query that makes up the view so that your ETL tool or any other program can harness Cypher's full capabilities.
