@@ -25,11 +25,8 @@ abstract class AbstractObjectValue<V> extends AbstractValue {
 	final V adapted;
 
 	protected AbstractObjectValue(V adapted) {
-		if (adapted == null) {
-			throw new IllegalArgumentException(
-					String.format("Cannot construct %s from null", getClass().getSimpleName()));
-		}
-		this.adapted = adapted;
+		this.adapted = Objects.requireNonNull(adapted,
+				String.format("Cannot construct %s from null", getClass().getSimpleName()));
 	}
 
 	@Override

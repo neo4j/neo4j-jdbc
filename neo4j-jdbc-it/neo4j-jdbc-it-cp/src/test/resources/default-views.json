@@ -1,0 +1,34 @@
+[
+  {
+    "name": "cbv1",
+    "query": "MATCH (n:Movie)<-[:ACTED_IN]-(:Person) RETURN *",
+    "columns": [
+      {
+        "name": "a",
+        "propertyName": "n.title",
+        "type": "STRING"
+      },
+      {
+        "name": "c1",
+        "propertyName": "n.released",
+        "type": "INTEGER"
+      }
+    ]
+  },
+  {
+    "name": "cbv2",
+    "query": "RETURN 1999 AS b, false AS c2",
+    "columns": [
+      {
+        "name": "b",
+        "propertyName": null,
+        "type": "FLOAT"
+      },
+      {
+        "name": "c2",
+        "propertyName": null,
+        "type": "BOOLEAN"
+      }
+    ]
+  }
+]

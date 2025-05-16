@@ -183,8 +183,10 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.transactionMetadata.putAll(Objects.requireNonNullElseGet(transactionMetadata, Map::of));
 		this.relationshipSampleSize = relationshipSampleSize;
 		this.databaseName = Objects.requireNonNull(databaseName);
-		this.databaseMetadData = Lazy.of((Supplier<DatabaseMetaData>) () -> new DatabaseMetadataImpl(this,
-				this.enableSqlTranslation, this.relationshipSampleSize));
+		this.databaseMetadData = Lazy.of((Supplier<DatabaseMetaData>) () -> {
+			var views = this.translators.resolve().stream().flatMap(t -> t.getViews().stream()).toList();
+			return new DatabaseMetadataImpl(this, this.enableSqlTranslation, this.relationshipSampleSize, views);
+		});
 		this.onClose = Objects.requireNonNullElse(onClose, (aborted) -> {
 		});
 	}
@@ -1089,6 +1091,9 @@ final class ConnectionImpl implements Neo4jConnection {
 							ex));
 					if (ex.getCause() != null) {
 						lastException = ex.getCause();
+					}
+					else {
+						lastException = ex;
 					}
 				}
 			}

@@ -1,0 +1,14 @@
+[
+  {
+    "columns": [
+      {
+        "name": "_NodeId_",
+        "type": "String"
+      },
+      {
+      }
+    ],
+    "name": "CountryCountsView",
+    "query": "MATCH (n:Country)-[]-(:Province)-[]-(:Region)-[]-(:Winery)-[]-(w:Wine) RETURN DISTINCT n.country AS countries, COUNT(DISTINCT w) AS numWines, elementId(n)"
+  }
+]

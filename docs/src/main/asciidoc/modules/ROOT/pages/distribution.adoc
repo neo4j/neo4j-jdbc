@@ -116,6 +116,7 @@ https://repo.maven.apache.org/maven2/org/neo4j/{artifact-id-bundle}/{version}/{a
 TIP: All bundles can be used as normal project dependencies as well.
 This might be useful for example if your project depends on a different, potentially conflicting Netty version.
 
+[#full_bunde]
 === Full bundle
 
 This bundle contains the default SQL-to-Cypher translator.

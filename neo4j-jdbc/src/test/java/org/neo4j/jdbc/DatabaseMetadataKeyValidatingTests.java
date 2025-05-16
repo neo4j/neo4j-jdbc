@@ -19,6 +19,7 @@
 package org.neo4j.jdbc;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class DatabaseMetadataKeyValidatingTests {
 		catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
-		return new DatabaseMetadataImpl(connection, false, 1000);
+		return new DatabaseMetadataImpl(connection, false, 1000, List.of());
 	}
 
 	@Test

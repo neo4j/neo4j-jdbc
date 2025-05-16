@@ -88,7 +88,14 @@ final class Neo4jConversions {
 			case "Null" -> "NULL";
 			// this is not a cypher type but needs to be represented for jdbc
 			case "Any" -> "ANY";
-			default -> "OTHER";
+			default -> {
+				try {
+					yield Type.valueOf(neo4jType).name();
+				}
+				catch (IllegalArgumentException ex) {
+					yield "OTHER";
+				}
+			}
 		};
 	}
 

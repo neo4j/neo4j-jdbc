@@ -21,6 +21,7 @@ package org.neo4j.jdbc.values;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -34,10 +35,7 @@ public final class MapValue extends AbstractValue {
 	private final Map<String, Value> val;
 
 	MapValue(Map<String, Value> val) {
-		if (val == null) {
-			throw new IllegalArgumentException("Cannot construct MapValue from null");
-		}
-		this.val = val;
+		this.val = Objects.requireNonNull(val, "Cannot construct MapValue from null");
 	}
 
 	@Override

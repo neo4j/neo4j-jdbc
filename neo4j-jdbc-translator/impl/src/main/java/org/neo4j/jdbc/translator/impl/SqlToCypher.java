@@ -18,19 +18,24 @@
  */
 package org.neo4j.jdbc.translator.impl;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
@@ -70,6 +75,7 @@ import org.neo4j.cypherdsl.core.ExposesRelationships;
 import org.neo4j.cypherdsl.core.ExposesReturning;
 import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Finish;
+import org.neo4j.cypherdsl.core.IdentifiableElement;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.NodeLabel;
 import org.neo4j.cypherdsl.core.PatternElement;
@@ -81,6 +87,7 @@ import org.neo4j.cypherdsl.core.ResultStatement;
 import org.neo4j.cypherdsl.core.SortItem;
 import org.neo4j.cypherdsl.core.Statement;
 import org.neo4j.cypherdsl.core.StatementBuilder;
+import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.SymbolicName;
@@ -90,6 +97,7 @@ import org.neo4j.cypherdsl.core.renderer.GeneralizedRenderer;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.jdbc.translator.spi.Cache;
 import org.neo4j.jdbc.translator.spi.Translator;
+import org.neo4j.jdbc.translator.spi.View;
 
 /**
  * A jOOQ/Cypher-DSL based SQL to Cypher translator and the default translator for the
@@ -131,6 +139,8 @@ final class SqlToCypher implements Translator {
 
 	private final Cache<Query, String> cache = Cache.getInstance(STATEMENT_CACHE_SIZE);
 
+	private final Set<View> views;
+
 	private SqlToCypher(SqlToCypherConfig config) {
 
 		this.config = config;
@@ -139,6 +149,18 @@ final class SqlToCypher implements Translator {
 			.alwaysEscapeNames(this.config.isAlwaysEscapeNames())
 			.withDialect(Dialect.NEO4J_5)
 			.build();
+
+		if (this.config.getViewDefinitions() == null) {
+			this.views = Set.of();
+		}
+		else {
+			try {
+				this.views = Set.copyOf(ViewDefinitionReader.of(this.config.getViewDefinitions()).read());
+			}
+			catch (IOException ex) {
+				throw new UncheckedIOException(ex);
+			}
+		}
 	}
 
 	@Override
@@ -149,6 +171,12 @@ final class SqlToCypher implements Translator {
 	@Override
 	public int getOrder() {
 		return Optional.ofNullable(this.config.getPrecedence()).orElseGet(Translator.super::getOrder);
+	}
+
+	@Override
+	public Set<View> getViews() {
+
+		return this.views;
 	}
 
 	@Override
@@ -177,7 +205,8 @@ final class SqlToCypher implements Translator {
 
 	private String translate0(Query query, DatabaseMetaData databaseMetaData) {
 
-		return render(ContextAwareStatementBuilder.build(this.config, databaseMetaData, query));
+		var views = this.getViews().stream().collect(Collectors.toMap(View::name, Function.identity()));
+		return render(ContextAwareStatementBuilder.build(this.config, databaseMetaData, query, views));
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -254,34 +283,43 @@ final class SqlToCypher implements Translator {
 
 		private final AtomicBoolean useAliasForVColumn = new AtomicBoolean(true);
 
-		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query) {
+		private final Map<String, View> views;
+
+		static Statement build(SqlToCypherConfig config, DatabaseMetaData databaseMetaData, Query query,
+				Map<String, View> views) {
 			if (query instanceof Select<?> s) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(s);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(s);
 			}
 			else if (query instanceof QOM.Delete<?> d) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(d);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(d);
 			}
 			else if (query instanceof QOM.Truncate<?> t) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(t);
 			}
 			else if (query instanceof QOM.Insert<?> t) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(t);
 			}
 			else if (query instanceof QOM.InsertReturning<?> t) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(t.$insert(),
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(t.$insert(),
 						t.$returning());
 			}
 			else if (query instanceof QOM.Update<?> u) {
-				return new ContextAwareStatementBuilder(config, databaseMetaData).statement(u);
+				return new ContextAwareStatementBuilder(config, databaseMetaData, views).statement(u);
 			}
 			else {
 				throw unsupported(query);
 			}
 		}
 
-		ContextAwareStatementBuilder(SqlToCypherConfig config, DatabaseMetaData databaseMetaData) {
+		ContextAwareStatementBuilder(SqlToCypherConfig config, DatabaseMetaData databaseMetaData,
+				Map<String, View> views) {
 			this.config = config;
 			this.databaseMetaData = databaseMetaData;
+			this.views = views;
+		}
+
+		private boolean ownsView(CbvPointer cbvPointer) {
+			return this.views.containsKey(cbvPointer.viewName());
 		}
 
 		private static IllegalArgumentException unsupported(QueryPart p) {
@@ -307,6 +345,8 @@ final class SqlToCypher implements Translator {
 			this.tables.clear();
 			this.tables.add(d.$from());
 
+			assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", this.tables.get(0));
+
 			Node e = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
 			OngoingReadingWithoutWhere m1 = Cypher.match(e);
 			OngoingReadingWithWhere m2 = (d.$where() != null) ? m1.where(condition(d.$where()))
@@ -317,6 +357,10 @@ final class SqlToCypher implements Translator {
 		private Statement statement(QOM.Truncate<?> t) {
 			this.tables.clear();
 			this.tables.addAll(t.$table());
+
+			for (var table : this.tables) {
+				assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", table);
+			}
 
 			Node e = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
 			return Cypher.match(e).detachDelete(e.asExpression()).build();
@@ -334,8 +378,25 @@ final class SqlToCypher implements Translator {
 			else {
 				x = incoming;
 			}
+
+			// Retrieve all Cypher-backed views
+			var allCbvs = loadCypherBackedViews();
+			var cbvs = new ArrayList<CbvPointer>();
+
 			this.tables.clear();
-			this.tables.addAll(unnestFromClause(x.$from()));
+			this.tables.addAll(unnestFromClause(x.$from(), false, (table, partOfJoin) -> {
+				var p = CbvPointer.of(table);
+				if (allCbvs.contains(p.viewName()) && ownsView(p)) {
+					if (partOfJoin) {
+						throw new IllegalArgumentException("Cypher-backed views cannot be used with a JOIN clause");
+					}
+					cbvs.add(p);
+				}
+			}));
+
+			if (!cbvs.isEmpty() && cbvs.size() < this.tables.size()) {
+				throw new IllegalArgumentException("Cypher-backed views cannot be combined with regular tables");
+			}
 
 			// Done lazy as otherwise the property containers won't be resolved
 			Supplier<List<Expression>> resultColumnsSupplier = () -> x.$select()
@@ -347,10 +408,32 @@ final class SqlToCypher implements Translator {
 				return Cypher.returning(resultColumnsSupplier.get()).build();
 			}
 
-			OngoingReadingWithoutWhere m1 = Cypher
-				.match(x.$from().stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
-			OngoingReadingWithWhere m2 = (x.$where() != null) ? m1.where(condition(x.$where()))
-					: (OngoingReadingWithWhere) m1;
+			OngoingReading m2;
+			if (!cbvs.isEmpty()) {
+				StatementBuilder.OrderableOngoingReadingAndWithWithoutWhere m1 = null;
+				List<IdentifiableElement> previousAliases = new ArrayList<>();
+				for (var cbv : cbvs) {
+					var view = this.views.get(cbv.viewName());
+					var projection = Cypher.mapOf(view.columns()
+						.stream()
+						.flatMap(column -> Stream.of(column.name(), Cypher.raw(column.propertyName())))
+						.toArray());
+					if (m1 == null) {
+						previousAliases.add(projection.as(cbv.alias()));
+						m1 = Cypher.callRawCypher(view.query()).with(previousAliases);
+					}
+					else {
+						previousAliases.add(projection.as(cbv.alias()));
+						m1 = m1.callRawCypher(view.query()).with(previousAliases);
+					}
+				}
+				m2 = (x.$where() != null) ? m1.where(condition(x.$where())) : m1;
+			}
+			else {
+				OngoingReadingWithoutWhere m1 = Cypher
+					.match(x.$from().stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
+				m2 = (x.$where() != null) ? m1.where(condition(x.$where())) : (OngoingReadingWithWhere) m1;
+			}
 
 			var intermediate = x.$distinct() ? m2.returningDistinct(resultColumnsSupplier.get())
 					: m2.returning(resultColumnsSupplier.get());
@@ -367,6 +450,21 @@ final class SqlToCypher implements Translator {
 			return buildableStatement.build();
 		}
 
+		private Set<String> loadCypherBackedViews() {
+			if (this.databaseMetaData == null) {
+				return Set.of();
+			}
+			var allCbvs = new HashSet<String>();
+			try (var resultSet = this.databaseMetaData.getTables(null, null, null, new String[] { "CBV" })) {
+				while (resultSet.next()) {
+					allCbvs.add(resultSet.getString("TABLE_NAME"));
+				}
+			}
+			catch (SQLException ignored) {
+			}
+			return allCbvs;
+		}
+
 		private Statement statement(QOM.Insert<?> insert) {
 			return statement(insert, List.of());
 		}
@@ -374,6 +472,8 @@ final class SqlToCypher implements Translator {
 		private Statement statement(QOM.Insert<?> insert, List<? extends SelectFieldOrAsterisk> returning) {
 			this.tables.clear();
 			this.tables.add(insert.$into());
+
+			assertCypherBackedViewUsage("Cypher-backed views cannot be inserted to", this.tables.get(0));
 
 			var node = (Node) this.resolveTableOrJoin(this.tables.get(0)).get(0);
 			var rows = insert.$values();
@@ -511,6 +611,8 @@ final class SqlToCypher implements Translator {
 			this.tables.clear();
 			this.tables.add(update.$table());
 
+			assertCypherBackedViewUsage("Cypher-backed views cannot be updated", this.tables.get(0));
+
 			var node = (Node) this.resolveTableOrJoin(this.tables.get(0)).get(0);
 			var updates = new ArrayList<Expression>();
 			update.$set().forEach((c, v) -> {
@@ -526,6 +628,14 @@ final class SqlToCypher implements Translator {
 				exposesSet = Cypher.match(node);
 			}
 			return exposesSet.set(updates).build();
+		}
+
+		private void assertCypherBackedViewUsage(String s, Table<?> table) {
+			var allCbvs = loadCypherBackedViews();
+			var p = CbvPointer.of(table);
+			if (allCbvs.contains(p.viewName()) && ownsView(p)) {
+				throw new IllegalArgumentException(s);
+			}
 		}
 
 		@SuppressWarnings("squid:S3776") // Yep, this is complex.
@@ -610,7 +720,9 @@ final class SqlToCypher implements Translator {
 		private List<Expression> findProperties(String tableName, PropertyContainer pc) {
 			List<Expression> properties = new ArrayList<>();
 			try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
-				properties.add(makeId(pc, null));
+				if (!this.views.containsKey(tableName)) {
+					properties.add(makeId(pc, null));
+				}
 				while (columns.next()) {
 					var columnName = columns.getString("COLUMN_NAME");
 					if ("YES".equalsIgnoreCase(columns.getString("IS_GENERATEDCOLUMN"))) {
@@ -631,15 +743,17 @@ final class SqlToCypher implements Translator {
 					? function.as(uniqueColumnName((alias != null) ? alias : ELEMENT_ID_ALIAS)) : function;
 		}
 
-		private static List<? extends Table<?>> unnestFromClause(List<? extends Table<?>> tables) {
+		private static List<? extends Table<?>> unnestFromClause(List<? extends Table<?>> tables, boolean partOfJoin,
+				BiConsumer<Table<?>, Boolean> listener) {
 			List<Table<?>> result = new ArrayList<>();
 			for (Table<?> table : tables) {
 				if (table instanceof QOM.JoinTable<?, ? extends Table<?>> join) {
-					result.addAll(unnestFromClause(List.of(join.$table1())));
-					result.addAll(unnestFromClause(List.of(join.$table2())));
+					result.addAll(unnestFromClause(List.of(join.$table1()), true, listener));
+					result.addAll(unnestFromClause(List.of(join.$table2()), true, listener));
 				}
 				else {
 					result.add(table);
+					listener.accept(table, partOfJoin);
 				}
 			}
 			return result;
@@ -1569,6 +1683,17 @@ final class SqlToCypher implements Translator {
 				.orElseGet(() -> relationshipTypeName(field));
 		}
 
+	}
+
+	record CbvPointer(Table<?> table, String viewName, String alias) {
+		static CbvPointer of(Table<?> table) {
+			var name = table.$name().first();
+			var alias = name;
+			if (table instanceof TableAlias<?> tableAlias) {
+				name = tableAlias.$aliased().$name().first();
+			}
+			return new CbvPointer(table, name, alias);
+		}
 	}
 
 }

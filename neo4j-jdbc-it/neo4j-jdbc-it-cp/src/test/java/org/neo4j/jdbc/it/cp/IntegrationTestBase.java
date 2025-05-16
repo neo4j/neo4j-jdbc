@@ -89,7 +89,8 @@ abstract class IntegrationTestBase {
 		return getConnection(false, false);
 	}
 
-	final Connection getConnection(boolean translate, boolean rewriteBatchedStatements) throws SQLException {
+	final Connection getConnection(boolean translate, boolean rewriteBatchedStatements, String... additionalProperties)
+			throws SQLException {
 		var url = getConnectionURL();
 		var properties = new Properties();
 		properties.put("user", "neo4j");
@@ -99,6 +100,12 @@ abstract class IntegrationTestBase {
 			properties.put("enableSQLTranslation", "true");
 			properties.put("s2c.alwaysEscapeNames", "false");
 			properties.put("s2c.prettyPrint", "false");
+		}
+
+		if (additionalProperties.length > 0 && additionalProperties.length % 2 == 0) {
+			for (int i = 0; i < additionalProperties.length; i += 2) {
+				properties.put(additionalProperties[0], additionalProperties[1]);
+			}
 		}
 		return this.driver.connect(url, properties);
 	}

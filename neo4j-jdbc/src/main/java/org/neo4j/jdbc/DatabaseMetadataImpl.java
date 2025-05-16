@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,15 +40,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
+import org.neo4j.jdbc.translator.spi.View;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -253,14 +258,17 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private final Map<GetTablesCacheKey, GetTablesCacheValue> tablesCache = new ConcurrentHashMap<>();
 
-	DatabaseMetadataImpl(Connection connection, boolean automaticSqlTranslation, int relationshipSampleSize) {
+	private final Map<String, View> views;
+
+	DatabaseMetadataImpl(Connection connection, boolean automaticSqlTranslation, int relationshipSampleSize,
+			Collection<View> views) {
 		this.connection = connection;
 		this.automaticSqlTranslation = automaticSqlTranslation;
 		this.relationshipSampleSize = relationshipSampleSize;
 
 		this.apocAvailable = Lazy.<Boolean, RuntimeException>of(this::isApocAvailable0);
 		// Those queries use administrative commands that do not compose with normal
-		// queries, so we cache it here and hope for the best they don't interfer with
+		// queries, so we cache it here and hope for the best they don't interfere with
 		// other queries.
 		this.userName = Lazy.of((ThrowingSupplier<String, SQLException>) () -> {
 			var response = doQueryForPullResponse(getRequest("getUserName"));
@@ -270,6 +278,9 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			var response = doQueryForPullResponse(getRequest("isReadOnly", "name", this.getSingleCatalog()));
 			return response.records().get(0).get(0).asBoolean();
 		});
+		this.views = views.stream().collect(Collectors.toMap(View::name, Function.identity(), (v1, v2) -> {
+			throw new IllegalArgumentException("Duplicate name for Cypher-backed view " + v1);
+		}, TreeMap::new));
 	}
 
 	boolean isApocAvailable() {
@@ -1018,7 +1029,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		var request = getRequest(isApocAvailable() ? "getTablesApoc" : "getTablesFallback", "name",
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null, "sampleSize",
-				this.relationshipSampleSize, "types", types);
+				this.relationshipSampleSize, "types", types, "views", this.views.keySet());
 
 		try (var resultSet = doQueryForResultSet(request)) {
 			return GetTablesCacheValue.of(resultSet);
@@ -1040,8 +1051,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		keys.add("TABLE_TYPE");
 
 		var runResponse = createRunResponseForStaticKeys(keys);
-		var pullResponse = staticPullResponseFor(keys,
-				List.of(new Value[] { Values.value("TABLE") }, new Value[] { Values.value("RELATIONSHIP") }));
+		var pullResponse = staticPullResponseFor(keys, List.of(new Value[] { Values.value("TABLE") },
+				new Value[] { Values.value("RELATIONSHIP") }, new Value[] { Values.value("CBV") }));
 		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
@@ -1062,6 +1073,15 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		return Values.NULL;
 	}
 
+	private Stream<Map<String, String>> getViewColumns() {
+		return this.views.values()
+			.stream()
+			.flatMap(view -> view.columns()
+				.stream()
+				.map(column -> Map.of("viewName", view.name(), "propertyName", column.name(), "propertyType",
+						column.type())));
+	}
+
 	@SuppressWarnings("squid:S3776") // Yep, this is complex.
 	@Override
 	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
@@ -1073,13 +1093,15 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		columnNamePattern = (columnNamePattern != null) ? columnNamePattern.replace("%", ".*") : columnNamePattern;
 		var request = getRequest("getColumns", "name",
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern, "column_name",
-				columnNamePattern, "sampleSize", this.relationshipSampleSize);
+				columnNamePattern, "sampleSize", this.relationshipSampleSize, "viewColumns", getViewColumns());
 		var innerColumnsResponse = doQueryForPullResponse(request);
 		var records = innerColumnsResponse.records();
 
 		var rows = new LinkedList<Value[]>();
 
 		var columnPerLabel = new HashMap<Value, Set<Value>>();
+
+		var cbvs = new HashSet<Value>();
 
 		for (Record record : records) {
 
@@ -1092,7 +1114,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 			var nodeLabels = record.get(0);
 			Value labelsOrTypes = nodeLabels;
-			if ("RELATIONSHIP".equals(record.get("TABLE_TYPE").asString())) {
+			var tableType = record.get("TABLE_TYPE").asString();
+			if ("RELATIONSHIP".equals(tableType)) {
 				// This column contains the flat rel type, so that we don't have to strip
 				// away start / end node again.
 				labelsOrTypes = Values.value(List.of(record.get("relationshipType").asString()));
@@ -1124,6 +1147,9 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				var values = addColumn(nodeLabel, propertyName, propertyType, NULLABLE, IS_NULLABLE,
 						nodeLabelList.indexOf(nodeLabel) + 1, false);
 				rows.add(values.toArray(Value[]::new));
+				if ("CBV".equals(tableType)) {
+					cbvs.add(nodeLabel);
+				}
 			}
 		}
 
@@ -1134,8 +1160,11 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			}
 		}
 
-		// Add artificial element ids
+		// Add artificial element ids, except for Cypher-backed views
 		for (Value v : columnPerLabel.keySet()) {
+			if (cbvs.contains(v)) {
+				continue;
+			}
 			boolean isRelationship = v.asString().contains("_");
 			var additionalIds = new ArrayList<>(List.of("v$id"));
 			if (isRelationship) {
