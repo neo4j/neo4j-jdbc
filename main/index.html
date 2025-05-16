@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-05-12T09:30:39Z</span>
+<span id="revdate">2025-05-16T14:20:02Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -580,7 +580,15 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#s2c">6.3. Using the default translator</a></li>
 </ul>
 </li>
-<li><a href="#text2cypher">7. text2cypher</a></li>
+<li><a href="#cbv_introduction">7. Cypher-backed views</a>
+<ul class="sectlevel2">
+<li><a href="#_introduction_3">7.1. Introduction</a></li>
+<li><a href="#_requirements">7.2. Requirements</a></li>
+<li><a href="#_configuration_and_view_definition_format">7.3. Configuration and view definition format</a></li>
+<li><a href="#_restrictions">7.4. Restrictions</a></li>
+</ul>
+</li>
+<li><a href="#text2cypher">8. text2cypher</a></li>
 <li><a href="#_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</a>
 <ul class="sectlevel2">
 <li><a href="#_data_types_for_fixed_point_arithmetic">A.1. Data types for fixed-point arithmetic</a></li>
@@ -796,7 +804,7 @@ However, the default SQL-to-Cypher translator will (when connected to a database
 <div class="title">Listing 1. Using the full bundle as a runtime dependency inside a Gradle-based project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="kotlin">dependencies {
-    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.4.2-SNAPSHOT) <i class="conum" data-value="1"></i><b>(1)</b>
+    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.5.0-SNAPSHOT) <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
@@ -1195,7 +1203,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.4.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.5.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1206,7 +1214,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 11. Neo4j JDBC Driver as Gradle runtime dependency</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.4.2-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.5.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1219,7 +1227,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-translator-impl<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.4.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.5.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1230,7 +1238,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 13. Gradle dependency for the default SQL to Cypher translator</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.4.2-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.5.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1243,7 +1251,7 @@ This bundle does not contain the default SQL-to-Cypher translator!
 The coordinates of this bundle are <code>org.neo4j:neo4j-jdbc-bundle</code> and you can download it from Maven central:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-bundle-6.4.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-bundle-6.4.2-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-bundle-6.5.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-bundle-6.5.0-SNAPSHOT.jar</a></p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1260,14 +1268,14 @@ This might be useful for example if your project depends on a different, potenti
 </div>
 </div>
 <div class="sect3">
-<h4 id="_full_bundle">3.2.3. Full bundle</h4>
+<h4 id="full_bunde">3.2.3. Full bundle</h4>
 <div class="paragraph">
 <p>This bundle contains the default SQL-to-Cypher translator.
 Otherwise, it is identical to the <a href="#small_bundle">small bundle</a>.
 Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can download it from Maven central here:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-full-bundle-6.4.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-full-bundle-6.4.2-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.5.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.5.0-SNAPSHOT.jar</a></p>
 </div>
 </div>
 <div class="sect3">
@@ -1276,7 +1284,7 @@ Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can do
 <p>We also ship a very experimental bundle that we call <code>text2cypher</code>:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.4.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.4.2-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.5.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.5.0-SNAPSHOT.jar</a></p>
 </div>
 <div class="paragraph">
 <p>See <a href="#">Neo4j JDBC Driver</a> more information.</p>
@@ -1540,6 +1548,12 @@ All query parameters must be <a href="https://en.wikipedia.org/wiki/Percent-enco
 If you disable it, it will only be disabled for the specific connection.
 Other connections retrieved from the driver instance to the same or to other databases are not affected, and the individual connections will still manage their bookmarks.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>viewDefinitions</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A file, http or https URL pointing to a valid JSON file containing definitions for <a href="#">Cypher-backed views</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
 </tr>
 </tbody>
 </table>
@@ -1932,7 +1946,7 @@ For Maven, use this additional dependency declaration:</p>
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-tracing-micrometer<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.4.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.5.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1943,7 +1957,7 @@ For Maven, use this additional dependency declaration:</p>
 <div class="title">Listing 22. Gradle dependency that allows you to configure tracing</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.4.2-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.5.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -4198,7 +4212,286 @@ ON MATCH SET people.born = properties['born']</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="text2cypher">7. text2cypher</h2>
+<h2 id="cbv_introduction">7. Cypher-backed views</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction_3">7.1. Introduction</h3>
+<div class="paragraph">
+<p>Cypher-backed views are a way to create virtual views inside the JDBC client application that are backed by an arbitrary Cypher query.
+They allow your Neo4j database to be utilized the best way possible and make use of all Cypher constructs, including everyone for which the JDBC driver can offer a direct SQL to Cypher translation.</p>
+</div>
+<div class="paragraph">
+<p>Cypher-backed views will appear in the database metadata of the JDBC connection and are defined on the client-side.
+They consist of</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a name</p>
+</li>
+<li>
+<p>a Cypher query</p>
+</li>
+<li>
+<p>the list of columns</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The name must be unique and will be the name under which the view is queryable and appear in the database metadata.
+Only the enumerated columns will appear in the database metadata.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_requirements">7.2. Requirements</h3>
+<div class="paragraph">
+<p>Cypher-backed views requires <a href="#s2c_introduction">SQL translations</a> to be enabled and <a href="#s2c">the default translator</a> on the classpath, hence you must add the corresponding dependency in your application or use <a href="#full_bunde">the full bundle</a>.
+If you fail to enable SQL translation or are missing the standard translator, your Cypher-backed views will still be loaded, contribute to the database metadata, but you cannot query them.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+While you can use any valid Cypher query in a view definition, we highly recommend not using Cypher statements that do updates to the graph. We don&#8217;t parse the Cypher, and we won&#8217;t prevent a <code>SELECT *</code> statement that casually deletes your graph with a view definition such as <code>MATCH (n) DETACH DELETE</code>. We do prevent Cypher-backed views from being used in a SQL update statements, such as <code>INSERT</code>, <code>DELETE</code> or <code>UPDATE</code>, though.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The Cypher query can basically have any shape, but it must be a query that is valid inside a <code>CALL {}</code> subquery.
+While we could just execute the query as-is, you wouldn&#8217;t be able to query more than one Cypher-backed view at a time otherwise.
+Check "<a href="#_restrictions">Restrictions</a>" below for more information.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_and_view_definition_format">7.3. Configuration and view definition format</h3>
+<div class="paragraph">
+<p>Cypher-backed views are represented as JSON.
+The native format is defined by the following <a href="https://json-schema.org">schema</a>:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 34. JSON Schema for Cypher-backed views</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="json">{
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">$schema</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">http://json-schema.org/draft-07/schema#</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">JSON Schema for Cypher-backed views</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">array</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">items</span><span class="delimiter">&quot;</span></span>: {
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">$ref</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">#/$defs/viewType</span><span class="delimiter">&quot;</span></span>
+  },
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">$defs</span><span class="delimiter">&quot;</span></span>: {
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">viewType</span><span class="delimiter">&quot;</span></span>: {
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">object</span><span class="delimiter">&quot;</span></span>,
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">properties</span><span class="delimiter">&quot;</span></span>: {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: {
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">string</span><span class="delimiter">&quot;</span></span>,
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">description</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">The name of this view.</span><span class="delimiter">&quot;</span></span>
+        },
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">query</span><span class="delimiter">&quot;</span></span>: {
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">string</span><span class="delimiter">&quot;</span></span>,
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">description</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">Any valid Cypher query.</span><span class="delimiter">&quot;</span></span>
+        },
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">columns</span><span class="delimiter">&quot;</span></span>: {
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">array</span><span class="delimiter">&quot;</span></span>,
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">items</span><span class="delimiter">&quot;</span></span>: {
+            <span class="key"><span class="delimiter">&quot;</span><span class="content">$ref</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">#/$defs/columnType</span><span class="delimiter">&quot;</span></span>
+          }
+        }
+      },
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">required</span><span class="delimiter">&quot;</span></span>: [
+        <span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>,
+        <span class="string"><span class="delimiter">&quot;</span><span class="content">query</span><span class="delimiter">&quot;</span></span>,
+        <span class="string"><span class="delimiter">&quot;</span><span class="content">columns</span><span class="delimiter">&quot;</span></span>
+      ],
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">A view that will be queryable.</span><span class="delimiter">&quot;</span></span>
+    },
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">columnType</span><span class="delimiter">&quot;</span></span>: {
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">object</span><span class="delimiter">&quot;</span></span>,
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">properties</span><span class="delimiter">&quot;</span></span>: {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: {
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">string</span><span class="delimiter">&quot;</span></span>,
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">description</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">The name as it will appear in the column list of the view.</span><span class="delimiter">&quot;</span></span>
+        },
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">propertyName</span><span class="delimiter">&quot;</span></span>: {
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">string</span><span class="delimiter">&quot;</span></span>,
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">description</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">The property to pick from the graph, can be omitted when equal to the column name</span><span class="delimiter">&quot;</span></span>
+        },
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: {
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">string</span><span class="delimiter">&quot;</span></span>,
+          <span class="key"><span class="delimiter">&quot;</span><span class="content">description</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">The Neo4j type of this column</span><span class="delimiter">&quot;</span></span>
+        }
+      },
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">required</span><span class="delimiter">&quot;</span></span>: [
+        <span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>,
+        <span class="string"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>
+      ],
+      <span class="key"><span class="delimiter">&quot;</span><span class="content">description</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">A type representing a column in a relational view</span><span class="delimiter">&quot;</span></span>
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The JDBC driver is able to load resources from</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the file system</p>
+</li>
+<li>
+<p>or via http(s)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>and the resources must be configured through a connection property named <code>viewDefinitions</code>.
+That property goes either as a query parameter into the JDBC URL or as a JDBC property.
+Here are a bunch of examples that uses a query parameter as part of a JDBC URL:</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Please be aware that we are strict with <a href="https://en.wikipedia.org/wiki/File_URI_scheme">File URI scheme</a> with regard to the number of slashes: <code>file:</code> is the protocol, the slashes are not part of it. Either use exactly one slash (<code>/</code>) meaning no hostname, or three slashes (<code>///</code>) meaning an empty hostname (effectively the same) after it. We don&#8217;t guess about the meaning of two slashes and don&#8217;t support hostnames for reading files.
+</td>
+</tr>
+</table>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>jdbc:neo4j://localhost:7687?viewDefinitions=file:/my/views/foobar.json</code></dt>
+<dd>
+<p>Here the view definition resides in a folder <code>/my/views/</code> on the same machine named <code>foobar.json</code></p>
+</dd>
+<dt class="hdlist1"><code>jdbc:neo4j://localhost:7687?viewDefinitions=file:///my/views/foobar.json</code></dt>
+<dd>
+<p>This is equivalent to the URL above</p>
+</dd>
+<dt class="hdlist1"><code>jdbc:neo4j://localhost:7687?viewDefinitions=https://myorg.com/movies.json</code></dt>
+<dd>
+<p>View definitions hosted on a secure webserver</p>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Make sure you only load view definitions from trusted sources. As stated above, there&#8217;s nothing that prevents a writing Cypher query being used as a view definition and you don&#8217;t want to have them injected into your application from an unknown or untrusted source.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>A simple example looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 35. A Cypher-backed view that returns all movies and their actors.</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="json">[
+  {
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">v_movie_actors</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">query</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (n:Movie)&lt;-[:ACTED_IN]-(p:Person) RETURN elementId(n) AS id, n.title AS title, n.released AS released, collect(p.name) AS actors</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">columns</span><span class="delimiter">&quot;</span></span>: [
+      {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">id</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">STRING</span><span class="delimiter">&quot;</span></span>
+      },
+      {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">STRING</span><span class="delimiter">&quot;</span></span>
+      },
+      {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">released</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">INTEGER</span><span class="delimiter">&quot;</span></span>
+      },
+      {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">actors</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">LIST</span><span class="delimiter">&quot;</span></span>
+      }
+    ]
+  }
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the above example, all columns are projected in the Cypher <code>RETURN</code> clause and named to match the column-names in the list of columns to follow via <code>AS</code>.
+The view can be queried as follows, with ordering and predicates being pushed down into the actual query:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 36. Querying <code>v_movie_actors</code></div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> v_movie_actors <span class="keyword">ORDER</span> <span class="keyword">BY</span> title</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>propertyName</code> attribute of the <code>columnType</code> object can be used to refer to properties of a Cypher entity (either a node or relationship) as shown in the following example:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 37. Defining a view that uses a virtual column (the id function) and an entity returned by the Cypher query</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="json">[
+  {
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">query</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (n:Person) RETURN id(n) AS id, n</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">columns</span><span class="delimiter">&quot;</span></span>: [
+      {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">id</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">INTEGER</span><span class="delimiter">&quot;</span></span>
+      },
+      {
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">propertyName</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">n.name</span><span class="delimiter">&quot;</span></span>,
+        <span class="key"><span class="delimiter">&quot;</span><span class="content">type</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">STRING</span><span class="delimiter">&quot;</span></span>
+      }
+    ]
+  }
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Which can now be queried as</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 38. Querying <code>v_people</code></div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> v_people <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string"><span class="delimiter">'</span><span class="content">A%</span><span class="delimiter">'</span></span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> name</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As with the <code>ORDER BY</code> clause in the <code>v_movie_actors</code> example, the predicate and the order clause will be pushed down into the actual Cypher that is passed to the Neo4j DBMS.</p>
+</div>
+<div class="paragraph">
+<p>Additionally, we support the same format as the "Magnitude Simba Neo4j Data Connector for Business Intelligence Tools" in version 1.0.10 as of January 2022 does.
+All schema information will however be ignored (schema names and whether a view is hidden or not).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_restrictions">7.4. Restrictions</h3>
+<div class="paragraph">
+<p>Cypher-backed views can of course only be read from, not modified (neither updated nor deleted).
+Cypher-backed views cannot be mixed with regular "tables", that is tables that are treated as labels and then matched on.
+If you want to query multiple Cypher-backed views at once, you need to enumerate them in the <code>FROM</code> clause, such as <code>view1, view2, view3</code> and as appropriate join in the <code>WHERE</code> clause with a predicate like this <code>view1.x = view2.y</code>.
+You cannot use the <code>JOIN</code>, <code>LEFT OUTER</code> or any other JOIN clause, as we cannot derive any meaningful relationship from a Cypher-backed view, which we would attempt in such cases.</p>
+</div>
+<div class="paragraph">
+<p>These restrictions should not matter much, as you can express arbitrary complex expressions inside the query that makes up the view so that your ETL tool or any other program can harness Cypher&#8217;s full capabilities.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="text2cypher">8. text2cypher</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This is an experimental translator inspired by the Neo4j Labs project <a href="https://github.com/neo4j-labs/text2cypher">text2cypher</a>.</p>
@@ -4258,7 +4551,7 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 34. Example of a valid URL</div>
+<div class="title">Listing 39. Example of a valid URL</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
 </div>
@@ -4350,7 +4643,7 @@ Once a natural language query gets translated into Cypher, the result will be ca
 <p>All that statements that do not start with 🤖 will be used as-is and treated as Cypher.</p>
 </div>
 <div class="paragraph">
-<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.4.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.4.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.4.2-SNAPSHOT.jar</a>. More information in <a href="#available_bundles">Available bundles</a>.</p>
+<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.5.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.5.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.5.0-SNAPSHOT.jar</a>. More information in <a href="#available_bundles">Available bundles</a>.</p>
 </div>
 </div>
 </div>
@@ -4614,7 +4907,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-12 09:30:50 UTC
+Last updated 2025-05-16 14:20:08 UTC
 </div>
 </div>
 </body>
