@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.neo4j.bolt.connection.values.Node;
 import org.neo4j.bolt.connection.values.Path;
@@ -105,7 +106,7 @@ enum ValueFactoryImpl implements ValueFactory {
 
 	@Override
 	public Segment segment(Node start, Relationship relationship, Node end) {
-		return new PathImpl.SelfContainedSegment((NodeImpl) start, (RelationshipImpl) relationship, (NodeImpl) end);
+		return new SelfContainedSegment((NodeImpl) start, (RelationshipImpl) relationship, (NodeImpl) end);
 	}
 
 	@Override
@@ -153,6 +154,39 @@ enum ValueFactoryImpl implements ValueFactory {
 			type = Type.BOOLEAN;
 		}
 		return new ValueImpl(value, type);
+	}
+
+	record SelfContainedSegment(org.neo4j.jdbc.values.Node start, org.neo4j.jdbc.values.Relationship relationship,
+			org.neo4j.jdbc.values.Node end)
+			implements
+				org.neo4j.jdbc.values.Path.Segment,
+				org.neo4j.bolt.connection.values.Segment {
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(this.start, this.relationship, this.end);
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (this == other) {
+				return true;
+			}
+			if (other == null || getClass() != other.getClass()) {
+				return false;
+			}
+
+			var that = (SelfContainedSegment) other;
+			return this.start.equals(that.start) && this.end.equals(that.end)
+					&& this.relationship.equals(that.relationship);
+		}
+
+		@Override
+		@SuppressWarnings({ "deprecation", "NullableProblems" })
+		public String toString() {
+			return String.format("(%s)-[%s:%s]->(%s)", this.start.id(), this.relationship.id(),
+					this.relationship.type(), this.end.id());
+		}
 	}
 
 }

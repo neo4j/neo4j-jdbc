@@ -18,9 +18,7 @@
  */
 package org.neo4j.jdbc.internal.bolt;
 
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -42,6 +40,11 @@ abstract class AbstractEntity implements Entity {
 		this.properties = Values.value(properties);
 	}
 
+	/**
+	 * See {@link Entity#id()}.
+	 * @return the id of this entity
+	 * @deprecated as Neo4j DBMS has deprecated the corresponding Cypher method, too.
+	 */
 	@Override
 	@Deprecated
 	public long id() {
@@ -121,26 +124,6 @@ abstract class AbstractEntity implements Entity {
 	@Override
 	public <T> Iterable<T> values(Function<Value, T> mapFunction) {
 		return map(this.properties.values(), mapFunction);
-	}
-
-	private static <T> Map<String, T> map(Map<String, Value> data, Function<Value, T> mapFunction) {
-		if (data.isEmpty()) {
-			return Collections.emptyMap();
-		}
-		else {
-			var size = data.size();
-			if (size == 1) {
-				var head = data.entrySet().iterator().next();
-				return Collections.singletonMap(head.getKey(), mapFunction.apply(head.getValue()));
-			}
-			else {
-				Map<String, T> map = new LinkedHashMap<>(size);
-				for (var entry : data.entrySet()) {
-					map.put(entry.getKey(), mapFunction.apply(entry.getValue()));
-				}
-				return Collections.unmodifiableMap(map);
-			}
-		}
 	}
 
 	private static <A, B> Iterable<B> map(final Iterable<A> it, final Function<A, B> f) {

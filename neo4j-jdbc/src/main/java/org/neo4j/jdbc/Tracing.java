@@ -67,6 +67,7 @@ final class Tracing implements ConnectionListener, StatementListener, ResultSetL
 	}
 
 	@Override
+	@SuppressWarnings("squid:S108")
 	public void onStatementCreated(StatementCreatedEvent event) {
 		try {
 			event.statement().unwrap(Neo4jStatement.class).addListener(this);

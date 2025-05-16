@@ -128,7 +128,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		this.transactionSupplier = Objects.requireNonNull(transactionSupplier);
 		this.sqlProcessor = Objects.requireNonNullElseGet(sqlProcessor, UnaryOperator::identity);
 		this.warnings = Objects.requireNonNullElseGet(localWarnings, Warnings::new);
-		this.onClose = Objects.requireNonNullElse(onClose, (type) -> {
+		this.onClose = Objects.requireNonNullElse(onClose, type -> {
 		});
 	}
 
@@ -140,7 +140,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		this.transactionSupplier = null;
 		this.sqlProcessor = UnaryOperator.identity();
 		this.warnings = new Warnings();
-		this.onClose = (type) -> {
+		this.onClose = type -> {
 		};
 	}
 
@@ -153,7 +153,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
-		return recordEvent(sql, ExecutionMode.QUERY, (context) -> {
+		return recordEvent(sql, ExecutionMode.QUERY, context -> {
 			this.updateCount = -1;
 			this.multipleResultsApi = false;
 			var processedSQL = applyProcessor ? processSQL(sql) : sql;
@@ -171,22 +171,23 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	private RunAndPullResponses runAndPull(Neo4jTransaction transaction, String processedSQL,
 			Map<String, Object> parameters, Map<String, Object> context) throws SQLException {
-		var fetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
-		var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), fetchSize, this.queryTimeout);
+		var finalFetchSize = (this.maxRows > 0) ? Math.min(this.maxRows, this.fetchSize) : this.fetchSize;
+		var runAndPull = transaction.runAndPull(processedSQL, getParameters(parameters), finalFetchSize,
+				this.queryTimeout);
 		Events.notify(this.listeners,
 				listener -> listener.on(new Neo4jEvent(Neo4jEvent.Type.RUN_AND_PULL_RESPONSE_ACQUIRED, context)));
 		return runAndPull;
 	}
 
 	private ResultSetImpl newResultSet(Neo4jTransaction transaction, RunAndPullResponses responses) {
-		var resultSet = new ResultSetImpl(this, transaction, responses.runResponse(), responses.pullResponse(),
+		var newResultSet = new ResultSetImpl(this, transaction, responses.runResponse(), responses.pullResponse(),
 				this.fetchSize, this.maxRows, this.maxFieldSize);
 		this.listeners.forEach(listener -> {
 			if (listener instanceof ResultSetListener resultSetListener) {
-				resultSet.addListener(resultSetListener);
+				newResultSet.addListener(resultSetListener);
 			}
 		});
-		return resultSet;
+		return newResultSet;
 	}
 
 	@Override
@@ -199,7 +200,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 			throws SQLException {
 		assertIsOpen();
 		closeResultSet();
-		return recordEvent(sql, ExecutionMode.UPDATE, (context) -> {
+		return recordEvent(sql, ExecutionMode.UPDATE, context -> {
 			this.updateCount = -1;
 			this.multipleResultsApi = false;
 			var processedSQL = applyProcessor ? processSQL(sql) : sql;
@@ -325,7 +326,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	protected final boolean execute0(String sql, Map<String, Object> parameters) throws SQLException {
 		assertIsOpen();
 		closeResultSet();
-		return recordEvent(sql, ExecutionMode.PLAIN, (context) -> {
+		return recordEvent(sql, ExecutionMode.PLAIN, context -> {
 			this.updateCount = -1;
 			this.multipleResultsApi = true;
 			var processedSQL = processSQL(sql);

@@ -20,7 +20,6 @@ package org.neo4j.jdbc.internal.bolt;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 import org.neo4j.jdbc.values.AsValue;
 import org.neo4j.jdbc.values.Node;
@@ -78,6 +77,7 @@ final class PathImpl implements Path, AsValue, org.neo4j.bolt.connection.values.
 		return this.nodes.get(this.nodes.size() - 1);
 	}
 
+	@SuppressWarnings("NullableProblems")
 	@Override
 	public Iterator<Segment> iterator() {
 		return this.segments.iterator();
@@ -111,43 +111,6 @@ final class PathImpl implements Path, AsValue, org.neo4j.bolt.connection.values.
 	public String toString() {
 
 		return "path" + this.segments;
-	}
-
-	private void buildSegments() {
-		for (var i = 0; i < this.relationships.size(); i++) {
-			this.segments
-				.add(new SelfContainedSegment(this.nodes.get(i), this.relationships.get(i), this.nodes.get(i + 1)));
-		}
-	}
-
-	record SelfContainedSegment(Node start, Relationship relationship,
-			Node end) implements Segment, org.neo4j.bolt.connection.values.Segment {
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(this.start, this.relationship, this.end);
-		}
-
-		@Override
-		public boolean equals(Object other) {
-			if (this == other) {
-				return true;
-			}
-			if (other == null || getClass() != other.getClass()) {
-				return false;
-			}
-
-			var that = (SelfContainedSegment) other;
-			return this.start.equals(that.start) && this.end.equals(that.end)
-					&& this.relationship.equals(that.relationship);
-		}
-
-		@Override
-		@SuppressWarnings("deprecation")
-		public String toString() {
-			return String.format("(%s)-[%s:%s]->(%s)", this.start.id(), this.relationship.id(),
-					this.relationship.type(), this.end.id());
-		}
 	}
 
 }
