@@ -129,7 +129,7 @@ SELECT * FROM v_people WHERE name LIKE 'A%' ORDER BY name
 
 As with the `ORDER BY` clause in the `v_movie_actors` example, the predicate and the order clause will be pushed down into the actual Cypher that is passed to the Neo4j DBMS.
 
-Additionally, we support the same format as the _Magnitude Simba Neo4j Data Connector for Business Intelligence Tools" in version 1.0.10 as of January 2022 does.
+Additionally, we support the same format as the "Magnitude Simba Neo4j Data Connector for Business Intelligence Tools" in version 1.0.10 as of January 2022 does.
 All schema information will however be ignored (schema names and whether a view is hidden or not).
 
 [#_restrictions]
