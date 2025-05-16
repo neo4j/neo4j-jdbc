@@ -21,13 +21,14 @@ package org.neo4j.jdbc.internal.bolt;
 import java.util.Iterator;
 import java.util.List;
 
+import org.neo4j.jdbc.values.AsValue;
 import org.neo4j.jdbc.values.Node;
 import org.neo4j.jdbc.values.Path;
 import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
-final class PathImpl implements Path, org.neo4j.bolt.connection.values.Path {
+final class PathImpl implements Path, AsValue, org.neo4j.bolt.connection.values.Path {
 
 	private final List<Node> nodes;
 
@@ -76,6 +77,7 @@ final class PathImpl implements Path, org.neo4j.bolt.connection.values.Path {
 		return this.nodes.get(this.nodes.size() - 1);
 	}
 
+	@SuppressWarnings("NullableProblems")
 	@Override
 	public Iterator<Segment> iterator() {
 		return this.segments.iterator();
