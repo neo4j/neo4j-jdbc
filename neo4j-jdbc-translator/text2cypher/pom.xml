@@ -34,6 +34,10 @@
 	<name>Neo4j JDBC Driver (text2cypher based SQL Translator)</name>
 	<description>An experimental text2cypher translator using OpenAI.</description>
 
+	<properties>
+		<sonar.coverage.exclusions>**/*.*</sonar.coverage.exclusions>
+	</properties>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
