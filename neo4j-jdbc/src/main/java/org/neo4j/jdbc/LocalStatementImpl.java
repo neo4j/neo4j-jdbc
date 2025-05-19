@@ -187,6 +187,7 @@ final class LocalStatementImpl extends StatementImpl {
 		return this.closeOnCompletion;
 	}
 
+	@Override
 	protected void assertIsOpen() throws SQLException {
 		if (this.closed) {
 			throw new Neo4jException(withReason("The statement set is closed"));

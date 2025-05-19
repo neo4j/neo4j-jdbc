@@ -496,6 +496,7 @@ final class SqlToCypher implements Translator {
 			return statement(insert, List.of());
 		}
 
+		@SuppressWarnings("squid:S1854")
 		private Statement statement(QOM.Insert<?> insert, List<? extends SelectFieldOrAsterisk> returning) {
 			this.tables.clear();
 			this.tables.add(insert.$into());
@@ -503,12 +504,10 @@ final class SqlToCypher implements Translator {
 			assertCypherBackedViewUsage("Cypher-backed views cannot be inserted to", this.tables.get(0));
 
 			var node = (Node) this.resolveTableOrJoin(this.tables.get(0)).get(0);
-			var rows = insert.$values();
 
 			var hasMergeProperties = !insert.$onConflict().isEmpty();
-			@SuppressWarnings("squid:S1854")
 			var useMerge = insert.$onDuplicateKeyIgnore() || hasMergeProperties;
-			if (rows.size() == 1) {
+			if (insert.$values().size() == 1) {
 				return buildSingleCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
 			}
 			return buildUnwindCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
@@ -1564,8 +1563,8 @@ final class SqlToCypher implements Translator {
 		private RelationshipPattern tryToIntegrateNodeAndVirtualTable(PatternElement lhs, PatternElement rhs,
 				QOM.Eq<?> eq) {
 
-			Node node = (lhs instanceof Node hlp) ? hlp : (rhs instanceof Node hlp) ? hlp : null;
-			Relationship rel = (lhs instanceof Relationship hlp) ? hlp : (rhs instanceof Relationship hlp) ? hlp : null;
+			var node = findNodeInJoin(lhs, rhs);
+			var rel = findRelInJoin(lhs, rhs);
 
 			if (eq == null || node == null || rel == null) {
 				return null;
@@ -1619,6 +1618,34 @@ final class SqlToCypher implements Translator {
 			}
 
 			return null;
+		}
+
+		private static Node findNodeInJoin(PatternElement lhs, PatternElement rhs) {
+			Node node;
+			if (lhs instanceof Node hlp) {
+				node = hlp;
+			}
+			else if (rhs instanceof Node hlp) {
+				node = hlp;
+			}
+			else {
+				node = null;
+			}
+			return node;
+		}
+
+		private static Relationship findRelInJoin(PatternElement lhs, PatternElement rhs) {
+			Relationship rel;
+			if (lhs instanceof Relationship hlp) {
+				rel = hlp;
+			}
+			else if (rhs instanceof Relationship hlp) {
+				rel = hlp;
+			}
+			else {
+				rel = null;
+			}
+			return rel;
 		}
 
 		static boolean isElementId(Field<?> field) {
@@ -1686,10 +1713,10 @@ final class SqlToCypher implements Translator {
 			var t = (tableOrAlias instanceof TableAlias<?> ta) ? ta.$aliased() : tableOrAlias;
 			var comment = t.getComment();
 			if (!comment.isBlank()) {
-				var config = Arrays.stream(comment.split(","))
+				var localConfig = Arrays.stream(comment.split(","))
 					.map(s -> s.split("="))
 					.collect(Collectors.toMap(a -> a[0], a -> a[1]));
-				return config.getOrDefault("label", t.getName());
+				return localConfig.getOrDefault("label", t.getName());
 			}
 
 			return this.config.getTableToLabelMappings()

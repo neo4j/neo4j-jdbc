@@ -400,8 +400,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	public void setCatalog(String catalog) throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Setting catalog to `%s`".formatted(catalog));
 		assertIsOpen();
-		var databaseName = this.getDatabaseName();
-		if (databaseName == null || !databaseName.equalsIgnoreCase(catalog)) {
+		if (this.databaseName == null || !this.databaseName.equalsIgnoreCase(catalog)) {
 			throw new SQLFeatureNotSupportedException("Changing the catalog is not implemented");
 		}
 	}
@@ -819,14 +818,16 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	private void setReadTimeout0(Duration duration) throws Neo4jException {
+		var failureMessage = "Failed to set read timeout";
 		try {
 			this.boltConnection.setReadTimeout(duration).toCompletableFuture().get();
 		}
-		catch (ExecutionException | InterruptedException ex) {
-			if (ex instanceof InterruptedException) {
-				Thread.currentThread().interrupt();
-			}
-			throw new Neo4jException(withInternal(ex, "Failed to set read timeout"));
+		catch (ExecutionException ex) {
+			throw new Neo4jException(withInternal(ex, failureMessage));
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			throw new Neo4jException(withInternal(ex, failureMessage));
 		}
 	}
 

@@ -29,18 +29,18 @@ import java.time.Duration;
  * This implements the protocol version negotiation of bolt. Testing to see if in address
  * will respond to this is a quick way to find out if it's a running bolt server.
  * <p>
- * This class first appeared in
- * https://github.com/michael-simons/junit-jupiter-causal-cluster-testcontainer-extension
- * by Andrew Jefferson and Michael Simons
+ * This class first appeared in the <a href=
+ * "https://github.com/michael-simons/junit-jupiter-causal-cluster-testcontainer-extension">junit-jupiter-causal-cluster-testcontainer-extension</a>
+ * by Andrew Jefferson and Michael Simons.
  */
 final class BoltHandshaker {
 
-	private static final int magicToken = 1616949271;
+	private static final int MAGIC_TOKEN = 1616949271;
 
 	// Versions message that cannot be matched because it is all zeros.
-	private static final byte[] versionsMessage = { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+	private static final byte[] BOLT_VERSIONS_MESSAGE = { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
 			(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-			(byte) 0x00, (byte) 0x00, (byte) 0x00 };
+			(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
 
 	private final String address;
 
@@ -65,13 +65,13 @@ final class BoltHandshaker {
 			DataInputStream dIn = new DataInputStream(socket.getInputStream());
 
 			// Send magic token (0x6060B017)
-			dOut.writeInt(magicToken);
+			dOut.writeInt(MAGIC_TOKEN);
 			dOut.flush();
 
 			// Send 4 supported versions
 			// Except we don't support any versions and communicate that by sending all
 			// zeros
-			dOut.write(versionsMessage);
+			dOut.write(BOLT_VERSIONS_MESSAGE);
 			dOut.flush();
 
 			// Receive agreed version

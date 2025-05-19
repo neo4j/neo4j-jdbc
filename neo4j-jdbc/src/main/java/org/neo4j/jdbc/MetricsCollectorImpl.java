@@ -64,9 +64,9 @@ final class MetricsCollectorImpl implements MetricsCollector {
 
 		this.meterRegistry = meterRegistry;
 
-		var cachedTranslations = "org.neo4j.jdbc.cached-translations";
-		if (meterRegistry.find(cachedTranslations).gauge() == null) {
-			Gauge.builder(cachedTranslations, this.cachedTranslations::get).register(meterRegistry);
+		var cachedTranslationsKey = "org.neo4j.jdbc.cached-translations";
+		if (meterRegistry.find(cachedTranslationsKey).gauge() == null) {
+			Gauge.builder(cachedTranslationsKey, this.cachedTranslations::get).register(meterRegistry);
 		}
 	}
 
@@ -120,7 +120,7 @@ final class MetricsCollectorImpl implements MetricsCollector {
 
 	@Override
 	public void onExecutionEnded(ExecutionEndedEvent event) {
-		var queryMetrics = this.queryMetrics.computeIfAbsent(Events.cleanURL(event.uri()), uri -> {
+		var queryMetricsForUri = this.queryMetrics.computeIfAbsent(Events.cleanURL(event.uri()), uri -> {
 			var queries = "org.neo4j.jdbc.queries";
 			var uriString = uri.toString();
 			return new QueryMetrics(
@@ -138,12 +138,12 @@ final class MetricsCollectorImpl implements MetricsCollector {
 						.register(this.meterRegistry));
 		});
 		if (event.state() == ExecutionEndedEvent.State.SUCCESSFUL) {
-			queryMetrics.successfulQueries.increment();
+			queryMetricsForUri.successfulQueries.increment();
 		}
 		else if (event.state() == ExecutionEndedEvent.State.FAILED) {
-			queryMetrics.failedQueries.increment();
+			queryMetricsForUri.failedQueries.increment();
 		}
-		queryMetrics.queryTimer.record(event.elapsedTime());
+		queryMetricsForUri.queryTimer.record(event.elapsedTime());
 	}
 
 	record QueryMetrics(Counter successfulQueries, Counter failedQueries, Timer queryTimer) {

@@ -1461,56 +1461,56 @@ class ResultSetImplTests {
 
 	@Test
 	void statementShouldBeAvailable() throws SQLException {
-		try (var resultSet = emptyResultSet()) {
-			assertThat(resultSet.getStatement()).isNotNull();
+		try (var rs = emptyResultSet()) {
+			assertThat(rs.getStatement()).isNotNull();
 		}
 	}
 
 	@Test
 	void indexShouldBeChecked() throws SQLException {
-		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
-			resultSet.next();
-			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt(-23))
+		try (var rs = setupWithValue(Values.value("test"), 0)) {
+			rs.next();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getInt(-23))
 				.withMessage("general processing exception - Invalid column index value");
-			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt(42))
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getInt(42))
 				.withMessage("general processing exception - Invalid column index value");
 		}
 	}
 
 	@Test
 	void nameShouldBeChecked() throws SQLException {
-		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
-			resultSet.next();
-			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getInt("42"))
+		try (var rs = setupWithValue(Values.value("test"), 0)) {
+			rs.next();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getInt("42"))
 				.withMessage("general processing exception - Invalid column label value");
 		}
 	}
 
 	@Test
 	void uncoercibleObject() throws SQLException {
-		try (var resultSet = setupWithValue(Values.value("test"), 0)) {
-			resultSet.next();
-			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getObject(1, Float.class))
+		try (var rs = setupWithValue(Values.value("test"), 0)) {
+			rs.next();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getObject(1, Float.class))
 				.withMessage("data exception - Cannot coerce java.lang.String to java.lang.Float");
 		}
 	}
 
 	@Test
 	void shouldThrowWhenClosed() throws SQLException {
-		var resultSet = emptyResultSet();
-		resultSet.close();
-		assertThatExceptionOfType(SQLException.class).isThrownBy(resultSet::next)
+		var rs = emptyResultSet();
+		rs.close();
+		assertThatExceptionOfType(SQLException.class).isThrownBy(rs::next)
 			.withMessage("general processing exception - This result set is closed");
 	}
 
 	@SuppressWarnings("deprecation")
 	@Test
 	void bigDecimalRounding() throws SQLException {
-		try (var resultSet = setupWithValue(Values.value(1.25), 0)) {
-			resultSet.next();
+		try (var rs = setupWithValue(Values.value(1.25), 0)) {
+			rs.next();
 
-			assertThat(resultSet.getBigDecimal(1, 2)).isEqualTo(new BigDecimal("1.25"));
-			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> resultSet.getBigDecimal(1, 1))
+			assertThat(rs.getBigDecimal(1, 2)).isEqualTo(new BigDecimal("1.25"));
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getBigDecimal(1, 1))
 				.withMessage("data exception - Cannot coerce 1.25 (FLOAT) to java.math.BigDecimal")
 				.withStackTraceContaining("java.lang.ArithmeticException: Rounding necessary");
 		}

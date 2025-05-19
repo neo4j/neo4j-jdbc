@@ -72,7 +72,7 @@ public record View(String name, String query, List<Column> columns) {
 		public Column {
 			var msg = "Column name is required";
 			if (Objects.requireNonNull(name, msg).isBlank()) {
-				throw new NullPointerException(msg);
+				throw new IllegalArgumentException(msg);
 			}
 			propertyName = Optional.ofNullable(propertyName).filter(Predicate.not(String::isBlank)).orElse(name);
 		}

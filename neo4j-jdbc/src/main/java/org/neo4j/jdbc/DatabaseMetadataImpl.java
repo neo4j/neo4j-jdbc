@@ -1252,7 +1252,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	private static Value getTypeFromList(List<Value> types, String propertyName) {
 		if (types.size() > 1) {
 			LOGGER.log(Level.FINE,
-					"More than one property type found for property %s, api will still return first one found.",
+					"More than one property type found for property {0}, api will still return first one found.",
 					propertyName);
 
 			for (var propertyType : types) {
@@ -1424,15 +1424,15 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	@Override
 	public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-		assertCatalogIsNullOrEmpty(catalog);
-		assertSchemaIsPublicOrNull(schema);
-
-		var keys = new ArrayList<String>();
-		return createKeysResultSet(keys);
+		return createEmptyKeysResult(catalog, schema);
 	}
 
 	@Override
 	public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
+		return createEmptyKeysResult(catalog, schema);
+	}
+
+	private ResultSet createEmptyKeysResult(String catalog, String schema) throws SQLException {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schema);
 
@@ -1490,16 +1490,23 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		var values = new ArrayList<Value[]>();
 		for (var type : Type.values()) {
 			var sqlType = Neo4jConversions.toSqlType(type);
+			int columnSearchable;
+			if (type == Type.STRING) {
+				columnSearchable = DatabaseMetaData.typeSearchable;
+			}
+			else if (type != Type.RELATIONSHIP) {
+				columnSearchable = DatabaseMetaData.typePredBasic;
+			}
+			else {
+				columnSearchable = DatabaseMetaData.typePredNone;
+			}
 			var row = new Value[] { Values.value(type.name()), Values.value(sqlType), getMaxPrecision(sqlType),
 					Values.NULL, // Prefix and suffix are actually determined for some, we
 									// should use this at some point
 					Values.NULL, Values.NULL, Values.value(DatabaseMetaData.typeNullable),
-					Values.value(type == Type.STRING),
-					Values.value((type == Type.STRING) ? DatabaseMetaData.typeSearchable
-							: (type != Type.RELATIONSHIP) ? DatabaseMetaData.typePredBasic
-									: DatabaseMetaData.typePredNone),
-					Values.value(false), Values.value(false), Values.NULL, Values.NULL, Values.NULL, Values.NULL,
-					Values.NULL, Values.NULL, Values.value(10), };
+					Values.value(type == Type.STRING), Values.value(columnSearchable), Values.value(false),
+					Values.value(false), Values.NULL, Values.NULL, Values.NULL, Values.NULL, Values.NULL, Values.NULL,
+					Values.value(10), };
 			values.add(row);
 		}
 
