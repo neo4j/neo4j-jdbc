@@ -50,16 +50,95 @@ final class Neo4jException extends SQLException implements GqlStatusObject {
 									// error codes
 	enum GQLError {
 
-		$08000(""), $22000(""), $22003("The numeric value %s is outside the required range"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_08000">08000</a>.
+		 */
+		$08000(""),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22000">22000</a>.
+		 */
+		$22000(""),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22003">22003</a>.
+		 */
+		$22003("The numeric value %s is outside the required range"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22G03">22G03</a>.
+		 */
 		$22G03("Invalid value type"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22N01">22N01</a>.
+		 */
 		$22N01("Invalid type, expected the value %s to be of type %s, but was of type %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22N02">22N02</a>.
+		 */
 		$22N02("You specified a negative numeric value, expected %s to be a positive number but found %s instead"),
-		$22N06("Required input missing, %s needs to be specified"), $22N11("Invalid argument, cannot process %s"),
-		$22N37("Cannot coerce %s to %s"), $22N63("The property key %s does not exist"),
-		$25N02("Unable to complete transaction, see debug log for details"), $25N05("Transaction has been closed"),
-		$2DN01("Failed to commit transaction: %s"), $2DN03("Failed to terminate transaction: %s"),
-		$40N01("Failed to rollback transaction: %s"), $42N51("Invalid parameter %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22N06">22N06</a>.
+		 */
+		$22N06("Required input missing, %s needs to be specified"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22N11">22N11</a>.
+		 */
+		$22N11("Invalid argument, cannot process %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22N37">22N37</a>.
+		 */
+		$22N37("Cannot coerce %s to %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_22N63">22N63</a>.
+		 */
+		$22N63("The property key %s does not exist"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_25N02">25N02</a>.
+		 */
+		$25N02("Unable to complete transaction, see debug log for details"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_25N05">25N05</a>.
+		 */
+		$25N05("Transaction has been closed"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_2DN01">2DN01</a>.
+		 */
+		$2DN01("Failed to commit transaction: %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_2DN03">2DN03</a>.
+		 */
+		$2DN03("Failed to terminate transaction: %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_40N01">40N01</a>.
+		 */
+		$40N01("Failed to rollback transaction: %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_42N51">42N51</a>.
+		 */
+		$42N51("Invalid parameter %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_50N00">50N00</a>.
+		 */
 		$50N00("An internal exception has been raised %s: %s"),
+		/**
+		 * See <a href=
+		 * "https://neo4j.com/docs/status-codes/current/errors/gql-errors/#_50N42">50N42</a>.
+		 */
 		$50N42("An unexpected error has occurred, see debug log for details");
 
 		private final String messageTemplate;

@@ -982,7 +982,14 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	private enum ParameterType {
 
-		ORDINAL, NAMED
+		/**
+		 * Denotates parameter defined by their numeric index.
+		 */
+		ORDINAL,
+		/**
+		 * Parameters given by name (that is, in Cypher format such as {@code $name}.
+		 */
+		NAMED
 
 	}
 
@@ -1150,6 +1157,11 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	private static final String PARAMETER_LIST = "(?:\\((?<parameterList>.*)\\))?";
 
+	/**
+	 * A regular expression for the fully qualified method name and its parameter list.
+	 * @deprecated No replacement, not to be used externally
+	 */
+	@Deprecated(forRemoval = true, since = "6.5.0")
 	public static final String FQN_AND_PARAMETER_LIST = "(?<fqn>" + VALID_IDENTIFIER + ")" + WS + PARAMETER_LIST;
 
 	private static final Pattern JDBC_CALL = Pattern
@@ -1167,7 +1179,18 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	enum ReturnType {
 
-		NONE, ORDINAL, NAMED, YIELD
+		/**
+		 * The statement won't return anything.
+		 */
+		NONE,
+		/**
+		 * The statement returns data to be retrieved by index.
+		 */
+		ORDINAL,
+		/**
+		 * The statement returns data by name.
+		 */
+		NAMED
 
 	}
 
