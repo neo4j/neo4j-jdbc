@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-05-19T15:40:21Z</span>
+<span id="revdate">2025-05-19T17:27:31Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -954,7 +954,7 @@ So for all <code>PreparedStatement</code> instances you need to specify paramete
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> cypher = <span class="string"><span class="delimiter">&quot;</span><span class="content">CREATE (m:Movie {title: $1})</span><span class="delimiter">&quot;</span></span>;
 <span class="keyword">try</span> (<span class="type">var</span> con = <span class="predefined-type">DriverManager</span>.getConnection(url, username, password);
-        <span class="predefined-type">PreparedStatement</span> stmt = con.prepareStatement(cypher);) {
+        <span class="predefined-type">PreparedStatement</span> stmt = con.prepareStatement(cypher)) {
     stmt.setString(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Test</span><span class="delimiter">&quot;</span></span>);
     stmt.executeUpdate();
 }</code></pre>
@@ -968,7 +968,7 @@ So for all <code>PreparedStatement</code> instances you need to specify paramete
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> sql = <span class="string"><span class="delimiter">&quot;</span><span class="content">INSERT INTO Movie (title) VALUES (?)</span><span class="delimiter">&quot;</span></span>;
 <span class="keyword">try</span> (<span class="type">var</span> con = <span class="predefined-type">DriverManager</span>.getConnection(url + <span class="string"><span class="delimiter">&quot;</span><span class="content">?enableSQLTranslation=true</span><span class="delimiter">&quot;</span></span>, username, password);
-        <span class="predefined-type">PreparedStatement</span> stmt = con.prepareStatement(sql);) {
+        <span class="predefined-type">PreparedStatement</span> stmt = con.prepareStatement(sql)) {
     stmt.setString(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Test</span><span class="delimiter">&quot;</span></span>);
     stmt.executeUpdate();
 }</code></pre>
@@ -982,7 +982,7 @@ So for all <code>PreparedStatement</code> instances you need to specify paramete
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> match = <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (n:Movie {title: $title}) RETURN n.title AS title</span><span class="delimiter">&quot;</span></span>;
 <span class="keyword">try</span> (<span class="type">var</span> con = <span class="predefined-type">DriverManager</span>.getConnection(url, username, password);
-        Neo4jPreparedStatement stmt = (Neo4jPreparedStatement) con.prepareStatement(match);) {
+        Neo4jPreparedStatement stmt = (Neo4jPreparedStatement) con.prepareStatement(match)) {
     stmt.setString(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Test</span><span class="delimiter">&quot;</span></span>);
     <span class="keyword">try</span> (<span class="type">var</span> resultSet = stmt.executeQuery()) {
         <span class="keyword">while</span> (resultSet.next()) {
@@ -4910,7 +4910,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-05-19 15:40:26 UTC
+Last updated 2025-05-19 17:27:35 UTC
 </div>
 </div>
 </body>
