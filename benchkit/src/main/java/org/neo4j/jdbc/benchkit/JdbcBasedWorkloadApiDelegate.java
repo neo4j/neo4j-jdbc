@@ -58,8 +58,8 @@ public class JdbcBasedWorkloadApiDelegate implements WorkloadApiDelegate {
 		}
 
 		try {
-			workload.getQueries().forEach(query -> {
-				this.jdbcTemplate.execute(query.getText(), (PreparedStatementCallback<Void>) ps -> {
+			workload.getQueries()
+				.forEach(query -> this.jdbcTemplate.execute(query.getText(), (PreparedStatementCallback<Void>) ps -> {
 					if (query.getParameters() != null && query.getParameters() instanceof Map<?, ?> parameters) {
 						var nps = ps.unwrap(Neo4jPreparedStatement.class);
 						for (Map.Entry<?, ?> entry : parameters.entrySet()) {
@@ -70,8 +70,7 @@ public class JdbcBasedWorkloadApiDelegate implements WorkloadApiDelegate {
 					}
 					ps.execute();
 					return null;
-				});
-			});
+				}));
 		}
 		catch (Exception ex) {
 			return ResponseEntity.internalServerError().build();

@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.translator.spi;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -69,10 +70,11 @@ public record View(String name, String query, List<Column> columns) {
 	public record Column(String name, String propertyName, String type) {
 
 		public Column {
-			if (name == null || name.isBlank()) {
-				throw new NullPointerException("Column name is required");
+			var msg = "Column name is required";
+			if (Objects.requireNonNull(name, msg).isBlank()) {
+				throw new NullPointerException(msg);
 			}
 			propertyName = Optional.ofNullable(propertyName).filter(Predicate.not(String::isBlank)).orElse(name);
 		}
-	};
+	}
 }

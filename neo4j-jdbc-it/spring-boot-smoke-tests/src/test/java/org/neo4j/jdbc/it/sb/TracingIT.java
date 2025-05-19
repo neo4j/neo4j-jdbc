@@ -143,7 +143,7 @@ public class TracingIT {
 	static class SimpleNeo4jContainer<S extends SimpleNeo4jContainer<S>> extends GenericContainer<S> {
 
 		private static final WaitStrategy WAIT_FOR_BOLT = (new LogMessageWaitStrategy())
-			.withRegEx(String.format(".*Bolt enabled on .*:%d\\.\n", 7687));
+			.withRegEx(".*Bolt enabled on .+:7687\\.\n");
 
 		final String adminPassword = "verysecret";
 

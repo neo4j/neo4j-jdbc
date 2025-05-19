@@ -20,6 +20,8 @@ package org.neo4j.jdbc;
 
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class SSLPropertiesTests {
+
+	private static final Logger LOGGER = Logger.getAnonymousLogger();
 
 	@Test
 	void testDefaults() throws SQLException {
@@ -45,6 +49,7 @@ class SSLPropertiesTests {
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("false");
 				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
+				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
 	}
@@ -64,6 +69,7 @@ class SSLPropertiesTests {
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("require");
+				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
 	}
@@ -83,6 +89,7 @@ class SSLPropertiesTests {
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("require");
+				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
 	}
@@ -116,6 +123,7 @@ class SSLPropertiesTests {
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo(sslMode.replace("_", "-"));
+				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
 	}
@@ -146,6 +154,7 @@ class SSLPropertiesTests {
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("verify-full");
+				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
 	}
@@ -164,6 +173,7 @@ class SSLPropertiesTests {
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("true");
 				case "sslMode" -> assertThat(info.value).isEqualTo("require");
+				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
 	}

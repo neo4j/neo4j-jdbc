@@ -27,7 +27,7 @@ import java.util.Properties;
 // end::cdm[]
 // end::ddm[]
 
-@SuppressWarnings("resource")
+@SuppressWarnings({ "resource", "squid:S1854" })
 // tag::cdm[]
 // tag::ddm[]
 class Configuration {

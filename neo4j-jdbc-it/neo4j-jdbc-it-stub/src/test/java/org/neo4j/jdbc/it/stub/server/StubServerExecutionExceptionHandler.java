@@ -26,14 +26,12 @@ class StubServerExecutionExceptionHandler implements TestExecutionExceptionHandl
 	@Override
 	public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
 		var testInstance = context.getTestInstance().orElse(null);
-		if (testInstance instanceof IntegrationTestBase testBase) {
-			if (!(throwable instanceof StubServerException)) {
-				try {
-					testBase.verifyStubServer();
-				}
-				catch (Throwable verificationThrowable) {
-					throwable.addSuppressed(verificationThrowable);
-				}
+		if (testInstance instanceof IntegrationTestBase testBase && !(throwable instanceof StubServerException)) {
+			try {
+				testBase.verifyStubServer();
+			}
+			catch (Throwable verificationThrowable) {
+				throwable.addSuppressed(verificationThrowable);
 			}
 		}
 		throw throwable;

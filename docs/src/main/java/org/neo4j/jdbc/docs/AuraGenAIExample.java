@@ -42,6 +42,9 @@ public final class AuraGenAIExample {
 	private AuraGenAIExample() {
 	}
 
+	// This is about Sonar not realizing that var = 1 is very much not an object, but int.
+	// Also, I am very happy here to throw things from main
+	@SuppressWarnings({ "squid:S2275", "squid:S2096" })
 	public static void main(String... args) throws Exception {
 
 		var openAIToken = System.getenv("OPEN_AI_API_KEY");

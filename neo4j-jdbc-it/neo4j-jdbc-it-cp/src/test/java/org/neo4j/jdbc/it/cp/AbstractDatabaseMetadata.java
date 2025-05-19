@@ -161,8 +161,8 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@ParameterizedTest
 	@MethodSource
 	void getReadOnlyShouldWork(String database, boolean expected) throws SQLException {
-		try (var connection = driver.connect(getConnectionURL() + "/" + database, new Properties())) {
-			assertThat(connection.getMetaData().isReadOnly()).isEqualTo(expected);
+		try (var readOnlyConnection = driver.connect(getConnectionURL() + "/" + database, new Properties())) {
+			assertThat(readOnlyConnection.getMetaData().isReadOnly()).isEqualTo(expected);
 		}
 	}
 
@@ -974,9 +974,9 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getTablesWithoutSamplingShouldWork() throws SQLException {
 
-		try (var connection = this.driver.connect(getConnectionURL() + "?relationshipSampleSize=-1",
+		try (var connectionWithLowerSampleSize = this.driver.connect(getConnectionURL() + "?relationshipSampleSize=-1",
 				new Properties())) {
-			var metaData = connection.getMetaData();
+			var metaData = connectionWithLowerSampleSize.getMetaData();
 			assertThatNoException().isThrownBy(() -> metaData.getTables(null, null, null, null));
 		}
 	}

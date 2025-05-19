@@ -89,7 +89,7 @@ public abstract class IntegrationTestBase {
 
 	private void throwStubServerException() {
 		var log = this.logAccumulator.getLog();
-		throw new StubServerException(String.format("See the stub server output below. \n%s", log));
+		throw new StubServerException(String.format("See the stub server output below. %n%s", log));
 	}
 
 	@AfterEach
