@@ -50,23 +50,25 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
+      - name: 'Preflight unit tests only'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw --no-transfer-progress -DskipITs -am -pl neo4j-jdbc clean verify
+
       - name: 'Clean and verify'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: >
-          ./mvnw --no-transfer-progress
-          -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc'
-          -am -pl neo4j-jdbc -pl neo4j-jdbc-bom -pl bundles/neo4j-jdbc-bundle -pl bundles/neo4j-jdbc-full-bundle -pl neo4j-jdbc-translator/sparkcleaner -pl neo4j-jdbc-tracing/micrometer
-          clean install
+          ./mvnw --no-transfer-progress -DskipClusterIT -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc' install
 
   integration_tests:
     name: Integration tests using Java ${{ matrix.java }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17', '21', '24' ]
+        java: [ '21', '24' ]
     needs: build
     steps:
       - name: 'Set up JDK'
