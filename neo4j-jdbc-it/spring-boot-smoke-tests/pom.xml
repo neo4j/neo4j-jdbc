@@ -31,6 +31,10 @@
 
 	<name>Neo4j JDBC Driver (Spring Boot Smoke tests)</name>
 
+	<properties>
+		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+	</properties>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>

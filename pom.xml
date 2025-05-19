@@ -148,7 +148,7 @@
 		<flatten-maven-plugin.version>1.7.0</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
-		<jackson-jr.version>2.19.0</jackson-jr.version>
+		<jackson.version>2.19.0</jackson.version>
 		<jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
 		<japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
@@ -208,6 +208,13 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<version>${jackson.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<dependency>
 				<groupId>io.micrometer</groupId>
 				<artifactId>micrometer-bom</artifactId>
@@ -270,11 +277,6 @@
 				<version>${testcontainers.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.jr</groupId>
-				<artifactId>jackson-jr-objects</artifactId>
-				<version>${jackson-jr.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.stefanbirkner</groupId>
