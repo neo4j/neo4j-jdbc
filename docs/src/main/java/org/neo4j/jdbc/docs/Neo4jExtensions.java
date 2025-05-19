@@ -31,6 +31,7 @@ public final class Neo4jExtensions {
 	private Neo4jExtensions() {
 	}
 
+	@SuppressWarnings("squid:S2096")
 	public static void main(String... a) throws SQLException {
 
 		try (var con = Neo4jDriver.fromEnv().orElseThrow();

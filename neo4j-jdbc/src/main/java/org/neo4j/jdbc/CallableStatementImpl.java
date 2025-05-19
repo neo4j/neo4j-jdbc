@@ -993,11 +993,13 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	}
 
+	@SuppressWarnings({ "squid:S3776" })
 	static ParameterListDescriptor parseParameterList(String parameterList) {
 
 		if (parameterList == null) {
 			return new ParameterListDescriptor(Map.of(), Map.of(), Map.of());
 		}
+
 		var ordinalParameters = new HashMap<Integer, Integer>();
 		var namedParameters = new HashMap<Integer, String>();
 		var constants = new HashMap<Integer, String>();
@@ -1028,6 +1030,12 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		}
 
 		assertEitherOrdinalOrNamedParameters(ordinalParameters, namedParameters);
+		makeDense(ordinalParameters);
+
+		return new ParameterListDescriptor(ordinalParameters, namedParameters, constants);
+	}
+
+	private static void makeDense(HashMap<Integer, Integer> ordinalParameters) {
 
 		var used = ordinalParameters.values().stream().filter(i -> i > 0).collect(Collectors.toSet());
 		int max = 1;
@@ -1042,8 +1050,6 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 			}
 			ordinalParameters.put(key, v);
 		}
-
-		return new ParameterListDescriptor(ordinalParameters, namedParameters, constants);
 	}
 
 	private static void assertEitherOrdinalOrNamedParameters(Map<Integer, Integer> ordinalParameters,

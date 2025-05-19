@@ -34,6 +34,7 @@ public final class SQLTranslator {
 	private SQLTranslator() {
 	}
 
+	@SuppressWarnings("squid:S2096")
 	public static void main(String... args) throws SQLException {
 		caseByCase();
 		alwaysWithUrlConfig();
@@ -59,6 +60,8 @@ public final class SQLTranslator {
 		// end::pt1[]
 	}
 
+	// Unconditional logging is for sure fine in this example.
+	@SuppressWarnings("squid:S2629")
 	static void alwaysWithUrlConfig() throws SQLException {
 
 		var username = "neo4j";
@@ -76,6 +79,8 @@ public final class SQLTranslator {
 		// end::pt2[]
 	}
 
+	// Unconditional logging is for sure fine in this example.
+	@SuppressWarnings("squid:S2629")
 	static void escapeHatch() throws SQLException {
 
 		var username = "neo4j";

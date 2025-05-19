@@ -51,6 +51,10 @@ class ConnectionIT extends IntegrationTestBase {
 	@Test
 	@StubScript(path = "writer_tx_with_begin_1_delay.script")
 	void shouldThrowOnBeginTimeout() throws SQLException {
+		assertThrowingOnTimeout();
+	}
+
+	private void assertThrowingOnTimeout() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			connection.setNetworkTimeout(null, 100);
 			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
@@ -62,23 +66,13 @@ class ConnectionIT extends IntegrationTestBase {
 	@Test
 	@StubScript(path = "writer_tx_with_run_1_delay.script")
 	void shouldThrowOnRunTimeout() throws SQLException {
-		try (var connection = getConnection(); var statement = connection.createStatement()) {
-			connection.setNetworkTimeout(null, 100);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
-		}
-
-		verifyStubServer();
+		assertThrowingOnTimeout();
 	}
 
 	@Test
 	@StubScript(path = "writer_tx_with_pull_1_delay.script")
 	void shouldThrowOnPullTimeout() throws SQLException {
-		try (var connection = getConnection(); var statement = connection.createStatement()) {
-			connection.setNetworkTimeout(null, 100);
-			assertThatThrownBy(() -> statement.executeQuery("RETURN 1 as n")).isInstanceOf(SQLException.class);
-		}
-
-		verifyStubServer();
+		assertThrowingOnTimeout();
 	}
 
 	@Test

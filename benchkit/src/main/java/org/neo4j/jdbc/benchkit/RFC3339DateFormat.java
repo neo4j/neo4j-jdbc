@@ -24,6 +24,7 @@ import java.text.FieldPosition;
 import java.text.ParsePosition;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import com.fasterxml.jackson.databind.util.StdDateFormat;
@@ -49,6 +50,22 @@ final class RFC3339DateFormat extends DateFormat {
 	@Override
 	public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
 		return this.fmt.format(date, toAppendTo, fieldPosition);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof RFC3339DateFormat that)) {
+			return false;
+		}
+		if (!super.equals(o)) {
+			return false;
+		}
+		return Objects.equals(this.fmt, that.fmt);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), this.fmt);
 	}
 
 }

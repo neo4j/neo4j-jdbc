@@ -618,10 +618,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		if (timeout < 0) {
 			throw new Neo4jException(GQLError.$22N02.withTemplatedMessage("timeout", timeout));
 		}
-		if (this.closed) {
-			return false;
-		}
-		if (this.fatalException != null) {
+		if (this.closed || this.fatalException != null) {
 			return false;
 		}
 		if (this.transaction != null && this.transaction.isRunnable()) {
@@ -655,10 +652,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			throw new Neo4jException(withInternal(ex, "The thread has been interrupted."));
 		}
 		catch (ExecutionException ex) {
-			var cause = ex.getCause();
-			if (cause == null) {
-				cause = ex;
-			}
+			var cause = Optional.ofNullable(ex.getCause()).orElse(ex);
 			if (!(cause instanceof BoltFailureException)) {
 				this.fatalException = new Neo4jException(
 						GQLError.$08000.withMessage("The connection is no longer valid"));
@@ -817,20 +811,22 @@ final class ConnectionImpl implements Neo4jConnection {
 				.ifPresent(defaultTimeout -> LOGGER.log(Level.FINE, String.format(
 						"setNetworkTimeout has been called with 0, will use the Bolt server default of % d milliseconds.",
 						defaultTimeout.toMillis())));
-			try {
-				this.boltConnection.setReadTimeout(null).toCompletableFuture().get();
-			}
-			catch (ExecutionException | InterruptedException ex) {
-				throw new Neo4jException(withInternal(ex, "Failed to set read timeout"));
-			}
+			setReadTimeout0(null);
 		}
 		else {
-			try {
-				this.boltConnection.setReadTimeout(Duration.ofMillis(this.networkTimeout)).toCompletableFuture().get();
+			setReadTimeout0(Duration.ofMillis(this.networkTimeout));
+		}
+	}
+
+	private void setReadTimeout0(Duration duration) throws Neo4jException {
+		try {
+			this.boltConnection.setReadTimeout(duration).toCompletableFuture().get();
+		}
+		catch (ExecutionException | InterruptedException ex) {
+			if (ex instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
 			}
-			catch (ExecutionException | InterruptedException ex) {
-				throw new Neo4jException(withInternal(ex, "Failed to set read timeout"));
-			}
+			throw new Neo4jException(withInternal(ex, "Failed to set read timeout"));
 		}
 	}
 

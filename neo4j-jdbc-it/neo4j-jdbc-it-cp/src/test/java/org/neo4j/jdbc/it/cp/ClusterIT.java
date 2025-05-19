@@ -73,6 +73,7 @@ class ClusterIT {
 		.withLocalCompose(true);
 
 	@BeforeAll
+	@SuppressWarnings("squid:S2925") // Keeps me waiting on the phone…
 	static void clearData() throws SQLException {
 
 		var wait = Duration.ofSeconds(5);
@@ -141,7 +142,7 @@ class ClusterIT {
 	static Connection getClusterConnection(boolean rw) throws SQLException {
 
 		var server = "server" + ThreadLocalRandom.current().nextInt(1, rw ? 4 : 5);
-		var url = "jdbc:neo4j://%s:%d".formatted("localhost", neo4jCluster.getServicePort("server1", 7687));
+		var url = "jdbc:neo4j://%s:%d".formatted("localhost", neo4jCluster.getServicePort(server, 7687));
 		var driver = DriverManager.getDriver(url);
 		var properties = new Properties();
 		properties.put("user", USERNAME);

@@ -39,6 +39,7 @@
 		<filtered-asciidoc-directory>${project.build.directory}/asciidoc</filtered-asciidoc-directory>
 		<manual-name>jdbc-manual</manual-name>
 		<revdate>${maven.build.timestamp}</revdate>
+		<sonar.coverage.exclusions>**/*.*</sonar.coverage.exclusions>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 

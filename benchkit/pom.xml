@@ -34,6 +34,7 @@
 
 	<properties>
 		<base-package>org.neo4j.jdbc.benchkit</base-package>
+		<sonar.coverage.exclusions>**/*.*</sonar.coverage.exclusions>
 	</properties>
 
 	<dependencyManagement>

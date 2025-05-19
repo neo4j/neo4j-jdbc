@@ -32,6 +32,9 @@ public final class NamedParameters {
 	private NamedParameters() {
 	}
 
+	// This is about Sonar not recognizing our named parameter variant; also, let's throw
+	// all the things
+	@SuppressWarnings({ "squid:S2695", "squid:S2096" })
 	public static void main(String... a) throws SQLException {
 		var url = "jdbc:neo4j://localhost:7687";
 		var username = "neo4j";
