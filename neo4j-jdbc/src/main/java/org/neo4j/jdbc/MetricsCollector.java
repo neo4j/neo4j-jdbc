@@ -37,6 +37,9 @@ import org.neo4j.jdbc.events.StatementListener;
  */
 interface MetricsCollector extends DriverListener, ConnectionListener, StatementListener {
 
+	/**
+	 * A flag if the JDBC driver has tried to find the global metrics registry already.
+	 */
 	AtomicBoolean GLOBAL_REGISTRY_HAS_BEEN_TRIED = new AtomicBoolean(false);
 
 	/**

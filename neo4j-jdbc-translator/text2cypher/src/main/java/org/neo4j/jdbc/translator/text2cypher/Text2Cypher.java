@@ -93,7 +93,7 @@ final class Text2Cypher implements Translator {
 			.apiKey(openAIApiKey)
 			.build();
 
-		this.cypherExpert = AiServices.builder(CypherExpert.class).chatLanguageModel(model).build();
+		this.cypherExpert = AiServices.builder(CypherExpert.class).chatModel(model).build();
 		this.precedence = configurePrecedence(config);
 	}
 

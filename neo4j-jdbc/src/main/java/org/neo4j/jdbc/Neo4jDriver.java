@@ -828,7 +828,18 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	enum SSLMode {
 
-		DISABLE("disable"), REQUIRE("require"), VERIFY_FULL("verify-full");
+		/**
+		 * Disables SSL completely.
+		 */
+		DISABLE("disable"),
+		/**
+		 * Require SSL but don't do a full certificate verification.
+		 */
+		REQUIRE("require"),
+		/**
+		 * Require SSL and fully verify the certificate chain.
+		 */
+		VERIFY_FULL("verify-full");
 
 		private final String name;
 
@@ -860,7 +871,23 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	enum AuthScheme {
 
-		NONE("none"), BASIC("basic"), BEARER("bearer"), KERBEROS("kerberos");
+		/**
+		 * Disable authentication.
+		 */
+		NONE("none"),
+		/**
+		 * Use basic auth (username and password).
+		 */
+		BASIC("basic"),
+		/**
+		 * Use a token as authentication (the password will be treated as JWT or other SSO
+		 * token).
+		 */
+		BEARER("bearer"),
+		/**
+		 * Use Kerberos authentication.
+		 */
+		KERBEROS("kerberos");
 
 		private final String name;
 
