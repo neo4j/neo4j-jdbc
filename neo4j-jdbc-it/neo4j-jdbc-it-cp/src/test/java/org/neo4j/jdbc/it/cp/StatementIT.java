@@ -73,7 +73,7 @@ class StatementIT extends IntegrationTestBase {
 				var statement2 = connection.createStatement()) {
 			statement1.setFetchSize(5);
 			statement2.setFetchSize(5);
-			var resultSet1 = statement1.executeQuery("UNWIND range(1, 10000) AS x RETURN x");
+			statement1.executeQuery("UNWIND range(1, 10000) AS x RETURN x");
 			assertThatThrownBy(() -> statement2.executeQuery("UNWIND range(1, 10000) AS x RETURN x"))
 				.isExactlyInstanceOf(SQLFeatureNotSupportedException.class);
 		}
@@ -100,8 +100,7 @@ class StatementIT extends IntegrationTestBase {
 		try (var connection = getConnection()) {
 			connection.setAutoCommit(false);
 			try (var statement = connection.createStatement()) {
-				var resultSet = statement
-					.executeQuery(String.format("UNWIND range(1, 5) AS x CREATE (n:Test {testId: '%s'})", testId));
+				statement.executeQuery(String.format("UNWIND range(1, 5) AS x CREATE (n:Test {testId: '%s'})", testId));
 			}
 
 			if (commit) {

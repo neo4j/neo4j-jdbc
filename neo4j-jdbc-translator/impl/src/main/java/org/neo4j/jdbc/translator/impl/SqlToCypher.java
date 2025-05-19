@@ -344,8 +344,8 @@ final class SqlToCypher implements Translator {
 			return Objects.requireNonNull(lhsJoinColumn.getQualifiedName().last()).toUpperCase(Locale.ROOT);
 		}
 
-		@SuppressWarnings("squid:S1854") // This is about useless assignments, which I
-											// don't think apply to m1 and m2.
+		// This is about useless assignments, which I don't think apply to m1 and m2.
+		@SuppressWarnings("squid:S1854")
 		private Statement statement(QOM.Delete<?> d) {
 			this.tables.clear();
 			this.tables.add(d.$from());
@@ -1559,7 +1559,9 @@ final class SqlToCypher implements Translator {
 			throw unsupported(joinTable);
 		}
 
-		@SuppressWarnings("squid:S3776") // Yep, this is complex.
+		// Yep, this is complex and for crying out loud, S1854: node and rel are for sure
+		// not "unused".
+		@SuppressWarnings({ "squid:S3776", "squid:S1854" })
 		private RelationshipPattern tryToIntegrateNodeAndVirtualTable(PatternElement lhs, PatternElement rhs,
 				QOM.Eq<?> eq) {
 

@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 // end::imports[]
 
+@SuppressWarnings("squid:S2068")
 public final class SQLTranslator {
 
 	private static final Logger LOGGER = Logger.getAnonymousLogger();

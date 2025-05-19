@@ -166,8 +166,8 @@ class ConnectionIT extends IntegrationTestBase {
 			statement2.setString(1, uuid);
 			statement3.setString(1, uuid);
 
-			var resultSet1 = statement1.executeQuery();
-			var resultSet2 = statement2.executeQuery();
+			statement1.executeQuery();
+			statement2.executeQuery();
 			connection.commit();
 
 			var resultSet3 = statement3.executeQuery();
@@ -188,12 +188,12 @@ class ConnectionIT extends IntegrationTestBase {
 			statement1.setString(1, uuid);
 			statement2.setString(1, uuid);
 
-			var resultSet1 = statement1.executeQuery();
+			statement1.executeQuery();
 			connection.setAutoCommit(!autocommit);
 
-			var resultSet2 = statement2.executeQuery();
-			assertThat(resultSet2.next()).isTrue();
-			assertThat(resultSet2.getInt(1)).isEqualTo(5);
+			var resultSet = statement2.executeQuery();
+			assertThat(resultSet.next()).isTrue();
+			assertThat(resultSet.getInt(1)).isEqualTo(5);
 		}
 	}
 

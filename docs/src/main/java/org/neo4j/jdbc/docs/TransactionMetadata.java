@@ -43,7 +43,7 @@ public final class TransactionMetadata {
 	private TransactionMetadata() {
 	}
 
-	@SuppressWarnings("squid:S2096")
+	@SuppressWarnings({"squid:S2096", "squid:S2068"})
 	// tag::example[]
 	public static void main(String... args) throws SQLException {
 		var url = "jdbc:neo4j://localhost:7687";

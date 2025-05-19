@@ -137,9 +137,8 @@ final class ValueImpl implements Value, AsValue {
 
 	@Override
 	public Iterable<org.neo4j.bolt.connection.values.Value> values() {
-		var value = this.value;
 		return () -> new Iterator<>() {
-			private final Iterator<org.neo4j.jdbc.values.Value> iterator = value.values().iterator();
+			private final Iterator<org.neo4j.jdbc.values.Value> iterator = ValueImpl.this.value.values().iterator();
 
 			@Override
 			public boolean hasNext() {

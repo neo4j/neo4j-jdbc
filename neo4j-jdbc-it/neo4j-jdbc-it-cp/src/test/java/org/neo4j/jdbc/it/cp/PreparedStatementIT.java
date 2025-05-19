@@ -209,7 +209,7 @@ class PreparedStatementIT extends IntegrationTestBase {
 			try (var statement = connection.prepareStatement("UNWIND range(1, $1) AS x CREATE (n:Test {testId: $2})")) {
 				statement.setInt(1, limit);
 				statement.setString(2, testId);
-				var resultSet = statement.executeQuery();
+				statement.executeQuery();
 			}
 
 			if (commit) {

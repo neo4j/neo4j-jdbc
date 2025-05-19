@@ -28,7 +28,7 @@ import java.util.List;
 
 import org.neo4j.jdbc.Neo4jDriver;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "unchecked", "squid:S2068" })
 // tag::pt1[]
 public final class Quickstart {
 

@@ -141,7 +141,6 @@ class ConnectionImplTests {
 				"aBeautifulDatabase", null);
 
 		var nativeSQL = connection.nativeSQL(sql);
-		nativeSQL = connection.nativeSQL(sql);
 
 		assertThat(nativeSQL).isEqualTo(expectedNativeSql);
 		then(translator).should(times(1)).translate(eq(sql), any(DatabaseMetaData.class));
