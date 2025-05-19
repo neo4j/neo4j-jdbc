@@ -43,7 +43,7 @@ public final class NamedParameters {
 		// tag::index[]
 		var cypher = "CREATE (m:Movie {title: $1})";
 		try (var con = DriverManager.getConnection(url, username, password);
-				PreparedStatement stmt = con.prepareStatement(cypher);) {
+				PreparedStatement stmt = con.prepareStatement(cypher)) {
 			stmt.setString(1, "Test");
 			stmt.executeUpdate();
 		}
@@ -52,7 +52,7 @@ public final class NamedParameters {
 		// tag::index-sql[]
 		var sql = "INSERT INTO Movie (title) VALUES (?)";
 		try (var con = DriverManager.getConnection(url + "?enableSQLTranslation=true", username, password);
-				PreparedStatement stmt = con.prepareStatement(sql);) {
+				PreparedStatement stmt = con.prepareStatement(sql)) {
 			stmt.setString(1, "Test");
 			stmt.executeUpdate();
 		}
@@ -61,7 +61,7 @@ public final class NamedParameters {
 		// tag::index-np[]
 		var match = "MATCH (n:Movie {title: $title}) RETURN n.title AS title";
 		try (var con = DriverManager.getConnection(url, username, password);
-				Neo4jPreparedStatement stmt = (Neo4jPreparedStatement) con.prepareStatement(match);) {
+				Neo4jPreparedStatement stmt = (Neo4jPreparedStatement) con.prepareStatement(match)) {
 			stmt.setString("title", "Test");
 			try (var resultSet = stmt.executeQuery()) {
 				while (resultSet.next()) {
