@@ -187,7 +187,7 @@ final class ConnectionImpl implements Neo4jConnection {
 			var views = this.translators.resolve().stream().flatMap(t -> t.getViews().stream()).toList();
 			return new DatabaseMetadataImpl(this, this.enableSqlTranslation, this.relationshipSampleSize, views);
 		});
-		this.onClose = Objects.requireNonNullElse(onClose, (aborted) -> {
+		this.onClose = Objects.requireNonNullElse(onClose, aborted -> {
 		});
 	}
 

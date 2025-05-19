@@ -67,16 +67,14 @@ final class Schema {
 			.append(properties.stream().collect(Collectors.joining(", ", "{", "}")))
 			.append(","));
 		sb.replace(sb.length() - 1, sb.length(), "\nThe relationships are the following:\n");
-		this.relationships.forEach(r -> {
-			sb.append("(:")
-				.append(r.sourceLabel())
-				.append(")-[:")
-				.append(r.type())
-				.append("]->(:")
-				.append(r.targetLabel())
-				.append(")")
-				.append(",");
-		});
+		this.relationships.forEach(r -> sb.append("(:")
+			.append(r.sourceLabel())
+			.append(")-[:")
+			.append(r.type())
+			.append("]->(:")
+			.append(r.targetLabel())
+			.append(")")
+			.append(","));
 		return sb.deleteCharAt(sb.length() - 1).toString();
 	}
 

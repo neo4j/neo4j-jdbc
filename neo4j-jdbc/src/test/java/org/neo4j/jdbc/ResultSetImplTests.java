@@ -1519,34 +1519,34 @@ class ResultSetImplTests {
 	@SuppressWarnings("resource")
 	@TestFactory
 	Stream<DynamicNode> characteristicsShouldWork() {
-		var resultSet = emptyResultSet();
+		var emptyResultSet = emptyResultSet();
 		return Stream.of(
 				DynamicContainer
 					.dynamicContainer("fetchDirection",
 							Stream.of(
 									DynamicTest.dynamicTest("get",
-											() -> assertThat(resultSet.getFetchDirection())
+											() -> assertThat(emptyResultSet.getFetchDirection())
 												.isEqualTo(ResultSet.FETCH_FORWARD)),
 									DynamicTest.dynamicTest("set", () -> {
-										assertThatNoException()
-											.isThrownBy(() -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
+										assertThatNoException().isThrownBy(
+												() -> emptyResultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
 										assertThatExceptionOfType(SQLException.class)
-											.isThrownBy(() -> resultSet.setFetchDirection(ResultSet.FETCH_REVERSE))
+											.isThrownBy(() -> emptyResultSet.setFetchDirection(ResultSet.FETCH_REVERSE))
 											.withMessage("Only forward fetching is supported");
 									}))),
 				DynamicTest.dynamicTest("fetchSize", () -> {
 					var changedValue = StatementImpl.DEFAULT_FETCH_SIZE - 1;
-					resultSet.setFetchSize(changedValue);
-					assertThat(resultSet.getFetchSize()).isEqualTo(changedValue);
-					resultSet.setFetchSize(-1);
-					assertThat(resultSet.getFetchSize()).isEqualTo(StatementImpl.DEFAULT_FETCH_SIZE);
+					emptyResultSet.setFetchSize(changedValue);
+					assertThat(emptyResultSet.getFetchSize()).isEqualTo(changedValue);
+					emptyResultSet.setFetchSize(-1);
+					assertThat(emptyResultSet.getFetchSize()).isEqualTo(StatementImpl.DEFAULT_FETCH_SIZE);
 				}),
 				DynamicTest.dynamicTest("type",
-						() -> assertThat(resultSet.getType()).isEqualTo(ResultSet.TYPE_FORWARD_ONLY)),
+						() -> assertThat(emptyResultSet.getType()).isEqualTo(ResultSet.TYPE_FORWARD_ONLY)),
 				DynamicTest.dynamicTest("concurrency",
-						() -> assertThat(resultSet.getConcurrency()).isEqualTo(ResultSet.CONCUR_READ_ONLY)),
+						() -> assertThat(emptyResultSet.getConcurrency()).isEqualTo(ResultSet.CONCUR_READ_ONLY)),
 				DynamicTest.dynamicTest("holdability",
-						() -> assertThat(resultSet.getHoldability()).isEqualTo(ResultSet.CLOSE_CURSORS_AT_COMMIT))
+						() -> assertThat(emptyResultSet.getHoldability()).isEqualTo(ResultSet.CLOSE_CURSORS_AT_COMMIT))
 
 		);
 	}

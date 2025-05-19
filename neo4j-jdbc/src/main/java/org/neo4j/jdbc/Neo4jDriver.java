@@ -398,7 +398,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
-				(aborted) -> {
+				aborted -> {
 					var event = new ConnectionClosedEvent(targetUrl, aborted);
 					Events.notify(this.listeners, listener -> listener.onConnectionClosed(event));
 				});
@@ -423,7 +423,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.connect(address, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
 					connectTimeoutMillis, securityPlan, DatabaseNameUtil.database(databaseName),
 					() -> CompletableFuture.completedStage(authToken), AccessMode.WRITE, Collections.emptySet(), null,
-					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), (ignored) -> {
+					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), ignored -> {
 					}, Collections.emptyMap())
 			.toCompletableFuture()
 			.join();
@@ -996,7 +996,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
 
 			var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
-			var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, "password"));
+			var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, ""));
 			var authRealm = config.getOrDefault(PROPERTY_AUTH_REALM, "");
 
 			var userAgent = String.valueOf(config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent()));

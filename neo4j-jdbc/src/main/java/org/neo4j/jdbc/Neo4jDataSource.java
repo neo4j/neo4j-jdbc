@@ -172,6 +172,7 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	 * @param driverClassName the driver name, only allowed and legal value is
 	 * {@literal "org.neo4j.jdbc.Neo4jDriver"}
 	 */
+	@SuppressWarnings("squid:S2325")
 	public void setDriverClassName(String driverClassName) {
 		if (driverClassName != null && !Neo4jDriver.class.getCanonicalName().equals(driverClassName)) {
 			throw new IllegalArgumentException("Unsupported driver clas name: " + driverClassName);
@@ -209,8 +210,10 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 		this.connectionProperties.stringPropertyNames()
 			.forEach(k -> newProperties.put(k, this.connectionProperties.getProperty(k)));
 
-		if (username != null && password != null) {
+		if (username != null) {
 			newProperties.setProperty("user", username);
+		}
+		if (password != null) {
 			newProperties.setProperty("password", password);
 		}
 

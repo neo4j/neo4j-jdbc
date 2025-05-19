@@ -135,9 +135,9 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private final Set<ResultSetListener> listeners = new HashSet<>();
 
-	private boolean openedEventFired = false;
+	private boolean openedEventFired;
 
-	private boolean closedEventFired = false;
+	private boolean closedEventFired;
 
 	ResultSetImpl(StatementImpl statement, Neo4jTransaction transaction, RunResponse runResponse,
 			PullResponse batchPullResponse, int fetchSize, int maxRowLimit, int maxFieldSize) {

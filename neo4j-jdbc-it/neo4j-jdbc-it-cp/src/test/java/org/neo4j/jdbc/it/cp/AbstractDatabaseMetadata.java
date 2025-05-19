@@ -161,7 +161,9 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@ParameterizedTest
 	@MethodSource
 	void getReadOnlyShouldWork(String database, boolean expected) throws SQLException {
-		try (var readOnlyConnection = driver.connect(getConnectionURL() + "/" + database, new Properties())) {
+		var info = new Properties();
+		info.put("password", this.neo4j.getAdminPassword());
+		try (var readOnlyConnection = driver.connect(getConnectionURL() + "/" + database, info)) {
 			assertThat(readOnlyConnection.getMetaData().isReadOnly()).isEqualTo(expected);
 		}
 	}
@@ -973,9 +975,10 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Test
 	void getTablesWithoutSamplingShouldWork() throws SQLException {
-
+		var info = new Properties();
+		info.put("password", this.neo4j.getAdminPassword());
 		try (var connectionWithLowerSampleSize = this.driver.connect(getConnectionURL() + "?relationshipSampleSize=-1",
-				new Properties())) {
+				info)) {
 			var metaData = connectionWithLowerSampleSize.getMetaData();
 			assertThatNoException().isThrownBy(() -> metaData.getTables(null, null, null, null));
 		}

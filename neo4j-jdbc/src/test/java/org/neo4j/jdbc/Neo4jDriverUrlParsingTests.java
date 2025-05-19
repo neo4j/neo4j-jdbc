@@ -317,7 +317,7 @@ class Neo4jDriverUrlParsingTests {
 				case "database" -> assertThat(info.value).isEqualTo("customDb");
 				case "authScheme" -> assertThat(info.value).isEqualTo("basic");
 				case "user" -> assertThat(info.value).isEqualTo("neo4j");
-				case "password" -> assertThat(info.value).isEqualTo("password");
+				case "password" -> assertThat(info.value).isEqualTo("");
 				case "authRealm" -> assertThat(info.value).isEqualTo("");
 				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
 				case "timeout" -> assertThat(info.value).isEqualTo("1000");
@@ -344,7 +344,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.database()).isEqualTo("neo4j");
 		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
 		assertThat(config.user()).isEqualTo("neo4j");
-		assertThat(config.password()).isEqualTo("password");
+		assertThat(config.password()).isEqualTo("");
 		assertThat(config.authRealm()).isEqualTo("");
 		assertThat(config.agent()).isEqualTo("neo4j-jdbc/dev");
 		assertThat(config.timeout()).isEqualTo(1000);

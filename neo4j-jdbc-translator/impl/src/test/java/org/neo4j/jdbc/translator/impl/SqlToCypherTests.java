@@ -386,7 +386,7 @@ class SqlToCypherTests {
 			return Stream.empty();
 		}
 
-		var files = parentFolder.listFiles((f) -> f.getName().toLowerCase().endsWith(".adoc"));
+		var files = parentFolder.listFiles(f -> f.getName().toLowerCase().endsWith(".adoc"));
 		if (files == null) {
 			return Stream.empty();
 		}
@@ -480,10 +480,10 @@ class SqlToCypherTests {
 			var blocks = document.findBy(Map.of("context", ":listing", "style", "source"))
 				.stream()
 				.map(Block.class::cast)
-				.filter((b) -> b.hasAttribute("id"))
+				.filter(b -> b.hasAttribute("id"))
 				.collect(Collectors.toMap(ContentNode::getId, Function.identity()));
 
-			blocks.values().stream().filter((b) -> "sql".equals(b.getAttribute("language"))).map((sqlBlock) -> {
+			blocks.values().stream().filter(b -> "sql".equals(b.getAttribute("language"))).map(sqlBlock -> {
 				var name = (String) sqlBlock.getAttribute("name");
 				var sql = String.join("\n", sqlBlock.getLines());
 				var cypherBlock = blocks.get(sqlBlock.getId() + "_expected");

@@ -214,6 +214,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private static final String COL_COLUMN_USAGE = "COLUMN_USAGE";
 
+	private static final String DEFAULT_SCHEMA = "public";
+
 	static {
 		QUERIES = new Properties();
 		try {
@@ -1197,7 +1199,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			String IS_NULLABLE, Integer ordinalPosition, boolean generated) throws SQLException {
 		var values = new ArrayList<Value>();
 		values.add(Values.value(getSingleCatalog())); // TABLE_CAT
-		values.add(Values.value("public")); // TABLE_SCHEM is always public
+		values.add(Values.value(DEFAULT_SCHEMA)); // TABLE_SCHEM is always public
 		values.add(nodeLabel); // TABLE_NAME
 		values.add(propertyName); // COLUMN_NAME
 		var columnType = Neo4jConversions.toSqlTypeFromOldCypherType(propertyType.asString());
@@ -1384,7 +1386,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 			// Exactly one unique constraint is fine
 			if (uniqueConstraints.size() == 1) {
-				resultRows = makeUniqueKeyValues(getSingleCatalog(), "public", table, uniqueConstraints);
+				resultRows = makeUniqueKeyValues(getSingleCatalog(), DEFAULT_SCHEMA, table, uniqueConstraints);
 			}
 			// Otherwise we go with element ids if the "table" exists
 			else {
@@ -1396,7 +1398,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				}
 
 				resultRows = exists
-						? makeUniqueKeyValues(getSingleCatalog(), "public", table,
+						? makeUniqueKeyValues(getSingleCatalog(), DEFAULT_SCHEMA, table,
 								List.of(new UniqueConstraint(table + "_elementId", List.of(table), List.of("v$id"))))
 						: List.of();
 
@@ -1409,7 +1411,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
-	private List<Value[]> makeUniqueKeyValues(String catalog, String schema, String table,
+	private static List<Value[]> makeUniqueKeyValues(String catalog, String schema, String table,
 			List<UniqueConstraint> uniqueConstraints) {
 		List<Value[]> results = new ArrayList<>();
 		for (var uniqueConstraint : uniqueConstraints) {
@@ -1733,8 +1735,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		keys.add(COL_TABLE_CATALOG);
 
 		var runResponse = createRunResponseForStaticKeys(keys);
-		var pullResponse = staticPullResponseFor(keys,
-				Collections.singletonList(new Value[] { Values.value("public"), Values.value(getSingleCatalog()) }));
+		var pullResponse = staticPullResponseFor(keys, Collections
+			.singletonList(new Value[] { Values.value(DEFAULT_SCHEMA), Values.value(getSingleCatalog()) }));
 		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
@@ -1742,8 +1744,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
 		assertCatalogIsNullOrEmpty(catalog);
 
-		var thePattern = Objects.requireNonNullElse(schemaPattern, "public").trim().replace("%", ".*");
-		if (thePattern.isEmpty() || "public".matches("(?i)" + thePattern)) {
+		var thePattern = Objects.requireNonNullElse(schemaPattern, DEFAULT_SCHEMA).trim().replace("%", ".*");
+		if (thePattern.isEmpty() || DEFAULT_SCHEMA.matches("(?i)" + thePattern)) {
 			return getSchemas();
 		}
 
@@ -1905,7 +1907,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	}
 
 	private static void assertSchemaIsPublicOrNull(String schemaPattern) throws SQLException {
-		if (schemaPattern != null && !"public".equalsIgnoreCase(schemaPattern)) {
+		if (schemaPattern != null && !DEFAULT_SCHEMA.equalsIgnoreCase(schemaPattern)) {
 			throw new Neo4jException(withReason("Schema must be public or null (was '%s')".formatted(schemaPattern)));
 		}
 	}
