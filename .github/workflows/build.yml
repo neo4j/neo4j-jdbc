@@ -53,9 +53,9 @@ jobs:
       - name: 'Preflight unit tests only'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./mvnw --no-transfer-progress -DskipITs -am -pl neo4j-jdbc clean verify
+        run: ./mvnw --no-transfer-progress -DskipITs -am -pl neo4j-jdbc clean package
 
-      - name: 'Clean and verify'
+      - name: 'Verify and install'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
