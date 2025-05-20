@@ -151,6 +151,22 @@
 									<shadedPattern>org.neo4j.jdbc.internal.shaded.jackson</shadedPattern>
 								</relocation>
 								<relocation>
+									<pattern>META-INF/versions/11/com.fasterxml.jackson</pattern>
+									<shadedPattern>META-INF/versions/11/org.neo4j.jdbc.internal.shaded.jackson</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>META-INF/versions/17/com.fasterxml.jackson</pattern>
+									<shadedPattern>META-INF/versions/17/org.neo4j.jdbc.internal.shaded.jackson</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>META-INF/versions/21/com.fasterxml.jackson</pattern>
+									<shadedPattern>META-INF/versions/21/org.neo4j.jdbc.internal.shaded.jackson</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>META-INF/versions/22/com.fasterxml.jackson</pattern>
+									<shadedPattern>META-INF/versions/22/org.neo4j.jdbc.internal.shaded.jackson</shadedPattern>
+								</relocation>
+								<relocation>
 									<pattern>io.github.cdimascio.dotenv</pattern>
 									<shadedPattern>org.neo4j.jdbc.internal.shaded.dotenv</shadedPattern>
 								</relocation>
