@@ -905,6 +905,35 @@ class ConnectionImplTests {
 		});
 	}
 
+	static Stream<Arguments> shouldEnforceCypher() {
+		var mlQuery = """
+				/*+ NEO4J FORCE_CYPHER */
+				MATCH (:Station { name: 'Denmark Hill' })<-[:CALLS_AT]-(d:Stop)
+					((:Stop)-[:NEXT]->(:Stop)){1,3}
+					(a:Stop)-[:CALLS_AT]->(:Station { name: 'Clapham Junction' })
+				RETURN d.departs AS departureTime, a.arrives AS arrivalTime
+				""";
+
+		return Stream.of(Arguments.of("/*+ NEO4J FORCE_CYPHER */ MATCH (n) RETURN n", true),
+				Arguments.of("MATCH /*+ NEO4J FORCE_CYPHER */ (n) RETURN n", true),
+				Arguments.of("MATCH /*+ NEO4J FORCE_CYPHER */ (n)\nRETURN n", true),
+				Arguments.of("/*+ NEO4J FORCE_CYPHER */ MATCH (n)\nRETURN n", true),
+				Arguments.of("/*+ NEO4J FORCE_CYPHER */\nMATCH (n)\nRETURN n", true),
+				Arguments.of("/*+ NEO4J FORCE_CYPHER */\nMATCH (n:'Movie')\nRETURN n", true),
+				Arguments.of("/*+ NEO4J FORCE_CYPHER */\nMATCH (n:`Movie`)\nRETURN n", true),
+				Arguments.of("MATCH (n:`/*+ NEO4J FORCE_CYPHER */`) RETURN n", false),
+				Arguments.of("MATCH (n) SET n.f = '/*+ NEO4J FORCE_CYPHER */' RETURN n", false),
+				Arguments.of("MATCH (n) SET n.f = '   /*+ NEO4J FORCE_CYPHER */    ' RETURN n", false),
+				Arguments.of("MATCH (n) SET n.f = \"/*+ NEO4J FORCE_CYPHER */\" RETURN n", false),
+				Arguments.of(mlQuery, true));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldEnforceCypher(String sql, boolean shouldEnforceCypher) {
+		assertThat(ConnectionImpl.forceCypher(sql)).isEqualTo(shouldEnforceCypher);
+	}
+
 	@FunctionalInterface
 	private interface ConnectionMethodRunner {
 

@@ -48,7 +48,6 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import org.neo4j.cypherdsl.support.schema_name.SchemaNames;
 import org.neo4j.jdbc.Neo4jException.GQLError;
@@ -66,12 +65,6 @@ import static org.neo4j.jdbc.Neo4jException.withCause;
 import static org.neo4j.jdbc.Neo4jException.withReason;
 
 non-sealed class StatementImpl implements Neo4jStatement {
-
-	// Adding the comment /*+ NEO4J FORCE_CYPHER */ to your Cypher statement will make the
-	// JDBC driver opt-out from translating it to Cypher, even if the driver has been
-	// configured for automatic translation.
-	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
-		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.statement");
 
@@ -639,8 +632,7 @@ non-sealed class StatementImpl implements Neo4jStatement {
 
 	protected final String processSQL(String sql) throws SQLException {
 		try {
-			var processor = forceCypher(sql) ? UnaryOperator.<String>identity() : this.sqlProcessor;
-			var processedSQL = processor.apply(sql);
+			var processedSQL = this.sqlProcessor.apply(sql);
 			if (SQL_LOGGER.isLoggable(Level.FINE) && !processedSQL.equals(sql)) {
 				SQL_LOGGER.log(Level.FINE, "Processed ''{0}'' into ''{1}''", new Object[] { sql, processedSQL });
 			}
@@ -649,17 +641,6 @@ non-sealed class StatementImpl implements Neo4jStatement {
 		catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException ex) {
 			throw new Neo4jException(withCause(Optional.ofNullable(ex.getCause()).orElse(ex)));
 		}
-	}
-
-	static boolean forceCypher(String sql) {
-		var matcher = PATTERN_ENFORCE_CYPHER.matcher(sql);
-		while (matcher.find()) {
-			if (matcher.group(1) != null && matcher.group(1).equals(matcher.group(2))) {
-				continue;
-			}
-			return true;
-		}
-		return false;
 	}
 
 	@Override
