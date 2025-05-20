@@ -69,6 +69,13 @@ public record View(String name, String query, List<Column> columns) {
 	 */
 	public record Column(String name, String propertyName, String type) {
 
+		/**
+		 * Validates the column name.
+		 * @param name the name of the column
+		 * @param propertyName the name of the graph property that is queried for the
+		 * columns data
+		 * @param type the Neo4j datatype of that column
+		 */
 		public Column {
 			var msg = "Column name is required";
 			if (Objects.requireNonNull(name, msg).isBlank()) {
