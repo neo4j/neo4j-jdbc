@@ -20,6 +20,7 @@ package org.neo4j.jdbc.docs;
 
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -217,8 +218,9 @@ public final class AuraGenAIExample {
 
 		var result = new ArrayList<Movie>();
 
-		try (var csvReader = new CSVReaderBuilder(new InputStreamReader(
-				Objects.requireNonNull(AuraGenAIExample.class.getResourceAsStream("/movies.csv"))))
+		try (var csvReader = new CSVReaderBuilder(
+				new InputStreamReader(Objects.requireNonNull(AuraGenAIExample.class.getResourceAsStream("/movies.csv")),
+						StandardCharsets.UTF_8))
 			.withSkipLines(1)
 			.build()) {
 			String[] nextRecord;

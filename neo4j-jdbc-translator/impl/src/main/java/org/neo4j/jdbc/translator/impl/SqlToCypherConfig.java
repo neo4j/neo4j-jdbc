@@ -69,8 +69,8 @@ public final class SqlToCypherConfig {
 
 	private static final SqlToCypherConfig DEFAULT_CONFIG = SqlToCypherConfig.builder().build();
 
-	@SuppressWarnings("squid:S1192") // Don't want to use the deprecateed properties,
-										// better repeat.
+	// Don't want to use the deprecated properties, better repeat them here
+	@SuppressWarnings("squid:S1192")
 	private static final Map<String, String> DRIVER_CONFIG_TO_TRANSLATOR_CONFIG_MAPPING = Map.of("cacheSQLTranslations",
 			"s2c.enableCache", "viewDefinitions", "s2c.viewDefinitions");
 

@@ -27,22 +27,16 @@ import org.neo4j.jdbc.values.Value;
 final class RelationshipImpl extends AbstractEntity
 		implements Relationship, org.neo4j.bolt.connection.values.Relationship {
 
-	private long start;
-
 	private String startElementId;
-
-	private long end;
 
 	private String endElementId;
 
 	private final String type;
 
-	RelationshipImpl(long id, String elementId, long start, String startElementId, long end, String endElementId,
-			String type, Map<String, Value> properties) {
+	RelationshipImpl(long id, String elementId, String startElementId, String endElementId, String type,
+			Map<String, Value> properties) {
 		super(id, elementId, properties);
-		this.start = start;
 		this.startElementId = startElementId;
-		this.end = end;
 		this.endElementId = endElementId;
 		this.type = type;
 	}
@@ -54,9 +48,7 @@ final class RelationshipImpl extends AbstractEntity
 
 	@Override
 	public void setStartAndEnd(long start, String startElementId, long end, String endElementId) {
-		this.start = start;
 		this.startElementId = startElementId;
-		this.end = end;
 		this.endElementId = endElementId;
 	}
 

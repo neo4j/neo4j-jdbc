@@ -100,8 +100,7 @@ enum ValueFactoryImpl implements ValueFactory {
 	@Override
 	public Relationship relationship(long id, String elementId, long start, String startElementId, long end,
 			String endElementId, String type, Map<String, Value> properties) {
-		return new RelationshipImpl(id, elementId, start, startElementId, end, endElementId, type,
-				toDriverMap(properties));
+		return new RelationshipImpl(id, elementId, startElementId, endElementId, type, toDriverMap(properties));
 	}
 
 	@Override
