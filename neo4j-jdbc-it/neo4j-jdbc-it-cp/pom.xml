@@ -38,6 +38,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>com.github.stefanbirkner</groupId>
+			<artifactId>system-lambda</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-launcher</artifactId>
 			<scope>test</scope>
@@ -78,6 +83,38 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<executions>
+					<execution>
+						<configuration combine.self="append">
+							<excludes>
+								<exclude>org.neo4j.jdbc.it.cp.Neo4jDriverExtensionsIT</exclude>
+							</excludes>
+						</configuration>
+					</execution>
+					<execution>
+						<id>modified_env</id>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+						<configuration>
+							<includes>
+								<include>org.neo4j.jdbc.it.cp.Neo4jDriverExtensionsIT</include>
+							</includes>
+							<!-- Needed to modify system environment variables in this particular test, don't want to have it everywhere. -->
+							<argLine>@{argLine} --add-opens java.base/java.util=ALL-UNNAMED</argLine>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 	<profiles>
 		<profile>

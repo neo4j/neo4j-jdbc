@@ -72,7 +72,12 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.prepared-statement");
 
-	private static final Pattern SQL_PLACEHOLDER_PATTERN = Pattern.compile("\\?(?=[^\"]*(?:\"[^\"]*\"[^\"]*)*$)");
+	/**
+	 * Matches question marks outside double and single quoted strings, nested quotes will
+	 * break it.
+	 */
+	private static final Pattern SQL_PLACEHOLDER_PATTERN = Pattern
+		.compile("\\?(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)");
 
 	// We did not consider using concurrent datastructures as the `PreparedStatement` is
 	// usually not treated as thread-safe
@@ -99,8 +104,10 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	PreparedStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			UnaryOperator<String> translator, Warnings localWarnings, Consumer<Class<? extends Statement>> onClose,
-			boolean rewriteBatchedStatements, String sql) {
-		super(connection, transactionSupplier, translator, localWarnings, onClose);
+			boolean rewritePlaceholders, boolean rewriteBatchedStatements, String sql) {
+		super(connection, transactionSupplier,
+				rewritePlaceholders ? s -> PreparedStatementImpl.rewritePlaceholders(translator.apply(s)) : translator,
+				localWarnings, onClose);
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.sql = sql;
 		this.poolable = true;

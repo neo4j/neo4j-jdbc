@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class Neo4jDriverIT {
+class Neo4jDriverIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
 	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();

@@ -83,6 +83,7 @@ class PreparedStatementImplTests {
 			textBlock = """
 					MATCH statement RETURN same WHERE thereAreNoPlaceholders|MATCH statement RETURN same WHERE thereAreNoPlaceholders
 					MATCH statement RETURN same WHERE thereIsAPlaceholder = ?|MATCH statement RETURN same WHERE thereIsAPlaceholder = $1
+					MATCH statement RETURN same WHERE thereIsAPlaceholder = '?'|MATCH statement RETURN same WHERE thereIsAPlaceholder = '?'
 					MATCH statement RETURN same WHERE thereIsAPlaceholder = ? AND another = ?|MATCH statement RETURN same WHERE thereIsAPlaceholder = $1 AND another = $2
 					MATCH statement RETURN same WHERE thisIs = "a string ?" AND thereIsAPlaceholder = ? AND another = ? AND notInString = "shall I replace this?"|MATCH statement RETURN same WHERE thisIs = "a string ?" AND thereIsAPlaceholder = $1 AND another = $2 AND notInString = "shall I replace this?"
 					MATCH statement RETURN same WHERE thereIsAPlaceholder = ? <NL>AND newLinePar = ?|MATCH statement RETURN same WHERE thereIsAPlaceholder = $1 <NL>AND newLinePar = $2
@@ -122,7 +123,7 @@ class PreparedStatementImplTests {
 
 	private static PreparedStatementImpl newStatement(Connection connection,
 			Neo4jTransactionSupplier transactionSupplier, String query) {
-		return new PreparedStatementImpl(connection, transactionSupplier, null, null, null, false, query);
+		return new PreparedStatementImpl(connection, transactionSupplier, null, null, null, false, false, query);
 	}
 
 	@Test

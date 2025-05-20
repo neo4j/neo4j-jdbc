@@ -62,6 +62,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.BasicResponseHandler;
@@ -94,6 +95,12 @@ import static org.neo4j.jdbc.Neo4jException.withReason;
  * @since 6.0.0
  */
 final class ConnectionImpl implements Neo4jConnection {
+
+	// Adding the comment /*+ NEO4J FORCE_CYPHER */ to your Cypher statement will make the
+	// JDBC driver opt-out from translating it to Cypher, even if the driver has been
+	// configured for automatic translation.
+	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
+		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.connection");
 
@@ -201,11 +208,15 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	UnaryOperator<String> getTranslator(boolean force, Consumer<SQLWarning> warningConsumer) throws SQLException {
+
+		List<Translator> resolvedTranslators;
 		if (!(this.enableSqlTranslation || force)) {
-			return UnaryOperator.identity();
+			resolvedTranslators = List.of((statement, optionalDatabaseMetaData) -> statement);
+		}
+		else {
+			resolvedTranslators = this.translators.resolve();
 		}
 
-		var resolvedTranslators = this.translators.resolve();
 		if (resolvedTranslators.isEmpty()) {
 			throw Neo4jDriver.noTranslatorsAvailableException();
 		}
@@ -536,18 +547,9 @@ final class ConnectionImpl implements Neo4jConnection {
 		assertValidResultSetTypeAndConcurrency(resultSetType, resultSetConcurrency);
 		assertValidResultSetHoldability(resultSetHoldability);
 		var localWarnings = new Warnings();
-		var translator = getTranslator(localWarnings);
-		UnaryOperator<String> decoratedTranslator;
-		if (this.rewritePlaceholders) {
-			decoratedTranslator = (translator != null)
-					? s -> PreparedStatementImpl.rewritePlaceholders(translator.apply(s))
-					: PreparedStatementImpl::rewritePlaceholders;
-		}
-		else {
-			decoratedTranslator = translator;
-		}
-		return trackStatement(new PreparedStatementImpl(this, this::getTransaction, decoratedTranslator, localWarnings,
-				this::notifyStatementListeners, this.rewriteBatchedStatements, sql));
+		return trackStatement(
+				new PreparedStatementImpl(this, this::getTransaction, getTranslator(localWarnings), localWarnings,
+						this::notifyStatementListeners, this.rewritePlaceholders, this.rewriteBatchedStatements, sql));
 	}
 
 	@Override
@@ -1045,6 +1047,17 @@ final class ConnectionImpl implements Neo4jConnection {
 		return this;
 	}
 
+	static boolean forceCypher(String sql) {
+		var matcher = PATTERN_ENFORCE_CYPHER.matcher(sql);
+		while (matcher.find()) {
+			if (matcher.group(1) != null && matcher.group(1).equals(matcher.group(2))) {
+				continue;
+			}
+			return true;
+		}
+		return false;
+	}
+
 	static class TranslatorChain implements UnaryOperator<String> {
 
 		private final List<Translator> translators;
@@ -1062,18 +1075,16 @@ final class ConnectionImpl implements Neo4jConnection {
 		@Override
 		public String apply(String statement) {
 
-			if (this.translators.size() == 1) {
-				return this.translators.get(0).translate(statement, this.metaData);
-			}
-
 			Throwable lastException = null;
 			String result = null;
 			String in = statement;
+
 			for (var translator : this.translators) {
 				// Break out early if any of the translators indicates a final Cypher
 				// statement
-				if (StatementImpl.forceCypher(in)) {
-					return in;
+				if (forceCypher(in)) {
+					result = in;
+					break;
 				}
 				try {
 					result = translator.translate(in, this.metaData);
@@ -1083,6 +1094,9 @@ final class ConnectionImpl implements Neo4jConnection {
 					}
 				}
 				catch (IllegalArgumentException ex) {
+					if (this.translators.size() == 1) {
+						throw ex;
+					}
 					this.warningSink.accept(new SQLWarning(
 							"Translator %s failed to translate `%s`".formatted(translator.getClass().getName(), in),
 							ex));
