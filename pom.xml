@@ -24,7 +24,7 @@
 
 	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-jdbc-parent</artifactId>
-	<version>6.5.0-SNAPSHOT</version>
+	<version>6.5.0</version>
 
 	<packaging>pom</packaging>
 	<name>Neo4j JDBC Driver</name>
@@ -119,7 +119,7 @@
 	<scm>
 		<connection>scm:git:git@github.com:neo4j/neo4j-jdbc.git</connection>
 		<developerConnection>scm:git:git@github.com:neo4j/neo4j-jdbc.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>6.5.0</tag>
 		<url>https://github.com/neo4j/neo4j-jdbc</url>
 	</scm>
 
