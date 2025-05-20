@@ -35,7 +35,63 @@ The native format is defined by the following https://json-schema.org[schema]:
 [source,json]
 .JSON Schema for Cypher-backed views
 ----
-include::cypher-backed-views.schema.json[]
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JSON Schema for Cypher-backed views",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/viewType"
+  },
+  "$defs": {
+    "viewType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of this view."
+        },
+        "query": {
+          "type": "string",
+          "description": "Any valid Cypher query."
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/columnType"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "query",
+        "columns"
+      ],
+      "title": "A view that will be queryable."
+    },
+    "columnType": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name as it will appear in the column list of the view."
+        },
+        "propertyName": {
+          "type": "string",
+          "description": "The property to pick from the graph, can be omitted when equal to the column name"
+        },
+        "type": {
+          "type": "string",
+          "description": "The Neo4j type of this column"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "description": "A type representing a column in a relational view"
+    }
+  }
+}
 ----
 
 The JDBC driver is able to load resources from
