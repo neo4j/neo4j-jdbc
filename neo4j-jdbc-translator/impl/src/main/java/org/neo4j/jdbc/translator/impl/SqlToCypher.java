@@ -50,7 +50,9 @@ import java.util.stream.Stream;
 import org.jooq.Asterisk;
 import org.jooq.CreateTableElementListStep;
 import org.jooq.DSLContext;
+import org.jooq.False;
 import org.jooq.Field;
+import org.jooq.Null;
 import org.jooq.Param;
 import org.jooq.Parser;
 import org.jooq.QualifiedAsterisk;
@@ -63,6 +65,7 @@ import org.jooq.SelectFieldOrAsterisk;
 import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.True;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import org.jooq.impl.ParserException;
@@ -1161,13 +1164,13 @@ final class SqlToCypher implements Translator {
 					throw unsupported(f);
 				}
 			}
-			else if (f instanceof org.jooq.True) {
+			else if (f instanceof True) {
 				return Cypher.literalTrue();
 			}
-			else if (f instanceof org.jooq.False) {
+			else if (f instanceof False) {
 				return Cypher.literalFalse();
 			}
-			else if (f instanceof QOM.Null || f == null || f instanceof org.jooq.Null) {
+			else if (f instanceof QOM.Null || f == null || f instanceof Null) {
 				return Cypher.literalNull();
 			}
 			else if (f instanceof QOM.Function<?> func) {
@@ -1185,7 +1188,7 @@ final class SqlToCypher implements Translator {
 					exp = Cypher.asterisk();
 				}
 				else {
-					exp = expression(field);
+					exp = expression(field, true);
 				}
 				return c.$distinct() ? Cypher.countDistinct(exp) : Cypher.count(exp);
 			}
@@ -1220,6 +1223,19 @@ final class SqlToCypher implements Translator {
 			}
 			else if (f instanceof QOM.CurrentTimestamp<?>) {
 				return Cypher.localdatetime();
+			}
+			else if (f instanceof QOM.Extract extract) {
+				return switch (extract.$datePart()) {
+					case YEAR -> expression(extract.$field()).property("year");
+					case MONTH -> expression(extract.$field()).property("month");
+					case DAY -> expression(extract.$field()).property("day");
+					case HOUR -> expression(extract.$field()).property("hour");
+					case MINUTE -> expression(extract.$field()).property("minute");
+					case SECOND -> expression(extract.$field()).property("SECOND");
+					case MILLISECOND -> expression(extract.$field()).property("millisecond");
+					default -> throw new IllegalStateException(
+							"Unsupported value for date/time extraction: " + extract.$datePart());
+				};
 			}
 			else {
 				throw unsupported(f);

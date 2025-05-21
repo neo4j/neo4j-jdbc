@@ -444,26 +444,118 @@ class SqlToCypherTests {
 		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));
 	}
 
-	@ParameterizedTest
-	@CsvSource(
-			textBlock = """
-					SELECT * FROM blub b WHERE name like '%Test%', MATCH (b:blub) WHERE b.name CONTAINS 'Test' RETURN *
-					SELECT * FROM blub b WHERE name like '%Test', MATCH (b:blub) WHERE b.name ENDS WITH 'Test' RETURN *
-					SELECT * FROM blub b WHERE name like 'Test%', MATCH (b:blub) WHERE b.name STARTS WITH 'Test' RETURN *
-					SELECT * FROM blub b WHERE name like 'This is _ %Test%', MATCH (b:blub) WHERE b.name =~ 'This is . .*Test.*' RETURN *
-					SELECT * FROM blub b WHERE name like '%', MATCH (b:blub) WHERE b.name =~ '.*' RETURN *
-					SELECT * FROM blub b WHERE name like '%%', MATCH (b:blub) WHERE b.name =~ '.*' RETURN *
-					SELECT * FROM blub b WHERE name like '%%%', MATCH (b:blub) WHERE b.name =~ '.*' RETURN *
-					SELECT * FROM blub b WHERE name like '_', MATCH (b:blub) WHERE b.name =~ '.' RETURN *
-					SELECT * FROM blub b WHERE name like '__', MATCH (b:blub) WHERE b.name =~ '..' RETURN *
-					SELECT * FROM blub b WHERE name like '___', MATCH (b:blub) WHERE b.name =~ '...' RETURN *
-					SELECT * FROM blub b WHERE name like '%_%', MATCH (b:blub) WHERE b.name =~ '.*..*' RETURN *
-					SELECT * FROM blub b WHERE name like '%ein%schöner%Name%', MATCH (b:blub) WHERE b.name =~ '.*ein.*schöner.*Name.*' RETURN *
-					""")
-	void likeShouldBeHandledNicely(String sql, String expected) {
+	@TestFactory
+	Stream<DynamicContainer> directCompare() {
 
-		var translator = SqlToCypher.defaultTranslator();
-		assertThat(translator.translate(sql)).isEqualTo(expected);
+		var like = List.of(
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%Test%'",
+						"MATCH (b:blub) WHERE b.name CONTAINS 'Test' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%Test'",
+						"MATCH (b:blub) WHERE b.name ENDS WITH 'Test' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like 'Test%'",
+						"MATCH (b:blub) WHERE b.name STARTS WITH 'Test' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like 'This is _ %Test%'",
+						"MATCH (b:blub) WHERE b.name =~ 'This is . .*Test.*' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%'",
+						"MATCH (b:blub) WHERE b.name =~ '.*' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%%'",
+						"MATCH (b:blub) WHERE b.name =~ '.*' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%%%'",
+						"MATCH (b:blub) WHERE b.name =~ '.*' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '_'",
+						"MATCH (b:blub) WHERE b.name =~ '.' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '__'",
+						"MATCH (b:blub) WHERE b.name =~ '..' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '___'",
+						"MATCH (b:blub) WHERE b.name =~ '...' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%_%'",
+						"MATCH (b:blub) WHERE b.name =~ '.*..*' RETURN *"),
+				SqlAndCypher.of("SELECT * FROM blub b WHERE name like '%ein%schöner%Name%'",
+						"MATCH (b:blub) WHERE b.name =~ '.*ein.*schöner.*Name.*' RETURN *"));
+		var blog = List.of(
+				SqlAndCypher.of("Get all columns from the Customers table.", "SELECT * FROM Customers",
+						"MATCH (customers:Customer) RETURN *"),
+				SqlAndCypher.of("Get all columns from the Customers table.", "SELECT * FROM Customers c",
+						"MATCH (c:Customer) RETURN *"),
+				SqlAndCypher.of("Get all columns from the Customers table.", "SELECT c FROM Customers c",
+						"MATCH (c:Customer) RETURN c"),
+				SqlAndCypher.of("Get the count of all Orders made during 1997.", """
+						SELECT COUNT(*)
+						FROM Orders o
+						WHERE YEAR(OrderDate) = 1997
+						""", "MATCH (o:Order) WHERE o.OrderDate.year = 1997 RETURN count(*)"),
+				SqlAndCypher.of("Get the count of all Orders made during 1997.", """
+						SELECT COUNT(o)
+						FROM Orders o
+						WHERE YEAR(OrderDate) = 1997
+						""", "MATCH (o:Order) WHERE o.OrderDate.year = 1997 RETURN count(o)"),
+				SqlAndCypher.of(
+						"Get all orders placed on the 19th of May, 1997. (Not a chance without schema figuring out that this is a date)",
+						"""
+								SELECT *
+								FROM Orders
+								WHERE OrderDate = '19970319'
+								""", "MATCH (orders:Order) WHERE orders.OrderDate = '19970319' RETURN *"),
+				SqlAndCypher.of("Create a report for all the orders of 1996 and their Customers.", """
+						SELECT *
+						FROM Orders o
+						INNER JOIN Customers c ON o.CustomerID = c.CustomerID
+						WHERE YEAR(o.OrderDate) = 1996
+						""",
+						"MATCH (o:Order)<-[purchased:PURCHASED]-(c:Customer) WHERE o.OrderDate.year = 1996 RETURN *"),
+				SqlAndCypher.of(
+						"Create a report for all 1996 orders and their Customers. Return only the Order ID, Order Date, Customer ID, Name, and Country.",
+						"""
+								SELECT o.OrderID, o.OrderDate, c.CustomerID, c.ContactName, c.Country
+								FROM Orders o
+								INNER JOIN Customers c ON o.CustomerID = c.CustomerID
+								WHERE YEAR(o.OrderDate) = 1996
+								""",
+						"MATCH (o:Order)<-[purchased:PURCHASED]-(c:Customer) WHERE o.OrderDate.year = 1996 RETURN o.OrderID, o.OrderDate, c.CustomerID, c.ContactName, c.Country"),
+				SqlAndCypher.of("Create a report that shows the number of customers from each city.", """
+						SELECT c.City, COUNT(*)
+						FROM Orders o
+						INNER JOIN Customers c ON o.CustomerID = c.CustomerID
+						GROUP BY c.City
+						""", "MATCH (o:Order)<-[purchased:PURCHASED]-(c:Customer) RETURN c.City, count(*)"),
+				SqlAndCypher.of("Insert yourself into the Customers table",
+						"""
+								INSERT INTO Customers (CustomerID, CompanyName, ContactName, ContactTitle, Address, City, Region, PostalCode, Country, Phone, Fax)
+								VALUES ('ILYA1', 'Acme Corp', 'Ilya Verbitskiy', 'Manager', '123 Main St', 'New York', 'NY', '10001', 'USA', '555-1234', '555-5678')
+								""",
+						"CREATE (customers:Customer {CustomerID: 'ILYA1', CompanyName: 'Acme Corp', ContactName: 'Ilya Verbitskiy', ContactTitle: 'Manager', Address: '123 Main St', City: 'New York', Region: 'NY', PostalCode: '10001', Country: 'USA', Phone: '555-1234', Fax: '555-5678'})"),
+				SqlAndCypher.of("Update the phone number.",
+						"UPDATE Customers SET Phone = '000-4321' WHERE CustomerID = 'ILYA'",
+						"MATCH (customers:Customer) WHERE customers.CustomerID = 'ILYA' SET customers.Phone = '000-4321'"));
+
+		return Stream.of(
+				DynamicContainer.dynamicContainer("https://verbitskiy.co/blog/neo4j-cypher-cheat-sheet/",
+						DynamicTest.stream(blog.stream(), SqlAndCypher::displayName, this::compare)),
+				DynamicContainer.dynamicContainer("likeShouldBeHandledNicely",
+						DynamicTest.stream(like.stream(), SqlAndCypher::displayName, this::compare)));
+	}
+
+	void compare(SqlAndCypher sqlAndCypher) {
+		var translator = SqlToCypher.with(SqlToCypherConfig.builder()
+			.withTableToLabelMappings(Map.of("Customers", "Customer", "Orders", "Order"))
+			.withJoinColumnsToTypeMappings(Map.of("Orders.CustomerID", "PURCHASED"))
+			.build());
+		assertThat(translator.translate(sqlAndCypher.sql())).isEqualTo(sqlAndCypher.cypher());
+	}
+
+	private record SqlAndCypher(String name, String sql, String cypher) {
+		static SqlAndCypher of(String name, String sql, String cypher) {
+			return new SqlAndCypher(name, sql, cypher);
+
+		}
+
+		static SqlAndCypher of(String sql, String cypher) {
+			return new SqlAndCypher(null, sql, cypher);
+		}
+
+		String displayName() {
+			return Optional.ofNullable(this.name).orElse(this.sql);
+		}
 	}
 
 	private static class TestDataExtractor extends Treeprocessor {

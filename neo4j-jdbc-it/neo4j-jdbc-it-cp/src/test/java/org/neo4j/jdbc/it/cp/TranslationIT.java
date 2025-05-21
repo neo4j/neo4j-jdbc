@@ -21,6 +21,8 @@ package org.neo4j.jdbc.it.cp;
 import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -94,6 +96,27 @@ class TranslationIT extends IntegrationTestBase {
 			}
 		}
 
+	}
+
+	@Test
+	void shouldTranslateExtract() throws SQLException {
+
+		var now = LocalDateTime.now();
+		try (var connection = getConnection(true, false)) {
+			try (var statement = ((Neo4jPreparedStatement) connection.prepareStatement(
+					"SELECT year(:now), month(:now), day(:now), hour(:now), minute(:now), second(:now), millisecond(:now)"))) {
+				statement.setTimestamp("now", Timestamp.valueOf(now));
+				var rs = statement.executeQuery();
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getInt(1)).isEqualTo(now.getYear());
+				assertThat(rs.getInt(2)).isEqualTo(now.getMonthValue());
+				assertThat(rs.getInt(3)).isEqualTo(now.getDayOfMonth());
+				assertThat(rs.getInt(4)).isEqualTo(now.getHour());
+				assertThat(rs.getInt(5)).isEqualTo(now.getMinute());
+				assertThat(rs.getInt(6)).isEqualTo(now.getSecond());
+			}
+
+		}
 	}
 
 	@SuppressWarnings("SqlDialectInspection")
