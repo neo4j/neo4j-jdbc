@@ -57,6 +57,7 @@ import org.neo4j.jdbc.translator.spi.Translator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
@@ -444,6 +445,16 @@ class SqlToCypherTests {
 		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));
 	}
 
+	@Test
+	void extractionShouldFailOnSomeProperties() {
+		var translator = SqlToCypher.defaultTranslator();
+		assertThatIllegalStateException().isThrownBy(() -> translator.translate("""
+				SELECT COUNT(*)
+							FROM Orders o
+							WHERE CENTURY(OrderDate) = 1997
+				""")).withMessage("Unsupported value for date/time extraction: CENTURY");
+	}
+
 	@TestFactory
 	Stream<DynamicContainer> directCompare() {
 
@@ -526,7 +537,29 @@ class SqlToCypherTests {
 						"CREATE (customers:Customer {CustomerID: 'ILYA1', CompanyName: 'Acme Corp', ContactName: 'Ilya Verbitskiy', ContactTitle: 'Manager', Address: '123 Main St', City: 'New York', Region: 'NY', PostalCode: '10001', Country: 'USA', Phone: '555-1234', Fax: '555-5678'})"),
 				SqlAndCypher.of("Update the phone number.",
 						"UPDATE Customers SET Phone = '000-4321' WHERE CustomerID = 'ILYA'",
-						"MATCH (customers:Customer) WHERE customers.CustomerID = 'ILYA' SET customers.Phone = '000-4321'"));
+						"MATCH (customers:Customer) WHERE customers.CustomerID = 'ILYA' SET customers.Phone = '000-4321'"),
+				SqlAndCypher.of("Get the top 25 Customers alphabetically by Country and name.", """
+						SELECT TOP 25 *
+						FROM Customers
+						ORDER BY Country, ContactName
+						""",
+						"MATCH (customers:Customer) RETURN * ORDER BY customers.Country, customers.ContactName LIMIT 25"),
+				SqlAndCypher.of("Get the top 25 Countries alphabetically by Country and name.", """
+						SELECT TOP 25 Country
+						FROM Customers
+						ORDER BY Country, ContactName
+						""",
+						"MATCH (customers:Customer) RETURN customers.Country AS Country ORDER BY customers.Country, customers.ContactName LIMIT 25"),
+				SqlAndCypher.of("Get the top 25 Customers alphabetically by Country and name.", """
+						SELECT TOP 25 *
+						FROM Customers c
+						ORDER BY Country, ContactName
+						""", "MATCH (c:Customer) RETURN * ORDER BY c.Country, c.ContactName LIMIT 25"),
+				SqlAndCypher.of("Get the top 25 Customers alphabetically by Country and name.", """
+						SELECT TOP 25 c
+						FROM Customers c
+						ORDER BY Country, ContactName
+						""", "MATCH (c:Customer) RETURN c ORDER BY c.Country, c.ContactName LIMIT 25"));
 
 		return Stream.of(
 				DynamicContainer.dynamicContainer("https://verbitskiy.co/blog/neo4j-cypher-cheat-sheet/",

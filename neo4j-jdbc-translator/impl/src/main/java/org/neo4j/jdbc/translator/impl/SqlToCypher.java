@@ -113,6 +113,7 @@ import org.neo4j.jdbc.translator.spi.View;
 final class SqlToCypher implements Translator {
 
 	static final Pattern ELEMENT_ID_PATTERN = Pattern.compile("(?i)v\\$(?:(?<prefix>.+?)_)?id");
+	static final Pattern LIMIT_STAR_FROM_PATTERN = Pattern.compile("\\((\\d+) \\* FROM\\)");
 	static final String ELEMENT_ID_FUNCTION_NAME = "elementId";
 	static final String ELEMENT_ID_ALIAS = "v$id";
 	static final Pattern PERCENT_OR_UNDERSCORE = Pattern.compile("[%_]");
@@ -375,11 +376,11 @@ final class SqlToCypher implements Translator {
 
 		private ResultStatement statement(Select<?> incomingStatement) {
 			Select<?> selectStatement;
-			boolean addLimit = false;
+			boolean forceLimit = false;
 			// Assume it's a funny, wrapper checked query
 			if (incomingStatement.$from().$first() instanceof TableAlias<?> tableAlias
 					&& tableAlias.$table() instanceof QOM.DerivedTable<?> d) {
-				addLimit = incomingStatement.$where() != null;
+				forceLimit = incomingStatement.$where() != null;
 				selectStatement = d.$arg1();
 			}
 			else {
@@ -398,7 +399,11 @@ final class SqlToCypher implements Translator {
 				.flatMap(this::expression)
 				.toList();
 
-			if (selectStatement.$from().isEmpty()) {
+			if (limitIsTopNWithAsterisk(selectStatement)) {
+				resultColumnsSupplier = () -> List.of(Cypher.asterisk());
+			}
+			else if (selectStatement.$from().isEmpty()) {
+
 				return Cypher.returning(resultColumnsSupplier.get()).build();
 			}
 
@@ -409,15 +414,26 @@ final class SqlToCypher implements Translator {
 			var orderedProjection = projection
 				.orderBy(selectStatement.$orderBy().stream().map(this::expression).toList());
 
+			return addLimit(forceLimit, selectStatement, orderedProjection).build();
+		}
+
+		private StatementBuilder.BuildableStatement<ResultStatement> addLimit(boolean force, Select<?> selectStatement,
+				StatementBuilder.OngoingMatchAndReturnWithOrder projection) {
 			StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
 			if (!(selectStatement.$limit() instanceof Param<?> param)) {
-				buildableStatement = addLimit ? orderedProjection.limit(1) : orderedProjection;
+				var sql = Optional.ofNullable(selectStatement.$limit()).map(Object::toString).orElse("");
+				var matcher = LIMIT_STAR_FROM_PATTERN.matcher(sql);
+				var limit = 1;
+				if (matcher.matches()) {
+					force = true;
+					limit = Integer.parseInt(matcher.group(1));
+				}
+				buildableStatement = force ? projection.limit(limit) : projection;
 			}
 			else {
-				buildableStatement = orderedProjection.limit(expression(param));
+				buildableStatement = projection.limit(expression(param));
 			}
-
-			return buildableStatement.build();
+			return buildableStatement;
 		}
 
 		private OngoingReading createOngoingReadingFromViews(Select<?> selectStatement, ArrayList<CbvPointer> cbvs) {
@@ -444,10 +460,44 @@ final class SqlToCypher implements Translator {
 		private OngoingReading createOngoingReadingFromSources(Select<?> selectStatement) {
 			OngoingReading m2;
 			OngoingReadingWithoutWhere m1 = Cypher
-				.match(selectStatement.$from().stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
+				.match(getFromClause(selectStatement).stream().flatMap(t -> resolveTableOrJoin(t).stream()).toList());
 			m2 = (selectStatement.$where() != null) ? m1.where(condition(selectStatement.$where()))
 					: (OngoingReadingWithWhere) m1;
 			return m2;
+		}
+
+		private static boolean limitIsTopNWithAsterisk(Select<?> selectStatement) {
+			// you are drunk, intellij. I did obviously check $limit
+			// noinspection DataFlowIssue
+			return selectStatement.$limit() != null && DSL.systemName("mul").equals(selectStatement.$limit().$name());
+		}
+
+		/**
+		 * In a TOP n * query, the parser adds the source table to the LIMIT.
+		 * @param selectStatement the incoming select statement
+		 * @return a list of tables
+		 */
+		private static List<? extends Table<?>> getFromClause(Select<?> selectStatement) {
+			List<? extends Table<?>> from;
+			if (selectStatement.$from().isEmpty() && selectStatement.$limit() != null) {
+				if (selectStatement.$select().$first() instanceof TableField<?, ?> tableField) {
+					from = List.of(DSL.table(tableField.$name()));
+				}
+				else if (selectStatement.$select().$first() instanceof QOM.FieldAlias<?> fieldAlias) {
+					from = List.of(DSL.table(fieldAlias.$aliased().$name()).as(fieldAlias.$alias()));
+				}
+				else {
+					throw new IllegalStateException("No source table found");
+				}
+			}
+			else if (selectStatement.$from().isEmpty() && selectStatement.$limit() != null
+					&& selectStatement.$select().$first() instanceof TableField<?, ?> tableField) {
+				from = List.of(DSL.table(tableField.$name()));
+			}
+			else {
+				from = selectStatement.$from();
+			}
+			return from;
 		}
 
 		private static void assertEitherCypherBackedViewsOrTables(List<Table<?>> tables, List<CbvPointer> cbvs) {
@@ -467,7 +517,7 @@ final class SqlToCypher implements Translator {
 		private List<? extends Table<?>> extractQueriedTables(Select<?> src, List<CbvPointer> cbvs) {
 			// Retrieve all Cypher-backed views
 			var allCbvs = loadCypherBackedViews();
-			return unnestFromClause(src.$from(), false, (table, partOfJoin) -> {
+			return unnestFromClause(getFromClause(src), false, (table, partOfJoin) -> {
 				var p = CbvPointer.of(table);
 				if (allCbvs.contains(p.viewName()) && ownsView(p)) {
 					if (partOfJoin) {
