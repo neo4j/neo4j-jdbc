@@ -417,18 +417,21 @@ final class SqlToCypher implements Translator {
 			return addLimit(forceLimit, selectStatement, orderedProjection).build();
 		}
 
+		// Again, Sonar thinks sql and matcher are uselessly assigned
+		@SuppressWarnings("squid:S1854")
 		private StatementBuilder.BuildableStatement<ResultStatement> addLimit(boolean force, Select<?> selectStatement,
 				StatementBuilder.OngoingMatchAndReturnWithOrder projection) {
 			StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
 			if (!(selectStatement.$limit() instanceof Param<?> param)) {
+				var forceLimit = force;
 				var sql = Optional.ofNullable(selectStatement.$limit()).map(Object::toString).orElse("");
 				var matcher = LIMIT_STAR_FROM_PATTERN.matcher(sql);
 				var limit = 1;
 				if (matcher.matches()) {
-					force = true;
+					forceLimit = true;
 					limit = Integer.parseInt(matcher.group(1));
 				}
-				buildableStatement = force ? projection.limit(limit) : projection;
+				buildableStatement = forceLimit ? projection.limit(limit) : projection;
 			}
 			else {
 				buildableStatement = projection.limit(expression(param));
