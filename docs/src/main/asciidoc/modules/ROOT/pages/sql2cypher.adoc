@@ -45,14 +45,14 @@ With the following imports:
 
 [source, java, tabsize=4]
 ----
-include::{examplesDir}/SQLTranslator.java[tag=imports]
+include::{examplesDir}/java/SQLTranslator.java[tag=imports]
 ----
 
 You just pass your SQL statement to `nativeSQL` and you will get Cypher back:
 
 [source, java, tabsize=4, indent=0]
 ----
-include::{examplesDir}/SQLTranslator.java[tag=pt1]
+include::{examplesDir}/java/SQLTranslator.java[tag=pt1]
 ----
 
 === For all queries
@@ -62,7 +62,7 @@ If you configure the driver in this way, the translator will be eagerly loaded.
 
 [source, java, tabsize=4, indent=0]
 ----
-include::{examplesDir}/SQLTranslator.java[tag=pt2]
+include::{examplesDir}/java/SQLTranslator.java[tag=pt2]
 ----
 
 Sometimes you may need to fall back to Cypher for some statements, either to use constructs that you cannot express with SQL, or because our default translator cannot handle your query.
@@ -70,7 +70,7 @@ We offer a special comment that you can use as a hint in your statement to stop 
 
 [source, java, tabsize=4, indent=0]
 ----
-include::{examplesDir}/SQLTranslator.java[tag=force-cypher]
+include::{examplesDir}/java/SQLTranslator.java[tag=force-cypher]
 ----
 
 === Possible error scenarios
@@ -129,13 +129,13 @@ The next few examples use the `properties` config to avoid terrible long URLs in
 [source, java, tabsize=4, indent=0]
 .Disable pretty printing; only escape if necessary; configure dedicated table mappings
 ----
-include::{examplesDir}/SQLTranslator.java[tag=config1]
+include::{examplesDir}/java/SQLTranslator.java[tag=config1]
 ----
 
 [source, java, tabsize=4, indent=0]
 .Parse table names into upper case
 ----
-include::{examplesDir}/SQLTranslator.java[tag=config2]
+include::{examplesDir}/java/SQLTranslator.java[tag=config2]
 ----
 
 Named parameter syntax in the SQL parser defaults to `:name` (such as supported by Oracle, JPA, Spring, a colon followed by a name).
@@ -144,7 +144,7 @@ The following example changes that prefix to `$` (the same prefix that Cypher us
 [source, java, tabsize=4, indent=0]
 .Change parameters prefix and add mappings for join columns
 ----
-include::{examplesDir}/SQLTranslator.java[tag=config3]
+include::{examplesDir}/java/SQLTranslator.java[tag=config3]
 ----
 
 This is helpful when a tool generates names like that and does not allow customization.

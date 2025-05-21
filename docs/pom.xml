@@ -82,6 +82,13 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
+				<!--
+					7 years of ongoing discussion to have an option to resolve symlinks or not …
+					https://issues.apache.org/jira/browse/MRESOURCES-237:
+					The linked JSON files from the translator will only be picked up in a directory subject to filtering,
+					so we have to recreate a structure in the example directory for things that must never be filtered
+					(the Java files using as example) and the things that are ok to filter.
+				-->
 				<executions>
 					<execution>
 						<id>prepare-asciidoc</id>
@@ -95,8 +102,9 @@
 								<resource>
 									<directory>src/main/asciidoc</directory>
 									<filtering>true</filtering>
+									<includes />
 									<excludes>
-										<exclude>modules/ROOT/examples/*</exclude>
+										<exclude>modules/ROOT/examples/java</exclude>
 									</excludes>
 								</resource>
 							</resources>
@@ -112,7 +120,7 @@
 							<outputDirectory>${filtered-asciidoc-directory}/modules/ROOT/examples</outputDirectory>
 							<resources>
 								<resource>
-									<directory>src/main/asciidoc/modules/ROOT/examples</directory>
+									<directory>src/main/asciidoc/modules/ROOT/examples/java</directory>
 								</resource>
 							</resources>
 						</configuration>

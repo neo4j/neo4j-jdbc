@@ -28,7 +28,7 @@ Metadata added on a statement has precedence over connection metadata which in t
 [source, java, tabsize=4]
 .Configuring transactional metadata
 ----
-include::{examplesDir}/TransactionMetadata.java[tag=example]
+include::{examplesDir}/java/TransactionMetadata.java[tag=example]
 ----
 
 The output will be similar to this:
@@ -155,7 +155,7 @@ The easiest way to acquire a connection is directly through the `java.sql.Driver
 [source, java, tabsize=4]
 .Acquiring a JDBC connection to a Neo4j server
 ----
-include::{examplesDir}/Configuration.java[tag=cdm]
+include::{examplesDir}/java/Configuration.java[tag=cdm]
 ----
 
 While our connection implementation is thread-safe, it allows only one concurrent transaction per connection (as dictated by the JDBC specification).
@@ -168,7 +168,7 @@ If you need access to an instance of the Neo4j driver itself, you can use the fo
 [source, java, tabsize=4]
 .Acquiring an instance of the Neo4j JDBC Driver
 ----
-include::{examplesDir}/Configuration.java[tag=ddm]
+include::{examplesDir}/java/Configuration.java[tag=ddm]
 ----
 
 == Securing your connection by using SSL
