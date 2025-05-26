@@ -179,7 +179,7 @@
 		<maven.version>3.9.4</maven.version>
 		<micrometer-tracing.version>1.5.0</micrometer-tracing.version>
 		<micrometer.version>1.15.0</micrometer.version>
-		<mockito.version>5.17.0</mockito.version>
+		<mockito.version>5.18.0</mockito.version>
 		<moditect-maven-plugin.version>1.2.2.Final</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.10.6</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>3.0.0</neo4j-bolt-connection.version>
