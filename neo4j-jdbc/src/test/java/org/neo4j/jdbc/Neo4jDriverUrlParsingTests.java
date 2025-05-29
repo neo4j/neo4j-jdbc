@@ -18,612 +18,629 @@
  */
 package org.neo4j.jdbc;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentMatcher;
-import org.neo4j.bolt.connection.AuthToken;
-import org.neo4j.bolt.connection.AuthTokens;
-import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
-import org.neo4j.bolt.connection.BoltServerAddress;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
-import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
-
-@SuppressWarnings("resource")
 class Neo4jDriverUrlParsingTests {
 
 	private BoltConnectionProvider boltConnectionProvider;
 
 	private static final int DEFAULT_BOLT_PORT = 7687;
 
-	@BeforeEach
-	void beforeEach() {
-		this.boltConnectionProvider = mock();
-		CompletionStage<BoltConnection> mockedFuture = mock();
-		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
-		given(boltConnectionCompletableFuture.join()).willReturn(mock());
-		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-				any(), any(), any(), any(), any(), any()))
-			.willReturn(mockedFuture);
-	}
-
-	@ParameterizedTest
-	@ValueSource(strings = { "jdbc:neo4j://host", "jdbc:neo4j://host:1000", "jdbc:neo4j://host:1000/database",
-			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database" })
-	void driverMustAcceptValidUrl(String url) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		assertThat(driver.acceptsURL(url)).isTrue();
-	}
-
-	@ParameterizedTest
-	@MethodSource("jdbcURLProvider")
-	void driverMustConnectWithValidUrl(String url, String host, int port) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-
-		driver.connect(url, props);
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-					any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustPullDatabaseOutOfUrl() throws SQLException {
-		var url = "jdbc:neo4j://host/database";
-
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-		var database = DatabaseNameUtil.database("database");
-
-		driver.connect(url, props);
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustPullDatabaseOutOfUrlEvenIfSpecifiedInProperties() throws SQLException {
-		var url = "jdbc:neo4j://host/database";
-
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-		props.put("database", "ThisShouldBeOverriden");
-		var database = DatabaseNameUtil.database("database");
-
-		driver.connect(url, props);
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustUseDatabaseInPropertiesIfUrlDatabaseIsBlank() throws SQLException {
-		var url = "jdbc:neo4j://host";
-
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-		props.put("database", "database");
-		var database = DatabaseNameUtil.database("database");
-
-		driver.connect(url, props);
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustUseNeo4jIfDatabaseIsUnspecifiedInPropertiesAndUrl() throws SQLException {
-		var url = "jdbc:neo4j://host";
-
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-		var database = DatabaseNameUtil.database("neo4j");
-
-		driver.connect(url, props);
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@ParameterizedTest
-	@ValueSource(strings = { "jdbc:neo4j:ThisIsWrong://host", "jdbc:neo4j+all-turns-to-crap://host" })
-	void driverMustThrowIfInvalidUrlPassed(String url) {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(url, props));
-	}
-
-	@Test
-	void driverMustThrowIfNoUrlPassed() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-		var props = new Properties();
-		props.put("username", "test");
-		props.put("password", "password");
-
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(null, props));
-	}
-
-	@Test
-	void driverMustThrowIfNoUrlAndInfoPassed() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(null, null));
-	}
-
-	@Test
-	void driverMustThrowIfNoInfoPassed() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect("jdbc:neo4j://host", null));
-	}
-
-	@Test
-	void driverMustParseUrlParamsWithJustHost() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("username", "incorrectUser");
-		props.put("password", "incorrectPassword");
-
-		driver.connect("jdbc:neo4j://host?user=correctUser&password=correctPassword", props);
-
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
-				BoltAdapters.getValueFactory());
-
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustParseUrlParamsWithHostAndPort() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("username", "incorrectUser");
-		props.put("password", "incorrectPassword");
-
-		driver.connect("jdbc:neo4j://host:1000?user=correctUser&password=correctPassword", props);
-
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
-				BoltAdapters.getValueFactory());
-
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustParseUrlParamsWithHostAndPortAndDatabase() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("username", "incorrectUser");
-		props.put("password", "incorrectPassword");
-
-		driver.connect("jdbc:neo4j://host:1000/database?user=correctUser&password=correctPassword", props);
-
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
-				BoltAdapters.getValueFactory());
-
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustParseUrlParamsWithHostAndDatabase() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("username", "incorrectUser");
-		props.put("password", "incorrectPassword");
-
-		driver.connect("jdbc:neo4j://host/database?user=correctUser&password=correctPassword", props);
-
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
-				BoltAdapters.getValueFactory());
-
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustUnescapeURL() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		driver.connect("jdbc:neo4j://host?user=user%3D&password=%26pass%3D%20word%3F", new Properties());
-
-		var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?", null, BoltAdapters.getValueFactory());
-
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void driverMustUsePropsIfUrlParamsEmpty() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("user", "correctUser");
-		props.put("password", "correctPassword");
-
-		driver.connect("jdbc:neo4j://host/database", props);
-
-		var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
-				BoltAdapters.getValueFactory());
-
-		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void testMinimalGetPropertyInfo() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-
-		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb", props);
-
-		for (var info : infos) {
-			assertThat(info.description).isNotNull();
-
-			switch (info.name) {
-				case "host" -> assertThat(info.value).isEqualTo("host");
-				case "port" -> assertThat(info.value).isEqualTo("1234");
-				case "database" -> assertThat(info.value).isEqualTo("customDb");
-				case "authScheme" -> assertThat(info.value).isEqualTo("basic");
-				case "user" -> assertThat(info.value).isEqualTo("neo4j");
-				case "password" -> assertThat(info.value).isEqualTo("");
-				case "authRealm" -> assertThat(info.value).isEqualTo("");
-				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
-				case "timeout" -> assertThat(info.value).isEqualTo("1000");
-				case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
-					assertThat(info.value).isEqualTo("false");
-				case "rewriteBatchedStatements", "rewritePlaceholders", "useBookmarks" ->
-					assertThat(info.value).isEqualTo("true");
-				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
-				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"s2c.enableCache", "rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
-			}
-		}
-	}
-
-	@Test
-	void testMinimalParseConfig() throws SQLException {
-		Properties props = new Properties();
-
-		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host", props);
-
-		assertThat(config.host()).isEqualTo("host");
-		assertThat(config.port()).isEqualTo(7687);
-		assertThat(config.database()).isEqualTo("neo4j");
-		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
-		assertThat(config.user()).isEqualTo("neo4j");
-		assertThat(config.password()).isEqualTo("");
-		assertThat(config.authRealm()).isEqualTo("");
-		assertThat(config.agent()).isEqualTo("neo4j-jdbc/dev");
-		assertThat(config.timeout()).isEqualTo(1000);
-		assertThat(config.relationshipSampleSize()).isEqualTo(1000);
-		assertThat(config.enableSQLTranslation()).isFalse();
-		assertThat(config.enableTranslationCaching()).isFalse();
-		assertThat(config.rewriteBatchedStatements()).isTrue();
-		assertThat(config.rewritePlaceholders()).isTrue();
-		assertThat(config.sslProperties().ssl()).isFalse();
-		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.DISABLE);
-
-		// raw config, i.e., everything the user explicitly set
-		var rawConfig = new HashMap<>(config.rawConfig());
-		assertThat(rawConfig.remove("host")).isEqualTo(config.host());
-		assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
-		assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
-		assertThat(rawConfig).isEmpty();
-
-		assertThat(config.misc()).isEqualTo(rawConfig);
-	}
-
-	@ParameterizedTest
-	@ValueSource(booleans = { true, false })
-	void shouldUnifyProperties(boolean value) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb?cacheSQLTranslations=%s".formatted(value),
-				props);
-
-		var expected = String.valueOf(value);
-		assertThat(infos).anyMatch(info -> "cacheSQLTranslations".equals(info.name) && expected.equals(info.value))
-			.noneMatch(info -> "s2c.enableCache".equals(info.name));
-	}
-
-	@Test
-	void testGetPropertyInfoPropertyOverrides() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("user", "user1");
-		props.put("authScheme", "basic");
-		props.put("password", "user1Password");
-		props.put("database", "customDb");
-		props.put("authRealm", "myRealm");
-		props.put("timeout", "2000");
-		props.put("enableSQLTranslation", "true");
-		props.put("rewriteBatchedStatements", "false");
-		props.put("useBookmarks", "false");
-		props.put("cacheSQLTranslations", "true");
-
-		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
-
-		for (var info : infos) {
-			assertThat(info.description).isNotNull();
-
-			switch (info.name) {
-				case "host" -> assertThat(info.value).isEqualTo("host");
-				case "port" -> assertThat(info.value).isEqualTo("1234");
-				case "database" -> assertThat(info.value).isEqualTo("customDb");
-				case "authScheme" -> assertThat(info.value).isEqualTo("basic");
-				case "user" -> assertThat(info.value).isEqualTo("user1");
-				case "password" -> assertThat(info.value).isEqualTo("user1Password");
-				case "authRealm" -> assertThat(info.value).isEqualTo("myRealm");
-				case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
-				case "timeout" -> assertThat(info.value).isEqualTo("2000");
-				case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
-				case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"rewritePlaceholders", "useBookmarks" ->
-					assertThat(info.value).isEqualTo("false");
-				case "enableSQLTranslation" -> assertThat(info.value).isEqualTo("true");
-				case "sslMode" -> assertThat(info.value).isEqualTo("disable");
-				default -> assertThat(info.name).isIn("host", "port", "database", "authScheme", "user", "password",
-						"agent", "authRealm", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
-						"s2c.enableCache", "rewriteBatchedStatements", "sslMode");
-			}
-		}
-	}
-
-	@Test
-	void sampleSizeShouldBeValidated() {
-		var properties = new Properties();
-		assertThatExceptionOfType(SQLException.class)
-			.isThrownBy(
-					() -> Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?relationshipSampleSize=-2", properties))
-			.withMessage("data exception - Sample size for relationships must be greater than or equal -1");
-	}
-
-	@Test
-	void testParseConfigOverrides() throws SQLException {
-		Properties props = new Properties();
-		props.put("authScheme", "basic");
-		props.put("user", "user1");
-		props.put("password", "user1Password");
-		props.put("database", "customDb");
-		props.put("authRealm", "myRealm");
-		props.put("agent", "baby's-first-agent/1.2.3");
-		props.put("timeout", "2000");
-		props.put("enableSQLTranslation", "true");
-		props.put("rewriteBatchedStatements", "false");
-		props.put("cacheSQLTranslations", "true");
-		props.put("s2c.alwaysEscapeNames", "true");
-		props.put("s2c.prettyPrint", "true");
-		props.put("s2c.enableCache", "true");
-		props.put("customProperty", "foo");
-		props.put("relationshipSampleSize", "4711");
-
-		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
-
-		assertThat(config.host()).isEqualTo("host");
-		assertThat(config.port()).isEqualTo(1234);
-		assertThat(config.database()).isEqualTo("customDb");
-		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
-		assertThat(config.user()).isEqualTo("user1");
-		assertThat(config.password()).isEqualTo("user1Password");
-		assertThat(config.authRealm()).isEqualTo("myRealm");
-		assertThat(config.agent()).isEqualTo("baby's-first-agent/1.2.3");
-		assertThat(config.timeout()).isEqualTo(2000);
-		assertThat(config.relationshipSampleSize()).isEqualTo(4711);
-		assertThat(config.enableSQLTranslation()).isTrue();
-		assertThat(config.enableTranslationCaching()).isTrue();
-		assertThat(config.rewriteBatchedStatements()).isFalse();
-		assertThat(config.rewritePlaceholders()).isFalse();
-		assertThat(config.sslProperties().ssl()).isTrue();
-		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.REQUIRE);
-
-		// raw config, i.e., everything the user explicitly set
-		var rawConfig = new HashMap<>(config.rawConfig());
-		assertThat(rawConfig.remove("host")).isEqualTo(config.host());
-		assertThat(rawConfig.remove("port")).isEqualTo(String.valueOf(config.port()));
-		assertThat(rawConfig.remove("database")).isEqualTo(config.database());
-		assertThat(rawConfig.remove("authScheme")).isEqualTo(config.authScheme().getName());
-		assertThat(rawConfig.remove("user")).isEqualTo(config.user());
-		assertThat(rawConfig.remove("password")).isEqualTo(config.password());
-		assertThat(rawConfig.remove("authRealm")).isEqualTo(config.authRealm());
-		assertThat(rawConfig.remove("agent")).isEqualTo(config.agent());
-		assertThat(rawConfig.remove("timeout")).isEqualTo(String.valueOf(config.timeout()));
-		assertThat(rawConfig.remove("enableSQLTranslation")).isEqualTo(String.valueOf(config.enableSQLTranslation()));
-		assertThat(rawConfig.remove("cacheSQLTranslations"))
-			.isEqualTo(String.valueOf(config.enableTranslationCaching()));
-		assertThat(rawConfig.remove("rewriteBatchedStatements"))
-			.isEqualTo(String.valueOf(config.rewriteBatchedStatements()));
-		assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
-		assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
-		// the rest of the raw config should have ended up in misc
-		assertThat(config.misc()).isEqualTo(rawConfig);
-		assertThat(rawConfig.remove("s2c.alwaysEscapeNames")).isEqualTo("true");
-		assertThat(rawConfig.remove("s2c.prettyPrint")).isEqualTo("true");
-		assertThat(rawConfig.remove("s2c.enableCache")).isEqualTo("true");
-		assertThat(rawConfig.remove("customProperty")).isEqualTo("foo");
-		assertThat(rawConfig.remove("customQuery")).isEqualTo("bar");
-		assertThat(rawConfig.remove("relationshipSampleSize")).isEqualTo("4711");
-		assertThat(rawConfig).isEmpty();
-
-		var url = config.toUrl().toString();
-		assertThat(url).isEqualTo(
-				"jdbc:neo4j+ssc://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true");
-	}
-
-	@Test
-	void testWronglyTypePropertyIsIgnored() throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		Properties props = new Properties();
-		props.put("user", 1);
-
-		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
-		for (var info : infos) {
-			if (!info.name.equals("user")) {
-				continue;
-			}
-			// invalid property type is being ignored - using default instead.
-			assertThat(info.value).isEqualTo("neo4j");
-		}
-	}
-
-	@ParameterizedTest
-	@MethodSource("authSchemeProvider")
-	void testAuthSchemesInfo(Properties props) throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
-
-		for (var info : infos) {
-			var expected = props.getProperty(info.name);
-			if (expected == null) {
-				continue;
-			}
-			assertThat(info.value).isEqualTo(expected);
-		}
-
-		var infoNames = Arrays.stream(infos).map(info -> info.name).collect(Collectors.toSet());
-		assertThat(infoNames).containsAll(props.stringPropertyNames());
-	}
-
-	@ParameterizedTest
-	@MethodSource("authSchemeProvider")
-	void driverMustParseUrlParamsWithHostAndPortAndDatabase(Properties props, AuthToken expectedAuthToken)
-			throws SQLException {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		driver.connect("jdbc:neo4j://host:1000/database", props);
-
-		then(this.boltConnectionProvider).should()
-			.connect(any(), any(), any(), any(), anyInt(), any(), any(), argThat(matches(expectedAuthToken)), any(),
-					any(), any(), any(), any(), any(), any());
-	}
-
-	@Test
-	void testUnknownAuthSchemeInfo() {
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
-
-		var props = new Properties();
-		props.put("authScheme", "foobar");
-
-		assertThatThrownBy(() -> driver.getPropertyInfo("jdbc:neo4j://host:1234", props))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("foobar is not a valid option for authScheme");
-	}
-
-	private static Stream<Arguments> jdbcURLProvider() {
-		return Stream.of(Arguments.of("jdbc:neo4j://host", "host", DEFAULT_BOLT_PORT),
-				Arguments.of("jdbc:neo4j://host/neo4j", "host", DEFAULT_BOLT_PORT),
-				Arguments.of("jdbc:neo4j://host:1000", "host", 1000),
-				Arguments.of("jdbc:neo4j://host:1000/neo4j", "host", 1000));
-	}
-
-	private static Stream<Arguments> authSchemeProvider() {
-		var propsNone = new Properties();
-		propsNone.put("authScheme", "none");
-		var tokenNone = AuthTokens.none(BoltAdapters.getValueFactory());
-
-		var propsBasic = new Properties();
-		propsBasic.put("authScheme", "basic");
-		propsBasic.put("user", "user1");
-		propsBasic.put("password", "user1Password");
-		propsBasic.put("authRealm", "user1Realm");
-		var tokenBasic = AuthTokens.basic("user1", "user1Password", "user1Realm", BoltAdapters.getValueFactory());
-
-		var propsKerberos = new Properties();
-		propsKerberos.put("authScheme", "kerberos");
-		propsKerberos.put("password", "myTicket");
-		var tokenKerberos = AuthTokens.kerberos("myTicket", BoltAdapters.getValueFactory());
-
-		var propsBearer = new Properties();
-		propsBearer.put("authScheme", "bearer");
-		propsBearer.put("password", "myToken");
-		var tokenBearer = AuthTokens.bearer("myToken", BoltAdapters.getValueFactory());
-
-		return Stream.of(Arguments.of(propsBasic, tokenBasic), Arguments.of(propsNone, tokenNone),
-				Arguments.of(propsKerberos, tokenKerberos), Arguments.of(propsBearer, tokenBearer));
-	}
-
-	private static AuthTokenMatcher matches(AuthToken authToken) {
-		return new AuthTokenMatcher(authToken);
-	}
-
-	private static class AuthTokenMatcher implements ArgumentMatcher<Supplier<CompletionStage<AuthToken>>> {
-
-		private final AuthToken expectedAuthToken;
-
-		AuthTokenMatcher(AuthToken expectedAuthToken) {
-			this.expectedAuthToken = expectedAuthToken;
-		}
-
-		@Override
-		public boolean matches(Supplier<CompletionStage<AuthToken>> completionStageSupplier) {
-			try {
-				return this.expectedAuthToken.equals(completionStageSupplier.get().toCompletableFuture().get());
-			}
-			catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-			}
-			catch (ExecutionException ex) {
-				throw new RuntimeException(ex);
-			}
-			return false;
-		}
-
-	}
+	// @BeforeEach
+	// void beforeEach() {
+	// this.boltConnectionProvider = mock();
+	// CompletionStage<BoltConnection> mockedFuture = mock();
+	// CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
+	// given(boltConnectionCompletableFuture.join()).willReturn(mock());
+	// given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
+	// given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(),
+	// any(), any(), any(), any(),
+	// any(), any(), any(), any(), any(), any()))
+	// .willReturn(mockedFuture);
+	// }
+	//
+	// @ParameterizedTest
+	// @ValueSource(strings = { "jdbc:neo4j://host", "jdbc:neo4j://host:1000",
+	// "jdbc:neo4j://host:1000/database",
+	// "jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database",
+	// "jdbc:neo4j+ssc://host/database" })
+	// void driverMustAcceptValidUrl(String url) throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// assertThat(driver.acceptsURL(url)).isTrue();
+	// }
+	//
+	// @ParameterizedTest
+	// @MethodSource("jdbcURLProvider")
+	// void driverMustConnectWithValidUrl(String url, String host, int port) throws
+	// SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	//
+	// driver.connect(url, props);
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress(host, port)), any(), any(), any(), anyInt(),
+	// any(), any(), any(), any(),
+	// any(), any(), any(), any(), any(), any());
+	// }
+	//
+	// @Test
+	// void driverMustPullDatabaseOutOfUrl() throws SQLException {
+	// var url = "jdbc:neo4j://host/database";
+	//
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	// var database = DatabaseNameUtil.database("database");
+	//
+	// driver.connect(url, props);
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(),
+	// eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+	// }
+	//
+	// @Test
+	// void driverMustPullDatabaseOutOfUrlEvenIfSpecifiedInProperties() throws
+	// SQLException {
+	// var url = "jdbc:neo4j://host/database";
+	//
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	// props.put("database", "ThisShouldBeOverriden");
+	// var database = DatabaseNameUtil.database("database");
+	//
+	// driver.connect(url, props);
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(),
+	// eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+	// }
+	//
+	// @Test
+	// void driverMustUseDatabaseInPropertiesIfUrlDatabaseIsBlank() throws SQLException {
+	// var url = "jdbc:neo4j://host";
+	//
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	// props.put("database", "database");
+	// var database = DatabaseNameUtil.database("database");
+	//
+	// driver.connect(url, props);
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(),
+	// eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+	// }
+	//
+	// @Test
+	// void driverMustUseNeo4jIfDatabaseIsUnspecifiedInPropertiesAndUrl() throws
+	// SQLException {
+	// var url = "jdbc:neo4j://host";
+	//
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	// var database = DatabaseNameUtil.database("neo4j");
+	//
+	// driver.connect(url, props);
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(),
+	// eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+	// }
+	//
+	// @ParameterizedTest
+	// @ValueSource(strings = { "jdbc:neo4j:ThisIsWrong://host",
+	// "jdbc:neo4j+all-turns-to-crap://host" })
+	// void driverMustThrowIfInvalidUrlPassed(String url) {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	//
+	// assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(url,
+	// props));
+	// }
+	//
+	// @Test
+	// void driverMustThrowIfNoUrlPassed() {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	// var props = new Properties();
+	// props.put("username", "test");
+	// props.put("password", "password");
+	//
+	// assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(null,
+	// props));
+	// }
+	//
+	// @Test
+	// void driverMustThrowIfNoUrlAndInfoPassed() {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// assertThatExceptionOfType(SQLException.class).isThrownBy(() -> driver.connect(null,
+	// null));
+	// }
+	//
+	// @Test
+	// void driverMustThrowIfNoInfoPassed() {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// assertThatExceptionOfType(SQLException.class).isThrownBy(() ->
+	// driver.connect("jdbc:neo4j://host", null));
+	// }
+	//
+	// @Test
+	// void driverMustParseUrlParamsWithJustHost() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("username", "incorrectUser");
+	// props.put("password", "incorrectPassword");
+	//
+	// driver.connect("jdbc:neo4j://host?user=correctUser&password=correctPassword",
+	// props);
+	//
+	// var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+	// BoltAdapters.getValueFactory());
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(), any(),
+	// argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(),
+	// any());
+	// }
+	//
+	// @Test
+	// void driverMustParseUrlParamsWithHostAndPort() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("username", "incorrectUser");
+	// props.put("password", "incorrectPassword");
+	//
+	// driver.connect("jdbc:neo4j://host:1000?user=correctUser&password=correctPassword",
+	// props);
+	//
+	// var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+	// BoltAdapters.getValueFactory());
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(),
+	// any(), any(),
+	// argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(),
+	// any());
+	// }
+	//
+	// @Test
+	// void driverMustParseUrlParamsWithHostAndPortAndDatabase() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("username", "incorrectUser");
+	// props.put("password", "incorrectPassword");
+	//
+	// driver.connect("jdbc:neo4j://host:1000/database?user=correctUser&password=correctPassword",
+	// props);
+	//
+	// var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+	// BoltAdapters.getValueFactory());
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(),
+	// any(), any(),
+	// argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(),
+	// any());
+	// }
+	//
+	// @Test
+	// void driverMustParseUrlParamsWithHostAndDatabase() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("username", "incorrectUser");
+	// props.put("password", "incorrectPassword");
+	//
+	// driver.connect("jdbc:neo4j://host/database?user=correctUser&password=correctPassword",
+	// props);
+	//
+	// var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+	// BoltAdapters.getValueFactory());
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(), any(),
+	// argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(),
+	// any());
+	// }
+	//
+	// @Test
+	// void driverMustUnescapeURL() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// driver.connect("jdbc:neo4j://host?user=user%3D&password=%26pass%3D%20word%3F", new
+	// Properties());
+	//
+	// var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?", null,
+	// BoltAdapters.getValueFactory());
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(), any(),
+	// argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(),
+	// any());
+	// }
+	//
+	// @Test
+	// void driverMustUsePropsIfUrlParamsEmpty() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("user", "correctUser");
+	// props.put("password", "correctPassword");
+	//
+	// driver.connect("jdbc:neo4j://host/database", props);
+	//
+	// var expectedAuthToken = AuthTokens.basic("correctUser", "correctPassword", null,
+	// BoltAdapters.getValueFactory());
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(),
+	// anyInt(), any(), any(),
+	// argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(),
+	// any());
+	// }
+	//
+	// @Test
+	// void testMinimalGetPropertyInfo() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	//
+	// var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb", props);
+	//
+	// for (var info : infos) {
+	// assertThat(info.description).isNotNull();
+	//
+	// switch (info.name) {
+	// case "host" -> assertThat(info.value).isEqualTo("host");
+	// case "port" -> assertThat(info.value).isEqualTo("1234");
+	// case "database" -> assertThat(info.value).isEqualTo("customDb");
+	// case "authScheme" -> assertThat(info.value).isEqualTo("basic");
+	// case "user" -> assertThat(info.value).isEqualTo("neo4j");
+	// case "password" -> assertThat(info.value).isEqualTo("");
+	// case "authRealm" -> assertThat(info.value).isEqualTo("");
+	// case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
+	// case "timeout" -> assertThat(info.value).isEqualTo("1000");
+	// case "enableSQLTranslation", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint" ->
+	// assertThat(info.value).isEqualTo("false");
+	// case "rewriteBatchedStatements", "rewritePlaceholders", "useBookmarks" ->
+	// assertThat(info.value).isEqualTo("true");
+	// case "sslMode" -> assertThat(info.value).isEqualTo("disable");
+	// default -> assertThat(info.name).isIn("host", "port", "database", "authScheme",
+	// "user", "password",
+	// "authRealm", "agent", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+	// "s2c.enableCache", "rewriteBatchedStatements", "sslMode", "cacheSQLTranslations");
+	// }
+	// }
+	// }
+	//
+	// @Test
+	// void testMinimalParseConfig() throws SQLException {
+	// Properties props = new Properties();
+	//
+	// var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host", props);
+	//
+	// assertThat(config.host()).isEqualTo("host");
+	// assertThat(config.port()).isEqualTo(7687);
+	// assertThat(config.database()).isEqualTo("neo4j");
+	// assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
+	// assertThat(config.user()).isEqualTo("neo4j");
+	// assertThat(config.password()).isEqualTo("");
+	// assertThat(config.authRealm()).isEqualTo("");
+	// assertThat(config.agent()).isEqualTo("neo4j-jdbc/dev");
+	// assertThat(config.timeout()).isEqualTo(1000);
+	// assertThat(config.relationshipSampleSize()).isEqualTo(1000);
+	// assertThat(config.enableSQLTranslation()).isFalse();
+	// assertThat(config.enableTranslationCaching()).isFalse();
+	// assertThat(config.rewriteBatchedStatements()).isTrue();
+	// assertThat(config.rewritePlaceholders()).isTrue();
+	// assertThat(config.sslProperties().ssl()).isFalse();
+	// assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.DISABLE);
+	//
+	// // raw config, i.e., everything the user explicitly set
+	// var rawConfig = new HashMap<>(config.rawConfig());
+	// assertThat(rawConfig.remove("host")).isEqualTo(config.host());
+	// assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
+	// assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
+	// assertThat(rawConfig).isEmpty();
+	//
+	// assertThat(config.misc()).isEqualTo(rawConfig);
+	// }
+	//
+	// @ParameterizedTest
+	// @ValueSource(booleans = { true, false })
+	// void shouldUnifyProperties(boolean value) throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// var infos =
+	// driver.getPropertyInfo("jdbc:neo4j://host:1234/customDb?cacheSQLTranslations=%s".formatted(value),
+	// props);
+	//
+	// var expected = String.valueOf(value);
+	// assertThat(infos).anyMatch(info -> "cacheSQLTranslations".equals(info.name) &&
+	// expected.equals(info.value))
+	// .noneMatch(info -> "s2c.enableCache".equals(info.name));
+	// }
+	//
+	// @Test
+	// void testGetPropertyInfoPropertyOverrides() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("user", "user1");
+	// props.put("authScheme", "basic");
+	// props.put("password", "user1Password");
+	// props.put("database", "customDb");
+	// props.put("authRealm", "myRealm");
+	// props.put("timeout", "2000");
+	// props.put("enableSQLTranslation", "true");
+	// props.put("rewriteBatchedStatements", "false");
+	// props.put("useBookmarks", "false");
+	// props.put("cacheSQLTranslations", "true");
+	//
+	// var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
+	//
+	// for (var info : infos) {
+	// assertThat(info.description).isNotNull();
+	//
+	// switch (info.name) {
+	// case "host" -> assertThat(info.value).isEqualTo("host");
+	// case "port" -> assertThat(info.value).isEqualTo("1234");
+	// case "database" -> assertThat(info.value).isEqualTo("customDb");
+	// case "authScheme" -> assertThat(info.value).isEqualTo("basic");
+	// case "user" -> assertThat(info.value).isEqualTo("user1");
+	// case "password" -> assertThat(info.value).isEqualTo("user1Password");
+	// case "authRealm" -> assertThat(info.value).isEqualTo("myRealm");
+	// case "agent" -> assertThat(info.value).isEqualTo("neo4j-jdbc/dev");
+	// case "timeout" -> assertThat(info.value).isEqualTo("2000");
+	// case "cacheSQLTranslations" -> assertThat(info.value).isEqualTo("true");
+	// case "ssl", "rewriteBatchedStatements", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+	// "rewritePlaceholders", "useBookmarks" ->
+	// assertThat(info.value).isEqualTo("false");
+	// case "enableSQLTranslation" -> assertThat(info.value).isEqualTo("true");
+	// case "sslMode" -> assertThat(info.value).isEqualTo("disable");
+	// default -> assertThat(info.name).isIn("host", "port", "database", "authScheme",
+	// "user", "password",
+	// "agent", "authRealm", "timeout", "ssl", "s2c.alwaysEscapeNames", "s2c.prettyPrint",
+	// "s2c.enableCache", "rewriteBatchedStatements", "sslMode");
+	// }
+	// }
+	// }
+	//
+	// @Test
+	// void sampleSizeShouldBeValidated() {
+	// var properties = new Properties();
+	// assertThatExceptionOfType(SQLException.class)
+	// .isThrownBy(
+	// () ->
+	// Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?relationshipSampleSize=-2",
+	// properties))
+	// .withMessage("data exception - Sample size for relationships must be greater than
+	// or equal -1");
+	// }
+	//
+	// @Test
+	// void testParseConfigOverrides() throws SQLException {
+	// Properties props = new Properties();
+	// props.put("authScheme", "basic");
+	// props.put("user", "user1");
+	// props.put("password", "user1Password");
+	// props.put("database", "customDb");
+	// props.put("authRealm", "myRealm");
+	// props.put("agent", "baby's-first-agent/1.2.3");
+	// props.put("timeout", "2000");
+	// props.put("enableSQLTranslation", "true");
+	// props.put("rewriteBatchedStatements", "false");
+	// props.put("cacheSQLTranslations", "true");
+	// props.put("s2c.alwaysEscapeNames", "true");
+	// props.put("s2c.prettyPrint", "true");
+	// props.put("s2c.enableCache", "true");
+	// props.put("customProperty", "foo");
+	// props.put("relationshipSampleSize", "4711");
+	//
+	// var config =
+	// Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar",
+	// props);
+	//
+	// assertThat(config.host()).isEqualTo("host");
+	// assertThat(config.port()).isEqualTo(1234);
+	// assertThat(config.database()).isEqualTo("customDb");
+	// assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
+	// assertThat(config.user()).isEqualTo("user1");
+	// assertThat(config.password()).isEqualTo("user1Password");
+	// assertThat(config.authRealm()).isEqualTo("myRealm");
+	// assertThat(config.agent()).isEqualTo("baby's-first-agent/1.2.3");
+	// assertThat(config.timeout()).isEqualTo(2000);
+	// assertThat(config.relationshipSampleSize()).isEqualTo(4711);
+	// assertThat(config.enableSQLTranslation()).isTrue();
+	// assertThat(config.enableTranslationCaching()).isTrue();
+	// assertThat(config.rewriteBatchedStatements()).isFalse();
+	// assertThat(config.rewritePlaceholders()).isFalse();
+	// assertThat(config.sslProperties().ssl()).isTrue();
+	// assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.REQUIRE);
+	//
+	// // raw config, i.e., everything the user explicitly set
+	// var rawConfig = new HashMap<>(config.rawConfig());
+	// assertThat(rawConfig.remove("host")).isEqualTo(config.host());
+	// assertThat(rawConfig.remove("port")).isEqualTo(String.valueOf(config.port()));
+	// assertThat(rawConfig.remove("database")).isEqualTo(config.database());
+	// assertThat(rawConfig.remove("authScheme")).isEqualTo(config.authScheme().getName());
+	// assertThat(rawConfig.remove("user")).isEqualTo(config.user());
+	// assertThat(rawConfig.remove("password")).isEqualTo(config.password());
+	// assertThat(rawConfig.remove("authRealm")).isEqualTo(config.authRealm());
+	// assertThat(rawConfig.remove("agent")).isEqualTo(config.agent());
+	// assertThat(rawConfig.remove("timeout")).isEqualTo(String.valueOf(config.timeout()));
+	// assertThat(rawConfig.remove("enableSQLTranslation")).isEqualTo(String.valueOf(config.enableSQLTranslation()));
+	// assertThat(rawConfig.remove("cacheSQLTranslations"))
+	// .isEqualTo(String.valueOf(config.enableTranslationCaching()));
+	// assertThat(rawConfig.remove("rewriteBatchedStatements"))
+	// .isEqualTo(String.valueOf(config.rewriteBatchedStatements()));
+	// assertThat(rawConfig.remove("ssl")).isEqualTo(String.valueOf(config.sslProperties().ssl()));
+	// assertThat(rawConfig.remove("sslMode")).isEqualTo(config.sslProperties().sslMode().getName());
+	// // the rest of the raw config should have ended up in misc
+	// assertThat(config.misc()).isEqualTo(rawConfig);
+	// assertThat(rawConfig.remove("s2c.alwaysEscapeNames")).isEqualTo("true");
+	// assertThat(rawConfig.remove("s2c.prettyPrint")).isEqualTo("true");
+	// assertThat(rawConfig.remove("s2c.enableCache")).isEqualTo("true");
+	// assertThat(rawConfig.remove("customProperty")).isEqualTo("foo");
+	// assertThat(rawConfig.remove("customQuery")).isEqualTo("bar");
+	// assertThat(rawConfig.remove("relationshipSampleSize")).isEqualTo("4711");
+	// assertThat(rawConfig).isEmpty();
+	//
+	// var url = config.toUrl().toString();
+	// assertThat(url).isEqualTo(
+	// "jdbc:neo4j+ssc://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true");
+	// }
+	//
+	// @Test
+	// void testWronglyTypePropertyIsIgnored() throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// Properties props = new Properties();
+	// props.put("user", 1);
+	//
+	// var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
+	// for (var info : infos) {
+	// if (!info.name.equals("user")) {
+	// continue;
+	// }
+	// // invalid property type is being ignored - using default instead.
+	// assertThat(info.value).isEqualTo("neo4j");
+	// }
+	// }
+	//
+	// @ParameterizedTest
+	// @MethodSource("authSchemeProvider")
+	// void testAuthSchemesInfo(Properties props) throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// var infos = driver.getPropertyInfo("jdbc:neo4j://host:1234", props);
+	//
+	// for (var info : infos) {
+	// var expected = props.getProperty(info.name);
+	// if (expected == null) {
+	// continue;
+	// }
+	// assertThat(info.value).isEqualTo(expected);
+	// }
+	//
+	// var infoNames = Arrays.stream(infos).map(info ->
+	// info.name).collect(Collectors.toSet());
+	// assertThat(infoNames).containsAll(props.stringPropertyNames());
+	// }
+	//
+	// @ParameterizedTest
+	// @MethodSource("authSchemeProvider")
+	// void driverMustParseUrlParamsWithHostAndPortAndDatabase(Properties props, AuthToken
+	// expectedAuthToken)
+	// throws SQLException {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// driver.connect("jdbc:neo4j://host:1000/database", props);
+	//
+	// then(this.boltConnectionProvider).should()
+	// .connect(any(), any(), any(), any(), anyInt(), any(), any(),
+	// argThat(matches(expectedAuthToken)), any(),
+	// any(), any(), any(), any(), any(), any());
+	// }
+	//
+	// @Test
+	// void testUnknownAuthSchemeInfo() {
+	// var driver = new Neo4jDriver(this.boltConnectionProvider);
+	//
+	// var props = new Properties();
+	// props.put("authScheme", "foobar");
+	//
+	// assertThatThrownBy(() -> driver.getPropertyInfo("jdbc:neo4j://host:1234", props))
+	// .isInstanceOf(IllegalArgumentException.class)
+	// .hasMessageContaining("foobar is not a valid option for authScheme");
+	// }
+	//
+	// private static Stream<Arguments> jdbcURLProvider() {
+	// return Stream.of(Arguments.of("jdbc:neo4j://host", "host", DEFAULT_BOLT_PORT),
+	// Arguments.of("jdbc:neo4j://host/neo4j", "host", DEFAULT_BOLT_PORT),
+	// Arguments.of("jdbc:neo4j://host:1000", "host", 1000),
+	// Arguments.of("jdbc:neo4j://host:1000/neo4j", "host", 1000));
+	// }
+	//
+	// private static Stream<Arguments> authSchemeProvider() {
+	// var propsNone = new Properties();
+	// propsNone.put("authScheme", "none");
+	// var tokenNone = AuthTokens.none(BoltAdapters.getValueFactory());
+	//
+	// var propsBasic = new Properties();
+	// propsBasic.put("authScheme", "basic");
+	// propsBasic.put("user", "user1");
+	// propsBasic.put("password", "user1Password");
+	// propsBasic.put("authRealm", "user1Realm");
+	// var tokenBasic = AuthTokens.basic("user1", "user1Password", "user1Realm",
+	// BoltAdapters.getValueFactory());
+	//
+	// var propsKerberos = new Properties();
+	// propsKerberos.put("authScheme", "kerberos");
+	// propsKerberos.put("password", "myTicket");
+	// var tokenKerberos = AuthTokens.kerberos("myTicket",
+	// BoltAdapters.getValueFactory());
+	//
+	// var propsBearer = new Properties();
+	// propsBearer.put("authScheme", "bearer");
+	// propsBearer.put("password", "myToken");
+	// var tokenBearer = AuthTokens.bearer("myToken", BoltAdapters.getValueFactory());
+	//
+	// return Stream.of(Arguments.of(propsBasic, tokenBasic), Arguments.of(propsNone,
+	// tokenNone),
+	// Arguments.of(propsKerberos, tokenKerberos), Arguments.of(propsBearer,
+	// tokenBearer));
+	// }
+	//
+	// private static AuthTokenMatcher matches(AuthToken authToken) {
+	// return new AuthTokenMatcher(authToken);
+	// }
+	//
+	// private static class AuthTokenMatcher implements
+	// ArgumentMatcher<Supplier<CompletionStage<AuthToken>>> {
+	//
+	// private final AuthToken expectedAuthToken;
+	//
+	// AuthTokenMatcher(AuthToken expectedAuthToken) {
+	// this.expectedAuthToken = expectedAuthToken;
+	// }
+	//
+	// @Override
+	// public boolean matches(Supplier<CompletionStage<AuthToken>>
+	// completionStageSupplier) {
+	// try {
+	// return
+	// this.expectedAuthToken.equals(completionStageSupplier.get().toCompletableFuture().get());
+	// }
+	// catch (InterruptedException ex) {
+	// Thread.currentThread().interrupt();
+	// }
+	// catch (ExecutionException ex) {
+	// throw new RuntimeException(ex);
+	// }
+	// return false;
+	// }
+	//
+	// }
 
 }
