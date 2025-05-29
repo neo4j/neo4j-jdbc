@@ -26,16 +26,10 @@ module org.neo4j.jdbc {
 
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;
-	requires io.netty.buffer;
-	requires io.netty.codec;
-	requires io.netty.common;
-	requires io.netty.handler;
-	requires io.netty.resolver;
-	requires io.netty.transport;
 	requires org.neo4j.bolt.connection;
-	requires org.neo4j.bolt.connection.netty;
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
+	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 	// end::shaded-dependencies
 
 	// requires jdk.unsupported;
@@ -47,6 +41,8 @@ module org.neo4j.jdbc {
 
 	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;
 	// provides org.neo4j.jdbc.translator.spi.TranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
+	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory;
 
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
+	// uses org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory;
 }

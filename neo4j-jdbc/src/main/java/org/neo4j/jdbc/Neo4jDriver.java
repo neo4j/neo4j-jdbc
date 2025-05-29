@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -30,11 +31,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +47,6 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -54,22 +54,16 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
+import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 import org.neo4j.bolt.connection.BoltProtocolVersion;
-import org.neo4j.bolt.connection.BoltServerAddress;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
-import org.neo4j.bolt.connection.DefaultDomainNameResolver;
 import org.neo4j.bolt.connection.NotificationConfig;
 import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
-import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.DriverListener;
@@ -228,15 +222,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 */
 	public static final String PROPERTY_SSL_MODE = "sslMode";
 
-	private static final EventLoopGroup DEFAULT_EVENT_LOOP_GROUP = new NioEventLoopGroup(new DriverThreadFactory());
-
 	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	/**
 	 * The URL pattern that this driver supports.
+	 *
 	 * @since 6.2.0
 	 */
 	public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
+
+	private static final String BOLT_SCHEMES_FACTORY_NAME = "org.neo4j.bolt.connection.netty.NettyBoltConnectionProviderFactory";
 
 	private static final BoltProtocolVersion MIN_BOLT_VERSION = new BoltProtocolVersion(5, 1);
 
@@ -344,9 +339,59 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
-		this(new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
-				DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
-				BoltAdapters.getValueFactory(), null));
+		this(loadBoltConnectionProvider());
+	}
+
+	// todo refactor this implementation
+	private static BoltConnectionProvider loadBoltConnectionProvider() {
+		var result = Optional.<BoltConnectionProviderFactory>empty();
+		var scheme = "bolt";
+		Exception loadException = null;
+		try {
+			var serviceLoader = ServiceLoader.load(BoltConnectionProviderFactory.class,
+					Neo4jDriver.class.getClassLoader());
+			result = serviceLoader.stream()
+				.map(ServiceLoader.Provider::get)
+				.filter(factory -> factory.supports(scheme))
+				.min(Comparator.comparing(BoltConnectionProviderFactory::getOrder));
+		}
+		catch (Exception ex) {
+			loadException = ex;
+		}
+		if (result.isEmpty()) {
+			try {
+				// an extra attempt in case the factory is visible
+				@SuppressWarnings("Java9ReflectionClassVisibility")
+				var factoryCls = Class.forName(BOLT_SCHEMES_FACTORY_NAME);
+				if (BoltConnectionProviderFactory.class.isAssignableFrom(factoryCls)) {
+					var factory = (BoltConnectionProviderFactory) factoryCls.getConstructor().newInstance();
+					if (factory.supports(scheme)) {
+						result = Optional.of(factory);
+					}
+				}
+			}
+			catch (Exception ex) {
+				if (loadException != null) {
+					loadException.addSuppressed(ex);
+				}
+				else {
+					loadException = ex;
+				}
+			}
+		}
+		if (result.isPresent()) {
+			return result.get()
+				.create(BoltAdapters.newLoggingProvider(), BoltAdapters.getValueFactory(), null,
+						Map.of("eventLoopThreadNamePrefix", "Neo4jJDBCDriverIO"));
+		}
+		else if (loadException != null) {
+			// todo update
+			throw new RuntimeException(loadException);
+		}
+		else {
+			// todo update
+			throw new RuntimeException("Could not load BoltConnectionProviderFactory");
+		}
 	}
 
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
@@ -357,8 +402,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
 		var driverConfig = DriverConfig.of(url, info);
-
-		var address = new BoltServerAddress(driverConfig.host, driverConfig.port);
 
 		var securityPlan = parseSSLParams(driverConfig.sslProperties);
 
@@ -392,9 +435,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		var targetUrl = driverConfig.toUrl();
+		// todo do this better
+		URI uri;
+		try {
+			uri = new URI("bolt", null, driverConfig.host, driverConfig.port, null, null, null);
+		}
+		catch (URISyntaxException ignored) {
+			throw new Neo4jException(GQLError.$22000.withMessage("uri creation failure"));
+		}
 		var connection = new ConnectionImpl(targetUrl,
-				() -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan, databaseName,
-						authToken),
+				() -> establishBoltConnection(uri, userAgent, connectTimeoutMillis, securityPlan, authToken),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
@@ -417,14 +467,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return connection;
 	}
 
-	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
-			int connectTimeoutMillis, SecurityPlan securityPlan, String databaseName, AuthToken authToken) {
+	private BoltConnection establishBoltConnection(URI uri, String userAgent, int connectTimeoutMillis,
+			SecurityPlan securityPlan, AuthToken authToken) {
 		return this.boltConnectionProvider
-			.connect(address, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
-					connectTimeoutMillis, securityPlan, DatabaseNameUtil.database(databaseName),
-					() -> CompletableFuture.completedStage(authToken), AccessMode.WRITE, Collections.emptySet(), null,
-					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), ignored -> {
-					}, Collections.emptyMap())
+			.connect(uri, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
+					connectTimeoutMillis, securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig())
 			.toCompletableFuture()
 			.join();
 	}
@@ -589,7 +636,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					throw new Neo4jException(withInternal(ex));
 				}
 			}
-			case DISABLE -> SecurityPlans.unencrypted();
+			case DISABLE -> null;
 		};
 	}
 

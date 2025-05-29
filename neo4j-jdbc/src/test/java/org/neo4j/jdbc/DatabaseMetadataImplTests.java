@@ -53,8 +53,7 @@ class DatabaseMetadataImplTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-				any(), any(), any(), any(), any(), any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any()))
 			.willReturn(mockedFuture);
 	}
 

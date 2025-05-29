@@ -33,9 +33,13 @@ mkdir -p "$(dirname "${OUT}")"
 
 if [ "$#" -ne 3 ]; then
   sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
+      -e 's/\/\/ uses \(org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory\);/uses \1;/' \
+      -e 's/\/\/ provides \(org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory\);/provides \1;/' \
       -e 's/\/\/ requires \(.*\);/requires \1;/' "$IN" | cat -s > "$OUT"
 else
   sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
+      -e 's/\/\/ uses \(org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory\);/uses \1;/' \
+      -e 's/\/\/ provides \(org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory\);/provides \1;/' \
       -e 's/\/\/ requires \(.*\);/requires \1;/' \
       -e 's/\/\/ provides \(.*\);/provides \1;/' "$IN" | cat -s > "$OUT"
 fi;
