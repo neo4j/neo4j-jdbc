@@ -203,7 +203,7 @@
 		<spring-boot.version>3.5.0</spring-boot.version>
 		<spring-javaformat.version>0.0.45</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
-		<testcontainers.version>1.21.0</testcontainers.version>
+		<testcontainers.version>1.21.1</testcontainers.version>
 	</properties>
 
 	<dependencyManagement>
