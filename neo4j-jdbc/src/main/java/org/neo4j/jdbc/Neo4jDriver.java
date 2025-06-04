@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +31,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,7 +46,6 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -54,22 +53,16 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
 import org.neo4j.bolt.connection.BoltProtocolVersion;
-import org.neo4j.bolt.connection.BoltServerAddress;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
-import org.neo4j.bolt.connection.DefaultDomainNameResolver;
 import org.neo4j.bolt.connection.NotificationConfig;
 import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
-import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
+import org.neo4j.bolt.connection.netty.NettyBoltConnectionProviderFactory;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.DriverListener;
@@ -228,12 +221,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 */
 	public static final String PROPERTY_SSL_MODE = "sslMode";
 
-	private static final EventLoopGroup DEFAULT_EVENT_LOOP_GROUP = new NioEventLoopGroup(new DriverThreadFactory());
-
 	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	/**
 	 * The URL pattern that this driver supports.
+	 *
 	 * @since 6.2.0
 	 */
 	public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
@@ -344,9 +336,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
-		this(new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
-				DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
-				BoltAdapters.getValueFactory(), null));
+		this(new NettyBoltConnectionProviderFactory().create(BoltAdapters.newLoggingProvider(),
+				BoltAdapters.getValueFactory(), null, Map.of("eventLoopThreadNamePrefix", "Neo4jJDBCDriverIO")));
 	}
 
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
@@ -357,8 +348,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
 		var driverConfig = DriverConfig.of(url, info);
-
-		var address = new BoltServerAddress(driverConfig.host, driverConfig.port);
 
 		var securityPlan = parseSSLParams(driverConfig.sslProperties);
 
@@ -392,9 +381,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		var targetUrl = driverConfig.toUrl();
+		var boltUrl = createBoltUri(driverConfig);
 		var connection = new ConnectionImpl(targetUrl,
-				() -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan, databaseName,
-						authToken),
+				() -> establishBoltConnection(boltUrl, userAgent, connectTimeoutMillis, securityPlan, authToken),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
@@ -417,16 +406,24 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return connection;
 	}
 
-	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
-			int connectTimeoutMillis, SecurityPlan securityPlan, String databaseName, AuthToken authToken) {
+	private BoltConnection establishBoltConnection(URI uri, String userAgent, int connectTimeoutMillis,
+			SecurityPlan securityPlan, AuthToken authToken) {
 		return this.boltConnectionProvider
-			.connect(address, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
-					connectTimeoutMillis, securityPlan, DatabaseNameUtil.database(databaseName),
-					() -> CompletableFuture.completedStage(authToken), AccessMode.WRITE, Collections.emptySet(), null,
-					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), ignored -> {
-					}, Collections.emptyMap())
+			.connect(uri, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
+					connectTimeoutMillis, securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig())
 			.toCompletableFuture()
 			.join();
+	}
+
+	private static URI createBoltUri(DriverConfig driverConfig) throws Neo4jException {
+		URI uri;
+		try {
+			uri = new URI("bolt", null, driverConfig.host, driverConfig.port, null, null, null);
+		}
+		catch (URISyntaxException ignored) {
+			throw new Neo4jException(GQLError.$22000.withMessage("Failed to create Bolt URI"));
+		}
+		return uri;
 	}
 
 	static String getDefaultUserAgent() {
@@ -589,7 +586,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					throw new Neo4jException(withInternal(ex));
 				}
 			}
-			case DISABLE -> SecurityPlans.unencrypted();
+			case DISABLE -> null;
 		};
 	}
 
