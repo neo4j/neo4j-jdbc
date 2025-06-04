@@ -27,12 +27,6 @@ module org.neo4j.jdbc {
 
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;
-	requires io.netty.buffer;
-	requires io.netty.codec;
-	requires io.netty.common;
-	requires io.netty.handler;
-	requires io.netty.resolver;
-	requires io.netty.transport;
 	requires org.neo4j.bolt.connection;
 	requires org.neo4j.bolt.connection.netty;
 	requires transitive org.neo4j.jdbc.authn.spi;
