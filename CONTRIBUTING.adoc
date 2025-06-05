@@ -2,7 +2,7 @@
 
 == Building and compiling the Neo4j JDBC driver
 
-JDK 17 and Maven is required. Please run to test and package the project:
+JDK 17, Maven and Docker are required. Please run the following for testing and packaging the project:
 
 [source,bash]
 ----

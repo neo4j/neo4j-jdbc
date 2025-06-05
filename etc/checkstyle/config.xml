@@ -27,6 +27,7 @@
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringAvoidStaticImportCheck"/>
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringHeaderCheck"/>
 		<property name="excludes" value="io.spring.javaformat.checkstyle.check.SpringLambdaCheck"/>
+		<property name="excludes" value="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
 	</module>
 	<module name="NewlineAtEndOfFile"/>
 	<module name="SuppressWarningsFilter"/>
@@ -50,6 +51,10 @@
                     org.neo4j.jdbc.Neo4jException.*
                 "
 			/>
+		</module>
+
+		<module name="JavadocMethod">
+			<property name="allowInlineReturn" value="true"/>
 		</module>
 	</module>
 </module>
