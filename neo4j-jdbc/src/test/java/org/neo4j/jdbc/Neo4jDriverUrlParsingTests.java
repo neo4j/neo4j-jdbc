@@ -75,7 +75,8 @@ class Neo4jDriverUrlParsingTests {
 
 	@ParameterizedTest
 	@ValueSource(strings = { "jdbc:neo4j://host", "jdbc:neo4j://host:1000", "jdbc:neo4j://host:1000/database",
-			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database" })
+			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database",
+			"jdbc:neo4j:http://host:1000" })
 	void driverMustAcceptValidUrl(String url) throws SQLException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		assertThat(driver.acceptsURL(url)).isTrue();
@@ -433,8 +434,9 @@ class Neo4jDriverUrlParsingTests {
 			.withMessage("data exception - Sample size for relationships must be greater than or equal -1");
 	}
 
-	@Test
-	void testParseConfigOverrides() throws SQLException {
+	@ParameterizedTest
+	@ValueSource(strings = { "", ":http" })
+	void testParseConfigOverrides(String protocol) throws SQLException {
 		Properties props = new Properties();
 		props.put("authScheme", "basic");
 		props.put("user", "user1");
@@ -452,7 +454,8 @@ class Neo4jDriverUrlParsingTests {
 		props.put("customProperty", "foo");
 		props.put("relationshipSampleSize", "4711");
 
-		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
+		var config = Neo4jDriver.DriverConfig
+			.of("jdbc:neo4j%s://host:1234/?sslMode=require&customQuery=bar".formatted(protocol), props);
 
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(1234);
@@ -501,7 +504,8 @@ class Neo4jDriverUrlParsingTests {
 
 		var url = config.toUrl().toString();
 		assertThat(url).isEqualTo(
-				"jdbc:neo4j+ssc://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true");
+				"jdbc:neo4j+ssc%s://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true"
+					.formatted(protocol));
 	}
 
 	@Test

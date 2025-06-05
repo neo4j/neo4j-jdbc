@@ -29,6 +29,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jConnection;
@@ -37,7 +39,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@ParameterizedClass
+@ValueSource(strings = { "bolt", "http" })
 class ConnectionIT extends IntegrationTestBase {
+
+	@Parameter
+	String protocol = "bolt";
 
 	@Test
 	void shouldCheckTXStateBeforeCommit() throws SQLException {
@@ -292,6 +299,13 @@ class ConnectionIT extends IntegrationTestBase {
 			var neo4jConnection = connection.unwrap(Neo4jConnection.class);
 			assertThat(neo4jConnection.getDatabaseName()).isNotBlank();
 		}
+	}
+
+	@Override
+	String getConnectionURL() {
+		var bolt = "bolt".equals(this.protocol);
+		return "jdbc:neo4j%s://%s:%d".formatted(bolt ? "" : ":" + this.protocol, this.neo4j.getHost(),
+				this.neo4j.getMappedPort(bolt ? 7687 : 7474));
 	}
 
 	static class CapturingHandler extends Handler {
