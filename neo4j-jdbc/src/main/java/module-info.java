@@ -27,6 +27,7 @@ module org.neo4j.jdbc {
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;
 	requires org.neo4j.bolt.connection;
+	requires org.neo4j.bolt.connection.query.api;
 	requires org.neo4j.bolt.connection.netty;
 	requires transitive org.neo4j.jdbc.authn.spi;
 	requires org.neo4j.jdbc.translator.spi;
@@ -47,4 +48,5 @@ module org.neo4j.jdbc {
 
 	uses org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
+	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 }
