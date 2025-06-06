@@ -40,11 +40,11 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ParameterizedClass
-@ValueSource(strings = { "bolt", "http" })
+@ValueSource(strings = { "neo4j", "http" })
 class ConnectionIT extends IntegrationTestBase {
 
 	@Parameter
-	String protocol = "bolt";
+	String protocol = "neo4j";
 
 	@Test
 	void shouldCheckTXStateBeforeCommit() throws SQLException {
@@ -303,9 +303,9 @@ class ConnectionIT extends IntegrationTestBase {
 
 	@Override
 	String getConnectionURL() {
-		var bolt = "bolt".equals(this.protocol);
-		return "jdbc:neo4j%s://%s:%d/neo4j".formatted(bolt ? "" : ":" + this.protocol, this.neo4j.getHost(),
-				this.neo4j.getMappedPort(bolt ? 7687 : 7474));
+		var neo4j = "neo4j".equals(this.protocol);
+		return "jdbc:neo4j%s://%s:%d/neo4j".formatted(neo4j ? "" : ":" + this.protocol, this.neo4j.getHost(),
+				this.neo4j.getMappedPort(neo4j ? 7687 : 7474));
 	}
 
 	static class CapturingHandler extends Handler {
