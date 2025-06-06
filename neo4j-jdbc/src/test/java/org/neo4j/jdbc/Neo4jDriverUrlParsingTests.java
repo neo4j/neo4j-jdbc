@@ -606,7 +606,7 @@ class Neo4jDriverUrlParsingTests {
 	}
 
 	private static URI boltUri(String host, int port) throws URISyntaxException {
-		return new URI("bolt", null, host, port, null, null, null);
+		return new URI("neo4j", null, host, port, null, null, null);
 	}
 
 	private static class AuthTokenMatcher implements ArgumentMatcher<Supplier<CompletionStage<AuthToken>>> {
