@@ -49,5 +49,9 @@ module org.neo4j.jdbc {
 
 	uses org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
+
+	// start::shaded-dependencies
 	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
+	// end::shaded-dependencies
+	// uses org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory;
 }
