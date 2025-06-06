@@ -34,6 +34,7 @@ mkdir -p "$(dirname "${OUT}")"
 if [ "$#" -ne 3 ]; then
   sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
       -e 's/\/\/ requires \(.*\);/requires \1;/' \
+      -e 's/\/\/ provides \(org.neo4j.jdbc.internal.shaded.bolt.*\);/provides \1;/' \
       -e 's/\/\/ uses \(.*\);/uses \1;/' "$IN" | cat -s > "$OUT"
 else
   sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
