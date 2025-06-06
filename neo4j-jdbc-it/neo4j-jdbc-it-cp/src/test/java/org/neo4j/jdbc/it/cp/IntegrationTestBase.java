@@ -82,7 +82,8 @@ abstract class IntegrationTestBase {
 		}
 		try (var connection = this.getConnection(); var stmt = connection.createStatement()) {
 			connection.setAutoCommit(false);
-			stmt.execute("MATCH (n) DETACH DELETE n"); // todo revert when we can enable auto-commit
+			stmt.execute("MATCH (n) DETACH DELETE n"); // todo revert when we can enable
+														// auto-commit
 			connection.commit();
 		}
 	}
