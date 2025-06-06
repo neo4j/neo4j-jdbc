@@ -44,5 +44,9 @@ module org.neo4j.jdbc {
 	// provides org.neo4j.jdbc.translator.spi.TranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
 
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
+
+	// start::shaded-dependencies
 	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
+	// end::shaded-dependencies
+	// uses org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory;
 }
