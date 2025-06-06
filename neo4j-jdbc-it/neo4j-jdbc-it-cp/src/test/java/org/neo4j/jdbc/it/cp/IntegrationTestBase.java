@@ -76,12 +76,14 @@ abstract class IntegrationTestBase {
 	@BeforeEach
 	void clearDatabase() throws SQLException {
 		try (var connection = this.getConnection(); var stmt = connection.createStatement()) {
+			connection.setAutoCommit(false);
 			stmt.execute("""
 					MATCH (n)
 					CALL {
 						WITH n DETACH DELETE n
 					}
 					IN TRANSACTIONS OF 1000 ROWs""");
+			connection.commit();
 		}
 	}
 
