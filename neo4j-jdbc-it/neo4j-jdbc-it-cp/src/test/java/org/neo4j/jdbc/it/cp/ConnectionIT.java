@@ -304,7 +304,7 @@ class ConnectionIT extends IntegrationTestBase {
 	@Override
 	String getConnectionURL() {
 		var bolt = "bolt".equals(this.protocol);
-		return "jdbc:neo4j%s://%s:%d".formatted(bolt ? "" : ":" + this.protocol, this.neo4j.getHost(),
+		return "jdbc:neo4j%s://%s:%d/neo4j".formatted(bolt ? "" : ":" + this.protocol, this.neo4j.getHost(),
 				this.neo4j.getMappedPort(bolt ? 7687 : 7474));
 	}
 
