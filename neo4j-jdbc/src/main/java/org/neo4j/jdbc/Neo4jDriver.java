@@ -59,7 +59,6 @@ import org.neo4j.bolt.connection.BoltConnectionProvider;
 import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 import org.neo4j.bolt.connection.BoltProtocolVersion;
 import org.neo4j.bolt.connection.NotificationConfig;
-import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProviderFactory;
@@ -427,8 +426,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		}
 		return connectionProvider
-			.connect(targetUri, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
-					connectTimeoutMillis, securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig())
+			.connect(targetUri, null, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent, connectTimeoutMillis,
+					securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig())
 			.toCompletableFuture()
 			.join();
 	}

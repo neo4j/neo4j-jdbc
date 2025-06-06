@@ -28,7 +28,7 @@ module org.neo4j.jdbc {
 	requires io.github.cdimascio.dotenv.java;
 	requires org.neo4j.bolt.connection;
 	requires org.neo4j.bolt.connection.netty;
-	requires org.neo4j.bolt.connection.query.api;
+	requires org.neo4j.bolt.connection.query_api;
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies
