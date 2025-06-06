@@ -54,4 +54,6 @@ module org.neo4j.jdbc {
 	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 	// end::shaded-dependencies
 	// uses org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory;
+	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory;
+	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.query_api.QueryApiBoltConnectionProviderFactory;
 }
