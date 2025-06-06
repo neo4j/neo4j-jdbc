@@ -411,7 +411,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.create("%s://%s:%d".formatted(driverConfig.protocol(), driverConfig.host(), driverConfig.port()));
 
 		var connectionProvider = this.defaultConnectionProvider;
-		if (!"bolt".equals(targetUri.getScheme())) {
+		if (!"neo4j".equals(targetUri.getScheme())) {
 			connectionProvider = ServiceLoader
 				.load(BoltConnectionProviderFactory.class, this.getClass().getClassLoader())
 				.stream()
@@ -979,7 +979,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var config = mergeConfig(urlParams, info);
 			var raw = new HashMap<>(config);
 
-			var protocol = Optional.ofNullable(matcher.group("protocol")).orElse("bolt");
+			var protocol = Optional.ofNullable(matcher.group("protocol")).orElse("neo4j");
 
 			var host = matcher.group(PROPERTY_HOST);
 			raw.put(PROPERTY_HOST, host);
@@ -1046,7 +1046,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		URI toUrl() {
 			var sslProperties = this.sslProperties();
 			var result = new StringBuilder("jdbc:neo4j%s%s://%s:%s/%s?".formatted(sslProperties.protocolSuffix(),
-					"bolt".equals(this.protocol()) ? "" : ":" + this.protocol(), this.host(), this.port(),
+					"neo4j".equals(this.protocol()) ? "" : ":" + this.protocol(), this.host(), this.port(),
 					this.database()));
 			append(result, PROPERTY_SQL_TRANSLATION_ENABLED, this.enableSQLTranslation()).append("&");
 			append(result, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, this.enableTranslationCaching()).append("&");
