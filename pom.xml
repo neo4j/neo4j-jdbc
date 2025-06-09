@@ -156,7 +156,7 @@
 		<jdbi3.version>3.49.4</jdbi3.version>
 		<jooq.version>3.19.23</jooq.version>
 		<jreleaser-maven-plugin.version>1.18.0</jreleaser-maven-plugin.version>
-		<junit-jupiter.version>5.12.2</junit-jupiter.version>
+		<junit-jupiter.version>5.13.1</junit-jupiter.version>
 		<kotlin-stdlib-jdk8.version>2.1.21</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.0.1</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
