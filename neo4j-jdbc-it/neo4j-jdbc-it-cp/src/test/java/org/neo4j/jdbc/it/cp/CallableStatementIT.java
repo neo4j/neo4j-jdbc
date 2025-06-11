@@ -45,7 +45,7 @@ class CallableStatementIT extends IntegrationTestBase {
 	@Test
 	void shouldExecuteQueryWithOrdinalParameters() throws SQLException {
 		try (var connection = getConnection();
-				var statement = connection.prepareCall("CALL dbms.cluster.routing.getRoutingTable(?, ?)")) {
+				var statement = connection.prepareCall("CALL dbms.routing.getRoutingTable(?, ?)")) {
 			statement.setObject(1, Collections.emptyMap());
 			statement.setString(2, "neo4j");
 
@@ -59,8 +59,8 @@ class CallableStatementIT extends IntegrationTestBase {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "CALL dbms.cluster.routing.getRoutingTable($database, $context)",
-			"CALL dbms.cluster.routing.getRoutingTable($context, $database)" })
+	@ValueSource(strings = { "CALL dbms.routing.getRoutingTable($database, $context)",
+			"CALL dbms.routing.getRoutingTable($context, $database)" })
 	void shouldExecuteQueryWithNamedParameters(String sql) throws SQLException {
 		try (var connection = getConnection(); var statement = connection.prepareCall(sql)) {
 			statement.setObject("context", Collections.emptyMap());
@@ -79,9 +79,9 @@ class CallableStatementIT extends IntegrationTestBase {
 	void shouldCheckExistenceOfNamedParameter() throws SQLException {
 		try (var connection = getConnection()) {
 			assertThatExceptionOfType(SQLException.class)
-				.isThrownBy(() -> connection.prepareCall("CALL dbms.cluster.routing.getRoutingTable($database, $foo)"))
+				.isThrownBy(() -> connection.prepareCall("CALL dbms.routing.getRoutingTable($database, $foo)"))
 				.withMessage(
-						"syntax error or access rule violation - Procedure `dbms.cluster.routing.getRoutingTable` does not have a named parameter `foo`");
+						"syntax error or access rule violation - Procedure `dbms.routing.getRoutingTable` does not have a named parameter `foo`");
 		}
 	}
 

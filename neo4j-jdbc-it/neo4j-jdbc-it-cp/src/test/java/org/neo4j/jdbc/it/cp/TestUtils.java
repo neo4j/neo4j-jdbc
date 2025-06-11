@@ -52,7 +52,7 @@ final class TestUtils {
 	 * to the needs of the integration tests}
 	 */
 	static Neo4jContainer<?> getNeo4jContainer(String image) {
-		return getNeo4jContainer(image, false);
+		return getNeo4jContainer(image, false, false);
 	}
 
 	/**
@@ -61,10 +61,13 @@ final class TestUtils {
 	 * to the needs of the integration tests}
 	 */
 	@SuppressWarnings("resource")
-	static Neo4jContainer<?> getNeo4jContainer(String image, boolean enableApoc) {
-		var container = new Neo4jContainer<>(
-				Optional.ofNullable(image).orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image")))
-			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+	static Neo4jContainer<?> getNeo4jContainer(String image, boolean enableApoc, boolean forceEnterprise) {
+		var dockerImageName = Optional.ofNullable(image)
+			.orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image"));
+		if (!dockerImageName.contains("-enterprise") && forceEnterprise) {
+			dockerImageName = dockerImageName + "-enterprise";
+		}
+		var container = new Neo4jContainer<>(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT) // The HTTP wait strategy used by
 			// default seems not to work in
 			// native image, bolt must be

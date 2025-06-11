@@ -57,7 +57,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	protected Connection connection;
 
 	AbstractDatabaseMetadata(boolean enableApoc) {
-		super("neo4j:5.26.0-enterprise", enableApoc);
+		super(null, enableApoc, true);
 	}
 
 	@BeforeAll
@@ -416,14 +416,14 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	void getDatabaseProductNameShouldWork() throws SQLException {
 		var productName = this.connection.getMetaData().getDatabaseProductName();
 
-		assertThat(productName).isEqualTo("Neo4j Kernel-enterprise-5.26.0");
+		assertThat(productName).startsWith("Neo4j Kernel-enterprise-");
 	}
 
 	@Test
 	void getDatabaseProductVersionShouldWork() throws SQLException {
 		var productVersion = this.connection.getMetaData().getDatabaseProductVersion();
 
-		assertThat(productVersion).isEqualTo("5.26.0");
+		assertThat(productVersion).isNotNull();
 	}
 
 	@Test

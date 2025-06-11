@@ -39,11 +39,11 @@ abstract class IntegrationTestBase {
 	}
 
 	IntegrationTestBase(String neo4jContainerName) {
-		this.neo4j = TestUtils.getNeo4jContainer(neo4jContainerName, false);
+		this(neo4jContainerName, false, false);
 	}
 
-	IntegrationTestBase(String neo4jContainerName, boolean enableApoc) {
-		this.neo4j = TestUtils.getNeo4jContainer(neo4jContainerName, enableApoc);
+	IntegrationTestBase(String neo4jContainerName, boolean enableApoc, boolean forceEnterprise) {
+		this.neo4j = TestUtils.getNeo4jContainer(neo4jContainerName, enableApoc, forceEnterprise);
 	}
 
 	@SuppressWarnings("resource") // On purpose to reuse this

@@ -1258,7 +1258,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 					propertyName);
 
 			for (var propertyType : types) {
-				if (propertyType.asString().equals("String")) {
+				if (propertyType.asString().toUpperCase(Locale.ROOT).startsWith("STRING")) {
 					return propertyType;
 				}
 			}
