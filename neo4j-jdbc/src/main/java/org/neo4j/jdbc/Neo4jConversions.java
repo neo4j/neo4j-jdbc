@@ -66,7 +66,12 @@ final class Neo4jConversions {
 	 * 6
 	 */
 	static String oldCypherTypesToNew(String neo4jType) {
-		return switch (neo4jType) {
+		String value = neo4jType;
+		if (value.startsWith("LIST<")) {
+			value = "LIST";
+		}
+		value = value.replaceAll("( NOT)? NULL", "");
+		return switch (value) {
 			// Simple
 			case "Boolean" -> "BOOLEAN";
 			case "Double" -> "FLOAT";
@@ -90,7 +95,7 @@ final class Neo4jConversions {
 			case "Any" -> "ANY";
 			default -> {
 				try {
-					yield Type.valueOf(neo4jType).name();
+					yield valueOfV5Name(neo4jType).name();
 				}
 				catch (IllegalArgumentException ex) {
 					yield "OTHER";
@@ -117,13 +122,23 @@ final class Neo4jConversions {
 	}
 
 	static Type valueOfV5Name(String in) {
-
+		// See (2025-06-11)
+		// https://neo4j.com/docs/cypher-manual/current/values-and-types/property-structural-constructed/
 		var value = in.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")
 			.replaceAll("([a-z])([A-Z])", "$1_$2")
 			.toUpperCase(Locale.ROOT);
+		if (value.startsWith("LIST<")) {
+			value = "LIST";
+		}
+		value = value.replaceAll("( NOT)? NULL", "");
 		value = switch (value) {
 			case "LONG" -> Type.INTEGER.name();
 			case "DOUBLE" -> Type.FLOAT.name();
+			// Translation of Cypher 25 dates
+			case "LOCAL TIME" -> Type.LOCAL_TIME.name();
+			case "LOCAL DATETIME" -> Type.LOCAL_DATE_TIME.name();
+			case "ZONED TIME" -> Type.TIME.name();
+			case "ZONED DATETIME" -> Type.DATE_TIME.name();
 			default -> value.endsWith("ARRAY") ? Type.LIST.name() : value;
 		};
 		return Type.valueOf(value);

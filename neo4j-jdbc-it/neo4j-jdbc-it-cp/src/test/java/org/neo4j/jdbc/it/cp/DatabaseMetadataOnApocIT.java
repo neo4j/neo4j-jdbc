@@ -26,7 +26,14 @@ class DatabaseMetadataOnApocIT extends AbstractDatabaseMetadata {
 
 	@Override
 	boolean apocShouldBeAvailable() {
-		return true;
+		// This is for pretending it runs on apoc while it does not,
+		// i.e. for a playday image for which no compatible version
+		// exists yet.
+		var prop = System.getProperty("neo4j-jdbc.apoc-available");
+		if (prop == null) {
+			return true;
+		}
+		return Boolean.parseBoolean(prop);
 	}
 
 }
