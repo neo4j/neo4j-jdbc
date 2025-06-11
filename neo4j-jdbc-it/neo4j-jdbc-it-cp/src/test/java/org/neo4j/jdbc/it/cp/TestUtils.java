@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -69,6 +70,14 @@ final class TestUtils {
 			// native image, bolt must be
 			// sufficed.
 			.withReuse(true);
+
+		for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
+			if (entry.getKey() instanceof String key && key.startsWith("NEO4J_")
+					&& entry.getValue() instanceof String value) {
+				container.withEnv(key, value);
+			}
+		}
+
 		if (enableApoc) {
 			container = container.withPlugins("apoc");
 		}
