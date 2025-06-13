@@ -156,7 +156,7 @@
 		<jdbi3.version>3.49.4</jdbi3.version>
 		<jooq.version>3.19.23</jooq.version>
 		<jreleaser-maven-plugin.version>1.18.0</jreleaser-maven-plugin.version>
-		<junit-jupiter.version>5.12.2</junit-jupiter.version>
+		<junit-jupiter.version>5.13.0</junit-jupiter.version>
 		<kotlin-stdlib-jdk8.version>2.1.21</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.0.1</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
@@ -182,7 +182,7 @@
 		<mockito.version>5.18.0</mockito.version>
 		<moditect-maven-plugin.version>1.2.2.Final</moditect-maven-plugin.version>
 		<native-maven-plugin.version>0.10.6</native-maven-plugin.version>
-		<neo4j-bolt-connection.version>3.0.0</neo4j-bolt-connection.version>
+		<neo4j-bolt-connection.version>4.0-SNAPSHOT</neo4j-bolt-connection.version>
 		<neo4j-cypher-dsl.version>2024.7.0</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.5.1</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
