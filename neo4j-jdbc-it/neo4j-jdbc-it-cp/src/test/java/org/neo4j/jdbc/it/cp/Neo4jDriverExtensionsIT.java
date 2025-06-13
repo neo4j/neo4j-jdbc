@@ -59,7 +59,7 @@ class Neo4jDriverExtensionsIT {
 			.and("NEO4J_PASSWORD", this.neo4j.getAdminPassword())
 			.and("NEO4J_SQL_TRANSLATION_ENABLED", "true")
 			.execute(() -> {
-				try (var connection = Neo4jDriver.withSQLTranslation()
+				try (@SuppressWarnings("deprecation") var connection = Neo4jDriver.withSQLTranslation()
 					.withProperties(Map.of("rewritePlaceholders", "true"))
 					.fromEnv()
 					.orElseThrow()) {
@@ -78,7 +78,7 @@ class Neo4jDriverExtensionsIT {
 				"NEO4J_URI=jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687)),
 				"NEO4J_PASSWORD=%s".formatted(this.neo4j.getAdminPassword()), "NEO4J_SQL_TRANSLATION_ENABLED=true"));
 
-		try (var connection = Neo4jDriver.withSQLTranslation()
+		try (@SuppressWarnings("deprecation") var connection = Neo4jDriver.withSQLTranslation()
 			.withProperties(Map.of("rewritePlaceholders", "true"))
 			.fromEnv(envFile.getParent(), envFile.getFileName().toString())
 			.orElseThrow()) {

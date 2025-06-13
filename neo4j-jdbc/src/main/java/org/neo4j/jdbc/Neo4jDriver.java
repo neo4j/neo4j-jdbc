@@ -261,9 +261,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * translation.
 	 * @return a builder that lets you create a driver from the environment.
 	 * @see SpecifyTranslationStep
+	 * @deprecated the return type will change to
+	 * {@link SpecifyAdditionalPropertiesOrAuthStep} in the next major version, with all
+	 * existing fluent api, plus the ability to configure authentication
 	 */
+	@SuppressWarnings("DeprecatedIsStillUsed")
+	@Deprecated(since = "6.6.0")
 	public static SpecifyAdditionalPropertiesStep withSQLTranslation() {
-		return new BuilderImpl(true, Map.of());
+		return new SpecifyAdditionalPropertiesOrAuthStepImpl(new BuilderImpl(true, Map.of()));
 	}
 
 	/**
@@ -272,9 +277,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param additionalProperties additional properties to be added to the configuration
 	 * @return a builder that lets you create a driver from the environment.
 	 * @see SpecifyAdditionalPropertiesStep
+	 * @deprecated the return type will change to {@link SpecifyTranslationOrAuthStep} in
+	 * the next major version, with all existing fluent api, plus the ability to configure
+	 * authentication
 	 */
+	@SuppressWarnings("DeprecatedIsStillUsed")
+	@Deprecated(since = "6.6.0")
 	public static SpecifyTranslationStep withProperties(Map<String, Object> additionalProperties) {
-		return new BuilderImpl(false, additionalProperties);
+		return new SpecifyTranslationOrAuthStepImpl(new BuilderImpl(false, additionalProperties));
+	}
+
+	// TODO Document this
+	public static SpecifyAdditionalPropertiesOrTranslationStep withAuth() {
+		return new SpecifyAdditionalPropertiesOrTranslationStepImpl(new BuilderImpl(false, Map.of()));
 	}
 
 	/**
@@ -1130,10 +1145,149 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
+	// TODO document this
+	public sealed interface SpecifyAdditionalPropertiesOrTranslationStep extends SpecifyEnvStep
+			permits SpecifyAdditionalPropertiesOrTranslationStepImpl {
+
+		/**
+		 * Call this to specify any additional properties. The environment has precedence.
+		 * Especially username, password and host will always be taken from the
+		 * environment.
+		 * @param additionalProperties any additional properties.
+		 * @return final step to retrieve a driver from the environment
+		 */
+		SpecifyTranslationStep withProperties(Map<String, Object> additionalProperties);
+
+		/**
+		 * Call to enable SQL to Cypher translation.
+		 * @return final step to retrieve a driver from the environment
+		 */
+		SpecifyAdditionalPropertiesStep withSQLTranslation();
+
+	}
+
+	private final static class SpecifyAdditionalPropertiesOrTranslationStepImpl
+			implements SpecifyAdditionalPropertiesOrTranslationStep {
+
+		private final BuilderImpl delegate;
+
+		private SpecifyAdditionalPropertiesOrTranslationStepImpl(BuilderImpl delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public SpecifyTranslationStep withProperties(Map<String, Object> additionalProperties) {
+			return (SpecifyTranslationStep) this.delegate.withProperties(additionalProperties);
+		}
+
+		@Override
+		public SpecifyAdditionalPropertiesStep withSQLTranslation() {
+			return (SpecifyAdditionalPropertiesStep) this.delegate.withSQLTranslation();
+		}
+
+		@Override
+		public Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
+			return this.delegate.fromEnv(directory, filename);
+		}
+
+	}
+
+	// TODO document this
+	/**
+	 * @since 6.6.0
+	 */
+	public sealed interface SpecifyAdditionalPropertiesOrAuthStep extends SpecifyEnvStep
+			permits SpecifyAdditionalPropertiesOrAuthStepImpl {
+
+		/**
+		 * Call this to specify any additional properties. The environment has precedence.
+		 * Especially username, password and host will always be taken from the
+		 * environment.
+		 * @param additionalProperties any additional properties.
+		 * @return final step to retrieve a driver from the environment
+		 */
+		SpecifyAuthStep withProperties(Map<String, Object> additionalProperties);
+
+		// TODO document this
+		SpecifyAdditionalPropertiesStep withAuth();
+
+	}
+
+	private final static class SpecifyAdditionalPropertiesOrAuthStepImpl
+			implements SpecifyAdditionalPropertiesStep, SpecifyAdditionalPropertiesOrAuthStep {
+
+		private final BuilderImpl delegate;
+
+		private SpecifyAdditionalPropertiesOrAuthStepImpl(BuilderImpl delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public SpecifyAuthStep withProperties(Map<String, Object> additionalProperties) {
+			return (SpecifyAuthStep) this.delegate.withProperties(additionalProperties);
+		}
+
+		@Override
+		public SpecifyAdditionalPropertiesStep withAuth() {
+			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuth();
+		}
+
+		@Override
+		public Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
+			return this.delegate.fromEnv(directory, filename);
+		}
+
+	}
+
+	// TODO document this
+	/**
+	 * @since 6.6.0
+	 */
+	public sealed interface SpecifyTranslationOrAuthStep extends SpecifyEnvStep
+			permits SpecifyTranslationOrAuthStepImpl {
+
+		/**
+		 * Call to enable SQL to Cypher translation.
+		 * @return final step to retrieve a driver from the environment
+		 */
+		SpecifyAuthStep withSQLTranslation();
+
+		// TODO document this
+		SpecifyTranslationStep withAuth();
+
+	}
+
+	private final static class SpecifyTranslationOrAuthStepImpl
+			implements SpecifyTranslationStep, SpecifyTranslationOrAuthStep {
+
+		private final BuilderImpl delegate;
+
+		private SpecifyTranslationOrAuthStepImpl(BuilderImpl delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public SpecifyAuthStep withSQLTranslation() {
+			return (SpecifyAuthStep) this.delegate.withSQLTranslation();
+		}
+
+		@Override
+		public SpecifyTranslationStep withAuth() {
+			return (SpecifyTranslationStep) this.delegate.withAuth();
+		}
+
+		@Override
+		public Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
+			return this.delegate.fromEnv(directory, filename);
+		}
+
+	}
+
 	/**
 	 * Responsible for configuring the optional SQL to Cypher translation.
 	 */
-	public interface SpecifyTranslationStep extends SpecifyEnvStep {
+	public sealed interface SpecifyTranslationStep extends SpecifyEnvStep
+			permits BuilderImpl, SpecifyTranslationOrAuthStepImpl {
 
 		/**
 		 * Call to enable SQL to Cypher translation.
@@ -1149,7 +1303,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * host settings from the driver, but merely used in addition for everything not taken
 	 * from the environment.
 	 */
-	public interface SpecifyAdditionalPropertiesStep extends SpecifyEnvStep {
+	public sealed interface SpecifyAdditionalPropertiesStep extends SpecifyEnvStep
+			permits BuilderImpl, SpecifyAdditionalPropertiesOrAuthStepImpl {
 
 		/**
 		 * Call this to specify any additional properties. The environment has precedence.
@@ -1162,7 +1317,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	private static final class BuilderImpl implements SpecifyAdditionalPropertiesStep, SpecifyTranslationStep {
+	// TODO document this
+	/**
+	 * @since 6.6.0
+	 */
+	public sealed interface SpecifyAuthStep extends SpecifyEnvStep permits BuilderImpl {
+
+		// TODO document this
+		SpecifyEnvStep withAuth();
+
+	}
+
+	private static final class BuilderImpl
+			implements SpecifyAdditionalPropertiesStep, SpecifyTranslationStep, SpecifyAuthStep {
 
 		private boolean forceSqlTranslation;
 
@@ -1226,6 +1393,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		public SpecifyEnvStep withProperties(Map<String, Object> additionalProperties) {
 			this.additionalProperties = Objects.requireNonNullElseGet(additionalProperties, Map::of);
 			return this;
+		}
+
+		@Override
+		public SpecifyEnvStep withAuth() {
+			return null;
 		}
 
 		@Override
