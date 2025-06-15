@@ -298,7 +298,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param authenticationProvider The authentication provider that shall be used on all
 	 * instances, might be {@literal null}, which will reset the behaviour
 	 */
-	public static void withGlobalAuth(AuthenticationProvider authenticationProvider) {
+	public static void withGlobalAuthenticationProvider(AuthenticationProvider authenticationProvider) {
 		// TODO
 	}
 
@@ -313,7 +313,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @return a builder that lets you create a new connection from the environment or
 	 * specify more features
 	 */
-	public static SpecifyAdditionalPropertiesOrTranslationStep withAuth(AuthenticationProvider authenticationProvider) {
+	public static SpecifyAdditionalPropertiesOrTranslationStep withAuthenticationProvider(
+			AuthenticationProvider authenticationProvider) {
 		return new SpecifyAdditionalPropertiesOrTranslationStepImpl(
 				new BuilderImpl(false, Map.of(), authenticationProvider));
 	}
@@ -1241,7 +1242,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		SpecifyAuthStep withProperties(Map<String, Object> additionalProperties);
 
 		// TODO document this
-		SpecifyAdditionalPropertiesStep withAuth(AuthenticationProvider authenticationProvider);
+		SpecifyAdditionalPropertiesStep withAuthenticationProvider(AuthenticationProvider authenticationProvider);
 
 	}
 
@@ -1260,8 +1261,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyAdditionalPropertiesStep withAuth(AuthenticationProvider authenticationProvider) {
-			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuth(authenticationProvider);
+		public SpecifyAdditionalPropertiesStep withAuthenticationProvider(
+				AuthenticationProvider authenticationProvider) {
+			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuthenticationProvider(authenticationProvider);
 		}
 
 		@Override
@@ -1285,7 +1287,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		SpecifyAuthStep withSQLTranslation();
 
 		// TODO document this
-		SpecifyTranslationStep withAuth(AuthenticationProvider authenticationProvider);
+		SpecifyTranslationStep withAuthenticationProvider(AuthenticationProvider authenticationProvider);
 
 	}
 
@@ -1304,8 +1306,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyTranslationStep withAuth(AuthenticationProvider authenticationProvider) {
-			return (SpecifyTranslationStep) this.delegate.withAuth(authenticationProvider);
+		public SpecifyTranslationStep withAuthenticationProvider(AuthenticationProvider authenticationProvider) {
+			return (SpecifyTranslationStep) this.delegate.withAuthenticationProvider(authenticationProvider);
 		}
 
 		@Override
@@ -1356,7 +1358,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public sealed interface SpecifyAuthStep extends SpecifyEnvStep permits BuilderImpl {
 
 		// TODO document this
-		SpecifyEnvStep withAuth(AuthenticationProvider authenticationProvider);
+		SpecifyEnvStep withAuthenticationProvider(AuthenticationProvider authenticationProvider);
 
 	}
 
@@ -1432,7 +1434,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyEnvStep withAuth(AuthenticationProvider authenticationProvider) {
+		public SpecifyEnvStep withAuthenticationProvider(AuthenticationProvider authenticationProvider) {
 			this.authenticationProvider = authenticationProvider;
 			return this;
 		}
