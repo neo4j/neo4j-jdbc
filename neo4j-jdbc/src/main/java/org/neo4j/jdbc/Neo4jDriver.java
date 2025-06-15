@@ -259,8 +259,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
-	 * @return a builder that lets you create a driver from the environment.
+	 * @return a builder that lets you create a connection from the environment.
 	 * @see SpecifyTranslationStep
+	 * @see SpecifyAuthStep
 	 * @deprecated the return type will change to
 	 * {@link SpecifyAdditionalPropertiesOrAuthStep} in the next major version, with all
 	 * existing fluent api, plus the ability to configure authentication
@@ -268,15 +269,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@SuppressWarnings("DeprecatedIsStillUsed")
 	@Deprecated(since = "6.6.0")
 	public static SpecifyAdditionalPropertiesStep withSQLTranslation() {
-		return new SpecifyAdditionalPropertiesOrAuthStepImpl(new BuilderImpl(true, Map.of()));
+		return new SpecifyAdditionalPropertiesOrAuthStepImpl(new BuilderImpl(true, Map.of(), null));
 	}
 
 	/**
 	 * Lets you configure the driver from the environment, with additional properties
 	 * being applied as well.
 	 * @param additionalProperties additional properties to be added to the configuration
-	 * @return a builder that lets you create a driver from the environment.
+	 * @return a builder that lets you create a connection from the environment.
 	 * @see SpecifyAdditionalPropertiesStep
+	 * @see SpecifyAuthStep
 	 * @deprecated the return type will change to {@link SpecifyTranslationOrAuthStep} in
 	 * the next major version, with all existing fluent api, plus the ability to configure
 	 * authentication
@@ -284,12 +286,36 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	@SuppressWarnings("DeprecatedIsStillUsed")
 	@Deprecated(since = "6.6.0")
 	public static SpecifyTranslationStep withProperties(Map<String, Object> additionalProperties) {
-		return new SpecifyTranslationOrAuthStepImpl(new BuilderImpl(false, additionalProperties));
+		return new SpecifyTranslationOrAuthStepImpl(new BuilderImpl(false, additionalProperties, null));
 	}
 
-	// TODO Document this
-	public static SpecifyAdditionalPropertiesOrTranslationStep withAuth() {
-		return new SpecifyAdditionalPropertiesOrTranslationStepImpl(new BuilderImpl(false, Map.of()));
+	/**
+	 * Registers {@code authenticationProvider} for the {@link Neo4jDriver} globally so
+	 * that any connection spawned from {@link DriverManager#getConnection(String)} and
+	 * the appropriate overloads will use the authentication provider if any. If the
+	 * provider is not {@literal null}, all {@code user} and {@code password} keys from
+	 * the JDBC properties or environment will be ignored.
+	 * @param authenticationProvider The authentication provider that shall be used on all
+	 * instances, might be {@literal null}, which will reset the behaviour
+	 */
+	public static void withGlobalAuth(AuthenticationProvider authenticationProvider) {
+		// TODO
+	}
+
+	/**
+	 * Lets you configure a new instance of the driver from the environment, starting with
+	 * the authentication provider. You can later enable
+	 * @param authenticationProvider The authentication provider to use, can be
+	 * {@literal null}
+	 * @see SpecifyTranslationStep
+	 * @see SpecifyAdditionalPropertiesStep
+	 * @since 6.6.0
+	 * @return a builder that lets you create a new connection from the environment or
+	 * specify more features
+	 */
+	public static SpecifyAdditionalPropertiesOrTranslationStep withAuth(AuthenticationProvider authenticationProvider) {
+		return new SpecifyAdditionalPropertiesOrTranslationStepImpl(
+				new BuilderImpl(false, Map.of(), authenticationProvider));
 	}
 
 	/**
@@ -337,7 +363,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @see SpecifyEnvStep#fromEnv(Path, String)
 	 */
 	public static Optional<Connection> fromEnv(Path directory, String filename) throws SQLException {
-		return new BuilderImpl(false, Map.of()).fromEnv(directory, filename);
+		return new BuilderImpl(false, Map.of(), null).fromEnv(directory, filename);
 	}
 
 	private final BoltConnectionProvider boltConnectionProvider;
@@ -367,6 +393,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
 		this.boltConnectionProvider = Objects.requireNonNull(boltConnectionProvider);
 		MetricsCollector.tryGlobal().ifPresent(this::addListener);
+	}
+
+	@Override
+	public Connection connect(String url, AuthenticationProvider authenticationProvider, Properties info)
+			throws SQLException {
+		return null;
 	}
 
 	@Override
@@ -1209,7 +1241,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		SpecifyAuthStep withProperties(Map<String, Object> additionalProperties);
 
 		// TODO document this
-		SpecifyAdditionalPropertiesStep withAuth();
+		SpecifyAdditionalPropertiesStep withAuth(AuthenticationProvider authenticationProvider);
 
 	}
 
@@ -1228,8 +1260,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyAdditionalPropertiesStep withAuth() {
-			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuth();
+		public SpecifyAdditionalPropertiesStep withAuth(AuthenticationProvider authenticationProvider) {
+			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuth(authenticationProvider);
 		}
 
 		@Override
@@ -1253,7 +1285,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		SpecifyAuthStep withSQLTranslation();
 
 		// TODO document this
-		SpecifyTranslationStep withAuth();
+		SpecifyTranslationStep withAuth(AuthenticationProvider authenticationProvider);
 
 	}
 
@@ -1272,8 +1304,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyTranslationStep withAuth() {
-			return (SpecifyTranslationStep) this.delegate.withAuth();
+		public SpecifyTranslationStep withAuth(AuthenticationProvider authenticationProvider) {
+			return (SpecifyTranslationStep) this.delegate.withAuth(authenticationProvider);
 		}
 
 		@Override
@@ -1324,7 +1356,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public sealed interface SpecifyAuthStep extends SpecifyEnvStep permits BuilderImpl {
 
 		// TODO document this
-		SpecifyEnvStep withAuth();
+		SpecifyEnvStep withAuth(AuthenticationProvider authenticationProvider);
 
 	}
 
@@ -1335,9 +1367,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		private Map<String, Object> additionalProperties;
 
-		BuilderImpl(boolean forceSqlTranslation, Map<String, Object> additionalProperties) {
+		private AuthenticationProvider authenticationProvider;
+
+		BuilderImpl(boolean forceSqlTranslation, Map<String, Object> additionalProperties,
+				AuthenticationProvider authenticationProvider) {
 			this.forceSqlTranslation = forceSqlTranslation;
 			this.additionalProperties = additionalProperties;
+			this.authenticationProvider = authenticationProvider;
 		}
 
 		@SuppressWarnings("squid:S3776") // Yep, this is complex.
@@ -1396,8 +1432,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyEnvStep withAuth() {
-			return null;
+		public SpecifyEnvStep withAuth(AuthenticationProvider authenticationProvider) {
+			this.authenticationProvider = authenticationProvider;
+			return this;
 		}
 
 		@Override

@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc;
 
+import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -106,5 +107,20 @@ public sealed interface Neo4jDriverExtensions extends Driver, Neo4jMetadataWrite
 	 * @since 6.3.0
 	 */
 	Neo4jDriver withTracer(Neo4jTracer tracer);
+
+	/**
+	 * Creates a connection from this driver, using the provided authentication provider,
+	 * ignoring both {@code user} and {@code password} properties from the JDBC
+	 * properties. If {@code provider} is {@literal null}, will behave just as usual and
+	 * try to find {@code user} and {@code password} keys inside the {@code info}
+	 * properties. Any globally configured authentication provider will be ignored.
+	 * @param url the URL of the database to which to connect
+	 * @param info a list of arbitrary string tag/value pairs as connection arguments.
+	 * Normally at least a "user" and "password" property should be included.
+	 * @return a {@code Connection} object that represents a connection to the URL
+	 * @throws SQLException if a database access error occurs or the url is {@code null}
+	 * @since 6.6.0
+	 */
+	Connection connect(String url, AuthenticationProvider authenticationProvider, Properties info) throws SQLException;
 
 }

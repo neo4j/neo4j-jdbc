@@ -18,11 +18,6 @@
  */
 package org.neo4j.jdbc;
 
-/**
- * Internal auth manager.
- *
- * @author Michael J. Simons
- */
-interface AuthManager {
+public interface AuthenticationProvider {
 
 }
