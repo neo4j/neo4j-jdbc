@@ -397,13 +397,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	@Override
-	public Connection connect(String url, AuthenticationProvider authenticationProvider, Properties info)
-			throws SQLException {
-		return null;
+	public Connection connect(String url, Properties info) throws SQLException {
+		return connect(url, info, null);
 	}
 
 	@Override
-	public Connection connect(String url, Properties info) throws SQLException {
+	public Connection connect(String url, Properties info, AuthenticationProvider authenticationProvider)
+			throws SQLException {
+
 		var driverConfig = DriverConfig.of(url, info);
 
 		var address = new BoltServerAddress(driverConfig.host, driverConfig.port);

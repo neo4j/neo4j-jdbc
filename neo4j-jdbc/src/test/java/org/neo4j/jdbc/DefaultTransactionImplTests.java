@@ -288,8 +288,9 @@ class DefaultTransactionImplTests {
 	private static BoltConnection mockBoltConnection() {
 		var boltConnection = mock(BoltConnection.class);
 		given(boltConnection.write(ArgumentMatchers.<List<Message>>argThat(argument -> {
-			var beginMessage = (BeginMessage) argument.get(0);
-			return "aBeautifulDatabase".equals(beginMessage.databaseName().orElse(null))
+			var message = argument.get(0);
+			return message instanceof ResetMessage || message instanceof BeginMessage beginMessage
+					&& "aBeautifulDatabase".equals(beginMessage.databaseName().orElse(null))
 					&& AccessMode.WRITE.equals(beginMessage.accessMode()) && beginMessage.bookmarks().isEmpty();
 		}))).willReturn(CompletableFuture.completedStage(null));
 		return boltConnection;

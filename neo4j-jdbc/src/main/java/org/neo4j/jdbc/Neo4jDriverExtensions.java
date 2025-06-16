@@ -124,6 +124,6 @@ public sealed interface Neo4jDriverExtensions extends Driver, Neo4jMetadataWrite
 	 * @throws SQLException if a database access error occurs or the url is {@code null}
 	 * @since 6.6.0
 	 */
-	Connection connect(String url, AuthenticationProvider authenticationProvider, Properties info) throws SQLException;
+	Connection connect(String url, Properties info, AuthenticationProvider authenticationProvider) throws SQLException;
 
 }

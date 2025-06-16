@@ -87,16 +87,18 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		this.autoCommit = autoCommit;
 		this.state = Objects.requireNonNullElse(state, State.NEW);
 
-		this.beginPipelinedStage = CompletableFuture.completedFuture(null).thenCompose(ignored -> {
-			var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-			var messages = new ArrayList<Message>(2);
-			if (resetNeeded) {
-				messages.add(Messages.reset());
-			}
-			messages.add(Messages.beginTransaction(databaseName, accessMode, null, this.usedBookmarks, txType, null,
-					BoltAdapters.adaptMap(transactionMetadata), NotificationConfig.defaultConfig()));
-			return this.boltConnection.write(messages);
-		});
+		var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
+		var messages = new ArrayList<Message>(2);
+		if (resetNeeded) {
+			messages.add(Messages.reset());
+		}
+		/*
+		 * messages.add(Messages.logoff()); messages.add(Messages.logon(the thing))
+		 */
+		messages.add(Messages.beginTransaction(databaseName, accessMode, null, this.usedBookmarks, txType, null,
+				BoltAdapters.adaptMap(transactionMetadata), NotificationConfig.defaultConfig()));
+		this.beginPipelinedStage = this.boltConnection.write(messages);
+
 	}
 
 	@Override
