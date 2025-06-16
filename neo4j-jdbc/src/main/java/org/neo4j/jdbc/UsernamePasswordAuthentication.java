@@ -18,9 +18,20 @@
  */
 package org.neo4j.jdbc;
 
-@FunctionalInterface
-public interface AuthenticationProvider {
+import java.util.Objects;
 
-	Authentication get();
+/**
+ * Representation for a username and password based authentication.
+ *
+ * @param username The identity of the principal being authenticated.
+ * @param password The credentials that prove the principal is correct.
+ * @author Michael J. Simons
+ * @since 6.6.0
+ */
+record UsernamePasswordAuthentication(String username, String password) implements Authentication {
 
+	UsernamePasswordAuthentication {
+		Objects.requireNonNull(username, "Username can't be null");
+		Objects.requireNonNull(password, "Password can't be null");
+	}
 }

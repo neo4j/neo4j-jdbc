@@ -18,9 +18,18 @@
  */
 package org.neo4j.jdbc;
 
-@FunctionalInterface
-public interface AuthenticationProvider {
+/**
+ * A marker class for disabled authentication. It's scheme will always be
+ * {@link AuthenticationScheme#NONE}.
+ *
+ * @author Michael J. Simons
+ * @since 6.6.0
+ */
+enum DisabledAuthentication implements Authentication {
 
-	Authentication get();
+	/**
+	 * The single instance of the disable authentication.
+	 */
+	INSTANCE
 
 }

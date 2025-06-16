@@ -260,11 +260,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
 	 * @return a builder that lets you create a connection from the environment.
-	 * @see SpecifyTranslationStep
-	 * @see SpecifyAuthStep
 	 * @deprecated the return type will change to
 	 * {@link SpecifyAdditionalPropertiesOrAuthStep} in the next major version, with all
 	 * existing fluent api, plus the ability to configure authentication
+	 * @see SpecifyTranslationStep
+	 * @see SpecifyAuthStep
 	 */
 	@SuppressWarnings("DeprecatedIsStillUsed")
 	@Deprecated(since = "6.6.0")
@@ -277,11 +277,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * being applied as well.
 	 * @param additionalProperties additional properties to be added to the configuration
 	 * @return a builder that lets you create a connection from the environment.
-	 * @see SpecifyAdditionalPropertiesStep
-	 * @see SpecifyAuthStep
 	 * @deprecated the return type will change to {@link SpecifyTranslationOrAuthStep} in
 	 * the next major version, with all existing fluent api, plus the ability to configure
 	 * authentication
+	 * @see SpecifyAdditionalPropertiesStep
+	 * @see SpecifyAuthStep
 	 */
 	@SuppressWarnings("DeprecatedIsStillUsed")
 	@Deprecated(since = "6.6.0")
@@ -295,7 +295,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * the appropriate overloads will use the authentication provider if any. If the
 	 * provider is not {@literal null}, all {@code user} and {@code password} keys from
 	 * the JDBC properties or environment will be ignored.
-	 * @param authenticationProvider The authentication provider that shall be used on all
+	 * @param authenticationProvider the authentication provider that shall be used on all
 	 * instances, might be {@literal null}, which will reset the behaviour
 	 */
 	public static void withGlobalAuthenticationProvider(AuthenticationProvider authenticationProvider) {
@@ -305,13 +305,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	/**
 	 * Lets you configure a new instance of the driver from the environment, starting with
 	 * the authentication provider. You can later enable
-	 * @param authenticationProvider The authentication provider to use, can be
+	 * @param authenticationProvider the authentication provider to use, can be
 	 * {@literal null}
-	 * @see SpecifyTranslationStep
-	 * @see SpecifyAdditionalPropertiesStep
-	 * @since 6.6.0
 	 * @return a builder that lets you create a new connection from the environment or
 	 * specify more features
+	 * @since 6.6.0
+	 * @see SpecifyTranslationStep
+	 * @see SpecifyAdditionalPropertiesStep
 	 */
 	public static SpecifyAdditionalPropertiesOrTranslationStep withAuthenticationProvider(
 			AuthenticationProvider authenticationProvider) {
@@ -432,7 +432,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 		var translatorFactory = driverConfig.rawConfig.get(PROPERTY_TRANSLATOR_FACTORY);
 		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
-				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new VoidBookmarkManagerImpl());
+				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
 
 		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this::getSqlTranslatorFactories;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
@@ -531,7 +531,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				"The password that is used to connect. Defaults to 'password'.", false, null));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.getName(),
 				"The authentication scheme to use. Defaults to 'basic'.", false,
-				Arrays.stream(AuthScheme.values()).map(AuthScheme::getName).toArray(String[]::new)));
+				Arrays.stream(AuthenticationScheme.values())
+					.map(AuthenticationScheme::getName)
+					.toArray(String[]::new)));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_AUTH_REALM, parsedConfig.authRealm,
 				"The authentication realm to use. Defaults to ''.", false, null));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_USER_AGENT, parsedConfig.agent,
@@ -917,38 +919,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
-	enum AuthScheme {
-
-		/**
-		 * Disable authentication.
-		 */
-		NONE("none"),
-		/**
-		 * Use basic auth (username and password).
-		 */
-		BASIC("basic"),
-		/**
-		 * Use a token as authentication (the password will be treated as JWT or other SSO
-		 * token).
-		 */
-		BEARER("bearer"),
-		/**
-		 * Use Kerberos authentication.
-		 */
-		KERBEROS("kerberos");
-
-		private final String name;
-
-		AuthScheme(String name) {
-			this.name = name;
-		}
-
-		public String getName() {
-			return this.name;
-		}
-
-	}
-
 	/**
 	 * Internal record class to handle parsing of driver config.
 	 *
@@ -971,10 +941,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
-	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
-			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
-			boolean rewriteBatchedStatements, boolean rewritePlaceholders, boolean useBookmarks,
-			int relationshipSampleSize, SSLProperties sslProperties, Map<String, String> rawConfig) {
+	record DriverConfig(String host, int port, String database, AuthenticationScheme authScheme, String user,
+			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
+			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
+			boolean useBookmarks, int relationshipSampleSize, SSLProperties sslProperties,
+			Map<String, String> rawConfig) {
 
 		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
 				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
@@ -1071,13 +1042,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					raw);
 		}
 
-		private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
+		private static AuthenticationScheme authScheme(String scheme) throws IllegalArgumentException {
 			if (scheme == null || scheme.isBlank()) {
-				return AuthScheme.BASIC;
+				return AuthenticationScheme.BASIC;
 			}
 
 			try {
-				return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
+				return AuthenticationScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
 			}
 			catch (IllegalArgumentException ignored) {
 				throw new IllegalArgumentException("%s is not a valid option for authScheme".formatted(scheme));
@@ -1178,7 +1149,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	// TODO document this
+	/**
+	 * Allows to configure additional properties or SQL translation.
+	 *
+	 * @since 6.6.0
+	 */
 	public sealed interface SpecifyAdditionalPropertiesOrTranslationStep extends SpecifyEnvStep
 			permits SpecifyAdditionalPropertiesOrTranslationStepImpl {
 
@@ -1199,7 +1174,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	private final static class SpecifyAdditionalPropertiesOrTranslationStepImpl
+	private static final class SpecifyAdditionalPropertiesOrTranslationStepImpl
 			implements SpecifyAdditionalPropertiesOrTranslationStep {
 
 		private final BuilderImpl delegate;
@@ -1225,8 +1200,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	// TODO document this
 	/**
+	 * Allows to configure additional properties or the authentication provider.
+	 *
 	 * @since 6.6.0
 	 */
 	public sealed interface SpecifyAdditionalPropertiesOrAuthStep extends SpecifyEnvStep
@@ -1246,7 +1222,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	private final static class SpecifyAdditionalPropertiesOrAuthStepImpl
+	private static final class SpecifyAdditionalPropertiesOrAuthStepImpl
 			implements SpecifyAdditionalPropertiesStep, SpecifyAdditionalPropertiesOrAuthStep {
 
 		private final BuilderImpl delegate;
@@ -1275,6 +1251,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	// TODO document this
 	/**
+	 * Allows to configure SQL translation or the authentication provider.
+	 *
 	 * @since 6.6.0
 	 */
 	public sealed interface SpecifyTranslationOrAuthStep extends SpecifyEnvStep
@@ -1291,7 +1269,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	private final static class SpecifyTranslationOrAuthStepImpl
+	private static final class SpecifyTranslationOrAuthStepImpl
 			implements SpecifyTranslationStep, SpecifyTranslationOrAuthStep {
 
 		private final BuilderImpl delegate;
@@ -1351,8 +1329,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	}
 
-	// TODO document this
 	/**
+	 * Allows to configure the authentication provider.
+	 *
 	 * @since 6.6.0
 	 */
 	public sealed interface SpecifyAuthStep extends SpecifyEnvStep permits BuilderImpl {
@@ -1423,7 +1402,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			if (this.forceSqlTranslation || Boolean.parseBoolean(sql2cypher)) {
 				properties.put(Neo4jDriver.PROPERTY_SQL_TRANSLATION_ENABLED, "true");
 			}
-			return Optional.of(new Neo4jDriver().connect(address, properties));
+			return Optional.of(new Neo4jDriver().connect(address, this.authenticationProvider, properties));
 
 		}
 

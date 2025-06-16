@@ -115,6 +115,9 @@ public sealed interface Neo4jDriverExtensions extends Driver, Neo4jMetadataWrite
 	 * try to find {@code user} and {@code password} keys inside the {@code info}
 	 * properties. Any globally configured authentication provider will be ignored.
 	 * @param url the URL of the database to which to connect
+	 * @param authenticationProvider the authentication provider to use, maybe
+	 * {@literal null} in which case a global one will be attempted before the driver
+	 * looks up credentials from {@code info}
 	 * @param info a list of arbitrary string tag/value pairs as connection arguments.
 	 * Normally at least a "user" and "password" property should be included.
 	 * @return a {@code Connection} object that represents a connection to the URL

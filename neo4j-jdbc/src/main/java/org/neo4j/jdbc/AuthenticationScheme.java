@@ -19,12 +19,44 @@
 package org.neo4j.jdbc;
 
 /**
- * Internal auth manager.
+ * Authentication schemes supported by the Neo4j server. Those do not match directly to
+ * {@link Authentication} objects, as for example the {@link TokenAuthentication} can
+ * support multiple schemes.
  *
  * @author Michael J. Simons
+ * @since 6.6.0
  */
-interface AuthenticationManager {
+enum AuthenticationScheme {
 
-	boolean isValid(Authentication authentication);
+	/**
+	 * Disable authentication.
+	 */
+	NONE("none"),
+	/**
+	 * Use basic auth (username and password).
+	 */
+	BASIC("basic"),
+	/**
+	 * Use a token as authentication (the password will be treated as JWT or other SSO
+	 * token).
+	 */
+	BEARER("bearer"),
+	/**
+	 * Use Kerberos authentication.
+	 */
+	KERBEROS("kerberos");
+
+	private final String name;
+
+	AuthenticationScheme(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * {@return the name of this scheme}
+	 */
+	String getName() {
+		return this.name;
+	}
 
 }

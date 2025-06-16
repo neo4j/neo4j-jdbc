@@ -18,24 +18,8 @@
  */
 package org.neo4j.jdbc;
 
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
+import java.time.Instant;
 
-final class VoidBookmarkManagerImpl implements BookmarkManager {
-
-	@Override
-	public <T> Set<T> getBookmarks(Function<String, T> transformer) {
-		return Set.of();
-	}
-
-	@Override
-	public <T> void updateBookmarks(Function<T, String> transformer, Collection<T> usedBookmarks,
-			Collection<T> newBookmarks) {
-
-		Objects.requireNonNull(transformer, "A function for deriving a String value from a bookmark is required");
-		Objects.requireNonNull(newBookmarks, "New bookmarks might not be null");
-	}
+public record AuthenticationContext(Instant currentDateTime, Authentication authentication) {
 
 }

@@ -18,9 +18,24 @@
  */
 package org.neo4j.jdbc;
 
-@FunctionalInterface
-public interface AuthenticationProvider {
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 
-	Authentication get();
+final class NoopBookmarkManagerImpl implements BookmarkManager {
+
+	@Override
+	public <T> Set<T> getBookmarks(Function<String, T> transformer) {
+		return Set.of();
+	}
+
+	@Override
+	public <T> void updateBookmarks(Function<T, String> transformer, Collection<T> usedBookmarks,
+			Collection<T> newBookmarks) {
+
+		Objects.requireNonNull(transformer, "A function for deriving a String value from a bookmark is required");
+		Objects.requireNonNull(newBookmarks, "New bookmarks might not be null");
+	}
 
 }

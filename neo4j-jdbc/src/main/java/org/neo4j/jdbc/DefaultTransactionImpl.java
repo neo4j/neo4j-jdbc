@@ -80,7 +80,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
 
-		this.bookmarkManager = Objects.requireNonNullElseGet(bookmarkManager, VoidBookmarkManagerImpl::new);
+		this.bookmarkManager = Objects.requireNonNullElseGet(bookmarkManager, NoopBookmarkManagerImpl::new);
 		this.onFailedCallback = onFailedCallback;
 		this.usedBookmarks = this.bookmarkManager.getBookmarks(Function.identity());
 

@@ -18,9 +18,25 @@
  */
 package org.neo4j.jdbc;
 
-@FunctionalInterface
-public interface AuthenticationProvider {
+import java.time.Clock;
+import java.time.Instant;
 
-	Authentication get();
+final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
+
+	private final Clock clock;
+
+	DefaultAuthenticationManagerImpl(Clock clock) {
+		this.clock = clock;
+	}
+
+	@Override
+	public boolean isValid(Authentication authentication) {
+
+		if (authentication instanceof TokenAuthentication tokenAuthentication
+				&& tokenAuthentication.expiresAt() != null) {
+			return tokenAuthentication.expiresAt().isBefore(Instant.now(this.clock));
+		}
+		return true;
+	}
 
 }
