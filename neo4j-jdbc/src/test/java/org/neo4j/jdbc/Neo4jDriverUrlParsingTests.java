@@ -42,7 +42,7 @@ import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
+import org.neo4j.bolt.connection.DatabaseName;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,7 +137,7 @@ class Neo4jDriverUrlParsingTests {
 		props.put("username", "test");
 		props.put("password", "password");
 		props.put("database", "database");
-		var database = DatabaseNameUtil.database("database");
+		var database = DatabaseName.database("database");
 
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
@@ -154,7 +154,7 @@ class Neo4jDriverUrlParsingTests {
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
-		var database = DatabaseNameUtil.database("neo4j");
+		var database = DatabaseName.database("neo4j");
 
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
