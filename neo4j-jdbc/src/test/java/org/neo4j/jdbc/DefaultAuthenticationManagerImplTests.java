@@ -18,21 +18,20 @@
  */
 package org.neo4j.jdbc;
 
-/**
- * Internal auth manager.
- *
- * @author Michael J. Simons
- */
-interface AuthenticationManager {
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-	/**
-	 * The method figures out if there's currently an active {@link Authentication}
-	 * spawned from this manager and if so, determines freely if it is still valid. In
-	 * case of being valid, it will be returned, otherwise any underlying
-	 * {@link AuthenticationProvider authentication provider} shall be asked for a fresh
-	 * authentication, which will then be stored with the manager and returned.
-	 * @return the current or a refreshed authentication
-	 */
-	Authentication getOrRefresh();
+class DefaultAuthenticationManagerImplTests {
+
+	@Test
+	void isValid() {
+		Assertions.fail();
+	}
+
+	@Test
+	void getOrRefresh() {
+		Assertions.fail();
+
+	}
 
 }

@@ -26,16 +26,23 @@ import java.util.Properties;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.neo4j.bolt.connection.AuthToken;
+import org.neo4j.bolt.connection.AuthTokens;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
 
@@ -147,6 +154,85 @@ class Neo4jDriverTests {
 	@Test
 	void defaultUAShouldWork() {
 		assertThat(Neo4jDriver.getDefaultUserAgent()).matches("neo4j-jdbc/dev");
+	}
+
+	@Nested
+	class AuthenticationProviderDeterminationTest {
+
+		@BeforeEach
+		void resetGlobal() {
+			Neo4jDriver.withGlobalAuthenticationProvider(null);
+		}
+
+		@Test
+		void explicitProviderShouldHaveHighestPrecedence() {
+
+			Neo4jDriver.withGlobalAuthenticationProvider(() -> Authentication.usernameAndPassword("global", "pw"));
+			var provider = Neo4jDriver.determineAuthenticationProvider(
+					() -> Authentication.usernameAndPassword("local", "pw"), newDriverConfig());
+			assertThat(provider.get())
+				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
+				.extracting(UsernamePasswordAuthentication::username)
+				.isEqualTo("local");
+		}
+
+		@Test
+		void globalHasPrecedenceOverExplicit() {
+
+			Neo4jDriver.withGlobalAuthenticationProvider(() -> Authentication.usernameAndPassword("global", "pw"));
+			var provider = Neo4jDriver.determineAuthenticationProvider(null, newDriverConfig());
+			assertThat(provider.get())
+				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
+				.extracting(UsernamePasswordAuthentication::username)
+				.isEqualTo("global");
+		}
+
+		@Test
+		void explicitLast() {
+
+			var provider = Neo4jDriver.determineAuthenticationProvider(null, newDriverConfig());
+			assertThat(provider.get())
+				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
+				.extracting(UsernamePasswordAuthentication::username)
+				.isEqualTo("explicit");
+		}
+
+		private static Neo4jDriver.DriverConfig newDriverConfig() {
+			return new Neo4jDriver.DriverConfig("na", 7687, "db", AuthenticationScheme.BASIC, "explicit", "pw", null,
+					null, 0, false, false, false, false, false, 0, null, Map.of());
+		}
+
+	}
+
+	@Nested
+	class AuthenticationTransformerTests {
+
+		static Stream<Arguments> straightConversionsShouldWork() {
+			return Stream.of(Arguments.of(Authentication.none(), AuthTokens.none(BoltAdapters.getValueFactory())),
+					Arguments.of(Authentication.usernameAndPassword("u", "p", "r"),
+							AuthTokens.basic("u", "p", "r", BoltAdapters.getValueFactory())),
+					Arguments.of(Authentication.usernameAndPassword("u", "p"),
+							AuthTokens.basic("u", "p", null, BoltAdapters.getValueFactory())),
+					Arguments.of(Authentication.bearer("t"), AuthTokens.bearer("t", BoltAdapters.getValueFactory())),
+					Arguments.of(Authentication.kerberos("t"),
+							AuthTokens.kerberos("t", BoltAdapters.getValueFactory())));
+		}
+
+		@ParameterizedTest
+		@MethodSource
+		void straightConversionsShouldWork(Authentication in, AuthToken expected) {
+			assertThat(Neo4jDriver.toAuthToken(in)).isEqualTo(expected);
+		}
+
+		@Test
+		void unsupportedScheme() {
+			// Tests for the type itself are impossible as the interface is sealed anyway
+			assertThatIllegalArgumentException()
+				.isThrownBy(
+						() -> Neo4jDriver.toAuthToken(new TokenAuthentication(AuthenticationScheme.BASIC, "foo", null)))
+				.withMessage("Invalid scheme `basic` for token based authentication");
+		}
+
 	}
 
 }

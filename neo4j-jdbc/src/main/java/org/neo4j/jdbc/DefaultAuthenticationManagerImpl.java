@@ -44,8 +44,7 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 		this.refreshOffset = refreshOffset;
 	}
 
-	@Override
-	public boolean isValid(Authentication authentication) {
+	boolean isValid(Authentication authentication) {
 
 		if (authentication == null) {
 			return false;

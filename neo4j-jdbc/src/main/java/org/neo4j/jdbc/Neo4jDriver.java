@@ -496,7 +496,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				case BEARER -> AuthTokens.bearer(token.value(), valueFactory);
 				case KERBEROS -> AuthTokens.kerberos(token.value(), valueFactory);
 				default -> throw new IllegalArgumentException(
-						"Invalid scheme %s for token based authentication".formatted(token.scheme().getName()));
+						"Invalid scheme `%s` for token based authentication".formatted(token.scheme().getName()));
 			};
 		}
 
