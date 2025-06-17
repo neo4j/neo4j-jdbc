@@ -256,6 +256,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
+	private static AuthenticationProvider globalAuthenticationProvider = null;
+
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
 	 * translation.
@@ -298,8 +300,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param authenticationProvider the authentication provider that shall be used on all
 	 * instances, might be {@literal null}, which will reset the behaviour
 	 */
-	public static void withGlobalAuthenticationProvider(AuthenticationProvider authenticationProvider) {
-		// TODO
+	public static synchronized void withGlobalAuthenticationProvider(AuthenticationProvider authenticationProvider) {
+		globalAuthenticationProvider = authenticationProvider;
 	}
 
 	/**
@@ -412,18 +414,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var securityPlan = parseSSLParams(driverConfig.sslProperties);
 
 		var databaseName = driverConfig.database;
-
-		var user = (driverConfig.user == null || driverConfig.user.isBlank()) ? "" : driverConfig.user;
-		var password = (driverConfig.password == null || driverConfig.password.isBlank()) ? "" : driverConfig.password;
-		var authRealm = (driverConfig.authRealm == null || driverConfig.authRealm.isBlank()) ? null
-				: driverConfig.authRealm;
-		var valueFactory = BoltAdapters.getValueFactory();
-		var authToken = switch (driverConfig.authScheme) {
-			case NONE -> AuthTokens.none(valueFactory);
-			case BASIC -> AuthTokens.basic(user, password, authRealm, valueFactory);
-			case BEARER -> AuthTokens.bearer(password, valueFactory);
-			case KERBEROS -> AuthTokens.kerberos(password, valueFactory);
-		};
 		var userAgent = driverConfig.agent;
 		var connectTimeoutMillis = driverConfig.timeout;
 
@@ -440,10 +430,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
 
+		var finalAuthenticationProvider = determineAuthenticationProvider(authenticationProvider, driverConfig);
 		var targetUrl = driverConfig.toUrl();
-		var connection = new ConnectionImpl(targetUrl,
-				() -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan, databaseName,
-						authToken),
+		var connection = new ConnectionImpl(targetUrl, finalAuthenticationProvider,
+				(authentication) -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan,
+						databaseName, toAuthToken(authentication)),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
@@ -464,6 +455,52 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		Events.notify(this.listeners, listener -> listener.onConnectionOpened(new ConnectionOpenedEvent(targetUrl)));
 		return connection;
+	}
+
+	static AuthenticationProvider determineAuthenticationProvider(AuthenticationProvider authenticationProvider,
+			DriverConfig driverConfig) {
+		if (authenticationProvider != null) {
+			return authenticationProvider;
+		}
+		synchronized (Neo4jDriver.class) {
+			if (globalAuthenticationProvider != null) {
+				return globalAuthenticationProvider;
+			}
+		}
+
+		var user = (driverConfig.user == null || driverConfig.user.isBlank()) ? "" : driverConfig.user;
+		var password = (driverConfig.password == null || driverConfig.password.isBlank()) ? "" : driverConfig.password;
+		var authRealm = (driverConfig.authRealm == null || driverConfig.authRealm.isBlank()) ? null
+				: driverConfig.authRealm;
+		var authentication = switch (driverConfig.authScheme) {
+			case NONE -> Authentication.none();
+			case BASIC -> Authentication.usernameAndPassword(user, password, authRealm);
+			case BEARER -> Authentication.bearer(password);
+			case KERBEROS -> Authentication.kerberos(password);
+		};
+		return () -> authentication;
+	}
+
+	static AuthToken toAuthToken(Authentication authentication) {
+
+		var valueFactory = BoltAdapters.getValueFactory();
+		if (authentication instanceof DisabledAuthentication) {
+			return AuthTokens.none(valueFactory);
+		}
+		else if (authentication instanceof UsernamePasswordAuthentication usernameAndPassword) {
+			return AuthTokens.basic(usernameAndPassword.username(), usernameAndPassword.password(),
+					usernameAndPassword.realm(), valueFactory);
+		}
+		else if (authentication instanceof TokenAuthentication token) {
+			return switch (token.scheme()) {
+				case BEARER -> AuthTokens.bearer(token.value(), valueFactory);
+				case KERBEROS -> AuthTokens.kerberos(token.value(), valueFactory);
+				default -> throw new IllegalArgumentException(
+						"Invalid scheme %s for token based authentication".formatted(token.scheme().getName()));
+			};
+		}
+
+		throw new IllegalArgumentException("Unsupported authentication type %s".formatted(authentication));
 	}
 
 	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
@@ -1403,7 +1440,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			if (this.forceSqlTranslation || Boolean.parseBoolean(sql2cypher)) {
 				properties.put(Neo4jDriver.PROPERTY_SQL_TRANSLATION_ENABLED, "true");
 			}
-			return Optional.of(new Neo4jDriver().connect(address, this.authenticationProvider, properties));
+			return Optional.of(new Neo4jDriver().connect(address, properties, this.authenticationProvider));
 
 		}
 

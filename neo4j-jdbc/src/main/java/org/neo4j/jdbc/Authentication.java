@@ -36,12 +36,26 @@ public sealed interface Authentication
 	 * itself will be done by the Neo4j server through the drivers
 	 * {@link AuthenticationManager}. The token alone is not enough to deem any principal
 	 * as authenticated.
-	 * @param username the identity of the principal being authenticated.
-	 * @param password the credentials that prove the principal is correct.
+	 * @param username the identity of the principal being authenticated
+	 * @param password the credentials that prove the principal is correct
 	 * @return an authentication token that needs to be processed by the Neo4j server
 	 */
 	static Authentication usernameAndPassword(String username, String password) {
-		return new UsernamePasswordAuthentication(username, password);
+		return usernameAndPassword(username, password, null);
+	}
+
+	/**
+	 * Creates a new authentication based on a username and password. Authentication
+	 * itself will be done by the Neo4j server through the drivers
+	 * {@link AuthenticationManager}. The token alone is not enough to deem any principal
+	 * as authenticated.
+	 * @param username the identity of the principal being authenticated
+	 * @param password the credentials that prove the principal is correct
+	 * @param realm the realm to authenticate against
+	 * @return an authentication token that needs to be processed by the Neo4j server
+	 */
+	static Authentication usernameAndPassword(String username, String password, String realm) {
+		return new UsernamePasswordAuthentication(username, password, realm);
 	}
 
 	/**
@@ -70,6 +84,18 @@ public sealed interface Authentication
 	 */
 	static Authentication bearer(String token, Instant expiresAt) {
 		return new TokenAuthentication(AuthenticationScheme.BEARER, token, expiresAt);
+	}
+
+	/**
+	 * Creates new authentication based on a Kerberos token. The token is expected to be a
+	 * non-null, BASE64 encoded {@link String}. The token will be either processed through
+	 * the SSO mechanism of the Neo4j server.
+	 * @param token a BASE64 encoded Kerberos token, must not be null
+	 * @return a new authentication that needs to be processed either directly in an
+	 * {@link AuthenticationManager} or by the Neo4j server
+	 */
+	static Authentication kerberos(String token) {
+		return new TokenAuthentication(AuthenticationScheme.KERBEROS, token, null);
 	}
 
 	/**

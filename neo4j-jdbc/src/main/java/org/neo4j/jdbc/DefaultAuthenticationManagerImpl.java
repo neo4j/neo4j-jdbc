@@ -19,24 +19,57 @@
 package org.neo4j.jdbc;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 
+	private final AuthenticationProvider authenticationProvider;
+
+	private final AtomicReference<Authentication> currentAuthentication = new AtomicReference<>();
+
 	private final Clock clock;
 
-	DefaultAuthenticationManagerImpl(Clock clock) {
+	/**
+	 * Refresh will take place a bit before "now", so that any clock drift, a bad timing
+	 * or early revokation might be taken care off.
+	 */
+	private final Duration refreshOffset;
+
+	DefaultAuthenticationManagerImpl(AuthenticationProvider authenticationProvider, Clock clock,
+			Duration refreshOffset) {
+		this.authenticationProvider = authenticationProvider;
 		this.clock = clock;
+		this.refreshOffset = refreshOffset;
 	}
 
 	@Override
 	public boolean isValid(Authentication authentication) {
 
+		if (authentication == null) {
+			return false;
+		}
+
 		if (authentication instanceof TokenAuthentication tokenAuthentication
 				&& tokenAuthentication.expiresAt() != null) {
-			return tokenAuthentication.expiresAt().isBefore(Instant.now(this.clock));
+			var now = Instant.now(this.clock).minus(this.refreshOffset);
+			return tokenAuthentication.expiresAt().isBefore(now);
 		}
 		return true;
+	}
+
+	@Override
+	public Authentication getOrRefresh() {
+
+		var authentication = this.currentAuthentication.get();
+		if (this.isValid(authentication)) {
+			return authentication;
+		}
+
+		var newAuthentication = this.authenticationProvider.get();
+		var witness = this.currentAuthentication.compareAndExchange(authentication, newAuthentication);
+		return (witness != authentication) ? witness : newAuthentication;
 	}
 
 }

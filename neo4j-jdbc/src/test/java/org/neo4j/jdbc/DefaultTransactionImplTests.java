@@ -36,6 +36,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 import org.neo4j.bolt.connection.AccessMode;
+import org.neo4j.bolt.connection.AuthInfo;
+import org.neo4j.bolt.connection.AuthToken;
+import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.ResponseHandler;
 import org.neo4j.bolt.connection.TransactionType;
@@ -53,6 +56,7 @@ import org.neo4j.bolt.connection.summary.DiscardSummary;
 import org.neo4j.bolt.connection.summary.PullSummary;
 import org.neo4j.bolt.connection.summary.RollbackSummary;
 import org.neo4j.bolt.connection.summary.RunSummary;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,10 +77,10 @@ class DefaultTransactionImplTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldHaveExpectedDefaults(boolean autoCommit) {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autoCommit,
 				AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.NEW);
 		assertThat(this.transaction.isRunnable()).isEqualTo(true);
@@ -92,6 +96,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
 		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -100,7 +105,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		var query = "query";
 		var fetchSize = 5;
 		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class))))
@@ -135,6 +140,7 @@ class DefaultTransactionImplTests {
 		var runMessage = (RunMessage) messages.get(0);
 		assertThat(runMessage.query()).isEqualTo("query");
 		assertThat(messages.get(1)).isInstanceOf(PullMessage.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -144,7 +150,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		var query = "query";
 		var fetchSize = 5;
 
@@ -178,6 +184,7 @@ class DefaultTransactionImplTests {
 		if (commit) {
 			assertThat(messages.get(2)).isInstanceOf(CommitMessage.class);
 		}
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -186,7 +193,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		var fetchSize = 5;
 		var runResponse = mock(Neo4jTransaction.RunResponse.class);
 		given(runResponse.queryId()).willReturn(-1L);
@@ -214,6 +221,7 @@ class DefaultTransactionImplTests {
 		var pullMessageCaptor = ArgumentCaptor.forClass(Message.class);
 		then(boltConnection).should().writeAndFlush(any(), pullMessageCaptor.capture());
 		assertThat(pullMessageCaptor.getValue()).isInstanceOf(PullMessage.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -222,7 +230,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		given(boltConnection.writeAndFlush(any(), anyList()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
@@ -248,6 +256,7 @@ class DefaultTransactionImplTests {
 		var messages = commitMessagesCaptor.getValue();
 		assertThat(messages).hasSize(1);
 		assertThat(messages.get(0)).isInstanceOf(CommitMessage.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -256,7 +265,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		given(boltConnection.writeAndFlush(any(), anyList()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
@@ -282,11 +291,24 @@ class DefaultTransactionImplTests {
 		var messages = rollbackMessagesCaptor.getValue();
 		assertThat(messages).hasSize(1);
 		assertThat(messages.get(0)).isInstanceOf(RollbackMessage.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
 	private static BoltConnection mockBoltConnection() {
 		var boltConnection = mock(BoltConnection.class);
+		given(boltConnection.authInfo()).willReturn(CompletableFuture.completedFuture(new AuthInfo() {
+
+			@Override
+			public AuthToken authToken() {
+				return AuthTokens.basic("foo", "bar", null, BoltAdapters.getValueFactory());
+			}
+
+			@Override
+			public long authAckMillis() {
+				return 0;
+			}
+		}));
 		given(boltConnection.write(ArgumentMatchers.<List<Message>>argThat(argument -> {
 			var message = argument.get(0);
 			return message instanceof ResetMessage || message instanceof BeginMessage beginMessage
@@ -302,7 +324,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autoCommit,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		given(boltConnection.writeAndFlush(any(), anyList()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
@@ -327,6 +349,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
 		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -335,7 +358,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, false,
 				AccessMode.WRITE, Neo4jTransaction.State.OPEN_FAILED, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		this.transaction.rollback();
 
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
@@ -350,6 +373,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
 		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.DEFAULT);
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -359,7 +383,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autocommit,
 				AccessMode.WRITE, state, "aBeautifulDatabase", failureState -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(Neo4jException.class);
 		assertThat(this.transaction.getState()).isEqualTo(state);
@@ -373,6 +397,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
 		assertThat(beginMessage.transactionType()).isEqualTo(transactionType);
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
@@ -484,7 +509,7 @@ class DefaultTransactionImplTests {
 	void shouldDetermineIsRunnable(Neo4jTransaction.State state) {
 		this.transaction = new DefaultTransactionImpl(mockBoltConnection(), null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, state, "aBeautifulDatabase", failureState -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		var runnable = switch (state) {
 			case NEW, READY -> true;
@@ -499,7 +524,7 @@ class DefaultTransactionImplTests {
 	void shouldDetermineIsOpen(Neo4jTransaction.State state) {
 		this.transaction = new DefaultTransactionImpl(mockBoltConnection(), null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, state, "aBeautifulDatabase", failureState -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 		var open = switch (state) {
 			case NEW, READY, OPEN_FAILED -> true;
 			case FAILED, COMMITTED, ROLLEDBACK -> false;
@@ -515,7 +540,7 @@ class DefaultTransactionImplTests {
 		var fatalExceptionHandler = mock(DefaultTransactionImpl.FatalExceptionHandler.class);
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, false,
 				autoCommit, AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
@@ -552,6 +577,7 @@ class DefaultTransactionImplTests {
 		var pullMessage = (PullMessage) messages.get(1);
 		assertThat(pullMessage.qid()).isEqualTo(-1L);
 		assertThat(pullMessage.request()).isEqualTo(fetchSize);
+		then(boltConnection).should().authInfo();
 		then(fatalExceptionHandler).shouldHaveNoMoreInteractions();
 	}
 
@@ -562,7 +588,7 @@ class DefaultTransactionImplTests {
 		var fatalExceptionHandler = mock(DefaultTransactionImpl.FatalExceptionHandler.class);
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, false,
 				autoCommit, AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
@@ -589,6 +615,7 @@ class DefaultTransactionImplTests {
 			.isEqualTo(autoCommit ? Neo4jTransaction.State.FAILED : Neo4jTransaction.State.OPEN_FAILED);
 		assertThat(this.transaction.isRunnable()).isFalse();
 		assertThat(this.transaction.isOpen()).isEqualTo(!autoCommit);
+		then(boltConnection).should().authInfo();
 		then(fatalExceptionHandler).shouldHaveNoMoreInteractions();
 	}
 
@@ -610,7 +637,7 @@ class DefaultTransactionImplTests {
 
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, true, true,
 				AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		assertThatThrownBy(() -> runner.run(this.transaction)).isExactlyInstanceOf(Neo4jException.class);
 		assertThat(this.transaction.getState()).isEqualTo(Neo4jTransaction.State.FAILED);
@@ -625,7 +652,7 @@ class DefaultTransactionImplTests {
 		var boltConnection = mockBoltConnection();
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, false,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
-				});
+				}, Authentication.usernameAndPassword("foo", "bar"));
 
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
@@ -697,6 +724,7 @@ class DefaultTransactionImplTests {
 		else {
 			assertThat(finishMessages.get(1)).isInstanceOf(RollbackMessage.class);
 		}
+		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 

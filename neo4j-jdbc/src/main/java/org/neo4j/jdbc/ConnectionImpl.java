@@ -39,6 +39,7 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -57,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -102,7 +104,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
 		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
 
-	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.connection");
+	static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.connection");
 
 	private static final int TRANSLATION_CACHE_SIZE = 128;
 
@@ -150,6 +152,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final BookmarkManager bookmarkManager;
 
+	private final AuthenticationManager authenticationManager;
+
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
 	private final int relationshipSampleSize;
@@ -171,16 +175,19 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final Set<ConnectionListener> listeners = new HashSet<>();
 
-	ConnectionImpl(URI databaseUrl, Supplier<BoltConnection> boltConnectionSupplier,
-			Supplier<List<Translator>> translators, boolean enableSQLTranslation, boolean enableTranslationCaching,
-			boolean rewriteBatchedStatements, boolean rewritePlaceholders, BookmarkManager bookmarkManager,
-			Map<String, Object> transactionMetadata, int relationshipSampleSize, String databaseName,
-			Consumer<Boolean> onClose) {
+	ConnectionImpl(URI databaseUrl, AuthenticationProvider authenticationProvider,
+			Function<Authentication, BoltConnection> boltConnectionSupplier, Supplier<List<Translator>> translators,
+			boolean enableSQLTranslation, boolean enableTranslationCaching, boolean rewriteBatchedStatements,
+			boolean rewritePlaceholders, BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata,
+			int relationshipSampleSize, String databaseName, Consumer<Boolean> onClose) {
 		Objects.requireNonNull(boltConnectionSupplier);
 
 		this.databaseUrl = Objects.requireNonNull(databaseUrl);
-		this.boltConnection = boltConnectionSupplier.get();
-		this.boltConnectionForMetaData = Lazy.of(boltConnectionSupplier);
+		this.authenticationManager = new DefaultAuthenticationManagerImpl(authenticationProvider, Clock.systemUTC(),
+				Duration.ofSeconds(10));
+		this.boltConnection = boltConnectionSupplier.apply(this.authenticationManager.getOrRefresh());
+		this.boltConnectionForMetaData = Lazy.of((Supplier<BoltConnection>) () -> boltConnectionSupplier
+			.apply(this.authenticationManager.getOrRefresh()));
 		this.translators = Lazy.of(translators);
 		this.enableSqlTranslation = enableSQLTranslation;
 		this.enableTranslationCaching = enableTranslationCaching;
@@ -885,8 +892,10 @@ final class ConnectionImpl implements Neo4jConnection {
 		var combinedTransactionMetadata = getCombinedTransactionMetadata(additionalTransactionMetadata);
 		this.transaction = new DefaultTransactionImpl(this.boltConnection, this.bookmarkManager,
 				combinedTransactionMetadata, this::handleFatalException, this.resetNeeded.getAndSet(false),
-				this.autoCommit, getAccessMode(), null, this.databaseName, state -> this.resetNeeded
-					.compareAndSet(false, EnumSet.of(State.FAILED, State.OPEN_FAILED).contains(state)));
+				this.autoCommit, getAccessMode(), null, this.databaseName,
+				state -> this.resetNeeded.compareAndSet(false,
+						EnumSet.of(State.FAILED, State.OPEN_FAILED).contains(state)),
+				this.authenticationManager.getOrRefresh());
 		return this.transaction;
 	}
 
@@ -903,7 +912,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		return new DefaultTransactionImpl(this.boltConnectionForMetaData.resolve(), this.bookmarkManager,
 				combinedTransactionMetadata, this::handleFatalException, false, this.autoCommit, getAccessMode(), null,
 				this.databaseName, state -> {
-				});
+				}, this.authenticationManager.getOrRefresh());
 	}
 
 	private Map<String, Object> getCombinedTransactionMetadata(Map<String, Object> additionalTransactionMetadata)

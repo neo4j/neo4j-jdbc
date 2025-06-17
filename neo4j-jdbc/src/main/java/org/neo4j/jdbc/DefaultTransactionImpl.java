@@ -34,8 +34,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 import org.neo4j.bolt.connection.AccessMode;
+import org.neo4j.bolt.connection.AuthInfo;
 import org.neo4j.bolt.connection.BasicResponseHandler;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.NotificationConfig;
@@ -75,7 +77,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 	DefaultTransactionImpl(BoltConnection boltConnection, BookmarkManager bookmarkManager,
 			Map<String, Object> transactionMetadata, FatalExceptionHandler fatalExceptionHandler, boolean resetNeeded,
 			boolean autoCommit, AccessMode accessMode, State state, String databaseName,
-			Consumer<State> onFailedCallback) {
+			Consumer<State> onFailedCallback, Authentication currentAuthentication) {
 
 		this.boltConnection = Objects.requireNonNull(boltConnection);
 		this.fatalExceptionHandler = Objects.requireNonNull(fatalExceptionHandler);
@@ -87,17 +89,25 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		this.autoCommit = autoCommit;
 		this.state = Objects.requireNonNullElse(state, State.NEW);
 
-		var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
-		var messages = new ArrayList<Message>(2);
-		if (resetNeeded) {
-			messages.add(Messages.reset());
-		}
-		/*
-		 * messages.add(Messages.logoff()); messages.add(Messages.logon(the thing))
-		 */
-		messages.add(Messages.beginTransaction(databaseName, accessMode, null, this.usedBookmarks, txType, null,
-				BoltAdapters.adaptMap(transactionMetadata), NotificationConfig.defaultConfig()));
-		this.beginPipelinedStage = this.boltConnection.write(messages);
+		this.beginPipelinedStage = this.boltConnection.authInfo()
+			.thenApply(AuthInfo::authToken)
+			.thenCompose(previousAuthToken -> {
+				var txType = this.autoCommit ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
+				var messages = new ArrayList<Message>(4);
+				if (resetNeeded) {
+					messages.add(Messages.reset());
+				}
+				var currentAuthToken = Neo4jDriver.toAuthToken(currentAuthentication);
+				if (!previousAuthToken.asMap().equals(currentAuthToken.asMap())) {
+					ConnectionImpl.LOGGER.log(Level.FINE,
+							() -> "Authentication has changed, pipelining logoff and logon messages");
+					messages.add(Messages.logoff());
+					messages.add(Messages.logon(Neo4jDriver.toAuthToken(currentAuthentication)));
+				}
+				messages.add(Messages.beginTransaction(databaseName, accessMode, null, this.usedBookmarks, txType, null,
+						BoltAdapters.adaptMap(transactionMetadata), NotificationConfig.defaultConfig()));
+				return this.boltConnection.write(messages);
+			});
 
 	}
 

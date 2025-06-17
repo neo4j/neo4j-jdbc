@@ -27,4 +27,6 @@ interface AuthenticationManager {
 
 	boolean isValid(Authentication authentication);
 
+	Authentication getOrRefresh();
+
 }

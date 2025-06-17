@@ -25,16 +25,16 @@ import java.util.Objects;
  * Representation for a token based authentication.
  *
  * @param scheme the scheme to be used while authenticating
- * @param token the token used for authenticating
+ * @param value the token used for authenticating
  * @param expiresAt an optional instant from which this token might not be longer valid
  * @author Michael J. Simons
  * @since 6.6.0
  */
-record TokenAuthentication(AuthenticationScheme scheme, String token, Instant expiresAt) implements Authentication {
+record TokenAuthentication(AuthenticationScheme scheme, String value, Instant expiresAt) implements Authentication {
 
 	TokenAuthentication {
 
 		Objects.requireNonNull(scheme, "Scheme can't be null");
-		Objects.requireNonNull(token, "Token can't be null");
+		Objects.requireNonNull(value, "Token can't be null");
 	}
 }

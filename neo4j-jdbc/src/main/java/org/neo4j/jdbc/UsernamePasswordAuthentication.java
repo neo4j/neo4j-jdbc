@@ -23,14 +23,16 @@ import java.util.Objects;
 /**
  * Representation for a username and password based authentication.
  *
- * @param username The identity of the principal being authenticated.
- * @param password The credentials that prove the principal is correct.
+ * @param username the identity of the principal being authenticated
+ * @param password the credentials that prove the principal is correct
+ * @param realm the realm to authenticate against
  * @author Michael J. Simons
  * @since 6.6.0
  */
-record UsernamePasswordAuthentication(String username, String password) implements Authentication {
+record UsernamePasswordAuthentication(String username, String password, String realm) implements Authentication {
 
 	UsernamePasswordAuthentication {
+
 		Objects.requireNonNull(username, "Username can't be null");
 		Objects.requireNonNull(password, "Password can't be null");
 	}
