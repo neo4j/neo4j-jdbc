@@ -46,6 +46,8 @@ import org.neo4j.bolt.connection.exception.BoltException;
 import org.neo4j.bolt.connection.message.BeginMessage;
 import org.neo4j.bolt.connection.message.CommitMessage;
 import org.neo4j.bolt.connection.message.DiscardMessage;
+import org.neo4j.bolt.connection.message.LogoffMessage;
+import org.neo4j.bolt.connection.message.LogonMessage;
 import org.neo4j.bolt.connection.message.Message;
 import org.neo4j.bolt.connection.message.PullMessage;
 import org.neo4j.bolt.connection.message.ResetMessage;
@@ -316,6 +318,26 @@ class DefaultTransactionImplTests {
 					&& AccessMode.WRITE.equals(beginMessage.accessMode()) && beginMessage.bookmarks().isEmpty();
 		}))).willReturn(CompletableFuture.completedStage(null));
 		return boltConnection;
+	}
+
+	@Test
+	void shouldReauthWhenAuthMismatch() {
+		var boltConnection = mockBoltConnection();
+		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, false,
+				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
+				}, Authentication.none());
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<Message>> messageCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().write(messageCaptor.capture());
+		var messages = messageCaptor.getValue();
+		assertThat(messages).hasSize(3);
+		assertThat(messages).first().isInstanceOf(LogoffMessage.class);
+		assertThat(messages.get(1)).isInstanceOf(LogonMessage.class).satisfies(m -> {
+			var logonMessage = (LogonMessage) m;
+			assertThat(logonMessage.authToken()).isEqualTo(AuthTokens.none(BoltAdapters.getValueFactory()));
+		});
+		then(boltConnection).should().authInfo();
+		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
 
 	@ParameterizedTest
