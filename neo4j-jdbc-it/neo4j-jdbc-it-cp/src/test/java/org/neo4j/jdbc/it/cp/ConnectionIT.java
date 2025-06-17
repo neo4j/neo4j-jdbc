@@ -29,6 +29,9 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jConnection;
@@ -37,7 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@ParameterizedClass
+@ValueSource(strings = { "neo4j", "http" })
 class ConnectionIT extends IntegrationTestBase {
+
+	@Parameter
+	String protocol = "neo4j";
 
 	@Test
 	void shouldCheckTXStateBeforeCommit() throws SQLException {
@@ -264,6 +272,8 @@ class ConnectionIT extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf(value = "isHttpProtocol",
+			disabledReason = "Query API does not support streaming and returns an error immediately on run")
 	void shouldRaiseErrorOnClosingResultSetWhenInAutoCommit() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			statement.setFetchSize(2);
@@ -275,6 +285,8 @@ class ConnectionIT extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf(value = "isHttpProtocol",
+			disabledReason = "Query API does not support streaming and returns an error immediately on run")
 	void shouldRaiseErrorOnClosingStatementWhenInAutoCommit() throws SQLException {
 		try (var connection = getConnection()) {
 			var statement = connection.createStatement();
@@ -286,12 +298,23 @@ class ConnectionIT extends IntegrationTestBase {
 		}
 	}
 
+	boolean isHttpProtocol() {
+		return this.protocol.equals("http");
+	}
+
 	@Test
 	void shouldRetrieveDatabaseName() throws SQLException {
 		try (var connection = getConnection()) {
 			var neo4jConnection = connection.unwrap(Neo4jConnection.class);
 			assertThat(neo4jConnection.getDatabaseName()).isNotBlank();
 		}
+	}
+
+	@Override
+	String getConnectionURL() {
+		var neo4j = "neo4j".equals(this.protocol);
+		return "jdbc:neo4j%s://%s:%d/neo4j".formatted(neo4j ? "" : ":" + this.protocol, this.neo4j.getHost(),
+				this.neo4j.getMappedPort(neo4j ? 7687 : 7474));
 	}
 
 	static class CapturingHandler extends Handler {

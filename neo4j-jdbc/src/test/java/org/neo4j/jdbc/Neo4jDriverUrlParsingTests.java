@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,8 +42,7 @@ import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
-import org.neo4j.bolt.connection.BoltServerAddress;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
+import org.neo4j.bolt.connection.DatabaseName;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,7 +50,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -69,14 +69,14 @@ class Neo4jDriverUrlParsingTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-				any(), any(), any(), any(), any(), any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any()))
 			.willReturn(mockedFuture);
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = { "jdbc:neo4j://host", "jdbc:neo4j://host:1000", "jdbc:neo4j://host:1000/database",
-			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database" })
+			"jdbc:neo4j://host/database", "jdbc:neo4j+s://host/database", "jdbc:neo4j+ssc://host/database",
+			"jdbc:neo4j:http://host:1000" })
 	void driverMustAcceptValidUrl(String url) throws SQLException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		assertThat(driver.acceptsURL(url)).isTrue();
@@ -84,7 +84,7 @@ class Neo4jDriverUrlParsingTests {
 
 	@ParameterizedTest
 	@MethodSource("jdbcURLProvider")
-	void driverMustConnectWithValidUrl(String url, String host, int port) throws SQLException {
+	void driverMustConnectWithValidUrl(String url, String host, int port) throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		var props = new Properties();
 		props.put("username", "test");
@@ -92,28 +92,27 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-					any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any());
 	}
 
 	@Test
-	void driverMustPullDatabaseOutOfUrl() throws SQLException {
+	void driverMustPullDatabaseOutOfUrl() throws SQLException, URISyntaxException {
 		var url = "jdbc:neo4j://host/database";
 
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
-		var database = DatabaseNameUtil.database("database");
 
-		driver.connect(url, props);
+		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
+
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
 	@Test
-	void driverMustPullDatabaseOutOfUrlEvenIfSpecifiedInProperties() throws SQLException {
+	void driverMustPullDatabaseOutOfUrlEvenIfSpecifiedInProperties() throws SQLException, URISyntaxException {
 		var url = "jdbc:neo4j://host/database";
 
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
@@ -121,16 +120,16 @@ class Neo4jDriverUrlParsingTests {
 		props.put("username", "test");
 		props.put("password", "password");
 		props.put("database", "ThisShouldBeOverriden");
-		var database = DatabaseNameUtil.database("database");
 
-		driver.connect(url, props);
+		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
+
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
 	@Test
-	void driverMustUseDatabaseInPropertiesIfUrlDatabaseIsBlank() throws SQLException {
+	void driverMustUseDatabaseInPropertiesIfUrlDatabaseIsBlank() throws SQLException, URISyntaxException {
 		var url = "jdbc:neo4j://host";
 
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
@@ -138,28 +137,30 @@ class Neo4jDriverUrlParsingTests {
 		props.put("username", "test");
 		props.put("password", "password");
 		props.put("database", "database");
-		var database = DatabaseNameUtil.database("database");
+		var database = DatabaseName.database("database");
 
-		driver.connect(url, props);
+		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
+
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
 	@Test
-	void driverMustUseNeo4jIfDatabaseIsUnspecifiedInPropertiesAndUrl() throws SQLException {
+	void driverMustUseNeo4jIfDatabaseIsUnspecifiedInPropertiesAndUrl() throws SQLException, URISyntaxException {
 		var url = "jdbc:neo4j://host";
 
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
-		var database = DatabaseNameUtil.database("neo4j");
+		var database = DatabaseName.database("neo4j");
 
-		driver.connect(url, props);
+		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
+
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(database), any(), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+		assertThat(connection.getDatabaseName()).isEqualTo("neo4j");
 	}
 
 	@ParameterizedTest
@@ -198,7 +199,7 @@ class Neo4jDriverUrlParsingTests {
 	}
 
 	@Test
-	void driverMustParseUrlParamsWithJustHost() throws SQLException {
+	void driverMustParseUrlParamsWithJustHost() throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		Properties props = new Properties();
@@ -211,12 +212,12 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(expectedAuthToken), any(), any());
 	}
 
 	@Test
-	void driverMustParseUrlParamsWithHostAndPort() throws SQLException {
+	void driverMustParseUrlParamsWithHostAndPort() throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		Properties props = new Properties();
@@ -229,12 +230,12 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(),
+					any());
 	}
 
 	@Test
-	void driverMustParseUrlParamsWithHostAndPortAndDatabase() throws SQLException {
+	void driverMustParseUrlParamsWithHostAndPortAndDatabase() throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		Properties props = new Properties();
@@ -247,12 +248,12 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", 1000)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(),
+					any());
 	}
 
 	@Test
-	void driverMustParseUrlParamsWithHostAndDatabase() throws SQLException {
+	void driverMustParseUrlParamsWithHostAndDatabase() throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		Properties props = new Properties();
@@ -265,12 +266,12 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(expectedAuthToken), any(), any());
 	}
 
 	@Test
-	void driverMustUnescapeURL() throws SQLException {
+	void driverMustUnescapeURL() throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		driver.connect("jdbc:neo4j://host?user=user%3D&password=%26pass%3D%20word%3F", new Properties());
@@ -278,12 +279,12 @@ class Neo4jDriverUrlParsingTests {
 		var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?", null, BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(expectedAuthToken), any(), any());
 	}
 
 	@Test
-	void driverMustUsePropsIfUrlParamsEmpty() throws SQLException {
+	void driverMustUsePropsIfUrlParamsEmpty() throws SQLException, URISyntaxException {
 		var driver = new Neo4jDriver(this.boltConnectionProvider);
 
 		Properties props = new Properties();
@@ -296,8 +297,8 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(new BoltServerAddress("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(),
-					argThat(matches(expectedAuthToken)), any(), any(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+					eq(expectedAuthToken), any(), any());
 	}
 
 	@Test
@@ -433,8 +434,9 @@ class Neo4jDriverUrlParsingTests {
 			.withMessage("data exception - Sample size for relationships must be greater than or equal -1");
 	}
 
-	@Test
-	void testParseConfigOverrides() throws SQLException {
+	@ParameterizedTest
+	@ValueSource(strings = { "", ":http" })
+	void testParseConfigOverrides(String protocol) throws SQLException {
 		Properties props = new Properties();
 		props.put("authScheme", "basic");
 		props.put("user", "user1");
@@ -452,7 +454,8 @@ class Neo4jDriverUrlParsingTests {
 		props.put("customProperty", "foo");
 		props.put("relationshipSampleSize", "4711");
 
-		var config = Neo4jDriver.DriverConfig.of("jdbc:neo4j://host:1234/?sslMode=require&customQuery=bar", props);
+		var config = Neo4jDriver.DriverConfig
+			.of("jdbc:neo4j%s://host:1234/?sslMode=require&customQuery=bar".formatted(protocol), props);
 
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(1234);
@@ -501,7 +504,8 @@ class Neo4jDriverUrlParsingTests {
 
 		var url = config.toUrl().toString();
 		assertThat(url).isEqualTo(
-				"jdbc:neo4j+ssc://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true");
+				"jdbc:neo4j+ssc%s://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true"
+					.formatted(protocol));
 	}
 
 	@Test
@@ -549,8 +553,7 @@ class Neo4jDriverUrlParsingTests {
 		driver.connect("jdbc:neo4j://host:1000/database", props);
 
 		then(this.boltConnectionProvider).should()
-			.connect(any(), any(), any(), any(), anyInt(), any(), any(), argThat(matches(expectedAuthToken)), any(),
-					any(), any(), any(), any(), any(), any());
+			.connect(any(), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(), any());
 	}
 
 	@Test
@@ -600,6 +603,10 @@ class Neo4jDriverUrlParsingTests {
 
 	private static AuthTokenMatcher matches(AuthToken authToken) {
 		return new AuthTokenMatcher(authToken);
+	}
+
+	private static URI boltUri(String host, int port) throws URISyntaxException {
+		return new URI("neo4j", null, host, port, null, null, null);
 	}
 
 	private static class AuthTokenMatcher implements ArgumentMatcher<Supplier<CompletionStage<AuthToken>>> {
