@@ -228,8 +228,8 @@ class Neo4jDriverTests {
 		void unsupportedScheme() {
 			// Tests for the type itself are impossible as the interface is sealed anyway
 			assertThatIllegalArgumentException()
-				.isThrownBy(
-						() -> Neo4jDriver.toAuthToken(new TokenAuthentication(AuthenticationScheme.BASIC, "foo", null, null)))
+				.isThrownBy(() -> Neo4jDriver
+					.toAuthToken(new TokenAuthentication(AuthenticationScheme.BASIC, "foo", null, null)))
 				.withMessage("Invalid scheme `basic` for token based authentication");
 		}
 

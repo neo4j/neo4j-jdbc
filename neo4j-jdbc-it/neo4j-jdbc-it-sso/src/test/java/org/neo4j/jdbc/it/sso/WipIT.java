@@ -42,6 +42,9 @@ import org.testcontainers.utility.MountableFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @author Michael J. Simons
+ */
 class WipIT {
 
 	@Test
