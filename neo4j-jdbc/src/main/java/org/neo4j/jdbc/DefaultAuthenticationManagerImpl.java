@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -61,21 +63,21 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 	@Override
 	public Authentication getOrRefresh() {
 
-		var authentication = this.currentAuthentication.get();
-		if (this.isValid(authentication)) {
-			return authentication;
-		}
-
-		Authentication newAuthentication;
 		try {
-			newAuthentication = this.authenticationProvider.get();
+			var authentication = this.currentAuthentication.get();
+			if (this.isValid(authentication)) {
+				return authentication;
+			}
+			var refreshToken = (authentication instanceof TokenAuthentication token) ? token.refreshToken() : null;
+			var newAuthentication = (authentication != null) ? this.authenticationProvider.refresh(refreshToken)
+					: this.authenticationProvider.get();
+			var witness = this.currentAuthentication.compareAndExchange(authentication, newAuthentication);
+			return (witness != authentication) ? witness : newAuthentication;
 		}
-		catch (Exception ex) {
-			// TODO this is not nice, exceptions needs to be on method
-			throw new RuntimeException(ex);
+		catch (IOException ex) {
+			throw new UncheckedIOException("Could not get or refresh authentication, provider %s throw an exception"
+				.formatted(this.authenticationProvider.getClass().getSimpleName()), ex);
 		}
-		var witness = this.currentAuthentication.compareAndExchange(authentication, newAuthentication);
-		return (witness != authentication) ? witness : newAuthentication;
 	}
 
 }

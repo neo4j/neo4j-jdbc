@@ -24,7 +24,6 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
@@ -89,42 +88,10 @@ class WipIT {
 			neo4j.start();
 
 			var cfg = new Configuration("http://localhost:" + keycloak.getHttpPort(), "neo4j-sso-test",
-					"neo4j-jdbc-driver", Map.of("secret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4"), HttpClients.createMinimal());
+					"neo4j-jdbc-driver", Map.of("secret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4"),
+					HttpClients.createMinimal());
 
-			var client = AuthzClient.create(cfg);
-
-			var acquired = new AtomicInteger();
-			var refreshed = new AtomicInteger();
-			var provider = new AuthenticationProvider() {
-
-				TokensAndExpirationTime currentToken;
-
-				@Override
-				public Authentication get() throws IOException {
-					if (this.currentToken == null) {
-						this.currentToken = TokensAndExpirationTime.of(client.obtainAccessToken("william.foster", "d-fens"));
-						acquired.incrementAndGet();
-					}
-					else {
-						var url = cfg.getAuthServerUrl() + "/realms/" + cfg.getRealm()
-								+ "/protocol/openid-connect/token";
-						var http = new Http(cfg, cfg.getClientCredentialsProvider());
-						this.currentToken = TokensAndExpirationTime.of(http.<AccessTokenResponse>post(url)
-							.authentication()
-							.client()
-							.form()
-							.param("grant_type", "refresh_token")
-							.param("refresh_token", this.currentToken.refreshToken())
-							.param("client_id", cfg.getResource())
-							.param("client_secret", (String) cfg.getCredentials().get("secret"))
-							.response()
-							.json(AccessTokenResponse.class)
-							.execute());
-						refreshed.incrementAndGet();
-					}
-					return this.currentToken.toAuthentication();
-				}
-			};
+			var provider = new DelegatingAuthenticationProvider(new AuthzAuthenticationProvider(cfg));
 
 			var driver = new Neo4jDriver();
 			try (var connection = driver.connect(
@@ -144,12 +111,80 @@ class WipIT {
 				}
 			}
 
-			assertThat(acquired).hasValue(1);
-			assertThat(refreshed).hasValue(2);
+			assertThat(provider.getCounter).isOne();
+			assertThat(provider.refreshCounter).isEqualTo(2);
 		}
 	}
 
-	record TokensAndExpirationTime(String accessToken, String refreshToken, Instant expiresAt) {
+	static final class AuthzAuthenticationProvider implements AuthenticationProvider {
+
+		private final AuthzClient authzClient;
+
+		private final Configuration cfg;
+
+		private final Http http;
+
+		private final String url;
+
+		AuthzAuthenticationProvider(Configuration cfg) {
+			this.cfg = cfg;
+			this.authzClient = AuthzClient.create(cfg);
+			this.url = cfg.getAuthServerUrl() + "/realms/" + cfg.getRealm() + "/protocol/openid-connect/token";
+			this.http = new Http(cfg, cfg.getClientCredentialsProvider());
+		}
+
+		@Override
+		public Authentication get() throws IOException {
+			return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken("william.foster", "d-fens"))
+				.toAuthentication();
+		}
+
+		@Override
+		public Authentication refresh(String refreshToken) throws IOException {
+			return TokensAndExpirationTime
+				.of(this.http.<AccessTokenResponse>post(this.url)
+					.authentication()
+					.client()
+					.form()
+					.param("grant_type", "refresh_token")
+					.param("refresh_token", refreshToken)
+					.param("client_id", this.cfg.getResource())
+					.param("client_secret", (String) this.cfg.getCredentials().get("secret"))
+					.response()
+					.json(AccessTokenResponse.class)
+					.execute())
+				.toAuthentication();
+		}
+
+	}
+
+	static final class DelegatingAuthenticationProvider implements AuthenticationProvider {
+
+		private final AuthenticationProvider delgate;
+
+		int getCounter = 0;
+
+		int refreshCounter = 0;
+
+		DelegatingAuthenticationProvider(AuthenticationProvider delgate) {
+			this.delgate = delgate;
+		}
+
+		@Override
+		public Authentication get() throws IOException {
+			++this.getCounter;
+			return this.delgate.get();
+		}
+
+		@Override
+		public Authentication refresh(String refreshToken) throws IOException {
+			++this.refreshCounter;
+			return this.delgate.refresh(refreshToken);
+		}
+
+	}
+
+	record TokensAndExpirationTime(String accessToken, Instant expiresAt, String refreshToken) {
 
 		static final Base64.Decoder DECODER = Base64.getDecoder();
 
@@ -157,12 +192,12 @@ class WipIT {
 			var chunks = accessTokenResponse.getToken().split("\\.");
 			var payload = JSON.std.mapFrom(DECODER.decode(chunks[1]));
 			var exp = Instant.ofEpochSecond(((Number) payload.get("exp")).longValue());
-			return new TokensAndExpirationTime(accessTokenResponse.getToken(), accessTokenResponse.getRefreshToken(),
-					exp);
+			return new TokensAndExpirationTime(accessTokenResponse.getToken(), exp,
+					accessTokenResponse.getRefreshToken());
 		}
 
 		Authentication toAuthentication() {
-			return Authentication.bearer(this.accessToken, this.expiresAt);
+			return Authentication.bearer(this.accessToken, this.expiresAt, this.refreshToken);
 		}
 
 	}

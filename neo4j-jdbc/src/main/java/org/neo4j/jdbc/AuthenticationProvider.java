@@ -18,9 +18,15 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.IOException;
+
 @FunctionalInterface
 public interface AuthenticationProvider {
 
-	Authentication get() throws Exception;
+	Authentication get() throws IOException;
+
+	default Authentication refresh(String refreshToken) throws IOException {
+		return get();
+	}
 
 }
