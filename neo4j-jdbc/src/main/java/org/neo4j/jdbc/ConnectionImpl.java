@@ -184,7 +184,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 		this.databaseUrl = Objects.requireNonNull(databaseUrl);
 		this.authenticationManager = new DefaultAuthenticationManagerImpl(authenticationProvider, Clock.systemUTC(),
-				Duration.ofSeconds(10));
+				Duration.ofSeconds(0));
 		this.boltConnection = boltConnectionSupplier.apply(this.authenticationManager.getOrRefresh());
 		this.boltConnectionForMetaData = Lazy.of((Supplier<BoltConnection>) () -> boltConnectionSupplier
 			.apply(this.authenticationManager.getOrRefresh()));

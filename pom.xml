@@ -157,6 +157,7 @@
 		<jooq.version>3.19.23</jooq.version>
 		<jreleaser-maven-plugin.version>1.18.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.12.2</junit-jupiter.version>
+		<keycloak-authz-client.version>26.0.5</keycloak-authz-client.version>
 		<kotlin-stdlib-jdk8.version>2.1.21</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.0.1</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
@@ -203,6 +204,7 @@
 		<spring-boot.version>3.5.0</spring-boot.version>
 		<spring-javaformat.version>0.0.46</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
+		<testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version>
 		<testcontainers.version>1.21.1</testcontainers.version>
 	</properties>
 
@@ -279,6 +281,11 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
+				<groupId>com.github.dasniko</groupId>
+				<artifactId>testcontainers-keycloak</artifactId>
+				<version>${testcontainers-keycloak.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>com.github.stefanbirkner</groupId>
 				<artifactId>system-lambda</artifactId>
 				<version>${system-lambda.version}</version>
@@ -317,6 +324,11 @@
 				<groupId>org.jooq</groupId>
 				<artifactId>jooq</artifactId>
 				<version>${jooq.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.keycloak</groupId>
+				<artifactId>keycloak-authz-client</artifactId>
+				<version>${keycloak-authz-client.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.neo4j</groupId>

@@ -18,14 +18,47 @@
  */
 package org.neo4j.jdbc;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.stream.Stream;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class DefaultAuthenticationManagerImplTests {
 
-	@Test
-	void isValid() {
-		Assertions.fail();
+	private static final Clock CLOCK = Clock.fixed(LocalDateTime.of(2013, 5, 6, 20, 0).toInstant(ZoneOffset.UTC),
+			ZoneId.of(ZoneOffset.UTC.getId()));
+
+	static Stream<Arguments> isValid() {
+		return Stream.of(Arguments.of(Instant.now(CLOCK).plus(Duration.ofSeconds(10)), Duration.ofSeconds(0), true),
+				Arguments.of(Instant.now(CLOCK).plus(Duration.ofSeconds(10)), Duration.ofSeconds(1), true),
+				Arguments.of(Instant.now(CLOCK).plus(Duration.ofSeconds(10)), Duration.ofSeconds(9), true),
+				Arguments.of(Instant.now(CLOCK).plus(Duration.ofSeconds(10)), Duration.ofSeconds(10), false),
+
+				Arguments.of(Instant.now(CLOCK).minus(Duration.ofSeconds(10)), Duration.ofSeconds(0), false),
+				Arguments.of(Instant.now(CLOCK).minus(Duration.ofSeconds(10)), Duration.ofSeconds(1), false),
+				Arguments.of(Instant.now(CLOCK).minus(Duration.ofSeconds(10)), Duration.ofSeconds(9), false),
+				Arguments.of(Instant.now(CLOCK).minus(Duration.ofSeconds(10)), Duration.ofSeconds(10), false));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void isValid(Instant expiration, Duration offset, boolean expected) throws Exception {
+
+		AuthenticationProvider provider = () -> Authentication.bearer("f", expiration);
+		var manager = new DefaultAuthenticationManagerImpl(provider, CLOCK, offset);
+		var authentication = provider.get();
+		assertThat(manager.isValid(authentication)).isEqualTo(expected);
 	}
 
 	@Test

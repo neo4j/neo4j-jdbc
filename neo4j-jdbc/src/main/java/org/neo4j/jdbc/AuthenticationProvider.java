@@ -21,6 +21,6 @@ package org.neo4j.jdbc;
 @FunctionalInterface
 public interface AuthenticationProvider {
 
-	Authentication get();
+	Authentication get() throws Exception;
 
 }

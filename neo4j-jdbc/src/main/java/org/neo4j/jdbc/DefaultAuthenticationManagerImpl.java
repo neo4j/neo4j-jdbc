@@ -52,8 +52,8 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 
 		if (authentication instanceof TokenAuthentication tokenAuthentication
 				&& tokenAuthentication.expiresAt() != null) {
-			var now = Instant.now(this.clock).minus(this.refreshOffset);
-			return tokenAuthentication.expiresAt().isBefore(now);
+			var now = Instant.now(this.clock);
+			return tokenAuthentication.expiresAt().minus(this.refreshOffset).isAfter(now);
 		}
 		return true;
 	}
@@ -66,7 +66,14 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 			return authentication;
 		}
 
-		var newAuthentication = this.authenticationProvider.get();
+		Authentication newAuthentication;
+		try {
+			newAuthentication = this.authenticationProvider.get();
+		}
+		catch (Exception ex) {
+			// TODO this is not nice, exceptions needs to be on method
+			throw new RuntimeException(ex);
+		}
 		var witness = this.currentAuthentication.compareAndExchange(authentication, newAuthentication);
 		return (witness != authentication) ? witness : newAuthentication;
 	}

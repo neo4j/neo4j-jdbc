@@ -165,7 +165,7 @@ class Neo4jDriverTests {
 		}
 
 		@Test
-		void explicitProviderShouldHaveHighestPrecedence() {
+		void explicitProviderShouldHaveHighestPrecedence() throws Exception {
 
 			Neo4jDriver.withGlobalAuthenticationProvider(() -> Authentication.usernameAndPassword("global", "pw"));
 			var provider = Neo4jDriver.determineAuthenticationProvider(
@@ -177,7 +177,7 @@ class Neo4jDriverTests {
 		}
 
 		@Test
-		void globalHasPrecedenceOverExplicit() {
+		void globalHasPrecedenceOverExplicit() throws Exception {
 
 			Neo4jDriver.withGlobalAuthenticationProvider(() -> Authentication.usernameAndPassword("global", "pw"));
 			var provider = Neo4jDriver.determineAuthenticationProvider(null, newDriverConfig());
@@ -188,7 +188,7 @@ class Neo4jDriverTests {
 		}
 
 		@Test
-		void explicitLast() {
+		void explicitLast() throws Exception {
 
 			var provider = Neo4jDriver.determineAuthenticationProvider(null, newDriverConfig());
 			assertThat(provider.get())
