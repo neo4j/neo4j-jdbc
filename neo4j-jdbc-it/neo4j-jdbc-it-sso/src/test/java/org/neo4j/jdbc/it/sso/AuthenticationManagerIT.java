@@ -19,14 +19,19 @@
 package org.neo4j.jdbc.it.sso;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Test;
 import org.keycloak.authorization.client.AuthzClient;
@@ -34,7 +39,6 @@ import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.representations.AccessTokenResponse;
 import org.neo4j.jdbc.Authentication;
-import org.neo4j.jdbc.AuthenticationProvider;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.Network;
@@ -45,7 +49,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Michael J. Simons
  */
-class WipIT {
+class AuthenticationManagerIT {
+
+	static {
+		Metrics.globalRegistry.add(new SimpleMeterRegistry());
+	}
 
 	@Test
 	void tokenRefreshShouldWork() throws Exception {
@@ -94,7 +102,7 @@ class WipIT {
 					"neo4j-jdbc-driver", Map.of("secret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4"),
 					HttpClients.createMinimal());
 
-			var provider = new DelegatingAuthenticationProvider(new AuthzAuthenticationProvider(cfg));
+			var provider = new AuthzAuthenticationSupplier(cfg);
 
 			var driver = new Neo4jDriver();
 			try (var connection = driver.connect(
@@ -113,13 +121,17 @@ class WipIT {
 					assertThat(rs.getInt("n")).isEqualTo(2);
 				}
 			}
-
-			assertThat(provider.getCounter).isOne();
-			assertThat(provider.refreshCounter).isEqualTo(2);
 		}
+
+		assertThat(Metrics.globalRegistry.get("org.neo4j.jdbc.authentications").tag("state", "new").counter().count())
+			.isOne();
+		assertThat(Metrics.globalRegistry.get("org.neo4j.jdbc.authentications")
+			.tag("state", "refreshed")
+			.counter()
+			.count()).isEqualTo(2);
 	}
 
-	static final class AuthzAuthenticationProvider implements AuthenticationProvider {
+	static final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
 
 		private final AuthzClient authzClient;
 
@@ -129,7 +141,9 @@ class WipIT {
 
 		private final String url;
 
-		AuthzAuthenticationProvider(Configuration cfg) {
+		private final AtomicReference<TokensAndExpirationTime> currentToken = new AtomicReference<>();
+
+		AuthzAuthenticationSupplier(Configuration cfg) {
 			this.cfg = cfg;
 			this.authzClient = AuthzClient.create(cfg);
 			this.url = cfg.getAuthServerUrl() + "/realms/" + cfg.getRealm() + "/protocol/openid-connect/token";
@@ -137,15 +151,27 @@ class WipIT {
 		}
 
 		@Override
-		public Authentication get() throws IOException {
-			return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken("william.foster", "d-fens"))
-				.toAuthentication();
+		public Authentication get() {
+			return this.currentToken.updateAndGet(previous -> {
+				if (previous == null) {
+					return get0();
+				}
+				return refresh0(previous.refreshToken());
+			}).toAuthentication();
 		}
 
-		@Override
-		public Authentication refresh(String refreshToken) throws IOException {
-			return TokensAndExpirationTime
-				.of(this.http.<AccessTokenResponse>post(this.url)
+		TokensAndExpirationTime get0() {
+			try {
+				return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken("william.foster", "d-fens"));
+			}
+			catch (IOException ex) {
+				throw new UncheckedIOException(ex);
+			}
+		}
+
+		TokensAndExpirationTime refresh0(String refreshToken) {
+			try {
+				return TokensAndExpirationTime.of(this.http.<AccessTokenResponse>post(this.url)
 					.authentication()
 					.client()
 					.form()
@@ -155,34 +181,11 @@ class WipIT {
 					.param("client_secret", (String) this.cfg.getCredentials().get("secret"))
 					.response()
 					.json(AccessTokenResponse.class)
-					.execute())
-				.toAuthentication();
-		}
-
-	}
-
-	static final class DelegatingAuthenticationProvider implements AuthenticationProvider {
-
-		private final AuthenticationProvider delgate;
-
-		int getCounter = 0;
-
-		int refreshCounter = 0;
-
-		DelegatingAuthenticationProvider(AuthenticationProvider delgate) {
-			this.delgate = delgate;
-		}
-
-		@Override
-		public Authentication get() throws IOException {
-			++this.getCounter;
-			return this.delgate.get();
-		}
-
-		@Override
-		public Authentication refresh(String refreshToken) throws IOException {
-			++this.refreshCounter;
-			return this.delgate.refresh(refreshToken);
+					.execute());
+			}
+			catch (IOException ex) {
+				throw new UncheckedIOException(ex);
+			}
 		}
 
 	}
@@ -200,7 +203,7 @@ class WipIT {
 		}
 
 		Authentication toAuthentication() {
-			return Authentication.bearer(this.accessToken, this.expiresAt, this.refreshToken);
+			return Authentication.bearer(this.accessToken, this.expiresAt);
 		}
 
 	}

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import org.neo4j.jdbc.events.AuthenticationListener;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.events.StatementListener;
@@ -35,7 +36,7 @@ import org.neo4j.jdbc.events.StatementListener;
  * @author Michael J. Simons
  * @since 6.3.0
  */
-interface MetricsCollector extends DriverListener, ConnectionListener, StatementListener {
+interface MetricsCollector extends DriverListener, ConnectionListener, StatementListener, AuthenticationListener {
 
 	/**
 	 * A flag if the JDBC driver has tried to find the global metrics registry already.

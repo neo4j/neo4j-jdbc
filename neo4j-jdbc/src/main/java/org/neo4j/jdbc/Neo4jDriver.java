@@ -256,7 +256,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
-	private static AuthenticationProvider globalAuthenticationProvider = null;
+	private static Supplier<Authentication> globalAuthenticationSupplier = null;
 
 	/**
 	 * Lets you configure the driver from the environment, but always enable SQL to Cypher
@@ -292,22 +292,24 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	/**
-	 * Registers {@code authenticationProvider} for the {@link Neo4jDriver} globally so
-	 * that any connection spawned from {@link DriverManager#getConnection(String)} and
-	 * the appropriate overloads will use the authentication provider if any. If the
-	 * provider is not {@literal null}, all {@code user} and {@code password} keys from
-	 * the JDBC properties or environment will be ignored.
-	 * @param authenticationProvider the authentication provider that shall be used on all
+	 * Registers a supplier of {@link Authentication authentications} for the
+	 * {@link Neo4jDriver} globally so that any connection spawned from
+	 * {@link DriverManager#getConnection(String)} and the appropriate overloads will use
+	 * the authentication supplier if any. If the provider is not {@literal null}, all
+	 * {@code user} and {@code password} keys from the JDBC properties or environment will
+	 * be ignored.
+	 * @param authenticationSupplier the authentication supplier that shall be used on all
 	 * instances, might be {@literal null}, which will reset the behaviour
 	 */
-	public static synchronized void withGlobalAuthenticationProvider(AuthenticationProvider authenticationProvider) {
-		globalAuthenticationProvider = authenticationProvider;
+	public static synchronized void withGlobalAuthenticationSupplier(Supplier<Authentication> authenticationSupplier) {
+		globalAuthenticationSupplier = authenticationSupplier;
 	}
 
 	/**
 	 * Lets you configure a new instance of the driver from the environment, starting with
-	 * the authentication provider. You can later enable
-	 * @param authenticationProvider the authentication provider to use, can be
+	 * the authentication supplier. You can later enable sql translation or add additional
+	 * properties.
+	 * @param authenticationSupplier the authentication provider to use, can be
 	 * {@literal null}
 	 * @return a builder that lets you create a new connection from the environment or
 	 * specify more features
@@ -315,10 +317,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @see SpecifyTranslationStep
 	 * @see SpecifyAdditionalPropertiesStep
 	 */
-	public static SpecifyAdditionalPropertiesOrTranslationStep withAuthenticationProvider(
-			AuthenticationProvider authenticationProvider) {
+	public static SpecifyAdditionalPropertiesOrTranslationStep withAuthenticationSupplier(
+			Supplier<Authentication> authenticationSupplier) {
 		return new SpecifyAdditionalPropertiesOrTranslationStepImpl(
-				new BuilderImpl(false, Map.of(), authenticationProvider));
+				new BuilderImpl(false, Map.of(), authenticationSupplier));
 	}
 
 	/**
@@ -404,7 +406,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	@Override
-	public Connection connect(String url, Properties info, AuthenticationProvider authenticationProvider)
+	public Connection connect(String url, Properties info, Supplier<Authentication> authenticationSupplier)
 			throws SQLException {
 
 		var driverConfig = DriverConfig.of(url, info);
@@ -430,9 +432,17 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
 
-		var finalAuthenticationProvider = determineAuthenticationProvider(authenticationProvider, driverConfig);
+		var finalAuthenticationSupplier = determineAuthenticationSupplier(authenticationSupplier, driverConfig);
 		var targetUrl = driverConfig.toUrl();
-		var connection = new ConnectionImpl(targetUrl, finalAuthenticationProvider,
+
+		var connectionListeners = new ArrayList<ConnectionListener>();
+		this.listeners.forEach(listener -> {
+			if (listener instanceof ConnectionListener connectionListener) {
+				connectionListeners.add(connectionListener);
+			}
+		});
+
+		var connection = new ConnectionImpl(targetUrl, finalAuthenticationSupplier,
 				(authentication) -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan,
 						databaseName, toAuthToken(authentication)),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
@@ -441,13 +451,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				aborted -> {
 					var event = new ConnectionClosedEvent(targetUrl, aborted);
 					Events.notify(this.listeners, listener -> listener.onConnectionClosed(event));
-				});
-
-		this.listeners.forEach(listener -> {
-			if (listener instanceof ConnectionListener connectionListener) {
-				connection.addListener(connectionListener);
-			}
-		});
+				}, connectionListeners);
 
 		if (this.tracer != null) {
 			connection.addListener(new Tracing(this.tracer, connection));
@@ -457,14 +461,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return connection;
 	}
 
-	static AuthenticationProvider determineAuthenticationProvider(AuthenticationProvider authenticationProvider,
+	static Supplier<Authentication> determineAuthenticationSupplier(Supplier<Authentication> authenticationSupplier,
 			DriverConfig driverConfig) {
-		if (authenticationProvider != null) {
-			return authenticationProvider;
+		if (authenticationSupplier != null) {
+			return authenticationSupplier;
 		}
 		synchronized (Neo4jDriver.class) {
-			if (globalAuthenticationProvider != null) {
-				return globalAuthenticationProvider;
+			if (globalAuthenticationSupplier != null) {
+				return globalAuthenticationSupplier;
 			}
 		}
 
@@ -1256,7 +1260,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		SpecifyAuthStep withProperties(Map<String, Object> additionalProperties);
 
 		// TODO document this
-		SpecifyAdditionalPropertiesStep withAuthenticationProvider(AuthenticationProvider authenticationProvider);
+		SpecifyAdditionalPropertiesStep withAuthenticationSupplier(Supplier<Authentication> authenticationSupplier);
 
 	}
 
@@ -1275,9 +1279,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyAdditionalPropertiesStep withAuthenticationProvider(
-				AuthenticationProvider authenticationProvider) {
-			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuthenticationProvider(authenticationProvider);
+		public SpecifyAdditionalPropertiesStep withAuthenticationSupplier(
+				Supplier<Authentication> authenticationSupplier) {
+			return (SpecifyAdditionalPropertiesStep) this.delegate.withAuthenticationSupplier(authenticationSupplier);
 		}
 
 		@Override
@@ -1303,7 +1307,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		SpecifyAuthStep withSQLTranslation();
 
 		// TODO document this
-		SpecifyTranslationStep withAuthenticationProvider(AuthenticationProvider authenticationProvider);
+		SpecifyTranslationStep withAuthenticationSupplier(Supplier<Authentication> authenticationSupplier);
 
 	}
 
@@ -1322,8 +1326,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyTranslationStep withAuthenticationProvider(AuthenticationProvider authenticationProvider) {
-			return (SpecifyTranslationStep) this.delegate.withAuthenticationProvider(authenticationProvider);
+		public SpecifyTranslationStep withAuthenticationSupplier(Supplier<Authentication> authenticationSupplier) {
+			return (SpecifyTranslationStep) this.delegate.withAuthenticationSupplier(authenticationSupplier);
 		}
 
 		@Override
@@ -1375,7 +1379,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public sealed interface SpecifyAuthStep extends SpecifyEnvStep permits BuilderImpl {
 
 		// TODO document this
-		SpecifyEnvStep withAuthenticationProvider(AuthenticationProvider authenticationProvider);
+		SpecifyEnvStep withAuthenticationSupplier(Supplier<Authentication> authenticationSupplier);
 
 	}
 
@@ -1386,13 +1390,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		private Map<String, Object> additionalProperties;
 
-		private AuthenticationProvider authenticationProvider;
+		private Supplier<Authentication> authenticationSupplier;
 
 		BuilderImpl(boolean forceSqlTranslation, Map<String, Object> additionalProperties,
-				AuthenticationProvider authenticationProvider) {
+				Supplier<Authentication> authenticationSupplier) {
 			this.forceSqlTranslation = forceSqlTranslation;
 			this.additionalProperties = additionalProperties;
-			this.authenticationProvider = authenticationProvider;
+			this.authenticationSupplier = authenticationSupplier;
 		}
 
 		@SuppressWarnings("squid:S3776") // Yep, this is complex.
@@ -1440,7 +1444,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			if (this.forceSqlTranslation || Boolean.parseBoolean(sql2cypher)) {
 				properties.put(Neo4jDriver.PROPERTY_SQL_TRANSLATION_ENABLED, "true");
 			}
-			return Optional.of(new Neo4jDriver().connect(address, properties, this.authenticationProvider));
+			return Optional.of(new Neo4jDriver().connect(address, properties, this.authenticationSupplier));
 
 		}
 
@@ -1451,8 +1455,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 
 		@Override
-		public SpecifyEnvStep withAuthenticationProvider(AuthenticationProvider authenticationProvider) {
-			this.authenticationProvider = authenticationProvider;
+		public SpecifyEnvStep withAuthenticationSupplier(Supplier<Authentication> authenticationSupplier) {
+			this.authenticationSupplier = authenticationSupplier;
 			return this;
 		}
 

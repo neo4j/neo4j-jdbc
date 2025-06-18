@@ -27,12 +27,10 @@ import java.util.Objects;
  * @param scheme the scheme to be used while authenticating
  * @param value the token used for authenticating
  * @param expiresAt an optional instant from which this token might not be longer valid
- * @param refreshToken a BASE64 encoded refresh token, can be {@literal null}
  * @author Michael J. Simons
  * @since 6.6.0
  */
-record TokenAuthentication(AuthenticationScheme scheme, String value, Instant expiresAt,
-		String refreshToken) implements Authentication {
+record TokenAuthentication(AuthenticationScheme scheme, String value, Instant expiresAt) implements Authentication {
 
 	TokenAuthentication {
 

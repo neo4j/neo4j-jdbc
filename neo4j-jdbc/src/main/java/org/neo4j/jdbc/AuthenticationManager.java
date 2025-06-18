@@ -18,6 +18,8 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.events.AuthenticationListener;
+
 /**
  * Internal auth manager.
  *
@@ -28,11 +30,13 @@ interface AuthenticationManager {
 	/**
 	 * The method figures out if there's currently an active {@link Authentication}
 	 * spawned from this manager and if so, determines freely if it is still valid. In
-	 * case of being valid, it will be returned, otherwise any underlying
-	 * {@link AuthenticationProvider authentication provider} shall be asked for a fresh
-	 * authentication, which will then be stored with the manager and returned.
+	 * case of being valid, it will be returned, otherwise any underlying authentication
+	 * supplier shall be asked for a fresh authentication, which will then be stored with
+	 * the manager and returned.
 	 * @return the current or a refreshed authentication
 	 */
 	Authentication getOrRefresh();
+
+	void addListener(AuthenticationListener authenticationListener);
 
 }

@@ -74,6 +74,7 @@ import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.bolt.connection.message.Messages;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.State;
+import org.neo4j.jdbc.events.AuthenticationListener;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.ConnectionListener.StatementClosedEvent;
 import org.neo4j.jdbc.events.ConnectionListener.StatementCreatedEvent;
@@ -175,16 +176,20 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final Set<ConnectionListener> listeners = new HashSet<>();
 
-	ConnectionImpl(URI databaseUrl, AuthenticationProvider authenticationProvider,
+	ConnectionImpl(URI databaseUrl, Supplier<Authentication> authenticationSupplier,
 			Function<Authentication, BoltConnection> boltConnectionSupplier, Supplier<List<Translator>> translators,
 			boolean enableSQLTranslation, boolean enableTranslationCaching, boolean rewriteBatchedStatements,
 			boolean rewritePlaceholders, BookmarkManager bookmarkManager, Map<String, Object> transactionMetadata,
-			int relationshipSampleSize, String databaseName, Consumer<Boolean> onClose) {
+			int relationshipSampleSize, String databaseName, Consumer<Boolean> onClose,
+			List<ConnectionListener> initalListeners) {
 		Objects.requireNonNull(boltConnectionSupplier);
 
 		this.databaseUrl = Objects.requireNonNull(databaseUrl);
-		this.authenticationManager = new DefaultAuthenticationManagerImpl(authenticationProvider, Clock.systemUTC(),
-				Duration.ofSeconds(0));
+		this.authenticationManager = new DefaultAuthenticationManagerImpl(this.databaseUrl, authenticationSupplier,
+				Clock.systemUTC(), Duration.ofSeconds(0));
+		// Must happen before the initial opening below, so that this is tracked, too
+		initalListeners.forEach(this::addListener);
+
 		this.boltConnection = boltConnectionSupplier.apply(this.authenticationManager.getOrRefresh());
 		this.boltConnectionForMetaData = Lazy.of((Supplier<BoltConnection>) () -> boltConnectionSupplier
 			.apply(this.authenticationManager.getOrRefresh()));
@@ -949,6 +954,9 @@ final class ConnectionImpl implements Neo4jConnection {
 	@Override
 	public void addListener(ConnectionListener connectionListener) {
 		this.listeners.add(Objects.requireNonNull(connectionListener));
+		if (connectionListener instanceof AuthenticationListener authenticationListener) {
+			this.authenticationManager.addListener(authenticationListener);
+		}
 	}
 
 	private <T extends StatementImpl> T trackStatement(T statement) {

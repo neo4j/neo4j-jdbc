@@ -18,12 +18,14 @@
  */
 package org.neo4j.jdbc;
 
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.Assertions;
@@ -55,9 +57,9 @@ class DefaultAuthenticationManagerImplTests {
 	@MethodSource
 	void isValid(Instant expiration, Duration offset, boolean expected) throws Exception {
 
-		AuthenticationProvider provider = () -> Authentication.bearer("f", expiration);
-		var manager = new DefaultAuthenticationManagerImpl(provider, CLOCK, offset);
-		var authentication = provider.get();
+		Supplier<Authentication> supplier = () -> Authentication.bearer("f", expiration);
+		var manager = new DefaultAuthenticationManagerImpl(URI.create("localhost:7687"), supplier, CLOCK, offset);
+		var authentication = supplier.get();
 		assertThat(manager.isValid(authentication)).isEqualTo(expected);
 	}
 

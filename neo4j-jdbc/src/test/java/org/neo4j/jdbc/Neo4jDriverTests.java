@@ -157,18 +157,18 @@ class Neo4jDriverTests {
 	}
 
 	@Nested
-	class AuthenticationProviderDeterminationTest {
+	class AuthenticationSupplierDeterminationTest {
 
 		@BeforeEach
 		void resetGlobal() {
-			Neo4jDriver.withGlobalAuthenticationProvider(null);
+			Neo4jDriver.withGlobalAuthenticationSupplier(null);
 		}
 
 		@Test
 		void explicitProviderShouldHaveHighestPrecedence() throws Exception {
 
-			Neo4jDriver.withGlobalAuthenticationProvider(() -> Authentication.usernameAndPassword("global", "pw"));
-			var provider = Neo4jDriver.determineAuthenticationProvider(
+			Neo4jDriver.withGlobalAuthenticationSupplier(() -> Authentication.usernameAndPassword("global", "pw"));
+			var provider = Neo4jDriver.determineAuthenticationSupplier(
 					() -> Authentication.usernameAndPassword("local", "pw"), newDriverConfig());
 			assertThat(provider.get())
 				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
@@ -179,8 +179,8 @@ class Neo4jDriverTests {
 		@Test
 		void globalHasPrecedenceOverExplicit() throws Exception {
 
-			Neo4jDriver.withGlobalAuthenticationProvider(() -> Authentication.usernameAndPassword("global", "pw"));
-			var provider = Neo4jDriver.determineAuthenticationProvider(null, newDriverConfig());
+			Neo4jDriver.withGlobalAuthenticationSupplier(() -> Authentication.usernameAndPassword("global", "pw"));
+			var provider = Neo4jDriver.determineAuthenticationSupplier(null, newDriverConfig());
 			assertThat(provider.get())
 				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
 				.extracting(UsernamePasswordAuthentication::username)
@@ -190,7 +190,7 @@ class Neo4jDriverTests {
 		@Test
 		void explicitLast() throws Exception {
 
-			var provider = Neo4jDriver.determineAuthenticationProvider(null, newDriverConfig());
+			var provider = Neo4jDriver.determineAuthenticationSupplier(null, newDriverConfig());
 			assertThat(provider.get())
 				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
 				.extracting(UsernamePasswordAuthentication::username)
@@ -228,8 +228,8 @@ class Neo4jDriverTests {
 		void unsupportedScheme() {
 			// Tests for the type itself are impossible as the interface is sealed anyway
 			assertThatIllegalArgumentException()
-				.isThrownBy(() -> Neo4jDriver
-					.toAuthToken(new TokenAuthentication(AuthenticationScheme.BASIC, "foo", null, null)))
+				.isThrownBy(
+						() -> Neo4jDriver.toAuthToken(new TokenAuthentication(AuthenticationScheme.BASIC, "foo", null)))
 				.withMessage("Invalid scheme `basic` for token based authentication");
 		}
 

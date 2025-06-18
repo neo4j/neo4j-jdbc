@@ -21,10 +21,9 @@ package org.neo4j.jdbc;
 import java.time.Instant;
 
 /**
- * Represents an authentication provided by an {@link AuthenticationProvider} to be used
- * with the {@link AuthenticationManager}. This interface represents the abstract notion
- * of a principal, which may be identified by a username and password, a token or other
- * means.
+ * Represents an authentication to be used with the {@link AuthenticationManager}. This
+ * interface represents the abstract notion of a principal, which may be identified by a
+ * username and password, a token or other means.
  *
  * @author Michael J. Simons
  */
@@ -83,23 +82,7 @@ public sealed interface Authentication
 	 * {@link AuthenticationManager} or by the Neo4j server
 	 */
 	static Authentication bearer(String token, Instant expiresAt) {
-		return bearer(token, expiresAt, null);
-	}
-
-	/**
-	 * Creates new authentication based on a bearer token. The token is expected to be a
-	 * non-null, BASE64 encoded {@link String}. The token will be either processed locally
-	 * via an {@link AuthenticationManager} or through the SSO mechanism of the Neo4j
-	 * server. An optional instant can be passed as expiration time for this token
-	 * @param token a BASE64 encoded bearer token, must not be {@literal null}
-	 * @param expiresAt an optional instant from which this token might not be longer
-	 * valid
-	 * @param refreshToken a BASE64 encoded refresh token, can be {@literal null}
-	 * @return a new authentication that needs to be processed either directly in an
-	 * {@link AuthenticationManager} or by the Neo4j server
-	 */
-	static Authentication bearer(String token, Instant expiresAt, String refreshToken) {
-		return new TokenAuthentication(AuthenticationScheme.BEARER, token, expiresAt, refreshToken);
+		return new TokenAuthentication(AuthenticationScheme.BEARER, token, expiresAt);
 	}
 
 	/**
@@ -111,7 +94,7 @@ public sealed interface Authentication
 	 * {@link AuthenticationManager} or by the Neo4j server
 	 */
 	static Authentication kerberos(String token) {
-		return new TokenAuthentication(AuthenticationScheme.KERBEROS, token, null, null);
+		return new TokenAuthentication(AuthenticationScheme.KERBEROS, token, null);
 	}
 
 	/**

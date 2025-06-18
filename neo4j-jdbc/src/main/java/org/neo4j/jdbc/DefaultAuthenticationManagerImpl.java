@@ -18,18 +18,25 @@
  */
 package org.neo4j.jdbc;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+import org.neo4j.jdbc.events.AuthenticationListener;
+import org.neo4j.jdbc.events.AuthenticationListener.NewAuthenticationEvent;
 
 final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 
-	private final AuthenticationProvider authenticationProvider;
+	private final URI targetUrl;
 
-	private final AtomicReference<Authentication> currentAuthentication = new AtomicReference<>();
+	private final Supplier<Authentication> authenticationSupplier;
+
+	private final AtomicReference<AuthenticationAndState> currentAuthentication = new AtomicReference<>();
 
 	private final Clock clock;
 
@@ -39,11 +46,15 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 	 */
 	private final Duration refreshOffset;
 
-	DefaultAuthenticationManagerImpl(AuthenticationProvider authenticationProvider, Clock clock,
+	private final List<AuthenticationListener> listeners;
+
+	DefaultAuthenticationManagerImpl(URI targetUrl, Supplier<Authentication> authenticationSupplier, Clock clock,
 			Duration refreshOffset) {
-		this.authenticationProvider = authenticationProvider;
+		this.targetUrl = targetUrl;
+		this.authenticationSupplier = authenticationSupplier;
 		this.clock = clock;
 		this.refreshOffset = refreshOffset;
+		this.listeners = new ArrayList<>();
 	}
 
 	boolean isValid(Authentication authentication) {
@@ -63,21 +74,38 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 	@Override
 	public Authentication getOrRefresh() {
 
-		try {
-			var authentication = this.currentAuthentication.get();
-			if (this.isValid(authentication)) {
-				return authentication;
+		var hlp = this.currentAuthentication.updateAndGet(previous -> {
+			if (previous != null && this.isValid(previous.authentication)) {
+				return new AuthenticationAndState(previous.authentication, State.REUSED);
 			}
-			var refreshToken = (authentication instanceof TokenAuthentication token) ? token.refreshToken() : null;
-			var newAuthentication = (authentication != null) ? this.authenticationProvider.refresh(refreshToken)
-					: this.authenticationProvider.get();
-			var witness = this.currentAuthentication.compareAndExchange(authentication, newAuthentication);
-			return (witness != authentication) ? witness : newAuthentication;
+			var authentication = this.authenticationSupplier.get();
+			return new AuthenticationAndState(authentication, (previous != null) ? State.REFRESHED : State.NEW);
+		});
+		if (hlp.state() != State.REUSED) {
+			this.notifyListeners(new NewAuthenticationEvent(this.targetUrl, hlp.state() == State.REFRESHED));
 		}
-		catch (IOException ex) {
-			throw new UncheckedIOException("Could not get or refresh authentication, provider %s throw an exception"
-				.formatted(this.authenticationProvider.getClass().getSimpleName()), ex);
+		return hlp.authentication();
+	}
+
+	void notifyListeners(NewAuthenticationEvent event) {
+		this.listeners.forEach(listener -> listener.onNewAuthentication(event));
+	}
+
+	@Override
+	public void addListener(AuthenticationListener authenticationListener) {
+		if (authenticationListener != null) {
+			this.listeners.add(authenticationListener);
 		}
+	}
+
+	enum State {
+
+		NEW, REUSED, REFRESHED
+
+	}
+
+	record AuthenticationAndState(Authentication authentication, State state) {
+
 	}
 
 }

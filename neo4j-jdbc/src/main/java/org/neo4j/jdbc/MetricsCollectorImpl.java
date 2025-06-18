@@ -54,6 +54,8 @@ final class MetricsCollectorImpl implements MetricsCollector {
 
 	private final Map<URI, AtomicInteger> openConnections = new ConcurrentHashMap<>();
 
+	private final Map<URI, AuthenticationMetrics> authenticationMetrics = new ConcurrentHashMap<>();
+
 	private final Map<StatementKey, AtomicInteger> openStatements = new ConcurrentHashMap<>();
 
 	private final AtomicInteger cachedTranslations = new AtomicInteger();
@@ -67,6 +69,29 @@ final class MetricsCollectorImpl implements MetricsCollector {
 		var cachedTranslationsKey = "org.neo4j.jdbc.cached-translations";
 		if (meterRegistry.find(cachedTranslationsKey).gauge() == null) {
 			Gauge.builder(cachedTranslationsKey, this.cachedTranslations::get).register(meterRegistry);
+		}
+	}
+
+	@Override
+	public void onNewAuthentication(NewAuthenticationEvent event) {
+		var metrics = this.authenticationMetrics.computeIfAbsent(Events.cleanURL(event.uri()), uri -> {
+			var authentications = "org.neo4j.jdbc.authentications";
+			var uriString = uri.toString();
+			return new AuthenticationMetrics(
+					Counter.builder(authentications)
+						.description("The total number of new authentications acquired")
+						.tags("uri", uriString, "state", "new")
+						.register(this.meterRegistry),
+					Counter.builder(authentications)
+						.description("The total number of authentications refreshed")
+						.tags("uri", uriString, "state", "refreshed")
+						.register(this.meterRegistry));
+		});
+		if (event.refreshed()) {
+			metrics.refreshedAuthentications.increment();
+		}
+		else {
+			metrics.newAuthentications.increment();
 		}
 	}
 
@@ -147,6 +172,9 @@ final class MetricsCollectorImpl implements MetricsCollector {
 	}
 
 	record QueryMetrics(Counter successfulQueries, Counter failedQueries, Timer queryTimer) {
+	}
+
+	record AuthenticationMetrics(Counter newAuthentications, Counter refreshedAuthentications) {
 	}
 
 	public record StatementKey(URI uri, Class<? extends Statement> type) {
