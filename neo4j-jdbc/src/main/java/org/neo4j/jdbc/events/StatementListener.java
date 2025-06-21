@@ -89,7 +89,7 @@ public interface StatementListener extends Neo4jEventListener {
 	 *
 	 * @param id a generated id to correlate this event to the corresponding
 	 * {@link ExecutionStartedEvent start event}
-	 * @param uri The URL of the Neo4j instance that was queried
+	 * @param uri the URL of the Neo4j instance that was queried
 	 * @param state information about the outcome of the execution (success or not)
 	 * @param elapsedTime the elapsed time between sending the original statement to the
 	 * database and the end of the first pull or discard. The elapsed time won't take the

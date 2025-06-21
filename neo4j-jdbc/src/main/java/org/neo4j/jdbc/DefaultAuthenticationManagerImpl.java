@@ -81,8 +81,9 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 			var authentication = this.authenticationSupplier.get();
 			return new AuthenticationAndState(authentication, (previous != null) ? State.REFRESHED : State.NEW);
 		});
-		if (hlp.state() != State.REUSED) {
-			this.notifyListeners(new NewAuthenticationEvent(this.targetUrl, hlp.state() == State.REFRESHED));
+		var eventState = hlp.state.toEventState();
+		if (eventState != null) {
+			this.notifyListeners(new NewAuthenticationEvent(this.targetUrl, eventState));
 		}
 		return hlp.authentication();
 	}
@@ -100,7 +101,15 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 
 	enum State {
 
-		NEW, REUSED, REFRESHED
+		NEW, REUSED, REFRESHED;
+
+		NewAuthenticationEvent.State toEventState() {
+			return switch (this) {
+				case NEW -> NewAuthenticationEvent.State.NEW;
+				case REFRESHED -> NewAuthenticationEvent.State.REFRESHED;
+				default -> null;
+			};
+		}
 
 	}
 

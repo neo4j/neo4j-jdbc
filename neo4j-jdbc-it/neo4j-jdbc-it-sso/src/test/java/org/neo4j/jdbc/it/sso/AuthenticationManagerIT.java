@@ -98,7 +98,7 @@ class AuthenticationManagerIT {
 			keycloak.start();
 			neo4j.start();
 
-			var cfg = new Configuration("http://localhost:" + keycloak.getHttpPort(), "neo4j-sso-test",
+			var cfg = new Configuration("http://localhost:%d".formatted(keycloak.getHttpPort()), "neo4j-sso-test",
 					"neo4j-jdbc-driver", Map.of("secret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4"),
 					HttpClients.createMinimal());
 
@@ -146,7 +146,7 @@ class AuthenticationManagerIT {
 		AuthzAuthenticationSupplier(Configuration cfg) {
 			this.cfg = cfg;
 			this.authzClient = AuthzClient.create(cfg);
-			this.url = cfg.getAuthServerUrl() + "/realms/" + cfg.getRealm() + "/protocol/openid-connect/token";
+			this.url = "%s/realms/%s/protocol/openid-connect/token".formatted(cfg.getAuthServerUrl(), cfg.getRealm());
 			this.http = new Http(cfg, cfg.getClientCredentialsProvider());
 		}
 

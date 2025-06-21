@@ -87,7 +87,7 @@ final class MetricsCollectorImpl implements MetricsCollector {
 						.tags("uri", uriString, "state", "refreshed")
 						.register(this.meterRegistry));
 		});
-		if (event.refreshed()) {
+		if (event.state() == NewAuthenticationEvent.State.REFRESHED) {
 			metrics.refreshedAuthentications.increment();
 		}
 		else {
