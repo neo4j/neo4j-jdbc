@@ -189,7 +189,7 @@
 		<neo4j.version>5.26.8</neo4j.version>
 		<netty.version>4.1.121.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.13.0</openapi-generator-maven-plugin.version>
-		<opencsv.version>5.11.1</opencsv.version>
+		<opencsv.version>5.11.2</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
