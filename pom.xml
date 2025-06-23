@@ -201,7 +201,7 @@
 		<sonar-maven-plugin.version>5.1.0.4751</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
 		<spring-boot.version>3.5.0</spring-boot.version>
-		<spring-javaformat.version>0.0.46</spring-javaformat.version>
+		<spring-javaformat.version>0.0.47</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers.version>1.21.1</testcontainers.version>
 	</properties>
