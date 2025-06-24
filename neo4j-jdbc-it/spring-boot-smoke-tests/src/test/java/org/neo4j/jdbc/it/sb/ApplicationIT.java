@@ -53,6 +53,9 @@ public class ApplicationIT {
 		var listOfMoviesType = new ParameterizedTypeReference<List<Movie>>() {
 		};
 
+		var stringMapType = new ParameterizedTypeReference<Map<String, String>>() {
+		};
+
 		var moviesResponse = restTemplate.exchange(RequestEntity.get("/movies").build(), listOfMoviesType);
 		assertThat(moviesResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(moviesResponse.getBody()).isEmpty();
@@ -85,10 +88,23 @@ public class ApplicationIT {
 		assertThat(metrics.getMeasurements()).hasSize(1);
 		assertThat(metrics.getMeasurements().get(0).getValue()).isZero();
 
+		var response = restTemplate.exchange(RequestEntity.get("/movies?fail=true").build(), stringMapType);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+
 		metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.queries?tag=state:successful",
 				MetricsEndpoint.MetricDescriptor.class);
-		assertThat(metrics.getMeasurements()).hasSize(1);
+		assertThat(metrics.getMeasurements()).hasSize(3);
 		assertThat(metrics.getMeasurements().get(0).getValue()).isEqualTo(5);
+
+		metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.queries?tag=state:failed",
+				MetricsEndpoint.MetricDescriptor.class);
+		assertThat(metrics.getMeasurements()).hasSize(3);
+		assertThat(metrics.getMeasurements().get(0).getValue()).isEqualTo(1);
+
+		metrics = restTemplate.getForObject("/actuator/metrics/org.neo4j.jdbc.queries",
+				MetricsEndpoint.MetricDescriptor.class);
+		assertThat(metrics.getMeasurements()).hasSize(3);
+		assertThat(metrics.getMeasurements().get(0).getValue()).isEqualTo(6);
 	}
 
 }
