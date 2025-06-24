@@ -225,6 +225,192 @@ These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:usage.ado
 This method exists in several overloads, which let you configure both filename and directory.
 Additionally, the builder lets you configure options that are not contained in the files from Aura.
 
+== Authentication
+
+The Neo4j JDBC driver provides the ability to use a custom authentication supplier in addition to JDBCs standard ways of authentication, such as using `java.sql.DriverManager#getConnection(java.lang.String, java.lang.String, java.lang.String)` or `java.sql.Driver#connect` for authentication with the Neo4j server.
+
+An authentication supplier is in Java terms a `Supplier<org.neo4j.jdbc.Authentication>`.
+An `Authentication` instances is an abstract representation of an arbitrary authentication to be presented to the Neo4j server and can contain a principal and its credentials (username and password), a token or other ways of confirming an identity.
+
+The interface itself offers the following factories:
+
+`Authentication#usernameAndPassword`:: Creates a simple username and password based authentication, which is what is used internally already with the default methods
+`Authentication#none`:: Disables authentication
+`Authentication#bearer`:: Creates a bearer-token based authentication
+
+The latter allows to set an expiration date for the token.
+If the token expires, that is used after the expiration date, the supplier is asked for a new one.
+This allows configuring the Neo4j JDBC driver in such a way that it can grab tokens from an SSO provider, such as https://www.keycloak.org[Keycloak] or https://www.okta.com[Okta], and authenticate itself with those tokens against Neo4j and automatically refresh those tokens when they expire.
+
+In addition, there are two interfaces, `CustomAuthentication` and `ExpiringAuthentication` that can be implemented in case the above factories are not sufficient.
+
+There are several ways to pass an authentication supplier:
+
+* On the driver itself, when unwrapped to a `Neo4jDriver`, there is `driver#connect(String, Properties, Supplier)`. The given supplier will have precedence over any authentication information in the `properties` parameter
+* Setting a supplier instance on a particular instance of the driver with `driver#setAuthenticationSupplier(Supplier)`
+* Registering a global supplier instance with `Neo4jDriver#registerAuthenticationSupplier` that will be used for all connections spawned from the `DriverManager`
+* The convenient builder methods present as static methods on `Neo4jDriver` allowing to configure the driver from the environment (see xref:usage.adoc#connect-dotenv[Getting a connection via environment variables]) allow to specify the supplier, too
+
+The precedence is as follows:
+
+1. If there's supplier passed to `connect` it has precedence over the drivers locally configured supplier respectively the global one and any properties
+2. The supplier configured per driver or the global one has precedence over any properties
+3. Properties will be used as per JDBC standard when there is no explicit or implicit authentication supplier
+
+The driver will only call the supplier when no token has been retrieved yet or when the first token expires.
+Any authentication supplier implementation can safely assume that the second call for a token means the first token is expired, so that the supplier does not need to manage state.
+
+NOTE: The underlying bolt protocol and the Neo4j Server might not work reliable with very short-lived authentication tokens (i.e. with a lifespan under 5 seconds). This restriction might be lifted in the future, but as of release 6.6.0 you might want to refrain from very short-lived tokens.
+
+=== Example
+
+The following class shows an example based on Keycloaks `AuthzClient`.
+The supplier will grab tokens from a Keycloak instance and store their expiration date along with the JWT token.
+The initial ask for a token will always be answered with a completely new one, each follow-up call will use the client to refresh the token
+
+[source,java,tabsize=4,indent=0]
+.`AuthzAuthenticationSupplier`, an example of using Keycloak with the Neo4j JDBC driver
+----
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.util.Http;
+import org.keycloak.representations.AccessTokenResponse;
+import org.neo4j.jdbc.Authentication;
+import com.fasterxml.jackson.jr.ob.JSON;
+
+final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
+
+    private final AuthzClient authzClient;
+
+    private final Configuration cfg;
+
+    private final Http http;
+
+    private final String url;
+
+    private final AtomicReference<TokensAndExpirationTime> currentToken = new AtomicReference<>();
+
+    AuthzAuthenticationSupplier(Configuration cfg) {
+        this.cfg = cfg;
+        this.authzClient = AuthzClient.create(cfg);
+        this.url = "%s/realms/%s/protocol/openid-connect/token".formatted(cfg.getAuthServerUrl(), cfg.getRealm());
+        this.http = new Http(cfg, cfg.getClientCredentialsProvider());
+    }
+
+    @Override
+    public Authentication get() {
+        return this.currentToken.updateAndGet(previous -> {
+            if (previous == null) {
+                return get0();
+            }
+            return refresh0(previous.refreshToken());
+        }).toAuthentication();
+    }
+
+    TokensAndExpirationTime get0() {
+        try {
+            return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken("william.foster", "d-fens"));
+        }
+        catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    TokensAndExpirationTime refresh0(String refreshToken) {
+        try {
+            return TokensAndExpirationTime.of(this.http.<AccessTokenResponse>post(this.url)
+                .authentication()
+                .client()
+                .form()
+                .param("grant_type", "refresh_token")
+                .param("refresh_token", refreshToken)
+                .param("client_id", this.cfg.getResource())
+                .param("client_secret", (String) this.cfg.getCredentials().get("secret"))
+                .response()
+                .json(AccessTokenResponse.class)
+                .execute());
+        }
+        catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private record TokensAndExpirationTime(String accessToken, Instant expiresAt, String refreshToken) {
+
+        static final Base64.Decoder DECODER = Base64.getDecoder();
+
+        static TokensAndExpirationTime of(AccessTokenResponse accessTokenResponse) throws IOException {
+            var chunks = accessTokenResponse.getToken().split("\\.");
+            var payload = JSON.std.mapFrom(DECODER.decode(chunks[1]));
+            var exp = Instant.ofEpochSecond(((Number) payload.get("exp")).longValue());
+            return new TokensAndExpirationTime(accessTokenResponse.getToken(), exp,
+                    accessTokenResponse.getRefreshToken());
+        }
+
+        Authentication toAuthentication() {
+            return Authentication.bearer(this.accessToken, this.expiresAt);
+        }
+
+    }
+
+}
+----
+
+To use this supplier, you can either register it for the global driver like this:
+
+[source,java]
+.Registering an instance of the authentication supplier globally
+----
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.function.Supplier;
+
+import org.keycloak.authorization.client.Configuration;
+import org.neo4j.jdbc.Authentication;
+import org.neo4j.jdbc.Neo4jDriver;
+
+class Example {
+
+	public static void main(String...a) throws Exception {
+		Supplier<Authentication> authenticationSupplier = new AuthzAuthenticationSupplier(new Configuration());
+        Neo4jDriver.registerAuthenticationSupplier(authenticationSupplier);
+        Connection connection = DriverManager.getConnection("neo4j+s://xyz.databases.neo4j.io");
+    }
+}
+----
+
+The above setting is most likely the easiest way for integrations with frameworks like Spring Boot, in which you could configure the global supplier through an `org.springframework.beans.factory.InitializingBean`.
+Alternatively use the driver builder or manually create an instance of the driver:
+
+[source,java]
+.Creating an explicit instance of `Neo4jDriver` so that the `connect` overload taking in an authentication supplier is visible
+----
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.Properties;
+import java.util.function.Supplier;
+
+import org.keycloak.authorization.client.Configuration;
+import org.neo4j.jdbc.Authentication;
+import org.neo4j.jdbc.Neo4jDriver;
+
+class Example {
+
+    public static void main(String...a) throws Exception {
+        Supplier<Authentication> authenticationSupplier = new AuthzAuthenticationSupplier(new Configuration());
+        Neo4jDriver.registerAuthenticationSupplier(authenticationSupplier);
+        Neo4jDriver driver = new Neo4jDriver();
+        Connection connection = driver.connect("neo4j+s://xyz.databases.neo4j.io", new Properties(), authenticationSupplier);
+    }
+}
+----
+
 == Logging
 
 === Via standard Java settings
@@ -233,7 +419,7 @@ To generate a useful and detailed log, you must configure `java.util.logging`. T
 The following section includes an example configuration that sets the global logging level to `INFO`, Neo4j JDBC Driver itself to `DEBUG` and everything that is network related to `WARN`:
 
 [source,properties]
-.Logging configuration for the Neo4j JDBC Driver that logs all informations
+.Logging configuration for the Neo4j JDBC Driver that logs all information
 ----
 .level = INFO
 handlers=java.util.logging.ConsoleHandler
@@ -432,18 +618,45 @@ public class TracingExampleSetup {
     Connection connection() {
 
         Tracer tracer = Tracer.NOOP;
-        return DriverManager.getConnection("jdbc:neo4j://yourhost:7687", "neo4j", "verysecret")
-            .unwrap(Neo4jConnection.class) // <.>
-            .withTracer(Neo4jTracingBridge.to(tracer));
+        Neo4jConnection connection = DriverManager.getConnection("jdbc:neo4j://yourhost:7687", "neo4j", "verysecret")
+            .unwrap(Neo4jConnection.class); // <.>
+        connection.setTracer(Neo4jTracingBridge.to(tracer)); // <.>
     }
 }
 ----
-<.> Unwrap the connection into our extension so that you can configure the tracer.
+<.> Unwrap the connection into our extension so that you can configure the tracer
+<.> Configure the tracer
+
+TIP: In case you neither want to work with a data source nor individual connections, use `Neo4jDriver.registerTracer(Neo4jTracingBridge.to(tracer))` to register the tracer with all Neo4j drivers that are registered with the JDBC `DriverManager`.
 
 === Using tracing with Spring Boot
 
 The tracing implementation that is provided by the Neo4j JDBC Driver utilizes Micrometer Tracing, which is well accepted in the Spring Boot ecosystem, but also in Quarkus, Micronaut and others.
 We provide a few examples, but refer to your frameworks documentation on how to configure tracing.
+
+If you are happy to configure tracing for all connections acquired from the `DriverManager`, configure tracing like this:
+
+[source,java, tabsize=4, indent=0]
+.Configure tracing for all drivers registered with `DriverManager`
+----
+import io.micrometer.tracing.Tracer;
+import org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge;
+
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class TracingConfiguration {
+
+    @Bean
+    InitializingBean neo4jTracingInitializer(Tracer tracer) {
+        return () -> Neo4jDriver.registerTracer(Neo4jTracingBridge.to(tracer));
+    }
+}
+----
+
+Otherwise, use a custom datasource as shown below.
 
 ==== Configuring the tracing datasource
 

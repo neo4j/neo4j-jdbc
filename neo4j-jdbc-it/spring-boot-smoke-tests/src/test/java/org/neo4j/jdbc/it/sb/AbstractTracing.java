@@ -20,16 +20,10 @@ package org.neo4j.jdbc.it.sb;
 
 import java.util.List;
 
-import javax.sql.DataSource;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.test.simple.SimpleTracer;
 import io.micrometer.tracing.test.simple.TracerAssert;
 import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.Neo4jDataSource;
-import org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
@@ -38,16 +32,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,22 +45,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers(disabledWithoutDocker = true)
-public class TracingIT {
+abstract class AbstractTracing {
 
 	@Container
-	private static final SimpleNeo4jContainer<?> neo4jContainer = new SimpleNeo4jContainer<>(
+	protected static final SimpleNeo4jContainer<?> NEO4J_CONTAINER = new SimpleNeo4jContainer<>(
 			System.getProperty("neo4j-jdbc.default-neo4j-image"))
 		.withReuse(true);
-
-	@DynamicPropertySource
-	static void postgresqlProperties(DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url",
-				() -> "jdbc:neo4j://%s:%d?enableSQLTranslation=true&s2c.precedence=20&cacheSQLTranslations=true"
-					.formatted(neo4jContainer.getHost(), neo4jContainer.getMappedPort(7687)));
-		registry.add("spring.datasource.username", () -> "neo4j");
-		registry.add("spring.datasource.password", () -> neo4jContainer.adminPassword);
-
-	}
 
 	@Test
 	void movieControllerShouldWork(@Autowired TestRestTemplate restTemplate, @Autowired Tracer tracer) {
@@ -114,30 +93,6 @@ public class TracingIT {
 					&& "ResultSet#next".equals(span.getTags().get("db.operation.name"))
 					&& "pulledNextBatch".equals(List.copyOf(span.getEvents()).get(0).getValue()))
 			.hasSize(1);
-	}
-
-	@TestConfiguration
-	static class TracingTestConfiguration {
-
-		@Bean
-		Tracer tracer() {
-			return new SimpleTracer();
-		}
-
-		@Bean
-		DataSource neo4jDataSource(Tracer tracer, DataSourceProperties dataSourceProperties) {
-
-			var neo4jDataSource = new Neo4jDataSource();
-			neo4jDataSource.setUrl(dataSourceProperties.getUrl());
-			neo4jDataSource.setPassword(dataSourceProperties.getPassword());
-			neo4jDataSource.setUser(dataSourceProperties.getUsername());
-			neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer));
-
-			var cfg = new HikariConfig();
-			cfg.setDataSource(neo4jDataSource);
-			return new HikariDataSource(cfg);
-		}
-
 	}
 
 	static class SimpleNeo4jContainer<S extends SimpleNeo4jContainer<S>> extends GenericContainer<S> {

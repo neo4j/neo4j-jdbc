@@ -75,6 +75,18 @@
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-jdbc-it-sso</artifactId>
+			<version>${project.version}</version>
+			<classifier>tests</classifier>
+			<exclusions>
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-spring-boot-smoke-tests</artifactId>
 			<version>${project.version}</version>
 			<classifier>tests</classifier>

@@ -55,7 +55,8 @@ public final class AuraGenAIExample {
 		}
 
 		// Getting a connection
-		try (var con = Neo4jDriver.withSQLTranslation()
+		try (@SuppressWarnings("deprecation")
+		var con = Neo4jDriver.withSQLTranslation()
 			.withProperties(Map.of("s2c.tableToLabelMappings", "genres:Genre"))
 			.fromEnv()
 			.orElseThrow()) {

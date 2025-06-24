@@ -36,6 +36,7 @@
 	<modules>
 		<module>neo4j-jdbc-it-stub</module>
 		<module>neo4j-jdbc-it-cp</module>
+		<module>neo4j-jdbc-it-sso</module>
 		<module>neo4j-jdbc-it-mp</module>
 		<module>spring-boot-smoke-tests</module>
 		<module>mybatis-smoke-tests</module>

@@ -51,6 +51,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.neo4j.bolt.connection.AccessMode;
+import org.neo4j.bolt.connection.AuthInfo;
+import org.neo4j.bolt.connection.AuthToken;
+import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.ResponseHandler;
 import org.neo4j.bolt.connection.TransactionType;
@@ -64,6 +67,7 @@ import org.neo4j.bolt.connection.summary.CommitSummary;
 import org.neo4j.bolt.connection.summary.ResetSummary;
 import org.neo4j.bolt.connection.summary.RollbackSummary;
 import org.neo4j.jdbc.ConnectionImpl.TranslatorChain;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.restoreSystemProperties;
@@ -136,9 +140,9 @@ class ConnectionImplTests {
 		var sql = "SQL";
 		var expectedNativeSql = "nativeSQL";
 		given(translator.translate(eq(sql), any(DatabaseMetaData.class))).willReturn(expectedNativeSql);
-		var connection = new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), () -> mock(BoltConnection.class),
-				() -> List.of(translator), false, true, false, false, new VoidBookmarkManagerImpl(), Map.of(), 23,
-				"aBeautifulDatabase", null);
+		var connection = new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), Authentication::none,
+				auth -> mock(BoltConnection.class), () -> List.of(translator), false, true, false, false,
+				new NoopBookmarkManagerImpl(), Map.of(), 23, "aBeautifulDatabase", null, List.of());
 
 		var nativeSQL = connection.nativeSQL(sql);
 
@@ -166,7 +170,7 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldCommitTransactionOnAutoCommitUpdate(boolean autoCommit) throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(!autoCommit);
 		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
@@ -192,6 +196,7 @@ class ConnectionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> finishMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture());
 		var finishMessages = finishMessagesCaptor.getValue();
 		assertThat(finishMessages.get(0)).isInstanceOf(CommitMessage.class);
@@ -201,7 +206,7 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldNotCommitTransactionOnSameAutoCommit(boolean autoCommit) throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(autoCommit);
 		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
@@ -214,6 +219,7 @@ class ConnectionImplTests {
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).should().write(beginMessagesCaptor.capture());
 		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
 		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
@@ -226,7 +232,7 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldThrowOnManagingAutoCommitTransaction(boolean rollback) throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var connection = makeConnection(boltConnection);
 
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
@@ -239,6 +245,7 @@ class ConnectionImplTests {
 		assertThat(Neo4jTransaction.State.NEW.equals(transaction.getState())).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).should().write(beginMessagesCaptor.capture());
 		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
 		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
@@ -251,7 +258,7 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldManageTransaction(boolean rollback) throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(false);
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
@@ -279,6 +286,7 @@ class ConnectionImplTests {
 			.equals(rollback ? Neo4jTransaction.State.ROLLEDBACK : Neo4jTransaction.State.COMMITTED)).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).should().write(beginMessagesCaptor.capture());
 		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
 		assertThat(beginMessage.databaseName().orElse(null)).isEqualTo("aBeautifulDatabase");
@@ -300,7 +308,7 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldNotBeClosedByDefault() {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var connection = makeConnection(boltConnection);
 
 		assertThat(connection.isClosed()).isFalse();
@@ -308,7 +316,7 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldClose() throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 
@@ -321,7 +329,7 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldRollbackOnClose() throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
 		given(boltConnection.writeAndFlush(any(), anyList()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
@@ -339,6 +347,7 @@ class ConnectionImplTests {
 		assertThat(Neo4jTransaction.State.ROLLEDBACK.equals(transaction.getState())).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> beginMessagesCaptor = ArgumentCaptor.forClass(List.class);
+		then(boltConnection).should().authInfo();
 		then(boltConnection).should().write(beginMessagesCaptor.capture());
 		var beginMessage = (BeginMessage) beginMessagesCaptor.getValue().get(0);
 		assertThat(beginMessage.accessMode()).isEqualTo(AccessMode.WRITE);
@@ -373,7 +382,7 @@ class ConnectionImplTests {
 	@ValueSource(booleans = { true, false })
 	void shouldPassAccessModeToBoltConnection(boolean readOnly) throws SQLException {
 		// given
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var accessMode = readOnly ? AccessMode.READ : AccessMode.WRITE;
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
@@ -396,7 +405,7 @@ class ConnectionImplTests {
 
 	@Test
 	void shouldThrowOnUpdatingReadOnlyDuringTransaction() throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 		@SuppressWarnings("unused")
@@ -498,7 +507,7 @@ class ConnectionImplTests {
 	@MethodSource("getSendResetOnValidatingWithoutActiveTransactionArgs")
 	void shouldSendResetOnValidatingWithoutActiveTransaction(boolean setupClosedTransaction, boolean expectedValid)
 			throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		var connection = makeConnection(boltConnection);
 		if (setupClosedTransaction) {
 			given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
@@ -537,6 +546,25 @@ class ConnectionImplTests {
 		}
 		assertThat(valid).isEqualTo(expectedValid);
 		then(boltConnection).should().writeAndFlush(any(), any(ResetMessage.class));
+	}
+
+	private static BoltConnection mockBoltConnection() {
+
+		var boltConnection = mock(BoltConnection.class);
+		given(boltConnection.authInfo()).willReturn(CompletableFuture.completedFuture(new AuthInfo() {
+
+			@Override
+			public AuthToken authToken() {
+				return AuthTokens.none(BoltAdapters.getValueFactory());
+			}
+
+			@Override
+			public long authAckMillis() {
+				return 0;
+			}
+		}));
+
+		return boltConnection;
 	}
 
 	static Stream<Arguments> getSendResetOnValidatingWithoutActiveTransactionArgs() {
@@ -633,7 +661,7 @@ class ConnectionImplTests {
 	@ParameterizedTest
 	@ValueSource(booleans = { true, false })
 	void shouldCloseOnAbort(boolean transactionPresent) throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 		Neo4jTransaction transaction = null;
@@ -653,6 +681,9 @@ class ConnectionImplTests {
 			then(boltConnection).should().write(beginMessagesCaptor.capture());
 			assertThat(beginMessagesCaptor.getValue().get(0)).isInstanceOf(BeginMessage.class);
 		}
+		if (transactionPresent) {
+			then(boltConnection).should().authInfo();
+		}
 		then(boltConnection).should().close();
 		then(boltConnection).shouldHaveNoMoreInteractions();
 	}
@@ -661,7 +692,7 @@ class ConnectionImplTests {
 	@MethodSource("getThrowingMethodExecutorsWhenClosed")
 	void shouldThrowWhenClosed(ConnectionMethodRunner consumer, Class<? extends SQLException> exceptionType)
 			throws SQLException {
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.close()).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 		connection.close();
@@ -819,8 +850,9 @@ class ConnectionImplTests {
 	}
 
 	ConnectionImpl makeConnection(BoltConnection boltConnection) {
-		return new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), () -> boltConnection, List::of, false, false,
-				true, false, new VoidBookmarkManagerImpl(), Map.of(), 23, "aBeautifulDatabase", null);
+		return new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), Authentication::none, auth -> boltConnection,
+				List::of, false, false, true, false, new NoopBookmarkManagerImpl(), Map.of(), 23, "aBeautifulDatabase",
+				null, List.of());
 
 	}
 
@@ -843,7 +875,7 @@ class ConnectionImplTests {
 	@Test
 	void shouldSetNetworkTimeout() throws SQLException {
 		// given
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.setReadTimeout(any())).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 
@@ -859,7 +891,7 @@ class ConnectionImplTests {
 	// this is not required by JDBC
 	void shouldSetNetworkTimeoutWithNullExecutor() throws SQLException {
 		// given
-		var boltConnection = mock(BoltConnection.class);
+		var boltConnection = mockBoltConnection();
 		given(boltConnection.setReadTimeout(any())).willReturn(CompletableFuture.completedStage(null));
 		var connection = makeConnection(boltConnection);
 

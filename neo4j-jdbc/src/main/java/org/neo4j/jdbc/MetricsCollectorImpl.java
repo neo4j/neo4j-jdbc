@@ -64,6 +64,22 @@ final class MetricsCollectorImpl implements MetricsCollector {
 	}
 
 	@Override
+	public void onNewAuthentication(NewAuthenticationEvent event) {
+		var uri = Events.cleanURL(event.uri()).toString();
+		var authentications = "org.neo4j.jdbc.authentications";
+
+		var counter = switch (event.state()) {
+			case NEW -> getOrCreateCounter(authentications, List.of(Tag.of("uri", uri), Tag.of("state", "new")),
+					"The total number of new authentications acquired");
+			case REFRESHED ->
+				getOrCreateCounter(authentications, List.of(Tag.of("uri", uri), Tag.of("state", "refreshed")),
+						"The total number of authentications refreshed");
+		};
+
+		counter.increment();
+	}
+
+	@Override
 	public void onConnectionOpened(ConnectionOpenedEvent event) {
 		var gauge = this.openConnections.computeIfAbsent(Events.cleanURL(event.uri()),
 				key -> new GaugeBackend("org.neo4j.jdbc.connections", "The number of currently open connections",
