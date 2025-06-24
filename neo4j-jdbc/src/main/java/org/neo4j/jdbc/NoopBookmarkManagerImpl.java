@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-final class VoidBookmarkManagerImpl implements BookmarkManager {
+final class NoopBookmarkManagerImpl implements BookmarkManager {
 
 	@Override
 	public <T> Set<T> getBookmarks(Function<String, T> transformer) {

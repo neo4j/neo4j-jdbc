@@ -112,7 +112,17 @@ public sealed interface Neo4jConnection extends Connection, Neo4jMetadataWriter 
 	 * @param tracer the tracer to use, {@literal null} safe
 	 * @return this connection
 	 * @since 6.3.0
+	 * @deprecated use {@link #setTracer(Neo4jTracer)}
 	 */
+	@Deprecated(since = "6.6.0", forRemoval = true)
 	Neo4jConnection withTracer(Neo4jTracer tracer);
+
+	/**
+	 * Setting the {@code tracer} to a non {@literal null} value will enable tracing for
+	 * this connection.
+	 * @param tracer the tracer to use, {@literal null} safe
+	 * @since 6.6.0
+	 */
+	void setTracer(Neo4jTracer tracer);
 
 }

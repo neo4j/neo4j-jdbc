@@ -16,7 +16,13 @@ There's a `fast` profile that will skip all the tests and validations:
 ./mvnw -Dfast package
 ----
 
-If the cluster integration test is flaky or does not work at all in your build, you can skip it like this without skipping any other integration tests:
+There are some integration tests that can be individually skipped, such as the cluster support and the authentication manager bits, as those might either be flaky in your build or just take some time.
+Set one of the following (or all) properties to skip them:
+
+skipClusterIT:: Skips cluster tests
+skipReauthenticationIT:: Skips reauthentication tests
+
+For example:
 
 [source,bash]
 ----

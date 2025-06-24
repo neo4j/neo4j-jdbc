@@ -38,10 +38,10 @@ public class MovieRepository {
 	}
 
 	@Transactional(readOnly = true)
-	public List<Movie> findAll() {
+	public List<Movie> findAll(boolean fail) {
 		// This is using a small fetch size specifically to test some annotations on spans
 		return this.jdbcTemplate.query(con -> {
-			var stmt = con.prepareStatement("SELECT title FROM Movie m");
+			var stmt = con.prepareStatement(fail ? "asd" : "SELECT title FROM Movie m");
 			stmt.setFetchSize(4);
 			return stmt;
 		}, (rs, rowNum) -> new Movie(rs.getString("title")));
