@@ -33,7 +33,7 @@ import javax.sql.DataSource;
 import org.neo4j.jdbc.tracing.Neo4jTracer;
 
 /**
- * A Neo4j specific extension of {@link DataSource}. It may be referred to for use with
+ * A Neo4j implementation of a {@link DataSource}. It may be referred to for use with
  * {@link #unwrap(Class)} to access specific Neo4j functionality.
  *
  * @author Michael J. Simons
@@ -202,8 +202,8 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	}
 
 	@Override
-	@SuppressWarnings("squid:S2095") // The whole point of this method is to provide an
-										// _open_ connection
+	// The whole point of this method is to provide an _open_ connection
+	@SuppressWarnings("squid:S2095")
 	public Connection getConnection(String username, String password) throws SQLException {
 
 		var newProperties = new Properties();
@@ -219,7 +219,7 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 
 		var connection = DriverManager.getConnection(getUrl(), newProperties).unwrap(Neo4jConnection.class);
 		if (this.tracer != null) {
-			connection.addListener(new Tracing(this.tracer, connection));
+			connection.setTracer(this.tracer);
 		}
 		return connection;
 	}

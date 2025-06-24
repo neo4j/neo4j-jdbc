@@ -51,6 +51,14 @@ public interface ConnectionListener {
 	}
 
 	/**
+	 * Will be called when a new authentication has been acquired.
+	 * @param event some information about the event
+	 * @since 6.6.0
+	 */
+	default void onNewAuthentication(NewAuthenticationEvent event) {
+	}
+
+	/**
 	 * This event will be fired when a statement has been created.
 	 *
 	 * @param uri The URL of the Neo4j instance towards the statement has been opened too.
@@ -75,6 +83,31 @@ public interface ConnectionListener {
 	 * @param cacheSize the size of the cache
 	 */
 	record TranslationCachedEvent(int cacheSize) {
+	}
+
+	/**
+	 * Will be fired after the Neo4j-JDBC driver has acquired a new authentication.
+	 *
+	 * @param uri the URL of the Neo4j instance that was queried
+	 * @param state the state of the new authentication
+	 */
+	record NewAuthenticationEvent(URI uri, State state) {
+
+		/**
+		 * Information about the state of the authentication.
+		 */
+		public enum State {
+
+			/**
+			 * Value indicating a brand-new authentication.
+			 */
+			NEW,
+			/**
+			 * Value indicating a refreshed authentication.
+			 */
+			REFRESHED
+
+		}
 	}
 
 }
