@@ -48,7 +48,7 @@ class MoviesTests {
 
 	@Test
 	void repositoryIsConnectedAndUsable(@Autowired MovieRepository movieRepository) {
-		assertThat(movieRepository.findAll()).hasSizeGreaterThanOrEqualTo(1)
+		assertThat(movieRepository.findAll(false)).hasSizeGreaterThanOrEqualTo(1)
 			.anyMatch(movie -> movie.title().equals("Barbieheimer"));
 	}
 
