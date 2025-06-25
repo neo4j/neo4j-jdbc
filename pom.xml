@@ -104,6 +104,7 @@
 
 	<modules>
 		<module>neo4j-jdbc-bom</module>
+		<module>neo4j-jdbc-authn</module>
 		<module>neo4j-jdbc-translator</module>
 		<module>neo4j-jdbc-tracing</module>
 		<module>neo4j-jdbc</module>
@@ -1190,7 +1191,7 @@
 			According to https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin
 			skipNexusStagingDeployMojo may not be set to true in the last reactor module. Because we don't
 			want to deploy our last module, nor a dummy module, we simply omit the relevant modules when
-			a deploy is in progress.
+			a deployment is in progress.
 			-->
 			<activation>
 				<property>

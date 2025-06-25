@@ -16,16 +16,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+package org.neo4j.jdbc.authn.spi;
 
 /**
- * A marker class for disabled authentication. It's scheme will always be
- * {@link AuthenticationScheme#NONE}.
+ * A marker class for disabled authentication.
  *
  * @author Michael J. Simons
  * @since 6.6.0
  */
-enum DisabledAuthentication implements Authentication {
+public enum DisabledAuthentication implements Authentication {
 
 	/**
 	 * The single instance of the disable authentication.

@@ -115,6 +115,7 @@
 									<include>io.netty:*</include>
 									<include>org.neo4j.bolt:*</include>
 									<include>org.neo4j:neo4j-cypher-dsl-schema-name-support</include>
+									<include>org.neo4j:neo4j-jdbc-authn-spi:*</include>
 									<include>org.neo4j:neo4j-jdbc-translator-spi:*</include>
 									<include>org.neo4j:neo4j-jdbc:*</include>
 								</includes>
@@ -167,6 +168,13 @@
 								</filter>
 								<filter>
 									<artifact>org.neo4j:neo4j-cypher-dsl-schema-name-support</artifact>
+									<excludes>
+										<exclude>META-INF/MANIFEST.MF</exclude>
+										<exclude>module-info.class</exclude>
+									</excludes>
+								</filter>
+								<filter>
+									<artifact>org.neo4j:neo4j-jdbc-authn-spi</artifact>
 									<excludes>
 										<exclude>META-INF/MANIFEST.MF</exclude>
 										<exclude>module-info.class</exclude>

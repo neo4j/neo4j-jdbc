@@ -342,7 +342,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(7687);
 		assertThat(config.database()).isEqualTo("neo4j");
-		assertThat(config.authScheme()).isEqualTo(AuthenticationScheme.BASIC);
+		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
 		assertThat(config.user()).isEqualTo("neo4j");
 		assertThat(config.password()).isEqualTo("");
 		assertThat(config.authRealm()).isEqualTo("");
@@ -457,7 +457,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(1234);
 		assertThat(config.database()).isEqualTo("customDb");
-		assertThat(config.authScheme()).isEqualTo(AuthenticationScheme.BASIC);
+		assertThat(config.authScheme()).isEqualTo(Neo4jDriver.AuthScheme.BASIC);
 		assertThat(config.user()).isEqualTo("user1");
 		assertThat(config.password()).isEqualTo("user1Password");
 		assertThat(config.authRealm()).isEqualTo("myRealm");

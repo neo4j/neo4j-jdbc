@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc;
 
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.events.ConnectionListener;
 
 /**

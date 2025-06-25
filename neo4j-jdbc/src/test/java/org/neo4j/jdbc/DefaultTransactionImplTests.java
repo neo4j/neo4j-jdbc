@@ -58,6 +58,7 @@ import org.neo4j.bolt.connection.summary.DiscardSummary;
 import org.neo4j.bolt.connection.summary.PullSummary;
 import org.neo4j.bolt.connection.summary.RollbackSummary;
 import org.neo4j.bolt.connection.summary.RunSummary;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
 import static org.assertj.core.api.Assertions.assertThat;

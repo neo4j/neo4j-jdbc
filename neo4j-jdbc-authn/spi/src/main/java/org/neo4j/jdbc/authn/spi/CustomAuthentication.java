@@ -16,47 +16,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+package org.neo4j.jdbc.authn.spi;
+
+import java.util.Map;
 
 /**
- * Authentication schemes supported by the Neo4j server. Those do not match directly to
- * {@link Authentication} objects, as for example the {@link TokenAuthentication} can
- * support multiple schemes.
+ * An interface for custom authentications based on a map of values.
  *
  * @author Michael J. Simons
  * @since 6.6.0
  */
-enum AuthenticationScheme {
+public non-sealed interface CustomAuthentication extends Authentication {
 
 	/**
-	 * Disable authentication.
+	 * Converts this token into a map. Usual keys that the server expects are
+	 * {@code scheme}, {@code principal} and {@code credentials}.
+	 * @return a map to be handled by the Neo4j server, must not be {@literal null}
 	 */
-	NONE("none"),
-	/**
-	 * Use basic auth (username and password).
-	 */
-	BASIC("basic"),
-	/**
-	 * Use a token as authentication (the password will be treated as JWT or other SSO
-	 * token).
-	 */
-	BEARER("bearer"),
-	/**
-	 * Use Kerberos authentication.
-	 */
-	KERBEROS("kerberos");
-
-	private final String name;
-
-	AuthenticationScheme(String name) {
-		this.name = name;
-	}
-
-	/**
-	 * {@return the name of this scheme}
-	 */
-	String getName() {
-		return this.name;
+	default Map<String, Object> toMap() {
+		return Map.of();
 	}
 
 }

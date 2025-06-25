@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.function.Supplier;
 
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.tracing.Neo4jTracer;
 

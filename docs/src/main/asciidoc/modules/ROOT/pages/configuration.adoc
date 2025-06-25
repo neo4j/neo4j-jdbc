@@ -144,6 +144,11 @@ Other connections retrieved from the driver instance to the same or to other dat
 |A file, http or https URL pointing to a valid JSON file containing definitions for xref:cypher_backed_views.adoc[Cypher-backed views].
 |`null`
 
+|`authn.supplier`
+|`String`
+|The name of an authentication supplier, can be used to plugin various SSO systems such as Keycloak, with automatic token refresh. See below xref:authentication[] for more information.
+|`null`
+
 |===
 
 == Getting a driver or a connection instance
@@ -225,11 +230,12 @@ These files can be directly used via `Neo4jDriver.fromEnv()` (see xref:usage.ado
 This method exists in several overloads, which let you configure both filename and directory.
 Additionally, the builder lets you configure options that are not contained in the files from Aura.
 
+[#authentication]
 == Authentication
 
 The Neo4j JDBC driver provides the ability to use a custom authentication supplier in addition to JDBCs standard ways of authentication, such as using `java.sql.DriverManager#getConnection(java.lang.String, java.lang.String, java.lang.String)` or `java.sql.Driver#connect` for authentication with the Neo4j server.
 
-An authentication supplier is in Java terms a `Supplier<org.neo4j.jdbc.Authentication>`.
+An authentication supplier is in Java terms a `Supplier<org.neo4j.jdbc.authn.api.Authentication>`.
 An `Authentication` instances is an abstract representation of an arbitrary authentication to be presented to the Neo4j server and can contain a principal and its credentials (username and password), a token or other ways of confirming an identity.
 
 The interface itself offers the following factories:
@@ -246,6 +252,7 @@ In addition, there are two interfaces, `CustomAuthentication` and `ExpiringAuthe
 
 There are several ways to pass an authentication supplier:
 
+* Creating a library with your custom authentication supplier and a small factory for it implementing `AuthenticationSupplierFactory`: It will be automatically be loaded into the JDBC driver and be used when the JDBC property `authn.supplier` is set to the name of the factory
 * On the driver itself, when unwrapped to a `Neo4jDriver`, there is `driver#connect(String, Properties, Supplier)`. The given supplier will have precedence over any authentication information in the `properties` parameter
 * Setting a supplier instance on a particular instance of the driver with `driver#setAuthenticationSupplier(Supplier)`
 * Registering a global supplier instance with `Neo4jDriver#registerAuthenticationSupplier` that will be used for all connections spawned from the `DriverManager`
@@ -253,7 +260,7 @@ There are several ways to pass an authentication supplier:
 
 The precedence is as follows:
 
-. If there's supplier passed to `connect` it has precedence over the drivers locally configured supplier respectively the global one and any properties
+. If there's a supplier passed to `connect` it has precedence over the drivers locally configured supplier respectively the global one and any properties
 . If there's a property named `authn.supplier` in the JDBC properties and an authentication supplier factory with that name is available, a supplier will be sourced from that factory and used
 . The supplier configured per driver or the global one has precedence over any properties
 . Properties will be used as per JDBC standard when there is no explicit or implicit authentication supplier
@@ -263,33 +270,45 @@ Any authentication supplier implementation can safely assume that the second cal
 
 NOTE: The underlying bolt protocol and the Neo4j Server might not work reliable with very short-lived authentication tokens (i.e. with a lifespan under 5 seconds). This restriction might be lifted in the future, but as of release 6.6.0 you might want to refrain from very short-lived tokens.
 
-=== Example
+=== Keycloak example
 
 The following class shows an example based on Keycloaks `AuthzClient`.
 The supplier will grab tokens from a Keycloak instance and store their expiration date along with the JWT token.
-The initial ask for a token will always be answered with a completely new one, each follow-up call will use the client to refresh the token
+The initial ask for a token will always be answered with a completely new one, each follow-up call will use the client to refresh the token.
+
+WARNING: There is no need to copy the below code into your own application. We actually do ship this authentication supplier with the optional `org.neo4j:neo4j-jdbc-authn-kc` module. The supplier is part of our semver api contract and can either be used directly or via the service loader mechanism, which is also demonstrated in the following documentation.
 
 [source,java,tabsize=4,indent=0]
-.`AuthzAuthenticationSupplier`, an example of using Keycloak with the Neo4j JDBC driver
+.`KCAuthenticationSupplier`, as an example of an authentication supplier refreshing a token when necessary
 ----
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+
+import com.fasterxml.jackson.jr.ob.JSON;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.representations.AccessTokenResponse;
-import org.neo4j.jdbc.Authentication;
-import com.fasterxml.jackson.jr.ob.JSON;
+import org.neo4j.jdbc.authn.spi.Authentication;
 
-final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
+public final class KCAuthenticationSupplier implements Supplier<Authentication> {
 
-    private final AuthzClient authzClient;
+    public static Supplier<Authentication> of(String user, String password, Configuration configuration) {
+        return new KCAuthenticationSupplier(user, password, configuration);
+    }
+
+    private final String username;
+
+    private final String password;
 
     private final Configuration cfg;
+
+    private final AuthzClient authzClient;
 
     private final Http http;
 
@@ -297,7 +316,9 @@ final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
 
     private final AtomicReference<TokensAndExpirationTime> currentToken = new AtomicReference<>();
 
-    AuthzAuthenticationSupplier(Configuration cfg) {
+    KCAuthenticationSupplier(String user, String password, Configuration cfg) {
+        this.username = user;
+        this.password = password;
         this.cfg = cfg;
         this.authzClient = AuthzClient.create(cfg);
         this.url = "%s/realms/%s/protocol/openid-connect/token".formatted(cfg.getAuthServerUrl(), cfg.getRealm());
@@ -316,7 +337,7 @@ final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
 
     TokensAndExpirationTime get0() {
         try {
-            return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken("william.foster", "d-fens"));
+            return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken(this.username, this.password));
         }
         catch (IOException ex) {
             throw new UncheckedIOException(ex);
@@ -342,7 +363,7 @@ final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
         }
     }
 
-    private record TokensAndExpirationTime(String accessToken, Instant expiresAt, String refreshToken) {
+    record TokensAndExpirationTime(String accessToken, Instant expiresAt, String refreshToken) {
 
         static final Base64.Decoder DECODER = Base64.getDecoder();
 
@@ -363,7 +384,54 @@ final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
 }
 ----
 
-To use this supplier, you can either register it for the global driver like this:
+For using the above supplier add the following dependency to your class- or module-path:
+
+[source,xml,subs="verbatim,attributes"]
+.Maven dependency for the core Neo4j JDBC Driver artifact
+----
+<dependency>
+    <groupId>{group-id}</groupId>
+    <artifactId>neo4j-jdbc-authn-kc</artifactId>
+    <version>{version}</version>
+</dependency>
+----
+
+The same would apply for any custom supplier you might write.
+The easiest way to use the supplier now is via the build-in loader, so that you can stick purely to the JDBC api:
+
+[source,java]
+.Using a custom authentication supplier via the `authn.supplier` config option:
+----
+@Test
+void authenticationSupplierFactoriesShouldWork() throws SQLException {
+
+    var properties = new Properties();
+    properties.put("enableSQLTranslation", "true");
+
+    properties.put("user", "william.foster");
+    properties.put("password", "d-fens");
+
+    properties.put("authn.supplier", "kc"); // <.>
+    properties.put("authn.kc.authServerUrl", "http://localhost:%d".formatted(KEYCLOAK.getHttpPort())); // <.>
+    properties.put("authn.kc.realm", "neo4j-sso-test");
+    properties.put("authn.kc.clientId", "neo4j-jdbc-driver");
+    properties.put("authn.kc.clientSecret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4");
+
+    try (var connection = DriverManager.getConnection(neo4jUri, properties); // <.>
+            var stmt = connection.createStatement();
+            var rs = stmt.executeQuery("SELECT 1")) {
+        assertThat(rs.next()).isTrue();
+        assertThat(rs.getInt(1)).isOne();
+    }
+}
+----
+<.> Indicate that you want to use the Keycloak authentication supplier (named `kc` in our distribution)
+<.> This and the following properties will be passed to the authentication system so that it can create authentication with Keycloak
+<.> This is a pure JDBC spec call
+
+In case you don't want to use the automatic loader for authentication supplier factories, or you did write a completely custom authentication supplier and don't want to provide `services` and corresponding module descriptions, there are several other ways of using an authentication supplier.
+
+The most JDBC complaint way is registering it for the global driver like this:
 
 [source,java]
 .Registering an instance of the authentication supplier globally
@@ -373,20 +441,22 @@ import java.sql.DriverManager;
 import java.util.function.Supplier;
 
 import org.keycloak.authorization.client.Configuration;
-import org.neo4j.jdbc.Authentication;
+import org.neo4j.jdbc.authn.kc.KCAuthenticationSupplier;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.Neo4jDriver;
 
 class Example {
 
 	public static void main(String...a) throws Exception {
-		Supplier<Authentication> authenticationSupplier = new AuthzAuthenticationSupplier(new Configuration());
+		Supplier<Authentication> authenticationSupplier = KCAuthenticationSupplier.of("user", "pass", new Configuration());
         Neo4jDriver.registerAuthenticationSupplier(authenticationSupplier);
         Connection connection = DriverManager.getConnection("neo4j+s://xyz.databases.neo4j.io");
     }
 }
 ----
 
-The above setting is most likely the easiest way for integrations with frameworks like Spring Boot, in which you could configure the global supplier through an `org.springframework.beans.factory.InitializingBean`.
+The advantage here is that it makes sure that all applications that use the Neo4j JDBC Driver in a JDBC compliant way over the `DriverManager` will automatically use the authentication supplier.
+Hence, the above setting is most likely the easiest way for integrations with frameworks like Spring Boot, in which you could configure the global supplier through an `org.springframework.beans.factory.InitializingBean`.
 Alternatively use the driver builder or manually create an instance of the driver:
 
 [source,java]
@@ -398,19 +468,26 @@ import java.util.Properties;
 import java.util.function.Supplier;
 
 import org.keycloak.authorization.client.Configuration;
-import org.neo4j.jdbc.Authentication;
+import org.neo4j.jdbc.authn.kc.KCAuthenticationSupplier;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.Neo4jDriver;
 
 class Example {
 
     public static void main(String...a) throws Exception {
-        Supplier<Authentication> authenticationSupplier = new AuthzAuthenticationSupplier(new Configuration());
+        Supplier<Authentication> authenticationSupplier = KCAuthenticationSupplier.of("user", "pass", new Configuration());
         Neo4jDriver.registerAuthenticationSupplier(authenticationSupplier);
         Neo4jDriver driver = new Neo4jDriver();
         Connection connection = driver.connect("neo4j+s://xyz.databases.neo4j.io", new Properties(), authenticationSupplier);
     }
 }
 ----
+
+This alternative is feasible in any application for which you are in sole control of creating connections.
+
+TIP: If you need to against Keycloak, the Neo4j JDBC driver does ship everything you need, and you are good to go.
+Just include the Maven module and apply the recommended way of configuring the supplier via JDBC properties.
+For all other authentication needs you can write a custom authentication supplier in a similar fashion as the provided Keycloak support. Have a look at the JavaDoc of `org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory` in the `org.neo4j:neo4j-jdbc-authn-spi`.
 
 == Logging
 

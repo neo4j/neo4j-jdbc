@@ -38,8 +38,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.ReflectionUtils;
-import org.neo4j.jdbc.Authentication;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 

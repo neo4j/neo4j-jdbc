@@ -68,13 +68,13 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-authz-client</artifactId>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-jdbc</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
-			<artifactId>neo4j-jdbc</artifactId>
+			<artifactId>neo4j-jdbc-authn-kc</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

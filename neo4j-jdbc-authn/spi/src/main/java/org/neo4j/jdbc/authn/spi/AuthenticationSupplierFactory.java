@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+package org.neo4j.jdbc.authn.spi;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * properly loaded via Javas {@link java.util.ServiceLoader}. Make sure you define a
  * provider configuration file
  *
- * <blockquote>{@code META-INF/services/org.neo4j.jdbc.AuthenticationSupplierFactory}</blockquote>
+ * <blockquote>{@code META-INF/services/org.neo4j.jdbc.authn.api.AuthenticationSupplierFactory}</blockquote>
  *
  * containing the fully qualified classname of your implementation. In case you offer
  * several factories, each name goes into a separate line. When you want to make sure that
@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  *
  * <pre>{@code
  * module your.library {
- *   provides org.neo4j.jdbc.AuthenticationSupplierFactory with YourImplementation;
+ *   provides org.neo4j.jdbc.authn.api.AuthenticationSupplierFactory with YourImplementation;
  * }
  * }</pre>
  *
@@ -61,12 +61,17 @@ public interface AuthenticationSupplierFactory {
 	 * Creates a new authentication supplier to be used with the driver. While the Neo4j
 	 * JDBC driver assumes that the factory will always provide a fresh one, it is ok to
 	 * return always the same instance if that makes sense in a given scenario.
+	 * @param user the username passed to the initial connect call to the driver, maybe
+	 * {@literal null}
+	 * @param password the users password passed to the initial connect call to the
+	 * driver, maybe {@literal null}
 	 * @param properties all {@link String} properties from the standard
-	 * {@link java.util.Properties JDBC properties} starting with {@literal AuthN}
-	 * (case-insensitive); the prefix will be stripped, meaning {@code authn.username}
-	 * becomes {@code username} for easier and better readable access
+	 * {@link java.util.Properties JDBC properties} starting with
+	 * {@literal authn.theNameOfThisFactory} (case-insensitive); the prefix will be
+	 * stripped, meaning {@code authn.myfactory.username} becomes {@code username} for
+	 * easier and better readable access
 	 * @return a new {@link Supplier authentication supplier}
 	 */
-	Supplier<Authentication> newAuthenticationSupplier(Map<String, ?> properties);
+	Supplier<Authentication> create(String user, String password, Map<String, ?> properties);
 
 }
