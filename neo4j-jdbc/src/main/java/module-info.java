@@ -49,4 +49,5 @@ module org.neo4j.jdbc {
 	// provides org.neo4j.jdbc.translator.spi.TranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
 
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
+	uses org.neo4j.jdbc.AuthenticationSupplierFactory;
 }

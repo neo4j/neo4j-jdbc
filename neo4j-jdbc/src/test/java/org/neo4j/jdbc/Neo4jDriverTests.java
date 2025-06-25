@@ -173,6 +173,19 @@ class Neo4jDriverTests {
 		}
 
 		@Test
+		void configuredProviderHasPrecedenceOverGlobal() {
+			var driver = new Neo4jDriver();
+			driver.setAuthenticationSupplier(() -> Authentication.usernameAndPassword("global", "pw"));
+			var provider = driver.determineAuthenticationSupplier(
+					null, newDriverConfig(Map.of("blah", "blub",
+							"foo", "bar", "authn.supplier", "testsupplier", "authn.username", "viafactory")));
+			assertThat(provider.get())
+				.asInstanceOf(InstanceOfAssertFactories.type(UsernamePasswordAuthentication.class))
+				.extracting(UsernamePasswordAuthentication::username)
+				.isEqualTo("viafactory");
+		}
+
+		@Test
 		void globalHasPrecedenceOverExplicit() {
 
 			var driver = new Neo4jDriver();
@@ -196,9 +209,13 @@ class Neo4jDriverTests {
 				.isEqualTo("explicit");
 		}
 
-		private static Neo4jDriver.DriverConfig newDriverConfig() {
+		private static Neo4jDriver.DriverConfig newDriverConfig(Map<String, String> raw) {
 			return new Neo4jDriver.DriverConfig("na", 7687, "db", AuthenticationScheme.BASIC, "explicit", "pw", null,
-					null, 0, false, false, false, false, false, 0, null, Map.of());
+					null, 0, false, false, false, false, false, 0, null, raw);
+		}
+
+		private static Neo4jDriver.DriverConfig newDriverConfig() {
+			return newDriverConfig(Map.of());
 		}
 
 	}

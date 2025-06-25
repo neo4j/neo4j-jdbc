@@ -253,9 +253,10 @@ There are several ways to pass an authentication supplier:
 
 The precedence is as follows:
 
-1. If there's supplier passed to `connect` it has precedence over the drivers locally configured supplier respectively the global one and any properties
-2. The supplier configured per driver or the global one has precedence over any properties
-3. Properties will be used as per JDBC standard when there is no explicit or implicit authentication supplier
+. If there's supplier passed to `connect` it has precedence over the drivers locally configured supplier respectively the global one and any properties
+. If there's a property named `authn.supplier` in the JDBC properties and an authentication supplier factory with that name is available, a supplier will be sourced from that factory and used
+. The supplier configured per driver or the global one has precedence over any properties
+. Properties will be used as per JDBC standard when there is no explicit or implicit authentication supplier
 
 The driver will only call the supplier when no token has been retrieved yet or when the first token expires.
 Any authentication supplier implementation can safely assume that the second call for a token means the first token is expired, so that the supplier does not need to manage state.

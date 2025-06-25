@@ -73,11 +73,11 @@ final class Text2Cypher implements Translator {
 		String modelName = (config.get(CONFIG_KEY_OPEN_AI_MODEL_NAME) != null)
 				? (String) config.get(CONFIG_KEY_OPEN_AI_MODEL_NAME) : "gpt-4-turbo";
 
-		Double temperature = 0.0;
+		double temperature = 0.0;
 
 		try {
 			if (config.get(CONFIG_KEY_OPEN_AI_TEMPERATURE) != null) {
-				temperature = Double.valueOf((String) config.get(CONFIG_KEY_OPEN_AI_TEMPERATURE));
+				temperature = Double.parseDouble((String) config.get(CONFIG_KEY_OPEN_AI_TEMPERATURE));
 			}
 		}
 		catch (NumberFormatException ex) {
