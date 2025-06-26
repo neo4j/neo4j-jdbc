@@ -33,7 +33,7 @@ final class Lazy<T> {
 
 	private volatile T resolved;
 
-	static <T, E extends Throwable> Lazy<T> of(ThrowingSupplier<T> supplier) {
+	static <T> Lazy<T> of(ThrowingSupplier<T> supplier) {
 		return new Lazy<>(supplier);
 	}
 

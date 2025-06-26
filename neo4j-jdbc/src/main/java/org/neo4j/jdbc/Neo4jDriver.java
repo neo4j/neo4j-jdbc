@@ -403,15 +403,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	private final BoltConnectionProvider boltConnectionProvider;
 
 	private final Lazy<List<TranslatorFactory>> sqlTranslatorFactories = Lazy
-		.<List<TranslatorFactory>, RuntimeException>of(() -> this.loadServices(TranslatorFactory.class));
+		.of(() -> this.loadServices(TranslatorFactory.class));
 
 	private final Lazy<Map<String, AuthenticationSupplierFactory>> authenticationSupplierFactories = Lazy
-		.<Map<String, AuthenticationSupplierFactory>, RuntimeException>of(
-				() -> this.loadServices(AuthenticationSupplierFactory.class)
-					.stream()
-					.collect(Collectors.collectingAndThen(
-							Collectors.toMap(AuthenticationSupplierFactory::getName, Function.identity()),
-							Map::copyOf)));
+		.of(() -> this.loadServices(AuthenticationSupplierFactory.class)
+			.stream()
+			.collect(Collectors.collectingAndThen(
+					Collectors.toMap(AuthenticationSupplierFactory::getName, Function.identity()), Map::copyOf)));
 
 	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
