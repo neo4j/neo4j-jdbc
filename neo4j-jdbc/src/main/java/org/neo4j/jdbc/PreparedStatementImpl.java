@@ -680,7 +680,12 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	@Override
 	public ResultSetMetaData getMetaData() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Getting meta data");
-		assertCallAndPositionAtFirstRow();
+		if (super.resultSet == null) {
+			throw new Neo4jException(withReason("#execute has not been called"));
+		}
+		if (this.cursorMoved.compareAndSet(false, true)) {
+			super.resultSet.next();
+		}
 		return super.resultSet.getMetaData();
 	}
 
@@ -871,16 +876,6 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	@Override
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		throw new SQLFeatureNotSupportedException();
-	}
-
-	protected final ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
-		if (resultSet == null) {
-			throw new Neo4jException(withReason("#execute has not been called"));
-		}
-		if (this.cursorMoved.compareAndSet(false, true)) {
-			this.resultSet.next();
-		}
-		return resultSet;
 	}
 
 	private static String computeParameterName(int parameterIndex) {

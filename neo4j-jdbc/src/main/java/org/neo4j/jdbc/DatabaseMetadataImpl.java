@@ -1251,6 +1251,31 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		};
 	}
 
+	static ResultSet resultSetForParameters(Connection connection, Map<String, Object> parameters) throws SQLException {
+		List<String> keys = new ArrayList<>();
+		Value[] columns = new Value[parameters.size()];
+		int i = 0;
+		for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+			String k = entry.getKey();
+			Object v = entry.getValue();
+			keys.add(k);
+			columns[i++] = (v instanceof Value value) ? value : Values.value(v);
+		}
+		var runResponse = new Neo4jTransaction.RunResponse() {
+			@Override
+			public long queryId() {
+				return 0;
+			}
+
+			@Override
+			public List<String> keys() {
+				return keys;
+			}
+		};
+		var pullResponse = DatabaseMetadataImpl.staticPullResponseFor(keys, List.<Value[]>of(columns));
+		return new LocalStatementImpl(connection, runResponse, pullResponse).getResultSet();
+	}
+
 	private static Value getTypeFromList(List<Value> types, String propertyName) {
 		if (types.size() > 1) {
 			LOGGER.log(Level.FINE,
