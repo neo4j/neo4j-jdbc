@@ -1,3 +1,94 @@
+# 6.5.1
+
+## 🚀 Features
+- ed9a104 feat(translator): Add support for `TOP n` limited queries.
+- 52351f8 feat(translator): Add support for date extraction.
+
+## 🔄️ Refactorings
+- 22de0b3 refactor: Make sure the driver works fine with Cypher 25 types. (#985)
+
+## 📝 Documentation
+- e50ad26 docs: Include Cypher-backed views scheme fully in docs.
+
+## 🧹 Housekeeping
+- 6f5d4b2 Bump org.codehaus.mojo:build-helper-maven-plugin (#984)
+- 98ae293 Bump spring-javaformat.version from 0.0.45 to 0.0.46 (#983)
+- 1c34907 Bump quarkus.platform.version from 3.23.0 to 3.23.2 (#980)
+- 878f24d Bump org.neo4j:cypher-v5-antlr-parser from 5.26.6 to 5.26.7 (#977)
+- acb0f7e Bump com.puppycrawl.tools:checkstyle (#976)
+- a1d2696 Bump com.opencsv:opencsv from 5.11 to 5.11.1 (#975)
+- f6a5a17 Bump org.testcontainers:testcontainers-bom (#974)
+- e29416b Bump org.codehaus.mojo:exec-maven-plugin (#973)
+- f6bd72d Bump org.neo4j:neo4j-cypher-dsl-bom (#972)
+- a8f5d3b Bump quarkus.platform.version from 3.22.3 to 3.23.0 (#970)
+- b0f5eab Bump spring-boot.version from 3.4.5 to 3.5.0 (#968)
+- 7eb8233 Bump org.mockito:mockito-bom from 5.17.0 to 5.18.0 (#967)
+- 03ab15d Bump org.hibernate.orm:hibernate-platform (#966)
+- 31bbb62 Bump dev.langchain4j:langchain4j-bom from 1.0.0 to 1.0.1 (#965)
+- 6bbd59f Bump io.github.git-commit-id:git-commit-id-maven-plugin (#964)
+- f0508ef Bump spring-javaformat.version from 0.0.44 to 0.0.45 (#963)
+- fbf3d88 Bump com.puppycrawl.tools:checkstyle (#962)
+
+## 🛠 Build
+- 68e3e32 build: Propagate system properties starting with `NEOJ4_` to the test container image.
+- b10c35b build: Allow inline return java docs.
+- 3f600c7 build: Add more jOOQ classes to build time initialization. (#961)
+- 0269ebc build: Make sure included single resources work in the AsciiDoc build.
+- d96af78 build: Shade JDK specific Jackson classes proper.
+
+
+# 6.5.0
+
+This is a feature release, introducing ["Cypher-backed views" ](https://neo4j.com/docs/jdbc-manual/current/cypher_backed_views/). Cypher-backed views will help you teaching your tools all the capabilities of Cypher without those tools leaving the relational world. Please have a look at the documentation linked above.
+
+In this release we also took some time and polish up the code base a bit, addressing some technical debt, resulting in a quadruple A-rating at the Neo4j SonarQube instance with regards to security, reliability, maintainability and security hotspots.
+
+If you have feedbacks, issues, bugs: Please reach out on the [issue tracker](https://github.com/neo4j/neo4j-jdbc/issues).
+
+## 🚀 Features
+- 90900b1 feat: Support Cypher-backed views. (#946)
+- 8f7be33 feat: Provide a dedicated logger for processed SQL.
+
+## 🐛 Bug Fixes
+- e7c91fc fix: Rewriting of parameter placeholders for prepared statements.
+
+## 🔄️ Refactorings
+- 8f69a6b refactor: Don’t default password to `password`
+- ffc010f refactor: Correct typographic error.
+- 9d0084e refactor: Use dedicated method for querying apoc availibility.
+
+## 📝 Documentation
+- 5b3d038 docs: Polish named parameters example. (#959)
+- 23987e7 docs: Document Cypher-backed views in README.
+- f644fef docs: Update local changelog.
+- 0609ce4 docs: Fix copyright year in Antora config.
+- e275046 docs: Fix typographic error in CONTRIBUTING. (#939)
+
+## 🧹 Housekeeping
+- 6666f0f Bump com.puppycrawl.tools:checkstyle from 10.21.4 to 10.23.1 (#928)
+- 4d809ce Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#954)
+- 71cc907 Bump io.micrometer:micrometer-bom from 1.14.6 to 1.15.0 (#953)
+- edd4dc5 Bump com.fasterxml.jackson.jr:jackson-jr-objects (#956)
+- 2ec5579 Bump quarkus.platform.version from 3.22.2 to 3.22.3 (#955)
+- ebaad65 Bump org.jdbi:jdbi3-bom from 3.49.3 to 3.49.4 (#952)
+- 90ca425 Bump dev.langchain4j:langchain4j-bom from 0.36.2 to 1.0.0 (#951)
+- aaed5a7 Bump io.micrometer:micrometer-tracing-bom (#950)
+- 10c33f7 Bump spring-javaformat.version from 0.0.43 to 0.0.44 (#949)
+- 970f3f9 Bump org.hibernate.orm:hibernate-platform (#948)
+- 2d5c565 Bump org.neo4j:neo4j-cypher-dsl-bom to 2024.6.1
+- 9e07ea7 Bump org.neo4j:neo4j-cypher-dsl-bom (#945)
+- 93c8012 Bump org.neo4j:cypher-v5-antlr-parser from 5.26.5 to 5.26.6 (#944)
+- 5027104 build(deps-dev): Bump com.tngtech.archunit:archunit from 1.4.0 to 1.4.1 (#943)
+- 66528b5 Bump quarkus.platform.version from 3.22.1 to 3.22.2 (#942)
+- c59da14 Update neo4j-bolt-connection to 3.0.0 (#940)
+
+## 🛠 Build
+- ccdd229 build: Incorporate Spring Boot smoke tests into test results.
+- bb02ce6 build: Make sure integration tests are observed by Sonar. (#957)
+- 1faf4fc build: Integrate deploy configuration for JReleaser with Maven and document all necessary deploy steps.
+- 12ede47 build: Exclude the text2cypher PoC / experimental module from code coverage.
+
+
 # 6.4.1
 
 This release does neither include changes nor dependency updates, but addresses the issue of the missing SBOMs in Maven central:
