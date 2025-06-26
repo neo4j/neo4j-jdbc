@@ -30,7 +30,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,7 +45,6 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,22 +55,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
+import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 import org.neo4j.bolt.connection.BoltProtocolVersion;
-import org.neo4j.bolt.connection.BoltServerAddress;
-import org.neo4j.bolt.connection.DatabaseNameUtil;
-import org.neo4j.bolt.connection.DefaultDomainNameResolver;
 import org.neo4j.bolt.connection.NotificationConfig;
-import org.neo4j.bolt.connection.RoutingContext;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
-import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
@@ -242,9 +233,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 */
 	public static final String PROPERTY_SSL_MODE = "sslMode";
 
-	private static final EventLoopGroup DEFAULT_EVENT_LOOP_GROUP = new NioEventLoopGroup(new DriverThreadFactory());
-
-	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
+	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?(?::(?<protocol>https?))?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	/**
 	 * The URL pattern that this driver supports.
@@ -253,6 +242,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
 
 	private static final BoltProtocolVersion MIN_BOLT_VERSION = new BoltProtocolVersion(5, 1);
+
+	private static final Map<String, String> EVENT_LOOP_THREAD_NAME_PREFIX = Map.of("eventLoopThreadNamePrefix",
+			"Neo4jJDBCDriverIO");
 
 	/*
 	 * Register one default instance globally.
@@ -400,7 +392,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new BuilderImpl(false, Map.of(), null).fromEnv(directory, filename);
 	}
 
-	private final BoltConnectionProvider boltConnectionProvider;
+	private final List<BoltConnectionProviderFactory> boltConnectionProviderFactories;
+
+	private final Map<String, BoltConnectionProvider> providerCache = new ConcurrentHashMap<>();
 
 	private final Lazy<List<TranslatorFactory>> sqlTranslatorFactories = Lazy
 		.of(() -> this.loadServices(TranslatorFactory.class));
@@ -428,13 +422,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * machinery for JDBC.
 	 */
 	public Neo4jDriver() {
-		this(new NettyBoltConnectionProvider(DEFAULT_EVENT_LOOP_GROUP, Clock.systemUTC(),
-				DefaultDomainNameResolver.getInstance(), null, BoltAdapters.newLoggingProvider(),
-				BoltAdapters.getValueFactory(), null));
+		this(List.of());
 	}
 
-	Neo4jDriver(BoltConnectionProvider boltConnectionProvider) {
-		this.boltConnectionProvider = Objects.requireNonNull(boltConnectionProvider);
+	Neo4jDriver(List<BoltConnectionProviderFactory> boltConnectionProviderFactories) {
+		this.boltConnectionProviderFactories = boltConnectionProviderFactories.isEmpty()
+				? this.loadServices(BoltConnectionProviderFactory.class) : List.copyOf(boltConnectionProviderFactories);
 		MetricsCollector.tryGlobal().ifPresent(this::addListener);
 	}
 
@@ -448,8 +441,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			throws SQLException {
 
 		var driverConfig = DriverConfig.of(url, info);
-
-		var address = new BoltServerAddress(driverConfig.host, driverConfig.port);
 
 		var securityPlan = parseSSLParams(driverConfig.sslProperties);
 
@@ -481,8 +472,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		});
 
 		var connection = new ConnectionImpl(targetUrl, finalAuthenticationSupplier,
-				authentication -> establishBoltConnection(address, userAgent, connectTimeoutMillis, securityPlan,
-						databaseName, toAuthToken(authentication)),
+				authentication -> establishBoltConnection(driverConfig, userAgent, connectTimeoutMillis, securityPlan,
+						toAuthToken(authentication)),
 				getSqlTranslatorSupplier(enableSqlTranslation, driverConfig.rawConfig(), translatorFactoriesSupplier),
 				enableSqlTranslation, enableTranslationCaching, rewriteBatchedStatements, rewritePlaceholders,
 				bookmarkManager, this.transactionMetadata, driverConfig.relationshipSampleSize(), databaseName,
@@ -565,14 +556,24 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		throw new IllegalArgumentException("Unsupported authentication type %s".formatted(authentication));
 	}
 
-	private BoltConnection establishBoltConnection(BoltServerAddress address, String userAgent,
-			int connectTimeoutMillis, SecurityPlan securityPlan, String databaseName, AuthToken authToken) {
-		return this.boltConnectionProvider
-			.connect(address, RoutingContext.EMPTY, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent,
-					connectTimeoutMillis, securityPlan, DatabaseNameUtil.database(databaseName),
-					() -> CompletableFuture.completedStage(authToken), AccessMode.WRITE, Collections.emptySet(), null,
-					MIN_BOLT_VERSION, NotificationConfig.defaultConfig(), ignored -> {
-					}, Collections.emptyMap())
+	private BoltConnection establishBoltConnection(DriverConfig driverConfig, String userAgent,
+			int connectTimeoutMillis, SecurityPlan securityPlan, AuthToken authToken) {
+
+		var targetUri = URI
+			.create("%s://%s:%d".formatted(driverConfig.protocol(), driverConfig.host(), driverConfig.port()));
+
+		var connectionProvider = this.providerCache.computeIfAbsent(targetUri.getScheme(),
+				scheme -> this.boltConnectionProviderFactories.stream()
+					.filter(factory -> factory.supports(scheme))
+					.findFirst()
+					.map(factory -> factory.create(BoltAdapters.newLoggingProvider(), BoltAdapters.getValueFactory(),
+							null, EVENT_LOOP_THREAD_NAME_PREFIX))
+					.orElseThrow(() -> new RuntimeException(
+							"Failed to load a connection provider supporting target %s".formatted(targetUri))));
+
+		return connectionProvider
+			.connect(targetUri, null, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent, connectTimeoutMillis,
+					securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig())
 			.toCompletableFuture()
 			.join();
 	}
@@ -737,7 +738,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					throw new Neo4jException(withInternal(ex));
 				}
 			}
-			case DISABLE -> SecurityPlans.unencrypted();
+			case DISABLE -> null;
 		};
 	}
 
@@ -1046,6 +1047,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * Internal record class to handle parsing of driver config.
 	 *
 	 * @param host host name
+	 * @param protocol the underlying protocol in use
 	 * @param port port
 	 * @param database database name
 	 * @param authScheme auth scheme
@@ -1064,10 +1066,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
-	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
-			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
-			boolean rewriteBatchedStatements, boolean rewritePlaceholders, boolean useBookmarks,
-			int relationshipSampleSize, SSLProperties sslProperties, Map<String, String> rawConfig) {
+	record DriverConfig(String host, String protocol, int port, String database, AuthScheme authScheme, String user,
+			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
+			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
+			boolean useBookmarks, int relationshipSampleSize, SSLProperties sslProperties,
+			Map<String, String> rawConfig) {
 
 		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
 				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
@@ -1134,6 +1137,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			raw.put(PROPERTY_SSL, String.valueOf(sslProperties.ssl));
 			raw.put(PROPERTY_SSL_MODE, sslProperties.sslMode.getName());
 
+			var protocol = Optional.ofNullable(matcher.group("protocol")).orElse("neo4j");
+
 			var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
 
 			var user = String.valueOf(config.getOrDefault(PROPERTY_USER, "neo4j"));
@@ -1158,8 +1163,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 						GQLError.$22N02.withMessage("Sample size for relationships must be greater than or equal -1"));
 			}
 
-			return new DriverConfig(host, port, databaseName, authScheme, user, password, authRealm, userAgent,
-					connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
+			return new DriverConfig(host, protocol, port, databaseName, authScheme, user, password, authRealm,
+					userAgent, connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
 					rewriteBatchedStatements, rewritePlaceholders, useBookmarks, relationshipSampleSize, sslProperties,
 					raw);
 		}
@@ -1179,8 +1184,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		URI toUrl() {
 			var sslProperties = this.sslProperties();
-			var result = new StringBuilder("jdbc:neo4j%s://%s:%s/%s?".formatted(sslProperties.protocolSuffix(),
-					this.host(), this.port(), this.database()));
+			var result = new StringBuilder("jdbc:neo4j%s%s://%s:%s/%s?".formatted(sslProperties.protocolSuffix(),
+					"neo4j".equals(this.protocol()) ? "" : ":" + this.protocol(), this.host(), this.port(),
+					this.database()));
 			append(result, PROPERTY_SQL_TRANSLATION_ENABLED, this.enableSQLTranslation()).append("&");
 			append(result, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, this.enableTranslationCaching()).append("&");
 			append(result, PROPERTY_REWRITE_BATCHED_STATEMENTS, this.rewriteBatchedStatements()).append("&");

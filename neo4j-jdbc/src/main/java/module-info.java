@@ -17,7 +17,9 @@
  * limitations under the License.
  */
 /**
- * The Neo4j JDBC Driver exposes both the actual JDBC API and the Neo4j value system being used. The value system can be used with methods like {@link java.sql.ResultSet#getObject(int, Class)}, for retrieving Neo4j nodes, relationships, paths and especially, the original value objects.
+ * The Neo4j JDBC Driver exposes both the actual JDBC API and the Neo4j value system being used. The value system can be
+ * used with methods like {@link java.sql.ResultSet#getObject(int, Class)}, for retrieving Neo4j nodes, relationships,
+ * paths and especially, the original value objects.
  */
 @SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
 module org.neo4j.jdbc {
@@ -53,7 +55,7 @@ module org.neo4j.jdbc {
 	// start::shaded-dependencies
 	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 	// end::shaded-dependencies
+
 	// uses org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory;
-	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory;
-	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.query_api.QueryApiBoltConnectionProviderFactory;
+	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory, org.neo4j.jdbc.internal.shaded.bolt.query_api.QueryApiBoltConnectionProviderFactory;
 }
