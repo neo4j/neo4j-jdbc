@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-06-25T07:34:44Z</span>
+<span id="revdate">2025-06-26T07:20:04Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -561,7 +561,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_url_and_connection_properties">4.4. URL and connection properties</a></li>
 <li><a href="#_getting_a_driver_or_a_connection_instance">4.5. Getting a driver or a connection instance</a></li>
 <li><a href="#_securing_your_connection_by_using_ssl">4.6. Securing your connection by using SSL</a></li>
-<li><a href="#_authentication">4.7. Authentication</a></li>
+<li><a href="#authentication">4.7. Authentication</a></li>
 <li><a href="#_logging">4.8. Logging</a></li>
 <li><a href="#_metrics">4.9. Metrics</a></li>
 <li><a href="#_tracing">4.10. Tracing</a></li>
@@ -1559,6 +1559,12 @@ Other connections retrieved from the driver instance to the same or to other dat
 <td class="tableblock halign-left valign-top"><p class="tableblock">A file, http or https URL pointing to a valid JSON file containing definitions for <a href="#">Cypher-backed views</a>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>authn.supplier</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The name of an authentication supplier, can be used to plugin various SSO systems such as Keycloak, with automatic token refresh. See below <a href="#authentication">Authentication</a> for more information.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1757,12 +1763,12 @@ Additionally, the builder lets you configure options that are not contained in t
 </div>
 </div>
 <div class="sect2">
-<h3 id="_authentication">4.7. Authentication</h3>
+<h3 id="authentication">4.7. Authentication</h3>
 <div class="paragraph">
 <p>The Neo4j JDBC driver provides the ability to use a custom authentication supplier in addition to JDBCs standard ways of authentication, such as using <code>java.sql.DriverManager#getConnection(java.lang.String, java.lang.String, java.lang.String)</code> or <code>java.sql.Driver#connect</code> for authentication with the Neo4j server.</p>
 </div>
 <div class="paragraph">
-<p>An authentication supplier is in Java terms a <code>Supplier&lt;org.neo4j.jdbc.Authentication&gt;</code>.
+<p>An authentication supplier is in Java terms a <code>Supplier&lt;org.neo4j.jdbc.authn.api.Authentication&gt;</code>.
 An <code>Authentication</code> instances is an abstract representation of an arbitrary authentication to be presented to the Neo4j server and can contain a principal and its credentials (username and password), a token or other ways of confirming an identity.</p>
 </div>
 <div class="paragraph">
@@ -1798,6 +1804,9 @@ This allows configuring the Neo4j JDBC driver in such a way that it can grab tok
 <div class="ulist">
 <ul>
 <li>
+<p>Creating a library with your custom authentication supplier and a small factory for it implementing <code>AuthenticationSupplierFactory</code>: It will be automatically be loaded into the JDBC driver and be used when the JDBC property <code>authn.supplier</code> is set to the name of the factory</p>
+</li>
+<li>
 <p>On the driver itself, when unwrapped to a <code>Neo4jDriver</code>, there is <code>driver#connect(String, Properties, Supplier)</code>. The given supplier will have precedence over any authentication information in the <code>properties</code> parameter</p>
 </li>
 <li>
@@ -1817,7 +1826,10 @@ This allows configuring the Neo4j JDBC driver in such a way that it can grab tok
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>If there&#8217;s supplier passed to <code>connect</code> it has precedence over the drivers locally configured supplier respectively the global one and any properties</p>
+<p>If there&#8217;s a supplier passed to <code>connect</code> it has precedence over the drivers locally configured supplier respectively the global one and any properties</p>
+</li>
+<li>
+<p>If there&#8217;s a property named <code>authn.supplier</code> in the JDBC properties and an authentication supplier factory with that name is available, a supplier will be sourced from that factory and used</p>
 </li>
 <li>
 <p>The supplier configured per driver or the global one has precedence over any properties</p>
@@ -1844,33 +1856,55 @@ The underlying bolt protocol and the Neo4j Server might not work reliable with v
 </table>
 </div>
 <div class="sect3">
-<h4 id="_example">4.7.1. Example</h4>
+<h4 id="_keycloak_example">4.7.1. Keycloak example</h4>
 <div class="paragraph">
 <p>The following class shows an example based on Keycloaks <code>AuthzClient</code>.
 The supplier will grab tokens from a Keycloak instance and store their expiration date along with the JWT token.
-The initial ask for a token will always be answered with a completely new one, each follow-up call will use the client to refresh the token</p>
+The initial ask for a token will always be answered with a completely new one, each follow-up call will use the client to refresh the token.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+There is no need to copy the below code into your own application. We actually do ship this authentication supplier with the optional <code>org.neo4j:neo4j-jdbc-authn-kc</code> module. The supplier is part of our semver api contract and can either be used directly or via the service loader mechanism, which is also demonstrated in the following documentation.
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. <code>AuthzAuthenticationSupplier</code>, an example of using Keycloak with the Neo4j JDBC driver</div>
+<div class="title">Listing 17. <code>KCAuthenticationSupplier</code>, as an example of an authentication supplier refreshing a token when necessary</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.io.IOException</span>;
 <span class="keyword">import</span> <span class="include">java.io.UncheckedIOException</span>;
 <span class="keyword">import</span> <span class="include">java.time.Instant</span>;
 <span class="keyword">import</span> <span class="include">java.util.Base64</span>;
+<span class="keyword">import</span> <span class="include">java.util.Optional</span>;
 <span class="keyword">import</span> <span class="include">java.util.concurrent.atomic.AtomicReference</span>;
 <span class="keyword">import</span> <span class="include">java.util.function.Supplier</span>;
+
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.jr.ob.JSON</span>;
 <span class="keyword">import</span> <span class="include">org.keycloak.authorization.client.AuthzClient</span>;
 <span class="keyword">import</span> <span class="include">org.keycloak.authorization.client.Configuration</span>;
 <span class="keyword">import</span> <span class="include">org.keycloak.authorization.client.util.Http</span>;
 <span class="keyword">import</span> <span class="include">org.keycloak.representations.AccessTokenResponse</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Authentication</span>;
-<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.jr.ob.JSON</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.authn.spi.Authentication</span>;
 
-<span class="directive">final</span> <span class="type">class</span> <span class="class">AuthzAuthenticationSupplier</span> <span class="directive">implements</span> Supplier&lt;Authentication&gt; {
+<span class="directive">public</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">KCAuthenticationSupplier</span> <span class="directive">implements</span> Supplier&lt;Authentication&gt; {
 
-    <span class="directive">private</span> <span class="directive">final</span> AuthzClient authzClient;
+    <span class="directive">public</span> <span class="directive">static</span> Supplier&lt;Authentication&gt; of(<span class="predefined-type">String</span> user, <span class="predefined-type">String</span> password, <span class="predefined-type">Configuration</span> configuration) {
+        <span class="keyword">return</span> <span class="keyword">new</span> KCAuthenticationSupplier(user, password, configuration);
+    }
+
+    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> username;
+
+    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> password;
 
     <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">Configuration</span> cfg;
+
+    <span class="directive">private</span> <span class="directive">final</span> AuthzClient authzClient;
 
     <span class="directive">private</span> <span class="directive">final</span> Http http;
 
@@ -1878,7 +1912,9 @@ The initial ask for a token will always be answered with a completely new one, e
 
     <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">AtomicReference</span>&lt;TokensAndExpirationTime&gt; currentToken = <span class="keyword">new</span> <span class="predefined-type">AtomicReference</span>&lt;&gt;();
 
-    AuthzAuthenticationSupplier(<span class="predefined-type">Configuration</span> cfg) {
+    KCAuthenticationSupplier(<span class="predefined-type">String</span> user, <span class="predefined-type">String</span> password, <span class="predefined-type">Configuration</span> cfg) {
+        <span class="local-variable">this</span>.username = user;
+        <span class="local-variable">this</span>.password = password;
         <span class="local-variable">this</span>.cfg = cfg;
         <span class="local-variable">this</span>.authzClient = AuthzClient.create(cfg);
         <span class="local-variable">this</span>.url = <span class="string"><span class="delimiter">&quot;</span><span class="content">%s/realms/%s/protocol/openid-connect/token</span><span class="delimiter">&quot;</span></span>.formatted(cfg.getAuthServerUrl(), cfg.getRealm());
@@ -1897,7 +1933,7 @@ The initial ask for a token will always be answered with a completely new one, e
 
     TokensAndExpirationTime get0() {
         <span class="keyword">try</span> {
-            <span class="keyword">return</span> TokensAndExpirationTime.of(<span class="local-variable">this</span>.authzClient.obtainAccessToken(<span class="string"><span class="delimiter">&quot;</span><span class="content">william.foster</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">d-fens</span><span class="delimiter">&quot;</span></span>));
+            <span class="keyword">return</span> TokensAndExpirationTime.of(<span class="local-variable">this</span>.authzClient.obtainAccessToken(<span class="local-variable">this</span>.username, <span class="local-variable">this</span>.password));
         }
         <span class="keyword">catch</span> (<span class="exception">IOException</span> ex) {
             <span class="keyword">throw</span> <span class="keyword">new</span> UncheckedIOException(ex);
@@ -1923,7 +1959,7 @@ The initial ask for a token will always be answered with a completely new one, e
         }
     }
 
-    <span class="directive">private</span> record TokensAndExpirationTime(<span class="predefined-type">String</span> accessToken, Instant expiresAt, <span class="predefined-type">String</span> refreshToken) {
+    record TokensAndExpirationTime(<span class="predefined-type">String</span> accessToken, Instant expiresAt, <span class="predefined-type">String</span> refreshToken) {
 
         <span class="directive">static</span> <span class="directive">final</span> Base64.Decoder DECODER = Base64.getDecoder();
 
@@ -1945,23 +1981,87 @@ The initial ask for a token will always be answered with a completely new one, e
 </div>
 </div>
 <div class="paragraph">
-<p>To use this supplier, you can either register it for the global driver like this:</p>
+<p>For using the above supplier add the following dependency to your class- or module-path:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Registering an instance of the authentication supplier globally</div>
+<div class="title">Listing 18. Maven dependency for the core Neo4j JDBC Driver artifact</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-authn-kc<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.6.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The same would apply for any custom supplier you might write.
+The easiest way to use the supplier now is via the build-in loader, so that you can stick purely to the JDBC api:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 19. Using a custom authentication supplier via the <code>authn.supplier</code> config option:</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Test</span>
+<span class="type">void</span> authenticationSupplierFactoriesShouldWork() <span class="directive">throws</span> <span class="exception">SQLException</span> {
+
+    <span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">enableSQLTranslation</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">true</span><span class="delimiter">&quot;</span></span>);
+
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">william.foster</span><span class="delimiter">&quot;</span></span>);
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">password</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">d-fens</span><span class="delimiter">&quot;</span></span>);
+
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">authn.supplier</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">kc</span><span class="delimiter">&quot;</span></span>); <i class="conum" data-value="1"></i><b>(1)</b>
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">authn.kc.authServerUrl</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">http://localhost:%d</span><span class="delimiter">&quot;</span></span>.formatted(KEYCLOAK.getHttpPort())); <i class="conum" data-value="2"></i><b>(2)</b>
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">authn.kc.realm</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j-sso-test</span><span class="delimiter">&quot;</span></span>);
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">authn.kc.clientId</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j-jdbc-driver</span><span class="delimiter">&quot;</span></span>);
+    properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">authn.kc.clientSecret</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4</span><span class="delimiter">&quot;</span></span>);
+
+    <span class="keyword">try</span> (<span class="type">var</span> connection = <span class="predefined-type">DriverManager</span>.getConnection(neo4jUri, properties); <i class="conum" data-value="3"></i><b>(3)</b>
+            <span class="type">var</span> stmt = connection.createStatement();
+            <span class="type">var</span> rs = stmt.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="content">SELECT 1</span><span class="delimiter">&quot;</span></span>)) {
+        assertThat(rs.next()).isTrue();
+        assertThat(rs.getInt(<span class="integer">1</span>)).isOne();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Indicate that you want to use the Keycloak authentication supplier (named <code>kc</code> in our distribution)</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>This and the following properties will be passed to the authentication system so that it can create authentication with Keycloak</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>This is a pure JDBC spec call</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In case you don&#8217;t want to use the automatic loader for authentication supplier factories, or you did write a completely custom authentication supplier and don&#8217;t want to provide <code>services</code> and corresponding module descriptions, there are several other ways of using an authentication supplier.</p>
+</div>
+<div class="paragraph">
+<p>The most JDBC complaint way is registering it for the global driver like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 20. Registering an instance of the authentication supplier globally</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
 <span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.util.function.Supplier</span>;
 
 <span class="keyword">import</span> <span class="include">org.keycloak.authorization.client.Configuration</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Authentication</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.authn.kc.KCAuthenticationSupplier</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.authn.spi.Authentication</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDriver</span>;
 
 <span class="type">class</span> <span class="class">Example</span> {
 
         <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>...a) <span class="directive">throws</span> <span class="exception">Exception</span> {
-                Supplier&lt;Authentication&gt; authenticationSupplier = <span class="keyword">new</span> AuthzAuthenticationSupplier(<span class="keyword">new</span> <span class="predefined-type">Configuration</span>());
+                Supplier&lt;Authentication&gt; authenticationSupplier = KCAuthenticationSupplier.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">pass</span><span class="delimiter">&quot;</span></span>, <span class="keyword">new</span> <span class="predefined-type">Configuration</span>());
         Neo4jDriver.registerAuthenticationSupplier(authenticationSupplier);
         <span class="predefined-type">Connection</span> connection = <span class="predefined-type">DriverManager</span>.getConnection(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j+s://xyz.databases.neo4j.io</span><span class="delimiter">&quot;</span></span>);
     }
@@ -1969,11 +2069,12 @@ The initial ask for a token will always be answered with a completely new one, e
 </div>
 </div>
 <div class="paragraph">
-<p>The above setting is most likely the easiest way for integrations with frameworks like Spring Boot, in which you could configure the global supplier through an <code>org.springframework.beans.factory.InitializingBean</code>.
+<p>The advantage here is that it makes sure that all applications that use the Neo4j JDBC Driver in a JDBC compliant way over the <code>DriverManager</code> will automatically use the authentication supplier.
+Hence, the above setting is most likely the easiest way for integrations with frameworks like Spring Boot, in which you could configure the global supplier through an <code>org.springframework.beans.factory.InitializingBean</code>.
 Alternatively use the driver builder or manually create an instance of the driver:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Creating an explicit instance of <code>Neo4jDriver</code> so that the <code>connect</code> overload taking in an authentication supplier is visible</div>
+<div class="title">Listing 21. Creating an explicit instance of <code>Neo4jDriver</code> so that the <code>connect</code> overload taking in an authentication supplier is visible</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
 <span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
@@ -1981,19 +2082,37 @@ Alternatively use the driver builder or manually create an instance of the drive
 <span class="keyword">import</span> <span class="include">java.util.function.Supplier</span>;
 
 <span class="keyword">import</span> <span class="include">org.keycloak.authorization.client.Configuration</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Authentication</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.authn.kc.KCAuthenticationSupplier</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.authn.spi.Authentication</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDriver</span>;
 
 <span class="type">class</span> <span class="class">Example</span> {
 
     <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>...a) <span class="directive">throws</span> <span class="exception">Exception</span> {
-        Supplier&lt;Authentication&gt; authenticationSupplier = <span class="keyword">new</span> AuthzAuthenticationSupplier(<span class="keyword">new</span> <span class="predefined-type">Configuration</span>());
+        Supplier&lt;Authentication&gt; authenticationSupplier = KCAuthenticationSupplier.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">pass</span><span class="delimiter">&quot;</span></span>, <span class="keyword">new</span> <span class="predefined-type">Configuration</span>());
         Neo4jDriver.registerAuthenticationSupplier(authenticationSupplier);
         Neo4jDriver driver = <span class="keyword">new</span> Neo4jDriver();
         <span class="predefined-type">Connection</span> connection = driver.connect(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j+s://xyz.databases.neo4j.io</span><span class="delimiter">&quot;</span></span>, <span class="keyword">new</span> <span class="predefined-type">Properties</span>(), authenticationSupplier);
     }
 }</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>This alternative is feasible in any application for which you are in sole control of creating connections.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you need to against Keycloak, the Neo4j JDBC driver does ship everything you need, and you are good to go.
+Just include the Maven module and apply the recommended way of configuring the supplier via JDBC properties.
+For all other authentication needs you can write a custom authentication supplier in a similar fashion as the provided Keycloak support. Have a look at the JavaDoc of <code>org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory</code> in the <code>org.neo4j:neo4j-jdbc-authn-spi</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -2006,7 +2125,7 @@ Alternatively use the driver builder or manually create an instance of the drive
 The following section includes an example configuration that sets the global logging level to <code>INFO</code>, Neo4j JDBC Driver itself to <code>DEBUG</code> and everything that is network related to <code>WARN</code>:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Logging configuration for the Neo4j JDBC Driver that logs all information</div>
+<div class="title">Listing 22. Logging configuration for the Neo4j JDBC Driver that logs all information</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
 handlers=java.util.logging.ConsoleHandler
@@ -2039,7 +2158,7 @@ java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4
 <p>Capturing logs to a file requires to change the handler:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. Logging configuration for the Neo4j JDBC Driver that writes all JDBC logs to a file</div>
+<div class="title">Listing 23. Logging configuration for the Neo4j JDBC Driver that writes all JDBC logs to a file</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
 handlers=java.util.logging.ConsoleHandler
@@ -2088,7 +2207,7 @@ The levels can be configured with the levels Spring does understand.
 The following configuration is equivalent to the one above:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file</div>
+<div class="title">Listing 24. Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="bash">logging.level.org.neo4j.jdbc=trace
 logging.level.org.neo4j.jdbc.result-set=warn
@@ -2106,7 +2225,7 @@ The levels can be configured with the levels Quarkus does understand.
 The following configuration is equivalent to the ones above:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file</div>
+<div class="title">Listing 25. Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="bash">quarkus.log.category.&quot;org.neo4j.jdbc&quot;.min-level=TRACE
 quarkus.log.category.&quot;org.neo4j.jdbc&quot;.level=TRACE
@@ -2186,7 +2305,7 @@ This applies to all distributed versions, including the full bundles, so that an
 For Maven, use this additional dependency declaration:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. Maven dependency that allows you to configure tracing</div>
+<div class="title">Listing 26. Maven dependency that allows you to configure tracing</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
@@ -2199,7 +2318,7 @@ For Maven, use this additional dependency declaration:</p>
 <p>And for Gradle you would want to declare the following runtime dependency:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. Gradle dependency that allows you to configure tracing</div>
+<div class="title">Listing 27. Gradle dependency that allows you to configure tracing</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
     runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.6.0-SNAPSHOT</span><span class="delimiter">'</span></span>
@@ -2214,7 +2333,7 @@ Micrometer Tracing allows you to bind to various tracers and exporters, such as 
 <p>Once you have a Micrometer Tracer, you can configure a <code>Neo4jDataSource</code> like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 26. A <code>Neo4jDataSource</code> spawning connections that trace their usage</div>
+<div class="title">Listing 28. A <code>Neo4jDataSource</code> spawning connections that trace their usage</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">javax.sql.DataSource</span>;
 
@@ -2254,7 +2373,7 @@ Micrometer Tracing allows you to bind to various tracers and exporters, such as 
 <p>You can also enable tracing on individual connections by unwrapping them into the <code>Neo4jConnection</code> extension like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. Enable tracing for an individual connection</div>
+<div class="title">Listing 29. Enable tracing for an individual connection</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
 <span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
@@ -2310,7 +2429,7 @@ We provide a few examples, but refer to your frameworks documentation on how to 
 <p>If you are happy to configure tracing for all connections acquired from the <code>DriverManager</code>, configure tracing like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 28. Configure tracing for all drivers registered with <code>DriverManager</code></div>
+<div class="title">Listing 30. Configure tracing for all drivers registered with <code>DriverManager</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
@@ -2340,7 +2459,7 @@ Hikari provides connection pooling, and you should not ditch that.
 There&#8217;s no need to create your own data source properties for all configuration values, you can just inject it like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. Configure a tracing and pooled data source with Spring Boot</div>
+<div class="title">Listing 31. Configure a tracing and pooled data source with Spring Boot</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">javax.sql.DataSource</span>;
 
@@ -2414,7 +2533,7 @@ The exporter should work the same for other services.
 OpenTelemetry has split its SDK into several modules, hence you will first import their BOM into your build file. Here&#8217;s an example for Maven:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 30. Snippet from a Maven build file to include the OpenTelemetry BOM</div>
+<div class="title">Listing 32. Snippet from a Maven build file to include the OpenTelemetry BOM</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>io.opentelemetry<span class="tag">&lt;/groupId&gt;</span>
@@ -2449,7 +2568,7 @@ Next, bring in the following dependencies so that Spring Boot can configure the 
 <p>In the case of Dash0, the application configuration will look similar to this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. Using the OpenTelemetry exporter in Spring Boot towards Dash0</div>
+<div class="title">Listing 33. Using the OpenTelemetry exporter in Spring Boot towards Dash0</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="properties">management.otlp.tracing.export.enabled=true
 management.otlp.tracing.endpoint=https://ingress.eu-west-1.aws.dash0.com/v1/traces
@@ -2812,7 +2931,7 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <p>The next few examples use the <code>properties</code> config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 32. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
+<div class="title">Listing 34. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2835,7 +2954,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 33. Parse table names into upper case</div>
+<div class="title">Listing 35. Parse table names into upper case</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2858,7 +2977,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 The following example changes that prefix to <code>$</code> (the same prefix that Cypher uses):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 34. Change parameters prefix and add mappings for join columns</div>
+<div class="title">Listing 36. Change parameters prefix and add mappings for join columns</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -3150,7 +3269,7 @@ RETURN elementId(p) AS `v$id`,
 </div>
 <hr>
 <div id="star_6b" class="listingblock">
-<div class="title">Listing 35. Ordering without specifying a table alias</div>
+<div class="title">Listing 37. Ordering without specifying a table alias</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Person p <span class="keyword">ORDER</span> <span class="keyword">BY</span> name <span class="directive">ASC</span></code></pre>
 </div>
@@ -4396,7 +4515,7 @@ While <code>ON DUPLICATE KEY</code> does offer upgrade options, it assumes the p
 Although this is most certainly the case in a relational system, this translation layer that runs without a database connection doesn&#8217;t know.</p>
 </div>
 <div id="upsert1" class="listingblock">
-<div class="title">Listing 36. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
+<div class="title">Listing 38. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Movie(title, released) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> DUPLICATE <span class="type">KEY</span> IGNORE</code></pre>
 </div>
@@ -4407,7 +4526,7 @@ Although this is most certainly the case in a relational system, this translatio
 </div>
 </div>
 <div id="upsert2" class="listingblock">
-<div class="title">Listing 37. Upsert with <code>ON CONFLICT IGNORE</code></div>
+<div class="title">Listing 39. Upsert with <code>ON CONFLICT IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> actors(name, firstname) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> CONFLICT DO NOTHING</code></pre>
 </div>
@@ -4560,7 +4679,7 @@ Check "<a href="#_restrictions">Restrictions</a>" below for more information.</p
 The native format is defined by the following <a href="https://json-schema.org">schema</a>:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 38. JSON Schema for Cypher-backed views</div>
+<div class="title">Listing 40. JSON Schema for Cypher-backed views</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">{
   <span class="key"><span class="delimiter">&quot;</span><span class="content">$schema</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">http://json-schema.org/draft-07/schema#</span><span class="delimiter">&quot;</span></span>,
@@ -4683,7 +4802,7 @@ Make sure you only load view definitions from trusted sources. As stated above, 
 <p>A simple example looks like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 39. A Cypher-backed view that returns all movies and their actors.</div>
+<div class="title">Listing 41. A Cypher-backed view that returns all movies and their actors.</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">[
   {
@@ -4716,7 +4835,7 @@ Make sure you only load view definitions from trusted sources. As stated above, 
 The view can be queried as follows, with ordering and predicates being pushed down into the actual query:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 40. Querying <code>v_movie_actors</code></div>
+<div class="title">Listing 42. Querying <code>v_movie_actors</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> v_movie_actors <span class="keyword">ORDER</span> <span class="keyword">BY</span> title</code></pre>
 </div>
@@ -4725,7 +4844,7 @@ The view can be queried as follows, with ordering and predicates being pushed do
 <p>The <code>propertyName</code> attribute of the <code>columnType</code> object can be used to refer to properties of a Cypher entity (either a node or relationship) as shown in the following example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 41. Defining a view that uses a virtual column (the id function) and an entity returned by the Cypher query</div>
+<div class="title">Listing 43. Defining a view that uses a virtual column (the id function) and an entity returned by the Cypher query</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">[
   {
@@ -4750,7 +4869,7 @@ The view can be queried as follows, with ordering and predicates being pushed do
 <p>Which can now be queried as</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 42. Querying <code>v_people</code></div>
+<div class="title">Listing 44. Querying <code>v_people</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> v_people <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string"><span class="delimiter">'</span><span class="content">A%</span><span class="delimiter">'</span></span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> name</code></pre>
 </div>
@@ -4838,7 +4957,7 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 43. Example of a valid URL</div>
+<div class="title">Listing 45. Example of a valid URL</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
 </div>
@@ -5194,7 +5313,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-06-25 07:34:50 UTC
+Last updated 2025-06-26 07:20:08 UTC
 </div>
 </div>
 </body>
