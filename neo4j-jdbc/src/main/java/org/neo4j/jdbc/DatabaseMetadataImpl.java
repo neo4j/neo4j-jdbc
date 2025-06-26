@@ -1261,17 +1261,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			keys.add(k);
 			columns[i++] = (v instanceof Value value) ? value : Values.value(v);
 		}
-		var runResponse = new Neo4jTransaction.RunResponse() {
-			@Override
-			public long queryId() {
-				return 0;
-			}
-
-			@Override
-			public List<String> keys() {
-				return keys;
-			}
-		};
+		var runResponse = createRunResponseForStaticKeys(keys);
 		var pullResponse = DatabaseMetadataImpl.staticPullResponseFor(keys, List.<Value[]>of(columns));
 		return new LocalStatementImpl(connection, runResponse, pullResponse).getResultSet();
 	}

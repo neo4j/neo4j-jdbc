@@ -123,6 +123,18 @@ class CallableStatementIT extends IntegrationTestBase {
 		}
 	}
 
+	@Test
+	void batchingShouldNotBeSupported() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall("{$name = call db.info()}")) {
+			assertThatExceptionOfType(SQLException.class).isThrownBy(statement::clearBatch)
+				.withMessage("general processing exception - This method must not be called on CallableStatement");
+			assertThatExceptionOfType(SQLException.class).isThrownBy(statement::addBatch)
+				.withMessage("general processing exception - This method must not be called on CallableStatement");
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> statement.addBatch("RETURN sin(?)"))
+				.withMessage("general processing exception - This method must not be called on CallableStatement");
+		}
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = { "{? = call sin(?)}", "RETURN sin(?)" })
 	void outByIndexOnFunctionShouldWork(String sql) throws SQLException {

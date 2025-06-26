@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +57,20 @@ class DatabaseMetadataImplTests {
 		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
 				any(), any(), any(), any(), any(), any()))
 			.willReturn(mockedFuture);
+	}
+
+	@Test
+	void parameterResultSetShouldWork() throws SQLException {
+		var map = new LinkedHashMap<String, Object>();
+		map.put("1", "a");
+		map.put("2", "b");
+		map.put("3", "c");
+		var rs = DatabaseMetadataImpl.resultSetForParameters(mock(ConnectionImpl.class), map);
+		var meta = rs.getMetaData();
+		assertThat(meta.getColumnCount()).isEqualTo(3);
+		for (int i = 0; i < meta.getColumnCount(); ++i) {
+			assertThat(meta.getColumnLabel(i + 1)).isEqualTo(Integer.toString(i + 1));
+		}
 	}
 
 	@Test

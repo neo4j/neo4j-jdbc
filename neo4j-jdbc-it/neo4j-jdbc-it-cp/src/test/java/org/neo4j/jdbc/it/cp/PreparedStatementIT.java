@@ -292,6 +292,23 @@ class PreparedStatementIT extends IntegrationTestBase {
 		}
 	}
 
+	@Test
+	void metadataWillAvailableOnlyAfterExecute() throws SQLException {
+		try (var connection = getConnection();
+				var stmt = connection.prepareStatement("MATCH(p:Person) WHERE p.date >= ? AND p.date  < ? RETURN p")) {
+
+			var ts = Timestamp.from(Instant.now());
+			stmt.setTimestamp(1, ts);
+			stmt.setTimestamp(2, ts);
+
+			assertThatExceptionOfType(SQLException.class).isThrownBy(stmt::getMetaData)
+				.withMessageContaining("#execute has not been called");
+
+			assertThat(stmt.execute()).isTrue();
+			assertThat(stmt.getMetaData()).isNotNull();
+		}
+	}
+
 	@Nested
 	class SymmetricTypeConversionInPreparedStatementAndResultSet {
 
