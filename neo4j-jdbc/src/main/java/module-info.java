@@ -45,6 +45,8 @@ module org.neo4j.jdbc {
 	exports org.neo4j.jdbc.events;
 	exports org.neo4j.jdbc.tracing;
 	exports org.neo4j.jdbc.values;
+	// exports org.neo4j.jdbc.authn.spi;
+	// exports org.neo4j.jdbc.translator.spi;
 
 	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;
 	// provides org.neo4j.jdbc.translator.spi.TranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;

@@ -37,5 +37,6 @@ if [ "$#" -ne 3 ]; then
 else
   sed -e '/\/\/ start::shaded-dependencies/,/\/\/ end::shaded-dependencies/d' \
       -e 's/\/\/ requires \(.*\);/requires \1;/' \
+      -e 's/\/\/ exports \(.*\);/exports \1;/' \
       -e 's/\/\/ provides \(.*\);/provides \1;/' "$IN" | cat -s > "$OUT"
 fi;
