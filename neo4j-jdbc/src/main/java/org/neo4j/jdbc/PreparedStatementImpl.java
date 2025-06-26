@@ -48,8 +48,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -111,7 +111,11 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
 		this.sql = sql;
 		this.poolable = true;
-		this.parameters.add(new HashMap<>());
+		this.parameters.add(newParameterMap());
+	}
+
+	private static LinkedHashMap<String, Object> newParameterMap() {
+		return new LinkedHashMap<>();
 	}
 
 	@Override
@@ -156,7 +160,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	public void addBatch() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Adding batch");
 		assertIsOpen();
-		this.parameters.addLast(new HashMap<>());
+		this.parameters.addLast(newParameterMap());
 	}
 
 	@Override
@@ -222,7 +226,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		LOGGER.log(Level.FINER, () -> "Clearing batch");
 		assertIsOpen();
 		this.parameters.clear();
-		this.parameters.add(new HashMap<>());
+		this.parameters.add(newParameterMap());
 	}
 
 	final void setParameter(String key, Object value) {
@@ -680,7 +684,12 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	@Override
 	public ResultSetMetaData getMetaData() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Getting meta data");
-		assertCallAndPositionAtFirstRow();
+		if (super.resultSet == null) {
+			throw new Neo4jException(withReason("#execute has not been called"));
+		}
+		if (this.cursorMoved.compareAndSet(false, true)) {
+			super.resultSet.next();
+		}
 		return super.resultSet.getMetaData();
 	}
 
@@ -873,22 +882,13 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		throw new SQLFeatureNotSupportedException();
 	}
 
-	protected final ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
-		if (resultSet == null) {
-			throw new Neo4jException(withReason("#execute has not been called"));
-		}
-		if (this.cursorMoved.compareAndSet(false, true)) {
-			this.resultSet.next();
-		}
-		return resultSet;
-	}
-
 	private static String computeParameterName(int parameterIndex) {
 		return String.valueOf(parameterIndex);
 	}
 
-	static SQLException newIllegalMethodInvocation() {
-		return new Neo4jException(withReason("This method must not be called on PreparedStatement"));
+	SQLException newIllegalMethodInvocation() {
+		return new Neo4jException(withReason(
+				"This method must not be called on %s".formatted(this.getClass().getSimpleName().replace("Impl", ""))));
 	}
 
 	private static void assertValidParameterIndex(int index) throws SQLException {

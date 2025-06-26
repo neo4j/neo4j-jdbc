@@ -29,6 +29,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
+import java.sql.ResultSet;
 import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -44,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -55,11 +57,11 @@ import java.util.stream.Collectors;
 
 import org.neo4j.jdbc.Neo4jException.GQLError;
 
+import static org.neo4j.jdbc.Neo4jException.withReason;
+
 final class CallableStatementImpl extends PreparedStatementImpl implements Neo4jCallableStatement {
 
 	private static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.callable-statement");
-
-	private ParameterType parameterType;
 
 	static CallableStatementImpl prepareCall(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql)
@@ -102,6 +104,12 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 				descriptor.toCypher(parameterOrder));
 	}
 
+	private ParameterType parameterType;
+
+	private ResultSet parameterResultSet;
+
+	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
+
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
 			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql) {
 		super(connection, transactionSupplier, UnaryOperator.identity(), null, onClose, false, rewriteBatchedStatements,
@@ -109,15 +117,42 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	}
 
 	@Override
+	public boolean execute() throws SQLException {
+		clearParameterResultSet();
+		this.parameterResultSet = DatabaseMetadataImpl.resultSetForParameters(getConnection(), getCurrentBatch());
+		return super.execute();
+	}
+
+	private void clearParameterResultSet() throws SQLException {
+		if (this.parameterResultSet == null) {
+			return;
+		}
+		this.parameterResultSet.close();
+		this.parameterResultSet = null;
+		this.cursorMoved.set(false);
+	}
+
+	ResultSet assertCallAndPositionAtFirstRow() throws SQLException {
+
+		if (this.parameterResultSet == null) {
+			throw new Neo4jException(withReason("#execute has not been called"));
+		}
+		if (this.cursorMoved.compareAndSet(false, true)) {
+			this.parameterResultSet.next();
+		}
+		return this.parameterResultSet;
+	}
+
+	@Override
 	public void clearParameters() throws SQLException {
 		super.clearParameters();
 		this.parameterType = null;
+		clearParameterResultSet();
 	}
 
 	@Override
 	public void clearBatch() throws SQLException {
-		super.clearBatch();
-		this.parameterType = null;
+		throw newIllegalMethodInvocation();
 	}
 
 	@Override
@@ -966,6 +1001,16 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	@Override
 	public int[] executeBatch() throws SQLException {
+		throw newIllegalMethodInvocation();
+	}
+
+	@Override
+	public void addBatch() throws SQLException {
+		throw newIllegalMethodInvocation();
+	}
+
+	@Override
+	public void addBatch(String sql) throws SQLException {
 		throw newIllegalMethodInvocation();
 	}
 
