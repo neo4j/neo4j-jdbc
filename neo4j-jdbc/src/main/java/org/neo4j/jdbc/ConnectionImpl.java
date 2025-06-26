@@ -113,15 +113,15 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final BoltConnection boltConnection;
 
-	private final Lazy<BoltConnection, RuntimeException> boltConnectionForMetaData;
+	private final Lazy<BoltConnection> boltConnectionForMetaData;
 
-	private final Lazy<DatabaseMetaData, RuntimeException> databaseMetadData;
+	private final Lazy<DatabaseMetaData> databaseMetadData;
 
 	private final Set<Reference<Statement>> trackedStatementReferences = new HashSet<>();
 
 	private final ReferenceQueue<Statement> trackedStatementReferenceQueue = new ReferenceQueue<>();
 
-	private final Lazy<List<Translator>, RuntimeException> translators;
+	private final Lazy<List<Translator>> translators;
 
 	private final boolean enableSqlTranslation;
 
@@ -191,9 +191,9 @@ final class ConnectionImpl implements Neo4jConnection {
 		initalListeners.forEach(this::addListener);
 
 		this.boltConnection = boltConnectionSupplier.apply(this.authenticationManager.getOrRefresh());
-		this.boltConnectionForMetaData = Lazy.of((Supplier<BoltConnection>) () -> boltConnectionSupplier
-			.apply(this.authenticationManager.getOrRefresh()));
-		this.translators = Lazy.of(translators);
+		this.boltConnectionForMetaData = Lazy
+			.of(() -> boltConnectionSupplier.apply(this.authenticationManager.getOrRefresh()));
+		this.translators = Lazy.of(translators::get);
 		this.enableSqlTranslation = enableSQLTranslation;
 		this.enableTranslationCaching = enableTranslationCaching;
 		this.rewriteBatchedStatements = rewriteBatchedStatements;
@@ -202,7 +202,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		this.transactionMetadata.putAll(Objects.requireNonNullElseGet(transactionMetadata, Map::of));
 		this.relationshipSampleSize = relationshipSampleSize;
 		this.databaseName = Objects.requireNonNull(databaseName);
-		this.databaseMetadData = Lazy.of((Supplier<DatabaseMetaData>) () -> {
+		this.databaseMetadData = Lazy.of(() -> {
 			var views = this.translators.resolve().stream().flatMap(t -> t.getViews().stream()).toList();
 			return new DatabaseMetadataImpl(this, this.enableSqlTranslation, this.relationshipSampleSize, views);
 		});

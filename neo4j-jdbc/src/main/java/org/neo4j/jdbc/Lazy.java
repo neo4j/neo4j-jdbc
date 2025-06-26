@@ -24,25 +24,20 @@ import java.util.function.Supplier;
  * Utility class for lazily and thread safe resolving a supplier of things.
  *
  * @param <T> the type of things to be resolved
- * @param <E> the type of the throwable
  * @author Michael J. Simons
  * @since 6.0.0
  */
-final class Lazy<T, E extends Throwable> {
+final class Lazy<T> {
 
-	private final ThrowingSupplier<T, E> supplier;
+	private final ThrowingSupplier<T> supplier;
 
 	private volatile T resolved;
 
-	static <T> Lazy<T, RuntimeException> of(Supplier<T> supplier) {
-		return new Lazy<>(supplier::get);
-	}
-
-	static <T, E extends Throwable> Lazy<T, E> of(ThrowingSupplier<T, E> supplier) {
+	static <T, E extends Throwable> Lazy<T> of(ThrowingSupplier<T> supplier) {
 		return new Lazy<>(supplier);
 	}
 
-	private Lazy(ThrowingSupplier<T, E> supplier) {
+	private Lazy(ThrowingSupplier<T> supplier) {
 		this.supplier = supplier;
 	}
 
@@ -50,19 +45,39 @@ final class Lazy<T, E extends Throwable> {
 	 * Lazily resolves the value of the original {@link Supplier} and memorizes it.
 	 * @return the resolved value
 	 */
-	T resolve() throws E {
+	T resolve() {
 
 		T result = this.resolved;
 		if (result == null) {
 			synchronized (this) {
 				result = this.resolved;
 				if (result == null) {
-					this.resolved = this.supplier.get();
+					try {
+						this.resolved = this.supplier.get();
+					}
+					catch (Exception ex) {
+						if (ex instanceof RuntimeException rt) {
+							throw rt;
+						}
+						throw new RuntimeException(ex);
+					}
 					result = this.resolved;
 				}
 			}
 		}
 		return result;
+	}
+
+	<E extends Throwable> T resolveThrowing(Class<E> type) throws E {
+		try {
+			return this.resolve();
+		}
+		catch (Exception ex) {
+			if (type.isAssignableFrom(ex.getCause().getClass())) {
+				throw type.cast(ex.getCause());
+			}
+			throw ex;
+		}
 	}
 
 	/**

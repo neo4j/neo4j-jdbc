@@ -402,10 +402,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final BoltConnectionProvider boltConnectionProvider;
 
-	private final Lazy<List<TranslatorFactory>, RuntimeException> sqlTranslatorFactories = Lazy
+	private final Lazy<List<TranslatorFactory>> sqlTranslatorFactories = Lazy
 		.<List<TranslatorFactory>, RuntimeException>of(() -> this.loadServices(TranslatorFactory.class));
 
-	private final Lazy<Map<String, AuthenticationSupplierFactory>, RuntimeException> authenticationSupplierFactories = Lazy
+	private final Lazy<Map<String, AuthenticationSupplierFactory>> authenticationSupplierFactories = Lazy
 		.<Map<String, AuthenticationSupplierFactory>, RuntimeException>of(
 				() -> this.loadServices(AuthenticationSupplierFactory.class)
 					.stream()

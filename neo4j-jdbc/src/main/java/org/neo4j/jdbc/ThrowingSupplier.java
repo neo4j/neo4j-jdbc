@@ -22,12 +22,12 @@ package org.neo4j.jdbc;
  * Supplier that can throw an exception.
  *
  * @param <T> the type of results supplied by this supplier
- * @param <E> the type of the throwable
  * @author Michael J. Simons
  * @since 6.2.0
  */
-interface ThrowingSupplier<T, E extends Throwable> {
+@FunctionalInterface
+interface ThrowingSupplier<T> {
 
-	T get() throws E;
+	T get() throws Exception;
 
 }

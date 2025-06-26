@@ -18,19 +18,22 @@
  */
 package org.neo4j.jdbc;
 
+import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatRuntimeException;
 
 class LazyTests {
 
 	@Test
 	void shouldMemorize() {
 		var cnt = new AtomicInteger(0);
-		var lazy = Lazy.<Integer>of(cnt::incrementAndGet);
+		var lazy = Lazy.of(cnt::incrementAndGet);
 		assertThat(lazy.resolve()).isOne();
 		assertThat(lazy.resolve()).isOne();
 		assertThat(cnt.get()).isOne();
@@ -39,7 +42,7 @@ class LazyTests {
 	@Test
 	void shouldNoteWhenResolved() {
 		var cnt = new AtomicInteger(0);
-		var lazy = Lazy.<Integer>of(cnt::incrementAndGet);
+		var lazy = Lazy.of(cnt::incrementAndGet);
 		assertThat(lazy.isResolved()).isFalse();
 		assertThat(lazy.resolve()).isOne();
 		assertThat(lazy.isResolved()).isTrue();
@@ -48,7 +51,7 @@ class LazyTests {
 	@Test
 	void shouldForget() {
 		var cnt = new AtomicInteger(0);
-		var lazy = Lazy.<Integer>of(cnt::incrementAndGet);
+		var lazy = Lazy.of(cnt::incrementAndGet);
 		assertThat(lazy.isResolved()).isFalse();
 		assertThat(lazy.resolve()).isOne();
 		assertThatNoException().isThrownBy(lazy::forget);
@@ -56,6 +59,48 @@ class LazyTests {
 		assertThat(lazy.resolve()).isEqualTo(2);
 		assertThat(lazy.isResolved()).isTrue();
 		assertThat(cnt.get()).isEqualTo(2);
+	}
+
+	@Test
+	void shouldNotWrapRuntimeException() {
+		var lazy = Lazy.of(() -> {
+			throw new RuntimeException("inner");
+		});
+		assertThatRuntimeException().isThrownBy(lazy::resolve).withNoCause().withMessage("inner");
+	}
+
+	@Test
+	void shouldWrapOtherExceptions() {
+		var lazy = Lazy.of(() -> {
+			throw new SQLException("inner");
+		});
+		assertThatRuntimeException().isThrownBy(lazy::resolve)
+			.withCauseInstanceOf(SQLException.class)
+			.withMessage("java.sql.SQLException: inner");
+	}
+
+	@Test
+	void shouldUnwrapSQLException() {
+		var lazy = Lazy.of(() -> {
+			throw new SQLException("inner");
+		});
+		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> lazy.resolveThrowing(SQLException.class))
+			.withNoCause()
+			.withMessage("inner");
+
+		assertThatRuntimeException().isThrownBy(() -> lazy.resolveThrowing(ArithmeticException.class))
+			.withCauseInstanceOf(SQLException.class)
+			.withMessage("java.sql.SQLException: inner");
+	}
+
+	@Test
+	void shouldWrapOtherExceptionsIfNotSQL() {
+		var lazy = Lazy.of(() -> {
+			throw new Exception("inner");
+		});
+		assertThatRuntimeException().isThrownBy(() -> lazy.resolveThrowing(ArithmeticException.class))
+			.withCauseInstanceOf(Exception.class)
+			.withMessage("java.lang.Exception: inner");
 	}
 
 }

@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
@@ -129,13 +128,13 @@ class ArrayImpl implements Array {
 
 	private final List<Value> values;
 
-	private final Lazy<Object, RuntimeException> array;
+	private final Lazy<Object> array;
 
 	ArrayImpl(Connection connection, Type arrayType, List<Value> values, boolean containsNulls) {
 		this.connection = connection;
 		this.arrayType = arrayType;
 		this.values = values;
-		this.array = Lazy.of((Supplier<Object>) () -> {
+		this.array = Lazy.of(() -> {
 			if (containsNulls) {
 				return this.values.stream().map(Value::asObject).toArray(Object[]::new);
 			}

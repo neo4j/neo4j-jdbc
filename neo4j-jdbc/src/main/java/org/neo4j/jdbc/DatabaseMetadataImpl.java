@@ -252,11 +252,11 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private final int relationshipSampleSize;
 
-	private final Lazy<Boolean, RuntimeException> apocAvailable;
+	private final Lazy<Boolean> apocAvailable;
 
-	private final Lazy<String, SQLException> userName;
+	private final Lazy<String> userName;
 
-	private final Lazy<Boolean, SQLException> readOnly;
+	private final Lazy<Boolean> readOnly;
 
 	private final Map<GetTablesCacheKey, GetTablesCacheValue> tablesCache = new ConcurrentHashMap<>();
 
@@ -268,15 +268,15 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		this.automaticSqlTranslation = automaticSqlTranslation;
 		this.relationshipSampleSize = relationshipSampleSize;
 
-		this.apocAvailable = Lazy.<Boolean, RuntimeException>of(this::isApocAvailable0);
+		this.apocAvailable = Lazy.of(this::isApocAvailable0);
 		// Those queries use administrative commands that do not compose with normal
 		// queries, so we cache it here and hope for the best they don't interfere with
 		// other queries.
-		this.userName = Lazy.of((ThrowingSupplier<String, SQLException>) () -> {
+		this.userName = Lazy.of(() -> {
 			var response = doQueryForPullResponse(getRequest("getUserName"));
 			return response.records().get(0).get(0).asString();
 		});
-		this.readOnly = Lazy.of((ThrowingSupplier<Boolean, SQLException>) () -> {
+		this.readOnly = Lazy.of(() -> {
 			var response = doQueryForPullResponse(getRequest("isReadOnly", "name", this.getSingleCatalog()));
 			return response.records().get(0).get(0).asBoolean();
 		});
@@ -347,12 +347,12 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	@Override
 	public String getUserName() throws SQLException {
-		return this.userName.resolve();
+		return this.userName.resolveThrowing(SQLException.class);
 	}
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
-		return this.readOnly.resolve();
+		return this.readOnly.resolveThrowing(SQLException.class);
 	}
 
 	// Wrt ordering see
