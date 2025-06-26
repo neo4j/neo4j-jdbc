@@ -16,25 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
-
-import java.util.Map;
-
 /**
- * An interface for custom authentications based on a map of values.
- *
- * @author Michael J. Simons
- * @since 6.6.0
+ * This package contains authentication suppliers to be used with a Keycloak instance.
  */
-public non-sealed interface CustomAuthentication extends Authentication {
-
-	/**
-	 * Converts this token into a map. Usual keys that the server expects are
-	 * {@code scheme}, {@code principal} and {@code credentials}.
-	 * @return a map to be handled by the Neo4j server, must not be {@literal null}
-	 */
-	default Map<String, Object> toMap() {
-		return Map.of();
-	}
-
-}
+package org.neo4j.jdbc.authn.kc;

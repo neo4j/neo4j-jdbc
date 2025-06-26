@@ -50,7 +50,7 @@ class ViewTests {
 		columns.add(View.column("d", "e", "f"));
 		var theViewColumns = view.columns();
 		assertThat(theViewColumns).hasSize(1);
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> theViewColumns.clear());
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(theViewColumns::clear);
 	}
 
 }

@@ -49,10 +49,12 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.netty.channel.EventLoopGroup;
@@ -72,6 +74,12 @@ import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
 import org.neo4j.bolt.connection.netty.NettyBoltConnectionProvider;
 import org.neo4j.jdbc.Neo4jException.GQLError;
+import org.neo4j.jdbc.authn.spi.Authentication;
+import org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
+import org.neo4j.jdbc.authn.spi.CustomAuthentication;
+import org.neo4j.jdbc.authn.spi.DisabledAuthentication;
+import org.neo4j.jdbc.authn.spi.TokenAuthentication;
+import org.neo4j.jdbc.authn.spi.UsernamePasswordAuthentication;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.DriverListener;
 import org.neo4j.jdbc.events.DriverListener.ConnectionClosedEvent;
@@ -95,44 +103,44 @@ import static org.neo4j.jdbc.Neo4jException.withReason;
 public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the host.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the host.
 	 */
 	public static final String PROPERTY_HOST = "host";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the port.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the port.
 	 */
 	public static final String PROPERTY_PORT = "port";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the username.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the username.
 	 */
 	public static final String PROPERTY_USER = "user";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the database.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the database.
 	 */
 	public static final String PROPERTY_DATABASE = "database";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the user-agent.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the user-agent.
 	 */
 	public static final String PROPERTY_USER_AGENT = "agent";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the password.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the password.
 	 */
 	public static final String PROPERTY_PASSWORD = "password";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the auth scheme.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the auth scheme.
 	 * <p>
 	 * Currently supported values are:
 	 * <ul>
@@ -150,25 +158,31 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_AUTH_SCHEME = "authScheme";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the auth realm.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the auth realm.
 	 */
 	public static final String PROPERTY_AUTH_REALM = "authRealm";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name}
-	 * containing the timeout.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the authn supplier name.
+	 */
+	public static final String PROPERTY_AUTHN_SUPPLIER = "authn.supplier";
+
+	/**
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
+	 * the timeout.
 	 */
 	public static final String PROPERTY_TIMEOUT = "timeout";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} used to
 	 * enable automatic SQL to Cypher translation.
 	 */
 	public static final String PROPERTY_SQL_TRANSLATION_ENABLED = "enableSQLTranslation";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} used to
 	 * enable the use of causal cluster bookmarks.
 	 */
 	public static final String PROPERTY_USE_BOOKMARKS = "useBookmarks";
@@ -184,7 +198,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_REWRITE_PLACEHOLDERS = "rewritePlaceholders";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name} used to
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} used to
 	 * enable automatic translation caching.
 	 */
 	public static final String PROPERTY_SQL_TRANSLATION_CACHING_ENABLED = "cacheSQLTranslations";
@@ -198,9 +212,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_TRANSLATOR_FACTORY = "translatorFactory";
 
 	/**
-	 * The name of the {@link #getPropertyInfo(String, Properties) property name} that
-	 * enables automatic rewrite of batched prepared statements into batched Cypher
-	 * statements.
+	 * The name of the {@link #getPropertyInfo(String, Properties) property} that enables
+	 * automatic rewrite of batched prepared statements into batched Cypher statements.
 	 */
 	public static final String PROPERTY_REWRITE_BATCHED_STATEMENTS = "rewriteBatchedStatements";
 
@@ -389,7 +402,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final BoltConnectionProvider boltConnectionProvider;
 
-	private volatile List<TranslatorFactory> sqlTranslatorFactories;
+	private final Lazy<List<TranslatorFactory>, RuntimeException> sqlTranslatorFactories = Lazy
+		.<List<TranslatorFactory>, RuntimeException>of(() -> this.loadServices(TranslatorFactory.class));
+
+	private final Lazy<Map<String, AuthenticationSupplierFactory>, RuntimeException> authenticationSupplierFactories = Lazy
+		.<Map<String, AuthenticationSupplierFactory>, RuntimeException>of(
+				() -> this.loadServices(AuthenticationSupplierFactory.class)
+					.stream()
+					.collect(Collectors.collectingAndThen(
+							Collectors.toMap(AuthenticationSupplierFactory::getName, Function.identity()),
+							Map::copyOf)));
 
 	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
@@ -445,7 +467,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
 				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
 
-		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this::getSqlTranslatorFactories;
+		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this.sqlTranslatorFactories::resolve;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
 			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
 		}
@@ -483,17 +505,32 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	Supplier<Authentication> determineAuthenticationSupplier(Supplier<Authentication> authenticationSupplier,
 			DriverConfig driverConfig) {
+
 		if (authenticationSupplier != null) {
 			return authenticationSupplier;
 		}
+
+		var user = (driverConfig.user == null || driverConfig.user.isBlank()) ? "" : driverConfig.user;
+		var password = (driverConfig.password == null || driverConfig.password.isBlank()) ? "" : driverConfig.password;
+		if (driverConfig.rawConfig().containsKey(PROPERTY_AUTHN_SUPPLIER)) {
+			var factory = this.authenticationSupplierFactories.resolve()
+				.get(driverConfig.rawConfig().get(PROPERTY_AUTHN_SUPPLIER));
+			if (factory != null) {
+				var prefix = "authn.%s.".formatted(factory.getName().toLowerCase(Locale.ROOT));
+				return factory.create(user, password,
+						driverConfig.rawConfig.entrySet()
+							.stream()
+							.filter(e -> e.getKey().toLowerCase(Locale.ROOT).startsWith(prefix))
+							.collect(Collectors.toMap(e -> e.getKey().replace(prefix, ""), Map.Entry::getValue)));
+			}
+		}
+
 		synchronized (this) {
 			if (this.authenticationSupplier != null) {
 				return this.authenticationSupplier;
 			}
 		}
 
-		var user = (driverConfig.user == null || driverConfig.user.isBlank()) ? "" : driverConfig.user;
-		var password = (driverConfig.password == null || driverConfig.password.isBlank()) ? "" : driverConfig.password;
 		var authRealm = (driverConfig.authRealm == null || driverConfig.authRealm.isBlank()) ? null
 				: driverConfig.authRealm;
 		var authentication = switch (driverConfig.authScheme) {
@@ -516,11 +553,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					usernameAndPassword.realm(), valueFactory);
 		}
 		else if (authentication instanceof TokenAuthentication token) {
-			return switch (token.scheme()) {
-				case BEARER -> AuthTokens.bearer(token.value(), valueFactory);
-				case KERBEROS -> AuthTokens.kerberos(token.value(), valueFactory);
+			return switch (token.scheme().toLowerCase(Locale.ROOT)) {
+				case "bearer" -> AuthTokens.bearer(token.value(), valueFactory);
+				case "kerberos" -> AuthTokens.kerberos(token.value(), valueFactory);
 				default -> throw new IllegalArgumentException(
-						"Invalid scheme `%s` for token based authentication".formatted(token.scheme().getName()));
+						"Invalid scheme `%s` for token based authentication".formatted(token.scheme()));
 			};
 		}
 		else if (authentication instanceof CustomAuthentication customAuthentication) {
@@ -596,9 +633,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				"The password that is used to connect. Defaults to 'password'.", false, null));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_AUTH_SCHEME, parsedConfig.authScheme.getName(),
 				"The authentication scheme to use. Defaults to 'basic'.", false,
-				Arrays.stream(AuthenticationScheme.values())
-					.map(AuthenticationScheme::getName)
-					.toArray(String[]::new)));
+				Arrays.stream(AuthScheme.values()).map(AuthScheme::getName).toArray(String[]::new)));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_AUTH_REALM, parsedConfig.authRealm,
 				"The authentication realm to use. Defaults to ''.", false, null));
 		driverPropertyInfos.add(newDriverPropertyInfo(PROPERTY_USER_AGENT, parsedConfig.agent,
@@ -827,29 +862,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return List.of();
 	}
 
-	/**
-	 * Tries to load all available {@link TranslatorFactory SqlTranslator factories} via
-	 * the {@link ServiceLoader} machinery. Throws an exception if there is no
-	 * implementation on the class- or module-path.
-	 * @return a collection containing at least one {@link TranslatorFactory}
-	 */
-	private List<TranslatorFactory> getSqlTranslatorFactories() {
-
-		List<TranslatorFactory> result = this.sqlTranslatorFactories;
-		if (result == null) {
-			synchronized (this) {
-				result = this.sqlTranslatorFactories;
-				if (result == null) {
-					this.sqlTranslatorFactories = ServiceLoader
-						.load(TranslatorFactory.class, this.getClass().getClassLoader())
-						.stream()
-						.map(ServiceLoader.Provider::get)
-						.toList();
-					result = this.sqlTranslatorFactories;
-				}
-			}
-		}
-		return result;
+	private <T> List<T> loadServices(Class<T> type) {
+		return ServiceLoader.load(type, this.getClass().getClassLoader())
+			.stream()
+			.map(ServiceLoader.Provider::get)
+			.toList();
 	}
 
 	static Supplier<List<Translator>> getSqlTranslatorSupplier(boolean automaticSqlTranslation, Map<String, ?> config,
@@ -995,6 +1012,38 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		}
 	}
 
+	enum AuthScheme {
+
+		/**
+		 * Disable authentication.
+		 */
+		NONE("none"),
+		/**
+		 * Use basic auth (username and password).
+		 */
+		BASIC("basic"),
+		/**
+		 * Use a token as authentication (the password will be treated as JWT or other SSO
+		 * token).
+		 */
+		BEARER("bearer"),
+		/**
+		 * Use Kerberos authentication.
+		 */
+		KERBEROS("kerberos");
+
+		private final String name;
+
+		AuthScheme(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+	}
+
 	/**
 	 * Internal record class to handle parsing of driver config.
 	 *
@@ -1017,11 +1066,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
-	record DriverConfig(String host, int port, String database, AuthenticationScheme authScheme, String user,
-			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
-			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
-			boolean useBookmarks, int relationshipSampleSize, SSLProperties sslProperties,
-			Map<String, String> rawConfig) {
+	record DriverConfig(String host, int port, String database, AuthScheme authScheme, String user, String password,
+			String authRealm, String agent, int timeout, boolean enableSQLTranslation, boolean enableTranslationCaching,
+			boolean rewriteBatchedStatements, boolean rewritePlaceholders, boolean useBookmarks,
+			int relationshipSampleSize, SSLProperties sslProperties, Map<String, String> rawConfig) {
 
 		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
 				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
@@ -1118,13 +1166,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					raw);
 		}
 
-		private static AuthenticationScheme authScheme(String scheme) throws IllegalArgumentException {
+		private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
 			if (scheme == null || scheme.isBlank()) {
-				return AuthenticationScheme.BASIC;
+				return AuthScheme.BASIC;
 			}
 
 			try {
-				return AuthenticationScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
+				return AuthScheme.valueOf(scheme.toUpperCase(Locale.ROOT));
 			}
 			catch (IllegalArgumentException ignored) {
 				throw new IllegalArgumentException("%s is not a valid option for authScheme".formatted(scheme));

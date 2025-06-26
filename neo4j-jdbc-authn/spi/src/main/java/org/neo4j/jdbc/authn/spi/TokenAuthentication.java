@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+package org.neo4j.jdbc.authn.spi;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -30,10 +30,16 @@ import java.util.Objects;
  * @author Michael J. Simons
  * @since 6.6.0
  */
-record TokenAuthentication(AuthenticationScheme scheme, String value,
-		Instant expiresAt) implements ExpiringAuthentication {
+public record TokenAuthentication(String scheme, String value, Instant expiresAt) implements ExpiringAuthentication {
 
-	TokenAuthentication {
+	/**
+	 * The constructor will validate the precense of the {@code scheme} and {@code value}.
+	 * @param scheme the scheme to be used while authenticating
+	 * @param value the token used for authenticating
+	 * @param expiresAt an optional instant from which this token might not be longer
+	 * valid
+	 */
+	public TokenAuthentication {
 
 		Objects.requireNonNull(scheme, "Scheme can't be null");
 		Objects.requireNonNull(value, "Token can't be null");

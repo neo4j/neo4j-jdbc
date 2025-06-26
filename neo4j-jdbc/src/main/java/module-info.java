@@ -34,6 +34,7 @@ module org.neo4j.jdbc {
 	requires io.netty.transport;
 	requires org.neo4j.bolt.connection;
 	requires org.neo4j.bolt.connection.netty;
+	requires transitive org.neo4j.jdbc.authn.spi;
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies
@@ -48,5 +49,6 @@ module org.neo4j.jdbc {
 	provides java.sql.Driver with org.neo4j.jdbc.Neo4jDriver;
 	// provides org.neo4j.jdbc.translator.spi.TranslatorFactory with org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory;
 
+	uses org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
 }

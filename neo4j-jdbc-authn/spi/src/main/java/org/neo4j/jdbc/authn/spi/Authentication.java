@@ -16,16 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+package org.neo4j.jdbc.authn.spi;
 
 import java.time.Instant;
 
 /**
- * Represents an authentication to be used with the {@link AuthenticationManager}. This
- * interface represents the abstract notion of a principal, which may be identified by a
- * username and password, a token or other means.
+ * Represents an authentication to be used with the Neo4j JDBC Driver. This interface is
+ * an abstract representation of a principal, which may be identified by a username and
+ * password, a token or other means.
  *
  * @author Michael J. Simons
+ * @since 6.6.0
  */
 public sealed interface Authentication
 		permits DisabledAuthentication, UsernamePasswordAuthentication, CustomAuthentication {
@@ -33,7 +34,7 @@ public sealed interface Authentication
 	/**
 	 * Creates a new authentication based on a username and password. Authentication
 	 * itself will be done by the Neo4j server through the drivers
-	 * {@link AuthenticationManager}. The token alone is not enough to deem any principal
+	 * {@code AuthenticationManager}. The token alone is not enough to deem any principal
 	 * as authenticated.
 	 * @param username the identity of the principal being authenticated
 	 * @param password the credentials that prove the principal is correct
@@ -46,7 +47,7 @@ public sealed interface Authentication
 	/**
 	 * Creates a new authentication based on a username and password. Authentication
 	 * itself will be done by the Neo4j server through the drivers
-	 * {@link AuthenticationManager}. The token alone is not enough to deem any principal
+	 * {@code AuthenticationManager}. The token alone is not enough to deem any principal
 	 * as authenticated.
 	 * @param username the identity of the principal being authenticated
 	 * @param password the credentials that prove the principal is correct
@@ -60,11 +61,11 @@ public sealed interface Authentication
 	/**
 	 * Creates new authentication based on a bearer token. The token is expected to be a
 	 * non-null, BASE64 encoded {@link String}. The token will be either processed locally
-	 * via an {@link AuthenticationManager} or through the SSO mechanism of the Neo4j
+	 * via an {@code AuthenticationManager} or through the SSO mechanism of the Neo4j
 	 * server.
 	 * @param token a BASE64 encoded bearer token, must not be null
-	 * @return a new authentication that needs to be processed either directly in an
-	 * {@link AuthenticationManager} or by the Neo4j server
+	 * @return a new authentication that needs to be processed either directly in the
+	 * driver or by the Neo4j server
 	 */
 	static Authentication bearer(String token) {
 		return bearer(token, null);
@@ -73,16 +74,16 @@ public sealed interface Authentication
 	/**
 	 * Creates new authentication based on a bearer token. The token is expected to be a
 	 * non-null, BASE64 encoded {@link String}. The token will be either processed locally
-	 * via an {@link AuthenticationManager} or through the SSO mechanism of the Neo4j
+	 * via an {@code AuthenticationManager} or through the SSO mechanism of the Neo4j
 	 * server. An optional instant can be passed as expiration time for this token
 	 * @param token a BASE64 encoded bearer token, must not be {@literal null}
 	 * @param expiresAt an optional instant from which this token might not be longer
 	 * valid
-	 * @return a new authentication that needs to be processed either directly in an
-	 * {@link AuthenticationManager} or by the Neo4j server
+	 * @return a new authentication that needs to be processed either directly in the
+	 * driver or by the Neo4j server
 	 */
 	static Authentication bearer(String token, Instant expiresAt) {
-		return new TokenAuthentication(AuthenticationScheme.BEARER, token, expiresAt);
+		return new TokenAuthentication("bearer", token, expiresAt);
 	}
 
 	/**
@@ -91,10 +92,10 @@ public sealed interface Authentication
 	 * the SSO mechanism of the Neo4j server.
 	 * @param token a BASE64 encoded Kerberos token, must not be null
 	 * @return a new authentication that needs to be processed either directly in an
-	 * {@link AuthenticationManager} or by the Neo4j server
+	 * {@code AuthenticationManager} or by the Neo4j server
 	 */
 	static Authentication kerberos(String token) {
-		return new TokenAuthentication(AuthenticationScheme.KERBEROS, token, null);
+		return new TokenAuthentication("kerberos", token, null);
 	}
 
 	/**

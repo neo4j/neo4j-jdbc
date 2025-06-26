@@ -104,6 +104,7 @@
 
 	<modules>
 		<module>neo4j-jdbc-bom</module>
+		<module>neo4j-jdbc-authn</module>
 		<module>neo4j-jdbc-translator</module>
 		<module>neo4j-jdbc-tracing</module>
 		<module>neo4j-jdbc</module>
@@ -154,6 +155,7 @@
 		<japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.2</jaxb-api.version>
+		<jboss-logging.version>3.6.1.Final</jboss-logging.version>
 		<jdbi3.version>3.49.5</jdbi3.version>
 		<jooq.version>3.19.24</jooq.version>
 		<jreleaser-maven-plugin.version>1.18.0</jreleaser-maven-plugin.version>
@@ -325,6 +327,11 @@
 				<groupId>org.awaitility</groupId>
 				<artifactId>awaitility</artifactId>
 				<version>${awaitility.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.logging</groupId>
+				<artifactId>jboss-logging</artifactId>
+				<version>${jboss-logging.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jooq</groupId>
@@ -1190,7 +1197,7 @@
 			According to https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin
 			skipNexusStagingDeployMojo may not be set to true in the last reactor module. Because we don't
 			want to deploy our last module, nor a dummy module, we simply omit the relevant modules when
-			a deploy is in progress.
+			a deployment is in progress.
 			-->
 			<activation>
 				<property>

@@ -16,21 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.jdbc;
+import org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
 
-import java.time.Instant;
+@SuppressWarnings({"requires-automatic"})
+module org.neo4j.jdbc.authn.kc {
 
-/**
- * An interface for any arbitrary authentications that might expire at some point.
- *
- * @author Michael J. Simons
- * @since 6.6.0
- */
-public interface ExpiringAuthentication extends CustomAuthentication {
+	requires com.fasterxml.jackson.jr.ob;
+	requires keycloak.authz.client;
+	requires keycloak.client.common.synced;
+	requires org.neo4j.jdbc.authn.spi;
+	requires org.apache.httpcomponents.httpclient;
 
-	/**
-	 * {@return the instant at which this authentication expires}
-	 */
-	Instant expiresAt();
-
+	provides AuthenticationSupplierFactory with org.neo4j.jdbc.authn.kc.KCAuthenticationSupplierFactory;
 }

@@ -35,6 +35,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
+import org.neo4j.jdbc.authn.spi.Authentication;
+import org.neo4j.jdbc.authn.spi.CustomAuthentication;
+import org.neo4j.jdbc.authn.spi.TokenAuthentication;
+import org.neo4j.jdbc.authn.spi.UsernamePasswordAuthentication;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 import org.neo4j.jdbc.translator.spi.TranslatorFactory;
@@ -196,9 +200,13 @@ class Neo4jDriverTests {
 				.isEqualTo("explicit");
 		}
 
+		private static Neo4jDriver.DriverConfig newDriverConfig(Map<String, String> raw) {
+			return new Neo4jDriver.DriverConfig("na", 7687, "db", Neo4jDriver.AuthScheme.BASIC, "explicit", "pw", null,
+					null, 0, false, false, false, false, false, 0, null, raw);
+		}
+
 		private static Neo4jDriver.DriverConfig newDriverConfig() {
-			return new Neo4jDriver.DriverConfig("na", 7687, "db", AuthenticationScheme.BASIC, "explicit", "pw", null,
-					null, 0, false, false, false, false, false, 0, null, Map.of());
+			return newDriverConfig(Map.of());
 		}
 
 	}
@@ -232,8 +240,8 @@ class Neo4jDriverTests {
 		@Test
 		void unsupportedScheme() {
 			assertThatIllegalArgumentException()
-				.isThrownBy(
-						() -> Neo4jDriver.toAuthToken(new TokenAuthentication(AuthenticationScheme.BASIC, "foo", null)))
+				.isThrownBy(() -> Neo4jDriver
+					.toAuthToken(new TokenAuthentication(Neo4jDriver.AuthScheme.BASIC.getName(), "foo", null)))
 				.withMessage("Invalid scheme `basic` for token based authentication");
 		}
 

@@ -18,24 +18,19 @@
  */
 package org.neo4j.jdbc.it.sso;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.jr.ob.JSON;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Metrics;
@@ -44,17 +39,15 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.util.Http;
-import org.keycloak.representations.AccessTokenResponse;
-import org.neo4j.jdbc.Authentication;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.neo4j.jdbc.authn.kc.KCAuthenticationSupplier;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -107,7 +100,9 @@ class ReauthenticationIT {
 
 	private static final SimpleMeterRegistry METER_REGISTRY = new SimpleMeterRegistry();
 
-	private static AuthzAuthenticationSupplier authenticationSupplier;
+	private static KCAuthenticationSupplier authenticationSupplier;
+
+	private static String neo4jUri;
 
 	@BeforeAll
 	static void startContainersAndMetrics() {
@@ -122,12 +117,13 @@ class ReauthenticationIT {
 		var authzConfiguration = new Configuration("http://localhost:%d".formatted(KEYCLOAK.getHttpPort()),
 				"neo4j-sso-test", "neo4j-jdbc-driver", Map.of("secret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4"),
 				HttpClients.createMinimal());
-		authenticationSupplier = new AuthzAuthenticationSupplier(authzConfiguration);
+		authenticationSupplier = (KCAuthenticationSupplier) KCAuthenticationSupplier.of("william.foster", "d-fens",
+				authzConfiguration);
+		neo4jUri = "jdbc:neo4j://%s:%d".formatted(NEO4J.getHost(), NEO4J.getMappedPort(7687));
 	}
 
 	static Stream<Arguments> tokenRefreshShouldWork() throws Exception {
 
-		var neo4jUri = "jdbc:neo4j://%s:%d".formatted(NEO4J.getHost(), NEO4J.getMappedPort(7687));
 		var builder = Stream.<Arguments>builder();
 		var properties = new Properties();
 		properties.put("enableSQLTranslation", "true");
@@ -150,7 +146,7 @@ class ReauthenticationIT {
 			catch (SQLException ex) {
 				throw new RuntimeException(ex);
 			}
-		}));
+		}, (Callable<Boolean>) authenticationSupplier::currentTokenIsExpired));
 
 		var tmpDir = Files.createTempDirectory("neo4j-jdbc");
 		var dotEnvFile = Files.createFile(tmpDir.resolve(".env"));
@@ -187,12 +183,10 @@ class ReauthenticationIT {
 			stmt.executeUpdate("DELETE FROM IWasHere");
 			stmt.executeUpdate("INSERT INTO IWasHere(test) VALUES ('Hello')");
 
-			await().atMost(tokenLifespanPlusN)
-				.until(() -> authenticationSupplier.currentToken.get().expiresAt.isBefore(Instant.now()));
+			await().atMost(tokenLifespanPlusN).until(authenticationSupplier::currentTokenIsExpired);
 			stmt.executeUpdate("INSERT INTO IWasHere(test) VALUES ('Hello')");
 
-			await().atMost(tokenLifespanPlusN)
-				.until(() -> authenticationSupplier.currentToken.get().expiresAt.isBefore(Instant.now()));
+			await().atMost(tokenLifespanPlusN).until(authenticationSupplier::currentTokenIsExpired);
 			try (var rs = stmt.executeQuery("SELECT count(*) AS n FROM IWasHere")) {
 				assertThat(rs.next()).isTrue();
 				assertThat(rs.getInt("n")).isEqualTo(2);
@@ -208,6 +202,29 @@ class ReauthenticationIT {
 			.isEqualTo(2.0);
 	}
 
+	@Test
+	void authenticationSupplierFactoriesShouldWork() throws SQLException {
+
+		var properties = new Properties();
+		properties.put("enableSQLTranslation", "true");
+
+		properties.put("user", "william.foster");
+		properties.put("password", "d-fens");
+
+		properties.put("authn.supplier", "kc");
+		properties.put("authn.kc.authServerUrl", "http://localhost:%d".formatted(KEYCLOAK.getHttpPort()));
+		properties.put("authn.kc.realm", "neo4j-sso-test");
+		properties.put("authn.kc.clientId", "neo4j-jdbc-driver");
+		properties.put("authn.kc.clientSecret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4");
+
+		try (var connection = DriverManager.getConnection(neo4jUri, properties);
+				var stmt = connection.createStatement();
+				var rs = stmt.executeQuery("SELECT 1")) {
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getInt(1)).isOne();
+		}
+	}
+
 	@AfterAll
 	static void cleanUp() {
 		NEO4J.stop();
@@ -217,83 +234,6 @@ class ReauthenticationIT {
 		Neo4jDriver.registerAuthenticationSupplier(null);
 
 		Metrics.globalRegistry.remove(METER_REGISTRY);
-	}
-
-	private static final class AuthzAuthenticationSupplier implements Supplier<Authentication> {
-
-		private final AuthzClient authzClient;
-
-		private final Configuration cfg;
-
-		private final Http http;
-
-		private final String url;
-
-		private final AtomicReference<TokensAndExpirationTime> currentToken = new AtomicReference<>();
-
-		AuthzAuthenticationSupplier(Configuration cfg) {
-			this.cfg = cfg;
-			this.authzClient = AuthzClient.create(cfg);
-			this.url = "%s/realms/%s/protocol/openid-connect/token".formatted(cfg.getAuthServerUrl(), cfg.getRealm());
-			this.http = new Http(cfg, cfg.getClientCredentialsProvider());
-		}
-
-		@Override
-		public Authentication get() {
-			return this.currentToken.updateAndGet(previous -> {
-				if (previous == null) {
-					return get0();
-				}
-				return refresh0(previous.refreshToken());
-			}).toAuthentication();
-		}
-
-		TokensAndExpirationTime get0() {
-			try {
-				return TokensAndExpirationTime.of(this.authzClient.obtainAccessToken("william.foster", "d-fens"));
-			}
-			catch (IOException ex) {
-				throw new UncheckedIOException(ex);
-			}
-		}
-
-		TokensAndExpirationTime refresh0(String refreshToken) {
-			try {
-				return TokensAndExpirationTime.of(this.http.<AccessTokenResponse>post(this.url)
-					.authentication()
-					.client()
-					.form()
-					.param("grant_type", "refresh_token")
-					.param("refresh_token", refreshToken)
-					.param("client_id", this.cfg.getResource())
-					.param("client_secret", (String) this.cfg.getCredentials().get("secret"))
-					.response()
-					.json(AccessTokenResponse.class)
-					.execute());
-			}
-			catch (IOException ex) {
-				throw new UncheckedIOException(ex);
-			}
-		}
-
-	}
-
-	private record TokensAndExpirationTime(String accessToken, Instant expiresAt, String refreshToken) {
-
-		static final Base64.Decoder DECODER = Base64.getDecoder();
-
-		static TokensAndExpirationTime of(AccessTokenResponse accessTokenResponse) throws IOException {
-			var chunks = accessTokenResponse.getToken().split("\\.");
-			var payload = JSON.std.mapFrom(DECODER.decode(chunks[1]));
-			var exp = Instant.ofEpochSecond(((Number) payload.get("exp")).longValue());
-			return new TokensAndExpirationTime(accessTokenResponse.getToken(), exp,
-					accessTokenResponse.getRefreshToken());
-		}
-
-		Authentication toAuthentication() {
-			return Authentication.bearer(this.accessToken, this.expiresAt);
-		}
-
 	}
 
 }

@@ -66,6 +66,10 @@
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-jdbc-authn-spi</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neo4j-jdbc-translator-spi</artifactId>
 		</dependency>
 		<dependency>

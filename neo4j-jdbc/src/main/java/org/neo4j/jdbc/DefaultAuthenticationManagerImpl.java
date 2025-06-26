@@ -28,6 +28,8 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import org.neo4j.jdbc.authn.spi.Authentication;
+import org.neo4j.jdbc.authn.spi.ExpiringAuthentication;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.ConnectionListener.NewAuthenticationEvent;
 

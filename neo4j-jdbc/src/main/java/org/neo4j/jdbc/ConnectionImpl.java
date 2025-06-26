@@ -74,6 +74,7 @@ import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.bolt.connection.message.Messages;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.State;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.events.ConnectionListener;
 import org.neo4j.jdbc.events.ConnectionListener.StatementClosedEvent;
 import org.neo4j.jdbc.events.ConnectionListener.StatementCreatedEvent;

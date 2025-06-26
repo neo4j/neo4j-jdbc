@@ -24,32 +24,19 @@
 
 	<parent>
 		<groupId>org.neo4j</groupId>
-		<artifactId>neo4j-jdbc-translator</artifactId>
+		<artifactId>neo4j-jdbc-authn</artifactId>
 		<version>6.6.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>neo4j-jdbc-translator-spi</artifactId>
+	<artifactId>neo4j-jdbc-authn-spi</artifactId>
 
 	<packaging>jar</packaging>
-	<name>Neo4j JDBC Driver (SQL Translator SPI)</name>
-	<description>SPI to be implemented by any SQL to Cypher translation service.</description>
+	<name>Neo4j JDBC Driver (Authentication API)</name>
+	<description>Types and SPI used in the authentication system of the Neo4j JDBC Driver.</description>
 
 	<properties>
 		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
 
 	<build>
 		<plugins>

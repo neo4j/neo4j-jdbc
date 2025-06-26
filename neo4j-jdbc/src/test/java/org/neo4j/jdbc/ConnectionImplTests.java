@@ -67,6 +67,7 @@ import org.neo4j.bolt.connection.summary.CommitSummary;
 import org.neo4j.bolt.connection.summary.ResetSummary;
 import org.neo4j.bolt.connection.summary.RollbackSummary;
 import org.neo4j.jdbc.ConnectionImpl.TranslatorChain;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.translator.spi.Translator;
 

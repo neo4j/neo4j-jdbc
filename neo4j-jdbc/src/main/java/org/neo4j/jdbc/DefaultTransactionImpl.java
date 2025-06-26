@@ -48,6 +48,7 @@ import org.neo4j.bolt.connection.message.Messages;
 import org.neo4j.bolt.connection.summary.PullSummary;
 import org.neo4j.bolt.connection.values.Value;
 import org.neo4j.jdbc.Neo4jException.GQLError;
+import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Values;

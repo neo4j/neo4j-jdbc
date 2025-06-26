@@ -24,39 +24,29 @@
 
 	<parent>
 		<groupId>org.neo4j</groupId>
-		<artifactId>neo4j-jdbc-translator</artifactId>
+		<artifactId>neo4j-jdbc-parent</artifactId>
 		<version>6.6.0-SNAPSHOT</version>
 	</parent>
+	<artifactId>neo4j-jdbc-authn</artifactId>
 
-	<artifactId>neo4j-jdbc-translator-spi</artifactId>
+	<packaging>pom</packaging>
+	<name>Neo4j JDBC Driver (Authentication)</name>
+	<description>Parent project for the authentication system.</description>
 
-	<packaging>jar</packaging>
-	<name>Neo4j JDBC Driver (SQL Translator SPI)</name>
-	<description>SPI to be implemented by any SQL to Cypher translation service.</description>
+	<modules>
+		<module>spi</module>
+		<module>kc</module>
+	</modules>
 
-	<properties>
-		<sonar.coverage.jacoco.xmlReportPaths>${basedir}/../../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-	</properties>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>com.github.siom79.japicmp</groupId>
-				<artifactId>japicmp-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.neo4j</groupId>
+				<artifactId>neo4j-jdbc-bom</artifactId>
+				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>
