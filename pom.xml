@@ -1294,6 +1294,7 @@
 												<stagingRepositories>
 													<stagingRepository>${project.build.directory}/artifacts</stagingRepository>
 												</stagingRepositories>
+												<maxRetries>1000</maxRetries>
 											</neo4j_jdbc>
 										</mavenCentral>
 									</maven>
