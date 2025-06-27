@@ -233,6 +233,13 @@ npm --prefix etc/antora run preview
 
 The build also provides a zipped version of the Antora module alone, ready to be pushed into another repo under `docs/target/jdbc-manual.zip`.
 
+In case you want to upgrade antora dependencies, you might want to run:
+
+[source,bash]
+----
+npm --prefix etc/antora update
+----
+
 == Resources
 
 - https://download.oracle.com/otndocs/jcp/jdbc-4_3-mrel3-spec/index.html[JDBC 4.3 Spec]
