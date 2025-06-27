@@ -114,7 +114,7 @@ class ReauthenticationIT {
 		Metrics.globalRegistry.add(METER_REGISTRY);
 
 		// Initialize authentication supplier
-		var authzConfiguration = new Configuration("http://localhost:%d".formatted(KEYCLOAK.getHttpPort()),
+		var authzConfiguration = new Configuration("http://%s:%d".formatted(KEYCLOAK.getHost(), KEYCLOAK.getHttpPort()),
 				"neo4j-sso-test", "neo4j-jdbc-driver", Map.of("secret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4"),
 				HttpClients.createMinimal());
 		authenticationSupplier = (KCAuthenticationSupplier) KCAuthenticationSupplier.of("william.foster", "d-fens",
@@ -212,7 +212,7 @@ class ReauthenticationIT {
 		properties.put("password", "d-fens");
 
 		properties.put("authn.supplier", "kc");
-		properties.put("authn.kc.authServerUrl", "http://localhost:%d".formatted(KEYCLOAK.getHttpPort()));
+		properties.put("authn.kc.authServerUrl", "http://%s:%d".formatted(KEYCLOAK.getHost(), KEYCLOAK.getHttpPort()));
 		properties.put("authn.kc.realm", "neo4j-sso-test");
 		properties.put("authn.kc.clientId", "neo4j-jdbc-driver");
 		properties.put("authn.kc.clientSecret", "QcWXnTg8qJpVMnIvm8Ev8gp1PqJitZu4");
