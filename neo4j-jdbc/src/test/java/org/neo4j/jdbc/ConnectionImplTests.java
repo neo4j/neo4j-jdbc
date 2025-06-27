@@ -127,15 +127,6 @@ class ConnectionImplTests {
 	}
 
 	@Test
-	void shouldPrepareCall() throws SQLException {
-		var connection = makeConnection(mock(BoltConnection.class));
-
-		var statement = connection.prepareCall("RETURN pi()");
-
-		assertThat(statement).isNotNull();
-	}
-
-	@Test
 	void shouldCallTranslator() throws SQLException {
 		var translator = mock(Translator.class);
 		var sql = "SQL";

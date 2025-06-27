@@ -213,9 +213,9 @@ class ConnectionIT extends IntegrationTestBase {
 		try (var connection = getConnection();
 				var statement = connection.createStatement();
 				var preparedStatement = connection.prepareStatement("RETURN 1");
-				var callableStatement = connection.prepareCall("RETURN pi()")) {
+				var anotherStatement = connection.prepareStatement("RETURN 2")) {
 			assertThat(preparedStatement.isClosed()).isFalse();
-			assertThat(callableStatement.isClosed()).isFalse();
+			assertThat(anotherStatement.isClosed()).isFalse();
 			connection.setNetworkTimeout(null, 100);
 			statement.setFetchSize(1);
 			statement.closeOnCompletion();
@@ -227,7 +227,7 @@ class ConnectionIT extends IntegrationTestBase {
 			assertThat(result.isClosed()).isTrue();
 			assertThat(statement.isClosed()).isTrue();
 			assertThat(preparedStatement.isClosed()).isTrue();
-			assertThat(callableStatement.isClosed()).isTrue();
+			assertThat(anotherStatement.isClosed()).isTrue();
 			assertThat(connection.isClosed()).isTrue();
 		}
 

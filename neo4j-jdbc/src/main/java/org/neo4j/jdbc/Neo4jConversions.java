@@ -66,6 +66,10 @@ final class Neo4jConversions {
 	 * 6
 	 */
 	static String oldCypherTypesToNew(String neo4jType) {
+		if (neo4jType == null) {
+			return "ANY";
+		}
+
 		String value = neo4jType;
 		if (value.startsWith("LIST<")) {
 			value = "LIST";
@@ -122,6 +126,10 @@ final class Neo4jConversions {
 	}
 
 	static Type valueOfV5Name(String in) {
+		if (in == null) {
+			return Type.ANY;
+		}
+
 		// See (2025-06-11)
 		// https://neo4j.com/docs/cypher-manual/current/values-and-types/property-structural-constructed/
 		var value = in.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")

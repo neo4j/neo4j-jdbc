@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -87,6 +88,29 @@ class CallableStatementIT extends IntegrationTestBase {
 		}
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = { "RETURN atan2(?, ?)", "RETURN atan2($x, $y)", "{? = call atan2(?, ?)}" })
+	void parameterNamesForFunctionsShouldWork(String query) throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall(query)) {
+			var meta = statement.getParameterMetaData();
+			assertThat(meta.getParameterCount()).isEqualTo(2);
+			assertThat(meta.getParameterType(1)).isEqualTo(Types.DOUBLE);
+			assertThat(meta.getParameterType(2)).isEqualTo(Types.DOUBLE);
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "CALL dbms.routing.getRoutingTable(?, ?)",
+			"CALL dbms.routing.getRoutingTable($context, $database)" })
+	void parameterNamesForProceduresShouldWork(String query) throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall(query)) {
+			var meta = statement.getParameterMetaData();
+			assertThat(meta.getParameterCount()).isEqualTo(2);
+			assertThat(meta.getParameterType(1)).isEqualTo(Types.STRUCT);
+			assertThat(meta.getParameterType(2)).isEqualTo(Types.VARCHAR);
+		}
+	}
+
 	@Test
 	void shouldCheckExistenceOfNamedParameter() throws SQLException {
 		try (var connection = getConnection()) {
@@ -114,6 +138,20 @@ class CallableStatementIT extends IntegrationTestBase {
 	void outByNameShouldWork() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.prepareCall("{$name = call db.info()}")) {
 
+			statement.execute();
+			var rs = statement.getResultSet();
+			assertThat(rs.next()).isTrue();
+			var msg = rs.getString("name");
+			assertThat(msg).isEqualTo("neo4j");
+			assertThat(msg).isEqualTo(rs.getString("name"));
+		}
+	}
+
+	@Test
+	void outByNameAsParameterShouldWork() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.prepareCall("{$name = call db.info()}")) {
+
+			statement.registerOutParameter("name", Types.VARCHAR);
 			statement.execute();
 			var rs = statement.getResultSet();
 			assertThat(rs.next()).isTrue();

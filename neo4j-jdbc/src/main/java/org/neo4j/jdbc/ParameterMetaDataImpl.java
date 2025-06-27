@@ -20,15 +20,29 @@ package org.neo4j.jdbc;
 
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
+import java.util.Map;
 
 import static org.neo4j.jdbc.Neo4jException.withReason;
 
 class ParameterMetaDataImpl implements ParameterMetaData {
 
+	private final int parameterCount;
+
+	private final Map<Integer, String> parameterTypes;
+
+	ParameterMetaDataImpl(int parameterCount) {
+		this.parameterCount = parameterCount;
+		this.parameterTypes = Map.of();
+	}
+
+	ParameterMetaDataImpl(Map<Integer, String> parameterTypes) {
+		this.parameterCount = parameterTypes.size();
+		this.parameterTypes = Map.copyOf(parameterTypes);
+	}
+
 	@Override
 	public int getParameterCount() {
-		return 0;
+		return this.parameterCount;
 	}
 
 	@Override
@@ -53,12 +67,12 @@ class ParameterMetaDataImpl implements ParameterMetaData {
 
 	@Override
 	public int getParameterType(int param) {
-		return Types.NULL;
+		return Neo4jConversions.toSqlTypeFromOldCypherType(this.parameterTypes.get(param));
 	}
 
 	@Override
 	public String getParameterTypeName(int param) {
-		return null;
+		return Neo4jConversions.oldCypherTypesToNew(this.parameterTypes.get(param));
 	}
 
 	@Override
@@ -68,7 +82,7 @@ class ParameterMetaDataImpl implements ParameterMetaData {
 
 	@Override
 	public int getParameterMode(int param) {
-		return ParameterMetaData.parameterModeUnknown;
+		return ParameterMetaData.parameterModeIn;
 	}
 
 	@Override

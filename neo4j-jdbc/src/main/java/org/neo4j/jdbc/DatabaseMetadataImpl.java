@@ -1000,7 +1000,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		var request = getRequest("getProcedureColumns", "results", intermediateResults, "columnNamePattern",
 				columnNamePattern, "columnType", DatabaseMetaData.procedureColumnIn, "nullable",
-				DatabaseMetaData.procedureNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog());
+				DatabaseMetaData.procedureNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog(),
+				"returnType", DatabaseMetaData.procedureColumnResult);
 		return doQueryForResultSet(request);
 	}
 
@@ -1823,9 +1824,11 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		assertSchemaIsPublicOrNull(schemaPattern);
 
 		var intermediateResults = getArgumentDescriptions("FUNCTIONS", functionNamePattern);
+
 		return doQueryForResultSet(getRequest("getFunctionColumns", "results", intermediateResults, "columnNamePattern",
 				columnNamePattern, "columnType", DatabaseMetaData.functionColumnIn, "nullable",
-				DatabaseMetaData.functionNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog()));
+				DatabaseMetaData.functionNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog(),
+				"returnType", DatabaseMetaData.functionColumnResult));
 	}
 
 	private List<Map<String, Object>> getArgumentDescriptions(String category, String namePattern) throws SQLException {
@@ -1842,7 +1845,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		try (var rs = doQueryForResultSet(request)) {
 			while (rs.next()) {
 				intermediateResults.add(Map.of("name", rs.getString("name"), "description", rs.getString("description"),
-						"argumentDescriptions", rs.getObject("argumentDescription")));
+						"argumentDescriptions", rs.getObject("argumentDescription"), "returnDescriptions",
+						rs.getObject("returnDescription")));
 			}
 		}
 		return intermediateResults;
