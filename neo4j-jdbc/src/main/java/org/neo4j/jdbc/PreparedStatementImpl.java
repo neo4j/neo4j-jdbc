@@ -32,6 +32,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
 import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -740,10 +741,19 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		setParameter(computeParameterName(parameterIndex), (url != null) ? Values.value(url.toString()) : Values.NULL);
 	}
 
+	/**
+	 * The Neo4j JDBC Driver does not inspect prepared or callable statements, hence the
+	 * number of parameters will be only known after all parameters have been explicitly
+	 * set. As a consequence, the driver is also not aware of the actual type of
+	 * parameters for prepared statements, meaning for any prepared statement this method
+	 * is of limited use.
+	 * @return a restricted set of information about this statements parameter
+	 * @see PreparedStatement#getParameterMetaData()
+	 */
 	@Override
 	public ParameterMetaData getParameterMetaData() {
 		LOGGER.log(Level.FINER, () -> "Getting parameter meta data");
-		return new ParameterMetaDataImpl();
+		return new ParameterMetaDataImpl(this.getCurrentBatch().size());
 	}
 
 	@Override

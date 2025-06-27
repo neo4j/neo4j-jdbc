@@ -26,8 +26,10 @@ import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.NClob;
+import java.sql.ParameterMetaData;
 import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.RowId;
@@ -83,13 +85,30 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 					descriptor.parameterList, isFunction);
 		}
 
-		if (descriptor.isUsingNamedParameters()) {
+		var parameterTypes = new HashMap<Integer, String>();
+
+		if (descriptor.hasParameters()) {
 			try (var columns = descriptor.isFunctionCall() ? meta.getFunctionColumns(null, null, descriptor.fqn(), null)
 					: meta.getProcedureColumns(null, null, descriptor.fqn(), null)) {
 				while (columns.next()) {
-					parameterOrder.put(columns.getString("COLUMN_NAME"), columns.getInt("ORDINAL_POSITION"));
+					var type = columns.getInt("COLUMN_TYPE");
+					var ordinalPosition = columns.getInt("ORDINAL_POSITION");
+
+					parameterOrder.put(columns.getString("COLUMN_NAME"), ordinalPosition);
+
+					// It might be that those JDBC constants are actually the same right
+					// now,
+					// but that might as well change
+					// in a different JDK or "the future"
+					// noinspection ConditionCoveredByFurtherCondition,ConstantValue
+					if (type == DatabaseMetaData.procedureColumnIn || type == DatabaseMetaData.functionColumnIn) {
+						parameterTypes.put(ordinalPosition, columns.getString("DATA_TYPE"));
+					}
 				}
 			}
+		}
+
+		if (descriptor.isUsingNamedParameters()) {
 			for (String value : descriptor.parameterList.namedParameters().values()) {
 				if (!parameterOrder.containsKey(value)) {
 					throw new Neo4jException(GQLError.$42N51.withMessage(
@@ -101,19 +120,30 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		// We can always store the descriptor with the statement to check for yielded /
 		// return values if wished / needed
 		return new CallableStatementImpl(connection, transactionSupplier, onClose, rewriteBatchedStatements,
-				descriptor.toCypher(parameterOrder));
+				descriptor.toCypher(parameterOrder), new ParameterMetaDataImpl(parameterTypes));
 	}
+
+	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
+
+	private final ParameterMetaData parameterMetaData;
 
 	private ParameterType parameterType;
 
 	private ResultSet parameterResultSet;
 
-	private final AtomicBoolean cursorMoved = new AtomicBoolean(false);
-
 	CallableStatementImpl(Connection connection, Neo4jTransactionSupplier transactionSupplier,
-			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql) {
+			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql,
+			ParameterMetaData parameterMetaData) {
 		super(connection, transactionSupplier, UnaryOperator.identity(), null, onClose, false, rewriteBatchedStatements,
 				sql);
+
+		this.parameterMetaData = parameterMetaData;
+	}
+
+	@Override
+	public ParameterMetaData getParameterMetaData() {
+		LOGGER.log(Level.FINER, () -> "Getting parameter meta data");
+		return this.parameterMetaData;
 	}
 
 	@Override
@@ -320,12 +350,12 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 	@Override
 	public void registerOutParameter(String parameterName, int sqlType) {
 		LOGGER.log(Level.WARNING,
-				() -> "Registering out parameter `%s`with type %d (ignored)".formatted(parameterName, sqlType));
+				() -> "Registering out parameter `%s` with type %d (ignored)".formatted(parameterName, sqlType));
 	}
 
 	@Override
 	public void registerOutParameter(String parameterName, int sqlType, int scale) {
-		LOGGER.log(Level.WARNING, () -> "Registering out parameter `%s`with type %d and scale %d (ignored)"
+		LOGGER.log(Level.WARNING, () -> "Registering out parameter `%s` with type %d and scale %d (ignored)"
 			.formatted(parameterName, sqlType, scale));
 	}
 
@@ -1258,7 +1288,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 		String toCypher(Map<String, Integer> parameterOrder) {
 
-			if (this.ordinalParameters.isEmpty() && this.namedParameters().isEmpty() && this.constants.isEmpty()) {
+			if (isEmpty()) {
 				return "";
 			}
 
@@ -1270,6 +1300,10 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 			});
 			all.putAll(this.constants);
 			return all.values().stream().collect(Collectors.joining(", ", "(", ")"));
+		}
+
+		boolean isEmpty() {
+			return this.ordinalParameters.isEmpty() && this.namedParameters().isEmpty() && this.constants.isEmpty();
 		}
 	}
 
@@ -1325,6 +1359,10 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 			}
 
 			return sb.toString();
+		}
+
+		boolean hasParameters() {
+			return !this.parameterList.isEmpty();
 		}
 	}
 

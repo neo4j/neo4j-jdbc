@@ -95,7 +95,7 @@ class CallableStatementImplTests {
 	void shouldSetParameter(StatementMethodRunner parameterSettingRunner, Value expectedValue)
 			throws SQLException, MalformedURLException, IllegalAccessException {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
-				false, "RETURN $x");
+				false, "RETURN $x", new ParameterMetaDataImpl(0));
 
 		parameterSettingRunner.run(this.statement);
 
@@ -191,7 +191,7 @@ class CallableStatementImplTests {
 	@MethodSource
 	void shouldThrowWhenClosed(StatementMethodRunner consumer) throws SQLException {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
-				false, TEST_STATEMENT);
+				false, TEST_STATEMENT, new ParameterMetaDataImpl(0));
 		this.statement.close();
 		assertThat(this.statement.isClosed()).isTrue();
 		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(SQLException.class);
@@ -290,7 +290,7 @@ class CallableStatementImplTests {
 	@MethodSource
 	void shouldThrowUnsupported(StatementMethodRunner consumer, Class<? extends SQLException> exceptionType) {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
-				false, TEST_STATEMENT);
+				false, TEST_STATEMENT, new ParameterMetaDataImpl(0));
 		assertThatThrownBy(() -> consumer.run(this.statement)).isInstanceOf(exceptionType);
 	}
 
@@ -397,7 +397,7 @@ class CallableStatementImplTests {
 	void shouldUnwrap(Class<?> cls, boolean shouldUnwrap) throws SQLException {
 		// given
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
-				false, TEST_STATEMENT);
+				false, TEST_STATEMENT, new ParameterMetaDataImpl(0));
 
 		// when & then
 		if (shouldUnwrap) {
@@ -414,7 +414,7 @@ class CallableStatementImplTests {
 	void shouldHandleIsWrapperFor(Class<?> cls, boolean shouldUnwrap) {
 		// given
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
-				false, TEST_STATEMENT);
+				false, TEST_STATEMENT, new ParameterMetaDataImpl(0));
 
 		// when
 		var wrapperFor = this.statement.isWrapperFor(cls);
@@ -436,7 +436,7 @@ class CallableStatementImplTests {
 	void shouldNotAllowMixingParameterTypes(StatementMethodRunner firstSetter, StatementMethodRunner secondSetter)
 			throws MalformedURLException, SQLException, IllegalAccessException {
 		this.statement = new CallableStatementImpl(mock(Connection.class), mock(Neo4jTransactionSupplier.class), null,
-				false, TEST_STATEMENT);
+				false, TEST_STATEMENT, new ParameterMetaDataImpl(0));
 
 		try {
 			firstSetter.run(this.statement);

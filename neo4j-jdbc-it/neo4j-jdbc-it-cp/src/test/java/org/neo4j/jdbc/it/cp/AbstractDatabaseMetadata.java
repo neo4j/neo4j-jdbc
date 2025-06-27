@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -447,20 +448,22 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getProcedureColumnsShouldWorkForASingleProcedure() throws SQLException {
 
+		int cnt = 0;
 		List<Map<Integer, String>> resultColumns = new ArrayList<>();
 		try (var rs = this.connection.getMetaData()
 			.getProcedureColumns(null, null, "db.index.fulltext.queryNodes", null)) {
 			while (rs.next()) {
 				assertThat(rs.getString("PROCEDURE_NAME")).isEqualTo("db.index.fulltext.queryNodes");
 				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo("db.index.fulltext.queryNodes");
-				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
+				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(
+						(cnt++ < 2) ? DatabaseMetaData.procedureColumnResult : DatabaseMetaData.procedureColumnIn);
 				assertThat(rs.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.procedureNullableUnknown);
 				assertThat(rs.getString("IS_NULLABLE")).isEmpty();
 				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
 			}
 		}
-		assertThat(resultColumns).containsExactly(Map.of(1, "indexName"), Map.of(2, "queryString"),
-				Map.of(3, "options"));
+		assertThat(resultColumns).containsExactly(Map.of(1, "node"), Map.of(2, "score"), Map.of(1, "indexName"),
+				Map.of(2, "queryString"), Map.of(3, "options"));
 	}
 
 	@Test
@@ -469,12 +472,16 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		List<Map<Integer, String>> resultColumns = new ArrayList<>();
 		try (var rs = this.connection.getMetaData().getFunctionColumns(null, null, "atan2", null)) {
 			while (rs.next()) {
+				var ordinalPosition = rs.getInt("ORDINAL_POSITION");
 				assertThat(rs.getString("FUNCTION_NAME")).isEqualTo("atan2");
 				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo("atan2");
-				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
-				assertThat(rs.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.procedureNullableUnknown);
+				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo((ordinalPosition != 0)
+						? DatabaseMetaData.functionColumnIn : DatabaseMetaData.functionColumnResult);
+				assertThat(rs.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.functionNullableUnknown);
 				assertThat(rs.getString("IS_NULLABLE")).isEmpty();
-				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+				if (ordinalPosition >= 1) {
+					resultColumns.add(Map.of(ordinalPosition, rs.getString("COLUMN_NAME")));
+				}
 			}
 		}
 		assertThat(resultColumns).containsExactly(Map.of(1, "y"), Map.of(2, "x"));
@@ -501,7 +508,9 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		try (var rs = this.connection.getMetaData().getFunctionColumns(null, null, "atan2", "x")) {
 			while (rs.next()) {
 				assertThat(rs.getString("FUNCTION_NAME")).isEqualTo("atan2");
-				resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+				if (rs.getInt("COLUMN_TYPE") == DatabaseMetaData.functionColumnIn) {
+					resultColumns.add(Map.of(rs.getInt("ORDINAL_POSITION"), rs.getString("COLUMN_NAME")));
+				}
 			}
 		}
 		assertThat(resultColumns).containsExactly(Map.of(2, "x"));
@@ -523,10 +532,37 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 				assertThat(rs.getString("COLUMN_NAME")).isNotNull();
 				assertThat(rs.getObject("ORDINAL_POSITION")).isNotNull();
 				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo(rs.getString("PROCEDURE_NAME"));
-				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
+				assertThat(rs.getInt("COLUMN_TYPE")).isIn(DatabaseMetaData.procedureColumnResult,
+						DatabaseMetaData.procedureColumnIn);
 				++cnt;
 			}
 			assertThat(cnt).isGreaterThan(0);
+		}
+	}
+
+	@Test
+	void procedureReturns() throws SQLException {
+		try (var rs = this.connection.getMetaData()
+			.getProcedureColumns(null, null, "dbms.routing.getRoutingTable", null)) {
+			int cnt = 0;
+
+			var names = Map.of(0, "ttl", 1, "servers", 2, "context", 3, "database");
+			while (rs.next()) {
+				assertThat(rs.getString("PROCEDURE_NAME")).isEqualTo("dbms.routing.getRoutingTable");
+				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo(rs.getString("PROCEDURE_NAME"));
+				var name = names.get(cnt);
+				assertThat(rs.getString("COLUMN_NAME")).isEqualTo(name);
+				if (Set.of("ttl", "servers").contains(name)) {
+					assertThat(rs.getInt("ORDINAL_POSITION")).isEqualTo(cnt + 1);
+					assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnResult);
+				}
+				else {
+					assertThat(rs.getInt("ORDINAL_POSITION")).isEqualTo(cnt + 1 - 2);
+					assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.procedureColumnIn);
+				}
+				++cnt;
+			}
+			assertThat(cnt).isEqualTo(4);
 		}
 	}
 
@@ -537,10 +573,18 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			int cnt = 0;
 			while (rs.next()) {
 				assertThat(rs.getString("FUNCTION_NAME")).isNotNull();
-				assertThat(rs.getString("COLUMN_NAME")).isNotNull();
-				assertThat(rs.getObject("ORDINAL_POSITION")).isNotNull();
+				var ordinalPosition = rs.getInt("ORDINAL_POSITION");
+				assertThat(rs.wasNull()).isFalse();
+				if (ordinalPosition >= 1) {
+					assertThat(rs.getString("COLUMN_NAME")).isNotNull();
+					assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.functionColumnIn);
+				}
+				else {
+					assertThat(rs.getString("COLUMN_NAME")).isNull();
+					assertThat(rs.wasNull()).isTrue();
+					assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.functionColumnResult);
+				}
 				assertThat(rs.getString("SPECIFIC_NAME")).isEqualTo(rs.getString("FUNCTION_NAME"));
-				assertThat(rs.getInt("COLUMN_TYPE")).isEqualTo(DatabaseMetaData.functionColumnIn);
 				++cnt;
 			}
 			assertThat(cnt).isGreaterThan(0);
