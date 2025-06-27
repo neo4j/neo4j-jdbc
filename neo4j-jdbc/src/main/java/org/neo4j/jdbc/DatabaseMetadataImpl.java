@@ -1001,7 +1001,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		var request = getRequest("getProcedureColumns", "results", intermediateResults, "columnNamePattern",
 				columnNamePattern, "columnType", DatabaseMetaData.procedureColumnIn, "nullable",
 				DatabaseMetaData.procedureNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog(),
-				"returnType", DatabaseMetadataImpl.procedureColumnResult);
+				"returnType", DatabaseMetaData.procedureColumnResult);
 		return doQueryForResultSet(request);
 	}
 
@@ -1828,7 +1828,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		return doQueryForResultSet(getRequest("getFunctionColumns", "results", intermediateResults, "columnNamePattern",
 				columnNamePattern, "columnType", DatabaseMetaData.functionColumnIn, "nullable",
 				DatabaseMetaData.functionNullableUnknown, "catalogAsParameterWorkaround", getSingleCatalog(),
-				"returnType", DatabaseMetadataImpl.functionColumnResult));
+				"returnType", DatabaseMetaData.functionColumnResult));
 	}
 
 	private List<Map<String, Object>> getArgumentDescriptions(String category, String namePattern) throws SQLException {

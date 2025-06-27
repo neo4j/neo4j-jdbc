@@ -87,23 +87,21 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 		var parameterTypes = new HashMap<Integer, String>();
 
-		if (descriptor.hasParameters()) {
-			try (var columns = descriptor.isFunctionCall() ? meta.getFunctionColumns(null, null, descriptor.fqn(), null)
-					: meta.getProcedureColumns(null, null, descriptor.fqn(), null)) {
-				while (columns.next()) {
-					var type = columns.getInt("COLUMN_TYPE");
-					var ordinalPosition = columns.getInt("ORDINAL_POSITION");
+		try (var columns = descriptor.isFunctionCall() ? meta.getFunctionColumns(null, null, descriptor.fqn(), null)
+				: meta.getProcedureColumns(null, null, descriptor.fqn(), null)) {
+			while (columns.next()) {
+				var type = columns.getInt("COLUMN_TYPE");
+				var ordinalPosition = columns.getInt("ORDINAL_POSITION");
 
-					parameterOrder.put(columns.getString("COLUMN_NAME"), ordinalPosition);
+				parameterOrder.put(columns.getString("COLUMN_NAME"), ordinalPosition);
 
-					// It might be that those JDBC constants are actually the same right
-					// now,
-					// but that might as well change
-					// in a different JDK or "the future"
-					// noinspection ConditionCoveredByFurtherCondition,ConstantValue
-					if (type == DatabaseMetaData.procedureColumnIn || type == DatabaseMetaData.functionColumnIn) {
-						parameterTypes.put(ordinalPosition, columns.getString("DATA_TYPE"));
-					}
+				// It might be that those JDBC constants are actually the same right
+				// now,
+				// but that might as well change
+				// in a different JDK or "the future"
+				// noinspection ConditionCoveredByFurtherCondition,ConstantValue
+				if (type == DatabaseMetaData.procedureColumnIn || type == DatabaseMetaData.functionColumnIn) {
+					parameterTypes.put(ordinalPosition, columns.getString("DATA_TYPE"));
 				}
 			}
 		}
