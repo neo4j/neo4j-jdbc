@@ -46,7 +46,7 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public Type type() {
+	public Type boltValueType() {
 		return this.type;
 	}
 
@@ -101,12 +101,12 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public IsoDuration asIsoDuration() {
+	public IsoDuration asBoltIsoDuration() {
 		return (IsoDuration) this.value.asIsoDuration();
 	}
 
 	@Override
-	public Point asPoint() {
+	public Point asBoltPoint() {
 		return (Point) this.value.asPoint();
 	}
 
@@ -131,12 +131,12 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public org.neo4j.bolt.connection.values.Value get(String key) {
+	public Value getBoltValue(String key) {
 		return ValueFactoryImpl.asBoltValue(this.value.get(key));
 	}
 
 	@Override
-	public Iterable<org.neo4j.bolt.connection.values.Value> values() {
+	public Iterable<Value> boltValues() {
 		return () -> new Iterator<>() {
 			private final Iterator<org.neo4j.jdbc.values.Value> iterator = ValueImpl.this.value.values().iterator();
 
@@ -158,8 +158,8 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public <T> Map<String, T> asMap(Function<Value, T> mapFunction) {
-		return this.value.asMap(mapFunction.compose(ValueFactoryImpl::asBoltValue));
+	public Map<String, Value> asBoltMap() {
+		return this.value.asMap(ValueFactoryImpl::asBoltValue);
 	}
 
 	@Override
