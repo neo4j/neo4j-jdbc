@@ -93,7 +93,7 @@ final class RecordImpl extends AbstractMapAccessorWithDefaultValue implements Re
 
 	@Override
 	public Map<String, Object> asMap() {
-		return ValueUtils.map(this, Values.ofObject());
+		return ValueUtils.map(this, Value::asObject);
 	}
 
 	@Override

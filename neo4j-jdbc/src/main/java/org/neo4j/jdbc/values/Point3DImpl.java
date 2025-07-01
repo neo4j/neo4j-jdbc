@@ -18,9 +18,9 @@
  */
 package org.neo4j.jdbc.values;
 
-record Point3DImpl(int srid, double x, double y, double z) {
+record Point3DImpl(int srid, double x, double y, double z) implements Point {
 	@Override
 	public String toString() {
-		return "Point{" + "srid=" + this.srid + ", x=" + this.x + ", y=" + this.y + ", z=" + this.z + '}';
+		return "point({srid:%d, x:%s, y:%s, z:%s})".formatted(this.srid, this.x, this.y, this.z);
 	}
 }

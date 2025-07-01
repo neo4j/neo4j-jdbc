@@ -26,6 +26,6 @@ record Point2DImpl(int srid, double x, double y) implements Point {
 
 	@Override
 	public String toString() {
-		return "Point{" + "srid=" + this.srid + ", x=" + this.x + ", y=" + this.y + '}';
+		return "point({srid:%d, x:%s, y:%s})".formatted(this.srid, this.x, this.y);
 	}
 }

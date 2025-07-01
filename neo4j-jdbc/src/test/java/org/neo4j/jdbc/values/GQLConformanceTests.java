@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -73,7 +74,8 @@ class GQLConformanceTests {
 						new Holder(Values.value(Duration.ofSeconds(150)), "DURATION 'PT2M30S'"),
 						new Holder(Values.value(Period.ofMonths(3).plusDays(1)), "P3M1D"),
 						new Holder(Values.value(Period.ofMonths(12)), "P1Y")),
-				newContainer("Collections", new Holder(Values.value(List.of(1, 2, 3, 4)), "[1, 2, 3, 4]")),
+				newContainer("Collections", new Holder(Values.value(List.of(1, 2, 3, 4)), "[1, 2, 3, 4]"),
+						new Holder(Values.value(Map.of("a", 1, "b", 2, "c", "haha")), "{a: 1, b: 2, c: \"haha\"}")),
 				newContainer("Strings", new Holder(Values.value("test"), "\"test\"")));
 	}
 

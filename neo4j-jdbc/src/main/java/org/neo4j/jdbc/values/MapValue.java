@@ -45,12 +45,12 @@ public final class MapValue extends AbstractValue {
 
 	@Override
 	public Map<String, Object> asObject() {
-		return asMap(Values.ofObject());
+		return asMap(Value::asObject);
 	}
 
 	@Override
 	public Map<String, Object> asMap() {
-		return map(this.val, Values.ofObject());
+		return map(this.val, Value::asObject);
 	}
 
 	@Override

@@ -118,7 +118,7 @@ abstract class AbstractValue extends AbstractMapAccessorWithDefaultValue impleme
 
 	@Override
 	public List<Object> asList() {
-		return asList(Values.ofObject());
+		return asList(Value::asObject);
 	}
 
 	@Override
@@ -128,7 +128,7 @@ abstract class AbstractValue extends AbstractMapAccessorWithDefaultValue impleme
 
 	@Override
 	public Map<String, Object> asMap() {
-		return asMap(Values.ofObject());
+		return asMap(Value::asObject);
 	}
 
 	@Override
