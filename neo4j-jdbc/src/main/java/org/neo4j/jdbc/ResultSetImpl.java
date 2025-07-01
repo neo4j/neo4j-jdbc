@@ -94,8 +94,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 	 */
 	static final int SUPPORTED_FETCH_DIRECTION = ResultSet.FETCH_FORWARD;
 
-	static final EnumSet<Type> NO_TO_STRING_SUPPORT = EnumSet.of(Type.NODE, Type.RELATIONSHIP, Type.PATH, Type.MAP,
-			Type.LIST);
+	static final EnumSet<Type> NO_TO_STRING_SUPPORT = EnumSet.of(Type.NODE, Type.RELATIONSHIP, Type.PATH);
 
 	private final StatementImpl statement;
 
@@ -1387,7 +1386,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (NO_TO_STRING_SUPPORT.stream().anyMatch(t -> t.isTypeOf(value))) {
 				throw new UncoercibleException(value.type().name(), "String");
 			}
-			return value.asObject().toString();
+			return value.toString();
 		}
 		catch (UncoercibleException ex) {
 			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "String"));

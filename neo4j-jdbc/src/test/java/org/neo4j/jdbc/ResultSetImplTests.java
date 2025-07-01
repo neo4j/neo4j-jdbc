@@ -123,7 +123,7 @@ class ResultSetImplTests {
 								supplier -> assertThat(supplier.get()).isEqualTo("0"))),
 				Arguments.of(Values.value(true),
 						Named.<VerificationLogic<String>>of("verify throws exception",
-								supplier -> assertThat(supplier.get()).isEqualTo("true"))))
+								supplier -> assertThat(supplier.get()).isEqualTo("TRUE"))))
 			// map each set of arguments to both index and label access methods
 			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
 	}

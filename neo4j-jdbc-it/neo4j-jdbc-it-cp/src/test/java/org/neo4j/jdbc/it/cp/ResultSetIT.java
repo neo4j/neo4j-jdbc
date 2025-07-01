@@ -21,6 +21,8 @@ package org.neo4j.jdbc.it.cp;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -149,6 +151,61 @@ class ResultSetIT extends IntegrationTestBase {
 			assertThatExceptionOfType(SQLException.class).isThrownBy(rs::last)
 				.withMessage(
 						"This result set is of type TYPE_FORWARD_ONLY (1003) and does not support last after it has been fully iterated");
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void getListAsStringShouldNotFail() throws SQLException {
+		try (var con = getConnection();
+				var stmt = con.createStatement();
+				var rs = stmt.executeQuery("RETURN [1, 2, 3, 4, 5] AS l")) {
+			assertThat(rs.next()).isTrue();
+			var l = rs.getObject("l");
+			assertThat(l).isInstanceOf(List.class);
+			assertThat(((List<Object>) l)).containsExactly(1L, 2L, 3L, 4L, 5L);
+			var a = rs.getArray("l");
+			try (var rsa = a.getResultSet()) {
+				int cnt = 0;
+				while (rsa.next()) {
+					++cnt;
+					assertThat(rsa.getLong(1)).isEqualTo(cnt);
+				}
+				assertThat(cnt).isEqualTo(5);
+			}
+
+			assertThat(rs.getString("l")).isEqualTo("[1, 2, 3, 4, 5]");
+		}
+	}
+
+	// GH-401 and Gerrit
+	@SuppressWarnings("unchecked")
+	@Test
+	void toStringShouldNotFailOnHeterogenous() throws SQLException {
+		try (var con = getConnection(); var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+				RETURN [1, 2, 3, 4, 'haha'] AS l,
+					{a: 1, b: 2, c: "haha"} AS m,
+					point({longitude: 56.7, latitude: 12.78}) AS p1,
+					point({x: 2.3, y: 4.5, crs: 'WGS-84'}) AS p2,
+					point({longitude: 56.7, latitude: 12.78, height: 8}) AS p3,
+					point({x: 2.3, y: 4.5, z: 2}) AS p4,
+				    point({x: 2.3, y: 4.5}) AS p5""")) {
+			assertThat(rs.next()).isTrue();
+			var l = rs.getObject("l");
+			assertThat(l).isInstanceOf(List.class);
+			assertThat(((List<Object>) l)).containsExactly(1L, 2L, 3L, 4L, "haha");
+			assertThat(rs.getString("l")).isEqualTo("[1, 2, 3, 4, \"haha\"]");
+
+			var m = rs.getObject("m");
+			assertThat(m).isInstanceOf(Map.class);
+			assertThat(((Map<String, Object>) m)).containsAllEntriesOf(Map.of("a", 1L, "b", 2L, "c", "haha"));
+			assertThat(rs.getString("m")).isEqualTo("{a: 1, b: 2, c: \"haha\"}");
+
+			assertThat(rs.getString("p1")).isEqualTo("point({srid:4326, x:56.7, y:12.78})");
+			assertThat(rs.getString("p2")).isEqualTo("point({srid:4326, x:2.3, y:4.5})");
+			assertThat(rs.getString("p3")).isEqualTo("point({srid:4979, x:56.7, y:12.78, z:8.0})");
+			assertThat(rs.getString("p4")).isEqualTo("point({srid:9157, x:2.3, y:4.5, z:2.0})");
+			assertThat(rs.getString("p5")).isEqualTo("point({srid:7203, x:2.3, y:4.5})");
 		}
 	}
 

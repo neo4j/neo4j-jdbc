@@ -47,12 +47,12 @@ public final class ListValue extends AbstractValue {
 
 	@Override
 	public List<Object> asObject() {
-		return asList(Values.ofObject());
+		return asList(Value::asObject);
 	}
 
 	@Override
 	public List<Object> asList() {
-		return list(this.values, Values.ofObject());
+		return list(this.values, Value::asObject);
 	}
 
 	@Override
