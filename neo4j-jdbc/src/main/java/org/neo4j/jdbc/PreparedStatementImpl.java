@@ -53,6 +53,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -595,8 +596,12 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 			setParameter(parameterName, neo4jValue);
 		}
 		else {
+			var optionalJSONMapper = Optional.ofNullable(value)
+				.map(Object::getClass)
+				.flatMap(type -> JSONMappers.INSTANCE.getMapper(type.getName()));
 			try {
-				setParameter(parameterName, Values.value(value));
+				setParameter(parameterName,
+						optionalJSONMapper.map(mapper -> mapper.fromJson(value)).orElseGet(() -> Values.value(value)));
 			}
 			catch (ValueException ex) {
 				throw new Neo4jException(withInternal(ex));

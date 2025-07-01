@@ -49,6 +49,8 @@ abstract class IntegrationTestBase {
 	@SuppressWarnings("resource") // On purpose to reuse this
 	protected final Neo4jContainer<?> neo4j;
 
+	protected boolean doClean = true;
+
 	protected Driver driver;
 
 	@BeforeAll
@@ -75,6 +77,9 @@ abstract class IntegrationTestBase {
 
 	@BeforeEach
 	void clearDatabase() throws SQLException {
+		if (!this.doClean) {
+			return;
+		}
 		try (var connection = this.getConnection(); var stmt = connection.createStatement()) {
 			stmt.execute("""
 					MATCH (n)

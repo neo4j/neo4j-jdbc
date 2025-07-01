@@ -1,0 +1,18 @@
+[
+  {
+    "name": "cbv1",
+    "query": "MATCH (n:Movie)<-[:ACTED_IN]-(:Person) RETURN *",
+    "columns": [
+      {
+        "name": "a",
+        "propertyName": "n.title",
+        "type": "STRING"
+      },
+      {
+        "name": "c1",
+        "propertyName": "n.released",
+        "type": "INTEGER"
+      }
+    ]
+  }
+]

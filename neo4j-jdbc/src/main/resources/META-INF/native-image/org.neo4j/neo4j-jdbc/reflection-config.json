@@ -1,0 +1,11 @@
+[
+  {
+    "name": "org.neo4j.jdbc.JacksonJSONMapperImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  }
+]

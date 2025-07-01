@@ -52,6 +52,8 @@ include::sql2cypher.adoc[leveloffset=+1]
 
 include::cypher_backed_views.adoc[leveloffset=+1]
 
+include::object_mapping.adoc[leveloffset=+1]
+
 include::text2cypher.adoc[leveloffset=+1]
 
 [appendix]
