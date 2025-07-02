@@ -23,6 +23,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +36,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
+import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
+import org.neo4j.bolt.connection.LoggingProvider;
+import org.neo4j.bolt.connection.MetricsListener;
+import org.neo4j.bolt.connection.values.ValueFactory;
 import org.neo4j.jdbc.values.Type;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,8 +60,7 @@ class DatabaseMetadataImplTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-				any(), any(), any(), any(), any(), any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any()))
 			.willReturn(mockedFuture);
 	}
 
@@ -283,7 +288,18 @@ class DatabaseMetadataImplTests {
 	private Connection newConnection() throws SQLException {
 		var url = "jdbc:neo4j://host";
 
-		var driver = new Neo4jDriver(this.boltConnectionProvider);
+		var driver = new Neo4jDriver(List.of(new BoltConnectionProviderFactory() {
+			@Override
+			public boolean supports(String s) {
+				return true;
+			}
+
+			@Override
+			public BoltConnectionProvider create(LoggingProvider loggingProvider, ValueFactory valueFactory,
+					MetricsListener metricsListener, Map<String, ?> map) {
+				return DatabaseMetadataImplTests.this.boltConnectionProvider;
+			}
+		}));
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
