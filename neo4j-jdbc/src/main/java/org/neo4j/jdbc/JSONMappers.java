@@ -42,6 +42,7 @@ enum JSONMappers {
 	private static final Map<String, String> KNOWN_MAPPERS = Map.of("com.fasterxml.jackson.databind.JsonNode",
 			"JacksonJSONMapperImpl");
 
+	@SuppressWarnings("squid:S1452") // Generic items, this is exactly what we want here
 	private final Map<String, Optional<JSONMapper<?>>> loadedMappers = new ConcurrentHashMap<>();
 
 	public Optional<JSONMapper<?>> getMapper(String typeName) {
@@ -56,7 +57,7 @@ enum JSONMappers {
 			try {
 				var type = Class.forName(typeName);
 
-				for (var mappedTypedName : KNOWN_MAPPERS.keySet()) {
+				for (@SuppressWarnings("squid:S2864") var mappedTypedName : KNOWN_MAPPERS.keySet()) {
 					var mappedType = Class.forName(mappedTypedName, false, JSONMappers.class.getClassLoader());
 					if (mappedType.isAssignableFrom(type)) {
 						mapperClass = KNOWN_MAPPERS.get(mappedTypedName);
@@ -64,6 +65,7 @@ enum JSONMappers {
 				}
 			}
 			catch (Exception ignored) {
+				// This is fine
 			}
 		}
 

@@ -23,9 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -72,11 +70,9 @@ import org.neo4j.jdbc.values.Values;
  */
 final class JacksonJSONMapperImpl implements JSONMapper<JsonNode> {
 
-	private static final TypeReference<Map<String, Object>> MAP_OF_STRING_TO_OBJECT = new TypeReference<Map<String, Object>>() {
-	};
-
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
+	@SuppressWarnings("squid:S3776") // Has a lot of ifs, but isn't really complex
 	@Override
 	public JsonNode toJson(Value value) {
 
