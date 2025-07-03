@@ -45,6 +45,7 @@ enum JSONMappers {
 	@SuppressWarnings("squid:S1452") // Generic items, this is exactly what we want here
 	private final Map<String, Optional<JSONMapper<?>>> loadedMappers = new ConcurrentHashMap<>();
 
+	@SuppressWarnings("squid:S1452") // With little surprise, here as well...
 	public Optional<JSONMapper<?>> getMapper(String typeName) {
 		return this.loadedMappers.computeIfAbsent(typeName, JSONMappers::loadMapper);
 	}
