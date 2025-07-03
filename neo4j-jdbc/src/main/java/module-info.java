@@ -23,6 +23,7 @@
 module org.neo4j.jdbc {
 	requires transitive java.sql;
 	requires static micrometer.core;
+	requires static com.fasterxml.jackson.databind;
 
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;

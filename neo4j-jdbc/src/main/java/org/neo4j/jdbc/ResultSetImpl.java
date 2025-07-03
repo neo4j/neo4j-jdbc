@@ -49,6 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1284,26 +1285,41 @@ final class ResultSetImpl implements Neo4jResultSet {
 	@Override
 	public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
 		logGet("Object", columnIndex);
-		return getValueByColumnIndex(columnIndex, valueMapperFor(type));
-	}
-
-	private <T> ValueMapper<T> valueMapperFor(Class<T> type) {
-		return value -> {
-			if (type.isInstance(value)) {
-				return type.cast(value);
-			}
-			var obj = mapToObject(value, this.maxFieldSize);
-			if (type.isInstance(obj)) {
-				return type.cast(obj);
-			}
-			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(obj.getClass().getName(), type.getName()));
-		};
+		return getValueByColumnIndex(columnIndex, valueMapperFor(type, this.maxFieldSize));
 	}
 
 	@Override
 	public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
 		logGet("Object", columnLabel);
-		return getValueByColumnLabel(columnLabel, valueMapperFor(type));
+		return getValueByColumnLabel(columnLabel, valueMapperFor(type, this.maxFieldSize));
+	}
+
+	private static <T> ValueMapper<T> valueMapperFor(Class<T> type, int maxFieldSize) {
+		return value -> {
+			if (type.isInstance(value)) {
+				return type.cast(value);
+			}
+			var optionalJSONMapper = JSONMappers.INSTANCE.getMapper(type.getName());
+			return optionalJSONMapper.map(mapper -> {
+				Object json = mapper.toJson(value);
+				try {
+					return type.cast(json);
+				}
+				catch (ClassCastException ex) {
+					throw new RuntimeException(
+							"Resulting type after mapping is incompatible, use %s or %s for reification"
+								.formatted(json.getClass().getName(), mapper.getBaseType().getName()));
+				}
+			}).or(() -> {
+				var obj = mapToObject(value, maxFieldSize);
+				if (type.isInstance(obj)) {
+					return Optional.of(type.cast(obj));
+				}
+				return Optional.empty();
+			})
+				.orElseThrow(() -> new Neo4jException(
+						GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName())));
+		};
 	}
 
 	@Override
@@ -1471,6 +1487,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 			return (short) 0;
 		}
 		throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), "short"));
+
 	}
 
 	private static int mapToInteger(Value value) throws SQLException {

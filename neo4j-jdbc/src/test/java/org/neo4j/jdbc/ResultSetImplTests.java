@@ -1491,7 +1491,7 @@ class ResultSetImplTests {
 		try (var rs = setupWithValue(Values.value("test"), 0)) {
 			rs.next();
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getObject(1, Float.class))
-				.withMessage("data exception - Cannot coerce java.lang.String to java.lang.Float");
+				.withMessage("data exception - Cannot coerce \"test\" (STRING) to java.lang.Float");
 		}
 	}
 

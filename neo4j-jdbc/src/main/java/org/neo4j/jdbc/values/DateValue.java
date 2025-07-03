@@ -31,7 +31,7 @@ import java.time.format.DateTimeFormatterBuilder;
 public final class DateValue extends AbstractObjectValue<LocalDate> {
 
 	private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().appendLiteral("DATE '")
-		.append(DateTimeFormatter.ISO_DATE)
+		.append(DateTimeFormatter.ISO_LOCAL_DATE)
 		.appendLiteral('\'')
 		.toFormatter();
 

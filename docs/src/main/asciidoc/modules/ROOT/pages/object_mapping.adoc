@@ -1,0 +1,182 @@
+[#object_mapping]
+= Object mapping
+
+== Introduction
+
+There are many different tools to do Object–relational mapping (ORM, O/RM, and O/R mapping tool) with JDBC and the Neo4j JDBC driver does support some of them, such as MyBatis or result-set / tuple oriented mapping with tools such as JDBI or Springs JDBC template.
+However, many of those tools also generate SQL queries and often times depend on very specific SQL functionality, that we cannot fully translate in our xref:sql2cypher.adoc#s2c_introduction[SQL to Cypher translation], and therefor, your milage may vary.
+
+TIP: The most "graphy" ways of Object mapping with Neo4j are either https://github.com/neo4j/neo4j-ogm[Neo4j-OGM], which is offered with integrations for Spring and Quarkus, or https://github.com/spring-projects/spring-data-neo4j[Spring Data Neo4j]. Both solutions are built on top of the https://github.com/neo4j/neo4j-java-driver[common Neo4j Java Driver]. Those solutions are favorable if you are looking for an end-to-end solution with repository support and advanced mapping and query capabilities.
+
+Sometimes, simple solutions are enough however and one solution that might be already enough is an easy and direct way of mapping graph data to JSON objects and passing back JSON objects into queries.
+The JDBC spec allows for getting and setting arbitrary objects of arbitrary types via the `ResultSet` and `PreparedStatement` types and
+the Neo4j JDBC driver utilizes those for turning nodes and relationships into JSON objects.
+
+As there is no standard JSON object in the JDK, this functionality requires additional, optional dependencies as described in the following sections.
+
+=== With Jackson Databind
+
+The Neo4j JDBC Driver can utilise https://github.com/FasterXML/jackson-databind[Jackson Databind] to transform graph objects into JSON Nodes and read back those objects into maps usable in Cypher queries.
+
+Put the following dependency on your class- or module path to enable mapping into objects of type `JsonNode`:
+
+[source,xml]
+.Required dependency for Object mapping through Jackson Databind
+----
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.19.1</version>
+</dependency>
+----
+
+You now can pass `JsonObject.class` as type parameter to any overload of `getObject` on a `ResultSet` that supports a type parameter to retrieve JSON like this:
+
+[source, java, tabsize=4, indent=0]
+.Retrieving a list of nodes as JSON Array
+----
+import java.io.StringWriter;
+import java.sql.DriverManager;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+public class ReadNodesIntoJson {
+
+	public static void main(String... args) throws Exception {
+
+		var objectMapper = new ObjectMapper();
+		objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+		objectMapper.enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
+
+		try (var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies", "neo4j", "verysecret");
+				var stmt = connection.createStatement()) {
+
+			var result = stmt.executeQuery("""
+					MATCH (n:Movie) LIMIT 2
+					WITH n RETURN collect(n) AS movies
+					""");
+			result.next();
+
+			var json = result.getObject("movies", JsonNode.class);
+			var sw = new StringWriter();
+			objectMapper.writeTree(objectMapper.createGenerator(sw), json);
+			System.out.println(sw);
+		}
+	}
+}
+----
+
+The output will look similar to this:
+
+[source,json]
+----
+[ {
+  "elementId" : "4:5c0c7e77-4034-45a1-ab00-a159be8dbf04:0",
+  "labels" : [ "Movie" ],
+  "properties" : {
+    "title" : "The Matrix",
+    "tagline" : "Welcome to the Real World",
+    "released" : 1999
+  }
+}, {
+  "elementId" : "4:5c0c7e77-4034-45a1-ab00-a159be8dbf04:9",
+  "labels" : [ "Movie" ],
+  "properties" : {
+    "title" : "The Matrix Reloaded",
+    "tagline" : "Free your mind",
+    "released" : 2003
+  }
+} ]
+----
+
+You'll notice that the nodes carry their element id, a list of labels and a property object.
+This structure is aligned with the https://neo4j.com/docs/query-api/current/result-formats/[Query API], so that any mapping will be similar to deal with. The JDBC driver however will always use the "Plain JSON" format, so that further mapping into domain objects will be as straight forward as possible, without custom deserializers.
+
+Here's one example that shows a query that structures the result of matching all movies and their actors into maps, collects them as a list, retrieves that again as a JSON node, which can ultimately mapped by Jacksons Object mapper into a list of domain objects:
+
+[source, java, tabsize=4, indent=0]
+.Mapping JSON nodes into domain objects
+----
+import java.sql.DriverManager;
+import java.util.List;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class MapNodesIntoObjects {
+
+	public static void main(String... args) throws Exception {
+
+		var objectMapper = new ObjectMapper();
+
+		record Actor(String name, short born) {
+		}
+		record Movie(String title, short released, List<Actor> actors) {
+		}
+
+		try (var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies", "neo4j",
+				"verysecret"); var stmt = connection.createStatement()) {
+
+			var result = stmt.executeQuery("""
+					MATCH (m:Movie)<-[:ACTED_IN]-(a:Person)
+					WITH m, collect(a{.*}) AS actors
+					ORDER BY m.title
+					LIMIT 5
+					RETURN collect({title: m.title, released: m.released, actors: actors})
+					""");
+			result.next();
+
+			var json = result.getObject(1, JsonNode.class); // <.>
+			var movies = objectMapper.treeToValue(json, new TypeReference<List<Movie>>() {}); // <.>
+
+			movies.forEach(System.out::println);
+		}
+	}
+}
+----
+<.> First retrieve the list as Json array again
+<.> Use Jacksons `ObjectMapper` to map that array into a list of `Movie` objects containing their actors
+
+Of course, writing back JSON nodes does work, too:
+
+[source, java, tabsize=4, indent=0]
+.Using JSON Nodes as parameters
+----
+import java.sql.DriverManager;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class WritingObjects {
+
+	public static void main(String... args) throws Exception {
+
+		var objectMapper = new ObjectMapper();
+
+		record Movie(String title, String tagline, long released) {
+		}
+
+		var movie = new Movie("title", "tagline", 2025);
+		try (var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies", "neo4j",
+				"verysecret"); var stmt = connection.prepareStatement("CREATE (m:Movie $1) RETURN m")) {
+			stmt.setObject(1, objectMapper.valueToTree(movie));
+			var rs = stmt.executeQuery();
+			rs.next();
+			var json = rs.getObject("m", JsonNode.class);
+			var newMovie = objectMapper.treeToValue(json.get("properties"), Movie.class);
+			System.out.println("New movie " + newMovie + " has id " + json.get("elementId"));
+		}
+	}
+}
+----
+
+It will produce output similar to this:
+
+[source,text]
+----
+New movie Movie[title=title, tagline=tagline, released=2025] has id "4:5c0c7e77-4034-45a1-ab00-a159be8dbf04:173"
+----

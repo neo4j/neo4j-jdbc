@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.it.cp;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,9 @@ class GQLCodesIT extends IntegrationTestBase {
 			assertThatNoException().isThrownBy(() -> rs.getDate(1));
 
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getBigDecimal(2))
+				.withMessage("data exception - Cannot coerce \"abc\" (STRING) to java.math.BigDecimal")
+				.matches(ex -> "22N37".equals(ex.getSQLState()));
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getObject(2, BigDecimal.class))
 				.withMessage("data exception - Cannot coerce \"abc\" (STRING) to java.math.BigDecimal")
 				.matches(ex -> "22N37".equals(ex.getSQLState()));
 			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> rs.getDouble(2))

@@ -168,6 +168,8 @@ To use it with a Neo4j cluster, server-side routing must be enabled on the clust
 * Provides an optional default implementation to translate many SQL statements into semantically similar Cypher statements
 * Supports client-side Cypher-backed views
 * Can be safely used with JDBC connection pools as opposed to the common Neo4j Java Driver or any JDBC driver based on that, as it doesn't do internal connection pooling and transaction management otherwise than dictated by the JDBC Spec
+* Built-in token based authentication, including reauthentication on token expiration plus an optiona Keycloak based SSO module
+* Built-in JSON based Object mapping
 
 The absence of any connection pooling and transaction management is an advantage of the Neo4j JDBC Driver over the common Neo4j Java Driver.
 It allows to pick and choose any database connection pooling system such as https://github.com/brettwooldridge/HikariCP[HikariCP] and transaction management such as https://jakarta.ee/specifications/transactions/[Jakarta Transactions].
