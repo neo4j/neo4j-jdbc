@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-07-01T14:56:33Z</span>
+<span id="revdate">2025-07-03T13:40:03Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -589,7 +589,12 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_restrictions">7.4. Restrictions</a></li>
 </ul>
 </li>
-<li><a href="#text2cypher">8. text2cypher</a></li>
+<li><a href="#object_mapping">8. Object mapping</a>
+<ul class="sectlevel2">
+<li><a href="#_introduction_4">8.1. Introduction</a></li>
+</ul>
+</li>
+<li><a href="#text2cypher">9. text2cypher</a></li>
 <li><a href="#_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</a>
 <ul class="sectlevel2">
 <li><a href="#_data_types_for_fixed_point_arithmetic">A.1. Data types for fixed-point arithmetic</a></li>
@@ -694,6 +699,12 @@ To use it with a Neo4j cluster, server-side routing must be enabled on the clust
 </li>
 <li>
 <p>Can be safely used with JDBC connection pools as opposed to the common Neo4j Java Driver or any JDBC driver based on that, as it doesn&#8217;t do internal connection pooling and transaction management otherwise than dictated by the JDBC Spec</p>
+</li>
+<li>
+<p>Built-in token based authentication, including reauthentication on token expiration plus an optiona Keycloak based SSO module</p>
+</li>
+<li>
+<p>Built-in JSON based Object mapping</p>
 </li>
 </ul>
 </div>
@@ -808,7 +819,7 @@ However, the default SQL-to-Cypher translator will (when connected to a database
 <div class="title">Listing 1. Using the full bundle as a runtime dependency inside a Gradle-based project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="kotlin">dependencies {
-    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.6.1-SNAPSHOT) <i class="conum" data-value="1"></i><b>(1)</b>
+    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.7.0-SNAPSHOT) <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
@@ -1207,7 +1218,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.6.1-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.7.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1218,7 +1229,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 11. Neo4j JDBC Driver as Gradle runtime dependency</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.6.1-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.7.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1231,7 +1242,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-translator-impl<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.6.1-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.7.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1242,7 +1253,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 13. Gradle dependency for the default SQL to Cypher translator</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.6.1-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.7.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1255,7 +1266,7 @@ This bundle does not contain the default SQL-to-Cypher translator!
 The coordinates of this bundle are <code>org.neo4j:neo4j-jdbc-bundle</code> and you can download it from Maven central:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-bundle-6.6.1-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-bundle-6.6.1-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-bundle-6.7.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-bundle-6.7.0-SNAPSHOT.jar</a></p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1279,7 +1290,7 @@ Otherwise, it is identical to the <a href="#small_bundle">small bundle</a>.
 Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can download it from Maven central here:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-full-bundle-6.6.1-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-full-bundle-6.6.1-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.7.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.7.0-SNAPSHOT.jar</a></p>
 </div>
 </div>
 <div class="sect3">
@@ -1288,7 +1299,7 @@ Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can do
 <p>We also ship a very experimental bundle that we call <code>text2cypher</code>:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.6.1-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.6.1-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.7.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.7.0-SNAPSHOT.jar</a></p>
 </div>
 <div class="paragraph">
 <p>See <a href="#">Neo4j JDBC Driver</a> more information.</p>
@@ -1989,7 +2000,7 @@ There is no need to copy the below code into your own application. We actually d
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-authn-kc<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.6.1-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.7.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -2310,7 +2321,7 @@ For Maven, use this additional dependency declaration:</p>
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-tracing-micrometer<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.6.1-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.7.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -2321,7 +2332,7 @@ For Maven, use this additional dependency declaration:</p>
 <div class="title">Listing 27. Gradle dependency that allows you to configure tracing</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.6.1-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.7.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -4897,7 +4908,225 @@ You cannot use the <code>JOIN</code>, <code>LEFT OUTER</code> or any other JOIN 
 </div>
 </div>
 <div class="sect1">
-<h2 id="text2cypher">8. text2cypher</h2>
+<h2 id="object_mapping">8. Object mapping</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction_4">8.1. Introduction</h3>
+<div class="paragraph">
+<p>There are many different tools to do Object–relational mapping (ORM, O/RM, and O/R mapping tool) with JDBC and the Neo4j JDBC driver does support some of them, such as MyBatis or result-set / tuple oriented mapping with tools such as JDBI or Springs JDBC template.
+However, many of those tools also generate SQL queries and often times depend on very specific SQL functionality, that we cannot fully translate in our <a href="#s2c_introduction">SQL to Cypher translation</a>, and therefor, your milage may vary.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The most "graphy" ways of Object mapping with Neo4j are either <a href="https://github.com/neo4j/neo4j-ogm">Neo4j-OGM</a>, which is offered with integrations for Spring and Quarkus, or <a href="https://github.com/spring-projects/spring-data-neo4j">Spring Data Neo4j</a>. Both solutions are built on top of the <a href="https://github.com/neo4j/neo4j-java-driver">common Neo4j Java Driver</a>. Those solutions are favorable if you are looking for an end-to-end solution with repository support and advanced mapping and query capabilities.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Sometimes, simple solutions are enough however and one solution that might be already enough is an easy and direct way of mapping graph data to JSON objects and passing back JSON objects into queries.
+The JDBC spec allows for getting and setting arbitrary objects of arbitrary types via the <code>ResultSet</code> and <code>PreparedStatement</code> types and
+the Neo4j JDBC driver utilizes those for turning nodes and relationships into JSON objects.</p>
+</div>
+<div class="paragraph">
+<p>As there is no standard JSON object in the JDK, this functionality requires additional, optional dependencies as described in the following sections.</p>
+</div>
+<div class="sect3">
+<h4 id="_with_jackson_databind">8.1.1. With Jackson Databind</h4>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver can utilise <a href="https://github.com/FasterXML/jackson-databind">Jackson Databind</a> to transform graph objects into JSON Nodes and read back those objects into maps usable in Cypher queries.</p>
+</div>
+<div class="paragraph">
+<p>Put the following dependency on your class- or module path to enable mapping into objects of type <code>JsonNode</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 45. Required dependency for Object mapping through Jackson Databind</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>com.fasterxml.jackson.core<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>jackson-databind<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>2.19.1<span class="tag">&lt;/version&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You now can pass <code>JsonObject.class</code> as type parameter to any overload of <code>getObject</code> on a <code>ResultSet</code> that supports a type parameter to retrieve JSON like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 46. Retrieving a list of nodes as JSON Array</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.io.StringWriter</span>;
+<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.core.JsonGenerator</span>;
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.JsonNode</span>;
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.ObjectMapper</span>;
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.SerializationFeature</span>;
+
+<span class="directive">public</span> <span class="type">class</span> <span class="class">ReadNodesIntoJson</span> {
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">Exception</span> {
+
+        <span class="type">var</span> objectMapper = <span class="keyword">new</span> ObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        objectMapper.enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
+
+        <span class="keyword">try</span> (<span class="type">var</span> connection = <span class="predefined-type">DriverManager</span>.getConnection(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687/movies</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
+                <span class="type">var</span> stmt = connection.createStatement()) {
+
+            <span class="type">var</span> result = stmt.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+                    MATCH (n:Movie) LIMIT 2
+                    WITH n RETURN collect(n) AS movies
+                    </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>);
+            result.next();
+
+            <span class="type">var</span> json = result.getObject(<span class="string"><span class="delimiter">&quot;</span><span class="content">movies</span><span class="delimiter">&quot;</span></span>, JsonNode.class);
+            <span class="type">var</span> sw = <span class="keyword">new</span> <span class="predefined-type">StringWriter</span>();
+            objectMapper.writeTree(objectMapper.createGenerator(sw), json);
+            <span class="predefined-type">System</span>.out.println(sw);
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output will look similar to this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="json">[ {
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">elementId</span><span class="delimiter">&quot;</span></span> : <span class="string"><span class="delimiter">&quot;</span><span class="content">4:5c0c7e77-4034-45a1-ab00-a159be8dbf04:0</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">labels</span><span class="delimiter">&quot;</span></span> : [ <span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span> ],
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">properties</span><span class="delimiter">&quot;</span></span> : {
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span> : <span class="string"><span class="delimiter">&quot;</span><span class="content">The Matrix</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">tagline</span><span class="delimiter">&quot;</span></span> : <span class="string"><span class="delimiter">&quot;</span><span class="content">Welcome to the Real World</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">released</span><span class="delimiter">&quot;</span></span> : <span class="integer">1999</span>
+  }
+}, {
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">elementId</span><span class="delimiter">&quot;</span></span> : <span class="string"><span class="delimiter">&quot;</span><span class="content">4:5c0c7e77-4034-45a1-ab00-a159be8dbf04:9</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">labels</span><span class="delimiter">&quot;</span></span> : [ <span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span> ],
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">properties</span><span class="delimiter">&quot;</span></span> : {
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span> : <span class="string"><span class="delimiter">&quot;</span><span class="content">The Matrix Reloaded</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">tagline</span><span class="delimiter">&quot;</span></span> : <span class="string"><span class="delimiter">&quot;</span><span class="content">Free your mind</span><span class="delimiter">&quot;</span></span>,
+    <span class="key"><span class="delimiter">&quot;</span><span class="content">released</span><span class="delimiter">&quot;</span></span> : <span class="integer">2003</span>
+  }
+} ]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You&#8217;ll notice that the nodes carry their element id, a list of labels and a property object.
+This structure is aligned with the <a href="https://neo4j.com/docs/query-api/current/result-formats/">Query API</a>, so that any mapping will be similar to deal with. The JDBC driver however will always use the "Plain JSON" format, so that further mapping into domain objects will be as straight forward as possible, without custom deserializers.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s one example that shows a query that structures the result of matching all movies and their actors into maps, collects them as a list, retrieves that again as a JSON node, which can ultimately mapped by Jacksons Object mapper into a list of domain objects:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 47. Mapping JSON nodes into domain objects</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+<span class="keyword">import</span> <span class="include">java.util.List</span>;
+
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.core.type.TypeReference</span>;
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.JsonNode</span>;
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.ObjectMapper</span>;
+
+<span class="directive">public</span> <span class="type">class</span> <span class="class">MapNodesIntoObjects</span> {
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">Exception</span> {
+
+        <span class="type">var</span> objectMapper = <span class="keyword">new</span> ObjectMapper();
+
+        record Actor(<span class="predefined-type">String</span> name, <span class="type">short</span> born) {
+        }
+        record Movie(<span class="predefined-type">String</span> title, <span class="type">short</span> released, <span class="predefined-type">List</span>&lt;Actor&gt; actors) {
+        }
+
+        <span class="keyword">try</span> (<span class="type">var</span> connection = <span class="predefined-type">DriverManager</span>.getConnection(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687/movies</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>,
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>); <span class="type">var</span> stmt = connection.createStatement()) {
+
+            <span class="type">var</span> result = stmt.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+                    MATCH (m:Movie)&lt;-[:ACTED_IN]-(a:Person)
+                    WITH m, collect(a{.*}) AS actors
+                    ORDER BY m.title
+                    LIMIT 5
+                    RETURN collect({title: m.title, released: m.released, actors: actors})
+                    </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>);
+            result.next();
+
+            <span class="type">var</span> json = result.getObject(<span class="integer">1</span>, JsonNode.class); <i class="conum" data-value="1"></i><b>(1)</b>
+            <span class="type">var</span> movies = objectMapper.treeToValue(json, <span class="keyword">new</span> TypeReference&lt;<span class="predefined-type">List</span>&lt;Movie&gt;&gt;() {}); <i class="conum" data-value="2"></i><b>(2)</b>
+
+            movies.forEach(<span class="predefined-type">System</span>.out::println);
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>First retrieve the list as Json array again</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Use Jacksons <code>ObjectMapper</code> to map that array into a list of <code>Movie</code> objects containing their actors</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Of course, writing back JSON nodes does work, too:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 48. Using JSON Nodes as parameters</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.JsonNode</span>;
+<span class="keyword">import</span> <span class="include">com.fasterxml.jackson.databind.ObjectMapper</span>;
+
+<span class="directive">public</span> <span class="type">class</span> <span class="class">WritingObjects</span> {
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">Exception</span> {
+
+        <span class="type">var</span> objectMapper = <span class="keyword">new</span> ObjectMapper();
+
+        record Movie(<span class="predefined-type">String</span> title, <span class="predefined-type">String</span> tagline, <span class="type">long</span> released) {
+        }
+
+        <span class="type">var</span> movie = <span class="keyword">new</span> Movie(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">tagline</span><span class="delimiter">&quot;</span></span>, <span class="integer">2025</span>);
+        <span class="keyword">try</span> (<span class="type">var</span> connection = <span class="predefined-type">DriverManager</span>.getConnection(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687/movies</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>,
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>); <span class="type">var</span> stmt = connection.prepareStatement(<span class="string"><span class="delimiter">&quot;</span><span class="content">CREATE (m:Movie $1) RETURN m</span><span class="delimiter">&quot;</span></span>)) {
+            stmt.setObject(<span class="integer">1</span>, objectMapper.valueToTree(movie));
+            <span class="type">var</span> rs = stmt.executeQuery();
+            rs.next();
+            <span class="type">var</span> json = rs.getObject(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>, JsonNode.class);
+            <span class="type">var</span> newMovie = objectMapper.treeToValue(json.get(<span class="string"><span class="delimiter">&quot;</span><span class="content">properties</span><span class="delimiter">&quot;</span></span>), Movie.class);
+            <span class="predefined-type">System</span>.out.println(<span class="string"><span class="delimiter">&quot;</span><span class="content">New movie </span><span class="delimiter">&quot;</span></span> + newMovie + <span class="string"><span class="delimiter">&quot;</span><span class="content"> has id </span><span class="delimiter">&quot;</span></span> + json.get(<span class="string"><span class="delimiter">&quot;</span><span class="content">elementId</span><span class="delimiter">&quot;</span></span>));
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It will produce output similar to this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="text">New movie Movie[title=title, tagline=tagline, released=2025] has id &quot;4:5c0c7e77-4034-45a1-ab00-a159be8dbf04:173&quot;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="text2cypher">9. text2cypher</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This is an experimental translator inspired by the Neo4j Labs project <a href="https://github.com/neo4j-labs/text2cypher">text2cypher</a>.</p>
@@ -4957,7 +5186,7 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 45. Example of a valid URL</div>
+<div class="title">Listing 49. Example of a valid URL</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
 </div>
@@ -5049,7 +5278,7 @@ Once a natural language query gets translated into Cypher, the result will be ca
 <p>All that statements that do not start with 🤖 will be used as-is and treated as Cypher.</p>
 </div>
 <div class="paragraph">
-<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.6.1-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.6.1-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.6.1-SNAPSHOT.jar</a>. More information in <a href="#available_bundles">Available bundles</a>.</p>
+<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.7.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.7.0-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.7.0-SNAPSHOT.jar</a>. More information in <a href="#available_bundles">Available bundles</a>.</p>
 </div>
 </div>
 </div>
@@ -5313,7 +5542,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-01 14:56:37 UTC
+Last updated 2025-07-03 13:40:08 UTC
 </div>
 </div>
 </body>
