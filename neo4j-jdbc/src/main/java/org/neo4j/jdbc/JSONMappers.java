@@ -57,7 +57,8 @@ enum JSONMappers {
 			try {
 				var type = Class.forName(typeName);
 
-				for (@SuppressWarnings("squid:S2864") var mappedTypedName : KNOWN_MAPPERS.keySet()) {
+				for (@SuppressWarnings("squid:S2864")
+				var mappedTypedName : KNOWN_MAPPERS.keySet()) {
 					var mappedType = Class.forName(mappedTypedName, false, JSONMappers.class.getClassLoader());
 					if (mappedType.isAssignableFrom(type)) {
 						mapperClass = KNOWN_MAPPERS.get(mappedTypedName);
