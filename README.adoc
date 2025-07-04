@@ -80,7 +80,7 @@ public final class Quickstart {
                 ORDER BY m.title
                 """;
 
-        var url = "jdbc:neo4j://localhost:7687";
+        var url = "jdbc:neo4j://localhost:7687/movies";
         var username = "neo4j";
         var password = "verysecret";
 
@@ -125,7 +125,7 @@ var query = """
         ORDER BY m.title
         """; // <.>
 
-var url = "jdbc:neo4j://localhost:7687?enableSQLTranslation=true";
+var url = "jdbc:neo4j://localhost:7687/movies?enableSQLTranslation=true";
 
 try (var con = DriverManager.getConnection(url, username, password);
         var stmt = con.createStatement();
