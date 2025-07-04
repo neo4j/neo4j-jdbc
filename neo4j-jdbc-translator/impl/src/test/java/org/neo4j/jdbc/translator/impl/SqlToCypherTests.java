@@ -48,7 +48,9 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
@@ -84,6 +86,22 @@ class SqlToCypherTests {
 		given(personColumns.next()).willReturn(true, results);
 		given(personColumns.getString("COLUMN_NAME")).willReturn(firstName, names);
 		return personColumns;
+	}
+
+	static Stream<Arguments> concatShouldWork() {
+		return Stream.of(Arguments.of("SELECT 'a' || 'b'", "RETURN ('a' + 'b')"),
+				Arguments.of("SELECT 'a' || 'b' || 'c'", "RETURN (('a' + 'b') + 'c')"),
+				Arguments.of("SELECT CONCAT('a', 'b')", "RETURN ('a' + 'b')"),
+				Arguments.of("SELECT CONCAT('a')", "RETURN 'a'"),
+				Arguments.of("SELECT CONCAT('a', 'b', 'c')", "RETURN ('a' + ('b' + 'c'))"));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void concatShouldWork(String sql, String expectedCypher) {
+
+		var cypher = NON_PRETTY_PRINTING_TRANSLATOR.translate(sql);
+		assertThat(cypher).isEqualTo(expectedCypher);
 	}
 
 	@Test

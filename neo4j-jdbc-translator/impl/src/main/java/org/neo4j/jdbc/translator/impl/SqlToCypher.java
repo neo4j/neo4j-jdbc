@@ -1290,9 +1290,20 @@ final class SqlToCypher implements Translator {
 							"Unsupported value for date/time extraction: " + extract.$datePart());
 				};
 			}
+			else if (f instanceof QOM.Concat concat) {
+				return concat(concat.$arg1());
+			}
 			else {
 				throw unsupported(f);
 			}
+		}
+
+		private Expression concat(@SuppressWarnings("squid:S1452") List<? extends Field<?>> args) {
+			var first = args.get(0);
+			if (args.size() == 1) {
+				return expression(first);
+			}
+			return Cypher.concat(expression(first), concat(args.subList(1, args.size())));
 		}
 
 		private Expression buildFunction(QOM.Function<?> func) {
