@@ -33,6 +33,7 @@ import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jConnection;
 
@@ -41,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ParameterizedClass
-@ValueSource(strings = { "neo4j", "http" })
+@MethodSource("allProtocols")
 class ConnectionIT extends IntegrationTestBase {
 
 	@Parameter

@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.fail;
 
 @ParameterizedClass
-@ValueSource(strings = { "neo4j", "http" })
+@MethodSource("allProtocols")
 abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Parameter
