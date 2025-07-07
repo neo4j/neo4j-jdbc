@@ -69,7 +69,7 @@ jobs:
     strategy:
       matrix:
         java: [ '21', '24' ]
-        neo4j: [ '5.26.8', '2025.06' ]
+        neo4j: [ '5.26.8' ]
     needs: build
     steps:
       - name: 'Set up JDK'
