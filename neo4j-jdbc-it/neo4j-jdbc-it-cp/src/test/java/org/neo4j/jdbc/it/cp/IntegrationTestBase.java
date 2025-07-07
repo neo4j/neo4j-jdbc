@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -38,11 +37,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 abstract class IntegrationTestBase {
 
 	protected final Stream<Arguments> allProtocols() {
-		// Query api tests do not work reliable on native image, so we test them only on
-		// JVM
 		var result = Stream.<Arguments>builder();
 		result.add(Arguments.of("neo4j"));
-		if (!Objects.requireNonNullElse(System.getProperty("org.graalvm.nativeimage.imagecode"), "").matches(".+")) {
+		var neo4jImage = System.getProperty("neo4j-jdbc.default-neo4j-image");
+		if (neo4jImage == null || neo4jImage.startsWith("neo4j:20")) {
 			result.add(Arguments.of("http"));
 		}
 		return result.build();
