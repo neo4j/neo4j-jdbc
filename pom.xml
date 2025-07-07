@@ -207,7 +207,7 @@
 		<spring-boot.version>3.5.3</spring-boot.version>
 		<spring-javaformat.version>0.0.47</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
-		<testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version>
+		<testcontainers-keycloak.version>3.8.0</testcontainers-keycloak.version>
 		<testcontainers.version>1.21.3</testcontainers.version>
 	</properties>
 
