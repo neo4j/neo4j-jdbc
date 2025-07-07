@@ -26,12 +26,12 @@ import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 import org.neo4j.bolt.connection.values.IsoDuration;
 import org.neo4j.bolt.connection.values.Point;
 import org.neo4j.bolt.connection.values.Type;
 import org.neo4j.bolt.connection.values.Value;
+import org.neo4j.bolt.connection.values.Vector;
 import org.neo4j.jdbc.values.AsValue;
 
 final class ValueImpl implements Value, AsValue {
@@ -160,6 +160,11 @@ final class ValueImpl implements Value, AsValue {
 	@Override
 	public Map<String, Value> asBoltMap() {
 		return this.value.asMap(ValueFactoryImpl::asBoltValue);
+	}
+
+	@Override
+	public Vector asBoltVector() {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

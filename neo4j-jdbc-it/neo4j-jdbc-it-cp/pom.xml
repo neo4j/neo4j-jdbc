@@ -140,6 +140,26 @@
 							<metadataRepository>
 								<enabled>true</enabled>
 							</metadataRepository>
+							<buildArgs>
+								<!-- See https://github.com/junit-team/junit-framework/wiki/Upgrading-to-JUnit-5.13 -->
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.api.DisplayNameGenerator$IndicativeSentences</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor$ClassInfo</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor$LifecycleMethods</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassTemplateInvocationTestDescriptor</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassTemplateTestDescriptor</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.DynamicDescendantFilter$Mode</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ExclusiveResourceCollector$1</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.MethodBasedTestDescriptor$MethodInfo</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.discovery.ClassSelectorResolver$DummyClassTemplateInvocationContext</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.engine.support.store.NamespacedHierarchicalStore$EvaluatedValue</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.DiscoveryIssueNotifier</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.HierarchicalOutputDirectoryProvider</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.LauncherDiscoveryResult$EngineResultInfo</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.LauncherPhase</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.suite.engine.DiscoverySelectorResolver</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.suite.engine.SuiteTestDescriptor$DiscoveryIssueForwardingListener</buildArg>
+								<buildArg>--initialize-at-build-time=org.junit.platform.suite.engine.SuiteTestDescriptor$LifecycleMethods</buildArg>
+							</buildArgs>
 						</configuration>
 						<executions>
 							<execution>

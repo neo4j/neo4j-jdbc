@@ -29,6 +29,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -270,7 +271,12 @@ class ConnectionIT extends IntegrationTestBase {
 		}
 	}
 
+	boolean usingQueryAPI() {
+		return "http".equalsIgnoreCase(this.protocol);
+	}
+
 	@Test
+	@DisabledIf("usingQueryAPI")
 	void shouldRaiseErrorOnClosingResultSetWhenInAutoCommit() throws SQLException {
 		try (var connection = getConnection(); var statement = connection.createStatement()) {
 			statement.setFetchSize(2);
@@ -282,6 +288,7 @@ class ConnectionIT extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("usingQueryAPI")
 	void shouldRaiseErrorOnClosingStatementWhenInAutoCommit() throws SQLException {
 		try (var connection = getConnection()) {
 			var statement = connection.createStatement();

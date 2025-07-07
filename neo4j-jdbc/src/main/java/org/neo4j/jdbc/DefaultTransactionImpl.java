@@ -308,7 +308,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		return new RunResponseImpl(summaries.runSummary().queryId(), summaries.runSummary().keys());
 	}
 
-	private static PullResponse asPullResponse(List<String> keys, List<List<Value>> valuesList, PullSummary pullSummary) {
+	private static PullResponse asPullResponse(List<String> keys, List<List<Value>> valuesList,
+			PullSummary pullSummary) {
 		return new PullResponseImpl(pullSummary.hasMore(), valuesList.stream().map(v -> asRecord(keys, v)).toList(),
 				asResultSummary(pullSummary.metadata()));
 	}

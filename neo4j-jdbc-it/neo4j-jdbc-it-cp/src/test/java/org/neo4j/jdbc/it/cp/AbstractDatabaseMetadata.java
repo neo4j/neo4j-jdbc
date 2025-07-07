@@ -40,6 +40,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -53,12 +55,28 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.fail;
 
+@ParameterizedClass
+@ValueSource(strings = { "neo4j", "http" })
 abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
+
+	@Parameter
+	String protocol = "neo4j";
 
 	protected Connection connection;
 
 	AbstractDatabaseMetadata(boolean enableApoc) {
 		super(null, enableApoc, true);
+	}
+
+	@Override
+	String getConnectionURL() {
+		return getConnectionURL("neo4j");
+	}
+
+	String getConnectionURL(String database) {
+		var neo4j = "neo4j".equals(this.protocol);
+		return "jdbc:neo4j%s://%s:%d/%s".formatted(neo4j ? "" : ":" + this.protocol, this.neo4j.getHost(),
+				this.neo4j.getMappedPort(neo4j ? 7687 : 7474), database);
 	}
 
 	@BeforeAll
@@ -164,7 +182,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	void getReadOnlyShouldWork(String database, boolean expected) throws SQLException {
 		var info = new Properties();
 		info.put("password", this.neo4j.getAdminPassword());
-		try (var readOnlyConnection = driver.connect(getConnectionURL() + "/" + database, info)) {
+		try (var readOnlyConnection = driver.connect(getConnectionURL(database), info)) {
 			assertThat(readOnlyConnection.getMetaData().isReadOnly()).isEqualTo(expected);
 		}
 	}

@@ -81,9 +81,12 @@ abstract class IntegrationTestBase {
 			return;
 		}
 		try (var connection = this.getConnection(); var stmt = connection.createStatement()) {
-			connection.setAutoCommit(false);
-			stmt.execute("MATCH (n) DETACH DELETE n");
-			connection.commit();
+			stmt.execute("""
+					MATCH (n)
+					CALL {
+						WITH n DETACH DELETE n
+					}
+					IN TRANSACTIONS OF 1000 ROWs""");
 		}
 	}
 
