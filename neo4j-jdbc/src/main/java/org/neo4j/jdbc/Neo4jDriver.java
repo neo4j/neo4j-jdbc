@@ -560,7 +560,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			int connectTimeoutMillis, SecurityPlan securityPlan, AuthToken authToken) {
 
 		var targetUri = URI
-			.create("%s://%s:%d".formatted(driverConfig.protocol(), driverConfig.host(), driverConfig.port()));
+			.create("%s://%s%s".formatted(driverConfig.protocol(), driverConfig.host(), driverConfig.formattedPort()));
 
 		var connectionProvider = this.providerCache.computeIfAbsent(targetUri.getScheme(),
 				scheme -> this.boltConnectionProviderFactories.stream()
@@ -1066,7 +1066,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param sslProperties ssl properties
 	 * @param rawConfig Unprocessed configuration options
 	 */
-	record DriverConfig(String host, String protocol, int port, String database, AuthScheme authScheme, String user,
+	record DriverConfig(String host, String protocol, Integer port, String database, AuthScheme authScheme, String user,
 			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
 			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
 			boolean useBookmarks, int relationshipSampleSize, SSLProperties sslProperties,
@@ -1118,10 +1118,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var config = mergeConfig(urlParams, info);
 			var raw = new HashMap<>(config);
 
+			var protocol = Optional.ofNullable(matcher.group("protocol")).orElse("neo4j");
+
 			var host = matcher.group(PROPERTY_HOST);
 			raw.put(PROPERTY_HOST, host);
 			var rawPort = matcher.group(PROPERTY_PORT);
-			var port = Integer.parseInt((rawPort != null) ? matcher.group("port") : "7687");
+			Integer port = null;
+			if ("neo4j".equals(protocol)) {
+				port = Integer.parseInt((rawPort != null) ? rawPort : "7687");
+			}
+			else if (rawPort != null) {
+				port = Integer.parseInt(rawPort);
+			}
+
 			if (rawPort != null) {
 				raw.put(PROPERTY_PORT, matcher.group(PROPERTY_PORT));
 			}
@@ -1136,8 +1145,6 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var sslProperties = parseSSLProperties(config, matcher.group("transport"));
 			raw.put(PROPERTY_SSL, String.valueOf(sslProperties.ssl));
 			raw.put(PROPERTY_SSL_MODE, sslProperties.sslMode.getName());
-
-			var protocol = Optional.ofNullable(matcher.group("protocol")).orElse("neo4j");
 
 			var authScheme = authScheme(config.get(PROPERTY_AUTH_SCHEME));
 
@@ -1182,10 +1189,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			}
 		}
 
+		String formattedPort() {
+			return (this.port() != null) ? (":" + this.port()) : "";
+		}
+
 		URI toUrl() {
 			var sslProperties = this.sslProperties();
-			var result = new StringBuilder("jdbc:neo4j%s%s://%s:%s/%s?".formatted(sslProperties.protocolSuffix(),
-					"neo4j".equals(this.protocol()) ? "" : ":" + this.protocol(), this.host(), this.port(),
+			var result = new StringBuilder("jdbc:neo4j%s%s://%s%s/%s?".formatted(sslProperties.protocolSuffix(),
+					"neo4j".equals(this.protocol()) ? "" : ":" + this.protocol(), this.host(), this.formattedPort(),
 					this.database()));
 			append(result, PROPERTY_SQL_TRANSLATION_ENABLED, this.enableSQLTranslation()).append("&");
 			append(result, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, this.enableTranslationCaching()).append("&");

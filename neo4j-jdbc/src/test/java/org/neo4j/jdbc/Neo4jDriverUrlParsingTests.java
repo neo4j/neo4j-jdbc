@@ -185,6 +185,19 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(connection.getDatabaseName()).isEqualTo("neo4j");
 	}
 
+	static Stream<Arguments> httpMustNotHaveDefaultPort() {
+		return Stream.of(Arguments.of("jdbc:neo4j://foobar", 7687), Arguments.of("jdbc:neo4j://foobar:4711", 4711),
+				Arguments.of("jdbc:neo4j:https://foobar:4711", 4711), Arguments.of("jdbc:neo4j:https://foobar", null),
+				Arguments.of("jdbc:neo4j:http://foobar", null));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void httpMustNotHaveDefaultPort(String url, Integer expectedPort) throws SQLException {
+		var config = Neo4jDriver.DriverConfig.of(url, new Properties());
+		assertThat(config.port()).isEqualTo(expectedPort);
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = { "jdbc:neo4j:ThisIsWrong://host", "jdbc:neo4j+all-turns-to-crap://host" })
 	void driverMustThrowIfInvalidUrlPassed(String url) {
