@@ -185,6 +185,7 @@
 		<micrometer.version>1.15.1</micrometer.version>
 		<mockito.version>5.18.0</mockito.version>
 		<moditect-maven-plugin.version>1.2.2.Final</moditect-maven-plugin.version>
+		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.10.6</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>6.0.1</neo4j-bolt-connection.version>
 		<neo4j-cypher-dsl.version>2024.7.1</neo4j-cypher-dsl.version>
@@ -697,6 +698,13 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
 					<version>${maven-shade-plugin.version}</version>
+					<dependencies>
+						<dependency>
+							<groupId>eu.michael-simons.maven</groupId>
+							<artifactId>native-image-config-transformer</artifactId>
+							<version>${native-image-config-transformer.version}</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -856,6 +864,36 @@
 					<configuration>
 						<skipNotDeployed>true</skipNotDeployed>
 						<classifier>sbom-cyclonedx</classifier>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.graalvm.buildtools</groupId>
+					<artifactId>native-maven-plugin</artifactId>
+					<version>${native-maven-plugin.version}</version>
+					<configuration>
+						<metadataRepository>
+							<enabled>true</enabled>
+						</metadataRepository>
+						<buildArgs>
+							<!-- See https://github.com/junit-team/junit-framework/wiki/Upgrading-to-JUnit-5.13 -->
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.api.DisplayNameGenerator$IndicativeSentences</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor$ClassInfo</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor$LifecycleMethods</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassTemplateInvocationTestDescriptor</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ClassTemplateTestDescriptor</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.DynamicDescendantFilter$Mode</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.ExclusiveResourceCollector$1</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.descriptor.MethodBasedTestDescriptor$MethodInfo</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.jupiter.engine.discovery.ClassSelectorResolver$DummyClassTemplateInvocationContext</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.engine.support.store.NamespacedHierarchicalStore$EvaluatedValue</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.DiscoveryIssueNotifier</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.HierarchicalOutputDirectoryProvider</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.LauncherDiscoveryResult$EngineResultInfo</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.launcher.core.LauncherPhase</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.suite.engine.DiscoverySelectorResolver</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.suite.engine.SuiteTestDescriptor$DiscoveryIssueForwardingListener</buildArg>
+							<buildArg>--initialize-at-build-time=org.junit.platform.suite.engine.SuiteTestDescriptor$LifecycleMethods</buildArg>
+						</buildArgs>
 					</configuration>
 				</plugin>
 			</plugins>

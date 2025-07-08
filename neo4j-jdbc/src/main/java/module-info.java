@@ -38,6 +38,9 @@ module org.neo4j.jdbc {
 	// end::shaded-dependencies
 
 	// requires jdk.unsupported;
+	// requires java.net.http;
+	// requires java.naming;
+	// requires com.fasterxml.jackson.jr.ob;
 
 	exports org.neo4j.jdbc;
 	exports org.neo4j.jdbc.events;

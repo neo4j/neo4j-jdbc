@@ -53,7 +53,7 @@ org.neo4j:neo4j-jdbc
 All bundles of the Neo4j JDBC Driver are distributed on Maven Central.
 The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not both at once.
 
-TIP: You absolutely can use the Neo4j JDBC driver with https://www.graalvm.org/latest/reference-manual/native-image/[GraalVM native image], it is 100% compatible. For this to work however you *must* use the normal dependencies and *cannot* use the small- or full-bundle. Fatjars don't go along nicely with native image.
+TIP: All distributions of the Neo4j JDBC driver and all features are compatible with https://www.graalvm.org/latest/reference-manual/native-image/[GraalVM native image].
 
 === Individual components
 

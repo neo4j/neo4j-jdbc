@@ -125,8 +125,11 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
-      - name: 'Run native tests'
+      - name: 'Run native tests (default distribution)'
         run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
+
+      - name: 'Run native tests (bundled distribution)'
+        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl bundles/neo4j-jdbc-full-bundle
 
   security_test:
     runs-on: ubuntu-latest
