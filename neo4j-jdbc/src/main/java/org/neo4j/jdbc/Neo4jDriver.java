@@ -243,8 +243,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private static final BoltProtocolVersion MIN_BOLT_VERSION = new BoltProtocolVersion(5, 1);
 
-	private static final Map<String, String> EVENT_LOOP_THREAD_NAME_PREFIX = Map.of("eventLoopThreadNamePrefix",
-			"Neo4jJDBCDriverIO");
+	private static final Map<String, Object> BOLT_CONNECTION_OPTIONS = Map.of("eventLoopThreadNamePrefix",
+			"Neo4jJDBCDriverIO", "maxVersion", new BoltProtocolVersion(5, 8));
 
 	/*
 	 * Register one default instance globally.
@@ -567,7 +567,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					.filter(factory -> factory.supports(scheme))
 					.findFirst()
 					.map(factory -> factory.create(BoltAdapters.newLoggingProvider(), BoltAdapters.getValueFactory(),
-							null, EVENT_LOOP_THREAD_NAME_PREFIX))
+							null, BOLT_CONNECTION_OPTIONS))
 					.orElseThrow(() -> new RuntimeException(
 							"Failed to load a connection provider supporting target %s".formatted(targetUri))));
 
