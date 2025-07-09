@@ -184,6 +184,13 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		info.put("password", this.neo4j.getAdminPassword());
 		try (var readOnlyConnection = driver.connect(getConnectionURL(database), info)) {
 			assertThat(readOnlyConnection.getMetaData().isReadOnly()).isEqualTo(expected);
+
+			// some smoke test for multi db setup
+			try (var statement = readOnlyConnection.createStatement();
+					var rs = statement.executeQuery("MATCH (n) RETURN COUNT(*) AS cnt")) {
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getInt(1)).isGreaterThanOrEqualTo(0);
+			}
 		}
 	}
 
