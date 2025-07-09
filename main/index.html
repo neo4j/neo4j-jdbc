@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-07-08T14:57:34Z</span>
+<span id="revdate">2025-07-09T08:55:47Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -556,15 +556,15 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_configuration">4. Configuration</a>
 <ul class="sectlevel2">
 <li><a href="#_driver_class_name">4.1. Driver class name</a></li>
-<li><a href="#_causal_clustering_and_bookmarks">4.2. Causal clustering and bookmarks</a></li>
-<li><a href="#_neo4j_transactional_metadata">4.3. Neo4j transactional metadata</a></li>
-<li><a href="#_url_and_connection_properties">4.4. URL and connection properties</a></li>
-<li><a href="#_getting_a_driver_or_a_connection_instance">4.5. Getting a driver or a connection instance</a></li>
-<li><a href="#_securing_your_connection_by_using_ssl">4.6. Securing your connection by using SSL</a></li>
-<li><a href="#authentication">4.7. Authentication</a></li>
-<li><a href="#_logging">4.8. Logging</a></li>
-<li><a href="#_metrics">4.9. Metrics</a></li>
-<li><a href="#_tracing">4.10. Tracing</a></li>
+<li><a href="#_url_and_connection_properties">4.2. URL and connection properties</a></li>
+<li><a href="#_getting_a_driver_or_a_connection_instance">4.3. Getting a driver or a connection instance</a></li>
+<li><a href="#_securing_your_connection_by_using_ssl">4.4. Securing your connection by using SSL</a></li>
+<li><a href="#_causal_clustering_and_bookmarks">4.5. Causal clustering and bookmarks</a></li>
+<li><a href="#_neo4j_transactional_metadata">4.6. Neo4j transactional metadata</a></li>
+<li><a href="#_logging">4.7. Logging</a></li>
+<li><a href="#_metrics">4.8. Metrics</a></li>
+<li><a href="#_tracing">4.9. Tracing</a></li>
+<li><a href="#authentication">4.10. Custom authentication</a></li>
 </ul>
 </li>
 <li><a href="#_metadata">5. Metadata</a>
@@ -1192,16 +1192,28 @@ Those bundles cover a lot of tooling (see <a href="#available_bundles">Available
 <p>All bundles of the Neo4j JDBC Driver are distributed on Maven Central.
 The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not both at once.</p>
 </div>
-<div class="sect3">
-<h4 id="_individual_components">3.2.1. Individual components</h4>
-<div class="paragraph">
-<p>Pick this distribution if you have an application that uses dependencies management in which you don&#8217;t have to care about dealing with binary artifacts yourself.</p>
-</div>
-<div class="admonitionblock important">
+<div class="admonitionblock tip">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-important" title="Important"></i>
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+All distributions of the Neo4j JDBC driver and all features are compatible with <a href="https://www.graalvm.org/latest/reference-manual/native-image/">GraalVM native image</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_individual_components">3.2.1. Individual components</h4>
+<div class="paragraph">
+<p>Pick this distribution if you have an application that uses proper dependencies management in which you don&#8217;t have to care about dealing with individual artifacts and their dependencies yourself.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
 We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are <code>org.neo4j:neo4j-jdbc-bom</code>.
@@ -1323,92 +1335,12 @@ The class is public API.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_causal_clustering_and_bookmarks">4.2. Causal clustering and bookmarks</h3>
-<div class="paragraph">
-<p>The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency in all Neo4j deployments.
-Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver, so all connections spawned by one instance will partake in the same causal chain of transactions.
-Connections from different driver instances will not use the same set of bookmarks and there is no built-in machinery that would enable this.
-If you want or need this, you can directly access the <code>Neo4jDriver</code> type to retrieve the current set of known bookmarks and pass them to another driver instance.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_neo4j_transactional_metadata">4.3. Neo4j transactional metadata</h3>
-<div class="paragraph">
-<p>Neo4j supports attaching metadata to transactions, see <a href="https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions"><code>SHOW TRANSACTIONS</code></a>.
-As there is no explicit transaction object in the JDBC specification, the Neo4j JDBC driver needs another mechanism to make these configurable.</p>
-</div>
-<div class="paragraph">
-<p>The JDBC driver provides the extension interface <code>Neo4jMetadataWriter</code>.
-Our driver, the connection implementation, and all statement variants can be unwrapped accordingly.
-The configuration is additive: metadata configured for a driver instance will be used for all connections spawned from that driver, connections can add further metadata, and  statements can also add their own metadata.
-Metadata added on a statement has precedence over connection metadata which in turn has precedence over driver metadata:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 14. Configuring transactional metadata</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
-<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
-<span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
-<span class="keyword">import</span> <span class="include">java.sql.Statement</span>;
-<span class="keyword">import</span> <span class="include">java.util.Map</span>;
-<span class="keyword">import</span> <span class="include">java.util.Properties</span>;
-<span class="keyword">import</span> <span class="include">java.util.logging.Level</span>;
-<span class="keyword">import</span> <span class="include">java.util.logging.Logger</span>;
-
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDriver</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jMetadataWriter</span>;
-
-<span class="directive">public</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">TransactionMetadata</span> {
-
-    <span class="directive">private</span> <span class="directive">static</span> <span class="directive">final</span> <span class="predefined-type">Logger</span> LOGGER = <span class="predefined-type">Logger</span>.getLogger(TransactionMetadata.class.getPackageName());
-
-    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">SQLException</span> {
-        <span class="type">var</span> url = <span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687</span><span class="delimiter">&quot;</span></span>;
-
-        <span class="type">var</span> driver = (Neo4jDriver) <span class="predefined-type">DriverManager</span>.getDriver(url);
-        driver.withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_driver</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v1</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">irrelevant</span><span class="delimiter">&quot;</span></span>));
-
-        <span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
-        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
-        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">password</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
-
-        <span class="keyword">try</span> (
-            <span class="type">var</span> con = driver.connect(url, properties)
-                .unwrap(Neo4jMetadataWriter.class)
-                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_connection</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v2</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">xxx</span><span class="delimiter">&quot;</span></span>))
-                .unwrap(<span class="predefined-type">Connection</span>.class);
-            <span class="type">var</span> statement = con.createStatement()
-                .unwrap(Neo4jMetadataWriter.class)
-                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_stmt</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v3</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v4</span><span class="delimiter">&quot;</span></span>))
-                .unwrap(<span class="predefined-type">Statement</span>.class)
-        ) {
-            <span class="keyword">try</span> (<span class="type">var</span> result = statement.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="content">SHOW TRANSACTIONS YIELD metaData</span><span class="delimiter">&quot;</span></span>)) {
-                <span class="keyword">while</span> (result.next()) {
-                    <span class="type">var</span> metaData = result.getObject(<span class="string"><span class="delimiter">&quot;</span><span class="content">metaData</span><span class="delimiter">&quot;</span></span>, <span class="predefined-type">Map</span>.class);
-                    LOGGER.log(<span class="predefined-type">Level</span>.INFO, <span class="string"><span class="delimiter">&quot;</span><span class="content">{0}</span><span class="delimiter">&quot;</span></span>, metaData);
-                }
-            }
-        }
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The output will be similar to this:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="text">Juli 17, 2024 1:18:16 PM org.neo4j.jdbc.docs.TransactionMetadata main
-INFORMATION: {md_from_driver=v1, md_from_connection=v2, md_from_stmt=v3, will_be_overwritten=v4}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_url_and_connection_properties">4.4. URL and connection properties</h3>
+<h3 id="_url_and_connection_properties">4.2. URL and connection properties</h3>
 <div class="paragraph">
 <p>The canonical URL format for the Neo4j JDBC Driver is</p>
 </div>
 <div class="listingblock">
+<div class="title">Listing 14. Canonical JDBC URL format for Neo4j JDBC Driver</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="text">jdbc:neo4j://&lt;host&gt;:&lt;port&gt;/&lt;database&gt;?param1=value1&amp;param2=value2</code></pre>
 </div>
@@ -1448,6 +1380,32 @@ All query parameters must be <a href="https://en.wikipedia.org/wiki/Percent-enco
 <div class="paragraph">
 <p><code>bolt</code> URI schemes are not supported.</p>
 </div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Last but not least, you can add <code>http</code> as sub-protocol when using the Neo4j-JDBC driver against a Neo4j instance from 2025.06 on with the Http Query-API enabled:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="text">jdbc:neo4j:http//&lt;host&gt;:&lt;port&gt;/&lt;database&gt;?param1=value1&amp;param2=value2
+jdbc:neo4j:https//&lt;host&gt;:&lt;port&gt;/&lt;database&gt;?param1=value1&amp;param2=value2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Usually, Neo4j provides the HTTP port on 7474 or 7473. When you don&#8217;t specify the port, the Neo4j JDBC Driver defaults to 80 and 443 for http and https respectively.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+The query API behaves different in a couple of edge cases. Especially, for big results the driver will materialize them completely and not stream individual records as it does over the binary neo4j protocol. Also, queries that produce n results and may fail on the nth+1 result, will fail immediate when run over HTTP.<br>
+<br>
+ Some features such as transactional metadata are not supported at all over HTTP.
 </td>
 </tr>
 </table>
@@ -1573,14 +1531,14 @@ Other connections retrieved from the driver instance to the same or to other dat
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>authn.supplier</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The name of an authentication supplier, can be used to plugin various SSO systems such as Keycloak, with automatic token refresh. See below <a href="#authentication">Authentication</a> for more information.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The name of an authentication supplier, can be used to plugin various SSO systems such as Keycloak, with automatic token refresh. See below <a href="#authentication">Custom authentication</a> for more information.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_getting_a_driver_or_a_connection_instance">4.5. Getting a driver or a connection instance</h3>
+<h3 id="_getting_a_driver_or_a_connection_instance">4.3. Getting a driver or a connection instance</h3>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -1650,7 +1608,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does no internal po
 </div>
 </div>
 <div class="sect2">
-<h3 id="_securing_your_connection_by_using_ssl">4.6. Securing your connection by using SSL</h3>
+<h3 id="_securing_your_connection_by_using_ssl">4.4. Securing your connection by using SSL</h3>
 <div class="paragraph">
 <p>The Neo4j JDBC Driver supports the same SSL option of the common Java driver, with the same URL protocols, using <code>+s</code> or <code>+ssc</code> as additional indicators for the required level of security.</p>
 </div>
@@ -1659,7 +1617,7 @@ It&#8217;s safe to use any of them, as the Neo4j JDBC Driver does no internal po
 As long as you don&#8217;t specify contradicting values, it&#8217;s fine to combine both approaches.</p>
 </div>
 <div class="sect3">
-<h4 id="ssl-mode">4.6.1. Understanding the SSL mode</h4>
+<h4 id="ssl-mode">4.4.1. Understanding the SSL mode</h4>
 <div class="paragraph">
 <p>The following list is ordered by ascending security:</p>
 </div>
@@ -1710,7 +1668,7 @@ Neo4j servers can offer both plain Bolt connections and encrypted SSL connection
 </div>
 </div>
 <div class="sect3">
-<h4 id="_valid_urls">4.6.2. Valid URLs</h4>
+<h4 id="_valid_urls">4.4.2. Valid URLs</h4>
 <div class="paragraph">
 <p>The following URLs are all valid:</p>
 </div>
@@ -1761,7 +1719,7 @@ The driver offers several mechanism so that you can use a fixed URL with dynamic
 </div>
 </div>
 <div class="sect3">
-<h4 id="_using_dotenv_files">4.6.3. Using .dotenv files</h4>
+<h4 id="_using_dotenv_files">4.4.3. Using .dotenv files</h4>
 <div class="paragraph">
 <p>When you create a <a href="https://neo4j.com/cloud/platform/aura-graph-database/">Neo4j Aura</a> instance, you will be asked to download a text-file named similar to <code>Neo4j-9df57663-Created-2023-06-12.txt</code>.
 This is essentially a <a href="https://www.dotenv.org">.dotenv</a> file containing the information required to connect to the database.</p>
@@ -1774,7 +1732,563 @@ Additionally, the builder lets you configure options that are not contained in t
 </div>
 </div>
 <div class="sect2">
-<h3 id="authentication">4.7. Authentication</h3>
+<h3 id="_causal_clustering_and_bookmarks">4.5. Causal clustering and bookmarks</h3>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver uses bookmarks by default to provide causal consistency in all Neo4j deployments.
+Bookmarks are managed on the driver level itself, not on the connections spawned by an instance of the driver, so all connections spawned by one instance will partake in the same causal chain of transactions.
+Connections from different driver instances will not use the same set of bookmarks and there is no built-in machinery that would enable this.
+If you want or need this, you can directly access the <code>Neo4jDriver</code> type to retrieve the current set of known bookmarks and pass them to another driver instance.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_neo4j_transactional_metadata">4.6. Neo4j transactional metadata</h3>
+<div class="paragraph">
+<p>Neo4j supports attaching metadata to transactions, see <a href="https://neo4j.com/docs/cypher-manual/current/clauses/transaction-clauses/#query-listing-transactions"><code>SHOW TRANSACTIONS</code></a>.
+As there is no explicit transaction object in the JDBC specification, the Neo4j JDBC driver needs another mechanism to make these configurable.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC driver provides the extension interface <code>Neo4jMetadataWriter</code>.
+Our driver, the connection implementation, and all statement variants can be unwrapped accordingly.
+The configuration is additive: metadata configured for a driver instance will be used for all connections spawned from that driver, connections can add further metadata, and  statements can also add their own metadata.
+Metadata added on a statement has precedence over connection metadata which in turn has precedence over driver metadata:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 17. Configuring transactional metadata</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
+<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+<span class="keyword">import</span> <span class="include">java.sql.SQLException</span>;
+<span class="keyword">import</span> <span class="include">java.sql.Statement</span>;
+<span class="keyword">import</span> <span class="include">java.util.Map</span>;
+<span class="keyword">import</span> <span class="include">java.util.Properties</span>;
+<span class="keyword">import</span> <span class="include">java.util.logging.Level</span>;
+<span class="keyword">import</span> <span class="include">java.util.logging.Logger</span>;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDriver</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jMetadataWriter</span>;
+
+<span class="directive">public</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">TransactionMetadata</span> {
+
+    <span class="directive">private</span> <span class="directive">static</span> <span class="directive">final</span> <span class="predefined-type">Logger</span> LOGGER = <span class="predefined-type">Logger</span>.getLogger(TransactionMetadata.class.getPackageName());
+
+    <span class="directive">public</span> <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span>... args) <span class="directive">throws</span> <span class="exception">SQLException</span> {
+        <span class="type">var</span> url = <span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://localhost:7687</span><span class="delimiter">&quot;</span></span>;
+
+        <span class="type">var</span> driver = (Neo4jDriver) <span class="predefined-type">DriverManager</span>.getDriver(url);
+        driver.withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_driver</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v1</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">irrelevant</span><span class="delimiter">&quot;</span></span>));
+
+        <span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
+        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">user</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+        properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">password</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
+
+        <span class="keyword">try</span> (
+            <span class="type">var</span> con = driver.connect(url, properties)
+                .unwrap(Neo4jMetadataWriter.class)
+                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_connection</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v2</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">xxx</span><span class="delimiter">&quot;</span></span>))
+                .unwrap(<span class="predefined-type">Connection</span>.class);
+            <span class="type">var</span> statement = con.createStatement()
+                .unwrap(Neo4jMetadataWriter.class)
+                .withMetadata(<span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">md_from_stmt</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v3</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">will_be_overwritten</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">v4</span><span class="delimiter">&quot;</span></span>))
+                .unwrap(<span class="predefined-type">Statement</span>.class)
+        ) {
+            <span class="keyword">try</span> (<span class="type">var</span> result = statement.executeQuery(<span class="string"><span class="delimiter">&quot;</span><span class="content">SHOW TRANSACTIONS YIELD metaData</span><span class="delimiter">&quot;</span></span>)) {
+                <span class="keyword">while</span> (result.next()) {
+                    <span class="type">var</span> metaData = result.getObject(<span class="string"><span class="delimiter">&quot;</span><span class="content">metaData</span><span class="delimiter">&quot;</span></span>, <span class="predefined-type">Map</span>.class);
+                    LOGGER.log(<span class="predefined-type">Level</span>.INFO, <span class="string"><span class="delimiter">&quot;</span><span class="content">{0}</span><span class="delimiter">&quot;</span></span>, metaData);
+                }
+            }
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output will be similar to this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="text">Juli 17, 2024 1:18:16 PM org.neo4j.jdbc.docs.TransactionMetadata main
+INFORMATION: {md_from_driver=v1, md_from_connection=v2, md_from_stmt=v3, will_be_overwritten=v4}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_logging">4.7. Logging</h3>
+<div class="sect3">
+<h4 id="_via_standard_java_settings">4.7.1. Via standard Java settings</h4>
+<div class="paragraph">
+<p>To generate a useful and detailed log, you must configure <code>java.util.logging</code>. This can be done either through a configuration file or programmatically.
+The following section includes an example configuration that sets the global logging level to <code>INFO</code>, Neo4j JDBC Driver itself to <code>DEBUG</code> and everything that is network related to <code>WARN</code>:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 18. Logging configuration for the Neo4j JDBC Driver that logs all information</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
+handlers=java.util.logging.ConsoleHandler
+
+# The handler must be configured for the lowest level it should catch
+java.util.logging.ConsoleHandler.level=FINEST
+
+# Enables all Logging for the JDBC Driver
+org.neo4j.jdbc.level=ALL
+# But reduces the noise on the network and the result set
+org.neo4j.jdbc.result-set.level=WARNING
+org.neo4j.jdbc.network.level=WARNING
+# This is an example how to configure the outbound and inbound messages
+org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
+org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
+
+# This produces a date, followed by the level, 3 dashes, the message and the source of the log if available
+java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Such a file must be passed to the running Java program as a system property to Java itself with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">java -Djava.util.logging.config.file=docs/src/main/resources/logging-to-console.properties &lt;your program&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Capturing logs to a file requires to change the handler:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 19. Logging configuration for the Neo4j JDBC Driver that writes all JDBC logs to a file</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
+handlers=java.util.logging.ConsoleHandler
+
+# Keep everything by default at INFO
+java.util.logging.ConsoleHandler.level=INFO
+
+# The handler must be configured for the lowest level it should catch
+java.util.logging.FileHandler.level=FINEST
+java.util.logging.FileHandler.pattern=jdbc.log
+# XML Format by default
+# java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
+
+# Change the handler for JDBC
+org.neo4j.jdbc.handlers=java.util.logging.FileHandler
+# Keep the rest as above
+org.neo4j.jdbc.level=ALL
+org.neo4j.jdbc.result-set.level=WARNING
+org.neo4j.jdbc.network.level=WARNING
+org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
+org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
+
+java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The diagnosability features of the JDBC driver are based on the standard <code>java.util.logging</code> framework. Configuration of that framework itself is out of scope for this documentation.
+      For a complete overview you might want to start at <a href="https://docs.oracle.com/en/java/javase/17/core/java-logging-overview.html">"Java Logging Overview"</a>.
+      The formatter Java uses is the <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Formatter.html#dt"><code>java.util.Formatter</code>.</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inside_a_spring_boot_application">4.7.2. Inside a Spring Boot application</h4>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver will integrate itself into the Spring Boot logging configuration and take all relevant format and other settings from there.
+The levels can be configured with the levels Spring does understand.
+The following configuration is equivalent to the one above:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 20. Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">logging.level.org.neo4j.jdbc=trace
+logging.level.org.neo4j.jdbc.result-set=warn
+logging.level.org.neo4j.jdbc.network=warn
+logging.level.org.neo4j.jdbc.network.OutboundMessageHandler=debug
+logging.level.org.neo4j.jdbc.network.InboundMessageHandler=debug</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_inside_a_quarkus_application">4.7.3. Inside a Quarkus application</h4>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver will integrate itself into the Quarkus logging configuration and take all relevant format and other settings from there.
+The levels can be configured with the levels Quarkus does understand.
+The following configuration is equivalent to the ones above:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 21. Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="bash">quarkus.log.category.&quot;org.neo4j.jdbc&quot;.min-level=TRACE
+quarkus.log.category.&quot;org.neo4j.jdbc&quot;.level=TRACE
+quarkus.log.category.&quot;org.neo4j.jdbc.result-set&quot;.level=DEBUG
+quarkus.log.category.&quot;org.neo4j.jdbc.network&quot;.level=WARNING
+quarkus.log.category.&quot;org.neo4j.jdbc.network.OutboundMessageHandler&quot;.level=DEBUG
+quarkus.log.category.&quot;org.neo4j.jdbc.network.InboundMessageHandler&quot;.level=DEBUG</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_sql_translations">4.7.4. SQL Translations</h4>
+<div class="paragraph">
+<p>The SQL translators use the logger <code>org.neo4j.jdbc.translator</code>; processed SQL and its original sources is logged at level <code>FINE</code> on <code>org.neo4j.jdbc.statement.SQL</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_metrics">4.8. Metrics</h3>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver will publish metrics via <a href="https://micrometer.io">Micrometer</a>.
+If you put Micrometer on your classpath, no further configuration is necessary.
+This is for example automatically the case with <a href="https://docs.spring.io/spring-boot/reference/actuator/metrics.html">Spring Boot Actuator</a> or <a href="https://quarkus.io/guides/telemetry-micrometer">Micrometer for Quarkus</a>.
+To make best use of this feature, you will additionally configure your <a href="https://docs.micrometer.io/micrometer/reference/implementations.html">monitoring system</a>.</p>
+</div>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver does publish the following metrics:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>org.neo4j.jdbc.connections</code></dt>
+<dd>
+<p>a gauge representing the number of open connections, tagged with <code>url</code> to which the driver is connected</p>
+</dd>
+<dt class="hdlist1"><code>org.neo4j.jdbc.statements</code></dt>
+<dd>
+<p>a gauge representing the number of open statements, tagged with both  the <code>url</code> to which the statement is opened and the JDBC type of the statement (either <code>Statement</code>, <code>PreparedStatement</code> or <code>CallableStatement</code>
+)</p>
+</dd>
+<dt class="hdlist1"><code>org.neo4j.jdbc.queries</code></dt>
+<dd>
+<p>a composite meter containing the counts of successful and failed queries and a timer measuring the duration of queries</p>
+</dd>
+<dt class="hdlist1"><code>org.neo4j.jdbc.cached-translations</code></dt>
+<dd>
+<p>a gauge representing the number of cached SQL to cypher translations</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tracing">4.9. Tracing</h3>
+<div class="paragraph">
+<p>The Neo4j JDBC Driver supports tracing and will provide traces spans for the following operations on JDBC <code>Statement</code> instances:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>#execute</code></p>
+</li>
+<li>
+<p><code>#executeQuery</code></p>
+</li>
+<li>
+<p><code>#executeUpdate</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>and all overloads thereof and in all inheriting types.
+In addition, when using a JDBC <code>ResultSet</code>, it will open a span when the result set is first moved from being before the first row until it is either moved beyond the last row or actively closed.
+Spans will contain various events, such as when a query has been actually executed by the Neo4j database or when a batch of records has been pulled from the database.</p>
+</div>
+<div class="paragraph">
+<p>The feature is optional: when you want to use it, you have to bring in additional dependencies.
+This applies to all distributed versions, including the full bundles, so that an optional feature doesn&#8217;t make the bundles bigger.
+For Maven, use this additional dependency declaration:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 22. Maven dependency that allows you to configure tracing</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-tracing-micrometer<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.7.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And for Gradle you would want to declare the following runtime dependency:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 23. Gradle dependency that allows you to configure tracing</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.7.0-SNAPSHOT</span><span class="delimiter">'</span></span>
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This dependency brings in <a href="https://docs.micrometer.io/tracing/reference/">Micrometer Tracing</a>.
+Micrometer Tracing allows you to bind to various tracers and exporters, such as Zipkin or OpenTelemetry.</p>
+</div>
+<div class="paragraph">
+<p>Once you have a Micrometer Tracer, you can configure a <code>Neo4jDataSource</code> like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 24. A <code>Neo4jDataSource</code> spawning connections that trace their usage</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">javax.sql.DataSource</span>;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDataSource</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
+
+<span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
+
+<span class="directive">public</span> <span class="type">class</span> <span class="class">TracingExampleSetup</span> {
+
+    <span class="predefined-type">DataSource</span> neo4jDataSource() {
+
+        Tracer tracer = Tracer.NOOP; <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="type">var</span> neo4jDataSource = <span class="keyword">new</span> Neo4jDataSource();
+        neo4jDataSource.setUrl(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://yourhost:7687</span><span class="delimiter">&quot;</span></span>);
+        neo4jDataSource.setPassword(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+        neo4jDataSource.setUser(<span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
+        neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer)); <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="keyword">return</span> neo4jDataSource;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>In most scenarios, your application framework will provide a Micrometer tracer instance for you</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>With this call you enable tracing in the data source and all connections spawned from it</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You can also enable tracing on individual connections by unwrapping them into the <code>Neo4jConnection</code> extension like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 25. Enable tracing for an individual connection</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
+<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jConnection</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
+
+<span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
+
+<span class="directive">public</span> <span class="type">class</span> <span class="class">TracingExampleSetup</span> {
+
+    <span class="predefined-type">Connection</span> connection() {
+
+        Tracer tracer = Tracer.NOOP;
+        Neo4jConnection connection = <span class="predefined-type">DriverManager</span>.getConnection(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://yourhost:7687</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>)
+            .unwrap(Neo4jConnection.class); <i class="conum" data-value="1"></i><b>(1)</b>
+        connection.setTracer(Neo4jTracingBridge.to(tracer)); <i class="conum" data-value="2"></i><b>(2)</b>
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Unwrap the connection into our extension so that you can configure the tracer</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Configure the tracer</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+In case you neither want to work with a data source nor individual connections, use <code>Neo4jDriver.registerTracer(Neo4jTracingBridge.to(tracer))</code> to register the tracer with all Neo4j drivers that are registered with the JDBC <code>DriverManager</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_using_tracing_with_spring_boot">4.9.1. Using tracing with Spring Boot</h4>
+<div class="paragraph">
+<p>The tracing implementation that is provided by the Neo4j JDBC Driver utilizes Micrometer Tracing, which is well accepted in the Spring Boot ecosystem, but also in Quarkus, Micronaut and others.
+We provide a few examples, but refer to your frameworks documentation on how to configure tracing.</p>
+</div>
+<div class="paragraph">
+<p>If you are happy to configure tracing for all connections acquired from the <code>DriverManager</code>, configure tracing like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 26. Configure tracing for all drivers registered with <code>DriverManager</code></div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.InitializingBean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="directive">public</span> <span class="type">class</span> <span class="class">TracingConfiguration</span> {
+
+    <span class="annotation">@Bean</span>
+    InitializingBean neo4jTracingInitializer(Tracer tracer) {
+        <span class="keyword">return</span> () -&gt; Neo4jDriver.registerTracer(Neo4jTracingBridge.to(tracer));
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Otherwise, use a custom datasource as shown below.</p>
+</div>
+<div class="sect4">
+<h5 id="_configuring_the_tracing_datasource">Configuring the tracing datasource</h5>
+<div class="paragraph">
+<p>Usually, Spring Boot configures a <code>HikariDataSource</code> based on you driver.
+Hikari provides connection pooling, and you should not ditch that.
+There&#8217;s no need to create your own data source properties for all configuration values, you can just inject it like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 27. Configure a tracing and pooled data source with Spring Boot</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">javax.sql.DataSource</span>;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDataSource</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.autoconfigure.jdbc.DataSourceProperties</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+
+<span class="keyword">import</span> <span class="include">com.zaxxer.hikari.HikariConfig</span>;
+<span class="keyword">import</span> <span class="include">com.zaxxer.hikari.HikariDataSource</span>;
+<span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="type">class</span> <span class="class">TracingTestConfiguration</span> {
+
+    <span class="annotation">@Bean</span>
+    <span class="predefined-type">DataSource</span> neo4jDataSource(Tracer tracer, DataSourceProperties dataSourceProperties) {
+
+        <span class="type">var</span> neo4jDataSource = <span class="keyword">new</span> Neo4jDataSource();
+        neo4jDataSource.setUrl(dataSourceProperties.getUrl());
+        neo4jDataSource.setPassword(dataSourceProperties.getPassword());
+        neo4jDataSource.setUser(dataSourceProperties.getUsername());
+        neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer));
+
+        <span class="type">var</span> cfg = <span class="keyword">new</span> HikariConfig();
+        cfg.setDataSource(neo4jDataSource);
+        <span class="keyword">return</span> <span class="keyword">new</span> HikariDataSource(cfg);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Bring <code>org.springframework.boot:spring-boot-starter-actuator</code> onto your class path too, and it will configure Micrometer for you.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The setup of your data source stays the same: no change is required here for the following examples to work, as our Tracing API will automatically pick the correct tracer through Micrometer!
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_exporting_to_zipkin">Exporting to Zipkin</h5>
+<div class="paragraph">
+<p>To export your traces to Zipkin, add <code>io.micrometer:micrometer-tracing-bridge-brave</code> and <code>io.zipkin.reporter2:zipkin-reporter-brave</code> and set <code>management.zipkin.tracing.export.enabled</code> to <code>true</code> in your Spring application.</p>
+</div>
+<div class="paragraph">
+<p>You should see spans like this:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/zipkintracing.jpg" alt="zipkintracing">
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_exporting_via_opentelemetry">Exporting via OpenTelemetry</h5>
+<div class="paragraph">
+<p><a href="https://opentelemetry.io">OpenTelemetry</a> allows to export not only traces, but metrics and logging too.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s an example how to use <a href="https://www.dash0.com">Dash0</a> via OpenTelemetry.
+The exporter should work the same for other services.
+OpenTelemetry has split its SDK into several modules, hence you will first import their BOM into your build file. Here&#8217;s an example for Maven:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 28. Snippet from a Maven build file to include the OpenTelemetry BOM</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>io.opentelemetry<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>opentelemetry-bom<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>1.47.0<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;type&gt;</span>pom<span class="tag">&lt;/type&gt;</span>
+    <span class="tag">&lt;scope&gt;</span>import<span class="tag">&lt;/scope&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>First you need to bring in the bridge from Micrometer to OpenTelemetry via: <code>io.micrometer:micrometer-tracing-bridge-otel</code>, so that Micrometer pushes into that SDK.
+Next, bring in the following dependencies so that Spring Boot can configure the exporter:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>io.opentelemetry:opentelemetry-sdk</code></p>
+</li>
+<li>
+<p><code>io.opentelemetry:opentelemetry-exporter-common</code></p>
+</li>
+<li>
+<p><code>io.opentelemetry:opentelemetry-exporter-otlp</code></p>
+</li>
+<li>
+<p><code>io.opentelemetry:opentelemetry-exporter-sender-jdk</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In the case of Dash0, the application configuration will look similar to this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 29. Using the OpenTelemetry exporter in Spring Boot towards Dash0</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="properties">management.otlp.tracing.export.enabled=true
+management.otlp.tracing.endpoint=https://ingress.eu-west-1.aws.dash0.com/v1/traces
+management.otlp.tracing.headers.Authorization=Bearer auth_XX_your_token_XX
+
+management.otlp.metrics.export.step=30s
+management.otlp.metrics.export.enabled=true
+management.otlp.metrics.export.url=https://ingress.eu-west-1.aws.dash0.com/v1/metrics
+management.otlp.metrics.export.headers.Authorization=Bearer auth_XX_your_token_XX</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The trace from our Movie application looks like this:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/dash0tracing.jpg" alt="dash0tracing">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="authentication">4.10. Custom authentication</h3>
 <div class="paragraph">
 <p>The Neo4j JDBC driver provides the ability to use a custom authentication supplier in addition to JDBCs standard ways of authentication, such as using <code>java.sql.DriverManager#getConnection(java.lang.String, java.lang.String, java.lang.String)</code> or <code>java.sql.Driver#connect</code> for authentication with the Neo4j server.</p>
 </div>
@@ -1867,9 +2381,9 @@ The underlying bolt protocol and the Neo4j Server might not work reliable with v
 </table>
 </div>
 <div class="sect3">
-<h4 id="_keycloak_example">4.7.1. Keycloak example</h4>
+<h4 id="_keycloak_example">4.10.1. Keycloak example</h4>
 <div class="paragraph">
-<p>The following class shows an example based on Keycloaks <code>AuthzClient</code>.
+<p>The following classes shows an example based on Keycloaks <code>AuthzClient</code>.
 The supplier will grab tokens from a Keycloak instance and store their expiration date along with the JWT token.
 The initial ask for a token will always be answered with a completely new one, each follow-up call will use the client to refresh the token.</p>
 </div>
@@ -1886,7 +2400,7 @@ There is no need to copy the below code into your own application. We actually d
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. <code>KCAuthenticationSupplier</code>, as an example of an authentication supplier refreshing a token when necessary</div>
+<div class="title">Listing 30. <code>KCAuthenticationSupplier</code>, as an example of an authentication supplier refreshing a token when necessary</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.io.IOException</span>;
 <span class="keyword">import</span> <span class="include">java.io.UncheckedIOException</span>;
@@ -1992,10 +2506,10 @@ There is no need to copy the below code into your own application. We actually d
 </div>
 </div>
 <div class="paragraph">
-<p>For using the above supplier add the following dependency to your class- or module-path:</p>
+<p>Again, for using the above supplier add the following dependency to your class- or module-path and don&#8217;t copy the code, which is only displayed here as an example how you would write your own authentication supplier:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Maven dependency for the core Neo4j JDBC Driver artifact</div>
+<div class="title">Listing 31. Maven dependency for the core Neo4j JDBC Driver artifact</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
@@ -2005,11 +2519,10 @@ There is no need to copy the below code into your own application. We actually d
 </div>
 </div>
 <div class="paragraph">
-<p>The same would apply for any custom supplier you might write.
-The easiest way to use the supplier now is via the build-in loader, so that you can stick purely to the JDBC api:</p>
+<p>The easiest way to use the supplier now is via the build-in loader, so that you can stick purely to the JDBC api:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Using a custom authentication supplier via the <code>authn.supplier</code> config option:</div>
+<div class="title">Listing 32. Using a custom authentication supplier via the <code>authn.supplier</code> config option:</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Test</span>
 <span class="type">void</span> authenticationSupplierFactoriesShouldWork() <span class="directive">throws</span> <span class="exception">SQLException</span> {
@@ -2058,7 +2571,7 @@ The easiest way to use the supplier now is via the build-in loader, so that you 
 <p>The most JDBC complaint way is registering it for the global driver like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Registering an instance of the authentication supplier globally</div>
+<div class="title">Listing 33. Registering an instance of the authentication supplier globally</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
 <span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
@@ -2085,7 +2598,7 @@ Hence, the above setting is most likely the easiest way for integrations with fr
 Alternatively use the driver builder or manually create an instance of the driver:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. Creating an explicit instance of <code>Neo4jDriver</code> so that the <code>connect</code> overload taking in an authentication supplier is visible</div>
+<div class="title">Listing 34. Creating an explicit instance of <code>Neo4jDriver</code> so that the <code>connect</code> overload taking in an authentication supplier is visible</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
 <span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
@@ -2120,485 +2633,10 @@ Alternatively use the driver builder or manually create an instance of the drive
 <td class="content">
 If you need to against Keycloak, the Neo4j JDBC driver does ship everything you need, and you are good to go.
 Just include the Maven module and apply the recommended way of configuring the supplier via JDBC properties.
-For all other authentication needs you can write a custom authentication supplier in a similar fashion as the provided Keycloak support. Have a look at the JavaDoc of <code>org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory</code> in the <code>org.neo4j:neo4j-jdbc-authn-spi</code>.
+Write a custom authentication supplier only for other authentication needs.
 </td>
 </tr>
 </table>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_logging">4.8. Logging</h3>
-<div class="sect3">
-<h4 id="_via_standard_java_settings">4.8.1. Via standard Java settings</h4>
-<div class="paragraph">
-<p>To generate a useful and detailed log, you must configure <code>java.util.logging</code>. This can be done either through a configuration file or programmatically.
-The following section includes an example configuration that sets the global logging level to <code>INFO</code>, Neo4j JDBC Driver itself to <code>DEBUG</code> and everything that is network related to <code>WARN</code>:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 22. Logging configuration for the Neo4j JDBC Driver that logs all information</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
-handlers=java.util.logging.ConsoleHandler
-
-# The handler must be configured for the lowest level it should catch
-java.util.logging.ConsoleHandler.level=FINEST
-
-# Enables all Logging for the JDBC Driver
-org.neo4j.jdbc.level=ALL
-# But reduces the noise on the network and the result set
-org.neo4j.jdbc.result-set.level=WARNING
-org.neo4j.jdbc.network.level=WARNING
-# This is an example how to configure the outbound and inbound messages
-org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
-org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
-
-# This produces a date, followed by the level, 3 dashes, the message and the source of the log if available
-java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Such a file must be passed to the running Java program as a system property to Java itself with:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="bash">java -Djava.util.logging.config.file=docs/src/main/resources/logging-to-console.properties &lt;your program&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Capturing logs to a file requires to change the handler:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 23. Logging configuration for the Neo4j JDBC Driver that writes all JDBC logs to a file</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="properties">.level = INFO
-handlers=java.util.logging.ConsoleHandler
-
-# Keep everything by default at INFO
-java.util.logging.ConsoleHandler.level=INFO
-
-# The handler must be configured for the lowest level it should catch
-java.util.logging.FileHandler.level=FINEST
-java.util.logging.FileHandler.pattern=jdbc.log
-# XML Format by default
-# java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
-
-# Change the handler for JDBC
-org.neo4j.jdbc.handlers=java.util.logging.FileHandler
-# Keep the rest as above
-org.neo4j.jdbc.level=ALL
-org.neo4j.jdbc.result-set.level=WARNING
-org.neo4j.jdbc.network.level=WARNING
-org.neo4j.jdbc.network.OutboundMessageHandler.level=FINE
-org.neo4j.jdbc.network.InboundMessageHandler.level=FINE
-
-java.util.logging.SimpleFormatter.format = %1$tFT%1$tk:%1$tM:%1$tS.%1$tL%1$tz %4$-15s --- %5$s [%2$s]%n</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The diagnosability features of the JDBC driver are based on the standard <code>java.util.logging</code> framework. Configuration of that framework itself is out of scope for this documentation.
-      For a complete overview you might want to start at <a href="https://docs.oracle.com/en/java/javase/17/core/java-logging-overview.html">"Java Logging Overview"</a>.
-      The formatter Java uses is the <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Formatter.html#dt"><code>java.util.Formatter</code>.</a>
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_inside_a_spring_boot_application">4.8.2. Inside a Spring Boot application</h4>
-<div class="paragraph">
-<p>The Neo4j JDBC Driver will integrate itself into the Spring Boot logging configuration and take all relevant format and other settings from there.
-The levels can be configured with the levels Spring does understand.
-The following configuration is equivalent to the one above:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 24. Logging configuration for the Neo4j JDBC Driver in a Spring Boot configuration file</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="bash">logging.level.org.neo4j.jdbc=trace
-logging.level.org.neo4j.jdbc.result-set=warn
-logging.level.org.neo4j.jdbc.network=warn
-logging.level.org.neo4j.jdbc.network.OutboundMessageHandler=debug
-logging.level.org.neo4j.jdbc.network.InboundMessageHandler=debug</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_inside_a_quarkus_application">4.8.3. Inside a Quarkus application</h4>
-<div class="paragraph">
-<p>The Neo4j JDBC Driver will integrate itself into the Quarkus logging configuration and take all relevant format and other settings from there.
-The levels can be configured with the levels Quarkus does understand.
-The following configuration is equivalent to the ones above:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 25. Logging configuration for the Neo4j JDBC Driver in a Quarkus configuration file</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="bash">quarkus.log.category.&quot;org.neo4j.jdbc&quot;.min-level=TRACE
-quarkus.log.category.&quot;org.neo4j.jdbc&quot;.level=TRACE
-quarkus.log.category.&quot;org.neo4j.jdbc.result-set&quot;.level=DEBUG
-quarkus.log.category.&quot;org.neo4j.jdbc.network&quot;.level=WARNING
-quarkus.log.category.&quot;org.neo4j.jdbc.network.OutboundMessageHandler&quot;.level=DEBUG
-quarkus.log.category.&quot;org.neo4j.jdbc.network.InboundMessageHandler&quot;.level=DEBUG</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_sql_translations">4.8.4. SQL Translations</h4>
-<div class="paragraph">
-<p>The SQL translators use the logger <code>org.neo4j.jdbc.translator</code>; processed SQL and its original sources is logged at level <code>FINE</code> on <code>org.neo4j.jdbc.statement.SQL</code>.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_metrics">4.9. Metrics</h3>
-<div class="paragraph">
-<p>The Neo4j JDBC Driver will publish metrics via <a href="https://micrometer.io">Micrometer</a>.
-If you put Micrometer on your classpath, no further configuration is necessary.
-This is for example automatically the case with <a href="https://docs.spring.io/spring-boot/reference/actuator/metrics.html">Spring Boot Actuator</a> or <a href="https://quarkus.io/guides/telemetry-micrometer">Micrometer for Quarkus</a>.
-To make best use of this feature, you will additionally configure your <a href="https://docs.micrometer.io/micrometer/reference/implementations.html">monitoring system</a>.</p>
-</div>
-<div class="paragraph">
-<p>The Neo4j JDBC Driver does publish the following metrics:</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>org.neo4j.jdbc.connections</code></dt>
-<dd>
-<p>a gauge representing the number of open connections, tagged with <code>url</code> to which the driver is connected</p>
-</dd>
-<dt class="hdlist1"><code>org.neo4j.jdbc.statements</code></dt>
-<dd>
-<p>a gauge representing the number of open statements, tagged with both  the <code>url</code> to which the statement is opened and the JDBC type of the statement (either <code>Statement</code>, <code>PreparedStatement</code> or <code>CallableStatement</code>
-)</p>
-</dd>
-<dt class="hdlist1"><code>org.neo4j.jdbc.queries</code></dt>
-<dd>
-<p>a composite meter containing the counts of successful and failed queries and a timer measuring the duration of queries</p>
-</dd>
-<dt class="hdlist1"><code>org.neo4j.jdbc.cached-translations</code></dt>
-<dd>
-<p>a gauge representing the number of cached SQL to cypher translations</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_tracing">4.10. Tracing</h3>
-<div class="paragraph">
-<p>The Neo4j JDBC Driver supports tracing and will provide traces spans for the following operations on JDBC <code>Statement</code> instances:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>#execute</code></p>
-</li>
-<li>
-<p><code>#executeQuery</code></p>
-</li>
-<li>
-<p><code>#executeUpdate</code></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>and all overloads thereof and in all inheriting types.
-In addition, when using a JDBC <code>ResultSet</code>, it will open a span when the result set is first moved from being before the first row until it is either moved beyond the last row or actively closed.
-Spans will contain various events, such as when a query has been actually executed by the Neo4j database or when a batch of records has been pulled from the database.</p>
-</div>
-<div class="paragraph">
-<p>The feature is optional: when you want to use it, you have to bring in additional dependencies.
-This applies to all distributed versions, including the full bundles, so that an optional feature doesn&#8217;t make the bundles bigger.
-For Maven, use this additional dependency declaration:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 26. Maven dependency that allows you to configure tracing</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
-    <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
-    <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-tracing-micrometer<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.7.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
-<span class="tag">&lt;/dependency&gt;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And for Gradle you would want to declare the following runtime dependency:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 27. Gradle dependency that allows you to configure tracing</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.7.0-SNAPSHOT</span><span class="delimiter">'</span></span>
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This dependency brings in <a href="https://docs.micrometer.io/tracing/reference/">Micrometer Tracing</a>.
-Micrometer Tracing allows you to bind to various tracers and exporters, such as Zipkin or OpenTelemetry.</p>
-</div>
-<div class="paragraph">
-<p>Once you have a Micrometer Tracer, you can configure a <code>Neo4jDataSource</code> like this:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 28. A <code>Neo4jDataSource</code> spawning connections that trace their usage</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">javax.sql.DataSource</span>;
-
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDataSource</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
-
-<span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
-
-<span class="directive">public</span> <span class="type">class</span> <span class="class">TracingExampleSetup</span> {
-
-    <span class="predefined-type">DataSource</span> neo4jDataSource() {
-
-        Tracer tracer = Tracer.NOOP; <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="type">var</span> neo4jDataSource = <span class="keyword">new</span> Neo4jDataSource();
-        neo4jDataSource.setUrl(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://yourhost:7687</span><span class="delimiter">&quot;</span></span>);
-        neo4jDataSource.setPassword(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
-        neo4jDataSource.setUser(<span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>);
-        neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer)); <i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="keyword">return</span> neo4jDataSource;
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>In most scenarios, your application framework will provide a Micrometer tracer instance for you</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>With this call you enable tracing in the data source and all connections spawned from it</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>You can also enable tracing on individual connections by unwrapping them into the <code>Neo4jConnection</code> extension like this:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 29. Enable tracing for an individual connection</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.Connection</span>;
-<span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
-
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jConnection</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
-
-<span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
-
-<span class="directive">public</span> <span class="type">class</span> <span class="class">TracingExampleSetup</span> {
-
-    <span class="predefined-type">Connection</span> connection() {
-
-        Tracer tracer = Tracer.NOOP;
-        Neo4jConnection connection = <span class="predefined-type">DriverManager</span>.getConnection(<span class="string"><span class="delimiter">&quot;</span><span class="content">jdbc:neo4j://yourhost:7687</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">verysecret</span><span class="delimiter">&quot;</span></span>)
-            .unwrap(Neo4jConnection.class); <i class="conum" data-value="1"></i><b>(1)</b>
-        connection.setTracer(Neo4jTracingBridge.to(tracer)); <i class="conum" data-value="2"></i><b>(2)</b>
-    }
-}</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Unwrap the connection into our extension so that you can configure the tracer</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>Configure the tracer</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-In case you neither want to work with a data source nor individual connections, use <code>Neo4jDriver.registerTracer(Neo4jTracingBridge.to(tracer))</code> to register the tracer with all Neo4j drivers that are registered with the JDBC <code>DriverManager</code>.
-</td>
-</tr>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_using_tracing_with_spring_boot">4.10.1. Using tracing with Spring Boot</h4>
-<div class="paragraph">
-<p>The tracing implementation that is provided by the Neo4j JDBC Driver utilizes Micrometer Tracing, which is well accepted in the Spring Boot ecosystem, but also in Quarkus, Micronaut and others.
-We provide a few examples, but refer to your frameworks documentation on how to configure tracing.</p>
-</div>
-<div class="paragraph">
-<p>If you are happy to configure tracing for all connections acquired from the <code>DriverManager</code>, configure tracing like this:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 30. Configure tracing for all drivers registered with <code>DriverManager</code></div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
-
-<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.InitializingBean</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
-
-<span class="annotation">@Configuration</span>
-<span class="directive">public</span> <span class="type">class</span> <span class="class">TracingConfiguration</span> {
-
-    <span class="annotation">@Bean</span>
-    InitializingBean neo4jTracingInitializer(Tracer tracer) {
-        <span class="keyword">return</span> () -&gt; Neo4jDriver.registerTracer(Neo4jTracingBridge.to(tracer));
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Otherwise, use a custom datasource as shown below.</p>
-</div>
-<div class="sect4">
-<h5 id="_configuring_the_tracing_datasource">Configuring the tracing datasource</h5>
-<div class="paragraph">
-<p>Usually, Spring Boot configures a <code>HikariDataSource</code> based on you driver.
-Hikari provides connection pooling, and you should not ditch that.
-There&#8217;s no need to create your own data source properties for all configuration values, you can just inject it like this:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 31. Configure a tracing and pooled data source with Spring Boot</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">javax.sql.DataSource</span>;
-
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.Neo4jDataSource</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.jdbc.tracing.micrometer.Neo4jTracingBridge</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.boot.autoconfigure.jdbc.DataSourceProperties</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
-
-<span class="keyword">import</span> <span class="include">com.zaxxer.hikari.HikariConfig</span>;
-<span class="keyword">import</span> <span class="include">com.zaxxer.hikari.HikariDataSource</span>;
-<span class="keyword">import</span> <span class="include">io.micrometer.tracing.Tracer</span>;
-
-<span class="annotation">@Configuration</span>
-<span class="type">class</span> <span class="class">TracingTestConfiguration</span> {
-
-    <span class="annotation">@Bean</span>
-    <span class="predefined-type">DataSource</span> neo4jDataSource(Tracer tracer, DataSourceProperties dataSourceProperties) {
-
-        <span class="type">var</span> neo4jDataSource = <span class="keyword">new</span> Neo4jDataSource();
-        neo4jDataSource.setUrl(dataSourceProperties.getUrl());
-        neo4jDataSource.setPassword(dataSourceProperties.getPassword());
-        neo4jDataSource.setUser(dataSourceProperties.getUsername());
-        neo4jDataSource.setTracer(Neo4jTracingBridge.to(tracer));
-
-        <span class="type">var</span> cfg = <span class="keyword">new</span> HikariConfig();
-        cfg.setDataSource(neo4jDataSource);
-        <span class="keyword">return</span> <span class="keyword">new</span> HikariDataSource(cfg);
-    }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Bring <code>org.springframework.boot:spring-boot-starter-actuator</code> onto your class path too, and it will configure Micrometer for you.</p>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-The setup of your data source stays the same: no change is required here for the following examples to work, as our Tracing API will automatically pick the correct tracer through Micrometer!
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_exporting_to_zipkin">Exporting to Zipkin</h5>
-<div class="paragraph">
-<p>To export your traces to Zipkin, add <code>io.micrometer:micrometer-tracing-bridge-brave</code> and <code>io.zipkin.reporter2:zipkin-reporter-brave</code> and set <code>management.zipkin.tracing.export.enabled</code> to <code>true</code> in your Spring application.</p>
-</div>
-<div class="paragraph">
-<p>You should see spans like this:</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="../images/zipkintracing.jpg" alt="zipkintracing">
-</div>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_exporting_via_opentelemetry">Exporting via OpenTelemetry</h5>
-<div class="paragraph">
-<p><a href="https://opentelemetry.io">OpenTelemetry</a> allows to export not only traces, but metrics and logging too.</p>
-</div>
-<div class="paragraph">
-<p>Here&#8217;s an example how to use <a href="https://www.dash0.com">Dash0</a> via OpenTelemetry.
-The exporter should work the same for other services.
-OpenTelemetry has split its SDK into several modules, hence you will first import their BOM into your build file. Here&#8217;s an example for Maven:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 32. Snippet from a Maven build file to include the OpenTelemetry BOM</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
-    <span class="tag">&lt;groupId&gt;</span>io.opentelemetry<span class="tag">&lt;/groupId&gt;</span>
-    <span class="tag">&lt;artifactId&gt;</span>opentelemetry-bom<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>1.47.0<span class="tag">&lt;/version&gt;</span>
-    <span class="tag">&lt;type&gt;</span>pom<span class="tag">&lt;/type&gt;</span>
-    <span class="tag">&lt;scope&gt;</span>import<span class="tag">&lt;/scope&gt;</span>
-<span class="tag">&lt;/dependency&gt;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>First you need to bring in the bridge from Micrometer to OpenTelemetry via: <code>io.micrometer:micrometer-tracing-bridge-otel</code>, so that Micrometer pushes into that SDK.
-Next, bring in the following dependencies so that Spring Boot can configure the exporter:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>io.opentelemetry:opentelemetry-sdk</code></p>
-</li>
-<li>
-<p><code>io.opentelemetry:opentelemetry-exporter-common</code></p>
-</li>
-<li>
-<p><code>io.opentelemetry:opentelemetry-exporter-otlp</code></p>
-</li>
-<li>
-<p><code>io.opentelemetry:opentelemetry-exporter-sender-jdk</code></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>In the case of Dash0, the application configuration will look similar to this:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 33. Using the OpenTelemetry exporter in Spring Boot towards Dash0</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="properties">management.otlp.tracing.export.enabled=true
-management.otlp.tracing.endpoint=https://ingress.eu-west-1.aws.dash0.com/v1/traces
-management.otlp.tracing.headers.Authorization=Bearer auth_XX_your_token_XX
-
-management.otlp.metrics.export.step=30s
-management.otlp.metrics.export.enabled=true
-management.otlp.metrics.export.url=https://ingress.eu-west-1.aws.dash0.com/v1/metrics
-management.otlp.metrics.export.headers.Authorization=Bearer auth_XX_your_token_XX</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The trace from our Movie application looks like this:</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="../images/dash0tracing.jpg" alt="dash0tracing">
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -2942,7 +2980,7 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <p>The next few examples use the <code>properties</code> config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 34. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
+<div class="title">Listing 35. Disable pretty printing; only escape if necessary; configure dedicated table mappings</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2965,7 +3003,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 35. Parse table names into upper case</div>
+<div class="title">Listing 36. Parse table names into upper case</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -2988,7 +3026,7 @@ properties.put(<span class="string"><span class="delimiter">&quot;</span><span c
 The following example changes that prefix to <code>$</code> (the same prefix that Cypher uses):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 36. Change parameters prefix and add mappings for join columns</div>
+<div class="title">Listing 37. Change parameters prefix and add mappings for join columns</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> properties = <span class="keyword">new</span> <span class="predefined-type">Properties</span>();
 properties.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">username</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
@@ -3280,7 +3318,7 @@ RETURN elementId(p) AS `v$id`,
 </div>
 <hr>
 <div id="star_6b" class="listingblock">
-<div class="title">Listing 37. Ordering without specifying a table alias</div>
+<div class="title">Listing 38. Ordering without specifying a table alias</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> Person p <span class="keyword">ORDER</span> <span class="keyword">BY</span> name <span class="directive">ASC</span></code></pre>
 </div>
@@ -4526,7 +4564,7 @@ While <code>ON DUPLICATE KEY</code> does offer upgrade options, it assumes the p
 Although this is most certainly the case in a relational system, this translation layer that runs without a database connection doesn&#8217;t know.</p>
 </div>
 <div id="upsert1" class="listingblock">
-<div class="title">Listing 38. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
+<div class="title">Listing 39. Upsert with <code>ON DUPLICATE KEY IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Movie(title, released) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> DUPLICATE <span class="type">KEY</span> IGNORE</code></pre>
 </div>
@@ -4537,7 +4575,7 @@ Although this is most certainly the case in a relational system, this translatio
 </div>
 </div>
 <div id="upsert2" class="listingblock">
-<div class="title">Listing 39. Upsert with <code>ON CONFLICT IGNORE</code></div>
+<div class="title">Listing 40. Upsert with <code>ON CONFLICT IGNORE</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> actors(name, firstname) <span class="keyword">VALUES</span>(<span class="error">?</span>, <span class="error">?</span>) <span class="keyword">ON</span> CONFLICT DO NOTHING</code></pre>
 </div>
@@ -4690,7 +4728,7 @@ Check "<a href="#_restrictions">Restrictions</a>" below for more information.</p
 The native format is defined by the following <a href="https://json-schema.org">schema</a>:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 40. JSON Schema for Cypher-backed views</div>
+<div class="title">Listing 41. JSON Schema for Cypher-backed views</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">{
   <span class="key"><span class="delimiter">&quot;</span><span class="content">$schema</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">http://json-schema.org/draft-07/schema#</span><span class="delimiter">&quot;</span></span>,
@@ -4813,7 +4851,7 @@ Make sure you only load view definitions from trusted sources. As stated above, 
 <p>A simple example looks like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 41. A Cypher-backed view that returns all movies and their actors.</div>
+<div class="title">Listing 42. A Cypher-backed view that returns all movies and their actors.</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">[
   {
@@ -4846,7 +4884,7 @@ Make sure you only load view definitions from trusted sources. As stated above, 
 The view can be queried as follows, with ordering and predicates being pushed down into the actual query:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 42. Querying <code>v_movie_actors</code></div>
+<div class="title">Listing 43. Querying <code>v_movie_actors</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> v_movie_actors <span class="keyword">ORDER</span> <span class="keyword">BY</span> title</code></pre>
 </div>
@@ -4855,7 +4893,7 @@ The view can be queried as follows, with ordering and predicates being pushed do
 <p>The <code>propertyName</code> attribute of the <code>columnType</code> object can be used to refer to properties of a Cypher entity (either a node or relationship) as shown in the following example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 43. Defining a view that uses a virtual column (the id function) and an entity returned by the Cypher query</div>
+<div class="title">Listing 44. Defining a view that uses a virtual column (the id function) and an entity returned by the Cypher query</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">[
   {
@@ -4880,7 +4918,7 @@ The view can be queried as follows, with ordering and predicates being pushed do
 <p>Which can now be queried as</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 44. Querying <code>v_people</code></div>
+<div class="title">Listing 45. Querying <code>v_people</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="sql"><span class="class">SELECT</span> * <span class="keyword">FROM</span> v_people <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string"><span class="delimiter">'</span><span class="content">A%</span><span class="delimiter">'</span></span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> name</code></pre>
 </div>
@@ -4945,7 +4983,7 @@ the Neo4j JDBC driver utilizes those for turning nodes and relationships into JS
 <p>Put the following dependency on your class- or module path to enable mapping into objects of type <code>JsonNode</code>:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 45. Required dependency for Object mapping through Jackson Databind</div>
+<div class="title">Listing 46. Required dependency for Object mapping through Jackson Databind</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>com.fasterxml.jackson.core<span class="tag">&lt;/groupId&gt;</span>
@@ -4958,7 +4996,7 @@ the Neo4j JDBC driver utilizes those for turning nodes and relationships into JS
 <p>You now can pass <code>JsonObject.class</code> as type parameter to any overload of <code>getObject</code> on a <code>ResultSet</code> that supports a type parameter to retrieve JSON like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 46. Retrieving a list of nodes as JSON Array</div>
+<div class="title">Listing 47. Retrieving a list of nodes as JSON Array</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.io.StringWriter</span>;
 <span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
@@ -5026,7 +5064,7 @@ This structure is aligned with the <a href="https://neo4j.com/docs/query-api/cur
 <p>Here&#8217;s one example that shows a query that structures the result of matching all movies and their actors into maps, collects them as a list, retrieves that again as a JSON node, which can ultimately mapped by Jacksons Object mapper into a list of domain objects:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 47. Mapping JSON nodes into domain objects</div>
+<div class="title">Listing 48. Mapping JSON nodes into domain objects</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 <span class="keyword">import</span> <span class="include">java.util.List</span>;
@@ -5083,7 +5121,7 @@ This structure is aligned with the <a href="https://neo4j.com/docs/query-api/cur
 <p>Of course, writing back JSON nodes does work, too:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 48. Using JSON Nodes as parameters</div>
+<div class="title">Listing 49. Using JSON Nodes as parameters</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">java.sql.DriverManager</span>;
 
@@ -5186,7 +5224,7 @@ You can use either a URL parameter, a JDBC property entry, or an environment var
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 49. Example of a valid URL</div>
+<div class="title">Listing 50. Example of a valid URL</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
 </div>
@@ -5542,7 +5580,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-08 14:57:41 UTC
+Last updated 2025-07-09 08:55:58 UTC
 </div>
 </div>
 </body>
