@@ -54,7 +54,7 @@ interface MetricsCollector extends DriverListener, ConnectionListener, Statement
 		}
 		catch (Throwable ex) {
 			if (GLOBAL_REGISTRY_HAS_BEEN_TRIED.compareAndSet(false, true)) {
-				Logger.getLogger("org.neo4j.jdbc").log(Level.INFO, "Metrics are not available");
+				Logger.getLogger("org.neo4j.jdbc").log(Level.FINE, "Metrics are not available");
 			}
 			return Optional.empty();
 		}
