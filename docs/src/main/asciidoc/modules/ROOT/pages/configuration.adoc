@@ -36,7 +36,7 @@ The driver supports the following URI schemes, which tweak the security configur
 `bolt` URI schemes are not supported.
 ====
 
-Last but not least, you can add `http` as sub-protocol when using the Neo4j-JDBC driver against a Neo4j instance from 2025.06 on upwards with the Http Query-API enabled:
+Last but not least, you can add `http` as sub-protocol when using the Neo4j-JDBC driver against a Neo4j instance from 2025.06 on with the Http Query-API enabled:
 
 [source, text]
 
