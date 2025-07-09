@@ -124,6 +124,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_USER_AGENT = "agent";
 
 	/**
+	 * The environment and system property key for the user-agent.
+	 */
+	public static final String USER_AGENT_ENV_KEY = "NEO4J_JDBC_USER_AGENT";
+
+	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
 	 * the password.
 	 */
@@ -578,8 +583,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.join();
 	}
 
-	static String getDefaultUserAgent() {
-		return "neo4j-jdbc/%s".formatted(ProductVersion.getValue());
+	static String getDefaultUserAgent(String envUserAgent) {
+		return Optional.ofNullable(System.getProperty(USER_AGENT_ENV_KEY))
+			.or(() -> Optional.ofNullable(envUserAgent))
+			.orElse("neo4j-jdbc/%s".formatted(ProductVersion.getValue()));
 	}
 
 	static Map<String, String> mergeConfig(String[] urlParams, Properties jdbcProperties) {
@@ -1155,7 +1162,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			var password = String.valueOf(config.getOrDefault(PROPERTY_PASSWORD, ""));
 			var authRealm = config.getOrDefault(PROPERTY_AUTH_REALM, "");
 
-			var userAgent = String.valueOf(config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent()));
+			var userAgent = String.valueOf(
+					config.getOrDefault(PROPERTY_USER_AGENT, getDefaultUserAgent(System.getenv(USER_AGENT_ENV_KEY))));
 			var connectionTimeoutMillis = Integer.parseInt(config.getOrDefault(PROPERTY_TIMEOUT, "1000"));
 			var automaticSqlTranslation = Boolean
 				.parseBoolean(config.getOrDefault(PROPERTY_SQL_TRANSLATION_ENABLED, "false"));
