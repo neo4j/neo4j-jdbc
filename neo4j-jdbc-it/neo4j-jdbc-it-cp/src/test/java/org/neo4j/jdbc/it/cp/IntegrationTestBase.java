@@ -23,16 +23,28 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.provider.Arguments;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class IntegrationTestBase {
+
+	protected final Stream<Arguments> allProtocols() {
+		var result = Stream.<Arguments>builder();
+		result.add(Arguments.of("neo4j"));
+		var neo4jImage = System.getProperty("neo4j-jdbc.default-neo4j-image");
+		if (neo4jImage == null || neo4jImage.startsWith("neo4j:20")) {
+			result.add(Arguments.of("http"));
+		}
+		return result.build();
+	}
 
 	IntegrationTestBase() {
 		this.neo4j = TestUtils.getNeo4jContainer();

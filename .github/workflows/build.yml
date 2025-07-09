@@ -64,11 +64,12 @@ jobs:
           ./mvnw --no-transfer-progress -DskipClusterIT -P$USE_SONAR -Dsonar.projectKey=neo4j-jdbc -Dsonar.projectName='neo4j-jdbc' install
 
   integration_tests:
-    name: Integration tests using Java ${{ matrix.java }}
+    name: Integration tests using Java ${{ matrix.java }} against ${{ matrix.neo4j }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         java: [ '21', '24' ]
+        neo4j: [ '5.26.8' ]
     needs: build
     steps:
       - name: 'Set up JDK'
@@ -95,7 +96,8 @@ jobs:
       - name: 'Run integration tests'
         run: > 
            ./mvnw --no-transfer-progress 
-           -DskipUTs 
+           -DskipUTs
+           -Dneo4j.version=${{ matrix.neo4j }}
            -f neo4j-jdbc-it
            clean verify
 
@@ -123,8 +125,11 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
-      - name: 'Run native tests'
+      - name: 'Run native tests (default distribution)'
         run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
+
+      - name: 'Run native tests (bundled distribution)'
+        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl bundles/neo4j-jdbc-full-bundle
 
   security_test:
     runs-on: ubuntu-latest

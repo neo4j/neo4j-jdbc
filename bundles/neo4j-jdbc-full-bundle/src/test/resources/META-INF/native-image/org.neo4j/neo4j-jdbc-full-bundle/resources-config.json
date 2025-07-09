@@ -2,9 +2,6 @@
   "resources": [
     {
       "pattern": ".*\\.json"
-    },
-    {
-      "pattern": ".*\\.cypher"
     }
   ]
 }

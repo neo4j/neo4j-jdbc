@@ -112,7 +112,7 @@ public final class BoltAdapters {
 	}
 
 	private static int counterValue(Value countersValue, String name) {
-		var value = countersValue.get(name);
+		var value = countersValue.getBoltValue(name);
 		return value.isNull() ? 0 : (int) value.asLong();
 	}
 

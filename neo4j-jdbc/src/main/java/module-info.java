@@ -17,7 +17,9 @@
  * limitations under the License.
  */
 /**
- * The Neo4j JDBC Driver exposes both the actual JDBC API and the Neo4j value system being used. The value system can be used with methods like {@link java.sql.ResultSet#getObject(int, Class)}, for retrieving Neo4j nodes, relationships, paths and especially, the original value objects.
+ * The Neo4j JDBC Driver exposes both the actual JDBC API and the Neo4j value system being used. The value system can be
+ * used with methods like {@link java.sql.ResultSet#getObject(int, Class)}, for retrieving Neo4j nodes, relationships,
+ * paths and especially, the original value objects.
  */
 @SuppressWarnings({"requires-automatic"}) // Netty is an automatic module :(
 module org.neo4j.jdbc {
@@ -27,20 +29,18 @@ module org.neo4j.jdbc {
 
 	// start::shaded-dependencies
 	requires io.github.cdimascio.dotenv.java;
-	requires io.netty.buffer;
-	requires io.netty.codec;
-	requires io.netty.common;
-	requires io.netty.handler;
-	requires io.netty.resolver;
-	requires io.netty.transport;
 	requires org.neo4j.bolt.connection;
 	requires org.neo4j.bolt.connection.netty;
+	requires org.neo4j.bolt.connection.query_api;
 	requires transitive org.neo4j.jdbc.authn.spi;
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
 	// end::shaded-dependencies
 
 	// requires jdk.unsupported;
+	// requires java.net.http;
+	// requires java.naming;
+	// requires com.fasterxml.jackson.jr.ob;
 
 	exports org.neo4j.jdbc;
 	exports org.neo4j.jdbc.events;
@@ -54,4 +54,11 @@ module org.neo4j.jdbc {
 
 	uses org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
 	uses org.neo4j.jdbc.translator.spi.TranslatorFactory;
+
+	// start::shaded-dependencies
+	uses org.neo4j.bolt.connection.BoltConnectionProviderFactory;
+	// end::shaded-dependencies
+
+	// uses org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory;
+	// provides org.neo4j.jdbc.internal.shaded.bolt.BoltConnectionProviderFactory with org.neo4j.jdbc.internal.shaded.bolt.netty.NettyBoltConnectionProviderFactory, org.neo4j.jdbc.internal.shaded.bolt.query_api.QueryApiBoltConnectionProviderFactory;
 }

@@ -134,6 +134,11 @@ enum ValueFactoryImpl implements ValueFactory {
 	}
 
 	@Override
+	public Value vector(Class<?> aClass, Object o) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public Value unsupportedDateTimeValue(DateTimeException e) {
 		return asBoltValue(new UnsupportedDateTimeValue(e));
 	}

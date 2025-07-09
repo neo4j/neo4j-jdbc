@@ -134,13 +134,7 @@
 					<plugin>
 						<groupId>org.graalvm.buildtools</groupId>
 						<artifactId>native-maven-plugin</artifactId>
-						<version>${native-maven-plugin.version}</version>
 						<extensions>true</extensions>
-						<configuration>
-							<metadataRepository>
-								<enabled>true</enabled>
-							</metadataRepository>
-						</configuration>
 						<executions>
 							<execution>
 								<id>test-native</id>

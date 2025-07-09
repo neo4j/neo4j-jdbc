@@ -21,7 +21,6 @@ package org.neo4j.jdbc;
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -309,13 +308,14 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		return new RunResponseImpl(summaries.runSummary().queryId(), summaries.runSummary().keys());
 	}
 
-	private static PullResponse asPullResponse(List<String> keys, List<Value[]> valuesList, PullSummary pullSummary) {
+	private static PullResponse asPullResponse(List<String> keys, List<List<Value>> valuesList,
+			PullSummary pullSummary) {
 		return new PullResponseImpl(pullSummary.hasMore(), valuesList.stream().map(v -> asRecord(keys, v)).toList(),
 				asResultSummary(pullSummary.metadata()));
 	}
 
-	private static Record asRecord(List<String> keys, Value[] values) {
-		return Record.of(keys, Arrays.stream(values).map(Values::value).toArray(org.neo4j.jdbc.values.Value[]::new));
+	private static Record asRecord(List<String> keys, List<Value> values) {
+		return Record.of(keys, values.stream().map(Values::value).toArray(org.neo4j.jdbc.values.Value[]::new));
 	}
 
 	private static ResultSummary asResultSummary(Map<String, Value> metadata) {

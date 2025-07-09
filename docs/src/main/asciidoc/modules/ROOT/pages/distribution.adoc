@@ -53,12 +53,13 @@ org.neo4j:neo4j-jdbc
 All bundles of the Neo4j JDBC Driver are distributed on Maven Central.
 The bundles have different characteristics: depending on your use-case or your environment, you can pick one or the other bundle, but not both at once.
 
+TIP: All distributions of the Neo4j JDBC driver and all features are compatible with https://www.graalvm.org/latest/reference-manual/native-image/[GraalVM native image].
 
 === Individual components
 
-Pick this distribution if you have an application that uses dependencies management in which you don't have to care about dealing with binary artifacts yourself.
+Pick this distribution if you have an application that uses proper dependencies management in which you don't have to care about dealing with individual artifacts and their dependencies yourself.
 
-IMPORTANT: We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are `{group-id}:neo4j-jdbc-bom`.
+TIP: We offer a Maven BOM project, which you should import when using the individual modules, so that you have always a consistent set of versions. The coordinates are `{group-id}:neo4j-jdbc-bom`.
 
 For Maven, use this dependency declaration:
 
