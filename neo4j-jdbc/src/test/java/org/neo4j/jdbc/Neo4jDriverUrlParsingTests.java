@@ -45,7 +45,6 @@ import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
 import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
-import org.neo4j.bolt.connection.DatabaseName;
 import org.neo4j.bolt.connection.LoggingProvider;
 import org.neo4j.bolt.connection.MetricsListener;
 import org.neo4j.bolt.connection.values.ValueFactory;
@@ -159,7 +158,6 @@ class Neo4jDriverUrlParsingTests {
 		props.put("username", "test");
 		props.put("password", "password");
 		props.put("database", "database");
-		var database = DatabaseName.database("database");
 
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
@@ -176,7 +174,6 @@ class Neo4jDriverUrlParsingTests {
 		var props = new Properties();
 		props.put("username", "test");
 		props.put("password", "password");
-		var database = DatabaseName.database("neo4j");
 
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
@@ -634,10 +631,6 @@ class Neo4jDriverUrlParsingTests {
 
 		return Stream.of(Arguments.of(propsBasic, tokenBasic), Arguments.of(propsNone, tokenNone),
 				Arguments.of(propsKerberos, tokenKerberos), Arguments.of(propsBearer, tokenBearer));
-	}
-
-	private static AuthTokenMatcher matches(AuthToken authToken) {
-		return new AuthTokenMatcher(authToken);
 	}
 
 	private static URI boltUri(String host, int port) throws URISyntaxException {

@@ -1100,6 +1100,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			return misc;
 		}
 
+		// This is about the neo4j constant, which is meant to be either protocol or
+		// default user or default database, I don't feel having a shared constant for it
+		@SuppressWarnings("squid:S1192")
 		static DriverConfig of(String url, Properties info) throws SQLException {
 			if (url == null) {
 				throw new Neo4jException(GQLError.$22N06.withTemplatedMessage("url"));
