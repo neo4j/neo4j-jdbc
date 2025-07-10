@@ -124,6 +124,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_USER_AGENT = "agent";
 
 	/**
+	 * The environment and system property key for the user-agent.
+	 */
+	public static final String USER_AGENT_ENV_KEY = "NEO4J_JDBC_USER_AGENT";
+
+	/**
 	 * The name of the {@link #getPropertyInfo(String, Properties) property} containing
 	 * the password.
 	 */
@@ -579,6 +584,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	static String getDefaultUserAgent() {
+		if (System.getProperties().containsKey(USER_AGENT_ENV_KEY)
+				&& !System.getProperties().getProperty(USER_AGENT_ENV_KEY).isBlank()) {
+			return System.getProperties().getProperty(USER_AGENT_ENV_KEY);
+		}
+		if (System.getenv().containsKey(USER_AGENT_ENV_KEY) && !System.getenv().get(USER_AGENT_ENV_KEY).isBlank()) {
+			return System.getenv().get(USER_AGENT_ENV_KEY);
+		}
 		return "neo4j-jdbc/%s".formatted(ProductVersion.getValue());
 	}
 
