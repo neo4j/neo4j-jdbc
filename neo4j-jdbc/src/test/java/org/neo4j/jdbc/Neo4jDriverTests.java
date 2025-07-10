@@ -157,23 +157,18 @@ class Neo4jDriverTests {
 
 	@Test
 	void defaultUAShouldWork() {
-		assertThat(Neo4jDriver.getDefaultUserAgent(null)).matches("neo4j-jdbc/dev");
+		assertThat(Neo4jDriver.getDefaultUserAgent()).matches("neo4j-jdbc/dev");
 	}
 
 	@Test
 	void defaultUAFromSystemPropertiesShouldWork() {
 		try {
-			System.setProperty(Neo4jDriver.USER_AGENT_ENV_KEY, "agent-smith");
-			assertThat(Neo4jDriver.getDefaultUserAgent("ignore-me")).matches("agent-smith");
+			System.setProperty(Neo4jDriver.USER_AGENT_ENV_KEY, "agent-00-schneider");
+			assertThat(Neo4jDriver.getDefaultUserAgent()).matches("agent-00-schneider");
 		}
 		finally {
 			System.clearProperty(Neo4jDriver.USER_AGENT_ENV_KEY);
 		}
-	}
-
-	@Test
-	void defaultUAFromEnvShouldWork() {
-		assertThat(Neo4jDriver.getDefaultUserAgent("agent-00-schneider")).matches("agent-00-schneider");
 	}
 
 	@Nested
