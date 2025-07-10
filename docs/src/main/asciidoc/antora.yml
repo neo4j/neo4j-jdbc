@@ -21,7 +21,7 @@
 
 name: jdbc-manual
 version: ${project.version}
-prerelease: "false"
+prerelease: false
 title: Neo4j JDBC Driver manual
 start_page: ROOT:index.adoc
 nav:
