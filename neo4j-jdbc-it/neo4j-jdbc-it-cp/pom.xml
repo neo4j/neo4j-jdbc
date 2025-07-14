@@ -99,6 +99,7 @@
 						<configuration combine.self="append">
 							<excludes>
 								<exclude>**/Neo4jDriverExtensionsIT.java</exclude>
+								<exclude>**/UserAgentIT.java</exclude>
 							</excludes>
 						</configuration>
 					</execution>
@@ -111,6 +112,7 @@
 						<configuration>
 							<includes>
 								<include>**/Neo4jDriverExtensionsIT.java</include>
+								<include>**/UserAgentIT.java</include>
 							</includes>
 							<!-- Needed to modify system environment variables in this particular test, don't want to have it everywhere. -->
 							<argLine>@{argLine} --add-opens java.base/java.util=ALL-UNNAMED</argLine>
