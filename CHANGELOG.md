@@ -1,3 +1,373 @@
+# 6.7.0
+
+## Can your JDBC driver do this?
+
+To highlight some of the features that have accumulated in the Neo4j JDBC driver since the first commit to the 6.x branch two years ago, we decided to create two hopefully easy to read demos before we jump into the list of features. We use plain Java in the first 3 examples, no dependency management and run fully on the module path with `Demo1.java`. The keen reader may notices that we do use some Java 24 preview features: Why bother with a class definition? And if we have Java modules, why not use them for import statements? (Be aware, that the JDBC driver does run on Java 17, too and does not require any preview feature)
+
+### Cypher and SQL supported
+
+First, let's download the JDBC bundle:
+
+```bash
+wget https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.7.0/neo4j-jdbc-full-bundle-6.7.0.jar
+```
+
+And run the following class
+
+```java
+import module java.sql;
+
+void main() throws SQLException {
+
+    try (
+        var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies", "neo4j", "verysecret");
+        var stmt = connection.prepareStatement("""
+            MERGE (g:Genre {name: $1})
+            MERGE (m:Movie {title: $2, released: $3}) -[:HAS]->(g)
+            FINISH"""))
+    {
+        stmt.setString(1, "Science Fiction");
+        stmt.setString(2, "Dune");
+        stmt.setInt(3, 2021);
+        stmt.addBatch();
+
+        stmt.setString(1, "Science Fiction");
+        stmt.setString(2, "Star Trek Generations");
+        stmt.setInt(3, 1994);
+        stmt.addBatch();
+
+        stmt.setString(1, "Horror");
+        stmt.setString(2, "Seven");
+        stmt.setInt(3, 1995);
+        stmt.addBatch();
+
+        stmt.executeBatch();
+    }
+
+    // Not happy with Cypher? Enable SQL translations
+    try (
+        var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies?enableSQLTranslation=true", "neo4j", "verysecret");
+        var stmt = connection.createStatement();
+        var rs = stmt.executeQuery("""
+            SELECT m.*, collect(g.name) AS genres
+            FROM Movie m NATURAL JOIN HAS r NATURAL JOIN Genre g
+            WHERE m.title LIKE 'S%'
+            ORDER BY m.title LIMIT 20"""))
+    {
+        while (rs.next()) {
+            var title = rs.getString("title");
+            var genres = rs.getObject("genres", List.class);
+            System.out.println(title + " " + genres);
+        }
+    }
+}
+```
+
+like this:
+
+```bash
+java --enable-preview --module-path neo4j-jdbc-full-bundle-6.7.0.jar Demo1.java
+```
+
+The output of the program will be similar to this. Notice how the Cypher has been rewritten to be proper batched:
+
+```
+Juli 09, 2025 12:52:54 PM org.neo4j.jdbc.PreparedStatementImpl executeBatch
+INFORMATION: Rewrite batch statements is in effect, statement MERGE (g:Genre {name: $1})
+MERGE (m:Movie {title: $2, released: $3}) -[:HAS]->(g)
+FINISH has been rewritten into UNWIND $__parameters AS __parameter MERGE (g:Genre {name: __parameter['1']})
+MERGE (m:Movie {title: __parameter['2'], released: __parameter['3']}) -[:HAS]->(g)
+FINISH
+Seven [Horror]
+Star Trek Generations [Science Fiction]
+Horror
+Science Fiction
+```
+
+*Bonus example* As JDBC 4.3, section 13.2 specifies that only `?` are allowed as positional parameters, we do of course handle those. The above example uses _named_ Cypher parameters `$1`, `$2` to align them with the indexes that the `PreparedStatement` requires.  If we would switch languages here, using SQL for inserting and Cypher for querying, you see the difference. Also take now that you can `unwrap` the `PreparedStatement` into a `Neo4jPreparedStatement` that allows you to use named parameters proper:
+
+```java
+import module java.sql;
+import module org.neo4j.jdbc;
+
+void main() throws SQLException {
+
+    try (
+        var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies?enableSQLTranslation=true", "neo4j", "verysecret");
+        var stmt = connection.prepareStatement("""
+            INSERT INTO Movie (title, released) VALUES (?, ?)
+            ON CONFLICT DO NOTHING
+            """))
+    {
+        stmt.setString(1, "Dune: Part Two");
+        stmt.setInt(2, 2024);
+        stmt.addBatch();
+
+        stmt.executeBatch();
+    }
+
+    try (
+        var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies", "neo4j", "verysecret");
+        var stmt = connection.prepareStatement("""
+            MATCH (n:$($label))
+            WHERE n.released = $year
+            RETURN DISTINCT n.title AS title""")
+            .unwrap(Neo4jPreparedStatement.class))
+    {
+        stmt.setString("label", "Movie");
+        stmt.setInt("year", 2024);
+
+        var rs = stmt.executeQuery();
+        while (rs.next()) {
+            var title = rs.getString("title");
+            System.out.println(title);
+        }
+    }
+}
+```
+
+As we importing the whole Neo4j JDBC Driver module at the top of the class, we must explicitly add it to the module path. Run the program as follows, so that you don't have to define a `module-info.java` for that anonymous class:
+
+```bash
+java --enable-preview --module-path neo4j-jdbc-full-bundle-6.7.0.jar --add-modules org.neo4j.jdbc Demo5.java
+```
+
+### Cypher backed views
+
+Your ETL tool just let you run plain selects but you do want to have some more complex Cypher? Don't worry, defined a Cypher-backed view like in demo 2 and we got you covered:
+
+```java
+import module java.sql;
+
+void main() throws SQLException, IOException {
+
+    // We do write this definition from the demo to a file, in reality it can be a
+    // module- or classpath resource, a file or a resource on a webserver.
+    var viewDefinition = """
+        [
+          {
+            "name": "movies",
+            "query": "MATCH (m:Movie)-[:HAS]->(g:Genre) RETURN m, collect(g.name) AS genres",
+            "columns": [
+              {
+                "name": "title",
+                "propertyName": "m.title",
+                "type": "STRING"
+              },
+              {
+                "name": "genres",
+                "type": "ANY"
+              }
+            ]
+          }
+        ]""";
+    var views = Files.createTempFile("views", ".json");
+    Files.writeString(views, viewDefinition);
+
+    var url = "jdbc:neo4j://localhost:7687/movies?enableSQLTranslation=%s&viewDefinitions=%s"
+        .formatted(true, "file://" + views.toAbsolutePath());
+    try (
+        var connection = DriverManager.getConnection(url, "neo4j", "verysecret");
+        var stmt = connection.createStatement();
+        var rs = stmt.executeQuery("SELECT * FROM movies"))
+    {
+        while (rs.next()) {
+            var title = rs.getString("title");
+            var genres = rs.getObject("genres", List.class);
+            System.out.println(title + " " + genres);
+        }
+    }
+}
+```
+
+Running
+
+```bash
+java --enable-preview --module-path neo4j-jdbc-full-bundle-6.7.0.jar Demo2.java
+```
+
+gives you
+
+```
+Dune [Science Fiction]
+Star Trek Generations [Science Fiction]
+Seven [Horror]
+```
+
+### Support for the Neo4j HTTP Query API
+
+Communication with Neo4j is usually done via the Bolt protocol, which is a binary format, running on a dedicated port. That can be problematic at times. Latest Neo4j server 2025.06 and higher have enabled the [Query API](https://neo4j.com/docs/query-api/current/), that allows Cypher over HTTP. The Neo4j JDBC driver can utilise that protocol, too, by just changing the URL like this:
+
+```java
+import module java.sql;
+
+void main() throws SQLException {
+
+    // Can't use Neo4j binary protocol, let's use http…
+    var url = "jdbc:neo4j:http://localhost:7474/movies?enableSQLTranslation=true";
+    try (
+        var connection = DriverManager.getConnection(url, "neo4j", "verysecret");
+        var stmt = connection.createStatement();
+        var rs = stmt.executeQuery("SELECT * FROM Genre ORDER BY name"))
+    {
+        while (rs.next()) {
+            var genre = rs.getString("name");
+            System.out.println(genre);
+        }
+    }
+
+    // This issue will be fixed in one of the next patch releases
+    System.exit(0);
+}
+```
+
+Everything else stays the same, the output of the query is
+
+```
+Horror
+Science Fiction
+```
+
+### Retrieving Graph data as JSON objects
+
+Last but not least, we did add some Object mapping to the driver. This is the only feature that requires an additional dependency. As we decided to go with an intermediate format, JSON, we are using [Jackson Databind](https://github.com/FasterXML/jackson-databind). With Jackson on the path, you can turn any Neo4j result into JSON by just asking the `ResultSet` for a `JsonNode`. The latter can than be converted to any Pojo or collection you desire.
+
+You need [JBang](https://www.jbang.dev) to run the last demo. It does the dependency management for us when you run `jbang Demo4.java`
+
+```java
+///usr/bin/env jbang "$0" "$@" ; exit $?
+//JAVA 24
+//PREVIEW
+//DEPS org.neo4j:neo4j-jdbc:6.7.0
+//DEPS com.fasterxml.jackson.core:jackson-databind:2.19.1
+
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+void main() throws SQLException, JsonProcessingException {
+
+    var objectMapper = new ObjectMapper();
+
+    record Movie(String title, int released, List<String> genres) {
+    }
+
+    try (
+        var connection = DriverManager.getConnection("jdbc:neo4j://localhost:7687/movies", "neo4j", "verysecret");
+        var stmt = connection.createStatement();
+        var rs = stmt.executeQuery("""
+            MATCH (m:Movie)-[:HAS]->(g:Genre)
+            WITH m, collect(g.name) AS genres
+            RETURN m{.*, genres: genres}
+            """)) {
+        while (rs.next()) {
+            // First let's get a JSON object from the Cypher map
+            var json = rs.getObject(1, JsonNode.class);
+            // Turn it into domain objects
+            var movie = objectMapper.treeToValue(json, Movie.class);
+            System.out.println(movie);
+        }
+    }
+}
+```
+
+The output now looks like this (with the dataset created in `Demo1.java`):
+
+```
+Movie[title=Dune, released=2021, genres=[Science Fiction]]
+Movie[title=Star Trek Generations, released=1994, genres=[Science Fiction]]
+Movie[title=Seven, released=1995, genres=[Horror]]
+```
+
+The Neo4j JDBC driver is a collective effort of @gjmwoods who did most of the work on the Query API server sides, @injectives and @meistermeier who implemented the client side parts of it in the Bolt connection module and @michael-simons who joined all of this together in the 6.7.0 release of the Neo4j JDBC driver.
+
+## 🚀 Features
+- 9300fd6 feat: Upgrade bolt-connection to 6.0.2 and add support for JDBC over HTTP. (#979)
+- cf13056 feat(translator): Add support for `CONCAT`. (#1023)
+- 8ad7285 feat: Allow the retrieval of graph data as `JsonNode` objects. (#1022)
+
+## 🔄️ Refactorings
+- e969fcb refactor: Remove superflous module declaration.
+- 82eb600 refactor: Reduce log level of global metrics collector.
+- 9b58975 refactor: Limit maximum bolt version to 5.8.
+
+## 📝 Documentation
+- 5d052d9 docs: Add database name to example urls.
+
+## 🧹 Housekeeping
+- 0e760bc build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1031)
+- 7250aaf Bump org.hibernate.orm:hibernate-platform (#1030)
+- 41edea0 Bump org.apache.maven.plugins:maven-enforcer-plugin (#1029)
+- d692605 Bump quarkus.platform.version from 3.24.1 to 3.24.2 (#1026)
+- 3695bef Bump org.jreleaser:jreleaser-maven-plugin (#1025)
+- 6989d9f Bump org.keycloak:keycloak-authz-client (#1024)
+
+
+# 6.6.1
+
+## 🐛 Bug Fixes
+- 99e02e5 fix: Allow coercion of map, list and points to string. (#1021)
+
+## 🧹 Housekeeping
+- 4e2a668 Bump org.openapitools:openapi-generator-maven-plugin (#1020)
+- 2120b6d Bump com.puppycrawl.tools:checkstyle (#1019)
+- 176f83d Bump org.testcontainers:testcontainers-bom (#1018)
+- cee342a Bump org.hibernate.orm:hibernate-platform (#1017)
+- 1b611d6 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1016)
+- cca2982 Bump quarkus.platform.version from 3.23.4 to 3.24.1 (#1015)
+- ecd7c97 build: Bump number of retries for state transition during release by a magnitude.
+
+
+# 6.6.0
+
+This release contains significant new features such as allowing token based authentication to be refreshed, an SPI to role token based authentication with any provider via standard JDBC properties and more. Additionally we improved the callable statement support quite a bit, although it is probably not that widely used (yet).
+
+Last but not least, the database metadata is now accurate wrt the return columns of procedures and functions and includes them in the corresponding methods.
+
+## 🚀 Features
+- f6708c2 feat: Provide an authentication SPI and allow loading additional authentication suppliers via factories.
+- e09a250 feat: Add support for refreshing expiring token based authentication.
+
+## 🐛 Bug Fixes
+- 3a620b3 fix: Align callable statement with JDBC spec wrt getting parameters back. (#1010)
+
+## 🔄️ Refactorings
+- 88ec761 refactor: Include function and procedure return columns in metadata and add support for parameter metadata in callable statements. (#1012)
+- 466be62 refactor: Simplify `Lazy<>`.
+- 47e4193 refactor: SPIs must be exported from the bundles.
+- 94a196c refactor: Improve metrics collection.
+
+## 📝 Documentation
+- 2d6bb9b docs: Update local changelog.
+
+## 🧹 Housekeeping
+- ada99ed Bump org.neo4j:neo4j-cypher-dsl-bom to 2024.7.1
+- 8940670 Bump org.testcontainers:testcontainers-bom (#1003)
+- b5bdcdb Bump org.hibernate.orm:hibernate-platform (#997)
+- f975800 Bump quarkus.platform.version from 3.23.3 to 3.23.4 (#1004)
+- 117dbd6 Bump spring-boot.version from 3.5.0 to 3.5.3 (#1002)
+- 86d120f Bump com.opencsv:opencsv from 5.11.1 to 5.11.2 (#1001)
+- 6181140 Bump org.codehaus.mojo:flatten-maven-plugin (#1000)
+- b73d7f8 Bump dev.langchain4j:langchain4j-bom from 1.0.1 to 1.1.0 (#999)
+- e20b897 Bump com.puppycrawl.tools:checkstyle (#1005)
+- 7015668 Bump spring-javaformat.version from 0.0.46 to 0.0.47 (#998)
+- 003cedf Bump io.micrometer:micrometer-tracing-bom (#993)
+- 2b948a5 Bump org.jooq:jooq from 3.19.23 to 3.19.24 (#987)
+- 827309f Bump org.hibernate.orm:hibernate-platform (#988)
+- 521c6af Bump quarkus.platform.version from 3.23.2 to 3.23.3 (#990)
+- a76bb30 Bump org.neo4j:cypher-v5-antlr-parser from 5.26.7 to 5.26.8 (#991)
+- 87ce824 Bump com.fasterxml.jackson:jackson-bom (#992)
+- a14d8da Bump org.jdbi:jdbi3-bom from 3.49.4 to 3.49.5 (#994)
+- ac13f49 Bump io.micrometer:micrometer-bom from 1.15.0 to 1.15.1 (#995)
+
+## 🛠 Build
+- 8cb67d8 build(test): Retrieve host from the KEYCLOAK container instead of defaulting to `localhost`.
+- 7fab110 build(docs): Updated antora dependencies.
+
+
 # 6.5.1
 
 ## 🚀 Features
