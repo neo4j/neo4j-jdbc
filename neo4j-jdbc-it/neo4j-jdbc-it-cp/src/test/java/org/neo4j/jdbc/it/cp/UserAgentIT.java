@@ -25,11 +25,13 @@ import java.util.List;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.neo4j.jdbc.Neo4jDriver;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DisabledInNativeImage
 class UserAgentIT extends IntegrationTestBase {
 
 	@Test
