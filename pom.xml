@@ -181,7 +181,7 @@
 		<maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
-		<micrometer-tracing.version>1.5.1</micrometer-tracing.version>
+		<micrometer-tracing.version>1.5.2</micrometer-tracing.version>
 		<micrometer.version>1.15.1</micrometer.version>
 		<mockito.version>5.18.0</mockito.version>
 		<moditect-maven-plugin.version>1.2.2.Final</moditect-maven-plugin.version>
