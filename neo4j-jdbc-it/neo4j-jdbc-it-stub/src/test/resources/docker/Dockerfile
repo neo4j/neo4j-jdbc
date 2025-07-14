@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-FROM python:3.10.0b4-buster
+FROM python:3.10-bookworm
 
 RUN apt-get update && apt-get install -y \
       apt-transport-https \
