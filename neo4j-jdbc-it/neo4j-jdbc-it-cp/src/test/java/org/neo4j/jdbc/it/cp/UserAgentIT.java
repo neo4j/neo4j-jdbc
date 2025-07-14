@@ -56,15 +56,16 @@ class UserAgentIT extends IntegrationTestBase {
 
 	@Test
 	void fromEnv() throws Exception {
+		var expected = "agent-wurstsalat";
 		withEnvironmentVariable("NEO4J_URI",
 				"jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687)))
 			.and("NEO4J_USERNAME", "neo4j")
 			.and("NEO4J_PASSWORD", this.neo4j.getAdminPassword())
-			.and("NEO4J_JDBC_USER_AGENT", "agent-wurstsalat")
+			.and("NEO4J_JDBC_USER_AGENT", expected)
 			.execute(() -> {
 				try (var connection = Neo4jDriver.fromEnv().orElseThrow()) {
 					var userAgents = getUserAgents(connection);
-					assertThat(userAgents).hasSize(1).first().isEqualTo("agent-wurstsalat");
+					assertThat(userAgents).hasSize(1).first().isEqualTo(expected);
 				}
 			});
 	}
