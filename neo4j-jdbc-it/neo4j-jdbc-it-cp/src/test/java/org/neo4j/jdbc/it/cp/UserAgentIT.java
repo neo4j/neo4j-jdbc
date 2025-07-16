@@ -35,22 +35,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserAgentIT extends IntegrationTestBase {
 
 	@Test
-	void defaultUA() throws SQLException {
+	void uaFromFile() throws SQLException {
 
-		var driver = new Neo4jDriver();
 		try (var connection = super.getConnection()) {
-
-			String version;
-			try {
-				version = "neo4j-jdbc/%d.%d.".formatted(driver.getMajorVersion(), driver.getMinorVersion());
-			}
-			catch (IllegalArgumentException ex) {
-				version = "neo4j-jdbc/dev";
-			}
 
 			var userAgents = getUserAgents(connection);
 			assertThat(userAgents).hasSize(1);
-			assertThat(userAgents.get(0)).startsWith(version);
+			assertThat(userAgents.get(0)).isEqualTo(
+					"By adding this file in META-INF you are able to change the User agent in a repacked version.");
 		}
 	}
 
@@ -127,7 +119,7 @@ class UserAgentIT extends IntegrationTestBase {
 
 	}
 
-	List<String> getUserAgents(Connection connection) throws SQLException {
+	private static List<String> getUserAgents(Connection connection) throws SQLException {
 		var userAgents = new ArrayList<String>();
 		try (var stmt = connection.createStatement();
 				var result = stmt.executeQuery(
