@@ -171,6 +171,13 @@ class Neo4jDriverTests {
 		}
 	}
 
+	@Test
+	void uaResourceLoaderShouldWork() {
+		assertThat(Neo4jDriver.loadUserAgentFromResources("non-existing")).isEmpty();
+		assertThat(Neo4jDriver.loadUserAgentFromResources("foo.txt")).hasValue("blah");
+
+	}
+
 	@Nested
 	class AuthenticationSupplierDeterminationTest {
 

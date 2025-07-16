@@ -18,7 +18,10 @@
  */
 package org.neo4j.jdbc;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -46,6 +49,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -591,7 +595,47 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		if (System.getenv().containsKey(USER_AGENT_ENV_KEY) && !System.getenv().get(USER_AGENT_ENV_KEY).isBlank()) {
 			return System.getenv().get(USER_AGENT_ENV_KEY);
 		}
-		return "neo4j-jdbc/%s".formatted(ProductVersion.getValue());
+
+		return loadUserAgentFromResources("META-INF/neo4j-jdbc-user-agent.txt")
+			.orElseGet(() -> "neo4j-jdbc/%s".formatted(ProductVersion.getValue()));
+	}
+
+	static Optional<String> loadUserAgentFromResources(String name) {
+
+		var processed = new HashSet<String>();
+		try {
+			var resources = Neo4jDriver.class.getClassLoader().getResources(name);
+			var ua = new StringBuilder();
+			while (resources.hasMoreElements()) {
+				var resource = resources.nextElement();
+				// Avoid the expensive equals method of URL
+				if (!processed.add(resource.toString())) {
+					continue;
+				}
+				try (var in = new BufferedReader(
+						new InputStreamReader(resource.openStream(), StandardCharsets.UTF_8))) {
+					var skip = new AtomicBoolean(false);
+					in.lines().filter(line -> !line.startsWith("#")).forEach(str -> {
+						if (str.startsWith("====")) {
+							var current = skip.get();
+							skip.set(!current);
+							return;
+						}
+
+						if (!(skip.get() || str.isBlank())) {
+							ua.append(str.trim());
+						}
+					});
+				}
+			}
+			if (ua.isEmpty()) {
+				return Optional.empty();
+			}
+			return Optional.of(ua.toString());
+		}
+		catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 
 	static Map<String, String> mergeConfig(String[] urlParams, Properties jdbcProperties) {

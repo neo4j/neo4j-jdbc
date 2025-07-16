@@ -19,6 +19,7 @@
 package org.neo4j.jdbc;
 
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -84,7 +85,7 @@ public final class Neo4jDataSource implements Neo4jDataSourceExtensions {
 	/**
 	 * A log writer, which we currently don't use.
 	 */
-	private PrintWriter logWriter = new PrintWriter(System.out);
+	private PrintWriter logWriter = new PrintWriter(System.out, false, Charset.defaultCharset());
 
 	private final Properties connectionProperties = new Properties();
 
