@@ -52,7 +52,7 @@ interface MetricsCollector extends DriverListener, ConnectionListener, Statement
 		try {
 			globalRegistry = Metrics.globalRegistry;
 		}
-		catch (Throwable ex) {
+		catch (@SuppressWarnings("squid:S1181") Throwable ex) {
 			if (GLOBAL_REGISTRY_HAS_BEEN_TRIED.compareAndSet(false, true)) {
 				Logger.getLogger("org.neo4j.jdbc").log(Level.FINE, "Metrics are not available");
 			}

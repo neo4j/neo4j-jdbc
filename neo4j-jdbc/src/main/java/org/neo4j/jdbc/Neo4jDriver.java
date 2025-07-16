@@ -612,7 +612,8 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				if (!processed.add(resource.toString())) {
 					continue;
 				}
-				try (var in = new BufferedReader(new InputStreamReader(resource.openStream()))) {
+				try (var in = new BufferedReader(
+						new InputStreamReader(resource.openStream(), StandardCharsets.UTF_8))) {
 					var skip = new AtomicBoolean(false);
 					in.lines().filter(line -> !line.startsWith("#")).forEach(str -> {
 						if (str.startsWith("====")) {
