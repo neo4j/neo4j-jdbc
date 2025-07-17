@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.internal.bolt;
 
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,15 +27,19 @@ import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.neo4j.bolt.connection.values.IsoDuration;
 import org.neo4j.bolt.connection.values.Point;
 import org.neo4j.bolt.connection.values.Type;
 import org.neo4j.bolt.connection.values.Value;
-import org.neo4j.bolt.connection.values.Vector;
 import org.neo4j.jdbc.values.AsValue;
+import org.neo4j.jdbc.values.Vector;
 
 final class ValueImpl implements Value, AsValue {
+
+	private static final AtomicReference<Function<Vector, Object>> ARRAY_VECTOR_ACCESSOR = new AtomicReference<>();
 
 	private final org.neo4j.jdbc.values.Value value;
 
@@ -103,53 +108,14 @@ final class ValueImpl implements Value, AsValue {
 	@Override
 	public IsoDuration asBoltIsoDuration() {
 		var jdbcDuration = this.value.asIsoDuration();
-		return new IsoDuration() {
-			@Override
-			public long months() {
-				return jdbcDuration.months();
-			}
-
-			@Override
-			public long days() {
-				return jdbcDuration.days();
-			}
-
-			@Override
-			public long seconds() {
-				return jdbcDuration.seconds();
-			}
-
-			@Override
-			public int nanoseconds() {
-				return jdbcDuration.nanoseconds();
-			}
-		};
+		return new BoltIsoDurationImpl(jdbcDuration.months(), jdbcDuration.days(), jdbcDuration.seconds(),
+				jdbcDuration.nanoseconds());
 	}
 
 	@Override
 	public Point asBoltPoint() {
 		var jdbcPoint = this.value.asPoint();
-		return new Point() {
-			@Override
-			public int srid() {
-				return jdbcPoint.srid();
-			}
-
-			@Override
-			public double x() {
-				return jdbcPoint.x();
-			}
-
-			@Override
-			public double y() {
-				return jdbcPoint.y();
-			}
-
-			@Override
-			public double z() {
-				return jdbcPoint.z();
-			}
-		};
+		return new BoltPointImpl(jdbcPoint.srid(), jdbcPoint.x(), jdbcPoint.y(), jdbcPoint.z());
 	}
 
 	@Override
@@ -205,8 +171,25 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public Vector asBoltVector() {
-		throw new UnsupportedOperationException();
+	public org.neo4j.bolt.connection.values.Vector asBoltVector() {
+		var jdbcVector = this.value.asVector();
+		var accessor = ARRAY_VECTOR_ACCESSOR.updateAndGet(old -> {
+			if (old != null) {
+				return old;
+			}
+			try {
+				var targetClass = Class.forName("org.neo4j.jdbc.values.ArrayBasedVectors");
+				var vh = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup())
+					.findStaticVarHandle(targetClass, "ELEMENT_ACCESSOR", Function.class);
+				@SuppressWarnings("unchecked")
+				var result = (Function<Vector, Object>) vh.get();
+				return result;
+			}
+			catch (Throwable ex) {
+				throw new RuntimeException(ex);
+			}
+		});
+		return new BoltVectorImpl(jdbcVector.elementType().getJavaType(), accessor.apply(jdbcVector));
 	}
 
 	@Override
@@ -231,6 +214,15 @@ final class ValueImpl implements Value, AsValue {
 	@Override
 	public org.neo4j.jdbc.values.Value asValue() {
 		return this.value;
+	}
+
+	record BoltVectorImpl(Class<?> elementType, Object elements) implements org.neo4j.bolt.connection.values.Vector {
+	}
+
+	record BoltIsoDurationImpl(long months, long days, long seconds, int nanoseconds) implements IsoDuration {
+	}
+
+	record BoltPointImpl(int srid, double x, double y, double z) implements Point {
 	}
 
 }
