@@ -23,11 +23,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
@@ -38,6 +40,7 @@ import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
+import org.neo4j.jdbc.values.Vector;
 
 import static org.neo4j.jdbc.Neo4jException.withReason;
 
@@ -96,6 +99,10 @@ class ArrayImpl implements Array {
 			return null;
 		}
 
+		if (value.hasType(Type.VECTOR)) {
+			return of(connection, value.asVector());
+		}
+
 		if (value.hasType(Type.BYTES)) {
 			return new ArrayImpl(connection, Type.BYTES, List.of(value), false);
 		}
@@ -122,6 +129,60 @@ class ArrayImpl implements Array {
 		return new ArrayImpl(connection, arrayType, values, containsNulls);
 	}
 
+	static Array of(Connection connection, Vector vector) throws SQLException {
+		record ValuesAndArray(List<Value> values, Object array) {
+		}
+		var valuesAndArray = vector.stream()
+			.collect(Collectors.teeing(Collectors.mapping(Values::value, Collectors.toList()),
+					Collectors.collectingAndThen(Collectors.toList(), l -> {
+						var size = l.size();
+						return switch (vector.elementType()) {
+							case INTEGER8 -> {
+								var a = new byte[size];
+								for (var i = 0; i < size; i++) {
+									a[i] = (byte) l.get(i);
+								}
+								yield a;
+							}
+							case INTEGER16 -> {
+								var a = new short[size];
+								for (var i = 0; i < size; i++) {
+									a[i] = (short) l.get(i);
+								}
+								yield a;
+							}
+							case INTEGER32 -> {
+								var a = new int[size];
+								Arrays.setAll(a, i -> (int) l.get(i));
+								yield a;
+							}
+							case INTEGER -> {
+								var a = new long[size];
+								Arrays.setAll(a, i -> (long) l.get(i));
+								yield a;
+							}
+							case FLOAT32 -> {
+								var a = new float[size];
+								for (var i = 0; i < size; i++) {
+									a[i] = (float) l.get(i);
+								}
+								yield a;
+							}
+							case FLOAT -> {
+								var a = new double[size];
+								Arrays.setAll(a, i -> (double) l.get(i));
+								yield a;
+							}
+						};
+					}), ValuesAndArray::new));
+		var type = switch (vector.elementType()) {
+			case INTEGER8 -> Type.BYTES;
+			case FLOAT32, FLOAT -> Type.FLOAT;
+			default -> Type.INTEGER;
+		};
+		return new ArrayImpl(connection, type, valuesAndArray.values(), valuesAndArray.array, false);
+	}
+
 	private final Connection connection;
 
 	private final Type arrayType;
@@ -131,10 +192,17 @@ class ArrayImpl implements Array {
 	private final Lazy<Object> array;
 
 	ArrayImpl(Connection connection, Type arrayType, List<Value> values, boolean containsNulls) {
+		this(connection, arrayType, values, null, containsNulls);
+	}
+
+	ArrayImpl(Connection connection, Type arrayType, List<Value> values, Object array, boolean containsNulls) {
 		this.connection = connection;
 		this.arrayType = arrayType;
 		this.values = values;
 		this.array = Lazy.of(() -> {
+			if (array != null) {
+				return array;
+			}
 			if (containsNulls) {
 				return this.values.stream().map(Value::asObject).toArray(Object[]::new);
 			}

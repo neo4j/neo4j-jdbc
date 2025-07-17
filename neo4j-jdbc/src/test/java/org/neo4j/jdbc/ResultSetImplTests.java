@@ -73,6 +73,7 @@ import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
+import org.neo4j.jdbc.values.Vector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -1118,6 +1119,11 @@ class ResultSetImplTests {
 					.of(Arguments.of(durationValue, Named.<VerificationLogic<Object>>of("verify returns IsoDuration",
 							supplier -> assertThat(supplier.get()).isEqualTo(durationValue.asIsoDuration())))));
 
+			var vectorStream = Stream.of(Values.value(Vector.of(new int[1])))
+				.flatMap(vectorValue -> Stream
+					.of(Arguments.of(vectorValue, Named.<VerificationLogic<Object>>of("verify returns Vector",
+							supplier -> assertThat(supplier.get()).isEqualTo(Vector.of(new int[1]))))));
+
 			return switch (type) {
 				case ANY, NODE, RELATIONSHIP, PATH, NUMBER -> Stream.of();
 				case BOOLEAN -> booleanStream;
@@ -1127,6 +1133,7 @@ class ResultSetImplTests {
 				case FLOAT -> floatStream;
 				case NULL -> nullStream;
 				case LIST -> listStream;
+				case VECTOR -> vectorStream;
 				case MAP -> mapStream;
 				case POINT -> pointStream;
 				case DATE -> dateStream;

@@ -480,6 +480,16 @@ public interface Value extends MapAccessorWithDefaultValue {
 	Point asPoint();
 
 	/**
+	 * Returns the value as a {@link Vector}, if possible.
+	 * @return the value as a {@link Vector}, if possible.
+	 * @throws UncoercibleException if value types are incompatible.
+	 * @since 6.8.0
+	 */
+	default Vector asVector() {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
 	 * Returns the value as local date if possible or the default value otherwise.
 	 * @param defaultValue default to this value if the value is a {@link NullValue}
 	 * @return the value as a {@link LocalDate}, if possible.
@@ -542,6 +552,17 @@ public interface Value extends MapAccessorWithDefaultValue {
 	 * @throws UncoercibleException if value types are incompatible.
 	 */
 	Point asPoint(Point defaultValue);
+
+	/**
+	 * Returns the value as a {@link Vector}, if possible.
+	 * @param defaultValue default to this value if the value is a {@link NullValue}
+	 * @return the value as a {@link Vector}, if possible.
+	 * @throws UncoercibleException if value types are incompatible.
+	 * @since 6.8.0
+	 */
+	default Vector asVector(Vector defaultValue) {
+		return computeOrDefault(Value::asVector, defaultValue);
+	}
 
 	/**
 	 * Return as a map of string keys and values converted using {@link Value#asObject()}.

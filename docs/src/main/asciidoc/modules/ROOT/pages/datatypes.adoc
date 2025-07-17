@@ -21,3 +21,31 @@ Any parameter of those types passed to `PreparedStatement` or `CallableStatement
 For information on Cypher date types, see https://neo4j.com/docs/cypher-manual/current/values-and-types/temporal/[Temporal types].
 
 For more precise a mapping, use a Neo4j https://neo4j.com/docs/api/java-driver/current/org.neo4j.driver/org/neo4j/driver/Value.html[`Value`] instance with the appropriate type and its methods `setObject` and `getObject`.
+
+== Vector support
+
+WARNING: You need a compatible Neo4j version to use native Vectors with Neo4j.
+
+The Neo4j driver supports the Neo4j `Vector` datatype. The `Vector` type is a uniform container value that has a fixed size of at least one and at most 4096 elements. The latter restriction might be lifted in a future version of Neo4j. Each element is of the same inner type and cannot be null.
+
+The Neo4j `Vector` supports the following inner types:
+
+`INTEGER8`:: Mapping to a Java `byte`
+`INTEGER16`:: Mapping to a Java `short`
+`INTEGER32`:: Mapping to a Java `int`
+`INTEGER`:: Mapping to a Java `long`
+`FLOAT32`:: Mapping to a Java `float`
+`FLOAT`:: Mapping to a Java `double`
+
+Instances returned by any query, either from a call to the Cypher constructor function `vector()` or by accessing node or relationship properties, can be accessed by using the `getObject` method of the JDBC `ResultSet`, passing in the index or the name of the field as well as the type `org.neo4j.jdbc.values.Vector`. The latter is also the entry point of creating instances from the client side:
+
+`Vector#of(byte[])`:: Creates an `INTEGER8` vector (`Int8Vector`)
+`Vector#of(short[])`:: Creates an `INTEGER16` vector (`Int16Vector`)
+`Vector#of(int[])`:: Creates an `INTEGER32` vector (`Int32Vector`)
+`Vector#of(long[])`:: Creates an `INTEGER` vector (`Int64Vector`)
+`Vector#of(float[])`:: Creates an `FLOAT32` vector (`Float32Vector`)
+`Vector#of(double[])`:: Creates an `FLOAT` vector (`Float64Vector`)
+
+The type has a guaranteed set of implementations (listed above). Each implementation provides `toArray()` returning a copy of its data as an array of the matching Java primitive. The `Vector` instances themselves are immutable.
+
+Last but not least, vectors returned from any query can also be accessed as `java.sql.Array`.

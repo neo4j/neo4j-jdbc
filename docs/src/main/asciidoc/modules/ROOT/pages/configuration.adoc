@@ -49,7 +49,7 @@ Usually, Neo4j provides the HTTP port on 7474 or 7473. When you don't specify th
 
 WARNING: The query API behaves different in a couple of edge cases. Especially, for big results the driver will materialize them completely and not stream individual records as it does over the binary neo4j protocol. Also, queries that produce n results and may fail on the nth+1 result, will fail immediate when run over HTTP. +
  +
- Some features such as transactional metadata are not supported at all over HTTP.
+ Some features such as support for the `Vector` datatype and transactional metadata are not supported at all over HTTP.
 
 The driver accepts the following configuration arguments, either as properties or as URL query parameters:
 

@@ -116,7 +116,7 @@ final class Neo4jConversions {
 			case STRING -> Types.VARCHAR;
 			case NUMBER, INTEGER -> Types.BIGINT;
 			case FLOAT -> Types.DOUBLE;
-			case LIST -> Types.ARRAY;
+			case LIST, VECTOR -> Types.ARRAY;
 			case MAP, POINT, PATH, RELATIONSHIP, NODE -> Types.STRUCT;
 			case DATE -> Types.DATE;
 			case TIME -> Types.TIME;
@@ -137,6 +137,9 @@ final class Neo4jConversions {
 			.toUpperCase(Locale.ROOT);
 		if (value.startsWith("LIST<")) {
 			value = "LIST";
+		}
+		if (value.startsWith("VECTOR<") || value.endsWith("VECTOR")) {
+			value = "VECTOR";
 		}
 		value = value.replaceAll("( NOT)? NULL", "");
 		value = switch (value) {

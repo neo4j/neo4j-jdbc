@@ -53,6 +53,8 @@ import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.UnsupportedDateTimeValue;
 import org.neo4j.jdbc.values.Values;
+import org.neo4j.jdbc.values.Vector;
+import org.neo4j.jdbc.values.VectorValue;
 
 enum ValueFactoryImpl implements ValueFactory {
 
@@ -81,6 +83,7 @@ enum ValueFactoryImpl implements ValueFactory {
 		hlp.put(PathValue.class, Type.PATH);
 		hlp.put(ListValue.class, Type.LIST);
 		hlp.put(BytesValue.class, Type.BYTES);
+		hlp.put(VectorValue.class, Type.VECTOR);
 		TYPE_MAP = Map.copyOf(hlp);
 	}
 
@@ -134,8 +137,38 @@ enum ValueFactoryImpl implements ValueFactory {
 	}
 
 	@Override
-	public Value vector(Class<?> aClass, Object o) {
-		throw new UnsupportedOperationException();
+	public Value value(org.neo4j.bolt.connection.values.Vector vector) {
+		return vector(vector.elementType(), vector.elements());
+	}
+
+	@Override
+	public Value vector(Class<?> elementType, Object elements) {
+
+		Vector vector;
+		if (elementType == byte.class) {
+			vector = Vector.of((byte[]) elements);
+		}
+		else if (elementType == short.class) {
+			vector = Vector.of((short[]) elements);
+		}
+		else if (elementType == int.class) {
+			vector = Vector.of((int[]) elements);
+		}
+		else if (elementType == long.class) {
+			vector = Vector.of((long[]) elements);
+		}
+		else if (elementType == float.class) {
+			vector = Vector.of((float[]) elements);
+		}
+		else if (elementType == double.class) {
+			vector = Vector.of((double[]) elements);
+		}
+		else {
+			throw new IllegalArgumentException(
+					"Element type %s is not a supported element type for vectors".formatted(elementType.getName()));
+		}
+
+		return asBoltValue(vector.asValue());
 	}
 
 	@Override

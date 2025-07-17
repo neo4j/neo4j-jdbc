@@ -20,12 +20,18 @@ package org.neo4j.jdbc.it.cp;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 import org.neo4j.jdbc.values.IsoDuration;
 import org.neo4j.jdbc.values.Point;
 import org.neo4j.jdbc.values.Values;
+import org.neo4j.jdbc.values.Vector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,6 +61,26 @@ class BoltValuesIT extends IntegrationTestBase {
 				.matches(i -> i.months() == 1L && i.days() == 2L && i.seconds() == 3L && i.nanoseconds() == 4L);
 
 		}
+	}
+
+	static Stream<Arguments> arrayVectorShouldBeReflected() {
+		return Stream.of(Arguments.of(Vector.of(new byte[] { 127 }), new byte[] { 127 }),
+				Arguments.of(Vector.of(new short[] { Short.MAX_VALUE }), new short[] { Short.MAX_VALUE }),
+				Arguments.of(Vector.of(new int[] { Integer.MAX_VALUE }), new int[] { Integer.MAX_VALUE }),
+				Arguments.of(Vector.of(new long[] { Long.MAX_VALUE }), new long[] { Long.MAX_VALUE }),
+				Arguments.of(Vector.of(new float[] { 1.23F }), new float[] { 1.23F }),
+				Arguments.of(Vector.of(new double[] { 1.23 }), new double[] { 1.23 }));
+	}
+
+	// Test added here to make sure it runs in native image tests, too
+	@ParameterizedTest
+	@MethodSource
+	void arrayVectorShouldBeReflected(Vector vector, Object expectedElements) {
+		var value = BoltAdapters.getValueFactory().value(vector);
+		var boltVector = value.asBoltVector();
+		assertThat(boltVector).isNotNull();
+		assertThat(boltVector.elementType()).isEqualTo(vector.elementType().getJavaType());
+		assertThat(boltVector.elements()).isEqualTo(expectedElements);
 	}
 
 }
