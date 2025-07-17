@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -1518,6 +1519,13 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		assertThat(primaryKeys.next()).isTrue();
 		assertPrimaryKey(primaryKeys, "Person_ACTED_IN_Movie", "engagement_id", 1, "acted_in_id");
 		assertThat(primaryKeys.next()).isFalse();
+	}
+
+	@Test
+	void vectorTypesShouldWork() {
+		// - props on node and rels
+		// - vectors return from statement
+		Assertions.fail();
 	}
 
 	private static void assertPrimaryKey(ResultSet primaryKeys, String tableName, String columnName, int seq,

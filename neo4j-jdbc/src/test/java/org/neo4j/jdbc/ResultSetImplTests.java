@@ -1127,6 +1127,7 @@ class ResultSetImplTests {
 				case FLOAT -> floatStream;
 				case NULL -> nullStream;
 				case LIST -> listStream;
+				case VECTOR -> throw new UnsupportedOperationException("TODO Vector test");
 				case MAP -> mapStream;
 				case POINT -> pointStream;
 				case DATE -> dateStream;

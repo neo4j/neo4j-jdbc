@@ -33,6 +33,7 @@ import org.neo4j.bolt.connection.values.Segment;
 import org.neo4j.bolt.connection.values.Type;
 import org.neo4j.bolt.connection.values.Value;
 import org.neo4j.bolt.connection.values.ValueFactory;
+import org.neo4j.bolt.connection.values.Vector;
 import org.neo4j.jdbc.values.BooleanValue;
 import org.neo4j.jdbc.values.BytesValue;
 import org.neo4j.jdbc.values.DateTimeValue;
@@ -134,8 +135,14 @@ enum ValueFactoryImpl implements ValueFactory {
 	}
 
 	@Override
-	public Value vector(Class<?> aClass, Object o) {
-		throw new UnsupportedOperationException();
+	public Value value(Vector vector) {
+		throw new RuntimeException("oopsie");
+	}
+
+	@Override
+	public Value vector(Class<?> elementType, Object elements) {
+		// return new ValueImpl(new VectorValue(), Type.VECTOR);
+		throw new RuntimeException("oopsie");
 	}
 
 	@Override

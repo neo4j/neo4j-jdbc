@@ -116,7 +116,7 @@ final class Neo4jConversions {
 			case STRING -> Types.VARCHAR;
 			case NUMBER, INTEGER -> Types.BIGINT;
 			case FLOAT -> Types.DOUBLE;
-			case LIST -> Types.ARRAY;
+			case LIST, VECTOR -> Types.ARRAY;
 			case MAP, POINT, PATH, RELATIONSHIP, NODE -> Types.STRUCT;
 			case DATE -> Types.DATE;
 			case TIME -> Types.TIME;
