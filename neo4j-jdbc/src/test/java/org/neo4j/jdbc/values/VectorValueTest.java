@@ -19,17 +19,34 @@
 package org.neo4j.jdbc.values;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.values.VectorValue.LongVectorValue;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.neo4j.jdbc.values.VectorValue.Int64VectorValue;
 
 class VectorValueTest {
 
+	static Stream<Arguments> toArrayShouldWork() {
+		return Stream.of(Arguments.of(VectorValue.int64(new long[] { 1L, 2L, 3L }), new long[] { 1L, 2L, 3L }));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void toArrayShouldWork(VectorValue vectorValue, Object expected) {
+		if (vectorValue instanceof Int64VectorValue int64VectorValue) {
+			System.out.println(Objects.deepEquals(int64VectorValue.toLongArray(), expected));
+		}
+	}
+
 	@Test
-	void shouldDealWithUnsupportedCasts() {
-		var vectorValue = VectorValue.longVector(new long[] { 1L, 2L, 3L });
-		if (vectorValue instanceof LongVectorValue longVectorValue) {
-			System.out.println(Arrays.toString(longVectorValue.toLongArray()));
+	void toLo() {
+		var vectorValue = VectorValue.int64(new long[] { 1L, 2L, 3L });
+		if (vectorValue instanceof Int64VectorValue int64VectorValue) {
+			System.out.println(Arrays.toString(int64VectorValue.toLongArray()));
 
 		}
 

@@ -20,18 +20,20 @@ package org.neo4j.jdbc.values;
 
 import java.lang.reflect.Array;
 
+import org.neo4j.jdbc.values.VectorValue.ElementType;
+
 /**
  * @since 6.8.0
  */
 abstract class AbstractVectorValue extends AbstractValue {
 
-	private final Class<?> elementType;
+	private final ElementType elementType;
 
 	private final Object elements;
 
 	private final int length;
 
-	AbstractVectorValue(Class<?> elementType, Object elements) {
+	AbstractVectorValue(ElementType elementType, Object elements) {
 		this.elementType = elementType;
 		this.elements = elements;
 		this.length = Array.getLength(this.elements);
@@ -40,6 +42,11 @@ abstract class AbstractVectorValue extends AbstractValue {
 	@Override
 	public final Type type() {
 		return Type.VECTOR;
+	}
+
+	@Override
+	public final ElementType elementType() {
+		return this.elementType;
 	}
 
 	@Override
