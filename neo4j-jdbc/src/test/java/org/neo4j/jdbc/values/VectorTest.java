@@ -18,24 +18,8 @@
  */
 package org.neo4j.jdbc.values;
 
-/**
- * A value containing a Neo4j {@link Vector}. Please use {@link Vector#elementType()} for
- * retrieving the concrete element-type or use the type-hierarchy of the {@link Vector
- * interface} to check the concrete type and extracting Java arrays from a vector.
- */
-public final class VectorValue extends AbstractObjectValue<Vector> {
+class VectorTest {
 
-	VectorValue(Vector adapted) {
-		super(adapted);
-	}
 
-	@Override
-	public Type type() {
-		return Type.VECTOR;
-	}
 
-	@Override
-	public Vector asVector() {
-		return super.asObject();
-	}
 }

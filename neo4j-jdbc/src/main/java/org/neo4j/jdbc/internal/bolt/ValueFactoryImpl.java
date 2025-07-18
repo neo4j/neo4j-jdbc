@@ -54,6 +54,7 @@ import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.UnsupportedDateTimeValue;
 import org.neo4j.jdbc.values.Values;
+import org.neo4j.jdbc.values.VectorValue;
 
 enum ValueFactoryImpl implements ValueFactory {
 
@@ -82,6 +83,7 @@ enum ValueFactoryImpl implements ValueFactory {
 		hlp.put(PathValue.class, Type.PATH);
 		hlp.put(ListValue.class, Type.LIST);
 		hlp.put(BytesValue.class, Type.BYTES);
+		hlp.put(VectorValue.class, Type.VECTOR);
 		TYPE_MAP = Map.copyOf(hlp);
 	}
 
@@ -141,6 +143,7 @@ enum ValueFactoryImpl implements ValueFactory {
 
 	@Override
 	public Value vector(Class<?> elementType, Object elements) {
+
 		// return new ValueImpl(new VectorValue(), Type.VECTOR);
 		throw new RuntimeException("oopsie");
 	}
