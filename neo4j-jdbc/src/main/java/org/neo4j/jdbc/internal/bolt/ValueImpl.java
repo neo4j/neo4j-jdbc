@@ -18,6 +18,7 @@
  */
 package org.neo4j.jdbc.internal.bolt;
 
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,15 +27,19 @@ import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.neo4j.bolt.connection.values.IsoDuration;
 import org.neo4j.bolt.connection.values.Point;
 import org.neo4j.bolt.connection.values.Type;
 import org.neo4j.bolt.connection.values.Value;
-import org.neo4j.bolt.connection.values.Vector;
 import org.neo4j.jdbc.values.AsValue;
+import org.neo4j.jdbc.values.Vector;
 
 final class ValueImpl implements Value, AsValue {
+
+	private static final AtomicReference<Function<Vector, Object>> ARRAY_VECTOR_ACCESSOR = new AtomicReference<>();
 
 	private final org.neo4j.jdbc.values.Value value;
 
@@ -205,8 +210,25 @@ final class ValueImpl implements Value, AsValue {
 	}
 
 	@Override
-	public Vector asBoltVector() {
-		throw new UnsupportedOperationException();
+	public org.neo4j.bolt.connection.values.Vector asBoltVector() {
+		var jdbcVector = this.value.asVector();
+		var accessor = ARRAY_VECTOR_ACCESSOR.updateAndGet(old -> {
+			if (old != null) {
+				return old;
+			}
+			try {
+				var targetClass = Class.forName("org.neo4j.jdbc.values.ArrayBasedVectors");
+				var vh = MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup())
+					.findStaticVarHandle(targetClass, "ELEMENT_ACCESSOR", Function.class);
+				@SuppressWarnings("unchecked")
+				var result = (Function<Vector, Object>) vh.get();
+				return result;
+			}
+			catch (Throwable ex) {
+				throw new RuntimeException(ex);
+			}
+		});
+		return new BoltVectorImpl(jdbcVector.elementType().getJavaType(), accessor.apply(jdbcVector));
 	}
 
 	@Override
@@ -233,4 +255,6 @@ final class ValueImpl implements Value, AsValue {
 		return this.value;
 	}
 
+	record BoltVectorImpl(Class<?> elementType, Object elements) implements org.neo4j.bolt.connection.values.Vector {
+	}
 }

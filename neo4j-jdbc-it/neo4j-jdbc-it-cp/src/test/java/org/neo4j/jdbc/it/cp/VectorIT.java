@@ -18,18 +18,14 @@
  */
 package org.neo4j.jdbc.it.cp;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class VectorIT {
@@ -38,12 +34,6 @@ class VectorIT {
 		return DriverManager.getConnection("jdbc:neo4j://127.0.0.1:7687", "neo4j", "verysecret");
 	}
 
-	/**
-	 * vector(vectorValue :: STRING | LIST<INTEGER | FLOAT>, dimension :: INTEGER,
-	 * coordinateType :: [INTEGER64, INTEGER32, INTEGER16, INTEGER8, FLOAT64, FLOAT32]) ::
-	 * VECTOR
-	 * @throws SQLException
-	 */
 	@Test
 	void shouldReadVector() throws SQLException {
 		try (var connection = getConnection(); var stmt = connection.createStatement(); var rs = stmt.executeQuery("""

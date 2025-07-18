@@ -18,6 +18,9 @@
  */
 package org.neo4j.jdbc.values;
 
+import java.util.Objects;
+import java.util.function.Function;
+
 import org.neo4j.jdbc.values.Vector.Float32Vector;
 import org.neo4j.jdbc.values.Vector.Float64Vector;
 import org.neo4j.jdbc.values.Vector.Int16Vector;
@@ -30,12 +33,48 @@ final class ArrayBasedVectors {
 	private ArrayBasedVectors() {
 	}
 
+	@SuppressWarnings("unused")
+	static final Function<Vector, Object> ELEMENT_ACCESSOR = vector -> {
+		// The field is reflected upon (hence the suppression).
+		Objects.requireNonNull(vector);
+
+		if (vector instanceof Int8VectorImpl int8Vector) {
+			return int8Vector.elements();
+		}
+		else if (vector instanceof Int16VectorImpl v) {
+			return v.elements();
+		}
+		else if (vector instanceof Int32VectorImpl v) {
+			return v.elements();
+		}
+		else if (vector instanceof Int64VectorImpl v) {
+			return v.elements();
+		}
+		else if (vector instanceof Float32VectorImpl v) {
+			return v.elements();
+		}
+		else if (vector instanceof Float64VectorImpl v) {
+			return v.elements();
+		}
+
+		throw new IllegalArgumentException("Unsupported vector implementation: " + vector.getClass().getName());
+	};
+
+	static String toString(Vector vector) {
+		return "VECTOR<%s>(%d)".formatted(vector.elementType(), vector.length());
+	}
+
 	record Int8VectorImpl(ElementType elementType, int length, byte[] elements) implements Int8Vector {
 		@Override
 		public byte[] toArray() {
 			var result = new byte[this.length()];
 			System.arraycopy(this.elements, 0, result, 0, this.length());
 			return result;
+		}
+
+		@Override
+		public String toString() {
+			return ArrayBasedVectors.toString(this);
 		}
 	}
 
@@ -46,6 +85,11 @@ final class ArrayBasedVectors {
 			System.arraycopy(this.elements, 0, result, 0, this.length());
 			return result;
 		}
+
+		@Override
+		public String toString() {
+			return ArrayBasedVectors.toString(this);
+		}
 	}
 
 	record Int32VectorImpl(ElementType elementType, int length, int[] elements) implements Int32Vector {
@@ -54,6 +98,11 @@ final class ArrayBasedVectors {
 			var result = new int[this.length()];
 			System.arraycopy(this.elements, 0, result, 0, this.length());
 			return result;
+		}
+
+		@Override
+		public String toString() {
+			return ArrayBasedVectors.toString(this);
 		}
 	}
 
@@ -64,6 +113,11 @@ final class ArrayBasedVectors {
 			System.arraycopy(this.elements, 0, result, 0, this.length());
 			return result;
 		}
+
+		@Override
+		public String toString() {
+			return ArrayBasedVectors.toString(this);
+		}
 	}
 
 	record Float32VectorImpl(ElementType elementType, int length, float[] elements) implements Float32Vector {
@@ -72,6 +126,11 @@ final class ArrayBasedVectors {
 			var result = new float[this.length()];
 			System.arraycopy(this.elements, 0, result, 0, this.length());
 			return result;
+		}
+
+		@Override
+		public String toString() {
+			return ArrayBasedVectors.toString(this);
 		}
 	}
 
@@ -82,6 +141,10 @@ final class ArrayBasedVectors {
 			System.arraycopy(this.elements, 0, result, 0, this.length());
 			return result;
 		}
-	}
 
+		@Override
+		public String toString() {
+			return ArrayBasedVectors.toString(this);
+		}
+	}
 }
