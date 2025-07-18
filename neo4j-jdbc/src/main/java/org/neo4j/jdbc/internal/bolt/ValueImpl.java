@@ -102,12 +102,54 @@ final class ValueImpl implements Value, AsValue {
 
 	@Override
 	public IsoDuration asBoltIsoDuration() {
-		return (IsoDuration) this.value.asIsoDuration();
+		var jdbcDuration = this.value.asIsoDuration();
+		return new IsoDuration() {
+			@Override
+			public long months() {
+				return jdbcDuration.months();
+			}
+
+			@Override
+			public long days() {
+				return jdbcDuration.days();
+			}
+
+			@Override
+			public long seconds() {
+				return jdbcDuration.seconds();
+			}
+
+			@Override
+			public int nanoseconds() {
+				return jdbcDuration.nanoseconds();
+			}
+		};
 	}
 
 	@Override
 	public Point asBoltPoint() {
-		return (Point) this.value.asPoint();
+		var jdbcPoint = this.value.asPoint();
+		return new Point() {
+			@Override
+			public int srid() {
+				return jdbcPoint.srid();
+			}
+
+			@Override
+			public double x() {
+				return jdbcPoint.x();
+			}
+
+			@Override
+			public double y() {
+				return jdbcPoint.y();
+			}
+
+			@Override
+			public double z() {
+				return jdbcPoint.z();
+			}
+		};
 	}
 
 	@Override
