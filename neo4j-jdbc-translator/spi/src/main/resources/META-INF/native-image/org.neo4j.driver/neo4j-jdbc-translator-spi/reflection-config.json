@@ -2,11 +2,13 @@
   {
     "name": "org.neo4j.jdbc.translator.spi.View",
     "allDeclaredConstructors" : true,
+    "allDeclaredFields": true,
     "allDeclaredMethods": true
   },
   {
     "name": "org.neo4j.jdbc.translator.spi.View$Column",
     "allDeclaredConstructors" : true,
+    "allDeclaredFields": true,
     "allDeclaredMethods": true
   }
 ]
