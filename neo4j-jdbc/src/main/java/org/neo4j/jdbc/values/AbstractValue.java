@@ -285,6 +285,11 @@ abstract class AbstractValue extends AbstractMapAccessorWithDefaultValue impleme
 	}
 
 	@Override
+	public Vector asVector() {
+		throw new UncoercibleException(type().name(), "Vector");
+	}
+
+	@Override
 	public Value get(int index) {
 		throw new NotMultiValuedException(type().name() + " is not an indexed collection");
 	}
