@@ -41,19 +41,12 @@ Labels will be reported as table objects with the `TABLE_TYPE` being literal `TA
 
 == Labels to tables
 
-The CLG and Langstar groups speak about "Node type combinations" and gravitate towards "open node type semantics" in the GQL standard:
-
-> Node type combinations is a less permissive form of open node type semantics. The idea of node type combinations is that nodes also conform to a graph type if they are not of one of the node types in the node type set of the graph type, but of a node type that is an intersection of (a subset of) the node type in a node type set of the graph type.
-
-An example for their proposal can be found https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19[here].
-
-This driver therefore compute node types in a similar way:
+The driver computes table names from node types as follows:
 
 * Single label nodes will map naturally to a table name, the single label will become the table name
 ** The label name will be taken as is and will be case-sensitive. The labels `Movie`, `movie`, `MOVIE` will result in three tables in the metadata
 ** This is in line with the default SQL-to-Cypher translation
-* Node type combinations will map to table names composed as `label1_label2`, sorting the labels alphabetically to make them independent of the order Neo4j returns them
-* Property sets for these node type combinations will then be computed
+* Node type combinations map to individual table names, so that a node with the labels `Action&Movie` will appear in two tables, which is in line with the current default SQL to Cypher translation
 
 == Primary keys
 

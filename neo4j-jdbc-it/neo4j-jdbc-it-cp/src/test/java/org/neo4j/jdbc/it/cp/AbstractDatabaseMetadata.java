@@ -453,7 +453,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
-	void getAllTablesShouldReturnAllLabelsOnATable() throws SQLException {
+	void getAllTablesShouldReturnAllSingleLabelsOnATable() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
 		expectedLabels.add("TestLabel2");
@@ -462,12 +462,43 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			this.connection.createStatement().executeQuery("Create (:%s)".formatted(label)).close();
 		}
 
-		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
+		boolean found = false;
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "%", null)) {
 			while (labelsRs.next()) {
-				var labelName = labelsRs.getString(3);
+				var tableType = labelsRs.getString("TABLE_TYPE");
+				if ("CBV".equals(tableType)) {
+					continue;
+				}
+				var labelName = labelsRs.getString("TABLE_NAME");
 				assertThat(expectedLabels).contains(labelName);
+				found = true;
 			}
 		}
+		assertThat(found).isTrue();
+	}
+
+	@Test
+	void getAllTablesShouldReturnAllLabelsOnATable() throws SQLException {
+		List<String> expectedLabels = new ArrayList<>();
+		expectedLabels.add("TestLabel1");
+		expectedLabels.add("TestLabel2");
+
+		this.connection.createStatement()
+			.executeQuery("Create (:%s)".formatted(String.join(":", expectedLabels)))
+			.close();
+		boolean found = false;
+		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "%", null)) {
+			while (labelsRs.next()) {
+				var tableType = labelsRs.getString("TABLE_TYPE");
+				if ("CBV".equals(tableType)) {
+					continue;
+				}
+				var labelName = labelsRs.getString("TABLE_NAME");
+				assertThat(expectedLabels).contains(labelName);
+				found = true;
+			}
+		}
+		assertThat(found).isTrue();
 	}
 
 	@Test
