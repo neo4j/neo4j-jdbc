@@ -315,6 +315,13 @@
 				<version>${jaxb-api.version}</version>
 			</dependency>
 			<dependency>
+				<!-- We of course don't use it directly, it's just that opencsv which we use for testing brings it in,
+				and they don't care if it doesn't converge with their dependencies…) -->
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.18.0</version>
+			</dependency>
+			<dependency>
 				<groupId>org.asciidoctor</groupId>
 				<artifactId>asciidoctorj</artifactId>
 				<version>${asciidoctorj.version}</version>
