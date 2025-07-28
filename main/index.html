@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-07-28T09:20:16Z</span>
+<span id="revdate">2025-07-28T09:34:38Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -2717,20 +2717,7 @@ We support querying for objects in any schema, however only literal <code>null</
 <div class="sect2">
 <h3 id="_labels_to_tables">5.2. Labels to tables</h3>
 <div class="paragraph">
-<p>The CLG and Langstar groups speak about "Node type combinations" and gravitate towards "open node type semantics" in the GQL standard:</p>
-</div>
-<div class="quoteblock">
-<blockquote>
-<div class="paragraph">
-<p>Node type combinations is a less permissive form of open node type semantics. The idea of node type combinations is that nodes also conform to a graph type if they are not of one of the node types in the node type set of the graph type, but of a node type that is an intersection of (a subset of) the node type in a node type set of the graph type.</p>
-</div>
-</blockquote>
-</div>
-<div class="paragraph">
-<p>An example for their proposal can be found <a href="https://urban-adventure-ov6lvqn.pages.github.io/?s=eyJjaGVja2VkIjp0cnVlLCJncmFwaFR5cGVJbnB1dCI6Iig6QSB7YTo6SU5UfSAuLi4pXG4oOkIge2I6OklOVH0gLi4uKSIsImdyYXBoSW5wdXQiOiIoYWI6QSZCIHthOjUsIGI6NX0pIiwib3B0aW9ucyI6WyJPcGVuIGVkZ2UgdHlwZXMgYWxsb3dlZCIsIklOSjEiLCJPcGVuIG5vZGUgdHlwZXMgYWxsb3dlZCIsIk9wZW4gZ3JhcGggdHlwZSBzZW1hbnRpY3MgKEdUUzIpIiwiT3BlbiBlbmRwb2ludCB0eXBlcyBhbGxvd2VkIiwiQ2xvc2VkIGVkZ2UgdHlwZXMgZGlzYWxsb3dlZCIsIkNsb3NlZCBub2RlIHR5cGVzIGRpc2FsbG93ZWQiLCJDbG9zZWQgZW5kcG9pbnQgdHlwZXMgZGlzYWxsb3dlZCIsIlNpbmdsZSBsYWJlbCBhbGxvd2VkIChFUEEyKSIsIkVUSTEiLCJOVEkyIl19">here</a>.</p>
-</div>
-<div class="paragraph">
-<p>This driver therefore compute node types in a similar way:</p>
+<p>The driver computes table names from node types as follows:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -2748,10 +2735,7 @@ We support querying for objects in any schema, however only literal <code>null</
 </div>
 </li>
 <li>
-<p>Node type combinations will map to table names composed as <code>label1_label2</code>, sorting the labels alphabetically to make them independent of the order Neo4j returns them</p>
-</li>
-<li>
-<p>Property sets for these node type combinations will then be computed</p>
+<p>Node type combinations map to individual table names, so that a node with the labels <code>Action&amp;Movie</code> will appear in two tables, which is in line with the current default SQL to Cypher translation</p>
 </li>
 </ul>
 </div>
@@ -5580,7 +5564,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-07-28 09:20:23 UTC
+Last updated 2025-07-28 09:34:43 UTC
 </div>
 </div>
 </body>
