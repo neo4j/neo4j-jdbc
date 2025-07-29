@@ -18,7 +18,10 @@
  */
 package org.neo4j.jdbc.values;
 
+import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,12 +36,18 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 class ArrayBasedVectorsTests {
 
 	static Stream<Arguments> hasToString() {
-		return Stream.of(Arguments.of(Vector.int8(new byte[1]), "VECTOR<INTEGER8>(1)"),
-				Arguments.of(Vector.int16(new short[2]), "VECTOR<INTEGER16>(2)"),
-				Arguments.of(Vector.int32(new int[3]), "VECTOR<INTEGER32>(3)"),
-				Arguments.of(Vector.int64(new long[4]), "VECTOR<INTEGER>(4)"),
-				Arguments.of(Vector.float32(new float[5]), "VECTOR<FLOAT32>(5)"),
-				Arguments.of(Vector.float64(new double[6]), "VECTOR<FLOAT>(6)")
+
+		var longDoubleArray = ThreadLocalRandom.current().doubles(4096).toArray();
+		var doubles = Arrays.stream(longDoubleArray).mapToObj(Double::toString).collect(Collectors.joining(", "));
+
+		return Stream.of(Arguments.of(Vector.int8(new byte[1]), "VECTOR([0], 1, INTEGER8 NOT NULL)"),
+				Arguments.of(Vector.int16(new short[2]), "VECTOR([0, 0], 2, INTEGER16 NOT NULL)"),
+				Arguments.of(Vector.int32(new int[3]), "VECTOR([0, 0, 0], 3, INTEGER32 NOT NULL)"),
+				Arguments.of(Vector.int64(new long[4]), "VECTOR([0, 0, 0, 0], 4, INTEGER NOT NULL)"),
+				Arguments.of(Vector.float32(new float[5]), "VECTOR([0.0, 0.0, 0.0, 0.0, 0.0], 5, FLOAT32 NOT NULL)"),
+				Arguments.of(Vector.float64(new double[6]),
+						"VECTOR([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 6, FLOAT NOT NULL)"),
+				Arguments.of(Vector.float64(longDoubleArray), "VECTOR([%s], 4096, FLOAT NOT NULL)".formatted(doubles))
 
 		);
 	}

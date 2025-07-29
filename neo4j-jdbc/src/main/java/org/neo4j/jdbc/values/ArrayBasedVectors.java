@@ -21,6 +21,7 @@ package org.neo4j.jdbc.values;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -64,7 +65,8 @@ final class ArrayBasedVectors {
 	};
 
 	static String toString(Vector vector) {
-		return "VECTOR<%s>(%d)".formatted(vector.elementType(), vector.size());
+		var value = vector.stream().map(Number::toString).collect(Collectors.joining(", ", "[", "]"));
+		return "VECTOR(%s, %d, %s NOT NULL)".formatted(value, vector.size(), vector.elementType());
 	}
 
 	record Int8VectorImpl(ElementType elementType, int size, byte[] elements) implements Int8Vector {
