@@ -148,7 +148,12 @@ public enum Type {
 	 * Null type.
 	 * @since 6.0.0
 	 */
-	NULL;
+	NULL,
+	/**
+	 * A typed vector type.
+	 * @since 6.8.0
+	 */
+	VECTOR;
 
 	/**
 	 * Test if the given value has this type.
