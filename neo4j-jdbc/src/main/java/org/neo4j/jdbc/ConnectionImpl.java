@@ -72,6 +72,7 @@ import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.exception.BoltConnectionReadTimeoutException;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.bolt.connection.message.Messages;
+import org.neo4j.jdbc.BoltConnectionObservations.NoopObservation;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.Neo4jTransaction.State;
 import org.neo4j.jdbc.authn.spi.Authentication;
@@ -646,7 +647,7 @@ final class ConnectionImpl implements Neo4jConnection {
 
 		try {
 			var handler = new BasicResponseHandler();
-			var future = this.boltConnection.writeAndFlush(handler, Messages.reset())
+			var future = this.boltConnection.writeAndFlush(handler, Messages.reset(), NoopObservation.INSTANCE)
 				.thenCompose(ignored -> handler.summaries())
 				.toCompletableFuture();
 			if (timeout > 0) {

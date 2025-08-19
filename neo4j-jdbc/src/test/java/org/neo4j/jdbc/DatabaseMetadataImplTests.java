@@ -38,7 +38,7 @@ import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
 import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 import org.neo4j.bolt.connection.LoggingProvider;
-import org.neo4j.bolt.connection.MetricsListener;
+import org.neo4j.bolt.connection.observation.ObservationProvider;
 import org.neo4j.bolt.connection.values.ValueFactory;
 import org.neo4j.jdbc.values.Type;
 
@@ -60,7 +60,8 @@ class DatabaseMetadataImplTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+				any()))
 			.willReturn(mockedFuture);
 	}
 
@@ -296,7 +297,7 @@ class DatabaseMetadataImplTests {
 
 			@Override
 			public BoltConnectionProvider create(LoggingProvider loggingProvider, ValueFactory valueFactory,
-					MetricsListener metricsListener, Map<String, ?> map) {
+					ObservationProvider observationProvider, Map<String, ?> additionalConfig) {
 				return DatabaseMetadataImplTests.this.boltConnectionProvider;
 			}
 		}));

@@ -111,7 +111,8 @@ class DefaultTransactionImplTests {
 				}, Authentication.usernameAndPassword("foo", "bar"));
 		var query = "query";
 		var fetchSize = 5;
-		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class))))
+		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class)),
+				any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
@@ -137,7 +138,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture(), any());
 		var messages = runMessagesCaptor.getValue();
 		assertThat(messages.get(0)).isInstanceOf(RunMessage.class);
 		var runMessage = (RunMessage) messages.get(0);
@@ -157,7 +158,7 @@ class DefaultTransactionImplTests {
 		var query = "query";
 		var fetchSize = 5;
 
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
@@ -181,7 +182,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture(), any());
 		var messages = runMessagesCaptor.getValue();
 		assertThat(messages).hasSize(commit ? 3 : 2);
 		if (commit) {
@@ -201,7 +202,7 @@ class DefaultTransactionImplTests {
 		var runResponse = mock(Neo4jTransaction.RunResponse.class);
 		given(runResponse.queryId()).willReturn(-1L);
 
-		given(boltConnection.writeAndFlush(any(), any(PullMessage.class)))
+		given(boltConnection.writeAndFlush(any(), any(PullMessage.class), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -222,7 +223,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.UNCONSTRAINED);
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		var pullMessageCaptor = ArgumentCaptor.forClass(Message.class);
-		then(boltConnection).should().writeAndFlush(any(), pullMessageCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), pullMessageCaptor.capture(), any());
 		assertThat(pullMessageCaptor.getValue()).isInstanceOf(PullMessage.class);
 		then(boltConnection).should().authInfo();
 		then(boltConnection).shouldHaveNoMoreInteractions();
@@ -234,7 +235,7 @@ class DefaultTransactionImplTests {
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
 				}, Authentication.usernameAndPassword("foo", "bar"));
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -255,7 +256,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> commitMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), commitMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), commitMessagesCaptor.capture(), any());
 		var messages = commitMessagesCaptor.getValue();
 		assertThat(messages).hasSize(1);
 		assertThat(messages.get(0)).isInstanceOf(CommitMessage.class);
@@ -269,7 +270,7 @@ class DefaultTransactionImplTests {
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, true,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
 				}, Authentication.usernameAndPassword("foo", "bar"));
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -290,7 +291,7 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> rollbackMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), rollbackMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), rollbackMessagesCaptor.capture(), any());
 		var messages = rollbackMessagesCaptor.getValue();
 		assertThat(messages).hasSize(1);
 		assertThat(messages.get(0)).isInstanceOf(RollbackMessage.class);
@@ -348,7 +349,7 @@ class DefaultTransactionImplTests {
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, NOOP_HANDLER, false, autoCommit,
 				AccessMode.WRITE, Neo4jTransaction.State.READY, "aBeautifulDatabase", state -> {
 				}, Authentication.usernameAndPassword("foo", "bar"));
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -568,7 +569,7 @@ class DefaultTransactionImplTests {
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
 		var fetchSize = 5;
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onPullSummary(mock(PullSummary.class));
@@ -592,7 +593,7 @@ class DefaultTransactionImplTests {
 		assertThat(this.transaction.isOpen()).isEqualTo(!autoCommit);
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture(), any());
 		var messages = runMessagesCaptor.getValue();
 		var runMessage = (RunMessage) messages.get(0);
 		assertThat(runMessage.query()).isEqualTo(query);
@@ -615,7 +616,7 @@ class DefaultTransactionImplTests {
 
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
@@ -626,7 +627,7 @@ class DefaultTransactionImplTests {
 			.isExactlyInstanceOf(SQLTimeoutException.class);
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), runMessagesCaptor.capture(), any());
 		var messages = runMessagesCaptor.getValue();
 		assertThat(messages).hasSize(2);
 		var runMessage = (RunMessage) messages.get(0);
@@ -650,13 +651,13 @@ class DefaultTransactionImplTests {
 		var writeFuture = CompletableFuture.<Void>completedFuture(null);
 		var exception = new BoltException("Defunct connection");
 
-		given(boltConnection.writeAndFlush(any(), any(ResetMessage.class)))
+		given(boltConnection.writeAndFlush(any(), any(ResetMessage.class), any()))
 			.willReturn(CompletableFuture.failedFuture(exception));
-		given(boltConnection.writeAndFlush(any(), any(RunMessage.class))).willReturn(writeFuture);
-		given(boltConnection.writeAndFlush(any(), any(PullMessage.class))).willReturn(writeFuture);
-		given(boltConnection.writeAndFlush(any(), any(DiscardMessage.class))).willReturn(writeFuture);
-		given(boltConnection.writeAndFlush(any(), any(CommitMessage.class))).willReturn(writeFuture);
-		given(boltConnection.writeAndFlush(any(), any(RollbackMessage.class))).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(RunMessage.class), any())).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(PullMessage.class), any())).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(DiscardMessage.class), any())).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(CommitMessage.class), any())).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), any(RollbackMessage.class), any())).willReturn(writeFuture);
 
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, true, true,
 				AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
@@ -680,7 +681,8 @@ class DefaultTransactionImplTests {
 		var query = "query";
 		var parameters = Collections.<String, Object>emptyMap();
 		var counter = new AtomicInteger();
-		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class))))
+		given(boltConnection.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class)),
+				any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRunSummary(mock(RunSummary.class));
 				var pullSummary = mock(PullSummary.class);
@@ -690,8 +692,8 @@ class DefaultTransactionImplTests {
 				return CompletableFuture.completedFuture(null);
 			});
 		given(boltConnection.writeAndFlush(any(),
-				messageTypeMatcher(
-						List.of(DiscardMessage.class, commit ? CommitMessage.class : RollbackMessage.class))))
+				messageTypeMatcher(List.of(DiscardMessage.class, commit ? CommitMessage.class : RollbackMessage.class)),
+				any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onDiscardSummary(mock(DiscardSummary.class));
 				if (commit) {
@@ -723,10 +725,10 @@ class DefaultTransactionImplTests {
 		assertThat(beginMessage.transactionType()).isEqualTo(TransactionType.DEFAULT);
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		then(boltConnection).should(times(2))
-			.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class)));
+			.writeAndFlush(any(), messageTypeMatcher(List.of(RunMessage.class, PullMessage.class)), any());
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> runMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should(times(3)).writeAndFlush(any(), runMessagesCaptor.capture());
+		then(boltConnection).should(times(3)).writeAndFlush(any(), runMessagesCaptor.capture(), any());
 		var messages = runMessagesCaptor.getAllValues().get(0);
 		var runMessage = (RunMessage) messages.get(0);
 		assertThat(runMessage.query()).isEqualTo(query);
@@ -734,11 +736,13 @@ class DefaultTransactionImplTests {
 		var pullMessage = (PullMessage) messages.get(1);
 		assertThat(pullMessage.qid()).isEqualTo(-1L);
 		then(boltConnection).should()
-			.writeAndFlush(any(), messageTypeMatcher(
-					List.of(DiscardMessage.class, commit ? CommitMessage.class : RollbackMessage.class)));
+			.writeAndFlush(any(),
+					messageTypeMatcher(
+							List.of(DiscardMessage.class, commit ? CommitMessage.class : RollbackMessage.class)),
+					any());
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> finishingMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should(times(3)).writeAndFlush(any(), finishingMessagesCaptor.capture());
+		then(boltConnection).should(times(3)).writeAndFlush(any(), finishingMessagesCaptor.capture(), any());
 		var finishMessages = finishingMessagesCaptor.getAllValues().get(2);
 		assertThat(finishMessages.get(0)).isInstanceOf(DiscardMessage.class);
 		if (commit) {

@@ -46,6 +46,7 @@ import org.neo4j.bolt.connection.message.Message;
 import org.neo4j.bolt.connection.message.Messages;
 import org.neo4j.bolt.connection.summary.PullSummary;
 import org.neo4j.bolt.connection.values.Value;
+import org.neo4j.jdbc.BoltConnectionObservations.NoopObservation;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
@@ -121,7 +122,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		var responsesFuture = this.beginPipelinedStage.thenCompose(ignored -> {
 			var messages = List.of(Messages.run(query, BoltAdapters.adaptMap(parameters)),
 					Messages.pull(-1, fetchSize));
-			return this.boltConnection.writeAndFlush(handler, messages);
+			return this.boltConnection.writeAndFlush(handler, messages, NoopObservation.INSTANCE);
 		})
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(DefaultTransactionImpl::asRunAndPullResponses)
@@ -148,7 +149,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 			if (commit) {
 				messages.add(Messages.commit());
 			}
-			return this.boltConnection.writeAndFlush(handler, messages);
+			return this.boltConnection.writeAndFlush(handler, messages, NoopObservation.INSTANCE);
 		})
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(DefaultTransactionImpl::asDiscardResponse)
@@ -168,7 +169,8 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 					String.format("The requested action is not supported in %s transaction state", this.state)));
 		}
 		var handler = new BasicResponseHandler();
-		var responseFuture = this.boltConnection.writeAndFlush(handler, Messages.pull(runResponse.queryId(), request))
+		var responseFuture = this.boltConnection
+			.writeAndFlush(handler, Messages.pull(runResponse.queryId(), request), NoopObservation.INSTANCE)
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(summaries -> asPullResponse(runResponse.keys(), summaries.valuesList(), summaries.pullSummary()))
 			.toCompletableFuture();
@@ -189,7 +191,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		appendDiscards(messages);
 		messages.add(Messages.commit());
 		var responsesFuture = this.beginPipelinedStage
-			.thenCompose(ignored -> this.boltConnection.writeAndFlush(handler, messages))
+			.thenCompose(ignored -> this.boltConnection.writeAndFlush(handler, messages, NoopObservation.INSTANCE))
 			.thenCompose(ignored -> handler.summaries())
 			.thenApply(BasicResponseHandler.Summaries::commitSummary)
 			.whenComplete((response, error) -> {
@@ -220,7 +222,7 @@ final class DefaultTransactionImpl implements Neo4jTransaction {
 		appendDiscards(messages);
 		messages.add(Messages.rollback());
 		var responsesFuture = this.beginPipelinedStage
-			.thenCompose(ignored -> this.boltConnection.writeAndFlush(handler, messages))
+			.thenCompose(ignored -> this.boltConnection.writeAndFlush(handler, messages, NoopObservation.INSTANCE))
 			.thenCompose(ignored -> handler.summaries())
 			.toCompletableFuture();
 

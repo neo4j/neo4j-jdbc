@@ -68,6 +68,7 @@ import org.neo4j.bolt.connection.BoltProtocolVersion;
 import org.neo4j.bolt.connection.NotificationConfig;
 import org.neo4j.bolt.connection.SecurityPlan;
 import org.neo4j.bolt.connection.SecurityPlans;
+import org.neo4j.jdbc.BoltConnectionObservations.NoopObservation;
 import org.neo4j.jdbc.Neo4jException.GQLError;
 import org.neo4j.jdbc.authn.spi.Authentication;
 import org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
@@ -576,13 +577,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 					.filter(factory -> factory.supports(scheme))
 					.findFirst()
 					.map(factory -> factory.create(BoltAdapters.newLoggingProvider(), BoltAdapters.getValueFactory(),
-							null, BOLT_CONNECTION_OPTIONS))
+							BoltConnectionObservations.NoopBoltObservationProvider.INSTANCE, BOLT_CONNECTION_OPTIONS))
 					.orElseThrow(() -> new RuntimeException(
 							"Failed to load a connection provider supporting target %s".formatted(targetUri))));
 
 		return connectionProvider
 			.connect(targetUri, null, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent, connectTimeoutMillis,
-					securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig())
+					securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig(),
+					NoopObservation.INSTANCE)
 			.toCompletableFuture()
 			.join();
 	}
