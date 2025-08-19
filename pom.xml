@@ -135,19 +135,19 @@
 		<asciidoctor-maven-plugin.version>3.2.0</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 		<asciidoctorj.version>3.0.0</asciidoctorj.version>
-		<assertj.version>3.27.3</assertj.version>
+		<assertj.version>3.27.4</assertj.version>
 		<awaitility.version>4.3.0</awaitility.version>
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
-		<checkstyle.version>10.26.1</checkstyle.version>
+		<checkstyle.version>11.0.0</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
-		<cypher-v5-antlr-parser.version>5.26.9</cypher-v5-antlr-parser.version>
+		<cypher-v5-antlr-parser.version>5.26.10</cypher-v5-antlr-parser.version>
 		<docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.5.1</exec-maven-plugin.version>
-		<flatten-maven-plugin.version>1.7.1</flatten-maven-plugin.version>
+		<flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.6</jackson-databind-nullable.version>
 		<jackson.version>2.19.2</jackson.version>
@@ -157,12 +157,12 @@
 		<jaxb-api.version>4.0.2</jaxb-api.version>
 		<jboss-logging.version>3.6.1.Final</jboss-logging.version>
 		<jdbi3.version>3.49.5</jdbi3.version>
-		<jooq.version>3.19.24</jooq.version>
+		<jooq.version>3.19.25</jooq.version>
 		<jreleaser-maven-plugin.version>1.19.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.13.4</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.6</keycloak-authz-client.version>
 		<kotlin-stdlib-jdk8.version>2.2.0</kotlin-stdlib-jdk8.version>
-		<langchain4j.version>1.1.0</langchain4j.version>
+		<langchain4j.version>1.3.0</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
@@ -173,7 +173,7 @@
 		<maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
 		<maven-install-plugin.version>3.1.4</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-		<maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+		<maven-javadoc-plugin.version>3.11.3</maven-javadoc-plugin.version>
 		<maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
@@ -188,7 +188,7 @@
 		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.11.0</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>6.0.2</neo4j-bolt-connection.version>
-		<neo4j-cypher-dsl.version>2024.7.1</neo4j-cypher-dsl.version>
+		<neo4j-cypher-dsl.version>2024.7.2</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.7.3</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>2025.06</neo4j.version>
@@ -198,7 +198,7 @@
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.24.5</quarkus.platform.version>
+		<quarkus.platform.version>3.25.3</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
