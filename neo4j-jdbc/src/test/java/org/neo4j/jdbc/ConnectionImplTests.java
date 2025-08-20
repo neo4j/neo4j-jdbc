@@ -167,7 +167,7 @@ class ConnectionImplTests {
 		connection.setAutoCommit(!autoCommit);
 		var transactionType = connection.getAutoCommit() ? TransactionType.UNCONSTRAINED : TransactionType.DEFAULT;
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -189,7 +189,7 @@ class ConnectionImplTests {
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> finishMessagesCaptor = ArgumentCaptor.forClass(List.class);
 		then(boltConnection).should().authInfo();
-		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture(), any());
 		var finishMessages = finishMessagesCaptor.getValue();
 		assertThat(finishMessages.get(0)).isInstanceOf(CommitMessage.class);
 		then(boltConnection).shouldHaveNoMoreInteractions();
@@ -254,7 +254,7 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		connection.setAutoCommit(false);
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				if (rollback) {
 					invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
@@ -287,7 +287,7 @@ class ConnectionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> finishMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture(), any());
 		var finishMessages = finishMessagesCaptor.getValue();
 		if (rollback) {
 			assertThat(finishMessages.get(0)).isInstanceOf(RollbackMessage.class);
@@ -323,7 +323,7 @@ class ConnectionImplTests {
 	void shouldRollbackOnClose() throws SQLException {
 		var boltConnection = mockBoltConnection();
 		given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
-		given(boltConnection.writeAndFlush(any(), anyList()))
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				invocation.<ResponseHandler>getArgument(0).onRollbackSummary(mock(RollbackSummary.class));
 				invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -347,7 +347,7 @@ class ConnectionImplTests {
 		assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<List<Message>> finishMessagesCaptor = ArgumentCaptor.forClass(List.class);
-		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture());
+		then(boltConnection).should().writeAndFlush(any(), finishMessagesCaptor.capture(), any());
 		var finishMessages = finishMessagesCaptor.getValue();
 		assertThat(finishMessages.get(0)).isInstanceOf(RollbackMessage.class);
 		then(boltConnection).should().close();
@@ -503,7 +503,7 @@ class ConnectionImplTests {
 		var connection = makeConnection(boltConnection);
 		if (setupClosedTransaction) {
 			given(boltConnection.write(anyList())).willReturn(CompletableFuture.completedStage(null));
-			given(boltConnection.writeAndFlush(any(), anyList()))
+			given(boltConnection.writeAndFlush(any(), anyList(), any()))
 				.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 					invocation.<ResponseHandler>getArgument(0).onCommitSummary(mock(CommitSummary.class));
 					invocation.<ResponseHandler>getArgument(0).onComplete();
@@ -512,7 +512,7 @@ class ConnectionImplTests {
 			var transaction = connection.getTransaction(Map.of());
 			transaction.commit();
 		}
-		given(boltConnection.writeAndFlush(any(), any(ResetMessage.class)))
+		given(boltConnection.writeAndFlush(any(), any(ResetMessage.class), any()))
 			.willAnswer((Answer<CompletableFuture<Void>>) invocation -> {
 				if (expectedValid) {
 					invocation.<ResponseHandler>getArgument(0).onResetSummary(mock(ResetSummary.class));
@@ -537,7 +537,7 @@ class ConnectionImplTests {
 			assertThat(beginMessage.bookmarks().isEmpty()).isTrue();
 		}
 		assertThat(valid).isEqualTo(expectedValid);
-		then(boltConnection).should().writeAndFlush(any(), any(ResetMessage.class));
+		then(boltConnection).should().writeAndFlush(any(), any(ResetMessage.class), any());
 	}
 
 	private static BoltConnection mockBoltConnection() {

@@ -46,7 +46,7 @@ import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
 import org.neo4j.bolt.connection.BoltConnectionProviderFactory;
 import org.neo4j.bolt.connection.LoggingProvider;
-import org.neo4j.bolt.connection.MetricsListener;
+import org.neo4j.bolt.connection.observation.ObservationProvider;
 import org.neo4j.bolt.connection.values.ValueFactory;
 import org.neo4j.jdbc.internal.bolt.BoltAdapters;
 
@@ -76,11 +76,11 @@ class Neo4jDriverUrlParsingTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+				any()))
 			.willReturn(mockedFuture);
 
 		this.factories = List.of(new BoltConnectionProviderFactory() {
-
 			@Override
 			public boolean supports(String s) {
 				return true;
@@ -88,7 +88,7 @@ class Neo4jDriverUrlParsingTests {
 
 			@Override
 			public BoltConnectionProvider create(LoggingProvider loggingProvider, ValueFactory valueFactory,
-					MetricsListener metricsListener, Map<String, ?> map) {
+					ObservationProvider observationProvider, Map<String, ?> additionalConfig) {
 				return Neo4jDriverUrlParsingTests.this.boltConnectionProvider;
 			}
 		});
@@ -113,7 +113,7 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+			.connect(eq(boltUri(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -128,7 +128,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+					any());
 		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
@@ -145,7 +146,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+					any());
 		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
@@ -162,7 +164,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+					any());
 		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
@@ -178,7 +181,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
+					any());
 		assertThat(connection.getDatabaseName()).isEqualTo("neo4j");
 	}
 
@@ -245,7 +249,7 @@ class Neo4jDriverUrlParsingTests {
 
 		then(this.boltConnectionProvider).should()
 			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(expectedAuthToken), any(), any());
+					eq(expectedAuthToken), any(), any(), any());
 	}
 
 	@Test
@@ -263,7 +267,7 @@ class Neo4jDriverUrlParsingTests {
 
 		then(this.boltConnectionProvider).should()
 			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(),
-					any());
+					any(), any());
 	}
 
 	@Test
@@ -281,7 +285,7 @@ class Neo4jDriverUrlParsingTests {
 
 		then(this.boltConnectionProvider).should()
 			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(),
-					any());
+					any(), any());
 	}
 
 	@Test
@@ -299,7 +303,7 @@ class Neo4jDriverUrlParsingTests {
 
 		then(this.boltConnectionProvider).should()
 			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(expectedAuthToken), any(), any());
+					eq(expectedAuthToken), any(), any(), any());
 	}
 
 	@Test
@@ -312,7 +316,7 @@ class Neo4jDriverUrlParsingTests {
 
 		then(this.boltConnectionProvider).should()
 			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(expectedAuthToken), any(), any());
+					eq(expectedAuthToken), any(), any(), any());
 	}
 
 	@Test
@@ -330,7 +334,7 @@ class Neo4jDriverUrlParsingTests {
 
 		then(this.boltConnectionProvider).should()
 			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
-					eq(expectedAuthToken), any(), any());
+					eq(expectedAuthToken), any(), any(), any());
 	}
 
 	@Test
@@ -585,7 +589,7 @@ class Neo4jDriverUrlParsingTests {
 		driver.connect("jdbc:neo4j://host:1000/database", props);
 
 		then(this.boltConnectionProvider).should()
-			.connect(any(), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(), any());
+			.connect(any(), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(), any(), any());
 	}
 
 	@Test
