@@ -57,6 +57,12 @@ class ArrayBasedVectorsTests {
 		assertThat(vector).hasToString(expected);
 	}
 
+	@ParameterizedTest
+	@MethodSource("hasToString")
+	void sizeAliasShouldWork(Vector vector) {
+		assertThat(vector.vectorDimensionCount()).isEqualTo(vector.size());
+	}
+
 	static Stream<Arguments> nullCheckShouldWork() {
 		return Stream.of(Arguments.of((Supplier<Vector>) () -> Vector.of((byte[]) null)),
 				Arguments.of((Supplier<Vector>) () -> Vector.of((short[]) null)),

@@ -201,9 +201,6 @@ public final class Values {
 		if (value instanceof Object[]) {
 			return value(Arrays.asList((Object[]) value));
 		}
-		if (value instanceof Vector vector) {
-			return new VectorValue(vector);
-		}
 
 		throw new ValueException("Unable to convert " + value.getClass().getName() + " to Neo4j Value.");
 	}

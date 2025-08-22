@@ -21,6 +21,7 @@ package org.neo4j.jdbc.values;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.BDDMockito.given;
 
@@ -35,6 +36,17 @@ class ValueTests {
 
 		value = Values.value("hallo");
 		assertThatExceptionOfType(UncoercibleException.class).isThrownBy(value::asVector);
+	}
+
+	@Test
+	void asVectorShouldWork() {
+		Value value = Values.value(Vector.of(new int[] { 1 }));
+		Vector vector = value.asVector();
+		assertThat(vector).isEqualTo(Vector.of(new int[] { 1 }));
+		vector = value.asVector(Vector.of(new double[] { 1.1 }));
+		assertThat(vector).isEqualTo(Vector.of(new int[] { 1 }));
+		vector = NullValue.NULL.asVector(Vector.of(new double[] { 1.1 }));
+		assertThat(vector).isEqualTo(Vector.of(new double[] { 1.1 }));
 	}
 
 }
