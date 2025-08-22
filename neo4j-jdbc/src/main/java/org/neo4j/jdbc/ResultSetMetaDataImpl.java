@@ -47,6 +47,7 @@ import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
+import org.neo4j.jdbc.values.VectorValue;
 
 import static org.neo4j.jdbc.Neo4jException.withReason;
 
@@ -183,17 +184,17 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 	}
 
 	@Override
-	public boolean isReadOnly(int column) throws SQLException {
+	public boolean isReadOnly(int column) {
 		return true; // you cannot write back using neo4j ResultSet.
 	}
 
 	@Override
-	public boolean isWritable(int column) throws SQLException {
+	public boolean isWritable(int column) {
 		return false; // you cannot write back using neo4j ResultSet.
 	}
 
 	@Override
-	public boolean isDefinitelyWritable(int column) throws SQLException {
+	public boolean isDefinitelyWritable(int column) {
 		return false; // you cannot write back using neo4j ResultSet.
 	}
 
@@ -265,6 +266,9 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 			}
 			case NULL -> {
 				return NullValue.class.getName();
+			}
+			case VECTOR -> {
+				return VectorValue.class.getName();
 			}
 		}
 

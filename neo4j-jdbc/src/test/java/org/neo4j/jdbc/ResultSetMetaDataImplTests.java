@@ -33,6 +33,8 @@ import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
+import org.neo4j.jdbc.values.Vector;
+import org.neo4j.jdbc.values.VectorValue;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -120,6 +122,10 @@ class ResultSetMetaDataImplTests {
 		try (var resultSet = setupWithValues(Collections.singletonList(Values.value("String")))) {
 			var rsMetadata = resultSet.getMetaData();
 			Assertions.assertThat(rsMetadata.getColumnClassName(1)).isEqualTo(StringValue.class.getName());
+		}
+		try (var resultSet = setupWithValues(Collections.singletonList(Vector.of(new int[] { 1 }).asValue()))) {
+			var rsMetadata = resultSet.getMetaData();
+			Assertions.assertThat(rsMetadata.getColumnClassName(1)).isEqualTo(VectorValue.class.getName());
 		}
 	}
 

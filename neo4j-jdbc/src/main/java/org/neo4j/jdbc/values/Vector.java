@@ -87,11 +87,12 @@ public sealed interface Vector extends AsValue {
 	@Override
 	default Value asValue() {
 		return new VectorValue(this);
-	};
+	}
 
 	/**
 	 * {@return a stream of the vectors elements}
 	 */
+	@SuppressWarnings("squid:S1452") // Generic items, this is exactly what we want here
 	Stream<? extends Number> stream();
 
 	private static void assertSize(int size) {
@@ -109,7 +110,7 @@ public sealed interface Vector extends AsValue {
 	 * @return a new {@link Vector}
 	 */
 	static Vector of(byte[] elements) {
-		assertSize(Objects.requireNonNull(elements, "Vector elements must not be literal null").length);
+		assertSize(Objects.requireNonNull(elements, ArrayBasedVectors.MSG_NULL_CHECK).length);
 		return new ArrayBasedVectors.Int8VectorImpl(ElementType.INTEGER8, elements.length,
 				Arrays.copyOf(elements, elements.length));
 	}
@@ -120,7 +121,7 @@ public sealed interface Vector extends AsValue {
 	 * @return a new {@link Vector}
 	 */
 	static Vector of(short[] elements) {
-		assertSize(Objects.requireNonNull(elements, "Vector elements must not be literal null").length);
+		assertSize(Objects.requireNonNull(elements, ArrayBasedVectors.MSG_NULL_CHECK).length);
 		return new ArrayBasedVectors.Int16VectorImpl(ElementType.INTEGER16, elements.length,
 				Arrays.copyOf(elements, elements.length));
 	}
@@ -131,7 +132,7 @@ public sealed interface Vector extends AsValue {
 	 * @return a new {@link Vector}
 	 */
 	static Vector of(int[] elements) {
-		assertSize(Objects.requireNonNull(elements, "Vector elements must not be literal null").length);
+		assertSize(Objects.requireNonNull(elements, ArrayBasedVectors.MSG_NULL_CHECK).length);
 		return new ArrayBasedVectors.Int32VectorImpl(ElementType.INTEGER32, elements.length,
 				Arrays.copyOf(elements, elements.length));
 	}
@@ -142,7 +143,7 @@ public sealed interface Vector extends AsValue {
 	 * @return a new {@link Vector}
 	 */
 	static Vector of(long[] elements) {
-		assertSize(Objects.requireNonNull(elements, "Vector elements must not be literal null").length);
+		assertSize(Objects.requireNonNull(elements, ArrayBasedVectors.MSG_NULL_CHECK).length);
 		return new ArrayBasedVectors.Int64VectorImpl(ElementType.INTEGER, elements.length,
 				Arrays.copyOf(elements, elements.length));
 	}
@@ -153,7 +154,7 @@ public sealed interface Vector extends AsValue {
 	 * @return a new {@link Vector}
 	 */
 	static Vector of(float[] elements) {
-		assertSize(Objects.requireNonNull(elements, "Vector elements must not be literal null").length);
+		assertSize(Objects.requireNonNull(elements, ArrayBasedVectors.MSG_NULL_CHECK).length);
 		return new ArrayBasedVectors.Float32VectorImpl(ElementType.FLOAT32, elements.length,
 				Arrays.copyOf(elements, elements.length));
 	}
@@ -164,7 +165,7 @@ public sealed interface Vector extends AsValue {
 	 * @return a new {@link Vector}
 	 */
 	static Vector of(double[] elements) {
-		assertSize(Objects.requireNonNull(elements, "Vector elements must not be literal null").length);
+		assertSize(Objects.requireNonNull(elements, ArrayBasedVectors.MSG_NULL_CHECK).length);
 		return new ArrayBasedVectors.Float64VectorImpl(ElementType.FLOAT, elements.length,
 				Arrays.copyOf(elements, elements.length));
 	}

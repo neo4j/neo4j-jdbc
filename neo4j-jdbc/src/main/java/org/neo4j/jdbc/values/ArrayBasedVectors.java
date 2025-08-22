@@ -34,6 +34,8 @@ import org.neo4j.jdbc.values.Vector.Int8Vector;
 
 final class ArrayBasedVectors {
 
+	static final String MSG_NULL_CHECK = "Vector elements must not be literal null";
+
 	private ArrayBasedVectors() {
 	}
 
