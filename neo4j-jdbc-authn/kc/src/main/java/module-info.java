@@ -18,6 +18,9 @@
  */
 import org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
 
+/**
+ * Contains an implementation of an {@link AuthenticationSupplierFactory} to be used with <a href="https://www.keycloak.org">Keycloak</a>.
+ */
 @SuppressWarnings({"requires-automatic"})
 module org.neo4j.jdbc.authn.kc {
 

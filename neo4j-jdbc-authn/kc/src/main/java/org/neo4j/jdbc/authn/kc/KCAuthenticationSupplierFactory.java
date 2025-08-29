@@ -46,6 +46,12 @@ import org.neo4j.jdbc.authn.spi.AuthenticationSupplierFactory;
  */
 public final class KCAuthenticationSupplierFactory implements AuthenticationSupplierFactory {
 
+	/**
+	 * Used by the service loader mechanism, safe to use standalone.
+	 */
+	public KCAuthenticationSupplierFactory() {
+	}
+
 	@Override
 	public String getName() {
 		return "kc";

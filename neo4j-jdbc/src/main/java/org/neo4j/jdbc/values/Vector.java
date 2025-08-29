@@ -218,6 +218,10 @@ public sealed interface Vector extends AsValue {
 
 	}
 
+	/**
+	 * Represents a Neo4j INTEGER8 vector (A Neo4j INTEGER8 is equivalent to Javas
+	 * <code>byte</code>).
+	 */
 	sealed interface Int8Vector extends Vector permits Int8VectorImpl {
 
 		/**
@@ -227,6 +231,10 @@ public sealed interface Vector extends AsValue {
 
 	}
 
+	/**
+	 * Represents a Neo4j INTEGER16 vector (A Neo4j INTEGER16 is equivalent to Javas
+	 * <code>short</code>).
+	 */
 	sealed interface Int16Vector extends Vector permits Int16VectorImpl {
 
 		/**
@@ -236,6 +244,10 @@ public sealed interface Vector extends AsValue {
 
 	}
 
+	/**
+	 * Represents a Neo4j INTEGER32 vector (A Neo4j INTEGER32 is equivalent to Javas
+	 * <code>int</code>).
+	 */
 	sealed interface Int32Vector extends Vector permits Int32VectorImpl {
 
 		/**
@@ -245,6 +257,10 @@ public sealed interface Vector extends AsValue {
 
 	}
 
+	/**
+	 * Represents a Neo4j INTEGER vector (A Neo4j Integer (or INTEGER) is equivalent to
+	 * Javas <code>long</code>).
+	 */
 	sealed interface Int64Vector extends Vector permits Int64VectorImpl {
 
 		/**
@@ -254,6 +270,10 @@ public sealed interface Vector extends AsValue {
 
 	}
 
+	/**
+	 * Represents a Neo4j FLOAT32 vector (A Neo4j FLOAT32 is equivalent to Javas
+	 * <code>float</code>).
+	 */
 	sealed interface Float32Vector extends Vector permits Float32VectorImpl {
 
 		/**
@@ -263,6 +283,10 @@ public sealed interface Vector extends AsValue {
 
 	}
 
+	/**
+	 * Represents a Neo4j FLOAT vector (A Neo4j FLOAT is equivalent to Javas
+	 * <code>double</code>).
+	 */
 	sealed interface Float64Vector extends Vector permits Float64VectorImpl {
 
 		/**
