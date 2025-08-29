@@ -173,7 +173,7 @@
 		<maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
 		<maven-install-plugin.version>3.1.4</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-		<maven-javadoc-plugin.version>3.11.3</maven-javadoc-plugin.version>
+		<maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
 		<maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
@@ -937,6 +937,16 @@
 										<ignoreVersion>
 											<type>range</type>
 											<version>[4.2.0,)</version>
+										</ignoreVersion>
+									</ignoreVersions>
+								</rule>
+								<rule>
+									<groupId>org.apache.maven.plugins</groupId>
+									<artifactId>maven-javadoc-plugin</artifactId>
+									<ignoreVersions>
+										<ignoreVersion>
+											<!-- See https://github.com/apache/maven-javadoc-plugin/commit/71a6ca45da32a04483de6baca01f39ca27bec1ed -->
+											<version>3.11.3</version>
 										</ignoreVersion>
 									</ignoreVersions>
 								</rule>
