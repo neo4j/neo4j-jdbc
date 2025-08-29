@@ -29,4 +29,7 @@ module org.neo4j.jdbc.translator.impl {
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.jooq;
 	requires org.neo4j.cypherdsl.core;
+
+	// jOOQ requires this.
+	requires static jakarta.xml.bind;
 }

@@ -688,13 +688,6 @@
 						<detectOfflineLinks>false</detectOfflineLinks>
 						<detectJavaApiLink>true</detectJavaApiLink>
 						<release>${java.version}</release>
-						<tags>
-							<tag>
-								<name>soundtrack</name>
-								<placement>a</placement>
-								<head>Soundtrack</head>
-							</tag>
-						</tags>
 					</configuration>
 				</plugin>
 				<plugin>
