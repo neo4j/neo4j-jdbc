@@ -150,7 +150,7 @@
 		<flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.7</jackson-databind-nullable.version>
-		<jackson.version>2.19.2</jackson.version>
+		<jackson.version>2.20.0</jackson.version>
 		<jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
 		<japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
