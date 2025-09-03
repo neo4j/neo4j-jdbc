@@ -22,10 +22,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ abstract class AbstractVectorIT {
 
 	AbstractVectorIT(String defaultLanguage) {
 		this.neo4j = getNeo4jContainer("neo4j:2025.07-enterprise", defaultLanguage);
-		var logs = new ArrayList<String>();
+		var logs = new CopyOnWriteArrayList<String>();
 		this.neo4j.withLogConsumer(frame -> logs.add(frame.getUtf8String().trim()));
 		this.neo4j.start();
 		this.databaseSupportsVectors = logs.stream()
