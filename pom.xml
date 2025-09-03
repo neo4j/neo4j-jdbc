@@ -138,7 +138,7 @@
 		<assertj.version>3.27.4</assertj.version>
 		<awaitility.version>4.3.0</awaitility.version>
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
-		<checkstyle.version>11.0.0</checkstyle.version>
+		<checkstyle.version>11.0.1</checkstyle.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
@@ -150,7 +150,7 @@
 		<flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.7</jackson-databind-nullable.version>
-		<jackson.version>2.19.2</jackson.version>
+		<jackson.version>2.20.0</jackson.version>
 		<jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
 		<japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
@@ -158,11 +158,11 @@
 		<jboss-logging.version>3.6.1.Final</jboss-logging.version>
 		<jdbi3.version>3.49.5</jdbi3.version>
 		<jooq.version>3.19.25</jooq.version>
-		<jreleaser-maven-plugin.version>1.19.0</jreleaser-maven-plugin.version>
+		<jreleaser-maven-plugin.version>1.20.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.13.4</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.6</keycloak-authz-client.version>
 		<kotlin-stdlib-jdk8.version>2.2.10</kotlin-stdlib-jdk8.version>
-		<langchain4j.version>1.3.0</langchain4j.version>
+		<langchain4j.version>1.4.0</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
@@ -188,7 +188,7 @@
 		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.11.0</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>7.0.0</neo4j-bolt-connection.version>
-		<neo4j-cypher-dsl.version>2025.0.0</neo4j-cypher-dsl.version>
+		<neo4j-cypher-dsl.version>2025.0.1</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.7.3</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>2025.06</neo4j.version>
@@ -203,7 +203,7 @@
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
 		<slf4j.version>2.0.17</slf4j.version>
-		<sonar-maven-plugin.version>5.1.0.4751</sonar-maven-plugin.version>
+		<sonar-maven-plugin.version>5.2.0.4988</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
 		<spring-boot.version>3.5.5</spring-boot.version>
 		<spring-javaformat.version>0.0.47</spring-javaformat.version>
