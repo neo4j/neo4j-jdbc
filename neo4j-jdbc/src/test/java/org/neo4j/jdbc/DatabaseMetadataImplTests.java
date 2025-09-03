@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -60,8 +61,8 @@ class DatabaseMetadataImplTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-				any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), anyLong(), any(), any(), any(),
+				any(), any()))
 			.willReturn(mockedFuture);
 	}
 

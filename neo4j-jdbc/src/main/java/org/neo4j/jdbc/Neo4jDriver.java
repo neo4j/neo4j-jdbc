@@ -583,7 +583,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 		return connectionProvider
 			.connect(targetUri, null, BoltAdapters.newAgent(ProductVersion.getValue()), userAgent, connectTimeoutMillis,
-					securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig(),
+					connectTimeoutMillis, securityPlan, authToken, MIN_BOLT_VERSION, NotificationConfig.defaultConfig(),
 					NoopObservation.INSTANCE)
 			.toCompletableFuture()
 			.join();

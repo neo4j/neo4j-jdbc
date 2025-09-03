@@ -55,6 +55,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -76,8 +77,8 @@ class Neo4jDriverUrlParsingTests {
 		CompletableFuture<BoltConnection> boltConnectionCompletableFuture = mock();
 		given(boltConnectionCompletableFuture.join()).willReturn(mock());
 		given(mockedFuture.toCompletableFuture()).willReturn(boltConnectionCompletableFuture);
-		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-				any()))
+		given(this.boltConnectionProvider.connect(any(), any(), any(), any(), anyInt(), anyLong(), any(), any(), any(),
+				any(), any()))
 			.willReturn(mockedFuture);
 
 		this.factories = List.of(new BoltConnectionProviderFactory() {
@@ -113,7 +114,8 @@ class Neo4jDriverUrlParsingTests {
 
 		driver.connect(url, props);
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri(host, port)), any(), any(), any(), anyInt(), any(), any(), any(), any(), any());
+			.connect(eq(boltUri(host, port)), any(), any(), any(), anyInt(), anyLong(), any(), any(), any(), any(),
+					any());
 	}
 
 	@Test
@@ -128,8 +130,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-					any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(), any(),
+					any(), any(), any());
 		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
@@ -146,8 +148,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-					any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(), any(),
+					any(), any(), any());
 		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
@@ -164,8 +166,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-					any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(), any(),
+					any(), any(), any());
 		assertThat(connection.getDatabaseName()).isEqualTo("database");
 	}
 
@@ -181,8 +183,8 @@ class Neo4jDriverUrlParsingTests {
 		var connection = driver.connect(url, props).unwrap(Neo4jConnection.class);
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(), any(), any(), any(),
-					any());
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(), any(),
+					any(), any(), any());
 		assertThat(connection.getDatabaseName()).isEqualTo("neo4j");
 	}
 
@@ -248,7 +250,7 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(),
 					eq(expectedAuthToken), any(), any(), any());
 	}
 
@@ -266,8 +268,8 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(),
-					any(), any());
+			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), anyLong(), any(), eq(expectedAuthToken),
+					any(), any(), any());
 	}
 
 	@Test
@@ -284,8 +286,8 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(),
-					any(), any());
+			.connect(eq(boltUri("host", 1000)), any(), any(), any(), anyInt(), anyLong(), any(), eq(expectedAuthToken),
+					any(), any(), any());
 	}
 
 	@Test
@@ -302,7 +304,7 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(),
 					eq(expectedAuthToken), any(), any(), any());
 	}
 
@@ -315,7 +317,7 @@ class Neo4jDriverUrlParsingTests {
 		var expectedAuthToken = AuthTokens.basic("user=", "&pass= word?", null, BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(),
 					eq(expectedAuthToken), any(), any(), any());
 	}
 
@@ -333,7 +335,7 @@ class Neo4jDriverUrlParsingTests {
 				BoltAdapters.getValueFactory());
 
 		then(this.boltConnectionProvider).should()
-			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), any(),
+			.connect(eq(boltUri("host", DEFAULT_BOLT_PORT)), any(), any(), any(), anyInt(), anyLong(), any(),
 					eq(expectedAuthToken), any(), any(), any());
 	}
 
@@ -589,7 +591,8 @@ class Neo4jDriverUrlParsingTests {
 		driver.connect("jdbc:neo4j://host:1000/database", props);
 
 		then(this.boltConnectionProvider).should()
-			.connect(any(), any(), any(), any(), anyInt(), any(), eq(expectedAuthToken), any(), any(), any());
+			.connect(any(), any(), any(), any(), anyInt(), anyLong(), any(), eq(expectedAuthToken), any(), any(),
+					any());
 	}
 
 	@Test
