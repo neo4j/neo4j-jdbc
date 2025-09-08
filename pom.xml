@@ -210,7 +210,7 @@
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers-keycloak.version>3.8.0</testcontainers-keycloak.version>
 		<testcontainers.version>1.21.3</testcontainers.version>
-		<versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
+		<versions-maven-plugin.version>2.19.0</versions-maven-plugin.version>
 	</properties>
 
 	<dependencyManagement>
