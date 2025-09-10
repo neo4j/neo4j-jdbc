@@ -52,7 +52,7 @@ abstract class AbstractVectorIT {
 	protected final boolean databaseSupportsVectors;
 
 	AbstractVectorIT(String defaultLanguage) {
-		this.neo4j = getNeo4jContainer("neo4j:2025.07-enterprise", defaultLanguage);
+		this.neo4j = getNeo4jContainer("neo4j:2025.08-enterprise", defaultLanguage);
 		var logs = new CopyOnWriteArrayList<String>();
 		this.neo4j.withLogConsumer(frame -> logs.add(frame.getUtf8String().trim()));
 		this.neo4j.start();
