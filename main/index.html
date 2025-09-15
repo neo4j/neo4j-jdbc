@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-09-10T11:34:20Z</span>
+<span id="revdate">2025-09-15T10:38:52Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -1535,8 +1535,54 @@ Other connections retrieved from the driver instance to the same or to other dat
 <td class="tableblock halign-left valign-top"><p class="tableblock">The name of an authentication supplier, can be used to plugin various SSO systems such as Keycloak, with automatic token refresh. See below <a href="#authentication">Custom authentication</a> for more information.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>tryTcpFastOpen</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>boolean</code></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Setting this value to <code>true</code> makes the driver attempt to use <a href="https://en.wikipedia.org/wiki/TCP_Fast_Open">TCP Fast Open</a>. For this to work the following additional requirements must be fulfilled:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The system the driver is running on supports and has TCP Fast Open enabled.</p>
+</li>
+<li>
+<p>The DBMS to which the driver should connect must also support and enable TCP Fast Open</p>
+</li>
+<li>
+<p>One of the following additional runtime dependencies (depending on your operating system), must be present on the class- or module path:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>netty-transport-native-io_uring (Netty 4.2+ only)</p>
+</li>
+<li>
+<p>netty-transport-native-epoll</p>
+</li>
+<li>
+<p>netty-transport-native-kqueue</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+</tr>
 </tbody>
 </table>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Providing that a valid Netty dependency for transport is added, it will be discovered and used instead of the default NIO transport. Those are operating system specific and valid options are <code>netty-transport-native-epoll</code>, <code>netty-transport-native-kqueue</code> and on Netty 4.2 or later, <code>netty-transport-native-io_uring</code>.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_getting_a_driver_or_a_connection_instance">4.3. Getting a driver or a connection instance</h3>
@@ -5651,7 +5697,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-09-10 11:34:27 UTC
+Last updated 2025-09-15 10:38:56 UTC
 </div>
 </div>
 </body>
