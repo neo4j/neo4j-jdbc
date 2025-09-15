@@ -134,7 +134,23 @@ Other connections retrieved from the driver instance to the same or to other dat
 |The name of an authentication supplier, can be used to plugin various SSO systems such as Keycloak, with automatic token refresh. See below xref:authentication[] for more information.
 |`null`
 
+|`tryTcpFastOpen`
+|`boolean`
+a|Setting this value to `true` makes the driver attempt to use https://en.wikipedia.org/wiki/TCP_Fast_Open[TCP Fast Open]. For this to work the following additional requirements must be fulfilled:
+
+* The system the driver is running on supports and has TCP Fast Open enabled.
+* The DBMS to which the driver should connect must also support and enable TCP Fast Open
+* One of the following additional runtime dependencies (depending on your operating system), must be present on the class- or module path:
+** netty-transport-native-io_uring (Netty 4.2+ only)
+** netty-transport-native-epoll
+** netty-transport-native-kqueue
+
+|`null`
+
 |===
+
+TIP: Providing that a valid Netty dependency for transport is added, it will be discovered and used instead of the default NIO transport. Those are operating system specific and valid options are `netty-transport-native-epoll`, `netty-transport-native-kqueue` and on Netty 4.2 or later, `netty-transport-native-io_uring`.
+
 
 == Getting a driver or a connection instance
 

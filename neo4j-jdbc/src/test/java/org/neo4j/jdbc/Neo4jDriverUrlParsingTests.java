@@ -29,6 +29,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentMatcher;
@@ -473,8 +475,13 @@ class Neo4jDriverUrlParsingTests {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "", ":http" })
-	void testParseConfigOverrides(String protocol) throws SQLException {
+	@CsvSource(textBlock = """
+				true,''
+				true,:http
+				false,''
+				false,:http
+			""")
+	void testParseConfigOverrides(boolean fastOpen, String protocol) throws SQLException {
 		Properties props = new Properties();
 		props.put("authScheme", "basic");
 		props.put("user", "user1");
@@ -491,9 +498,13 @@ class Neo4jDriverUrlParsingTests {
 		props.put("s2c.enableCache", "true");
 		props.put("customProperty", "foo");
 		props.put("relationshipSampleSize", "4711");
+		if (fastOpen) {
+			props.put("tryTcpFastOpen", fastOpen);
+		}
 
+		var fastOpenArg = fastOpen ? "&tryTcpFastOpen=true" : "";
 		var config = Neo4jDriver.DriverConfig
-			.of("jdbc:neo4j%s://host:1234/?sslMode=require&customQuery=bar".formatted(protocol), props);
+			.of("jdbc:neo4j%s://host:1234/?sslMode=require&customQuery=bar%s".formatted(protocol, fastOpenArg), props);
 
 		assertThat(config.host()).isEqualTo("host");
 		assertThat(config.port()).isEqualTo(1234);
@@ -511,6 +522,7 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(config.rewritePlaceholders()).isFalse();
 		assertThat(config.sslProperties().ssl()).isTrue();
 		assertThat(config.sslProperties().sslMode()).isEqualTo(Neo4jDriver.SSLMode.REQUIRE);
+		assertThat(config.tryTcpFastOpen()).isEqualTo(fastOpen);
 
 		// raw config, i.e., everything the user explicitly set
 		var rawConfig = new HashMap<>(config.rawConfig());
@@ -523,6 +535,9 @@ class Neo4jDriverUrlParsingTests {
 		assertThat(rawConfig.remove("authRealm")).isEqualTo(config.authRealm());
 		assertThat(rawConfig.remove("agent")).isEqualTo(config.agent());
 		assertThat(rawConfig.remove("timeout")).isEqualTo(String.valueOf(config.timeout()));
+		if (fastOpen) {
+			assertThat(rawConfig.remove("tryTcpFastOpen")).isEqualTo(Boolean.toString(fastOpen));
+		}
 		assertThat(rawConfig.remove("enableSQLTranslation")).isEqualTo(String.valueOf(config.enableSQLTranslation()));
 		assertThat(rawConfig.remove("cacheSQLTranslations"))
 			.isEqualTo(String.valueOf(config.enableTranslationCaching()));
@@ -542,8 +557,8 @@ class Neo4jDriverUrlParsingTests {
 
 		var url = config.toUrl().toString();
 		assertThat(url).isEqualTo(
-				"jdbc:neo4j+ssc%s://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true"
-					.formatted(protocol));
+				"jdbc:neo4j+ssc%s://host:1234/customDb?enableSQLTranslation=true&cacheSQLTranslations=true&rewriteBatchedStatements=false&rewritePlaceholders=false&useBookmarks=true%s"
+					.formatted(protocol, fastOpenArg));
 	}
 
 	@Test
@@ -593,6 +608,35 @@ class Neo4jDriverUrlParsingTests {
 		then(this.boltConnectionProvider).should()
 			.connect(any(), any(), any(), any(), anyInt(), anyLong(), any(), eq(expectedAuthToken), any(), any(),
 					any());
+	}
+
+	@Test
+	void shouldEnableTCPFastOpen() throws SQLException {
+
+		var optionCorrect = new AtomicBoolean(false);
+		var singleBCPF = List.<BoltConnectionProviderFactory>of(new BoltConnectionProviderFactory() {
+			@Override
+			public boolean supports(String s) {
+				return true;
+			}
+
+			@Override
+			public BoltConnectionProvider create(LoggingProvider loggingProvider, ValueFactory valueFactory,
+					ObservationProvider observationProvider, Map<String, ?> additionalConfig) {
+				optionCorrect.compareAndSet(false, additionalConfig.get("enableFastOpen") instanceof Boolean b && b);
+				return Neo4jDriverUrlParsingTests.this.boltConnectionProvider;
+			}
+		});
+
+		var driver = new Neo4jDriver(singleBCPF);
+
+		var props = new Properties();
+		props.put(Neo4jDriver.PROPERTY_TRY_TCP_FAST_OPEN, "true");
+		driver.connect("jdbc:neo4j://host:1000/database", props);
+
+		then(this.boltConnectionProvider).should()
+			.connect(any(), any(), any(), any(), anyInt(), anyLong(), any(), any(), any(), any(), any());
+		assertThat(optionCorrect).isTrue();
 	}
 
 	@Test

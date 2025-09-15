@@ -243,6 +243,18 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 */
 	public static final String PROPERTY_SSL_MODE = "sslMode";
 
+	/**
+	 * An optional configuration flag to try opening new TCP connections using TCP fast
+	 * oben. TCP fast open requires one of the following libraries to be on the module or
+	 * classpath:
+	 * <ul>
+	 * <li>netty-transport-native-io_uring (Netty 4.2+ only)</li>
+	 * <li>netty-transport-native-epoll</li>
+	 * <li>netty-transport-native-kqueue</li>
+	 * </ul>
+	 */
+	public static final String PROPERTY_TRY_TCP_FAST_OPEN = "tryTcpFastOpen";
+
 	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?(?::(?<protocol>https?))?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
 
 	/**
@@ -572,12 +584,21 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var targetUri = URI
 			.create("%s://%s%s".formatted(driverConfig.protocol(), driverConfig.host(), driverConfig.formattedPort()));
 
+		Map<String, Object> additionalOptions;
+		if (!driverConfig.tryTcpFastOpen()) {
+			additionalOptions = BOLT_CONNECTION_OPTIONS;
+		}
+		else {
+			additionalOptions = new HashMap<>(BOLT_CONNECTION_OPTIONS);
+			additionalOptions.put("enableFastOpen", driverConfig.tryTcpFastOpen());
+		}
+
 		var connectionProvider = this.providerCache.computeIfAbsent(targetUri.getScheme(),
 				scheme -> this.boltConnectionProviderFactories.stream()
 					.filter(factory -> factory.supports(scheme))
 					.findFirst()
 					.map(factory -> factory.create(BoltAdapters.newLoggingProvider(), BoltAdapters.getValueFactory(),
-							BoltConnectionObservations.NoopBoltObservationProvider.INSTANCE, BOLT_CONNECTION_OPTIONS))
+							BoltConnectionObservations.NoopBoltObservationProvider.INSTANCE, additionalOptions))
 					.orElseThrow(() -> new RuntimeException(
 							"Failed to load a connection provider supporting target %s".formatted(targetUri))));
 
@@ -1122,19 +1143,22 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	 * @param useBookmarks enables the use of causal cluster bookmarks
 	 * @param relationshipSampleSize Sample size for determining relationship types
 	 * @param sslProperties ssl properties
+	 * @param tryTcpFastOpen set to true to try opening TCP connection using TCP Fast open
+	 * (requires netty-transport-native-epoll, netty-transport-native-kqueue or
+	 * netty-transport-native-io_uring (Netty 4.2+ only)) on the classpath
 	 * @param rawConfig Unprocessed configuration options
 	 */
 	record DriverConfig(String host, String protocol, Integer port, String database, AuthScheme authScheme, String user,
 			String password, String authRealm, String agent, int timeout, boolean enableSQLTranslation,
 			boolean enableTranslationCaching, boolean rewriteBatchedStatements, boolean rewritePlaceholders,
-			boolean useBookmarks, int relationshipSampleSize, SSLProperties sslProperties,
+			boolean useBookmarks, int relationshipSampleSize, SSLProperties sslProperties, boolean tryTcpFastOpen,
 			Map<String, String> rawConfig) {
 
 		private static final Set<String> DRIVER_SPECIFIC_PROPERTIES = Set.of(PROPERTY_HOST, PROPERTY_PORT,
 				PROPERTY_DATABASE, PROPERTY_AUTH_SCHEME, PROPERTY_USER, PROPERTY_PASSWORD, PROPERTY_AUTH_REALM,
 				PROPERTY_USER_AGENT, PROPERTY_TIMEOUT, PROPERTY_SQL_TRANSLATION_ENABLED,
 				PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, PROPERTY_REWRITE_BATCHED_STATEMENTS,
-				PROPERTY_REWRITE_PLACEHOLDERS, PROPERTY_SSL, PROPERTY_SSL_MODE);
+				PROPERTY_REWRITE_PLACEHOLDERS, PROPERTY_SSL, PROPERTY_SSL_MODE, PROPERTY_TRY_TCP_FAST_OPEN);
 
 		DriverConfig {
 			rawConfig = Collections.unmodifiableMap(new TreeMap<>(rawConfig));
@@ -1230,11 +1254,16 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				throw new Neo4jException(
 						GQLError.$22N02.withMessage("Sample size for relationships must be greater than or equal -1"));
 			}
+			var hlp = config.get(PROPERTY_TRY_TCP_FAST_OPEN);
+			var tryTcpFastOpen = Boolean.parseBoolean(hlp);
+			if (hlp != null) {
+				raw.put(PROPERTY_TRY_TCP_FAST_OPEN, hlp);
+			}
 
 			return new DriverConfig(host, protocol, port, databaseName, authScheme, user, password, authRealm,
 					userAgent, connectionTimeoutMillis, automaticSqlTranslation, enableTranslationCaching,
 					rewriteBatchedStatements, rewritePlaceholders, useBookmarks, relationshipSampleSize, sslProperties,
-					raw);
+					tryTcpFastOpen, raw);
 		}
 
 		private static AuthScheme authScheme(String scheme) throws IllegalArgumentException {
@@ -1264,6 +1293,9 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			append(result, PROPERTY_REWRITE_BATCHED_STATEMENTS, this.rewriteBatchedStatements()).append("&");
 			append(result, PROPERTY_REWRITE_PLACEHOLDERS, this.rewriteBatchedStatements()).append("&");
 			append(result, PROPERTY_USE_BOOKMARKS, this.useBookmarks()).append("&");
+			if (this.tryTcpFastOpen()) {
+				append(result, PROPERTY_TRY_TCP_FAST_OPEN, this.tryTcpFastOpen()).append("&");
+			}
 			return URI.create(result.substring(0, result.length() - 1));
 		}
 

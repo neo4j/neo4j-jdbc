@@ -220,7 +220,7 @@ class Neo4jDriverTests {
 
 		private static Neo4jDriver.DriverConfig newDriverConfig(Map<String, String> raw) {
 			return new Neo4jDriver.DriverConfig("na", "neo4j", 7687, "db", Neo4jDriver.AuthScheme.BASIC, "explicit",
-					"pw", null, null, 0, false, false, false, false, false, 0, null, raw);
+					"pw", null, null, 0, false, false, false, false, false, 0, null, false, raw);
 		}
 
 		private static Neo4jDriver.DriverConfig newDriverConfig() {
