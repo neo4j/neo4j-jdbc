@@ -1,3 +1,122 @@
+# 6.8.0
+
+This release brings support for transmitting the new data types optimised for vector storage in future Neo4j versions. If you want to try them out, you need at least Neo4j 2025.8 and enable several settings on the database site. Consult the Neo4j documentation on how to do that.
+
+The new types are provided via factory methods in `org.neo4j.jdbc.values.Vector` for creating them client-side and passing them as parameters and we support all Neo4j supported inner types:
+
+* `INTEGER8` (Java `byte`)
+* `INTEGER16` (Java `short`)
+* `INTEGER32` (Java `int`)
+* `INTEGER` (Java `long`)
+* `FLOAT16` (Java `float`)
+* `FLOAT` (Java `double`)
+
+Our current client implementations are array based unless we can in some future use Javas Vector API.
+Vectors can be used as is, or even used as SQL `ARRAY`'s
+
+The rest of this release is consists mostly of dependency updates.
+
+## 🚀 Features
+- 87acb67 build: Add support for upgrading all dependencies via Maven.
+- b02ab8e feat: Add support for the new Neo4j `Vector` type. (#1051)
+
+## 🐛 Bug Fixes
+- 6264aed build: Fix JavaDoc warnings wrt the optional JAXB dependency.
+
+## 📝 Documentation
+- 7c16e99 docs: Document the authn/kc module and the various Neo4j vector types.
+
+## 🧹 Housekeeping
+- e3fb173 Bump dev.langchain4j:langchain4j-bom from 1.3.0 to 1.4.0 (#1083)
+- c5e65aa Bump org.openapitools:openapi-generator-maven-plugin (#1074)
+- 7571c7b Bump org.mockito:mockito-bom from 5.18.0 to 5.19.0 (#1080)
+- b190f07 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1079)
+- b2697a2 Bump org.openapitools:jackson-databind-nullable (#1078)
+- b8d3311 Bump io.netty:netty-bom from 4.1.123.Final to 4.1.124.Final (#1077)
+- d72e801 Bump spring-boot.version from 3.5.4 to 3.5.5 (#1076)
+- 734ef3d Bump quarkus.platform.version from 3.25.3 to 3.25.4 (#1075)
+- 3c51df6 Bump org.neo4j:neo4j-cypher-dsl-bom to 2025.0.0
+- 77c4fc7 Bump org.neo4j.bolt:neo4j-bolt-connection-bom from 6.0.2 to 7.0.0 (#1065)
+- 58b55e6 Bump io.micrometer:micrometer-bom from 1.15.2 to 1.15.3 (#1072)
+- 226df5e Bump io.micrometer:micrometer-tracing-bom (#1073)
+- 2f133e2 Bump org.jooq:jooq from 3.19.24 to 3.19.25 (#1071)
+- 10dbb90 Bump org.neo4j:neo4j-cypher-dsl-bom (#1057)
+- 38aa96b Bump org.codehaus.mojo:flatten-maven-plugin (#1060)
+- e8f03b3 Bump com.puppycrawl.tools:checkstyle from 10.26.1 to 11.0.0 (#1062)
+- c679045 Bump dev.langchain4j:langchain4j-bom from 1.1.0 to 1.3.0 (#1064)
+- 987f53a Bump org.hibernate.orm:hibernate-platform (#1066)
+- ba1f85f Bump org.neo4j:cypher-v5-antlr-parser (#1067)
+- 00a1d52 Bump org.assertj:assertj-core from 3.27.3 to 3.27.4 (#1068)
+- 36e8c65 Bump quarkus.platform.version from 3.24.5 to 3.25.3 (#1069)
+- 3f94ffe Bump org.apache.maven.plugins:maven-javadoc-plugin (#1070)
+- 715a83a Add some more tests for the value system.
+
+## 🛠 Build
+- 8a9eb9d build: Downgrade to JRelease 1.19 again.
+- 821ff30 build: Update to Neo4j 2025.8 for all tests by default.
+- 83f6e13 build: Upgrade vector tests to use latest Neo4j 2025.8.
+- a8a26d6 build: Upgrade dependencies.
+- a11d810 build: Upgrade dependencies.
+- 46f2921 build: Upgrade dependencies.
+- a70b1d9 build: Add service transformer to text2cypher bundle.
+- c5d1ea2 build: Downgrade to Javadoc plugin 3.11.2 to get rid of new wrong build warnings.
+
+
+# 6.7.3
+
+## 🐛 Bug Fixes
+- 12e2b86 fix: Proper test multiple node types, and fix metadata doc.
+
+## 🧹 Housekeeping
+- 225cfdf Bump com.opencsv:opencsv from 5.11.2 to 5.12.0 (#1053)
+- 04901e3 Bump spring-boot.version from 3.5.3 to 3.5.4 (#1056)
+- c9036b2 Bump org.junit:junit-bom from 5.13.3 to 5.13.4 (#1055)
+- 56c0fb9 Bump org.hibernate.orm:hibernate-platform (#1054)
+- 7ff8dd9 Bump quarkus.platform.version from 3.24.4 to 3.24.5 (#1052)
+
+
+# 6.7.2
+
+## 🚀 Features
+- f8078f1 feat: Allow to configure User-Agent from a dedicated resource. (#1041)
+
+## 🐛 Bug Fixes
+- 259f89a fix: Prevent a class cast exception when transmitting parameters of type `Point` or `IsoDuration` to the server. (#1042)
+
+## 🧹 Housekeeping
+- aca6fda Bump io.netty:netty-bom from 4.1.121.Final to 4.1.123.Final (#1049)
+- dbfc88a Bump quarkus.platform.version from 3.24.3 to 3.24.4 (#1048)
+- 392a48e Bump org.graalvm.buildtools:native-maven-plugin (#1047)
+- 4843e90 Bump org.moditect:moditect-maven-plugin (#1046)
+- fb9d651 Bump org.apache.maven.plugins:maven-enforcer-plugin (#1045)
+- df64186 Bump com.fasterxml.jackson:jackson-bom (#1044)
+
+## 🛠 Build
+- 5c9984f build: Remove workarounds for JUnit 5.13 to work with older native image build tools. (#1050)
+
+
+# 6.7.1
+
+## 🚀 Features
+- dad6a0d feat: Allow user-agent customisation via env-variables or system properties. (#1032)
+
+## 📝 Documentation
+- 864b042 docs: Update local changelog.
+- 72102a5 docs: Remove quotes from prerelease attribute. (#1033)
+
+## 🧹 Housekeeping
+- 0404c49 Bump io.micrometer:micrometer-bom from 1.15.1 to 1.15.2 (#1039)
+- e0b401d Bump quarkus.platform.version from 3.24.2 to 3.24.3 (#1037)
+- 6e75f97 Bump org.hibernate.orm:hibernate-platform (#1038)
+- 0d0ec22 Bump mybatis-spring-boot-starter.version (#1036)
+- 9217bf1 Bump org.neo4j:cypher-v5-antlr-parser from 5.26.8 to 5.26.9 (#1035)
+- ac484d1 Bump io.micrometer:micrometer-tracing-bom (#1034)
+
+## 🛠 Build
+- cdc7a19 test: Add integration tests for retrieving the user-agent. (#1040)
+- b7f4f90 build: Upgrade stubserver / testkit tests to use latest Python 3.10 image.
+
+
 # 6.7.0
 
 ## Can your JDBC driver do this?
