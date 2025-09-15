@@ -139,6 +139,7 @@
 		<awaitility.version>4.3.0</awaitility.version>
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
 		<checkstyle.version>11.0.1</checkstyle.version>
+		<commons-lang3.version>3.18.0</commons-lang3.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
@@ -152,16 +153,17 @@
 		<jackson-databind-nullable.version>0.2.7</jackson-databind-nullable.version>
 		<jackson.version>2.20.0</jackson.version>
 		<jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
 		<japicmp-maven-plugin.version>0.23.1</japicmp-maven-plugin.version>
 		<java.version>17</java.version>
-		<jaxb-api.version>4.0.2</jaxb-api.version>
+		<jaxb-api.version>4.0.4</jaxb-api.version>
 		<jboss-logging.version>3.6.1.Final</jboss-logging.version>
 		<jdbi3.version>3.49.5</jdbi3.version>
-		<jooq.version>3.19.25</jooq.version>
+		<jooq.version>3.19.26</jooq.version>
 		<jreleaser-maven-plugin.version>1.19.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>5.13.4</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.6</keycloak-authz-client.version>
-		<kotlin-stdlib-jdk8.version>2.2.10</kotlin-stdlib-jdk8.version>
+		<kotlin-stdlib-jdk8.version>2.2.20</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.4.0</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
@@ -170,15 +172,15 @@
 		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
 		<maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
 		<maven-enforcer-plugin.version>3.6.1</maven-enforcer-plugin.version>
-		<maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
+		<maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
 		<maven-install-plugin.version>3.1.4</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
 		<maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
 		<maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-		<maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-		<maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.4</maven.version>
 		<micrometer-tracing.version>1.5.4</micrometer-tracing.version>
@@ -187,7 +189,7 @@
 		<moditect-maven-plugin.version>1.3.0.Final</moditect-maven-plugin.version>
 		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.11.0</native-maven-plugin.version>
-		<neo4j-bolt-connection.version>8.2.0</neo4j-bolt-connection.version>
+		<neo4j-bolt-connection.version>8.3.0</neo4j-bolt-connection.version>
 		<neo4j-cypher-dsl.version>2025.0.1</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.8.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
@@ -198,7 +200,7 @@
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.26.1</quarkus.platform.version>
+		<quarkus.platform.version>3.26.3</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
@@ -311,6 +313,11 @@
 				<version>${dotenv-java.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>jakarta.activation</groupId>
+				<artifactId>jakarta.activation-api</artifactId>
+				<version>${jakarta.activation-api.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.xml.bind</groupId>
 				<artifactId>jakarta.xml.bind-api</artifactId>
 				<version>${jaxb-api.version}</version>
@@ -320,7 +327,7 @@
 				and they don't care if it doesn't converge with their dependencies…) -->
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
-				<version>3.18.0</version>
+				<version>${commons-lang3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.asciidoctor</groupId>
