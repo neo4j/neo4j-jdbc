@@ -135,7 +135,7 @@
 		<asciidoctor-maven-plugin.version>3.2.0</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 		<asciidoctorj.version>3.0.0</asciidoctorj.version>
-		<assertj.version>3.27.4</assertj.version>
+		<assertj.version>3.27.5</assertj.version>
 		<awaitility.version>4.3.0</awaitility.version>
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
 		<checkstyle.version>11.0.1</checkstyle.version>
@@ -148,7 +148,7 @@
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.5.1</exec-maven-plugin.version>
-		<flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
+		<flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.7</jackson-databind-nullable.version>
 		<jackson.version>2.20.0</jackson.version>
@@ -164,18 +164,18 @@
 		<junit-jupiter.version>5.13.4</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.6</keycloak-authz-client.version>
 		<kotlin-stdlib-jdk8.version>2.2.20</kotlin-stdlib-jdk8.version>
-		<langchain4j.version>1.4.0</langchain4j.version>
+		<langchain4j.version>1.5.0</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 		<maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
 		<maven-enforcer-plugin.version>3.6.1</maven-enforcer-plugin.version>
 		<maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
 		<maven-install-plugin.version>3.1.4</maven-install-plugin.version>
 		<maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-		<maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+		<maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 		<maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
@@ -185,12 +185,12 @@
 		<maven.version>3.9.4</maven.version>
 		<micrometer-tracing.version>1.5.4</micrometer-tracing.version>
 		<micrometer.version>1.15.4</micrometer.version>
-		<mockito.version>5.19.0</mockito.version>
+		<mockito.version>5.20.0</mockito.version>
 		<moditect-maven-plugin.version>1.3.0.Final</moditect-maven-plugin.version>
 		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.11.0</native-maven-plugin.version>
-		<neo4j-bolt-connection.version>8.3.0</neo4j-bolt-connection.version>
-		<neo4j-cypher-dsl.version>2025.0.1</neo4j-cypher-dsl.version>
+		<neo4j-bolt-connection.version>8.4.0</neo4j-bolt-connection.version>
+		<neo4j-cypher-dsl.version>2025.0.2</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.8.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>2025.08</neo4j.version>
@@ -200,19 +200,19 @@
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.26.3</quarkus.platform.version>
+		<quarkus.platform.version>3.26.4</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
 		<slf4j.version>2.0.17</slf4j.version>
 		<sonar-maven-plugin.version>5.2.0.4988</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-		<spring-boot.version>3.5.5</spring-boot.version>
+		<spring-boot.version>3.5.6</spring-boot.version>
 		<spring-javaformat.version>0.0.47</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers-keycloak.version>3.8.0</testcontainers-keycloak.version>
 		<testcontainers.version>1.21.3</testcontainers.version>
-		<versions-maven-plugin.version>2.19.0</versions-maven-plugin.version>
+		<versions-maven-plugin.version>2.19.1</versions-maven-plugin.version>
 	</properties>
 
 	<dependencyManagement>
