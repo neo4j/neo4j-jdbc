@@ -185,7 +185,7 @@
 		<maven.version>3.9.4</maven.version>
 		<micrometer-tracing.version>1.5.4</micrometer-tracing.version>
 		<micrometer.version>1.15.4</micrometer.version>
-		<mockito.version>5.19.0</mockito.version>
+		<mockito.version>5.20.0</mockito.version>
 		<moditect-maven-plugin.version>1.3.0.Final</moditect-maven-plugin.version>
 		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.11.0</native-maven-plugin.version>
