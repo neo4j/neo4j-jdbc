@@ -190,7 +190,7 @@
 		<native-image-config-transformer.version>0.0.1</native-image-config-transformer.version>
 		<native-maven-plugin.version>0.11.0</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>8.3.0</neo4j-bolt-connection.version>
-		<neo4j-cypher-dsl.version>2025.0.1</neo4j-cypher-dsl.version>
+		<neo4j-cypher-dsl.version>2025.0.2</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.8.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>2025.08</neo4j.version>
