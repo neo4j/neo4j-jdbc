@@ -1,0 +1,15 @@
+!: BOLT 6.0
+
+A: HELLO {"{}": "*"}
+A: LOGON {"scheme": "basic", "principal": "neo4j", "credentials": "password"}
+C: BEGIN {"mode": "r", "db": "neo4j", "tx_type": "IMPLICIT", "[bookmarks]": "*", "[tx_metadata]": "*"}
+   RUN "RETURN 1 as n" {} {}
+   PULL {"n": 1000}
+S: SUCCESS {}
+   SUCCESS {"fields": ["n"]}
+   RECORD [{"UT": ["foo", 47, 11, "Whatever"]}]
+   SUCCESS {"type": "r"}
+C: COMMIT
+S: SUCCESS {}
+C: GOODBYE
+S: <EXIT>

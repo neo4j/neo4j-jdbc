@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone https://github.com/neo4j-drivers/testkit.git /testkit \
     && cd /testkit \
-    && git checkout 317bfd5823f027291fbb34ff7c83871a057b4b31 \
+    && git checkout 166d62c3f8bfdbf8066993fdf85374a003bc87f1 \
     && python -m pip install -Ur requirements.txt
 
 COPY scripts /scripts
