@@ -27,9 +27,12 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.neo4j.jdbc.Neo4jMetadataWriter;
 import org.neo4j.jdbc.it.stub.server.IntegrationTestBase;
 import org.neo4j.jdbc.it.stub.server.StubScript;
+import org.neo4j.jdbc.values.UnsupportedType;
+import org.neo4j.jdbc.values.Value;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.restoreSystemProperties;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ConnectionIT extends IntegrationTestBase {
@@ -241,6 +244,31 @@ class ConnectionIT extends IntegrationTestBase {
 			connection.setNetworkTimeout(null, 100);
 			assertThat(connection.isValid(0)).isFalse();
 			assertThat(connection.isClosed()).isTrue();
+		}
+
+		verifyStubServer();
+	}
+
+	@Test
+	@StubScript(path = "echo_unsupported.script")
+	void unsupportedTypeShouldWork() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			connection.setReadOnly(true);
+			var result = statement.executeQuery("RETURN 1 as n");
+			assertThat(result.next()).isTrue();
+
+			assertThatException().isThrownBy(() -> result.getInt(1))
+				.withMessage(
+						"data exception - Cannot coerce UnsupportedType[name=foo, minProtocolVersion=47.11, message=Whatever] (UNSUPPORTED) to int");
+
+			var ut = result.getObject(1, UnsupportedType.class);
+			assertThat(ut.name()).isEqualTo("foo");
+			assertThat(ut.minProtocolVersion()).isEqualTo("47.11");
+			assertThat(ut.message()).isEqualTo("Whatever");
+
+			var v = result.getObject(1, Value.class);
+			assertThat(v.asObject()).isEqualTo(new UnsupportedType("foo", "47.11", "Whatever"));
+			assertThat(result.next()).isFalse();
 		}
 
 		verifyStubServer();

@@ -110,7 +110,7 @@ final class Neo4jConversions {
 
 	static int toSqlType(Type neo4jType) {
 		return switch (neo4jType) {
-			case ANY, DURATION -> Types.OTHER;
+			case ANY, DURATION, UNSUPPORTED -> Types.OTHER;
 			case BOOLEAN -> Types.BOOLEAN;
 			case BYTES -> Types.BLOB;
 			case STRING -> Types.VARCHAR;

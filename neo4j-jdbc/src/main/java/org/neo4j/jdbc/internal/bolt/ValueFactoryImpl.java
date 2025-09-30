@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.neo4j.bolt.connection.BoltProtocolVersion;
 import org.neo4j.bolt.connection.values.Node;
 import org.neo4j.bolt.connection.values.Path;
 import org.neo4j.bolt.connection.values.Relationship;
@@ -52,6 +53,7 @@ import org.neo4j.jdbc.values.RelationshipValue;
 import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.UnsupportedDateTimeValue;
+import org.neo4j.jdbc.values.UnsupportedType;
 import org.neo4j.jdbc.values.Values;
 import org.neo4j.jdbc.values.Vector;
 import org.neo4j.jdbc.values.VectorValue;
@@ -169,6 +171,15 @@ enum ValueFactoryImpl implements ValueFactory {
 		}
 
 		return asBoltValue(vector.asValue());
+	}
+
+	@Override
+	public Value unsupportedType(String name, BoltProtocolVersion minProtocolVersion, Map<String, Value> extra) {
+		var message = extra.get("message");
+		var messageString = (message != null)
+				? (message.boltValueType().equals(Type.STRING) ? message.asString() : null) : null;
+		return new ValueImpl(new UnsupportedType(name, minProtocolVersion.toString(), messageString).asValue(),
+				Type.UNSUPPORTED);
 	}
 
 	@Override

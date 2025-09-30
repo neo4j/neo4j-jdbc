@@ -1125,7 +1125,7 @@ class ResultSetImplTests {
 							supplier -> assertThat(supplier.get()).isEqualTo(Vector.of(new int[1]))))));
 
 			return switch (type) {
-				case ANY, NODE, RELATIONSHIP, PATH, NUMBER -> Stream.of();
+				case ANY, NODE, UNSUPPORTED, RELATIONSHIP, PATH, NUMBER -> Stream.of();
 				case BOOLEAN -> booleanStream;
 				case BYTES -> bytesStream;
 				case STRING -> stringStream;

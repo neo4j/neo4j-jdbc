@@ -153,7 +153,12 @@ public enum Type {
 	 * A typed vector type.
 	 * @since 6.8.0
 	 */
-	VECTOR;
+	VECTOR,
+	/**
+	 * A datatype that might be known in the server, but is unsupported in this client.
+	 * @since 6.9.0
+	 */
+	UNSUPPORTED;
 
 	/**
 	 * Test if the given value has this type.
