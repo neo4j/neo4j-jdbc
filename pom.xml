@@ -902,7 +902,7 @@
 							<ignoreVersions>
 								<ignoreVersion>
 									<type>regex</type>
-									<version>(?i)(.+-SNAPSHOT|.+-M\d|.+-?RC\d|.+CR\d)</version>
+									<version>(?i)(.+-SNAPSHOT|.+-M\d+|.+-?RC\d+|.+CR\d+)</version>
 								</ignoreVersion>
 								<ignoreVersion>
 									<type>regex</type>
