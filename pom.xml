@@ -161,7 +161,7 @@
 		<jdbi3.version>3.49.6</jdbi3.version>
 		<jooq.version>3.19.26</jooq.version>
 		<jreleaser-maven-plugin.version>1.19.0</jreleaser-maven-plugin.version>
-		<junit-jupiter.version>5.13.4</junit-jupiter.version>
+		<junit-jupiter.version>6.0.0</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.6</keycloak-authz-client.version>
 		<kotlin-stdlib-jdk8.version>2.2.20</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.7.1</langchain4j.version>
