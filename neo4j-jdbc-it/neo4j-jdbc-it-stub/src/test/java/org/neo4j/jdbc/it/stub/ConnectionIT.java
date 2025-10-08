@@ -266,6 +266,8 @@ class ConnectionIT extends IntegrationTestBase {
 			assertThat(ut.minProtocolVersion()).isEqualTo("47.11");
 			assertThat(ut.message()).isEqualTo("Whatever");
 
+			assertThat(result.getMetaData().getColumnClassName(1)).isEqualTo("org.neo4j.jdbc.values.UnsupportedType");
+
 			var v = result.getObject(1, Value.class);
 			assertThat(v.asObject()).isEqualTo(new UnsupportedType("foo", "47.11", "Whatever"));
 			assertThat(result.next()).isFalse();

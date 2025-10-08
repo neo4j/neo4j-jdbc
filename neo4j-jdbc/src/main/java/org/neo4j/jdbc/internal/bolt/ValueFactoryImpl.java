@@ -176,8 +176,8 @@ enum ValueFactoryImpl implements ValueFactory {
 	@Override
 	public Value unsupportedType(String name, BoltProtocolVersion minProtocolVersion, Map<String, Value> extra) {
 		var message = extra.get("message");
-		var messageString = (message != null)
-				? (message.boltValueType().equals(Type.STRING) ? message.asString() : null) : null;
+		var messageString = (message != null && message.boltValueType().equals(Type.STRING)) ? message.asString()
+				: null;
 		return new ValueImpl(new UnsupportedType(name, minProtocolVersion.toString(), messageString).asValue(),
 				Type.UNSUPPORTED);
 	}

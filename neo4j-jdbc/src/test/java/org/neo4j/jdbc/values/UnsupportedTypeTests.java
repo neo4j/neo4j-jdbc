@@ -18,15 +18,17 @@
  */
 package org.neo4j.jdbc.values;
 
-public final class UnsupportedTypeValue extends AbstractObjectValue<UnsupportedType> {
+import org.junit.jupiter.api.Test;
 
-	protected UnsupportedTypeValue(UnsupportedType adapted) {
-		super(adapted);
-	}
+import static org.assertj.core.api.Assertions.assertThat;
 
-	@Override
-	public Type type() {
-		return Type.ANY;
+class UnsupportedTypeTests {
+
+	@Test
+	void asValueShouldWork() {
+		var unsupported = new UnsupportedType("a", "b", "c");
+		var value = unsupported.asValue();
+		assertThat(value.type()).isEqualTo(Type.UNSUPPORTED);
 	}
 
 }
