@@ -51,6 +51,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
@@ -61,8 +62,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Michael J. Simons
@@ -308,6 +313,69 @@ class SqlToCypherTests {
 			.build());
 		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES($a)"))
 			.isEqualTo("CREATE (movie:`Movie` {title: $a})");
+	}
+
+	@Test
+	void standardInsertShouldWork() {
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(true).build());
+		assertThat(translator.translate("INSERT INTO Movie (Movie.title) VALUES('a')"))
+			.isEqualTo("CREATE (movie:`Movie` {title: 'a'})");
+	}
+
+	@Test
+	void insertIntoRelationshipTableShouldWork() throws SQLException {
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
+
+		var cbvs = mock(ResultSet.class);
+		given(cbvs.next()).willReturn(false);
+
+		var databaseMetadata = mock(DatabaseMetaData.class);
+		given(databaseMetadata.getTables(null, null, null, new String[] { "CBV" })).willReturn(cbvs);
+
+		var relationships = mock(ResultSet.class);
+		given(relationships.next()).willReturn(true);
+		given(relationships.getString("REMARKS")).willReturn("Person\nACTED_IN\nMovie");
+		given(databaseMetadata.getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" }))
+			.willReturn(relationships);
+
+		mockColumnResults(databaseMetadata, "Person", "a");
+		mockColumnResults(databaseMetadata, "ACTED_IN", "b", "d");
+		mockColumnResults(databaseMetadata, "Movie", "c");
+
+		assertThat(translator.translate(
+				"INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')",
+				databaseMetadata))
+			.isEqualTo("CREATE (_lhs:Person {a: 'a'})-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs:Movie {c: 'c'})");
+
+		verify(cbvs).next();
+		verify(cbvs).close();
+		verifyNoMoreInteractions(cbvs);
+
+		verify(relationships).next();
+		verify(relationships).close();
+		verify(relationships).getString("REMARKS");
+		verifyNoMoreInteractions(relationships);
+
+		verify(databaseMetadata).getTables(null, null, null, new String[] { "CBV" });
+		verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" });
+		verify(databaseMetadata, times(3)).getColumns(any(), any(), anyString(), any());
+		verifyNoMoreInteractions(databaseMetadata);
+	}
+
+	private void mockColumnResults(DatabaseMetaData databaseMetadata, String targetTable, String columnName,
+			String... more) throws SQLException {
+
+		var lhsColumns = mock(ResultSet.class);
+		Boolean[] next = new Boolean[more.length + 1];
+		for (int i = 0; i < more.length; ++i) {
+			next[i] = true;
+		}
+		next[more.length] = false;
+		given(lhsColumns.getString("COLUMN_NAME")).willReturn(columnName, more);
+		given(lhsColumns.next()).willReturn(true, next);
+		given(databaseMetadata.getColumns(null, null, targetTable, null)).willReturn(lhsColumns);
 	}
 
 	@Test
