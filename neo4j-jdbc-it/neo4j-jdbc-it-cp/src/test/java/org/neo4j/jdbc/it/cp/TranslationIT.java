@@ -26,15 +26,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.jooq.impl.ParserException;
-import org.jooq.impl.QOM;
 import org.junit.jupiter.api.Test;
-import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
-import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -162,6 +157,59 @@ class TranslationIT extends IntegrationTestBase {
 			}
 
 			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie) <-[a:ACTED_IN]-(p:Person {name: "Jodie Turner-Smith"})
+					RETURN p, collect(m.title) AS titles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("titles", Value.class).asList(Value::asString))
+					.containsExactlyInAnyOrder("TRON Ares", "The Independent");
+				assertThat(rs.next()).isFalse();
+			}
+		}
+	}
+
+	@Test
+	void shouldInsertRelationshipBasedOnAutomaticDetection() throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+			// No template relationship needed, assignment of node to properties via
+			// qualified names
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, Person_ACTED_IN_Movie.role, Movie.title)
+					VALUES
+					    ('Jaret Leto', 'Ares', 'TRON Ares'),
+						('Greta Lee', 'Eve Kim', 'TRON Ares'),
+						('Jodie Turner-Smith', 'Athena', 'TRON Ares')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			// Above has run, database metadata knows the relationship now, no more
+			// explicit column assignments
+			try (var stmt = con
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
+				stmt.setString(1, "Jodie Turner-Smith");
+				stmt.setString(2, "Elisha James");
+				stmt.setString(3, "The Independent");
+				stmt.execute();
+			}
+
+			// Verify start and ends have been merged
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie {title: 'TRON Ares'}) <-[a:ACTED_IN]-(p:Person)
+					RETURN m, collect(a.role) AS roles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("roles", Value.class).asList(Value::asString))
+					.containsExactlyInAnyOrder("Eve Kim", "Athena", "Ares");
+				assertThat(rs.next()).isFalse();
+			}
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
 					/*+ NEO4J FORCE_CYPHER */
 					MATCH (m:Movie) <-[a:ACTED_IN]-(p:Person {name: "Jodie Turner-Smith"})
 					RETURN p, collect(m.title) AS titles

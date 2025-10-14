@@ -633,7 +633,6 @@ non-sealed class StatementImpl implements Neo4jStatement {
 	protected final String processSQL(String sql) throws SQLException {
 		try {
 			var processedSQL = this.sqlProcessor.apply(sql);
-			System.out.println(processedSQL);
 			if (SQL_LOGGER.isLoggable(Level.FINE) && !processedSQL.equals(sql)) {
 				SQL_LOGGER.log(Level.FINE, "Processed ''{0}'' into ''{1}''", new Object[] { sql, processedSQL });
 			}

@@ -196,9 +196,9 @@ class SqlToCypherTests {
 				""", databaseMetaData)).isEqualTo(renderer.render(CypherParser.parse("""
 				MATCH (movie:Movie)-[has:HAS]->(genre:Genre)
 				WHERE genre.name IN ['action comedy film', 'romcom']
-				RETURN elementId(movie) AS `v$id`, movie.title AS title,
+				RETURN elementId(movie) AS `v$id`, movie.title AS title, elementId(movie) AS `v$movie_id`,
 					elementId(has) AS `v$id1`, has.foobar AS foobar,
-					elementId(genre) AS `v$id2`, genre.name AS name
+					elementId(genre) AS `v$genre_id`, elementId(genre) AS `v$id2`, genre.name AS name
 				""")));
 	}
 
@@ -375,8 +375,9 @@ class SqlToCypherTests {
 					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					true@@INSERT INTO Person_ACTED_IN_Movie (b, c, d) VALUES ('bv1', 'cv1', 'dv1'), ('bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties CREATE (_lhs:Person) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, d) VALUES ('av1', 'bv1', 'dv1'), ('av2', 'bv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) CREATE (_rhs:Movie) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
-					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@CREATE (person_acted_in_movie:Person_ACTED_IN_Movie {a: 'a', b: 'b', c: 'c', d: 'd', e: 'e'})
-					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')@@UNWIND [{a: 'av1', b: 'bv1', c: 'cv1', d: 'dv1'}, {a: 'av2', b: 'bv2', c: 'cv2', d: 'dv2'}] AS properties CREATE (person_acted_in_movie:Person_ACTED_IN_Movie) SET person_acted_in_movie = properties
+					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@CREATE (_lhs:Person) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {d: 'd', e: 'e'}]->(_rhs)
+					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {}, rel: {e: 'ev1'}, rhs: {}}, {lhs: {}, rel: {e: 'ev2'}, rhs: {}}] AS properties CREATE (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs = properties['lhs'] SET person_acted_in_movie = properties['rel'] SET _rhs = properties['rhs']
+					false@@INSERT INTO Person_ACTED_IN_Movie (Person.a, Movie.b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {a: 'av1'}, rel: {e: 'ev1'}, rhs: {b: 'bv1'}}, {lhs: {a: 'av2'}, rel: {e: 'ev2'}, rhs: {b: 'bv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {b: properties['rhs']['b']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					""")
 	void insertIntoRelationshipTableShouldWork(boolean withMeta, String sql, String cypher) throws SQLException {
 		var translator = SqlToCypher
