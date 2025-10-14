@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -72,8 +73,11 @@ import org.jooq.impl.ParserException;
 import org.jooq.impl.QOM;
 import org.jooq.impl.QOM.TableAlias;
 import org.neo4j.cypherdsl.core.Case;
+import org.neo4j.cypherdsl.core.Clauses;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.ExposesCreate;
+import org.neo4j.cypherdsl.core.ExposesMerge;
 import org.neo4j.cypherdsl.core.ExposesRelationships;
 import org.neo4j.cypherdsl.core.ExposesReturning;
 import org.neo4j.cypherdsl.core.Expression;
@@ -277,6 +281,8 @@ final class SqlToCypher implements Translator {
 		private final SqlToCypherConfig config;
 
 		private final DatabaseMetaData databaseMetaData;
+
+		private final Map<String, Set<String>> columnsCache = new ConcurrentHashMap<>();
 
 		private final ParameterNameGenerator parameterNameGenerator = new ParameterNameGenerator();
 
@@ -568,14 +574,21 @@ final class SqlToCypher implements Translator {
 			var useMerge = insert.$onDuplicateKeyIgnore() || hasMergeProperties;
 
 			if (target instanceof Relationship relationship) {
-				return buildSingleCreateStatement(insert, returning, relationship, useMerge, hasMergeProperties);
-			}
-			else if (target instanceof Node node) {
+				if (useMerge) {
+					throw new UnsupportedOperationException(
+							"`ON DUPLICATE` and `ON CONFLICT` clauses are not supported for inserting relationships");
+				}
 
 				if (insert.$values().size() == 1) {
-					return buildSingleCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
+					return buildSingleCreateStatement(insert, returning, relationship);
 				}
-				return buildUnwindCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
+
+				return buildUnwindCreateStatement(insert, returning, relationship);
+			}
+			else if (target instanceof Node node) {
+				return (insert.$values().size() != 1)
+						? buildUnwindCreateStatement(insert, returning, node, useMerge, hasMergeProperties)
+						: buildSingleCreateStatement(insert, returning, node, useMerge, hasMergeProperties);
 			}
 			else {
 				throw new IllegalArgumentException(
@@ -630,56 +643,60 @@ final class SqlToCypher implements Translator {
 		}
 
 		private Statement buildSingleCreateStatement(QOM.Insert<?> insert,
-				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship, boolean useMerge,
-				boolean hasMergeProperties) {
+				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
 			var row = Objects.requireNonNull(insert.$values().$first());
 			QOM.UnmodifiableList<? extends Field<?>> columns = insert.$columns();
 
 			if (databaseMetaData == null) {
-
+				return null;
 			}
 			else {
-				var lhsProperties = getColumns(row, columns, relationship.getLeft().getLabels().get(0).getValue());
-				var relProperties = getColumns(row, columns, relationship.getDetails().getTypes().get(0));
-				var rhsProperties = getColumns(row, columns, relationship.getRight().getLabels().get(0).getValue());
-				var left = nodeWithProperties(relationship.getLeft(), lhsProperties)
-					.relationshipTo(nodeWithProperties(relationship.getRight(), rhsProperties),
-							relationship.getDetails().getTypes().get(0))
+				var leftLabel = relationship.getLeft().getLabels().get(0).getValue();
+				var relationshipType = relationship.getDetails().getTypes().get(0);
+				var rightLabel = relationship.getRight().getLabels().get(0).getValue();
+
+				var lhsProperties = getPropertiesForLabel(row, columns, leftLabel);
+				var relProperties = getPropertiesForLabel(row, columns,
+						"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel));
+				var rhsProperties = getPropertiesForLabel(row, columns, rightLabel);
+
+				var left = nodeWithProperties(relationship.getLeft(), lhsProperties);
+				var right = nodeWithProperties(relationship.getRight(), rhsProperties);
+
+				var newRelationship = left.relationshipTo(right, relationshipType)
 					.withProperties(toPropertyArray(relProperties));
 
-				return addOptionalReturnAndBuild(Cypher.create(left), returning);
-			}
+				var ongoingUpdate = lhsProperties.isEmpty() ? Cypher.create(left) : Cypher.merge(left);
+				ongoingUpdate = rhsProperties.isEmpty() ? ongoingUpdate.create(right) : ongoingUpdate.merge(right);
 
-			return null;// return
-						// addOptionalReturnAndBuild(Cypher.create(nodeWithProperties(node,
-						// nodeProperties)), returning);
+				return addOptionalReturnAndBuild(ongoingUpdate.create(newRelationship), returning);
+			}
 		}
 
-		Map<String, Expression> getColumns(Row row, List<? extends Field<?>> targetColumns, String targetLabel) {
-
-			try {
-				var columns = new HashSet<String>();
+		private Map<String, Expression> getPropertiesForLabel(Row row, List<? extends Field<?>> targetColumns,
+				String targetLabel) {
+			var columns = this.columnsCache.computeIfAbsent(targetLabel, key -> {
+				var value = new HashSet<String>();
 				try (var resultSet = this.databaseMetaData.getColumns(null, null, targetLabel, null)) {
 					while (resultSet.next()) {
-						columns.add(resultSet.getString("COLUMN_NAME"));
+						value.add(resultSet.getString("COLUMN_NAME"));
 					}
 				}
-				var targetLabelIsTargetTable = Pattern.compile(".+_" + Pattern.quote(targetLabel) + "_.+")
-					.asMatchPredicate();
-				Map<String, Expression> targetProperties = new LinkedHashMap<>();
-				for (int i = 0; i < targetColumns.size(); ++i) {
-					var targetColumn = targetColumns.get(i).getName();
-					var columnTargetTable = targetColumns.get(i).getQualifiedName().getName()[0];
-					if (columns.contains(targetColumn) || targetLabelIsTargetTable.test(columnTargetTable)) {
-						targetProperties.put(targetColumn, expression(row.field(i)));
-					}
+				catch (SQLException ex) {
+					throw new RuntimeException(ex);
 				}
+				return value;
+			});
+			Map<String, Expression> targetProperties = new LinkedHashMap<>();
+			for (int i = 0; i < targetColumns.size(); ++i) {
+				var targetColumn = targetColumns.get(i).getName();
+				var columnTargetTable = targetColumns.get(i).getQualifiedName().getName()[0];
+				if (columns.contains(targetColumn) || targetLabel.equals(columnTargetTable)) {
+					targetProperties.put(targetColumn, expression(row.field(i)));
+				}
+			}
 
-				return targetProperties;
-			}
-			catch (SQLException ex) {
-				throw new RuntimeException(ex);
-			}
+			return targetProperties;
 		}
 
 		private Statement buildUnwindCreateStatement(QOM.Insert<?> insert,
@@ -687,12 +704,12 @@ final class SqlToCypher implements Translator {
 				boolean hasMergeProperties) {
 			if (useMerge && !hasMergeProperties) {
 				throw new UnsupportedOperationException(
-						"MERGE is not supported when inserting multiple rows without using a property to merge on");
+						"`ON DUPLICATE` and `ON CONFLICT` clauses are not supported when inserting multiple rows without using a property to merge on");
 			}
 
 			var columns = insert.$columns();
 			var props = Cypher.listOf(insert.$values().stream().map(row -> {
-				var result = new HashMap<String, Object>(columns.size());
+				var result = new HashMap<String, Expression>(columns.size());
 				for (int i = 0; i < columns.size(); ++i) {
 					result.put(columns.get(i).getName(), expression(row.field(i)));
 				}
@@ -739,6 +756,90 @@ final class SqlToCypher implements Translator {
 
 			return addOptionalReturnAndBuild(
 					Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")), returning);
+		}
+
+		private Statement buildUnwindCreateStatement(QOM.Insert<?> insert,
+				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
+
+			if (databaseMetaData == null) {
+				return null;
+			}
+			else {
+				var columns = insert.$columns();
+
+				var leftLabel = relationship.getLeft().getLabels().get(0).getValue();
+				var relationshipType = relationship.getDetails().getTypes().get(0);
+				var rightLabel = relationship.getRight().getLabels().get(0).getValue();
+
+				var leftMergeProperties = new HashSet<String>();
+				var rightMergeProperties = new HashSet<String>();
+
+				var properties = Cypher.listOf(insert.$values().stream().map(row -> {
+					var rowProperties = new LinkedHashMap<String, Map<String, Expression>>();
+					var hlp = getPropertiesForLabel(row, columns, leftLabel);
+					if (leftMergeProperties.isEmpty()) {
+						leftMergeProperties.addAll(hlp.keySet());
+					}
+					else {
+						leftMergeProperties.retainAll(hlp.keySet());
+					}
+					rowProperties.put("lhs", hlp);
+					rowProperties.put("rel", getPropertiesForLabel(row, columns,
+							"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel)));
+					hlp = getPropertiesForLabel(row, columns, rightLabel);
+					if (rightMergeProperties.isEmpty()) {
+						rightMergeProperties.addAll(hlp.keySet());
+					}
+					else {
+						rightMergeProperties.retainAll(hlp.keySet());
+					}
+					rowProperties.put("rhs", hlp);
+					return Cypher.literalOf(rowProperties);
+				}).toList());
+
+				var propertiesName = Cypher.name("properties");
+				if (leftMergeProperties.isEmpty() && rightMergeProperties.isEmpty()) {
+					return addOptionalReturnAndBuild(
+							Cypher.unwind(properties)
+								.as(propertiesName)
+								.create(relationship)
+								.set(relationship.getLeft(), Cypher.valueAt(propertiesName, Cypher.literalOf("lhs")))
+								.set(relationship, Cypher.valueAt(propertiesName, Cypher.literalOf("rel")))
+								.set(relationship.getRight(), Cypher.valueAt(propertiesName, Cypher.literalOf("rhs"))),
+							returning);
+				}
+				else {
+					ExposesCreate ongoingStratement = Cypher.unwind(properties).as(propertiesName);
+
+					if (leftMergeProperties.isEmpty()) {
+						ongoingStratement = ongoingStratement.create(relationship.getLeft());
+					}
+					else {
+						var left = relationship.getLeft()
+							.withProperties(leftMergeProperties.stream()
+								.flatMap((k) -> Stream.of(k,
+										Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf("lhs")),
+												Cypher.literalOf(k))))
+								.toArray(Object[]::new));
+						ongoingStratement = ((ExposesMerge) ongoingStratement).merge(left);
+					}
+					if (rightMergeProperties.isEmpty()) {
+						ongoingStratement = ongoingStratement.create(relationship.getRight());
+					}
+					else {
+						var right = relationship.getRight()
+							.withProperties(rightMergeProperties.stream()
+								.flatMap((k) -> Stream.of(k,
+										Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf("rhs")),
+												Cypher.literalOf(k))))
+								.toArray(Object[]::new));
+						ongoingStratement = ((ExposesMerge) ongoingStratement).merge(right);
+					}
+
+					return addOptionalReturnAndBuild(ongoingStratement.create(relationship)
+						.set(relationship, Cypher.valueAt(propertiesName, Cypher.literalOf("rel"))), returning);
+				}
+			}
 		}
 
 		private <T extends ExposesReturning & StatementBuilder.BuildableStatement<?>> Statement addOptionalReturnAndBuild(

@@ -51,7 +51,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
@@ -59,6 +58,7 @@ import org.neo4j.cypherdsl.parser.CypherParser;
 import org.neo4j.jdbc.translator.spi.Translator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.ArgumentMatchers.any;
@@ -324,10 +324,20 @@ class SqlToCypherTests {
 	}
 
 	@Test
-	void insertIntoRelationshipTableShouldWork() throws SQLException {
+	void unwindWithMergeWithoutPropertiesIsNotSupported() {
+		var sql = """
+					INSERT INTO People (first_name, last_name, born) VALUES
+					('Helge', 'Schneider', 1955),
+					('Bela', 'B', 1962) ON CONFLICT DO NOTHING
+				""";
 		var translator = SqlToCypher
-			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(true).build());
+		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> translator.translate(sql))
+			.withMessage(
+					"`ON DUPLICATE` and `ON CONFLICT` clauses are not supported when inserting multiple rows without using a property to merge on");
+	}
 
+	DatabaseMetaData mockRelationshipMeta() throws SQLException {
 		var cbvs = mock(ResultSet.class);
 		given(cbvs.next()).willReturn(false);
 
@@ -340,28 +350,55 @@ class SqlToCypherTests {
 		given(databaseMetadata.getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" }))
 			.willReturn(relationships);
 
-		mockColumnResults(databaseMetadata, "Person", "a");
-		mockColumnResults(databaseMetadata, "ACTED_IN", "b", "d");
-		mockColumnResults(databaseMetadata, "Movie", "c");
+		return databaseMetadata;
+	}
 
-		assertThat(translator.translate(
-				"INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')",
-				databaseMetadata))
-			.isEqualTo("CREATE (_lhs:Person {a: 'a'})-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs:Movie {c: 'c'})");
+	@Test
+	void insertIntoRelationshipsWithMergeIsNotoSupported() throws SQLException {
+		var sql = "	INSERT INTO Person_ACTED_IN_Movie (a, b, c) VALUES('a', 'b', 'c') ON CONFLICT DO NOTHING\n";
 
-		verify(cbvs).next();
-		verify(cbvs).close();
-		verifyNoMoreInteractions(cbvs);
+		var databaseMetadata = mockRelationshipMeta();
 
-		verify(relationships).next();
-		verify(relationships).close();
-		verify(relationships).getString("REMARKS");
-		verifyNoMoreInteractions(relationships);
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(true).build());
+		assertThatExceptionOfType(UnsupportedOperationException.class)
+			.isThrownBy(() -> translator.translate(sql, databaseMetadata))
+			.withMessage("`ON DUPLICATE` and `ON CONFLICT` clauses are not supported for inserting relationships");
+	}
 
-		verify(databaseMetadata).getTables(null, null, null, new String[] { "CBV" });
-		verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" });
-		verify(databaseMetadata, times(3)).getColumns(any(), any(), anyString(), any());
-		verifyNoMoreInteractions(databaseMetadata);
+	@ParameterizedTest
+	@CsvSource(delimiterString = "@@",
+			textBlock = """
+					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@MERGE (_lhs:Person {a: 'a'}) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
+					true@@INSERT INTO Person_ACTED_IN_Movie (b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('b', 'c', 'd', 'e')@@CREATE (_lhs:Person) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
+					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'd', 'e')@@MERGE (_lhs:Person {a: 'a'}) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
+					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					true@@INSERT INTO Person_ACTED_IN_Movie (b, c, d) VALUES ('bv1', 'cv1', 'dv1'), ('bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties CREATE (_lhs:Person) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, d) VALUES ('av1', 'bv1', 'dv1'), ('av2', 'bv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) CREATE (_rhs:Movie) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@CREATE (person_acted_in_movie:Person_ACTED_IN_Movie {a: 'a', b: 'b', c: 'c', d: 'd', e: 'e'})
+					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')@@UNWIND [{a: 'av1', b: 'bv1', c: 'cv1', d: 'dv1'}, {a: 'av2', b: 'bv2', c: 'cv2', d: 'dv2'}] AS properties CREATE (person_acted_in_movie:Person_ACTED_IN_Movie) SET person_acted_in_movie = properties
+					""")
+	void insertIntoRelationshipTableShouldWork(boolean withMeta, String sql, String cypher) throws SQLException {
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
+
+		DatabaseMetaData databaseMetadata = null;
+		if (withMeta) {
+			databaseMetadata = mockRelationshipMeta();
+
+			mockColumnResults(databaseMetadata, "Person", "a");
+			mockColumnResults(databaseMetadata, "Person_ACTED_IN_Movie", "b", "d");
+			mockColumnResults(databaseMetadata, "Movie", "c");
+		}
+
+		assertThat(translator.translate(sql, databaseMetadata)).isEqualTo(cypher);
+
+		if (withMeta) {
+			verify(databaseMetadata).getTables(null, null, null, new String[] { "CBV" });
+			verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" });
+			verify(databaseMetadata, times(3)).getColumns(any(), any(), anyString(), any());
+			verifyNoMoreInteractions(databaseMetadata);
+		}
 	}
 
 	private void mockColumnResults(DatabaseMetaData databaseMetadata, String targetTable, String columnName,

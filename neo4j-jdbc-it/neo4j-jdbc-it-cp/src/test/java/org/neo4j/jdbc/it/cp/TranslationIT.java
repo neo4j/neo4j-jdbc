@@ -26,10 +26,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jooq.impl.ParserException;
+import org.jooq.impl.QOM;
 import org.junit.jupiter.api.Test;
+import org.neo4j.jdbc.Neo4jConnection;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,8 +85,8 @@ class TranslationIT extends IntegrationTestBase {
 		var title = "JDBC the Sequel";
 
 		try (var connection = getConnection(true, false)) {
-			try (var statement = ((Neo4jPreparedStatement) connection.prepareStatement(
-					"/*+ NEO4J FORCE_CYPHER */ CREATE (m:Movie {title:  $title, released: $released})"))) {
+			try (var statement = (Neo4jPreparedStatement) connection
+				.prepareStatement("/*+ NEO4J FORCE_CYPHER */ CREATE (m:Movie {title:  $title, released: $released})")) {
 				statement.setString("title", title);
 				statement.setInt("released", 2024);
 				statement.execute();
@@ -96,6 +101,78 @@ class TranslationIT extends IntegrationTestBase {
 			}
 		}
 
+	}
+
+	@Test
+	void shouldInsertRelationshipBasedOnTemplate() throws SQLException {
+
+		try (var connection = getConnection(true, true)) {
+			try (var statement = connection.prepareStatement(
+					"/*+ NEO4J FORCE_CYPHER */ CREATE (a:Person {name: 'Jaret Leto'})-[:ACTED_IN {role: 'Ares'}]->(m:Movie {title: 'TRON Ares'})")) {
+				statement.executeUpdate();
+			}
+
+			try (var statement = (Neo4jPreparedStatement) connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
+				statement.setString(1, "Jodie Turner-Smith");
+				statement.setString(2, "Athena");
+				statement.setString(3, "TRON Ares");
+				statement.execute();
+			}
+
+			try (var statement = (Neo4jPreparedStatement) connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES (?, ?, ?)")) {
+				statement.setString(1, "Jeff Bridges");
+				statement.setString(2, "Kevin Flynn");
+				statement.setString(3, "TRON Ares");
+				statement.addBatch();
+				statement.setString(1, "Greta Lee");
+				statement.setString(2, "Eve Kim");
+				statement.setString(3, "TRON Ares");
+				statement.executeBatch();
+			}
+
+			try (var statement = connection.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(name, role, title)
+					VALUES ('Gillian Anderson', 'Elisabeth Dillinger', 'TRON Ares'),
+					('Arturo Castro', 'Seth Flores', 'TRON Ares')
+					""")) {
+
+				statement.executeUpdate();
+			}
+
+			try (var statement = ((Neo4jPreparedStatement) connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)"))) {
+				statement.setString(1, "Jodie Turner-Smith");
+				statement.setString(2, "Elisha James");
+				statement.setString(3, "The Independent");
+				statement.execute();
+			}
+
+			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie {title: 'TRON Ares'}) <-[a:ACTED_IN]-(p:Person)
+					RETURN m, collect(a.role) AS roles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("roles", Value.class).asList(Value::asString)).containsExactlyInAnyOrder(
+						"Eve Kim", "Kevin Flynn", "Athena", "Ares", "Seth Flores", "Elisabeth Dillinger");
+				assertThat(rs.next()).isFalse();
+			}
+
+			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie) <-[a:ACTED_IN]-(p:Person {name: "Jodie Turner-Smith"})
+					RETURN p, collect(m.title) AS titles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("titles", Value.class).asList(Value::asString))
+					.containsExactlyInAnyOrder("TRON Ares", "The Independent");
+				assertThat(rs.next()).isFalse();
+			}
+		}
 	}
 
 	@Test
