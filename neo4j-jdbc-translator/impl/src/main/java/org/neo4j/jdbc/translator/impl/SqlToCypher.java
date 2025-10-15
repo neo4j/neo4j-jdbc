@@ -86,6 +86,7 @@ import org.neo4j.cypherdsl.core.IdentifiableElement;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.NodeLabel;
 import org.neo4j.cypherdsl.core.PatternElement;
+import org.neo4j.cypherdsl.core.Property;
 import org.neo4j.cypherdsl.core.PropertyContainer;
 import org.neo4j.cypherdsl.core.Relationship;
 import org.neo4j.cypherdsl.core.RelationshipChain;
@@ -292,7 +293,7 @@ final class SqlToCypher implements Translator {
 		 */
 		private final List<Table<?>> tables = new ArrayList<>();
 
-		private final Map<SymbolicName, PatternElement> resolvedRelationships = new HashMap<>();
+		private final Map<SymbolicName, RelationshipPattern> resolvedRelationships = new HashMap<>();
 
 		private final AtomicBoolean useAliasForVColumn = new AtomicBoolean(true);
 
@@ -368,9 +369,11 @@ final class SqlToCypher implements Translator {
 
 			assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", this.tables.get(0));
 
-			var m1 = Cypher.match(resolveTableOrJoin(this.tables.get(0)).get(0));
+			var patternElement = resolveTableOrJoin(this.tables.get(0)).get(0);
+
+			var m1 = Cypher.match(patternElement);
 			var m2 = (d.$where() != null) ? m1.where(condition(d.$where())) : (OngoingReadingWithWhere) m1;
-			return m2.delete(((Node) resolveTableOrJoin(this.tables.get(0)).get(0)).asExpression()).build();
+			return m2.delete(((PropertyContainer) patternElement).asExpression()).build();
 		}
 
 		private Statement statement(QOM.Truncate<?> t) {
@@ -381,9 +384,14 @@ final class SqlToCypher implements Translator {
 				assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", table);
 			}
 
-			@SuppressWarnings("squid:S1854")
-			var node = (Node) resolveTableOrJoin(this.tables.get(0)).get(0);
-			return Cypher.match(node).detachDelete(node.asExpression()).build();
+			var pattern = resolveTableOrJoin(this.tables.get(0)).get(0);
+			if (pattern instanceof Node node) {
+				return Cypher.match(node).detachDelete(node.asExpression()).build();
+			}
+			else if (pattern instanceof Relationship rel) {
+				return Cypher.match(pattern).delete(rel).build();
+			}
+			throw new IllegalArgumentException("Cannot truncate " + t.$table());
 		}
 
 		private ResultStatement statement(Select<?> incomingStatement) {
@@ -647,14 +655,9 @@ final class SqlToCypher implements Translator {
 			var row = Objects.requireNonNull(insert.$values().$first());
 			QOM.UnmodifiableList<? extends Field<?>> columns = insert.$columns();
 
-			var leftLabel = relationship.getLeft().getLabels().get(0).getValue();
-			var relationshipType = relationship.getDetails().getTypes().get(0);
-			var rightLabel = relationship.getRight().getLabels().get(0).getValue();
-
-			var lhsProperties = getPropertiesForLabel(row, columns, leftLabel);
-			var relProperties = getPropertiesForLabel(row, columns,
-					"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel));
-			var rhsProperties = getPropertiesForLabel(row, columns, rightLabel);
+			var lhsProperties = getPropertiesFor(row, columns, relationship.getLeft());
+			var relProperties = getPropertiesFor(row, columns, relationship);
+			var rhsProperties = getPropertiesFor(row, columns, relationship.getRight());
 
 			for (int i = 0; i < columns.size(); ++i) {
 				var targetColumn = columns.get(i).getName();
@@ -666,7 +669,7 @@ final class SqlToCypher implements Translator {
 			var left = nodeWithProperties(relationship.getLeft(), lhsProperties);
 			var right = nodeWithProperties(relationship.getRight(), rhsProperties);
 
-			var newRelationship = left.relationshipTo(right, relationshipType)
+			var newRelationship = left.relationshipTo(right, relationship.getDetails().getTypes().get(0))
 				.withProperties(toPropertyArray(relProperties));
 
 			var ongoingUpdate = lhsProperties.isEmpty() ? Cypher.create(left) : Cypher.merge(left);
@@ -675,9 +678,26 @@ final class SqlToCypher implements Translator {
 			return addOptionalReturnAndBuild(ongoingUpdate.create(newRelationship), returning);
 		}
 
-		private Map<String, Expression> getPropertiesForLabel(Row row, List<? extends Field<?>> targetColumns,
-				String targetLabel) {
-			var columns = this.columnsCache.computeIfAbsent(targetLabel, key -> {
+		private Map<String, Expression> getPropertiesFor(Row row, List<? extends Field<?>> targetColumns,
+				PatternElement targetElement) {
+
+			var columns = getColumnsOf(toTableName(targetElement));
+			var targetLabelOrType = (targetElement instanceof Relationship)
+					? ((Relationship) targetElement).getDetails().getTypes().get(0) : toTableName(targetElement);
+			Map<String, Expression> targetProperties = new LinkedHashMap<>();
+			for (int i = 0; i < targetColumns.size(); ++i) {
+				var targetColumn = targetColumns.get(i).getName();
+				var columnTargetTable = targetColumns.get(i).getQualifiedName().getName()[0];
+				if (columns.contains(targetColumn) || targetLabelOrType.equals(columnTargetTable)) {
+					targetProperties.put(targetColumn, expression(row.field(i)));
+				}
+			}
+
+			return targetProperties;
+		}
+
+		private Set<String> getColumnsOf(String targetLabel) {
+			return this.columnsCache.computeIfAbsent(targetLabel, key -> {
 				var value = new HashSet<String>();
 				if (this.databaseMetaData != null) {
 					try (var resultSet = this.databaseMetaData.getColumns(null, null, targetLabel, null)) {
@@ -691,16 +711,6 @@ final class SqlToCypher implements Translator {
 				}
 				return value;
 			});
-			Map<String, Expression> targetProperties = new LinkedHashMap<>();
-			for (int i = 0; i < targetColumns.size(); ++i) {
-				var targetColumn = targetColumns.get(i).getName();
-				var columnTargetTable = targetColumns.get(i).getQualifiedName().getName()[0];
-				if (columns.contains(targetColumn) || targetLabel.equals(columnTargetTable)) {
-					targetProperties.put(targetColumn, expression(row.field(i)));
-				}
-			}
-
-			return targetProperties;
 		}
 
 		private Statement buildUnwindCreateStatement(QOM.Insert<?> insert,
@@ -767,17 +777,13 @@ final class SqlToCypher implements Translator {
 
 			var columns = insert.$columns();
 
-			var leftLabel = relationship.getLeft().getLabels().get(0).getValue();
-			var relationshipType = relationship.getDetails().getTypes().get(0);
-			var rightLabel = relationship.getRight().getLabels().get(0).getValue();
-
 			var leftMergeProperties = new HashSet<String>();
 			var rightMergeProperties = new HashSet<String>();
 
 			var properties = Cypher.listOf(insert.$values().stream().map(row -> {
 				var allPropertiesInRow = new LinkedHashMap<String, Map<String, Expression>>();
 
-				var lhsProperties = getPropertiesForLabel(row, columns, leftLabel);
+				var lhsProperties = getPropertiesFor(row, columns, relationship.getLeft());
 				if (leftMergeProperties.isEmpty()) {
 					leftMergeProperties.addAll(lhsProperties.keySet());
 				}
@@ -786,12 +792,11 @@ final class SqlToCypher implements Translator {
 				}
 				allPropertiesInRow.put("lhs", lhsProperties);
 
-				var relProperties = getPropertiesForLabel(row, columns,
-						"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel));
+				var relProperties = getPropertiesFor(row, columns, relationship);
 
 				allPropertiesInRow.put("rel", relProperties);
 
-				var rhsProperties = getPropertiesForLabel(row, columns, rightLabel);
+				var rhsProperties = getPropertiesFor(row, columns, relationship.getRight());
 				if (rightMergeProperties.isEmpty()) {
 					rightMergeProperties.addAll(rhsProperties.keySet());
 				}
@@ -1129,6 +1134,28 @@ final class SqlToCypher implements Translator {
 			if (col == null && fallbackToFieldName) {
 				col = Cypher.name(tf.getName());
 			}
+			if (col instanceof Property property && this.resolvedRelationships
+				.get(property.getContainer().getRequiredSymbolicName()) instanceof Relationship rel) {
+				if (rel.getLeft()
+					.getLabels()
+					.stream()
+					.map(NodeLabel::getValue)
+					.flatMap(t -> this.getColumnsOf(t).stream())
+					.anyMatch(c -> c.equals(tf.getName()))) {
+					col = rel.getLeft().property(tf.getName());
+				}
+				else if (this.getColumnsOf(toTableName(rel)).contains(tf.getName())) {
+					col = rel.property(tf.getName());
+				}
+				else if (rel.getRight()
+					.getLabels()
+					.stream()
+					.map(NodeLabel::getValue)
+					.flatMap(t -> this.getColumnsOf(t).stream())
+					.anyMatch(c -> c.equals(tf.getName()))) {
+					col = rel.getRight().property(tf.getName());
+				}
+			}
 			return col;
 		}
 
@@ -1157,7 +1184,8 @@ final class SqlToCypher implements Translator {
 				}
 			}
 			else if (f instanceof TableField<?, ?> tf) {
-				if (tf.getTable() == null) {
+				Table<?> table = tf.getTable();
+				if (table == null) {
 					var tableField = findTableFieldInTables(tf, turnUnknownIntoNames, false);
 					if (tableField == null) {
 						throw unsupported(tf);
@@ -1165,7 +1193,31 @@ final class SqlToCypher implements Translator {
 					return tableField;
 				}
 
-				var pe = resolveTableOrJoin(tf.getTable()).get(0);
+				// Check if access to relationships has been qualified
+				for (var relationshipPattern : this.resolvedRelationships.values()) {
+					if (relationshipPattern instanceof Relationship rel) {
+						Predicate<String> labelOrTypePredicate = v -> v.equals(table.getName());
+						if (rel.getLeft()
+							.getLabels()
+							.stream()
+							.map(NodeLabel::getValue)
+							.anyMatch(labelOrTypePredicate)) {
+							return rel.getLeft().property(tf.getName());
+						}
+						else if (rel.getDetails().getTypes().stream().anyMatch(labelOrTypePredicate)) {
+							return rel.property(tf.getName());
+						}
+						else if (rel.getRight()
+							.getLabels()
+							.stream()
+							.map(NodeLabel::getValue)
+							.anyMatch(labelOrTypePredicate)) {
+							return rel.getRight().property(tf.getName());
+						}
+					}
+				}
+
+				var pe = resolveTableOrJoin(table).get(0);
 				if (pe instanceof PropertyContainer pc) {
 					var m = ELEMENT_ID_PATTERN.matcher(tf.getName());
 					if (m.matches()) {
@@ -1183,7 +1235,6 @@ final class SqlToCypher implements Translator {
 						// condition
 						return makeId(src, tf.getName());
 					}
-
 					return pc.property(tf.getName());
 				}
 				throw unsupported(tf);
@@ -1912,6 +1963,19 @@ final class SqlToCypher implements Translator {
 			}
 
 			return null;
+		}
+
+		private static String toTableName(PatternElement patternElement) {
+			if (patternElement instanceof Relationship relationship) {
+				return "%s_%s_%s".formatted(toTableName(relationship.getLeft()),
+						String.join("", relationship.getDetails().getTypes()), toTableName(relationship.getRight()));
+			}
+			else if (patternElement instanceof Node node) {
+				return node.getLabels().stream().map(NodeLabel::getValue).collect(Collectors.joining());
+			}
+			else {
+				throw new IllegalArgumentException("Cannot derive a table name for " + patternElement);
+			}
 		}
 
 		private static Node findNodeInJoin(PatternElement lhs, PatternElement rhs) {

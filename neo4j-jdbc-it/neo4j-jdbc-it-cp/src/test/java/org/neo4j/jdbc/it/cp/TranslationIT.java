@@ -182,7 +182,7 @@ class TranslationIT extends IntegrationTestBase {
 			// No template relationship needed, assignment of node to properties via
 			// qualified names
 			try (var stmt = con.prepareStatement("""
-					INSERT INTO Person_ACTED_IN_Movie(Person.name, Person_ACTED_IN_Movie.role, Movie.title)
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
 					VALUES
 					    ('Jaret Leto', 'Ares', 'TRON Ares'),
 						('Greta Lee', 'Eve Kim', 'TRON Ares'),
@@ -237,7 +237,7 @@ class TranslationIT extends IntegrationTestBase {
 			}
 
 			try (var stmt = con.prepareStatement("""
-					INSERT INTO Person_ACTED_IN_Movie(Person.name, Person_ACTED_IN_Movie.role, Movie.title)
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
 					VALUES
 					    ('Jaret Leto', 'Ares', 'TRON Ares'),
 						('Greta Lee', 'Eve Kim', 'TRON Ares'),

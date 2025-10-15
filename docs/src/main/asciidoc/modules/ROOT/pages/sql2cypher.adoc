@@ -288,8 +288,8 @@ The JDBC driver however can utilize a SQL feature that lets you qualify columns 
 
 [source,sql]
 ----
-INSERT INTO Person_ACTED_IN_Movie(Person.name, Person_ACTED_IN_Movie.role, Movie.title)
+INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
 VALUES ('Evan Peters', 'Julian Dillinger', 'TRON Ares');
 ----
 
-Now, most SQL databases won't support qualified columns in an `INSERT` statement, but it's valid SQL, and we can parse it. The above qualified columns will be appropriately distributed onto `Person`, `Movie` and the relationship type mapping the qualifications case-sensitive by name.
+Now, most SQL databases won't support qualified columns in an `INSERT` statement, but it's valid SQL, and we can parse it. The above qualified columns will be appropriately distributed onto `Person`, `Movie` and `ACTED_IN`.

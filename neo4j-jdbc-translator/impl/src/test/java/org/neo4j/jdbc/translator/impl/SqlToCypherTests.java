@@ -368,17 +368,17 @@ class SqlToCypherTests {
 	}
 
 	@ParameterizedTest
-	@CsvSource(delimiterString = "@@",
+	@CsvSource(delimiterString = "|",
 			textBlock = """
-					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@MERGE (_lhs:Person {a: 'a'}) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
-					true@@INSERT INTO Person_ACTED_IN_Movie (b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('b', 'c', 'd', 'e')@@CREATE (_lhs:Person) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
-					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'd', 'e')@@MERGE (_lhs:Person {a: 'a'}) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
-					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
-					true@@INSERT INTO Person_ACTED_IN_Movie (b, c, d) VALUES ('bv1', 'cv1', 'dv1'), ('bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties CREATE (_lhs:Person) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
-					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, d) VALUES ('av1', 'bv1', 'dv1'), ('av2', 'bv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) CREATE (_rhs:Movie) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
-					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@CREATE (_lhs:Person) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {d: 'd', e: 'e', a: 'a', b: 'b', c: 'c'}]->(_rhs)
-					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {}, rel: {e: 'ev1', a: 'av1', b: 'bv1', c: 'cv1', d: 'dv1'}, rhs: {}}, {lhs: {}, rel: {e: 'ev2', a: 'av2', b: 'bv2', c: 'cv2', d: 'dv2'}, rhs: {}}] AS properties CREATE (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs = properties['lhs'] SET person_acted_in_movie = properties['rel'] SET _rhs = properties['rhs']
-					false@@INSERT INTO Person_ACTED_IN_Movie (Person.a, Movie.b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {a: 'av1'}, rel: {e: 'ev1', c: 'cv1', d: 'dv1'}, rhs: {b: 'bv1'}}, {lhs: {a: 'av2'}, rel: {e: 'ev2', c: 'cv2', d: 'dv2'}, rhs: {b: 'bv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {b: properties['rhs']['b']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					true  | INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')                           | MERGE (_lhs:Person {a: 'a'}) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
+					true  | INSERT INTO Person_ACTED_IN_Movie (b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('b', 'c', 'd', 'e')                                   | CREATE (_lhs:Person) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
+					true  | INSERT INTO Person_ACTED_IN_Movie (a, b, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'd', 'e')                                   | MERGE (_lhs:Person {a: 'a'}) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
+					true  | INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')                                        | UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					true  | INSERT INTO Person_ACTED_IN_Movie (b, c, d) VALUES ('bv1', 'cv1', 'dv1'), ('bv2', 'cv2', 'dv2')                                                         | UNWIND [{lhs: {}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties CREATE (_lhs:Person) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					true  | INSERT INTO Person_ACTED_IN_Movie (a, b, d) VALUES ('av1', 'bv1', 'dv1'), ('av2', 'bv2', 'dv2')                                                         | UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) CREATE (_rhs:Movie) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					false | INSERT INTO Person_ACTED_IN_Movie (a, b, c, ACTED_IN.d, ACTED_IN.e) VALUES('a', 'b', 'c', 'd', 'e')                                                     | CREATE (_lhs:Person) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {d: 'd', e: 'e', a: 'a', b: 'b', c: 'c'}]->(_rhs)
+					false | INSERT INTO Person_ACTED_IN_Movie (a, b, c, d, ACTED_IN.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')              | UNWIND [{lhs: {}, rel: {e: 'ev1', a: 'av1', b: 'bv1', c: 'cv1', d: 'dv1'}, rhs: {}}, {lhs: {}, rel: {e: 'ev2', a: 'av2', b: 'bv2', c: 'cv2', d: 'dv2'}, rhs: {}}] AS properties CREATE (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs = properties['lhs'] SET person_acted_in_movie = properties['rel'] SET _rhs = properties['rhs']
+					false | INSERT INTO Person_ACTED_IN_Movie (Person.a, Movie.b, c, d, ACTED_IN.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2') | UNWIND [{lhs: {a: 'av1'}, rel: {e: 'ev1', c: 'cv1', d: 'dv1'}, rhs: {b: 'bv1'}}, {lhs: {a: 'av2'}, rel: {e: 'ev2', c: 'cv2', d: 'dv2'}, rhs: {b: 'bv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {b: properties['rhs']['b']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					""")
 	void insertIntoRelationshipTableShouldWork(boolean withMeta, String sql, String cypher) throws SQLException {
 		var translator = SqlToCypher
@@ -402,6 +402,46 @@ class SqlToCypherTests {
 			verify(databaseMetadata, times(3)).getColumns(any(), any(), anyString(), any());
 			verifyNoMoreInteractions(databaseMetadata);
 		}
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|",
+			textBlock = """
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE v$id = 'asd'                     | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(person_acted_in_movie) = 'asd' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE v$person_id = 'asd'              | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_lhs) = 'asd' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE v$movie_id = 'asd'               | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_rhs) = 'asd' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie                                        | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE a = 'x'                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE _lhs.a = 'x' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE Person.a = 'x'                   | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE _lhs.a = 'x' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE b = 'x'                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE person_acted_in_movie.b = 'x' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE ACTED_IN.b = 'x'                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE person_acted_in_movie.b = 'x' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE c = 'x'                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE _rhs.c = 'x' DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE Movie.c = 'x'                    | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE _rhs.c = 'x' DELETE person_acted_in_movie
+					true  | TRUNCATE TABLE Person_ACTED_IN_Movie                                     | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) DELETE person_acted_in_movie
+					true  | DELETE FROM Person_ACTED_IN_Movie WHERE a = 'x' AND b = 'x' AND c = 'x'  | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE (_lhs.a = 'x' AND person_acted_in_movie.b = 'x' AND _rhs.c = 'x') DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie                                        | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie WHERE a = 'x'                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE person_acted_in_movie.a = 'x' DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie WHERE Person.a = 'x'                   | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE _lhs.a = 'x' DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie WHERE b = 'x'                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE person_acted_in_movie.b = 'x' DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie WHERE ACTED_IN.b = 'x'                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE person_acted_in_movie.b = 'x' DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie WHERE c = 'x'                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE person_acted_in_movie.c = 'x' DELETE person_acted_in_movie
+					false | DELETE FROM Person_ACTED_IN_Movie WHERE Movie.c = 'x'                    | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE _rhs.c = 'x' DELETE person_acted_in_movie
+					false | TRUNCATE TABLE Person_ACTED_IN_Movie                                     | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) DELETE person_acted_in_movie
+					""")
+	void deleteFromRelationshipTableShouldWork(boolean withMeta, String sql, String cypher) throws SQLException {
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
+
+		DatabaseMetaData databaseMetadata = null;
+		if (withMeta) {
+			databaseMetadata = mockRelationshipMeta();
+
+			mockColumnResults(databaseMetadata, "Person", "a");
+			mockColumnResults(databaseMetadata, "Person_ACTED_IN_Movie", "b", "d");
+			mockColumnResults(databaseMetadata, "Movie", "c");
+		}
+
+		assertThat(translator.translate(sql, databaseMetadata)).isEqualTo(cypher);
 	}
 
 	private void mockColumnResults(DatabaseMetaData databaseMetadata, String targetTable, String columnName,
