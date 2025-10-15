@@ -25,11 +25,16 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.values.Node;
+import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,7 +112,7 @@ class TranslationIT extends IntegrationTestBase {
 				statement.executeUpdate();
 			}
 
-			try (var statement = (Neo4jPreparedStatement) connection
+			try (var statement = connection
 				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
 				statement.setString(1, "Jodie Turner-Smith");
 				statement.setString(2, "Athena");
@@ -115,7 +120,7 @@ class TranslationIT extends IntegrationTestBase {
 				statement.execute();
 			}
 
-			try (var statement = (Neo4jPreparedStatement) connection
+			try (var statement = connection
 				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES (?, ?, ?)")) {
 				statement.setString(1, "Jeff Bridges");
 				statement.setString(2, "Kevin Flynn");
@@ -136,8 +141,8 @@ class TranslationIT extends IntegrationTestBase {
 				statement.executeUpdate();
 			}
 
-			try (var statement = ((Neo4jPreparedStatement) connection
-				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)"))) {
+			try (var statement = connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
 				statement.setString(1, "Jodie Turner-Smith");
 				statement.setString(2, "Elisha James");
 				statement.setString(3, "The Independent");
@@ -219,6 +224,79 @@ class TranslationIT extends IntegrationTestBase {
 				assertThat(rs.getObject("titles", Value.class).asList(Value::asString))
 					.containsExactlyInAnyOrder("TRON Ares", "The Independent");
 				assertThat(rs.next()).isFalse();
+			}
+		}
+	}
+
+	@Test
+	void mustNotInferWhenNodeExists() throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.createStatement()) {
+				stmt.executeUpdate("/*+ NEO4J FORCE_CYPHER */ CREATE (n:Person_ACTED_IN_Movie {initial: 'true'})");
+			}
+
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, Person_ACTED_IN_Movie.role, Movie.title)
+					VALUES
+					    ('Jaret Leto', 'Ares', 'TRON Ares'),
+						('Greta Lee', 'Eve Kim', 'TRON Ares'),
+						('Jodie Turner-Smith', 'Athena', 'TRON Ares')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (n:Person_ACTED_IN_Movie) WHERE n.initial IS NULL
+					RETURN n""")) {
+
+				int cnt = 0;
+				while (rs.next()) {
+					var node = rs.getObject("n", Node.class);
+					assertThat(node.asMap()).containsOnlyKeys("name", "role", "title");
+					++cnt;
+				}
+				assertThat(cnt).isEqualTo(3);
+			}
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = { 1, 2 })
+	void allPropsOnRelWithoutQualification(int numRows) throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+
+			var base = new StringBuilder("INSERT INTO A_RELATES_TO_B (a, b, c) VALUES ");
+
+			for (int i = 1; i <= numRows; ++i) {
+				base.append("(");
+				for (var s : new String[] { "a", "b", "c" }) {
+					base.append("'").append(s).append(i).append("',");
+				}
+				base.replace(base.length() - 1, base.length(), "), ");
+			}
+
+			try (var stmt = con.prepareStatement(base.substring(0, base.length() - 2))) {
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH ()-[r:RELATES_TO]->()
+					RETURN r""")) {
+
+				int cnt = 0;
+				while (rs.next()) {
+					var node = rs.getObject("r", Relationship.class);
+					var idx = cnt + 1;
+					assertThat(node.asMap())
+						.containsExactlyInAnyOrderEntriesOf(Map.of("a", "a" + idx, "b", "b" + idx, "c", "c" + idx));
+					++cnt;
+				}
+				assertThat(cnt).isEqualTo(numRows);
 			}
 		}
 	}

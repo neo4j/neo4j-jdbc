@@ -345,9 +345,10 @@ class SqlToCypherTests {
 		given(databaseMetadata.getTables(null, null, null, new String[] { "CBV" })).willReturn(cbvs);
 
 		var relationships = mock(ResultSet.class);
-		given(relationships.next()).willReturn(true);
+		given(relationships.next()).willReturn(true, false);
 		given(relationships.getString("REMARKS")).willReturn("Person\nACTED_IN\nMovie");
-		given(databaseMetadata.getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" }))
+		given(relationships.getString("TYPE")).willReturn("RELATIONSHIP");
+		given(databaseMetadata.getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "TABLE", "RELATIONSHIP" }))
 			.willReturn(relationships);
 
 		return databaseMetadata;
@@ -375,9 +376,9 @@ class SqlToCypherTests {
 					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d) VALUES ('av1', 'bv1', 'cv1', 'dv1'), ('av2', 'bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					true@@INSERT INTO Person_ACTED_IN_Movie (b, c, d) VALUES ('bv1', 'cv1', 'dv1'), ('bv2', 'cv2', 'dv2')@@UNWIND [{lhs: {}, rel: {b: 'bv1', d: 'dv1'}, rhs: {c: 'cv1'}}, {lhs: {}, rel: {b: 'bv2', d: 'dv2'}, rhs: {c: 'cv2'}}] AS properties CREATE (_lhs:Person) MERGE (_rhs:Movie {c: properties['rhs']['c']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					true@@INSERT INTO Person_ACTED_IN_Movie (a, b, d) VALUES ('av1', 'bv1', 'dv1'), ('av2', 'bv2', 'dv2')@@UNWIND [{lhs: {a: 'av1'}, rel: {b: 'bv1', d: 'dv1'}, rhs: {}}, {lhs: {a: 'av2'}, rel: {b: 'bv2', d: 'dv2'}, rhs: {}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) CREATE (_rhs:Movie) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
-					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@CREATE (_lhs:Person) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {d: 'd', e: 'e'}]->(_rhs)
-					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {}, rel: {e: 'ev1'}, rhs: {}}, {lhs: {}, rel: {e: 'ev2'}, rhs: {}}] AS properties CREATE (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs = properties['lhs'] SET person_acted_in_movie = properties['rel'] SET _rhs = properties['rhs']
-					false@@INSERT INTO Person_ACTED_IN_Movie (Person.a, Movie.b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {a: 'av1'}, rel: {e: 'ev1'}, rhs: {b: 'bv1'}}, {lhs: {a: 'av2'}, rel: {e: 'ev2'}, rhs: {b: 'bv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {b: properties['rhs']['b']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
+					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')@@CREATE (_lhs:Person) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {d: 'd', e: 'e', a: 'a', b: 'b', c: 'c'}]->(_rhs)
+					false@@INSERT INTO Person_ACTED_IN_Movie (a, b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {}, rel: {e: 'ev1', a: 'av1', b: 'bv1', c: 'cv1', d: 'dv1'}, rhs: {}}, {lhs: {}, rel: {e: 'ev2', a: 'av2', b: 'bv2', c: 'cv2', d: 'dv2'}, rhs: {}}] AS properties CREATE (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs = properties['lhs'] SET person_acted_in_movie = properties['rel'] SET _rhs = properties['rhs']
+					false@@INSERT INTO Person_ACTED_IN_Movie (Person.a, Movie.b, c, d, Person_ACTED_IN_Movie.e) VALUES ('av1', 'bv1', 'cv1', 'dv1', 'ev1'), ('av2', 'bv2', 'cv2', 'dv2', 'ev2')@@UNWIND [{lhs: {a: 'av1'}, rel: {e: 'ev1', c: 'cv1', d: 'dv1'}, rhs: {b: 'bv1'}}, {lhs: {a: 'av2'}, rel: {e: 'ev2', c: 'cv2', d: 'dv2'}, rhs: {b: 'bv2'}}] AS properties MERGE (_lhs:Person {a: properties['lhs']['a']}) MERGE (_rhs:Movie {b: properties['rhs']['b']}) CREATE (_lhs)-[person_acted_in_movie:ACTED_IN]->(_rhs) SET person_acted_in_movie = properties['rel']
 					""")
 	void insertIntoRelationshipTableShouldWork(boolean withMeta, String sql, String cypher) throws SQLException {
 		var translator = SqlToCypher
@@ -396,7 +397,8 @@ class SqlToCypherTests {
 
 		if (withMeta) {
 			verify(databaseMetadata).getTables(null, null, null, new String[] { "CBV" });
-			verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "RELATIONSHIP" });
+			verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie",
+					new String[] { "TABLE", "RELATIONSHIP" });
 			verify(databaseMetadata, times(3)).getColumns(any(), any(), anyString(), any());
 			verifyNoMoreInteractions(databaseMetadata);
 		}

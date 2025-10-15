@@ -94,7 +94,7 @@ That means we might be able to parse a certain piece of SQL, but are unable to t
 === Configuration
 
 The default implementation provides a number of configuration settings.
-They must be prefixed with `s2c` in the URL or config options:
+**They must be prefixed with `s2c` in the URL or config options:**
 
 |===
 |Name |Meaning|Default
@@ -122,7 +122,17 @@ They must be prefixed with `s2c` in the URL or config options:
 |`sqlDialect`
 |Which dialect to use when parsing. Supported values are `POSTGRES`, `SQLITE`, `MYSQL`, `H2`, `HSQLDB`, `DERBY` and `DEFAULT`.
 |`DEFAULT`
+
+|`relationshipPattern`
+|The pattern that is used for automatically inferring a relationship from a table-name.^1^
+|A pattern that matches `ALabel_RELATIONSHIP_TYPE_AnotherLabel` (i.e. relationship type **must** be upper-case and can contain underscores)
+
 |===
+
+[NOTE]
+^1^ The pattern must be a valid regular expression  with three capturing groups: First group will be interpreted as start
+or left-hand-side node, second group will be interpreted as the relationship type and the third as end or right-hand-side node.
+Named groups `lhs`, `reltype` and `rhs` are supported too. `null` or a blank pattern disables automatic inference.
 
 The next few examples use the `properties` config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.
 
@@ -163,3 +173,123 @@ include::translator/predicates.adoc[leveloffset=+2]
 include::translator/joins.adoc[leveloffset=+2]
 
 include::translator/dml.adoc[leveloffset=+2]
+
+[#s2c_manipulating_relationships]
+=== Manipulating relationships
+
+Relationships in Neo4j involve three entities: A start node, the relationship itself and an end node. Using Cypher, this can be expressed in one statement:
+
+[source,cypher]
+----
+CREATE (a:Person {name: 'Jaret Leto'})
+       -[:ACTED_IN {role: 'Ares'}]->
+       (m:Movie {title: 'TRON Ares'})
+RETURN *;
+----
+
+Which gives you this graph:
+
+image::movie_rel.png[]
+
+In SQL on the other hand, we would normally use at least two or depending on the level of normalisation, three tables to store this
+(Think `people`, `movies` and  `acted_in` as intersection table, referencing both `people` and `movies` and storing any properties).
+
+While you can obviously `SELECT` from as many relations as you can think of, the `INSERT` clause in SQL does not support multiple targets of insertion, only a single table.
+Without such a construct, the SQL to Cypher translator cannot directly translate a SQL statement into a pattern like the one above.
+The translator can only try to infer an intention here on best effort base.
+
+==== Inferring relationships from tables based on existing data
+
+Assuming the above statement was executed, the JDBC driver will actually show that relationship as virtual table in the database metadata:
+
+image::movie_rel_virtual_table.png[]
+
+Having one relationship as this is enough for the JDBC driver to use it as a kind of template. The JDBC driver will query for a relationship-virtual-table based on the given table name and if that matches, automatically infer that the following SQL statement does target a relationship:
+
+[source,sql]
+----
+INSERT INTO Person_ACTED_IN_Movie(name, role, title)
+VALUES('Jodie Turner-Smith', 'Athena', 'TRON Ares');
+----
+
+The updated graph looks like this:
+
+image::after_first_insert.png[]
+
+Noteable things are
+
+- No additional `Movie` node has been created
+- The attributes `name` has been used with the `Person` label and `title` with the `Movie`
+- `role` has been used on the relationship
+
+The matching has been based on the virtual table. If both nodes had had a `name` attribute, the property would have been used on both.
+Columns that match neither properties of the nodes nor the relationship, will be added to the relationship.
+The `INSERT` statement also was not translated into a plain `CREATE …` statement as shown above.
+Inserting into a relationship expresses a pretty clear intention to create the relationship alone, hence the JDBC driver will always create a statement such as this, if possible:
+
+[source,cypher]
+----
+MERGE (lhs:LabelLeft {propN: 'Value'})
+MERGE (rhs:LabelRight {propM: 'Value'})
+CREATE (lhs)-[:TYPE]->(rhs);
+----
+
+All properties for the nodes will be used for merging. If the JDBC driver cannot match any property to a label, it will issue a `CREATE` statement for that label.
+
+[TIP]
+If you can, make sure you define a unique constraint on the properties of the nodes on which you are going to insert relationships, for performance reasons, but also to account for Neo4js `MERGE` behaviour. Under concurrent updates, MERGE only guarantees the existence of the MERGE pattern, but not uniqueness, see https://neo4j.com/docs/cypher-manual/current/clauses/merge/[MERGE].
+
+This works the same way with a multiple values. A statement like the following:
+
+[source,sql]
+----
+INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES
+ ('Gillian Anderson', 'Elisabeth Dillinger', 'TRON Ares'),
+ ('Arturo Castro', 'Seth Flores', 'TRON Ares');
+----
+
+or a batched JDBC variant such as follows:
+
+[source,java]
+----
+try (var statement = connection.prepareStatement("""
+    INSERT INTO Person_ACTED_IN_Movie(name, role, title)
+    VALUES (?, ?, ?)""")
+) {
+    statement.setString(1, "Jeff Bridges");
+    statement.setString(2, "Kevin Flynn");
+    statement.setString(3, "TRON Ares");
+    statement.addBatch();
+    statement.setString(1, "Greta Lee");
+    statement.setString(2, "Eve Kim");
+    statement.setString(3, "TRON Ares");
+    statement.executeBatch();
+}
+----
+
+Will be translated into a Cypher query utilizing `UNWIND` and thus being great for batch loading relationships.
+
+==== Inferring relationships based on the table name
+
+The translator is by default configured in such a way that it tries to infer a relationship from the name of the table that should be inserted into if there's neither a matching existing relationship nor a node with the same label:
+
+Target table of the `INSERT` clause is: `Person_ACTED_IN_Movie`:
+
+* A relationship `(:Person)-[:ACTED_IN]->(:Movie)` exists: This relationship and the properties of all its constituents will be used as template
+* A node with the label `Person_ACTED_IN_Movie` exists: `INSERT` clause will be translated into `CREATE (n:Person_ACTED_IN_Movie)`, no attempt of creating relationships will be made
+* Otherwise, as `Person_ACTED_IN_Movie` matches the default pattern nodes labeled `Person` and `Movie` will either be merged or created, and a new relationship `ACTED_IN` will be created
+
+The default pattern to infer a relationship is designed in such a way that it detects labels in mixed-case letters that might contain underscores as well separated by a single underscore on each site from a relationship type in upper case, i.e. `Person_ACTED_IN_Movie` will be detected as well as `A_RELATES_TO_B`.
+The latter will use labels `A` and `B` for nodes, and `RELATES_TO` for the relationship type.
+
+Without an existing template, we need a way to map properties to the source or the target node or the relationship. By default, all properties will be put onto the relationship when the relationship has been inferred by just the table name.
+
+The JDBC driver however can utilize a SQL feature that lets you qualify columns like this:
+
+[source,sql]
+----
+INSERT INTO Person_ACTED_IN_Movie(Person.name, Person_ACTED_IN_Movie.role, Movie.title)
+VALUES ('Evan Peters', 'Julian Dillinger', 'TRON Ares');
+----
+
+Now, most SQL databases won't support qualified columns in an `INSERT` statement, but it's valid SQL, and we can parse it. The above qualified columns will be appropriately distributed onto `Person`, `Movie` and the relationship type mapping the qualifications case-sensitive by name.

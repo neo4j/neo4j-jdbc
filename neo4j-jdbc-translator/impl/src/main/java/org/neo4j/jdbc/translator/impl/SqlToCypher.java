@@ -656,6 +656,13 @@ final class SqlToCypher implements Translator {
 					"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel));
 			var rhsProperties = getPropertiesForLabel(row, columns, rightLabel);
 
+			for (int i = 0; i < columns.size(); ++i) {
+				var targetColumn = columns.get(i).getName();
+				if (!(lhsProperties.containsKey(targetColumn) || rhsProperties.containsKey(targetColumn))) {
+					relProperties.putIfAbsent(targetColumn, expression(row.field(i)));
+				}
+			}
+
 			var left = nodeWithProperties(relationship.getLeft(), lhsProperties);
 			var right = nodeWithProperties(relationship.getRight(), rhsProperties);
 
@@ -768,26 +775,39 @@ final class SqlToCypher implements Translator {
 			var rightMergeProperties = new HashSet<String>();
 
 			var properties = Cypher.listOf(insert.$values().stream().map(row -> {
-				var rowProperties = new LinkedHashMap<String, Map<String, Expression>>();
-				var hlp = getPropertiesForLabel(row, columns, leftLabel);
+				var allPropertiesInRow = new LinkedHashMap<String, Map<String, Expression>>();
+
+				var lhsProperties = getPropertiesForLabel(row, columns, leftLabel);
 				if (leftMergeProperties.isEmpty()) {
-					leftMergeProperties.addAll(hlp.keySet());
+					leftMergeProperties.addAll(lhsProperties.keySet());
 				}
 				else {
-					leftMergeProperties.retainAll(hlp.keySet());
+					leftMergeProperties.retainAll(lhsProperties.keySet());
 				}
-				rowProperties.put("lhs", hlp);
-				rowProperties.put("rel", getPropertiesForLabel(row, columns,
-						"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel)));
-				hlp = getPropertiesForLabel(row, columns, rightLabel);
+				allPropertiesInRow.put("lhs", lhsProperties);
+
+				var relProperties = getPropertiesForLabel(row, columns,
+						"%s_%s_%s".formatted(leftLabel, relationshipType, rightLabel));
+
+				allPropertiesInRow.put("rel", relProperties);
+
+				var rhsProperties = getPropertiesForLabel(row, columns, rightLabel);
 				if (rightMergeProperties.isEmpty()) {
-					rightMergeProperties.addAll(hlp.keySet());
+					rightMergeProperties.addAll(rhsProperties.keySet());
 				}
 				else {
-					rightMergeProperties.retainAll(hlp.keySet());
+					rightMergeProperties.retainAll(rhsProperties.keySet());
 				}
-				rowProperties.put("rhs", hlp);
-				return Cypher.literalOf(rowProperties);
+				allPropertiesInRow.put("rhs", rhsProperties);
+
+				for (int i = 0; i < columns.size(); ++i) {
+					var targetColumn = columns.get(i).getName();
+					if (!(lhsProperties.containsKey(targetColumn) || rhsProperties.containsKey(targetColumn))) {
+						relProperties.putIfAbsent(targetColumn, expression(row.field(i)));
+					}
+				}
+
+				return Cypher.literalOf(allPropertiesInRow);
 			}).toList());
 
 			var propertiesName = Cypher.name("properties");
@@ -1677,22 +1697,31 @@ final class SqlToCypher implements Translator {
 				return relationship;
 			}
 
-			if (primaryLabel.contains("_") && this.databaseMetaData != null) {
+			var tableExists = false;
+			if (this.databaseMetaData != null) {
 				try (var resultSet = this.databaseMetaData.getTables(null, null, primaryLabel,
-						new String[] { "RELATIONSHIP" })) {
-					if (resultSet.next()) {
-						var definition = resultSet.getString("REMARKS").split("\n");
-						relationship = Cypher.node(definition[0])
-							.named("_lhs")
-							.relationshipTo(Cypher.node(definition[2]).named("_rhs"), definition[1])
-							.named(symbolicName);
+						new String[] { "TABLE", "RELATIONSHIP" })) {
+					while (resultSet.next()) {
+						var type = resultSet.getString("TABLE_TYPE");
+						if ("TABLE".equals(type)) {
+							tableExists = true;
+							break;
+						}
+						else if ("RELATIONSHIP".equals(type)) {
+							var definition = resultSet.getString("REMARKS").split("\n");
+							relationship = Cypher.node(definition[0])
+								.named("_lhs")
+								.relationshipTo(Cypher.node(definition[2]).named("_rhs"), definition[1])
+								.named(symbolicName);
+						}
 					}
 				}
 				catch (SQLException ex) {
 					throw new RuntimeException(ex);
 				}
 			}
-			if (relationship == null && this.relationshipPattern != null) {
+
+			if (!tableExists && relationship == null && this.relationshipPattern != null) {
 				var matcher = this.relationshipPattern.matcher(primaryLabel);
 				if (matcher.matches()) {
 					relationship = Cypher.node(namedGroupOrIndex(matcher, "lhs", 1))
