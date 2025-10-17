@@ -1231,8 +1231,8 @@ final class SqlToCypher implements Translator {
 				}
 
 				// Check if access to relationships has been qualified
-				for (var relationshipPattern : this.resolvedRelationships.values()) {
-					if (relationshipPattern instanceof Relationship rel) {
+				for (var pattern : this.resolvedRelationships.values()) {
+					if (pattern instanceof Relationship rel) {
 						Predicate<String> labelOrTypePredicate = v -> v.equals(table.getName());
 						if (rel.getLeft()
 							.getLabels()
