@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-10-17T09:22:40Z</span>
+<span id="revdate">2025-10-17T16:52:49Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -2959,7 +2959,7 @@ That means we might be able to parse a certain piece of SQL, but are unable to t
 <h4 id="s2c_configuration">6.3.2. Configuration</h4>
 <div class="paragraph">
 <p>The default implementation provides a number of configuration settings.
-They must be prefixed with <code>s2c</code> in the URL or config options:</p>
+<strong>They must be prefixed with <code>s2c</code> in the URL or config options:</strong></p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -3005,8 +3005,27 @@ They must be prefixed with <code>s2c</code> in the URL or config options:</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Which dialect to use when parsing. Supported values are <code>POSTGRES</code>, <code>SQLITE</code>, <code>MYSQL</code>, <code>H2</code>, <code>HSQLDB</code>, <code>DERBY</code> and <code>DEFAULT</code>.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>DEFAULT</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>relationshipPattern</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The pattern that is used for automatically inferring a relationship from a table-name.<sup>1</sup></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A pattern that matches <code>ALabel_RELATIONSHIP_TYPE_AnotherLabel</code> (i.e. relationship type <strong>must</strong> be upper-case and can contain underscores)</p></td>
+</tr>
 </tbody>
 </table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<sup>1</sup> The pattern must be a valid regular expression  with three capturing groups: First group will be interpreted as start
+or left-hand-side node, second group will be interpreted as the relationship type and the third as end or right-hand-side node.
+Named groups <code>lhs</code>, <code>reltype</code> and <code>rhs</code> are supported too. <code>null</code> or a blank pattern disables automatic inference.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>The next few examples use the <code>properties</code> config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.</p>
 </div>
@@ -4166,6 +4185,20 @@ There are several implementation options:</p>
 <div class="paragraph">
 <p>We implemented some variants thereof, however we don&#8217;t claim their absolute usefulness in all cases.</p>
 </div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Outer joins are not supported.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <div class="sect4">
 <h5 id="_1n_joins">1:n joins</h5>
 <div class="sect5">
@@ -4691,6 +4724,277 @@ ON CREATE SET
   people.born = properties.born
 ON MATCH SET people.born = properties['born']</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="s2c_manipulating_relationships">6.3.9. Manipulating relationships</h4>
+<div class="paragraph">
+<p>Relationships in Neo4j involve three entities: A start node, the relationship itself and an end node. Using Cypher, this can be expressed in one statement:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">CREATE (a:Person {name: 'Jaret Leto'})
+       -[:ACTED_IN {role: 'Ares'}]-&gt;
+       (m:Movie {title: 'TRON Ares'})
+RETURN *;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Which gives you this graph:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/movie_rel.png" alt="movie rel">
+</div>
+</div>
+<div class="paragraph">
+<p>In SQL on the other hand, we would normally use at least two or depending on the level of normalisation, three tables to store this
+(Think <code>people</code>, <code>movies</code> and  <code>acted_in</code> as intersection table, referencing both <code>people</code> and <code>movies</code> and storing any properties).</p>
+</div>
+<div class="paragraph">
+<p>While you can obviously <code>SELECT</code> from as many relations as you can think of, the <code>INSERT</code> clause in SQL does not support multiple targets of insertion, only a single table.
+Without such a construct, the SQL to Cypher translator cannot directly translate a SQL statement into a pattern like the one above.
+The translator can only try to infer an intention here on best effort base.</p>
+</div>
+<div class="sect4">
+<h5 id="_inferring_relationships_from_tables_based_on_existing_data">Inferring relationships from tables based on existing data</h5>
+<div class="paragraph">
+<p>Assuming the above statement was executed, the JDBC driver will actually show that relationship as virtual table in the database metadata:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/movie_rel_virtual_table.png" alt="movie rel virtual table">
+</div>
+</div>
+<div class="paragraph">
+<p>Having one relationship as this is enough for the JDBC driver to use it as a kind of template. The JDBC driver will query for a relationship-virtual-table based on the given table name and if that matches, automatically infer that the following SQL statement does target a relationship:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Person_ACTED_IN_Movie(name, role, title)
+<span class="keyword">VALUES</span>(<span class="string"><span class="delimiter">'</span><span class="content">Jodie Turner-Smith</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Athena</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The updated graph looks like this:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/after_first_insert.png" alt="after first insert">
+</div>
+</div>
+<div class="paragraph">
+<p>Noteable things are</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>No additional <code>Movie</code> node has been created</p>
+</li>
+<li>
+<p>The attributes <code>name</code> has been used with the <code>Person</code> label and <code>title</code> with the <code>Movie</code></p>
+</li>
+<li>
+<p><code>role</code> has been used on the relationship</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The matching has been based on the virtual table. If both nodes had had a <code>name</code> attribute, the property would have been used on both.
+Columns that match neither properties of the nodes nor the relationship, will be added to the relationship.
+The <code>INSERT</code> statement also was not translated into a plain <code>CREATE …</code> statement as shown above.
+Inserting into a relationship expresses a pretty clear intention to create the relationship alone, hence the JDBC driver will always create a statement such as this, if possible:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">MERGE (lhs:LabelLeft {propN: 'Value'})
+MERGE (rhs:LabelRight {propM: 'Value'})
+CREATE (lhs)-[:TYPE]-&gt;(rhs);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All properties for the nodes will be used for merging. If the JDBC driver cannot match any property to a label, it will issue a <code>CREATE</code> statement for that label.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you can, make sure you define a unique constraint on the properties of the nodes on which you are going to insert relationships, for performance reasons, but also to account for Neo4js <code>MERGE</code> behaviour. Under concurrent updates, MERGE only guarantees the existence of the MERGE pattern, but not uniqueness, see <a href="https://neo4j.com/docs/cypher-manual/current/clauses/merge/">MERGE</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This works the same way with a multiple values. A statement like the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Person_ACTED_IN_Movie(name, role, title) <span class="keyword">VALUES</span>
+ (<span class="string"><span class="delimiter">'</span><span class="content">Gillian Anderson</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Elisabeth Dillinger</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>),
+ (<span class="string"><span class="delimiter">'</span><span class="content">Arturo Castro</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Seth Flores</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or a batched JDBC variant such as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">try</span> (<span class="type">var</span> statement = connection.prepareStatement(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+    INSERT INTO Person_ACTED_IN_Movie(name, role, title)
+    VALUES (?, ?, ?)</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>)
+) {
+    statement.setString(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Jeff Bridges</span><span class="delimiter">&quot;</span></span>);
+    statement.setString(<span class="integer">2</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Kevin Flynn</span><span class="delimiter">&quot;</span></span>);
+    statement.setString(<span class="integer">3</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">TRON Ares</span><span class="delimiter">&quot;</span></span>);
+    statement.addBatch();
+    statement.setString(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Greta Lee</span><span class="delimiter">&quot;</span></span>);
+    statement.setString(<span class="integer">2</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Eve Kim</span><span class="delimiter">&quot;</span></span>);
+    statement.setString(<span class="integer">3</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">TRON Ares</span><span class="delimiter">&quot;</span></span>);
+    statement.executeBatch();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Will be translated into a Cypher query utilizing <code>UNWIND</code> and thus being great for batch loading relationships.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_inferring_relationships_based_on_the_table_name">Inferring relationships based on the table name</h5>
+<div class="paragraph">
+<p>The translator is by default configured in such a way that it tries to infer a relationship from the name of the table that should be inserted into if there&#8217;s neither a matching existing relationship nor a node with the same label:</p>
+</div>
+<div class="paragraph">
+<p>Target table of the <code>INSERT</code> clause is: <code>Person_ACTED_IN_Movie</code>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A relationship <code>(:Person)-[:ACTED_IN]&#8594;(:Movie)</code> exists: This relationship and the properties of all its constituents will be used as template</p>
+</li>
+<li>
+<p>A node with the label <code>Person_ACTED_IN_Movie</code> exists: <code>INSERT</code> clause will be translated into <code>CREATE (n:Person_ACTED_IN_Movie)</code>, no attempt of creating relationships will be made</p>
+</li>
+<li>
+<p>Otherwise, as <code>Person_ACTED_IN_Movie</code> matches the default pattern nodes labeled <code>Person</code> and <code>Movie</code> will either be merged or created, and a new relationship <code>ACTED_IN</code> will be created</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The default pattern to infer a relationship is designed in such a way that it detects labels in mixed-case letters that might contain underscores as well separated by a single underscore on each site from a relationship type in upper case, i.e. <code>Person_ACTED_IN_Movie</code> will be detected as well as <code>A_RELATES_TO_B</code>.
+The latter will use labels <code>A</code> and <code>B</code> for nodes, and <code>RELATES_TO</code> for the relationship type.</p>
+</div>
+<div class="paragraph">
+<p>Without an existing template, we need a way to map properties to the source or the target node or the relationship. By default, all properties will be put onto the relationship when the relationship has been inferred by just the table name.</p>
+</div>
+<div class="paragraph">
+<p>The JDBC driver however can utilize a SQL feature that lets you qualify columns like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+<span class="keyword">VALUES</span> (<span class="string"><span class="delimiter">'</span><span class="content">Evan Peters</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Julian Dillinger</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, most SQL databases won&#8217;t support qualified columns in an <code>INSERT</code> statement, but it&#8217;s valid SQL, and we can parse it. The above qualified columns will be appropriately distributed onto <code>Person</code>, <code>Movie</code> and <code>ACTED_IN</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_deleting_relationships">Deleting relationships</h5>
+<div class="paragraph">
+<p>While Samuel L. Jackson did play in a lot of movies, he didn&#8217;t play himself in <code>TRON: Legacy</code> and you might want to delete that relationship from the Graph:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../images/tronwrong.png" alt="tronwrong">
+</div>
+</div>
+<div class="paragraph">
+<p>This is possible with an ordinary <code>DELETE FROM</code> statement on which the inference of relationships works the same way as described above. Aligned with the start and end nodes being merged if possible during create and not modified otherwise, the deletion will only affect the relationship itself:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">DELETE</span> <span class="keyword">FROM</span> Person_ACTED_IN_Movie
+<span class="keyword">WHERE</span> title = <span class="string"><span class="delimiter">'</span><span class="content">TRON: Legacy</span><span class="delimiter">'</span></span>
+  <span class="keyword">AND</span> name = <span class="string"><span class="delimiter">'</span><span class="content">Samuel L. Jackson</span><span class="delimiter">'</span></span>
+  <span class="keyword">AND</span> role = <span class="string"><span class="delimiter">'</span><span class="content">himself</span><span class="delimiter">'</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Predicates will be pushed down in such a way that they filter on the correct target (here: The <code>name</code> property of the <code>:Actor</code> node, <code>title</code> on <code>:Movie</code> and <code>role</code> on the relationship <code>:ACTED_IN</code>). The result can be confirmed with Cypher (the JDBC driver does not support outer joins):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cypher">/*+ NEO4J FORCE_CYPHER */
+MATCH (p:Person {name: 'Samuel L. Jackson'})
+RETURN p.name, COUNT {(p)-[:ACTED_IN]-&gt;(:Movie)} AS cnt</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The result will be one row with stating that Samuel L. Jackson played in zero movies, which is obviously a true lie.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_truncating_relationships">Truncating relationships</h5>
+<div class="paragraph">
+<p>The <code>TRUNCATE</code> keyword works the same way, except that as per SQL standard, it will unconditionally delete all relationship instances:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">TRUNCATE</span> Person_ACTED_IN_Movie</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will delete all <code>ACTED_IN</code> relationships, but none of the attached nodes.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_updating_relationships">Updating relationships</h5>
+<div class="paragraph">
+<p>When you create a graph like that</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">INSERT</span> <span class="class">INTO</span> Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+<span class="keyword">VALUES</span>
+    (<span class="string"><span class="delimiter">'</span><span class="content">Jaret Leto</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Ares</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Morbius</span><span class="delimiter">'</span></span>),
+    (<span class="string"><span class="delimiter">'</span><span class="content">Greta Lee</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Eve Kim</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>),
+    (<span class="string"><span class="delimiter">'</span><span class="content">Jodie Turner-Smith</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Elisha James</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>realising later that Jodie Turner-Smith played Athena, you can fix that relationship via an <code>UPDATE</code> statement:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">try</span> (<span class="type">var</span> stmt = con.prepareStatement(
+    <span class="string"><span class="delimiter">&quot;</span><span class="content">UPDATE Person_ACTED_IN_Movie SET role = ? WHERE name = ?</span><span class="delimiter">&quot;</span></span>)
+) {
+    stmt.setString(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Athena</span><span class="delimiter">&quot;</span></span>);
+    stmt.setString(<span class="integer">2</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Jodie Turner-Smith</span><span class="delimiter">&quot;</span></span>);
+    stmt.executeUpdate();
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The same algorithm that is used to determine which column is applied to start-node, relationship or end-node properties during insert is applied for the update.
+That means you can also update properties of nodes.
+But be aware that those updates will only applied via <code>SET</code> and no other <code>MERGE</code> updates are made.
+That means fixing the second bug in the above graph—making sure Leto played Ares in TRON Ares, not in Morbius—creates a <strong>second</strong> <code>:Movie</code> node with the name <code>TRON Ares</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">UPDATE</span> Person_ACTED_IN_Movie
+<span class="class">SET</span> title = <span class="string"><span class="delimiter">'</span><span class="content">TRON Ares</span><span class="delimiter">'</span></span>
+<span class="keyword">WHERE</span> name = <span class="string"><span class="delimiter">'</span><span class="content">Jaret Leto</span><span class="delimiter">'</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will result with two <code>:Movie</code>-Nodes labeled <code>TRON Ares</code> (<code>SELECT count(*) FROM Movie WHERE title = 'TRON Ares'</code> will return 2).</p>
 </div>
 </div>
 </div>
@@ -5697,7 +6001,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-10-17 09:23:00 UTC
+Last updated 2025-10-17 16:53:19 UTC
 </div>
 </div>
 </body>
