@@ -1803,6 +1803,9 @@ final class SqlToCypher implements Translator {
 		// method, thank you very much sonar
 		@SuppressWarnings({ "squid:S3776", "squid:S1854" })
 		private List<PatternElement> resolveJoin(QOM.JoinTable<?, ? extends Table<?>> joinTable) {
+			if (joinTable instanceof QOM.NaturalFullJoin<?>) {
+				throw unsupported(joinTable);
+			}
 			var join = JoinDetails.of(joinTable);
 
 			String relType = null;

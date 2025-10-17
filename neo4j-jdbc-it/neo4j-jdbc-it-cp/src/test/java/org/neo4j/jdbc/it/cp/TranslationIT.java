@@ -228,6 +228,79 @@ class TranslationIT extends IntegrationTestBase {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	void relationshipsShallBeDeletable() throws SQLException {
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+					VALUES
+					    ('Jeff Bridges', 'Kevin Flynn', 'TRON Ares'),
+					    ('Jeff Bridges', 'Kevin Flynn', 'TRON: Legacy'),
+						('Garrett Hedlund', 'Sam Flynn', 'TRON Ares'),
+						('Garrett Hedlund', 'Sam Flynn', 'TRON: Legacy'),
+						('Samuel L. Jackson', 'himself', 'TRON: Legacy')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement()) {
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Movie WHERE title LIKE 'TRON%'")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(2);
+				}
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Person")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(3);
+				}
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Person_ACTED_IN_Movie")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(5);
+				}
+				stmt.executeUpdate("""
+						DELETE FROM Person_ACTED_IN_Movie
+						WHERE title = 'TRON: Legacy'
+						  AND name = 'Samuel L. Jackson'
+						  AND role = 'himself'
+						""");
+
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Movie WHERE title LIKE 'TRON%'")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(2);
+				}
+				try (var rs = stmt.executeQuery("""
+						/*+ NEO4J FORCE_CYPHER */
+						MATCH (p:Person {name: 'Samuel L. Jackson'})
+						RETURN p.name, COUNT {(p)-[:ACTED_IN]->(:Movie)} AS cnt
+						""")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getString(1)).isEqualTo("Samuel L. Jackson");
+					assertThat(rs.getInt(2)).isEqualTo(0);
+				}
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Person_ACTED_IN_Movie")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(4);
+				}
+
+				stmt.executeUpdate("TRUNCATE Person_ACTED_IN_Movie");
+
+				try (var rs = stmt.executeQuery("""
+							/*+ NEO4J FORCE_CYPHER */
+							MATCH (n)
+							OPTIONAL MATCH (n)-[r]->(m)
+							WITH labels(n) + coalesce(labels(m), []) + coalesce(type(r), []) AS row
+							UNWIND row AS label
+							RETURN COLLECT(DISTINCT label)
+						""")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getObject(1, List.class)).containsOnly("Movie", "Person");
+				}
+			}
+
+		}
+	}
+
 	@Test
 	void mustNotInferWhenNodeExists() throws SQLException {
 

@@ -10,6 +10,11 @@ There are several implementation options:
 
 We implemented some variants thereof, however we don't claim their absolute usefulness in all cases.
 
+[WARNING]
+====
+Outer joins are not supported.
+====
+
 == 1:n joins
 
 === Natural joins

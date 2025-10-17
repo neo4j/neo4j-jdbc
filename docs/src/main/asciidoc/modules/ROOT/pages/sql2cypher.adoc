@@ -293,3 +293,41 @@ VALUES ('Evan Peters', 'Julian Dillinger', 'TRON Ares');
 ----
 
 Now, most SQL databases won't support qualified columns in an `INSERT` statement, but it's valid SQL, and we can parse it. The above qualified columns will be appropriately distributed onto `Person`, `Movie` and `ACTED_IN`.
+
+==== Deleting relationships
+
+While Samuel L. Jackson did play in a lot of movies, he didn't play himself in `TRON: Legacy` and you might want to delete that relationship from the Graph:
+
+image::tronwrong.png[]
+
+This is possible with an ordinary `DELETE FROM` statement on which the inference of relationships works the same way as described above. Aligned with the start and end nodes being merged if possible during create and not modified otherwise, the deletion will only affect the relationship itself:
+
+[source,sql]
+----
+DELETE FROM Person_ACTED_IN_Movie
+WHERE title = 'TRON: Legacy'
+  AND name = 'Samuel L. Jackson'
+  AND role = 'himself'
+----
+
+Predicates will be pushed down in such a way that they filter on the correct target (here: The `name` property of the `:Actor` node, `title` on `:Movie` and `role` on the relationship `:ACTED_IN`). The result can be confirmed with Cypher (the JDBC driver does not support outer joins):
+
+[source,cypher]
+----
+/*+ NEO4J FORCE_CYPHER */
+MATCH (p:Person {name: 'Samuel L. Jackson'})
+RETURN p.name, COUNT {(p)-[:ACTED_IN]->(:Movie)} AS cnt
+----
+
+The result will be one row with stating that Samuel L. Jackson played in zero movies, which is obviously a true lie.
+
+==== Truncating relationships
+
+The `TRUNCATE` keyword works the same way, except that as per SQL standard, it will unconditionally delete all relationship instances:
+
+[source,sql]
+----
+TRUNCATE Person_ACTED_IN_Movie
+----
+
+will delete all `ACTED_IN` relationships, but none of the attached nodes.
