@@ -58,6 +58,9 @@ final class Tracing implements ConnectionListener, StatementListener, ResultSetL
 		// See
 		// https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-spans.md
 		var uri = URI.create(connection.getDatabaseURL().getSchemeSpecificPart());
+		if (uri.getHost() == null) {
+			uri = URI.create(uri.getSchemeSpecificPart());
+		}
 		this.defaultTags = Map.of("server.address", uri.getHost(), "server.port", Integer.toString(uri.getPort()),
 				"db.system.name", "neo4j", "db.namespace", connection.getDatabaseName());
 	}
@@ -134,6 +137,10 @@ final class Tracing implements ConnectionListener, StatementListener, ResultSetL
 		}
 
 		span.annotate(event.type().toString());
+	}
+
+	Map<String, String> defaultTags() {
+		return this.defaultTags;
 	}
 
 }
