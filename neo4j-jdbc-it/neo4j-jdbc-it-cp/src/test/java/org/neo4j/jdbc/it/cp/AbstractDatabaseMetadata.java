@@ -1153,6 +1153,39 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	void getRelationshipTableShouldWork() throws SQLException {
+		try (Statement statement = this.connection.createStatement()) {
+			statement.execute("CREATE (:Person {name: 'A'})-[:ACTED_IN {role: 'B'}]->(:Movie {title: 'C'})");
+		}
+
+		var resultSet = this.connection.getMetaData().getTables(null, null, null, null);
+		assertThat(resultSet).isNotNull();
+		var tableNames = new ArrayList<String>();
+		while (resultSet.next()) {
+			var tableName = resultSet.getString("TABLE_NAME");
+			tableNames.add(tableName);
+			if ("Person_ACTED_IN_Movie".equals(tableName)) {
+				assertThat(resultSet.getString("TABLE_TYPE")).isEqualTo("RELATIONSHIP");
+				var info = resultSet.getString("REMARKS");
+				assertThat(info).isNotEmpty();
+				var labels = info.split("\n");
+				assertThat(labels).containsExactly("Person", "ACTED_IN", "Movie");
+			}
+		}
+		resultSet.close();
+		assertThat(tableNames).containsExactlyInAnyOrder("Person_ACTED_IN_Movie", "Movie", "Person", "cbv1", "cbv2");
+
+		resultSet = this.connection.getMetaData().getColumns(null, null, "Person_ACTED_IN_Movie", null);
+		assertThat(resultSet).isNotNull();
+		var columns = new ArrayList<String>();
+		while (resultSet.next()) {
+			columns.add(resultSet.getString("COLUMN_NAME"));
+		}
+		resultSet.close();
+		assertThat(columns).containsOnly("role", "v$movie_id", "v$person_id", "v$id");
+	}
+
+	@Test
 	void getTablesWithPattern() throws SQLException {
 
 		try (Statement statement = this.connection.createStatement()) {

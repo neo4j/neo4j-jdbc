@@ -115,6 +115,7 @@ public final class SqlToCypherConfig {
 				case "enableCache" -> builder.withCacheEnabled(toBoolean(v));
 				case "precedence" -> builder.withPrecedence(toInteger(v));
 				case "viewDefinitions" -> builder.withViewDefinitions(toString(v));
+				case "relationshipPattern" -> builder.withRelationshipPattern(toString(v));
 				default -> {
 					SqlToCypher.LOGGER.log(Level.WARNING, "Unknown config option {0}", m.group());
 					yield null;
@@ -251,6 +252,8 @@ public final class SqlToCypherConfig {
 
 	private final String viewDefinitions;
 
+	private final String relationshipPattern;
+
 	private SqlToCypherConfig(Builder builder) {
 
 		this.parseNameCase = builder.parseNameCase;
@@ -265,6 +268,7 @@ public final class SqlToCypherConfig {
 		this.cacheEnabled = builder.enableCache;
 		this.precedence = builder.precedence;
 		this.viewDefinitions = builder.viewDefinitions;
+		this.relationshipPattern = builder.relationshipPattern;
 	}
 
 	/**
@@ -401,6 +405,17 @@ public final class SqlToCypherConfig {
 	}
 
 	/**
+	 * {@return an optional relationship pattern for detecting relationships in empty}
+	 * @since 6.9.0
+	 */
+	public Pattern getRelationshipPattern() {
+		if (this.relationshipPattern == null || this.relationshipPattern.isBlank()) {
+			return null;
+		}
+		return Pattern.compile(this.relationshipPattern.trim());
+	}
+
+	/**
 	 * A builder to create new instances of {@link SqlToCypherConfig configurations}.
 	 */
 	public static final class Builder {
@@ -429,21 +444,25 @@ public final class SqlToCypherConfig {
 
 		private String viewDefinitions;
 
+		private String relationshipPattern;
+
 		private Builder() {
 			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, false, false,
-					null, false, Translator.LOWEST_PRECEDENCE, null);
+					null, false, Translator.LOWEST_PRECEDENCE, null,
+					"(?<lhs>.+?)_(?<=_)(?<reltype>[_\\p{Lu}]+)(?=_)_(?<rhs>.+?)");
 		}
 
 		private Builder(SqlToCypherConfig config) {
 			this(config.parseNameCase, config.renderNameCase, config.jooqDiagnosticLogging, config.tableToLabelMappings,
 					config.joinColumnsToTypeMappings, config.sqlDialect, config.prettyPrint, config.alwaysEscapeNames,
-					config.parseNamedParamPrefix, config.cacheEnabled, config.precedence, config.viewDefinitions);
+					config.parseNamedParamPrefix, config.cacheEnabled, config.precedence, config.viewDefinitions,
+					config.relationshipPattern);
 		}
 
 		private Builder(ParseNameCase parseNameCase, RenderNameCase renderNameCase, boolean jooqDiagnosticLogging,
 				Map<String, String> tableToLabelMappings, Map<String, String> joinColumnsToTypeMappings,
 				SQLDialect sqlDialect, boolean prettyPrint, boolean alwaysEscapeNames, String parseNamedParamPrefix,
-				boolean enableCache, Integer precedence, String viewDefinitions) {
+				boolean enableCache, Integer precedence, String viewDefinitions, String relationshipPattern) {
 			this.parseNameCase = parseNameCase;
 			this.renderNameCase = renderNameCase;
 			this.jooqDiagnosticLogging = jooqDiagnosticLogging;
@@ -456,6 +475,7 @@ public final class SqlToCypherConfig {
 			this.enableCache = enableCache;
 			this.precedence = precedence;
 			this.viewDefinitions = viewDefinitions;
+			this.relationshipPattern = relationshipPattern;
 		}
 
 		/**
@@ -588,6 +608,29 @@ public final class SqlToCypherConfig {
 		 */
 		public Builder withViewDefinitions(String viewDefinitions) {
 			this.viewDefinitions = viewDefinitions;
+			return this;
+		}
+
+		/**
+		 * Configures a pattern to determine relationships from table names. The pattern
+		 * must have 3 capturing groups:
+		 * <ol>
+		 * <li>The label for the left-hand-side node</li>
+		 * <li>The type of the relationship</li>
+		 * <li>The label for the right.-hand-side nde/li>
+		 * </ol>
+		 * You can also use named groups, the configuration will detect
+		 * <ul>
+		 * <li><code>lhs</code> (label left-hand-side node)</li>
+		 * <li><code>reltype</code> (relationship type</li>
+		 * <li><code>rhs</code> (label right-hand-side node</li>
+		 * </ul>
+		 * @param pattern the pattern to discover relationships within table names
+		 * @return this builder
+		 * @since 6.9.0
+		 */
+		public Builder withRelationshipPattern(String pattern) {
+			this.relationshipPattern = pattern;
 			return this;
 		}
 

@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.translator.impl;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.jooq.SQLDialect;
@@ -27,6 +28,7 @@ import org.jooq.conf.RenderNameCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,6 +88,44 @@ class SqlToCypherConfigTests {
 		}
 	}
 
+	static Stream<Arguments> emptyOrNullPatternDisablesRelDetection() {
+		return Stream.of(null, "", "\n", " ").map(Arguments::of);
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void emptyOrNullPatternDisablesRelDetection(String value) {
+		assertThat(SqlToCypherConfig.builder().withRelationshipPattern(value).build().getRelationshipPattern())
+			.isNull();
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			A_B_C, A, B, C
+			A_a_B_C, A_a, B, C
+			A_B_C_C, A, B_C, C
+			a_B_C_c, a, B_C, c
+			a_B_C_C, a, B_C, C
+			A_B_C_c, A, B_C, c
+			A_A_B_C_C, A, A_B_C, C
+			A_A_B_B_C_C, A, A_B_B_C, C
+			Das_ist_ein_B_B_Lustiger_Test, Das_ist_ein, B_B, Lustiger_Test,
+			Person_ACTED_IN_Movie, Person, ACTED_IN, Movie
+			""")
+	void defaultRelationshipPatternShouldWork(String value, String lhs, String reltype, String rhs) {
+		var config = SqlToCypherConfig.defaultConfig();
+		var pattern = config.getRelationshipPattern();
+		assertThat(pattern).isNotNull();
+		var matcher = pattern.matcher(value);
+		assertThat(matcher.matches());
+		assertThat(matcher.group(1)).isEqualTo(lhs);
+		assertThat(matcher.group(2)).isEqualTo(reltype);
+		assertThat(matcher.group(3)).isEqualTo(rhs);
+		assertThat(matcher.group("lhs")).isEqualTo(lhs);
+		assertThat(matcher.group("reltype")).isEqualTo(reltype);
+		assertThat(matcher.group("rhs")).isEqualTo(rhs);
+	}
+
 	static Stream<Arguments> shouldParseMaps() {
 		return Stream.of(Arguments.of(Map.of("a", "b"), Map.of("a", "b"), null),
 				Arguments.of("a:b", Map.of("a", "b"), null),
@@ -140,7 +180,8 @@ class SqlToCypherConfigTests {
 				"s2c.renderNameCase", ParseNameCase.LOWER_IF_UNQUOTED.name(), "s2c.jooqDiagnosticLogging", "true",
 				"s2c.sql-dialect", SQLDialect.FIREBIRD.name(), "s2c.prettyPrint", "false", "s2c.parseNamedParamPrefix",
 				"foo", "s2c.tableToLabelMappings", "people:Person;movies:Movie;movie_actors:ACTED_IN",
-				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN", "s2c.precedence", 123));
+				"s2c.joinColumnsToTypeMappings", "actor_id:ACTED_IN", "s2c.precedence", 123, "s2c.relationshipPattern",
+				"(.+)_(.+)_(.+)"));
 
 		assertThat(config.getParseNameCase()).isEqualTo(ParseNameCase.LOWER_IF_UNQUOTED);
 		assertThat(config.getRenderNameCase()).isEqualTo(RenderNameCase.LOWER_IF_UNQUOTED);
@@ -153,6 +194,9 @@ class SqlToCypherConfigTests {
 		assertThat(config.getJoinColumnsToTypeMappings())
 			.containsExactlyInAnyOrderEntriesOf(Map.of("actor_id", "ACTED_IN"));
 		assertThat(config.getPrecedence()).isEqualTo(123);
+		assertThat(config.getRelationshipPattern()).isNotNull()
+			.extracting(Pattern::pattern)
+			.isEqualTo("(.+)_(.+)_(.+)");
 	}
 
 }

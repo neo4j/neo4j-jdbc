@@ -24,12 +24,18 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
+import org.neo4j.jdbc.values.Node;
+import org.neo4j.jdbc.values.Relationship;
 import org.neo4j.jdbc.values.Value;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,8 +86,8 @@ class TranslationIT extends IntegrationTestBase {
 		var title = "JDBC the Sequel";
 
 		try (var connection = getConnection(true, false)) {
-			try (var statement = ((Neo4jPreparedStatement) connection.prepareStatement(
-					"/*+ NEO4J FORCE_CYPHER */ CREATE (m:Movie {title:  $title, released: $released})"))) {
+			try (var statement = (Neo4jPreparedStatement) connection
+				.prepareStatement("/*+ NEO4J FORCE_CYPHER */ CREATE (m:Movie {title:  $title, released: $released})")) {
 				statement.setString("title", title);
 				statement.setInt("released", 2024);
 				statement.execute();
@@ -96,6 +102,320 @@ class TranslationIT extends IntegrationTestBase {
 			}
 		}
 
+	}
+
+	@Test
+	void shouldInsertRelationshipBasedOnTemplate() throws SQLException {
+
+		try (var connection = getConnection(true, true)) {
+			try (var statement = connection.prepareStatement(
+					"/*+ NEO4J FORCE_CYPHER */ CREATE (a:Person {name: 'Jaret Leto'})-[:ACTED_IN {role: 'Ares'}]->(m:Movie {title: 'TRON Ares'})")) {
+				statement.executeUpdate();
+			}
+
+			try (var statement = connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
+				statement.setString(1, "Jodie Turner-Smith");
+				statement.setString(2, "Athena");
+				statement.setString(3, "TRON Ares");
+				statement.execute();
+			}
+
+			try (var statement = connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES (?, ?, ?)")) {
+				statement.setString(1, "Jeff Bridges");
+				statement.setString(2, "Kevin Flynn");
+				statement.setString(3, "TRON Ares");
+				statement.addBatch();
+				statement.setString(1, "Greta Lee");
+				statement.setString(2, "Eve Kim");
+				statement.setString(3, "TRON Ares");
+				statement.executeBatch();
+			}
+
+			try (var statement = connection.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(name, role, title)
+					VALUES ('Gillian Anderson', 'Elisabeth Dillinger', 'TRON Ares'),
+					('Arturo Castro', 'Seth Flores', 'TRON Ares')
+					""")) {
+
+				statement.executeUpdate();
+			}
+
+			try (var statement = connection
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
+				statement.setString(1, "Jodie Turner-Smith");
+				statement.setString(2, "Elisha James");
+				statement.setString(3, "The Independent");
+				statement.execute();
+			}
+
+			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie {title: 'TRON Ares'}) <-[a:ACTED_IN]-(p:Person)
+					RETURN m, collect(a.role) AS roles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("roles", Value.class).asList(Value::asString)).containsExactlyInAnyOrder(
+						"Eve Kim", "Kevin Flynn", "Athena", "Ares", "Seth Flores", "Elisabeth Dillinger");
+				assertThat(rs.next()).isFalse();
+			}
+
+			try (var statement = connection.createStatement(); var rs = statement.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie) <-[a:ACTED_IN]-(p:Person {name: "Jodie Turner-Smith"})
+					RETURN p, collect(m.title) AS titles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("titles", Value.class).asList(Value::asString))
+					.containsExactlyInAnyOrder("TRON Ares", "The Independent");
+				assertThat(rs.next()).isFalse();
+			}
+		}
+	}
+
+	@Test
+	void shouldInsertRelationshipBasedOnAutomaticDetection() throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+			// No template relationship needed, assignment of node to properties via
+			// qualified names
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+					VALUES
+					    ('Jaret Leto', 'Ares', 'TRON Ares'),
+						('Greta Lee', 'Eve Kim', 'TRON Ares'),
+						('Jodie Turner-Smith', 'Athena', 'TRON Ares')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			// Above has run, database metadata knows the relationship now, no more
+			// explicit column assignments
+			try (var stmt = con
+				.prepareStatement("INSERT INTO Person_ACTED_IN_Movie(name, role, title) VALUES(?, ?, ?)")) {
+				stmt.setString(1, "Jodie Turner-Smith");
+				stmt.setString(2, "Elisha James");
+				stmt.setString(3, "The Independent");
+				stmt.execute();
+			}
+
+			// Verify start and ends have been merged
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie {title: 'TRON Ares'}) <-[a:ACTED_IN]-(p:Person)
+					RETURN m, collect(a.role) AS roles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("roles", Value.class).asList(Value::asString))
+					.containsExactlyInAnyOrder("Eve Kim", "Athena", "Ares");
+				assertThat(rs.next()).isFalse();
+			}
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (m:Movie) <-[a:ACTED_IN]-(p:Person {name: "Jodie Turner-Smith"})
+					RETURN p, collect(m.title) AS titles
+					""")) {
+
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getObject("titles", Value.class).asList(Value::asString))
+					.containsExactlyInAnyOrder("TRON Ares", "The Independent");
+				assertThat(rs.next()).isFalse();
+			}
+		}
+	}
+
+	@Test
+	void shouldUpdateRelationship() throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+					VALUES
+					    ('Jaret Leto', 'Ares', 'Morbius'),
+						('Greta Lee', 'Eve Kim', 'TRON Ares'),
+						('Jodie Turner-Smith', 'Elisha James', 'TRON Ares')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.prepareStatement("UPDATE Person_ACTED_IN_Movie SET role = ? WHERE name = ?")) {
+				stmt.setString(1, "Athena");
+				stmt.setString(2, "Jodie Turner-Smith");
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement()) {
+
+				stmt.executeUpdate("UPDATE Person_ACTED_IN_Movie SET title = 'TRON Ares' WHERE name = 'Jaret Leto'");
+
+				try (var rs = stmt.executeQuery("SELECT count(*) FROM Movie WHERE title = 'TRON Ares'")) {
+
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(2);
+				}
+			}
+
+			try (var stmt = con.createStatement();
+					var rs = stmt.executeQuery("SELECT DISTINCT role FROM Person_ACTED_IN_Movie")) {
+				var roles = new HashSet<>();
+				while (rs.next()) {
+					roles.add(rs.getString("role"));
+				}
+				assertThat(roles).containsExactlyInAnyOrder("Ares", "Eve Kim", "Athena");
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void relationshipsShallBeDeletable() throws SQLException {
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+					VALUES
+					    ('Jeff Bridges', 'Kevin Flynn', 'TRON Ares'),
+					    ('Jeff Bridges', 'Kevin Flynn', 'TRON: Legacy'),
+						('Garrett Hedlund', 'Sam Flynn', 'TRON Ares'),
+						('Garrett Hedlund', 'Sam Flynn', 'TRON: Legacy'),
+						('Samuel L. Jackson', 'himself', 'TRON: Legacy')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement()) {
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Movie WHERE title LIKE 'TRON%'")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(2);
+				}
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Person")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(3);
+				}
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Person_ACTED_IN_Movie")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(5);
+				}
+				stmt.executeUpdate("""
+						DELETE FROM Person_ACTED_IN_Movie
+						WHERE title = 'TRON: Legacy'
+						  AND name = 'Samuel L. Jackson'
+						  AND role = 'himself'
+						""");
+
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Movie WHERE title LIKE 'TRON%'")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(2);
+				}
+				try (var rs = stmt.executeQuery("""
+						/*+ NEO4J FORCE_CYPHER */
+						MATCH (p:Person {name: 'Samuel L. Jackson'})
+						RETURN p.name, COUNT {(p)-[:ACTED_IN]->(:Movie)} AS cnt
+						""")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getString(1)).isEqualTo("Samuel L. Jackson");
+					assertThat(rs.getInt(2)).isEqualTo(0);
+				}
+				try (var rs = stmt.executeQuery("SELECT COUNT(*) FROM Person_ACTED_IN_Movie")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(4);
+				}
+
+				stmt.executeUpdate("TRUNCATE Person_ACTED_IN_Movie");
+
+				try (var rs = stmt.executeQuery("""
+							/*+ NEO4J FORCE_CYPHER */
+							MATCH (n)
+							OPTIONAL MATCH (n)-[r]->(m)
+							WITH labels(n) + coalesce(labels(m), []) + coalesce(type(r), []) AS row
+							UNWIND row AS label
+							RETURN COLLECT(DISTINCT label)
+						""")) {
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getObject(1, List.class)).containsOnly("Movie", "Person");
+				}
+			}
+
+		}
+	}
+
+	@Test
+	void mustNotInferWhenNodeExists() throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.createStatement()) {
+				stmt.executeUpdate("/*+ NEO4J FORCE_CYPHER */ CREATE (n:Person_ACTED_IN_Movie {initial: 'true'})");
+			}
+
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+					VALUES
+					    ('Jaret Leto', 'Ares', 'TRON Ares'),
+						('Greta Lee', 'Eve Kim', 'TRON Ares'),
+						('Jodie Turner-Smith', 'Athena', 'TRON Ares')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH (n:Person_ACTED_IN_Movie) WHERE n.initial IS NULL
+					RETURN n""")) {
+
+				int cnt = 0;
+				while (rs.next()) {
+					var node = rs.getObject("n", Node.class);
+					assertThat(node.asMap()).containsOnlyKeys("name", "role", "title");
+					++cnt;
+				}
+				assertThat(cnt).isEqualTo(3);
+			}
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = { 1, 2 })
+	void allPropsOnRelWithoutQualification(int numRows) throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+
+			var base = new StringBuilder("INSERT INTO A_RELATES_TO_B (a, b, c) VALUES ");
+
+			for (int i = 1; i <= numRows; ++i) {
+				base.append("(");
+				for (var s : new String[] { "a", "b", "c" }) {
+					base.append("'").append(s).append(i).append("',");
+				}
+				base.replace(base.length() - 1, base.length(), "), ");
+			}
+
+			try (var stmt = con.prepareStatement(base.substring(0, base.length() - 2))) {
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+					/*+ NEO4J FORCE_CYPHER */
+					MATCH ()-[r:RELATES_TO]->()
+					RETURN r""")) {
+
+				int cnt = 0;
+				while (rs.next()) {
+					var node = rs.getObject("r", Relationship.class);
+					var idx = cnt + 1;
+					assertThat(node.asMap())
+						.containsExactlyInAnyOrderEntriesOf(Map.of("a", "a" + idx, "b", "b" + idx, "c", "c" + idx));
+					++cnt;
+				}
+				assertThat(cnt).isEqualTo(numRows);
+			}
+		}
 	}
 
 	@Test
