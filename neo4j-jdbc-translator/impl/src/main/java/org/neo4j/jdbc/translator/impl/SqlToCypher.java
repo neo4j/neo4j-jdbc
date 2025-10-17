@@ -122,6 +122,7 @@ final class SqlToCypher implements Translator {
 	static final String ELEMENT_ID_FUNCTION_NAME = "elementId";
 	static final String ELEMENT_ID_ALIAS = "v$id";
 	static final Pattern PERCENT_OR_UNDERSCORE = Pattern.compile("[%_]");
+	static final String PROPERTIES = "properties";
 
 	static {
 		Logger.getLogger("org.jooq.Constants").setLevel(Level.WARNING);
@@ -384,12 +385,14 @@ final class SqlToCypher implements Translator {
 				assertCypherBackedViewUsage("Cypher-backed views cannot be deleted from", table);
 			}
 
+			// Don't understand why Sonar thinks this is a dead store
+			@SuppressWarnings("squid:S1854")
 			var pattern = resolveTableOrJoin(this.tables.get(0)).get(0);
 			if (pattern instanceof Node node) {
 				return Cypher.match(node).detachDelete(node.asExpression()).build();
 			}
 			else if (pattern instanceof Relationship rel) {
-				return Cypher.match(pattern).delete(rel).build();
+				return Cypher.match(rel).delete(rel).build();
 			}
 			throw new IllegalArgumentException("Cannot truncate " + t.$table());
 		}
@@ -650,6 +653,8 @@ final class SqlToCypher implements Translator {
 			return addOptionalReturnAndBuild(Cypher.create(nodeWithProperties(node, nodeProperties)), returning);
 		}
 
+		// More complaints about useless assignments, which are just untrue.
+		@SuppressWarnings("squid:S1854")
 		private Statement buildSingleCreateStatement(QOM.Insert<?> insert,
 				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
 			var row = Objects.requireNonNull(insert.$values().$first());
@@ -732,7 +737,7 @@ final class SqlToCypher implements Translator {
 
 			if (useMerge) {
 
-				var symName = Cypher.name("properties");
+				var symName = Cypher.name(PROPERTIES);
 				var mergeProperties = new LinkedHashMap<String, Expression>();
 
 				insert.$onConflict()
@@ -760,7 +765,7 @@ final class SqlToCypher implements Translator {
 				}
 
 				return addOptionalReturnAndBuild(Cypher.unwind(props)
-					.as("properties")
+					.as(PROPERTIES)
 					.merge(nodeWithProperties(node, mergeProperties))
 					.onCreate()
 					.set(properties)
@@ -769,9 +774,10 @@ final class SqlToCypher implements Translator {
 			}
 
 			return addOptionalReturnAndBuild(
-					Cypher.unwind(props).as("properties").create(node).set(node, Cypher.name("properties")), returning);
+					Cypher.unwind(props).as(PROPERTIES).create(node).set(node, Cypher.name(PROPERTIES)), returning);
 		}
 
+		@SuppressWarnings({ "squid:S3776", "squid:S1854" })
 		private Statement buildUnwindCreateStatement(QOM.Insert<?> insert,
 				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
 
@@ -815,7 +821,7 @@ final class SqlToCypher implements Translator {
 				return Cypher.literalOf(allPropertiesInRow);
 			}).toList());
 
-			var propertiesName = Cypher.name("properties");
+			var propertiesName = Cypher.name(PROPERTIES);
 			if (leftMergeProperties.isEmpty() && rightMergeProperties.isEmpty()) {
 				return addOptionalReturnAndBuild(
 						Cypher.unwind(properties)
@@ -835,7 +841,7 @@ final class SqlToCypher implements Translator {
 				else {
 					var left = relationship.getLeft()
 						.withProperties(leftMergeProperties.stream()
-							.flatMap((k) -> Stream.of(k,
+							.flatMap(k -> Stream.of(k,
 									Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf("lhs")),
 											Cypher.literalOf(k))))
 							.toArray(Object[]::new));
@@ -847,7 +853,7 @@ final class SqlToCypher implements Translator {
 				else {
 					var right = relationship.getRight()
 						.withProperties(rightMergeProperties.stream()
-							.flatMap((k) -> Stream.of(k,
+							.flatMap(k -> Stream.of(k,
 									Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf("rhs")),
 											Cypher.literalOf(k))))
 							.toArray(Object[]::new));
@@ -874,6 +880,7 @@ final class SqlToCypher implements Translator {
 			return s + ((cnt > 0) ? cnt : "");
 		}
 
+		@SuppressWarnings({ "squid:S3776", "squid:S1854" })
 		private Statement statement(QOM.Update<?> update) {
 			this.tables.clear();
 			this.tables.add(update.$table());
