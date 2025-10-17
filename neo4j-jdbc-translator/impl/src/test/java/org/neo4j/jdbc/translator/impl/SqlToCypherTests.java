@@ -407,6 +407,44 @@ class SqlToCypherTests {
 	@ParameterizedTest
 	@CsvSource(delimiterString = "|",
 			textBlock = """
+					true  | UPDATE Person_ACTED_IN_Movie SET b = 'x' WHERE a = 'y' AND c = 'z'                       | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE (_lhs.a = 'y' AND _rhs.c = 'z') SET person_acted_in_movie.b = 'x'
+					true  | UPDATE Person_ACTED_IN_Movie SET b = 'x' WHERE v$id = 'y'                                | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(person_acted_in_movie) = 'y' SET person_acted_in_movie.b = 'x'
+					true  | UPDATE Person_ACTED_IN_Movie SET b = 'x'                                                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET person_acted_in_movie.b = 'x'
+					true  | UPDATE Person_ACTED_IN_Movie SET a = 'x'                                                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs.a = 'x'
+					true  | UPDATE Person_ACTED_IN_Movie SET c = 'x'                                                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _rhs.c = 'x'
+					true  | UPDATE Person_ACTED_IN_Movie SET a = 'x' WHERE v$movie_id = 'wurstsalat'                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_rhs) = 'wurstsalat' SET _lhs.a = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET b = 'x' WHERE a = 'y' AND c = 'z'                       | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE (person_acted_in_movie.a = 'y' AND person_acted_in_movie.c = 'z') SET person_acted_in_movie.b = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET b = 'x' WHERE v$id = 'y'                                | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(person_acted_in_movie) = 'y' SET person_acted_in_movie.b = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET b = 'x'                                                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET person_acted_in_movie.b = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET a = 'x'                                                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET person_acted_in_movie.a = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET c = 'x'                                                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET person_acted_in_movie.c = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET a = 'x' WHERE v$movie_id = 'wurstsalat'                 | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_rhs) = 'wurstsalat' SET person_acted_in_movie.a = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET ACTED_IN.b = 'x' WHERE Person.a = 'y' AND Movie.c = 'z' | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE (_lhs.a = 'y' AND _rhs.c = 'z') SET person_acted_in_movie.b = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET ACTED_IN.b = 'x' WHERE v$id = 'y'                       | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(person_acted_in_movie) = 'y' SET person_acted_in_movie.b = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET ACTED_IN.b = 'x'                                        | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET person_acted_in_movie.b = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET Person.a = 'x'                                          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _lhs.a = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET Movie.c = 'x'                                           | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) SET _rhs.c = 'x'
+					false | UPDATE Person_ACTED_IN_Movie SET Person.a = 'x' WHERE v$movie_id = 'wurstsalat'          | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_rhs) = 'wurstsalat' SET _lhs.a = 'x'
+					""")
+	void updateRelationshipTableShouldWork(boolean withMeta, String sql, String cypher) throws SQLException {
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
+
+		DatabaseMetaData databaseMetadata = null;
+		if (withMeta) {
+			databaseMetadata = mockRelationshipMeta();
+
+			mockColumnResults(databaseMetadata, "Person", "a");
+			mockColumnResults(databaseMetadata, "Person_ACTED_IN_Movie", "b", "d");
+			mockColumnResults(databaseMetadata, "Movie", "c");
+		}
+
+		assertThat(translator.translate(sql, databaseMetadata)).isEqualTo(cypher);
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|",
+			textBlock = """
 					true  | DELETE FROM Person_ACTED_IN_Movie WHERE v$id = 'asd'                     | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(person_acted_in_movie) = 'asd' DELETE person_acted_in_movie
 					true  | DELETE FROM Person_ACTED_IN_Movie WHERE v$person_id = 'asd'              | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_lhs) = 'asd' DELETE person_acted_in_movie
 					true  | DELETE FROM Person_ACTED_IN_Movie WHERE v$movie_id = 'asd'               | MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) WHERE elementId(_rhs) = 'asd' DELETE person_acted_in_movie

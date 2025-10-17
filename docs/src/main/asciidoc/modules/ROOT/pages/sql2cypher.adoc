@@ -331,3 +331,43 @@ TRUNCATE Person_ACTED_IN_Movie
 ----
 
 will delete all `ACTED_IN` relationships, but none of the attached nodes.
+
+==== Updating relationships
+
+When you create a graph like that
+
+[source,sql]
+----
+INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+VALUES
+    ('Jaret Leto', 'Ares', 'Morbius'),
+    ('Greta Lee', 'Eve Kim', 'TRON Ares'),
+    ('Jodie Turner-Smith', 'Elisha James', 'TRON Ares')
+----
+
+realising later that Jodie Turner-Smith played Athena, you can fix that relationship via an `UPDATE` statement:
+
+[source,java]
+----
+try (var stmt = con.prepareStatement(
+    "UPDATE Person_ACTED_IN_Movie SET role = ? WHERE name = ?")
+) {
+    stmt.setString(1, "Athena");
+    stmt.setString(2, "Jodie Turner-Smith");
+    stmt.executeUpdate();
+}
+----
+
+The same algorithm that is used to determine which column is applied to start-node, relationship or end-node properties during insert is applied for the update.
+That means you can also update properties of nodes.
+But be aware that those updates will only applied via `SET` and no other `MERGE` updates are made.
+That means fixing the second bug in the above graph—making sure Leto played Ares in TRON Ares, not in Morbius—creates a **second** `:Movie` node with the name `TRON Ares`:
+
+[source,sql]
+----
+UPDATE Person_ACTED_IN_Movie
+SET title = 'TRON Ares'
+WHERE name = 'Jaret Leto'
+----
+
+will result with two `:Movie`-Nodes labeled `TRON Ares` (`SELECT count(*) FROM Movie WHERE title = 'TRON Ares'` will return 2).

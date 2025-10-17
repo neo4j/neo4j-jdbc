@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -224,6 +225,49 @@ class TranslationIT extends IntegrationTestBase {
 				assertThat(rs.getObject("titles", Value.class).asList(Value::asString))
 					.containsExactlyInAnyOrder("TRON Ares", "The Independent");
 				assertThat(rs.next()).isFalse();
+			}
+		}
+	}
+
+	@Test
+	void shouldUpdateRelationship() throws SQLException {
+
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.prepareStatement("""
+					INSERT INTO Person_ACTED_IN_Movie(Person.name, ACTED_IN.role, Movie.title)
+					VALUES
+					    ('Jaret Leto', 'Ares', 'Morbius'),
+						('Greta Lee', 'Eve Kim', 'TRON Ares'),
+						('Jodie Turner-Smith', 'Elisha James', 'TRON Ares')
+					""")) {
+
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.prepareStatement("UPDATE Person_ACTED_IN_Movie SET role = ? WHERE name = ?")) {
+				stmt.setString(1, "Athena");
+				stmt.setString(2, "Jodie Turner-Smith");
+				stmt.executeUpdate();
+			}
+
+			try (var stmt = con.createStatement()) {
+
+				stmt.executeUpdate("UPDATE Person_ACTED_IN_Movie SET title = 'TRON Ares' WHERE name = 'Jaret Leto'");
+
+				try (var rs = stmt.executeQuery("SELECT count(*) FROM Movie WHERE title = 'TRON Ares'")) {
+
+					assertThat(rs.next()).isTrue();
+					assertThat(rs.getInt(1)).isEqualTo(2);
+				}
+			}
+
+			try (var stmt = con.createStatement();
+					var rs = stmt.executeQuery("SELECT DISTINCT role FROM Person_ACTED_IN_Movie")) {
+				var roles = new HashSet<>();
+				while (rs.next()) {
+					roles.add(rs.getString("role"));
+				}
+				assertThat(roles).containsExactlyInAnyOrder("Ares", "Eve Kim", "Athena");
 			}
 		}
 	}

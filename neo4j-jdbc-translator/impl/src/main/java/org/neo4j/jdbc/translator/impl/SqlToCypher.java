@@ -687,7 +687,7 @@ final class SqlToCypher implements Translator {
 			Map<String, Expression> targetProperties = new LinkedHashMap<>();
 			for (int i = 0; i < targetColumns.size(); ++i) {
 				var targetColumn = targetColumns.get(i).getName();
-				var columnTargetTable = targetColumns.get(i).getQualifiedName().getName()[0];
+				var columnTargetTable = targetColumns.get(i).$name().first();
 				if (columns.contains(targetColumn) || targetLabelOrType.equals(columnTargetTable)) {
 					targetProperties.put(targetColumn, expression(row.field(i)));
 				}
@@ -880,19 +880,49 @@ final class SqlToCypher implements Translator {
 
 			assertCypherBackedViewUsage("Cypher-backed views cannot be updated", this.tables.get(0));
 
-			var node = (Node) this.resolveTableOrJoin(this.tables.get(0)).get(0);
 			var updates = new ArrayList<Expression>();
-			update.$set().forEach((c, v) -> {
-				updates.add(node.property(((Field<?>) c).getName()));
-				updates.add(expression((Field<?>) v));
-			});
+
+			var patternElement = this.resolveTableOrJoin(this.tables.get(0)).get(0);
+			PropertyContainer target;
+			if (patternElement instanceof Node n) {
+				target = n;
+			}
+			else if (patternElement instanceof Relationship r) {
+
+				for (var targetElement : new PatternElement[] { r.getLeft(), r, r.getRight() }) {
+
+					var columns = getColumnsOf(toTableName(targetElement));
+					var targetLabelOrType = (targetElement instanceof Relationship)
+							? ((Relationship) targetElement).getDetails().getTypes().get(0)
+							: toTableName(targetElement);
+
+					update.$set().forEach((c, v) -> {
+						var name = ((Field<?>) c).getName();
+						if (columns.contains(name) || targetLabelOrType.equals(((Field<?>) c).$name().first())) {
+							updates.add(((PropertyContainer) targetElement).property(name));
+							updates.add(expression((Field<?>) v));
+						}
+					});
+				}
+				target = updates.isEmpty() ? r : null;
+			}
+			else {
+				throw unsupported(update);
+			}
+
+			if (target != null) {
+				update.$set().forEach((c, v) -> {
+					updates.add(target.property(((Field<?>) c).getName()));
+					updates.add(expression((Field<?>) v));
+				});
+			}
 
 			StatementBuilder.ExposesSet exposesSet;
 			if (update.$where() != null) {
-				exposesSet = Cypher.match(node).where(condition(update.$where()));
+				exposesSet = Cypher.match(patternElement).where(condition(update.$where()));
 			}
 			else {
-				exposesSet = Cypher.match(node);
+				exposesSet = Cypher.match(patternElement);
 			}
 			return exposesSet.set(updates).build();
 		}
