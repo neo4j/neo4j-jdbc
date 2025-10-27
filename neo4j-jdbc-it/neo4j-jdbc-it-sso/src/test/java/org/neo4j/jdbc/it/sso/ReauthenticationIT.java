@@ -48,9 +48,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.keycloak.authorization.client.Configuration;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.authn.kc.KCAuthenticationSupplier;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 import org.testcontainers.utility.MountableFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,7 +72,7 @@ class ReauthenticationIT {
 		.withEnv("KC_HOSTNAME_BACKCHANNEL_DYNAMIC", "true");
 
 	@SuppressWarnings("resource")
-	private static final Neo4jContainer<?> NEO4J = new Neo4jContainer<>(
+	private static final Neo4jContainer NEO4J = new Neo4jContainer(
 			Optional.ofNullable(System.getProperty("neo4j-jdbc.default-neo4j-image"))
 				.or(() -> Optional.of("neo4j:5.26.8"))
 				.map(v -> !v.contains("-enterprise") ? v + "-enterprise" : v)

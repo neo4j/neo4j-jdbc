@@ -36,8 +36,8 @@ import org.neo4j.bolt.connection.exception.BoltGqlErrorException;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
 import org.neo4j.jdbc.values.Node;
 import org.neo4j.jdbc.values.Vector;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
@@ -47,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThatException;
 @EnabledIf("databaseSupportsVectors")
 abstract class AbstractVectorIT {
 
-	protected final Neo4jContainer<?> neo4j;
+	protected final Neo4jContainer neo4j;
 
 	protected final boolean databaseSupportsVectors;
 
@@ -73,14 +73,14 @@ abstract class AbstractVectorIT {
 	}
 
 	@SuppressWarnings("resource")
-	private static Neo4jContainer<?> getNeo4jContainer(String image, String defaultLanguage) {
+	private static Neo4jContainer getNeo4jContainer(String image, String defaultLanguage) {
 
 		var dockerImageName = Optional.ofNullable(image)
 			.orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image"));
 		if (!dockerImageName.contains("-enterprise")) {
 			dockerImageName = dockerImageName + "-enterprise";
 		}
-		return new Neo4jContainer<>(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+		return new Neo4jContainer(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT)
 			.withNeo4jConfig("server.config.strict_validation.enabled", "false")
 			.withNeo4jConfig("internal.cypher.enable_extra_semantic_features", "VectorType")

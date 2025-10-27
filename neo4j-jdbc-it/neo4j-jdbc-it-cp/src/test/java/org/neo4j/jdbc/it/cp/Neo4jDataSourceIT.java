@@ -24,8 +24,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.jdbc.Neo4jDataSource;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 class Neo4jDataSourceIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
+	protected final Neo4jContainer neo4j = TestUtils.getNeo4jContainer();
 
 	@BeforeAll
 	void startNeo4j() {
