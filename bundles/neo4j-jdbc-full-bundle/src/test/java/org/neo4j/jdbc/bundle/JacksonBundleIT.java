@@ -25,8 +25,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JacksonBundleIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = new Neo4jContainer<>(System.getProperty("neo4j-jdbc.default-neo4j-image"))
+	protected final Neo4jContainer neo4j = new Neo4jContainer(System.getProperty("neo4j-jdbc.default-neo4j-image"))
 		.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 		.waitingFor(Neo4jContainer.WAIT_FOR_BOLT)
 		.withReuse(true);

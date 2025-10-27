@@ -40,8 +40,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.authn.spi.Authentication;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -52,7 +52,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 class Neo4jDriverExtensionsIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
-	protected final Neo4jContainer<?> neo4j = TestUtils.getNeo4jContainer();
+	protected final Neo4jContainer neo4j = TestUtils.getNeo4jContainer();
 
 	@BeforeAll
 	void startNeo4j() {

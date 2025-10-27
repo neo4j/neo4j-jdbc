@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 final class TestUtils {
 
@@ -42,7 +42,7 @@ final class TestUtils {
 	 * @return a Neo4j testcontainer configured to the needs of the integration tests
 	 * @see #getNeo4jContainer(String)
 	 */
-	static Neo4jContainer<?> getNeo4jContainer() {
+	static Neo4jContainer getNeo4jContainer() {
 		return getNeo4jContainer(null);
 	}
 
@@ -51,7 +51,7 @@ final class TestUtils {
 	 * {@return a Neo4j testcontainer configured
 	 * to the needs of the integration tests}
 	 */
-	static Neo4jContainer<?> getNeo4jContainer(String image) {
+	static Neo4jContainer getNeo4jContainer(String image) {
 		return getNeo4jContainer(image, false, false);
 	}
 
@@ -61,13 +61,13 @@ final class TestUtils {
 	 * to the needs of the integration tests}
 	 */
 	@SuppressWarnings("resource")
-	static Neo4jContainer<?> getNeo4jContainer(String image, boolean enableApoc, boolean forceEnterprise) {
+	static Neo4jContainer getNeo4jContainer(String image, boolean enableApoc, boolean forceEnterprise) {
 		var dockerImageName = Optional.ofNullable(image)
 			.orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image"));
 		if (!dockerImageName.contains("-enterprise") && forceEnterprise) {
 			dockerImageName = dockerImageName + "-enterprise";
 		}
-		var container = new Neo4jContainer<>(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+		var container = new Neo4jContainer(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT) // The HTTP wait strategy used by
 			// default seems not to work in
 			// native image, bolt must be
@@ -87,7 +87,7 @@ final class TestUtils {
 		return container;
 	}
 
-	static Connection getConnection(Neo4jContainer<?> neo4j) throws SQLException {
+	static Connection getConnection(Neo4jContainer neo4j) throws SQLException {
 		return getConnection(neo4j, false);
 	}
 
@@ -108,7 +108,7 @@ final class TestUtils {
 		}
 	}
 
-	static Connection getConnection(Neo4jContainer<?> neo4j, boolean translate) throws SQLException {
+	static Connection getConnection(Neo4jContainer neo4j, boolean translate) throws SQLException {
 		var url = "jdbc:neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687));
 		var driver = DriverManager.getDriver(url);
 		var properties = new Properties();
