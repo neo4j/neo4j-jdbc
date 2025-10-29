@@ -1138,6 +1138,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				}
 			}
 
+			var scopeTable = record.get("SCOPE_TABLE");
 			var nodeLabelList = nodeLabels.asList(Function.identity());
 			for (Value nodeLabel : nodeLabelList) {
 				// Avoid duplicates while unrolling
@@ -1146,9 +1147,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 					continue;
 				}
 				properties.add(propertyName);
-
 				var values = addColumn(nodeLabel, propertyName, propertyType, NULLABLE, IS_NULLABLE,
-						nodeLabelList.indexOf(nodeLabel) + 1, false);
+						nodeLabelList.indexOf(nodeLabel) + 1, false, scopeTable);
 				rows.add(values.toArray(Value[]::new));
 				if ("CBV".equals(tableType)) {
 					cbvs.add(nodeLabel);
@@ -1184,7 +1184,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				}
 
 				var values = addColumn(v, Values.value(additionalId), Values.value("String"),
-						DatabaseMetaData.columnNoNulls, "NO", 0, true);
+						DatabaseMetaData.columnNoNulls, "NO", 0, true, Values.NULL);
 				rows.add(0, values.toArray(Value[]::new));
 			}
 		}
@@ -1197,7 +1197,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	}
 
 	private ArrayList<Value> addColumn(Value nodeLabel, Value propertyName, Value propertyType, int NULLABLE,
-			String IS_NULLABLE, Integer ordinalPosition, boolean generated) throws SQLException {
+			String IS_NULLABLE, Integer ordinalPosition, boolean generated, Value scopeTable) throws SQLException {
 		var values = new ArrayList<Value>();
 		values.add(Values.value(getSingleCatalog())); // TABLE_CAT
 		values.add(Values.value(DEFAULT_SCHEMA)); // TABLE_SCHEM is always public
@@ -1220,7 +1220,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		values.add(Values.value(IS_NULLABLE));
 		values.add(Values.NULL); // SCOPE_CATALOG
 		values.add(Values.NULL); // SCOPE_SCHEMA
-		values.add(Values.NULL); // SCOPE_TABLE
+		values.add(scopeTable); // SCOPE_TABLE
 		values.add(Values.NULL); // SOURCE_DATA_TYPE
 		values.add(Values.value("NO")); // IS_AUTOINCREMENT
 		values.add(Values.value(generated ? "YES" : "NO")); // IS_GENERATEDCOLUMN

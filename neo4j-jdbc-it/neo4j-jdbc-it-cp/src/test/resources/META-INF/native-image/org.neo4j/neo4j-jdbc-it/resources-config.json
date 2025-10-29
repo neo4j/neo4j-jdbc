@@ -5,6 +5,9 @@
     },
     {
       "pattern": ".*\\.cypher"
+    },
+    {
+      "pattern": ".*\\.csv"
     }
   ]
 }

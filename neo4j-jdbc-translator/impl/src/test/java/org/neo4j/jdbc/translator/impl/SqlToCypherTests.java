@@ -337,7 +337,7 @@ class SqlToCypherTests {
 					"`ON DUPLICATE` and `ON CONFLICT` clauses are not supported when inserting multiple rows without using a property to merge on");
 	}
 
-	DatabaseMetaData mockRelationshipMeta() throws SQLException {
+	DatabaseMetaData mockRelationshipMeta(List<Rel> rels) throws SQLException {
 		var cbvs = mock(ResultSet.class);
 		given(cbvs.next()).willReturn(false);
 
@@ -345,12 +345,17 @@ class SqlToCypherTests {
 		given(databaseMetadata.getTables(null, null, null, new String[] { "CBV" })).willReturn(cbvs);
 
 		var relationships = mock(ResultSet.class);
-		given(relationships.next()).willReturn(true, false);
-		given(relationships.getString("REMARKS")).willReturn("Person\nACTED_IN\nMovie");
-		given(relationships.getString("TYPE")).willReturn("RELATIONSHIP");
-		given(databaseMetadata.getTables(null, null, "Person_ACTED_IN_Movie", new String[] { "TABLE", "RELATIONSHIP" }))
-			.willReturn(relationships);
 
+		for (var rel1 : rels) {
+			given(relationships.next()).willReturn(true);
+			given(relationships.getString("REMARKS"))
+				.willReturn(String.join("\n", rel1.source(), rel1.rel(), rel1.target()));
+			given(relationships.getString("TYPE")).willReturn("RELATIONSHIP");
+			given(databaseMetadata.getTables(null, null, String.join("_", rel1.source(), rel1.rel(), rel1.target()),
+					new String[] { "TABLE", "RELATIONSHIP" }))
+				.willReturn(relationships);
+		}
+		given(relationships.next()).willReturn(false);
 		return databaseMetadata;
 	}
 
@@ -358,7 +363,7 @@ class SqlToCypherTests {
 	void insertIntoRelationshipsWithMergeIsNotoSupported() throws SQLException {
 		var sql = "	INSERT INTO Person_ACTED_IN_Movie (a, b, c) VALUES('a', 'b', 'c') ON CONFLICT DO NOTHING\n";
 
-		var databaseMetadata = mockRelationshipMeta();
+		var databaseMetadata = mockRelationshipMeta(List.of(new Rel("Person", "ACTED_IN", "Movie")));
 
 		var translator = SqlToCypher
 			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(true).build());
@@ -370,6 +375,14 @@ class SqlToCypherTests {
 	@ParameterizedTest
 	@CsvSource(delimiterString = "|",
 			textBlock = """
+					true  | INSERT INTO A_RELATED_TO_B (a.id, b.id) VALUES (?, ?)                                                                                                   | MERGE (_lhs:A {id: $1}) MERGE (_rhs:B {id: $2}) CREATE (_lhs)-[:RELATED_TO]->(_rhs)
+					true  | INSERT INTO A_RELATED_TO_B (id, b.id) VALUES (?, ?)                                                                                                     | MERGE (_lhs:A {id: $1}) MERGE (_rhs:B {id: $2}) CREATE (_lhs)-[:RELATED_TO]->(_rhs)
+					true  | INSERT INTO A_RELATED_TO_B (a.id, id) VALUES (?, ?)                                                                                                     | MERGE (_lhs:A {id: $1}) MERGE (_rhs:B {id: $2}) CREATE (_lhs)-[:RELATED_TO]->(_rhs)
+					true  | INSERT INTO A_RELATED_TO_B (id, id) VALUES (?, ?)                                                                                                       | MERGE (_lhs:A {id: $1}) CREATE (_rhs:B) CREATE (_lhs)-[:RELATED_TO]->(_rhs)
+					true  | INSERT INTO A_RELATED_TO_B (a, b, c) VALUES (?, ?, ?)                                                                                                   | CREATE (_lhs:A) CREATE (_rhs:B) CREATE (_lhs)-[:RELATED_TO {a: $1, b: $2, c: $3}]->(_rhs)
+					true  | INSERT INTO User_LIKES_Music (name, genre) VALUES(?,?)                                                                                                  | MERGE (_lhs:User {name: $1}) MERGE (_rhs:Music {genre: $2}) CREATE (_lhs)-[:LIKES]->(_rhs)
+					true  | INSERT INTO User_LIKES_Music (v$user_id, v$music_id) VALUES(?,?)                                                                                        | MATCH (_lhs:User WHERE elementId(_lhs) = $1) MATCH (_rhs:Music WHERE elementId(_rhs) = $2) CREATE (_lhs)-[:LIKES]->(_rhs)
+					true  | INSERT INTO User_LIKES_Music (v$user_id, v$music_id) VALUES('x','y'),('a','b')                                                                          | UNWIND [{lhs: {_elementId: 'x'}, rel: {}, rhs: {_elementId: 'y'}}, {lhs: {_elementId: 'a'}, rel: {}, rhs: {_elementId: 'b'}}] AS properties MATCH (_lhs:User WHERE elementId(_lhs) = properties['lhs']['_elementId']) MATCH (_rhs:Music WHERE elementId(_rhs) = properties['rhs']['_elementId']) CREATE (_lhs)-[user_likes_music:LIKES]->(_rhs) SET user_likes_music = properties['rel']
 					true  | INSERT INTO Person_ACTED_IN_Movie (a, b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'c', 'd', 'e')                           | MERGE (_lhs:Person {a: 'a'}) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
 					true  | INSERT INTO Person_ACTED_IN_Movie (b, c, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('b', 'c', 'd', 'e')                                   | CREATE (_lhs:Person) MERGE (_rhs:Movie {c: 'c'}) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
 					true  | INSERT INTO Person_ACTED_IN_Movie (a, b, Person_ACTED_IN_Movie.d, Person_ACTED_IN_Movie.e) VALUES('a', 'b', 'd', 'e')                                   | MERGE (_lhs:Person {a: 'a'}) CREATE (_rhs:Movie) CREATE (_lhs)-[:ACTED_IN {b: 'b', d: 'd', e: 'e'}]->(_rhs)
@@ -386,19 +399,37 @@ class SqlToCypherTests {
 
 		DatabaseMetaData databaseMetadata = null;
 		if (withMeta) {
-			databaseMetadata = mockRelationshipMeta();
-
+			databaseMetadata = mockRelationshipMeta(List.of(new Rel("Person", "ACTED_IN", "Movie"),
+					new Rel("User", "LIKES", "Music"), new Rel("A", "RELATED_TO", "B")));
 			mockColumnResults(databaseMetadata, "Person", "a");
 			mockColumnResults(databaseMetadata, "Person_ACTED_IN_Movie", "b", "d");
 			mockColumnResults(databaseMetadata, "Movie", "c");
+
+			mockColumnResults(databaseMetadata, "User", "name");
+			mockColumnResults(databaseMetadata, "User_LIKES_Music", "v$user_id", "v$music_id");
+			mockColumnResults(databaseMetadata, "Music", "genre");
+
+			mockColumnResults(databaseMetadata, "A", "id");
+			mockColumnResults(databaseMetadata, "A_RELATED_TO_B", "v$a_id", "v$b_id");
+			mockColumnResults(databaseMetadata, "B", "id");
 		}
 
 		assertThat(translator.translate(sql, databaseMetadata)).isEqualTo(cypher);
 
 		if (withMeta) {
 			verify(databaseMetadata).getTables(null, null, null, new String[] { "CBV" });
-			verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie",
-					new String[] { "TABLE", "RELATIONSHIP" });
+			if (sql.contains("Person_ACTED_IN_Movie")) {
+				verify(databaseMetadata).getTables(null, null, "Person_ACTED_IN_Movie",
+						new String[] { "TABLE", "RELATIONSHIP" });
+			}
+			else if (sql.contains("User_LIKES_Music")) {
+				verify(databaseMetadata).getTables(null, null, "User_LIKES_Music",
+						new String[] { "TABLE", "RELATIONSHIP" });
+			}
+			else {
+				verify(databaseMetadata).getTables(null, null, "A_RELATED_TO_B",
+						new String[] { "TABLE", "RELATIONSHIP" });
+			}
 			verify(databaseMetadata, times(3)).getColumns(any(), any(), anyString(), any());
 			verifyNoMoreInteractions(databaseMetadata);
 		}
@@ -432,7 +463,7 @@ class SqlToCypherTests {
 
 		DatabaseMetaData databaseMetadata = null;
 		if (withMeta) {
-			databaseMetadata = mockRelationshipMeta();
+			databaseMetadata = mockRelationshipMeta(List.of(new Rel("Person", "ACTED_IN", "Movie")));
 
 			mockColumnResults(databaseMetadata, "Person", "a");
 			mockColumnResults(databaseMetadata, "Person_ACTED_IN_Movie", "b", "d");
@@ -472,7 +503,7 @@ class SqlToCypherTests {
 
 		DatabaseMetaData databaseMetadata = null;
 		if (withMeta) {
-			databaseMetadata = mockRelationshipMeta();
+			databaseMetadata = mockRelationshipMeta(List.of(new Rel("Person", "ACTED_IN", "Movie")));
 
 			mockColumnResults(databaseMetadata, "Person", "a");
 			mockColumnResults(databaseMetadata, "Person_ACTED_IN_Movie", "b", "d");
@@ -490,6 +521,12 @@ class SqlToCypherTests {
 		for (int i = 0; i < more.length; ++i) {
 			next[i] = true;
 		}
+
+		for (int i = 0; i < next.length; ++i) {
+			given(lhsColumns.getString("IS_GENERATEDCOLUMN"))
+				.willReturn(((i != 0) ? more[i - 1] : columnName).startsWith("v$") ? "YES" : "NO");
+		}
+
 		next[more.length] = false;
 		given(lhsColumns.getString("COLUMN_NAME")).willReturn(columnName, more);
 		given(lhsColumns.next()).willReturn(true, next);
@@ -869,6 +906,9 @@ class SqlToCypherTests {
 
 	private record TestData(String id, String name, String sql, String cypher, Map<String, String> tableMappings,
 			Map<String, String> joinColumnsMappings, boolean prettyPrint, DatabaseMetaData databaseMetaData) {
+	}
+
+	private record Rel(String source, String rel, String target) {
 	}
 
 }
