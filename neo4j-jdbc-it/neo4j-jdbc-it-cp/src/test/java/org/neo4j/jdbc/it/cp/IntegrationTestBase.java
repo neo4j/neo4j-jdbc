@@ -22,6 +22,8 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -31,11 +33,14 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.provider.Arguments;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.neo4j.Neo4jContainer;
+import org.testcontainers.utility.MountableFile;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class IntegrationTestBase {
 
+	// used by several parameterized test classes
+	@SuppressWarnings("unused")
 	protected final Stream<Arguments> allProtocols() {
 		var result = Stream.<Arguments>builder();
 		result.add(Arguments.of("neo4j"));
@@ -65,9 +70,19 @@ abstract class IntegrationTestBase {
 
 	protected Driver driver;
 
+	/**
+	 * Absolute classpath resources to copy over into the
+	 * <code>/var/lib/neo4j/import</code> folder inside the container.
+	 */
+	protected List<String> resources = new ArrayList<>();
+
 	@BeforeAll
 	void startNeo4j() throws SQLException {
 		this.neo4j.start();
+		for (var resource : this.resources) {
+			this.neo4j.copyFileToContainer(MountableFile.forClasspathResource(resource),
+					"/var/lib/neo4j/import/%s".formatted(resource.substring(resource.lastIndexOf("/") + 1)));
+		}
 
 		var url = getConnectionURL();
 		this.driver = DriverManager.getDriver(url);

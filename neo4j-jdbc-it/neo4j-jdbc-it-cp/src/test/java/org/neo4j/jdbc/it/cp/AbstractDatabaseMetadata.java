@@ -1179,10 +1179,32 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		assertThat(resultSet).isNotNull();
 		var columns = new ArrayList<String>();
 		while (resultSet.next()) {
-			columns.add(resultSet.getString("COLUMN_NAME"));
+			var columnName = resultSet.getString("COLUMN_NAME");
+			var scopeTable = resultSet.getString("SCOPE_TABLE");
+			columns.add(columnName);
+			if ("name".equals(columnName)) {
+				assertThat(scopeTable).isEqualTo("Person");
+			}
+			else if ("title".equals(columnName)) {
+				assertThat(scopeTable).isEqualTo("Movie");
+			}
+			else {
+				assertThat(scopeTable).isNull();
+			}
 		}
 		resultSet.close();
-		assertThat(columns).containsOnly("role", "v$movie_id", "v$person_id", "v$id");
+		var expectedColumns = new String[] { "role", "v$movie_id", "v$person_id", "v$id", "name", "title" };
+		assertThat(columns).containsOnly(expectedColumns);
+
+		try (var con = getConnection(true, true);
+				var stmt = con.createStatement();
+				var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
+			while (rs.next()) {
+				for (var expectedColumn : expectedColumns) {
+					assertThat(rs.getObject(expectedColumn)).isNotNull();
+				}
+			}
+		}
 	}
 
 	@Test

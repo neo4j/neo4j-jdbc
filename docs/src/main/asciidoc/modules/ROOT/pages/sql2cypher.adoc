@@ -222,8 +222,11 @@ Noteable things are
 - The attributes `name` has been used with the `Person` label and `title` with the `Movie`
 - `role` has been used on the relationship
 
-The matching has been based on the virtual table. If both nodes had had a `name` attribute, the property would have been used on both.
+The matching has been based on the virtual table. If both nodes had had a `name` attribute, the property would have been on left hand side only.
 Columns that match neither properties of the nodes nor the relationship, will be added to the relationship.
+
+WARNING: If the schema spots the same property name on nodes and relationships, the nodes are prioritized. If the same property appears on both sides of the relationship, it will be only used on the first appearance (the start node). If this does not work for you, you must qualify the target properties.
+
 The `INSERT` statement also was not translated into a plain `CREATE …` statement as shown above.
 Inserting into a relationship expresses a pretty clear intention to create the relationship alone, hence the JDBC driver will always create a statement such as this, if possible:
 
