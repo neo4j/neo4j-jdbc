@@ -72,6 +72,9 @@ class NorthwindIT extends IntegrationTestBase {
 					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($a, $b, $c) | MERGE (_lhs:Supplier {id: $a}) MERGE (_rhs:Product {id: $b}) CREATE (_lhs)-[:SUPPLIES {amount: $c}]->(_rhs)
 					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($b, $a, $c) | MERGE (_lhs:Supplier {id: $b}) MERGE (_rhs:Product {id: $a}) CREATE (_lhs)-[:SUPPLIES {amount: $c}]->(_rhs)
 					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($b, $c, $a) | MERGE (_lhs:Supplier {id: $b}) MERGE (_rhs:Product {id: $c}) CREATE (_lhs)-[:SUPPLIES {amount: $a}]->(_rhs)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($1, $2, $3) | MERGE (_lhs:Supplier {id: $1}) MERGE (_rhs:Product {id: $2}) CREATE (_lhs)-[:SUPPLIES {amount: $3}]->(_rhs)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($3, $1, $2) | MERGE (_lhs:Supplier {id: $3}) MERGE (_rhs:Product {id: $1}) CREATE (_lhs)-[:SUPPLIES {amount: $2}]->(_rhs)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount, SUPPLIES.lol) VALUES ($3, $1, $2, ?) | MERGE (_lhs:Supplier {id: $3}) MERGE (_rhs:Product {id: $1}) CREATE (_lhs)-[:SUPPLIES {amount: $2, lol: $4}]->(_rhs)
 					""")
 	void insertsShouldUseStableParameters(String sql, String cypher) throws SQLException {
 		try (var connection = getConnection(false, false, "s2c.parseNamedParamPrefix", "$")) {
