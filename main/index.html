@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-10-27T11:54:23Z</span>
+<span id="revdate">2025-10-31T16:58:11Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -3021,7 +3021,7 @@ That means we might be able to parse a certain piece of SQL, but are unable to t
 <td class="content">
 <sup>1</sup> The pattern must be a valid regular expression  with three capturing groups: First group will be interpreted as start
 or left-hand-side node, second group will be interpreted as the relationship type and the third as end or right-hand-side node.
-Named groups <code>lhs</code>, <code>reltype</code> and <code>rhs</code> are supported too. <code>null</code> or a blank pattern disables automatic inference.
+Named groups <code>start</code>, <code>reltype</code> and <code>end</code> are supported too. <code>null</code> or a blank pattern disables automatic inference.
 </td>
 </tr>
 </table>
@@ -4801,9 +4801,23 @@ The translator can only try to infer an intention here on best effort base.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>The matching has been based on the virtual table. If both nodes had had a <code>name</code> attribute, the property would have been used on both.
-Columns that match neither properties of the nodes nor the relationship, will be added to the relationship.
-The <code>INSERT</code> statement also was not translated into a plain <code>CREATE …</code> statement as shown above.
+<p>The matching has been based on the virtual table. If both nodes had had a <code>name</code> attribute, the property would have been used for the start node only.
+Columns that match neither properties of the nodes nor the relationship, will be added to the relationship.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+If the schema spots the same property name on nodes and relationships, the nodes are prioritized. If the same property appears on both sides of the relationship, it will be only used on the first appearance (the start node). If this does not work for you, you must qualify the target properties.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>INSERT</code> statement also was not translated into a plain <code>CREATE …</code> statement as shown above.
 Inserting into a relationship expresses a pretty clear intention to create the relationship alone, hence the JDBC driver will always create a statement such as this, if possible:</p>
 </div>
 <div class="listingblock">
@@ -6001,7 +6015,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-10-27 11:54:46 UTC
+Last updated 2025-10-31 16:58:41 UTC
 </div>
 </div>
 </body>
