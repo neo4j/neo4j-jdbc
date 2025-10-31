@@ -121,9 +121,9 @@ class SqlToCypherConfigTests {
 		assertThat(matcher.group(1)).isEqualTo(lhs);
 		assertThat(matcher.group(2)).isEqualTo(reltype);
 		assertThat(matcher.group(3)).isEqualTo(rhs);
-		assertThat(matcher.group("lhs")).isEqualTo(lhs);
+		assertThat(matcher.group("start")).isEqualTo(lhs);
 		assertThat(matcher.group("reltype")).isEqualTo(reltype);
-		assertThat(matcher.group("rhs")).isEqualTo(rhs);
+		assertThat(matcher.group("end")).isEqualTo(rhs);
 	}
 
 	static Stream<Arguments> shouldParseMaps() {

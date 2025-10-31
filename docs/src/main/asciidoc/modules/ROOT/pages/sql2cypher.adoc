@@ -132,7 +132,7 @@ The default implementation provides a number of configuration settings.
 [NOTE]
 ^1^ The pattern must be a valid regular expression  with three capturing groups: First group will be interpreted as start
 or left-hand-side node, second group will be interpreted as the relationship type and the third as end or right-hand-side node.
-Named groups `lhs`, `reltype` and `rhs` are supported too. `null` or a blank pattern disables automatic inference.
+Named groups `start`, `reltype` and `end` are supported too. `null` or a blank pattern disables automatic inference.
 
 The next few examples use the `properties` config to avoid terrible long URLs in this documentation, but all the attributes can be specified via URL as well.
 
@@ -222,7 +222,7 @@ Noteable things are
 - The attributes `name` has been used with the `Person` label and `title` with the `Movie`
 - `role` has been used on the relationship
 
-The matching has been based on the virtual table. If both nodes had had a `name` attribute, the property would have been on left hand side only.
+The matching has been based on the virtual table. If both nodes had had a `name` attribute, the property would have been used for the start node only.
 Columns that match neither properties of the nodes nor the relationship, will be added to the relationship.
 
 WARNING: If the schema spots the same property name on nodes and relationships, the nodes are prioritized. If the same property appears on both sides of the relationship, it will be only used on the first appearance (the start node). If this does not work for you, you must qualify the target properties.

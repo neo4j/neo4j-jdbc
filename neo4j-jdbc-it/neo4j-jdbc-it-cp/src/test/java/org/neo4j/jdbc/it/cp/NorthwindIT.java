@@ -65,16 +65,16 @@ class NorthwindIT extends IntegrationTestBase {
 	@ParameterizedTest
 	@CsvSource(delimiterString = "|",
 			textBlock = """
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id) VALUES (?, ?)                        | MERGE (_lhs:Supplier {id: $1}) MERGE (_rhs:Product {id: $2}) CREATE (_lhs)-[:SUPPLIES]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (id, Product.id) VALUES (?, ?)                                 | CREATE (_lhs:Supplier) MERGE (_rhs:Product {id: $2}) CREATE (_lhs)-[:SUPPLIES {id: $1}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Product.id, id) VALUES (?, ?)                                 | CREATE (_lhs:Supplier) MERGE (_rhs:Product {id: $1}) CREATE (_lhs)-[:SUPPLIES {id: $2}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES (?, ?, ?)    | MERGE (_lhs:Supplier {id: $1}) MERGE (_rhs:Product {id: $2}) CREATE (_lhs)-[:SUPPLIES {amount: $3}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($a, $b, $c) | MERGE (_lhs:Supplier {id: $a}) MERGE (_rhs:Product {id: $b}) CREATE (_lhs)-[:SUPPLIES {amount: $c}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($b, $a, $c) | MERGE (_lhs:Supplier {id: $b}) MERGE (_rhs:Product {id: $a}) CREATE (_lhs)-[:SUPPLIES {amount: $c}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($b, $c, $a) | MERGE (_lhs:Supplier {id: $b}) MERGE (_rhs:Product {id: $c}) CREATE (_lhs)-[:SUPPLIES {amount: $a}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($1, $2, $3) | MERGE (_lhs:Supplier {id: $1}) MERGE (_rhs:Product {id: $2}) CREATE (_lhs)-[:SUPPLIES {amount: $3}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($3, $1, $2) | MERGE (_lhs:Supplier {id: $3}) MERGE (_rhs:Product {id: $1}) CREATE (_lhs)-[:SUPPLIES {amount: $2}]->(_rhs)
-					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount, SUPPLIES.lol) VALUES ($3, $1, $2, ?) | MERGE (_lhs:Supplier {id: $3}) MERGE (_rhs:Product {id: $1}) CREATE (_lhs)-[:SUPPLIES {amount: $2, lol: $4}]->(_rhs)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id) VALUES (?, ?)                        | MERGE (_start:Supplier {id: $1}) MERGE (_end:Product {id: $2}) CREATE (_start)-[:SUPPLIES]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (id, Product.id) VALUES (?, ?)                                 | CREATE (_start:Supplier) MERGE (_end:Product {id: $2}) CREATE (_start)-[:SUPPLIES {id: $1}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Product.id, id) VALUES (?, ?)                                 | CREATE (_start:Supplier) MERGE (_end:Product {id: $1}) CREATE (_start)-[:SUPPLIES {id: $2}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES (?, ?, ?)    | MERGE (_start:Supplier {id: $1}) MERGE (_end:Product {id: $2}) CREATE (_start)-[:SUPPLIES {amount: $3}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($a, $b, $c) | MERGE (_start:Supplier {id: $a}) MERGE (_end:Product {id: $b}) CREATE (_start)-[:SUPPLIES {amount: $c}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($b, $a, $c) | MERGE (_start:Supplier {id: $b}) MERGE (_end:Product {id: $a}) CREATE (_start)-[:SUPPLIES {amount: $c}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($b, $c, $a) | MERGE (_start:Supplier {id: $b}) MERGE (_end:Product {id: $c}) CREATE (_start)-[:SUPPLIES {amount: $a}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($1, $2, $3) | MERGE (_start:Supplier {id: $1}) MERGE (_end:Product {id: $2}) CREATE (_start)-[:SUPPLIES {amount: $3}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount) VALUES ($3, $1, $2) | MERGE (_start:Supplier {id: $3}) MERGE (_end:Product {id: $1}) CREATE (_start)-[:SUPPLIES {amount: $2}]->(_end)
+					INSERT INTO Supplier_SUPPLIES_Product (Supplier.id, Product.id, SUPPLIES.amount, SUPPLIES.lol) VALUES ($3, $1, $2, ?) | MERGE (_start:Supplier {id: $3}) MERGE (_end:Product {id: $1}) CREATE (_start)-[:SUPPLIES {amount: $2, lol: $4}]->(_end)
 					""")
 	void insertsShouldUseStableParameters(String sql, String cypher) throws SQLException {
 		try (var connection = getConnection(false, false, "s2c.parseNamedParamPrefix", "$")) {

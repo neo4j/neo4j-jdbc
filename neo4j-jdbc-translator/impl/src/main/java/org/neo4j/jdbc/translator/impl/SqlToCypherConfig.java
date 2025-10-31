@@ -449,7 +449,7 @@ public final class SqlToCypherConfig {
 		private Builder() {
 			this(ParseNameCase.AS_IS, RenderNameCase.AS_IS, false, Map.of(), Map.of(), SQLDialect.DEFAULT, false, false,
 					null, false, Translator.LOWEST_PRECEDENCE, null,
-					"(?<lhs>.+?)_(?<=_)(?<reltype>[_\\p{Lu}]+)(?=_)_(?<rhs>.+?)");
+					"(?<start>.+?)_(?<=_)(?<reltype>[_\\p{Lu}]+)(?=_)_(?<end>.+?)");
 		}
 
 		private Builder(SqlToCypherConfig config) {
