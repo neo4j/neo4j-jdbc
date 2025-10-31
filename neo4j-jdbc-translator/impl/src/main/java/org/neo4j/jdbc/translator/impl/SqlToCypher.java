@@ -89,6 +89,7 @@ import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Finish;
 import org.neo4j.cypherdsl.core.IdentifiableElement;
 import org.neo4j.cypherdsl.core.ListOperator;
+import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.NodeLabel;
 import org.neo4j.cypherdsl.core.PatternElement;
@@ -129,6 +130,14 @@ final class SqlToCypher implements Translator {
 	static final String ELEMENT_ID_ALIAS = "v$id";
 	static final Pattern PERCENT_OR_UNDERSCORE = Pattern.compile("[%_]");
 	static final String PROPERTIES = "properties";
+	static final String NODE_NAME_START = "_start";
+	static final String NODE_NAME_END = "_end";
+	static final String NG_START = "start";
+	static final String NG_RELTYPE = "reltype";
+	static final String NG_END = "end";
+	static final @SuppressWarnings("squid:S1192") Literal<String> LOOKUP_START = Cypher.literalOf("start");
+	static final Literal<String> LOOKUP_REL = Cypher.literalOf("rel");
+	static final @SuppressWarnings("squid:S1192") Literal<String> LOOKUP_END = Cypher.literalOf("end");
 
 	static {
 		Logger.getLogger("org.jooq.Constants").setLevel(Level.WARNING);
@@ -680,7 +689,7 @@ final class SqlToCypher implements Translator {
 		}
 
 		// More complaints about useless assignments, which are just untrue.
-		@SuppressWarnings("squid:S1854")
+		@SuppressWarnings({ "squid:S1854", "squid:S3776" })
 		private Statement buildSingleCreateStatement(QOM.Insert<?> insert,
 				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
 			var row = expression(Objects.requireNonNull(insert.$values().$first()));
@@ -903,13 +912,13 @@ final class SqlToCypher implements Translator {
 					var isVirtualId = virtualIdColumns.contains(targetColumn.last());
 					if (isVirtualId && isVirtualIdColumnForNode(relationship.getLeft(), targetColumn.last())) {
 						lhsProperties.put(elementId, row[i]);
-						leftConditionRef.setPlain(
-								Cypher.elementId(relationship.getLeft()).eq(lookupElementIdOf(propertiesName, "lhs")));
+						leftConditionRef.setPlain(Cypher.elementId(relationship.getLeft())
+							.eq(lookupElementIdOf(propertiesName, LOOKUP_START)));
 					}
 					else if (isVirtualId && isVirtualIdColumnForNode(relationship.getRight(), targetColumn.last())) {
 						rhsProperties.put(elementId, row[i]);
-						rightConditionRef.setPlain(
-								Cypher.elementId(relationship.getRight()).eq(lookupElementIdOf(propertiesName, "rhs")));
+						rightConditionRef.setPlain(Cypher.elementId(relationship.getRight())
+							.eq(lookupElementIdOf(propertiesName, LOOKUP_END)));
 					}
 					else if (!(lhsProperties.containsKey(targetColumn) || rhsProperties.containsKey(targetColumn))) {
 						relProperties.putIfAbsent(targetColumn, row[i]);
@@ -920,9 +929,12 @@ final class SqlToCypher implements Translator {
 					.toMap(e -> e.getKey().last(), Map.Entry::getValue, (x, y) -> {
 						throw new IllegalStateException("Duplicate map key");
 					}, LinkedHashMap::new);
-				allPropertiesInRow.put("lhs", lhsProperties.entrySet().stream().collect(mappingCollector));
-				allPropertiesInRow.put("rel", relProperties.entrySet().stream().collect(mappingCollector));
-				allPropertiesInRow.put("rhs", rhsProperties.entrySet().stream().collect(mappingCollector));
+				allPropertiesInRow.put(LOOKUP_START.getContent(),
+						lhsProperties.entrySet().stream().collect(mappingCollector));
+				allPropertiesInRow.put(LOOKUP_REL.getContent(),
+						relProperties.entrySet().stream().collect(mappingCollector));
+				allPropertiesInRow.put(LOOKUP_END.getContent(),
+						rhsProperties.entrySet().stream().collect(mappingCollector));
 
 				return Cypher.literalOf(allPropertiesInRow);
 			}).toList());
@@ -932,14 +944,12 @@ final class SqlToCypher implements Translator {
 
 			if (leftMergeProperties.isEmpty() && rightMergeProperties.isEmpty() && leftCondition == null
 					&& rightCondition == null) {
-				return addOptionalReturnAndBuild(
-						Cypher.unwind(properties)
-							.as(propertiesName)
-							.create(relationship)
-							.set(relationship.getLeft(), Cypher.valueAt(propertiesName, Cypher.literalOf("lhs")))
-							.set(relationship, Cypher.valueAt(propertiesName, Cypher.literalOf("rel")))
-							.set(relationship.getRight(), Cypher.valueAt(propertiesName, Cypher.literalOf("rhs"))),
-						returning);
+				return addOptionalReturnAndBuild(Cypher.unwind(properties)
+					.as(propertiesName)
+					.create(relationship)
+					.set(relationship.getLeft(), Cypher.valueAt(propertiesName, LOOKUP_START))
+					.set(relationship, Cypher.valueAt(propertiesName, LOOKUP_REL))
+					.set(relationship.getRight(), Cypher.valueAt(propertiesName, LOOKUP_END)), returning);
 			}
 			else {
 				Object ongoingStratement = Cypher.unwind(properties).as(propertiesName);
@@ -955,7 +965,7 @@ final class SqlToCypher implements Translator {
 					var left = relationship.getLeft()
 						.withProperties(leftMergeProperties.stream()
 							.flatMap(k -> Stream.of(k.last(),
-									Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf("lhs")),
+									Cypher.valueAt(Cypher.valueAt(propertiesName, LOOKUP_START),
 											Cypher.literalOf(k.last()))))
 							.toArray(Object[]::new));
 					ongoingStratement = ((ExposesMerge) ongoingStratement).merge(left);
@@ -972,20 +982,19 @@ final class SqlToCypher implements Translator {
 					var right = relationship.getRight()
 						.withProperties(rightMergeProperties.stream()
 							.flatMap(k -> Stream.of(k.last(),
-									Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf("rhs")),
+									Cypher.valueAt(Cypher.valueAt(propertiesName, LOOKUP_END),
 											Cypher.literalOf(k.last()))))
 							.toArray(Object[]::new));
 					ongoingStratement = ((ExposesMerge) ongoingStratement).merge(right);
 				}
 
 				return addOptionalReturnAndBuild(((ExposesCreate) ongoingStratement).create(relationship)
-					.set(relationship, Cypher.valueAt(propertiesName, Cypher.literalOf("rel"))), returning);
+					.set(relationship, Cypher.valueAt(propertiesName, LOOKUP_REL)), returning);
 			}
 		}
 
-		private static ListOperator lookupElementIdOf(SymbolicName propertiesName, String side) {
-			return Cypher.valueAt(Cypher.valueAt(propertiesName, Cypher.literalOf(side)),
-					Cypher.literalOf("_elementId"));
+		private static ListOperator lookupElementIdOf(SymbolicName propertiesName, Literal<String> side) {
+			return Cypher.valueAt(Cypher.valueAt(propertiesName, side), Cypher.literalOf("_elementId"));
 		}
 
 		private <T extends ExposesReturning & StatementBuilder.BuildableStatement<?>> Statement addOptionalReturnAndBuild(
@@ -1938,8 +1947,8 @@ final class SqlToCypher implements Translator {
 						else if ("RELATIONSHIP".equals(type)) {
 							var definition = resultSet.getString("REMARKS").split("\n");
 							relationship = Cypher.node(definition[0])
-								.named("_lhs")
-								.relationshipTo(Cypher.node(definition[2]).named("_rhs"), definition[1])
+								.named(NODE_NAME_START)
+								.relationshipTo(Cypher.node(definition[2]).named(NODE_NAME_END), definition[1])
 								.named(symbolicName);
 						}
 					}
@@ -1952,10 +1961,10 @@ final class SqlToCypher implements Translator {
 			if (!tableExists && relationship == null && this.relationshipPattern != null) {
 				var matcher = this.relationshipPattern.matcher(primaryLabel);
 				if (matcher.matches()) {
-					relationship = Cypher.node(namedGroupOrIndex(matcher, "lhs", 1))
-						.named("_lhs")
-						.relationshipTo(Cypher.node(namedGroupOrIndex(matcher, "rhs", 2)).named("_rhs"),
-								namedGroupOrIndex(matcher, "reltype", 3))
+					relationship = Cypher.node(namedGroupOrIndex(matcher, NG_START, 1))
+						.named(NODE_NAME_START)
+						.relationshipTo(Cypher.node(namedGroupOrIndex(matcher, NG_END, 2)).named(NODE_NAME_END),
+								namedGroupOrIndex(matcher, NG_RELTYPE, 3))
 						.named(symbolicName);
 				}
 			}

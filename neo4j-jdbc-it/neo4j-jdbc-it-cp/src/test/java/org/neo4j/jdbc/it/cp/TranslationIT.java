@@ -673,7 +673,7 @@ class TranslationIT extends IntegrationTestBase {
 					   FROM `public`.`Person_ACTED_IN_Movie` `Person_ACTED_IN_Movie`
 					""");
 			assertThat(cypher).isEqualTo(
-					"MATCH (_lhs:Person)-[person_acted_in_movie:ACTED_IN]->(_rhs:Movie) RETURN person_acted_in_movie.roles AS roles, elementId(person_acted_in_movie) AS v_id, elementId(_rhs) AS v_movie_id, elementId(_lhs) AS v_person_id LIMIT 100");
+					"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN person_acted_in_movie.roles AS roles, elementId(person_acted_in_movie) AS v_id, elementId(_end) AS v_movie_id, elementId(_start) AS v_person_id LIMIT 100");
 		}
 
 	}
@@ -691,7 +691,7 @@ class TranslationIT extends IntegrationTestBase {
 					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
 					ON (`Person`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
 			assertThat(cypher).isEqualTo(
-					"MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(_rhs:Movie) RETURN person.name AS name, elementId(_rhs) AS v_movie_id");
+					"MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(_end:Movie) RETURN person.name AS name, elementId(_end) AS v_movie_id");
 
 			cypher = connection.nativeSQL("""
 					SELECT `Movie`.`title` AS `title`, `Person_DIRECTED_Movie`.`v$movie_id` AS `v_movie_id`
@@ -699,7 +699,7 @@ class TranslationIT extends IntegrationTestBase {
 					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
 					ON (`Movie`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
 			assertThat(cypher).isEqualTo(
-					"MATCH (_lhs:Person)-[person_directed_movie:DIRECTED WHERE elementId(movie) = elementId(person_directed_movie)]->(movie) RETURN movie.title AS title, elementId(movie) AS v_movie_id");
+					"MATCH (_start:Person)-[person_directed_movie:DIRECTED WHERE elementId(movie) = elementId(person_directed_movie)]->(movie) RETURN movie.title AS title, elementId(movie) AS v_movie_id");
 		}
 
 	}

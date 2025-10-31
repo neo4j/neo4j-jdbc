@@ -1138,7 +1138,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				}
 			}
 
-			var scopeTable = record.get("SCOPE_TABLE");
+			var scopeTable = record.get(COL_SCOPE_TABLE);
 			var nodeLabelList = nodeLabels.asList(Function.identity());
 			for (Value nodeLabel : nodeLabelList) {
 				// Avoid duplicates while unrolling
