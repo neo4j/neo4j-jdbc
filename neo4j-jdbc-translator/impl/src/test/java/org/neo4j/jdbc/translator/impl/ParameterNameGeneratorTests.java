@@ -21,13 +21,15 @@ package org.neo4j.jdbc.translator.impl;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ParameterNameGeneratorTests {
 
 	@Test
-	void shouldGenerateProperSequence() {
+	void shouldMeaningfullSequence() {
 
 		var generator = new ParameterNameGenerator();
 		var names = new ArrayList<String>();
@@ -41,7 +43,27 @@ class ParameterNameGeneratorTests {
 		names.add(generator.newIndex("7"));
 		names.add(generator.newIndex("1"));
 		names.add(generator.newIndex());
-		assertThat(names).containsExactly("1", "2", "3", "4", "5", "foobar", "7", "8", "9", "10");
+		assertThat(names).containsExactly("1", "0", "1", "2", "3", "foobar", "6", "7", "1", "8");
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|", nullValues = "n/a",
+			textBlock = """
+					$   | INSERT INTO Movie (a, b, c, d) VALUES($1, $2, $a, $3) | CREATE (movie:`Movie` {a: $1, b: $2, c: $a, d: $3})
+					$   | INSERT INTO Movie (a, b, c, d) VALUES($1, $2, $3, $4) | CREATE (movie:`Movie` {a: $1, b: $2, c: $3, d: $4})
+					$   | INSERT INTO Movie (a, b, c, d) VALUES($1, $2, $4, $3) | CREATE (movie:`Movie` {a: $1, b: $2, c: $4, d: $3})
+					$   | INSERT INTO Movie (a, b, c, d) VALUES($1, $2, ?, ?)   | CREATE (movie:`Movie` {a: $1, b: $2, c: $3, d: $4})
+					$   | INSERT INTO Movie (a, b, c, d) VALUES($2, $1, ?, ?)   | CREATE (movie:`Movie` {a: $2, b: $1, c: $3, d: $4})
+					n/a | INSERT INTO Movie (a, b, c, d) VALUES(:1, :2, :a, :3) | CREATE (movie:`Movie` {a: $1, b: $2, c: $a, d: $3})
+					n/a | INSERT INTO Movie (a, b, c, d) VALUES(?, ?, ?, ?)     | CREATE (movie:`Movie` {a: $1, b: $2, c: $3, d: $4})
+					""")
+	void usingIndexLikeNamedParameters(String prefix, String sql, String cypher) {
+		var translator = SqlToCypher.with(SqlToCypherConfig.builder()
+			.withParseNamedParamPrefix(prefix)
+			.withPrettyPrint(false)
+			.withAlwaysEscapeNames(true)
+			.build());
+		assertThat(translator.translate(sql)).isEqualTo(cypher);
 	}
 
 }
