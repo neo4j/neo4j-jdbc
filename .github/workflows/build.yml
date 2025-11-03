@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: zulu
-          java-version: 17
+          java-version: 25
 
       - name: 'Cache Maven packages'
         uses: actions/cache@v4
@@ -68,8 +68,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '21', '24' ]
-        neo4j: [ '5.26.8' ]
+        java: [ '17', '25' ]
+        neo4j: [ '5.26.15' ]
     needs: build
     steps:
       - name: 'Set up JDK'
@@ -98,6 +98,7 @@ jobs:
            ./mvnw --no-transfer-progress 
            -DskipUTs
            -Dneo4j.version=${{ matrix.neo4j }}
+           -Djava-build.version=17
            -f neo4j-jdbc-it
            clean verify
 
@@ -110,7 +111,7 @@ jobs:
         uses: graalvm/setup-graalvm@v1.3.3
         with:
           distribution: 'graalvm-community'
-          java-version: '17'
+          java-version: 25
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Cache Maven packages'

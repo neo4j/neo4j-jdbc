@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: zulu
-          java-version: 17
+          java-version: 25
       - name: Run docs generation
         run: >
           ./mvnw --no-transfer-progress clean git-commit-id:revision@get-the-git-infos resources:copy-resources@prepare-asciidoc resources:copy-resources@copy-classes  asciidoctor:process-asciidoc@generate-html-docs -pl docs &&

@@ -17,19 +17,19 @@
 # limitations under the License.
 #
 
-FROM maven:3.9.4-eclipse-temurin-17 as maven
+FROM maven:3.9.11-eclipse-temurin-25 as maven
 COPY . /driver
 WORKDIR driver
 RUN mvn -Dfast -am -pl neo4j-jdbc clean install
 RUN mvn -Dfast -pl benchkit package
 
-FROM eclipse-temurin:17-jre as builder
+FROM eclipse-temurin:25-jre as builder
 WORKDIR application
 ARG JAR_FILE=/driver/benchkit/target/*.jar
 COPY --from=maven ${JAR_FILE} application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 WORKDIR application
 COPY --from=builder application/dependencies/ ./
 COPY --from=builder application/spring-boot-loader/ ./

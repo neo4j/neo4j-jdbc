@@ -155,6 +155,7 @@
 		<jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
 		<japicmp-maven-plugin.version>0.24.2</japicmp-maven-plugin.version>
+		<java-build.version>25</java-build.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.4</jaxb-api.version>
 		<jboss-logging.version>3.6.1.Final</jboss-logging.version>
@@ -182,7 +183,7 @@
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
-		<maven.version>3.9.4</maven.version>
+		<maven.version>3.9.11</maven.version>
 		<micrometer-tracing.version>1.5.5</micrometer-tracing.version>
 		<micrometer.version>1.15.5</micrometer.version>
 		<mockito.version>5.20.0</mockito.version>
@@ -509,13 +510,13 @@
 					<version>${maven-enforcer-plugin.version}</version>
 					<configuration>
 						<rules>
+							<DependencyConvergence />
 							<requireJavaVersion>
-								<version>${java.version}</version>
+								<version>${java-build.version}</version>
 							</requireJavaVersion>
 							<requireMavenVersion>
 								<version>${maven.version}</version>
 							</requireMavenVersion>
-							<DependencyConvergence />
 						</rules>
 					</configuration>
 				</plugin>
