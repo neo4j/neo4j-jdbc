@@ -24,7 +24,7 @@ record SummaryCountersImpl(int nodesCreated, int nodesDeleted, int relationships
 		int propertiesSet, int labelsAdded, int labelsRemoved, int indexesAdded, int indexesRemoved,
 		int constraintsAdded, int constraintsRemoved, int systemUpdates) implements SummaryCounters {
 
-	public static final SummaryCountersImpl EMPTY_STATS = new SummaryCountersImpl(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	static final SummaryCountersImpl EMPTY_STATS = new SummaryCountersImpl(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	@Override
 	public int totalCount() {

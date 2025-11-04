@@ -102,15 +102,17 @@ class CallableStatementImplTests {
 		assertThat(this.statement.getCurrentBatch()).isEqualTo(Map.of("x", expectedValue));
 	}
 
-	static Stream<Arguments> shouldSetParameter() {
+	static Stream<Arguments> shouldSetParameter() throws MalformedURLException {
 
 		var zoneId = ZoneId.of("America/Los_Angeles");
 		var offset = zoneId.getRules().getOffset(Instant.now());
+		@SuppressWarnings("squid:S1874")
+		var val = new URL("https://neo4j.com");
 
 		return Stream.of(
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull("x", Types.NULL), Values.NULL),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean("x", true), Values.value(true)),
-				Arguments.of((StatementMethodRunner) statement -> statement.setURL("x", new URL("https://neo4j.com")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setURL("x", val),
 						Values.value("https://neo4j.com")),
 				Arguments.of((StatementMethodRunner) statement -> statement.setURL("x", null), Values.NULL),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean("x", false),
@@ -303,8 +305,6 @@ class CallableStatementImplTests {
 						SQLException.class),
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
-						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) Statement::getGeneratedKeys,
 						SQLFeatureNotSupportedException.class),
 				// not currently supported
 				Arguments.of((StatementMethodRunner) statement -> statement.setObject(1, null, Types.NULL),

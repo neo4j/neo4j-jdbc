@@ -123,7 +123,8 @@ class PreparedStatementImplTests {
 
 	private static PreparedStatementImpl newStatement(Connection connection,
 			Neo4jTransactionSupplier transactionSupplier, String query) {
-		return new PreparedStatementImpl(connection, transactionSupplier, null, null, null, false, false, query);
+		return new PreparedStatementImpl(connection, transactionSupplier, null, null, null, false, false,
+				Statement.NO_GENERATED_KEYS, query);
 	}
 
 	@Test
@@ -301,8 +302,6 @@ class PreparedStatementImplTests {
 				Arguments.of(
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((StatementMethodRunner) Statement::getGeneratedKeys,
-						SQLFeatureNotSupportedException.class),
 				// not currently supported
 				Arguments.of((StatementMethodRunner) statement -> statement.setObject(1, null, Types.NULL),
 						SQLFeatureNotSupportedException.class),
@@ -418,15 +417,17 @@ class PreparedStatementImplTests {
 		assertThat(this.statement.getCurrentBatch()).isEqualTo(Map.of("1", expectedValue));
 	}
 
-	static Stream<Arguments> shouldSetParameter() {
+	static Stream<Arguments> shouldSetParameter() throws MalformedURLException {
 
 		var zoneId = ZoneId.of("America/Los_Angeles");
 		var offset = zoneId.getRules().getOffset(Instant.now());
+		@SuppressWarnings("squid:S1874")
+		var url = new URL("https://neo4j.com");
 
 		return Stream.of(
 				Arguments.of((StatementMethodRunner) statement -> statement.setNull(1, Types.NULL), Values.NULL),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean(1, true), Values.value(true)),
-				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, new URL("https://neo4j.com")),
+				Arguments.of((StatementMethodRunner) statement -> statement.setURL(1, url),
 						Values.value("https://neo4j.com")),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBoolean(1, false), Values.value(false)),
 				Arguments.of((StatementMethodRunner) statement -> statement.setByte(1, (byte) 1),

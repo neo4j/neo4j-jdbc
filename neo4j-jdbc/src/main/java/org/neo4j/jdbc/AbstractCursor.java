@@ -18,32 +18,38 @@
  */
 package org.neo4j.jdbc;
 
-import java.sql.ResultSet;
-
-import org.neo4j.jdbc.events.ResultSetListener;
 import org.neo4j.jdbc.values.Record;
 
 /**
- * A Neo4j specific extension of a {@link ResultSet}. It may be referred to for use with
- * {@link #unwrap(Class)} to access specific Neo4j functionality.
+ * Base class for holding some cursor state.
  *
  * @author Michael J. Simons
- * @since 6.3.0
  */
-public sealed interface Neo4jResultSet extends ResultSet permits ResultSetImpl {
+abstract class AbstractCursor implements Cursor {
 
-	/**
-	 * Adds a listener to this statement that gets notified on starts and finish of
-	 * iteration and whenever a new batch is pulled from the database.
-	 * @param resultSetListener the lister to add to this result set
-	 * @since 6.3.0
-	 */
-	void addListener(ResultSetListener resultSetListener);
+	protected final Record sampleRecord;
 
-	/**
-	 * {@return the current record if any}
-	 * @since 6.10.0
-	 */
-	Record getCurrentRecord();
+	protected Record currentRecord;
+
+	protected int currentRowNum;
+
+	AbstractCursor(Record sampleRecord) {
+		this.sampleRecord = sampleRecord;
+	}
+
+	@Override
+	public Record getCurrentRecord() {
+		return this.currentRecord;
+	}
+
+	@Override
+	public int getCurrentRowNum() {
+		return this.currentRowNum;
+	}
+
+	@Override
+	public Record getSampleRecord() {
+		return this.sampleRecord;
+	}
 
 }

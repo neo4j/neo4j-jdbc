@@ -133,7 +133,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 			Consumer<Class<? extends Statement>> onClose, boolean rewriteBatchedStatements, String sql,
 			ParameterMetaData parameterMetaData) {
 		super(connection, transactionSupplier, UnaryOperator.identity(), null, onClose, false, rewriteBatchedStatements,
-				sql);
+				Statement.NO_GENERATED_KEYS, sql);
 
 		this.parameterMetaData = parameterMetaData;
 	}
