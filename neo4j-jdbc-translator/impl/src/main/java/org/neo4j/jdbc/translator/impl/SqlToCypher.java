@@ -92,6 +92,7 @@ import org.neo4j.cypherdsl.core.ListOperator;
 import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.NodeLabel;
+import org.neo4j.cypherdsl.core.Parameter;
 import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.Property;
 import org.neo4j.cypherdsl.core.PropertyContainer;
@@ -1839,8 +1840,10 @@ final class SqlToCypher implements Translator {
 						.asCondition();
 				}
 				else if (c instanceof QOM.InList<?> il) {
+					var searchList = il.$list().stream().map(this::expression).toList();
 					return expression(il.$field())
-						.in(Cypher.listOf(il.$list().stream().map(this::expression).toList()));
+						.in(((searchList.size() == 1) && (searchList.get(0) instanceof Parameter<?> parameter))
+								? parameter : Cypher.listOf(searchList));
 				}
 				else {
 					throw unsupported(c);
