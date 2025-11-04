@@ -86,7 +86,7 @@ final class LocalStatementImpl extends StatementImpl {
 		if (!this.resultSetAcquired.compareAndSet(false, true)) {
 			throw new Neo4jException(withReason("Result set has already been acquired"));
 		}
-		return new ResultSetImpl(this, new ThrowingTransactionImpl(), this.runResponse, this.pullResponse, -1, -1, -1);
+		return new ResultSetImpl(this, -1, new ThrowingTransactionImpl(), this.runResponse, this.pullResponse, -1, -1);
 	}
 
 	@Override

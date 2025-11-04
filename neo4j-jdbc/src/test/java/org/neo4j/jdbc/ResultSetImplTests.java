@@ -141,15 +141,11 @@ class ResultSetImplTests {
 		verificationLogic.run(() -> indexAccess ? this.resultSet.getURL(INDEX) : this.resultSet.getURL(LABEL));
 	}
 
-	private static Stream<Arguments> getUrlArgs() {
+	private static Stream<Arguments> getUrlArgs() throws MalformedURLException {
 
-		URL url;
-		try {
-			url = new URL("https://neo4j.com");
-		}
-		catch (MalformedURLException ex) {
-			throw new RuntimeException(ex);
-		}
+		@SuppressWarnings("squid:S1874")
+		var url = new URL("https://neo4j.com");
+
 		return Stream
 			.of(Arguments.of(Values.value("https://neo4j.com"),
 					Named.<VerificationLogic<URL>>of("verify returns valid URL",
@@ -1611,7 +1607,7 @@ class ResultSetImplTests {
 		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(pullResponse.records()).willReturn(List.of());
 
-		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0, 0);
+		return new ResultSetImpl(statement, 0, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0);
 	}
 
 	private ResultSet setupWithValue(Value expectedValue, int maxFieldSize) throws SQLException {
@@ -1628,8 +1624,8 @@ class ResultSetImplTests {
 		var pullResponse = mock(Neo4jTransaction.PullResponse.class);
 		given(pullResponse.records()).willReturn(List.of(boltRecord));
 
-		return new ResultSetImpl(statement, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000, 0,
-				maxFieldSize);
+		return new ResultSetImpl(statement, maxFieldSize, mock(Neo4jTransaction.class), runResponse, pullResponse, 1000,
+				0);
 	}
 
 	@FunctionalInterface

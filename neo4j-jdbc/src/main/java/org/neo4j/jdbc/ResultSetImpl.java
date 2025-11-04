@@ -45,14 +45,12 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,27 +97,11 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private final StatementImpl statement;
 
-	private final Neo4jTransaction transaction;
-
-	private final RunResponse runResponse;
-
 	private final List<String> keys;
-
-	private final Record firstRecord;
 
 	private final int maxFieldSize;
 
-	private PullResponse batchPullResponse;
-
-	private int fetchSize;
-
-	private int remainingRowAllowance;
-
-	private Iterator<Record> recordsBatchIterator;
-
-	private Record currentRecord;
-
-	private final AtomicInteger currentRow = new AtomicInteger(0);
+	private final Cursor cursor;
 
 	private Value value;
 
@@ -139,19 +121,32 @@ final class ResultSetImpl implements Neo4jResultSet {
 
 	private boolean closedEventFired;
 
-	ResultSetImpl(StatementImpl statement, Neo4jTransaction transaction, RunResponse runResponse,
-			PullResponse batchPullResponse, int fetchSize, int maxRowLimit, int maxFieldSize) {
+	ResultSetImpl(StatementImpl statement, int maxFieldSize, Neo4jTransaction transaction, RunResponse runResponse,
+			PullResponse batchPullResponse, int fetchSize, int maxRowLimit) {
 		this.statement = Objects.requireNonNull(statement);
-		this.transaction = Objects.requireNonNull(transaction);
-		this.runResponse = Objects.requireNonNull(runResponse);
-		this.batchPullResponse = Objects.requireNonNull(batchPullResponse);
-		this.setFetchSize(fetchSize);
-		this.remainingRowAllowance = (maxRowLimit > 0) ? maxRowLimit : -1;
-		var recordsBatch = batchPullResponse.records();
-		this.recordsBatchIterator = recordsBatch.iterator();
-		this.firstRecord = recordsBatch.isEmpty() ? null : recordsBatch.get(0);
-		this.keys = (this.firstRecord != null) ? recordsBatch.get(0).keys() : runResponse.keys();
 		this.maxFieldSize = maxFieldSize;
+
+		this.cursor = Cursor.of(Objects.requireNonNull(transaction), Objects.requireNonNull(runResponse),
+				(maxRowLimit > 0) ? maxRowLimit : -1, fetchSize, Objects.requireNonNull(batchPullResponse),
+				this::onNextBatch);
+
+		var sampleRecord = this.cursor.getSampleRecord();
+		this.keys = (sampleRecord != null) ? sampleRecord.keys() : runResponse.keys();
+	}
+
+	ResultSetImpl(StatementImpl statement, int maxFieldSize, List<Record> records) {
+		this.statement = Objects.requireNonNull(statement);
+		this.maxFieldSize = maxFieldSize;
+
+		this.cursor = Cursor.of(records);
+
+		var sampleRecord = this.cursor.getSampleRecord();
+		this.keys = (sampleRecord != null) ? sampleRecord.keys() : List.of();
+	}
+
+	@Override
+	public Record getCurrentRecord() {
+		return this.cursor.getCurrentRecord();
 	}
 
 	@Override
@@ -162,17 +157,21 @@ final class ResultSetImpl implements Neo4jResultSet {
 	@Override
 	public boolean next() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "next");
+		if (this.closed) {
+			throw new Neo4jException(withReason("This result set is closed"));
+		}
 		if (this.beforeFirst.compareAndSet(true, false) && !this.openedEventFired) {
 			Events.notify(this.listeners, listener -> listener
 				.onIterationStarted(new IterationStartedEvent(Long.toString(System.identityHashCode(this)))));
 			this.openedEventFired = true;
 		}
-		var result = next0();
+		var result = this.cursor.next();
 		if (result) {
+			// this.currentRecord = this.cursor.getCurrentRecord();
 			if (!this.first.compareAndSet(null, true)) {
 				this.first.compareAndSet(true, false);
 			}
-			this.last.compareAndSet(false, !(this.recordsBatchIterator.hasNext() || this.batchPullResponse.hasMore()));
+			this.last.compareAndSet(false, !this.cursor.isLast());
 		}
 		else {
 			this.first.compareAndSet(true, false);
@@ -186,28 +185,9 @@ final class ResultSetImpl implements Neo4jResultSet {
 		return result;
 	}
 
-	private boolean next0() throws SQLException {
-		if (this.closed) {
-			throw new Neo4jException(withReason("This result set is closed"));
-		}
-		if (this.remainingRowAllowance == 0) {
-			return false;
-		}
-		if (this.recordsBatchIterator.hasNext()) {
-			this.currentRecord = this.recordsBatchIterator.next();
-			this.currentRow.incrementAndGet();
-			decrementRemainingRowAllowance();
-			return true;
-		}
-		if (this.batchPullResponse.hasMore()) {
-			this.batchPullResponse = this.transaction.pull(this.runResponse, calculateFetchSize());
-			Events.notify(this.listeners, listener -> listener.on(new Neo4jEvent(Neo4jEvent.Type.PULLED_NEXT_BATCH,
-					Map.of("source", this.getClass(), "id", Long.toString(System.identityHashCode(this))))));
-			this.recordsBatchIterator = this.batchPullResponse.records().iterator();
-			return next();
-		}
-		this.currentRecord = null;
-		return false;
+	void onNextBatch() {
+		Events.notify(this.listeners, listener -> listener.on(new Neo4jEvent(Neo4jEvent.Type.PULLED_NEXT_BATCH,
+				Map.of("source", this.getClass(), "id", Long.toString(System.identityHashCode(this))))));
 	}
 
 	@Override
@@ -216,9 +196,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		if (this.closed) {
 			return;
 		}
-		if (this.transaction.isAutoCommit() && this.transaction.isRunnable()) {
-			this.transaction.commit();
-		}
+		this.cursor.close();
 		if (this.openedEventFired && !this.closedEventFired) {
 			Events.notify(this.listeners, listener -> listener.onIterationDone(
 					new IterationDoneEvent(Long.toString(System.identityHashCode(this)), this.isAfterLast())));
@@ -462,7 +440,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 	public ResultSetMetaData getMetaData() throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Getting meta data");
 		var connection = this.statement.getConnection();
-		return new ResultSetMetaDataImpl(connection.getSchema(), connection.getCatalog(), this.keys, this.firstRecord);
+		return new ResultSetMetaDataImpl(connection.getSchema(), connection.getCatalog(), this.keys,
+				this.cursor.getSampleRecord());
 	}
 
 	@Override
@@ -549,7 +528,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 	@SuppressWarnings("StatementWithEmptyBody")
 	@Override
 	public void afterLast() throws SQLException {
-		LOGGER.log(Level.FINER, () -> "Moving after first");
+		LOGGER.log(Level.FINER, () -> "Moving after last");
 		while (this.next()) {
 			// Discard everything
 		}
@@ -574,18 +553,16 @@ final class ResultSetImpl implements Neo4jResultSet {
 					"This result set is of type TYPE_FORWARD_ONLY (%d) and does not support last after it has been fully iterated"
 						.formatted(SUPPORTED_TYPE));
 		}
-		var lastRecord = this.currentRecord;
-		while (next()) {
-			lastRecord = this.currentRecord;
+		while (!isLast()) {
+			this.next();
 		}
-		this.currentRecord = lastRecord;
 		return true;
 	}
 
 	@Override
 	public int getRow() {
 		LOGGER.log(Level.FINER, () -> "Getting row");
-		return this.currentRow.get();
+		return this.cursor.getCurrentRowNum();
 	}
 
 	@Override
@@ -625,15 +602,15 @@ final class ResultSetImpl implements Neo4jResultSet {
 	}
 
 	@Override
-	public void setFetchSize(int rows) {
+	public void setFetchSize(int rows) throws SQLException {
 		LOGGER.log(Level.FINER, () -> "Setting fetch size to %d".formatted(rows));
-		this.fetchSize = (rows > 0) ? rows : Neo4jStatement.DEFAULT_FETCH_SIZE;
+		this.cursor.setFetchSize((rows > 0) ? rows : Neo4jStatement.DEFAULT_FETCH_SIZE);
 	}
 
 	@Override
 	public int getFetchSize() {
 		LOGGER.log(Level.FINER, () -> "Getting fetch size");
-		return this.fetchSize;
+		return this.cursor.getFetchSize();
 	}
 
 	@Override
@@ -1340,7 +1317,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 	}
 
 	private void assertCurrentRecordIsNotNull() throws SQLException {
-		if (this.currentRecord == null) {
+		if (this.getCurrentRecord() == null) {
 			throw new Neo4jException(withReason("Invalid cursor position"));
 		}
 	}
@@ -1352,13 +1329,13 @@ final class ResultSetImpl implements Neo4jResultSet {
 	}
 
 	private void assertColumnIndexIsPresent(int columnIndex) throws SQLException {
-		if (columnIndex < 1 || columnIndex > this.currentRecord.size()) {
+		if (columnIndex < 1 || columnIndex > this.getCurrentRecord().size()) {
 			throw new Neo4jException(withReason("Invalid column index value"));
 		}
 	}
 
 	private void assertColumnLabelIsPresent(String columnLabel) throws SQLException {
-		if (!this.currentRecord.containsKey(columnLabel)) {
+		if (!this.getCurrentRecord().containsKey(columnLabel)) {
 			throw new Neo4jException(withReason("Invalid column label value"));
 		}
 	}
@@ -1368,7 +1345,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		assertCurrentRecordIsNotNull();
 		assertColumnIndexIsPresent(columnIndex);
 		columnIndex--;
-		this.value = this.currentRecord.get(columnIndex);
+		this.value = this.getCurrentRecord().get(columnIndex);
 		return valueMapper.map(this.value);
 	}
 
@@ -1376,18 +1353,8 @@ final class ResultSetImpl implements Neo4jResultSet {
 		assertIsOpen();
 		assertCurrentRecordIsNotNull();
 		assertColumnLabelIsPresent(columnLabel);
-		this.value = this.currentRecord.get(columnLabel);
+		this.value = this.getCurrentRecord().get(columnLabel);
 		return valueMapper.map(this.value);
-	}
-
-	private int calculateFetchSize() {
-		return (this.remainingRowAllowance > 0) ? Math.min(this.remainingRowAllowance, this.fetchSize) : this.fetchSize;
-	}
-
-	private void decrementRemainingRowAllowance() {
-		if (this.remainingRowAllowance > 0) {
-			this.remainingRowAllowance--;
-		}
 	}
 
 	private static String mapToString(Value value, int maxFieldSize) throws SQLException {
@@ -1409,6 +1376,9 @@ final class ResultSetImpl implements Neo4jResultSet {
 		}
 	}
 
+	// Go home, Sonar, you are drunk.
+	// URL is part of the JDBC API.
+	@SuppressWarnings("squid:S1874")
 	private static URL mapToUrl(Value value) throws SQLException {
 		if (Type.STRING.isTypeOf(value)) {
 			try {

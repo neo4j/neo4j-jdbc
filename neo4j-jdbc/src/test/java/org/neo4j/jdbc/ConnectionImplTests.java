@@ -784,8 +784,6 @@ class ConnectionImplTests {
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareCall("ignored",
 						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT),
 						SQLFeatureNotSupportedException.class),
-				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored",
-						Statement.RETURN_GENERATED_KEYS), SQLFeatureNotSupportedException.class),
 				Arguments.of((ConnectionMethodRunner) connection -> connection.prepareStatement("ignored", new int[0]),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of(
