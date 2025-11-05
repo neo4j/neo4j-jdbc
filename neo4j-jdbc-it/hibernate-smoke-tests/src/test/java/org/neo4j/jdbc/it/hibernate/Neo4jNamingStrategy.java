@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2023-2025 "Neo4j,"
+ * Neo4j Sweden AB [https://neo4j.com]
+ *
+ * This file is part of Neo4j.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.neo4j.jdbc.it.hibernate;
+
+import java.io.Serial;
+import java.util.Locale;
+
+import org.hibernate.boot.model.naming.Identifier;
+import org.hibernate.boot.model.naming.ImplicitJoinColumnNameSource;
+import org.hibernate.boot.model.naming.ImplicitJoinTableNameSource;
+import org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl;
+
+public final class Neo4jNamingStrategy extends ImplicitNamingStrategyJpaCompliantImpl {
+
+	@Serial
+	private static final long serialVersionUID = 6595021344120877404L;
+
+	@Override
+	public Identifier determineJoinTableName(ImplicitJoinTableNameSource source) {
+		return Identifier.toIdentifier(source.getOwningPhysicalTableName() + "_"
+				+ deriveRelationshipType(source.getAssociationOwningAttributePath().getProperty()) + "_"
+				+ source.getNonOwningPhysicalTableName());
+	}
+
+	@Override
+	public Identifier determineJoinColumnName(ImplicitJoinColumnNameSource source) {
+		return Identifier.toIdentifier(source.getEntityNaming().getJpaEntityName().toLowerCase(Locale.ROOT) + "_id");
+	}
+
+	private static String deriveRelationshipType(String name) {
+
+		if (name == null || name.isBlank()) {
+			throw new IllegalArgumentException();
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		int codePoint;
+		int previousIndex = 0;
+		int i = 0;
+		while (i < name.length()) {
+			codePoint = name.codePointAt(i);
+			if (Character.isLowerCase(codePoint)) {
+				if (i > 0 && !Character.isLetter(name.codePointAt(previousIndex))) {
+					sb.append("_");
+				}
+				codePoint = Character.toUpperCase(codePoint);
+			}
+			else if (!sb.isEmpty()) {
+				sb.append("_");
+			}
+			sb.append(Character.toChars(codePoint));
+			previousIndex = i;
+			i += Character.charCount(codePoint);
+		}
+		return sb.toString();
+	}
+
+}

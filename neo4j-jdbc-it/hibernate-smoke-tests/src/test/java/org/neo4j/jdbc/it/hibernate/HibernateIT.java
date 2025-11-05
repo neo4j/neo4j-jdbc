@@ -18,8 +18,8 @@
  */
 package org.neo4j.jdbc.it.hibernate;
 
+import org.assertj.core.api.Assertions;
 import org.hibernate.SessionFactory;
-import org.hibernate.annotations.processing.GenericDialect;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.Configuration;
 import org.junit.jupiter.api.AfterAll;
@@ -49,6 +49,7 @@ class HibernateIT {
 	void startNeo4j() {
 		this.neo4j.start();
 		this.sessionFactory = new Configuration().addAnnotatedClass(Movie.class)
+			.addAnnotatedClass(Person.class)
 			.setProperty(AvailableSettings.JAKARTA_JDBC_DRIVER, Neo4jDriver.class)
 			.setProperty(AvailableSettings.JAKARTA_JDBC_URL,
 					"jdbc:neo4j://" + this.neo4j.getHost() + ":" + this.neo4j.getMappedPort(7687)
@@ -58,8 +59,8 @@ class HibernateIT {
 			.setProperty(AvailableSettings.SHOW_SQL, true)
 			.setProperty(AvailableSettings.FORMAT_SQL, true)
 			.setProperty(AvailableSettings.HIGHLIGHT_SQL, true)
-			.setProperty(AvailableSettings.DIALECT, GenericDialect.class)
-
+			.setProperty(AvailableSettings.DIALECT, Neo4jDialect.class)
+			.setProperty(AvailableSettings.IMPLICIT_NAMING_STRATEGY, Neo4jNamingStrategy.class)
 			.buildSessionFactory();
 	}
 
@@ -76,6 +77,13 @@ class HibernateIT {
 								WITH n DETACH DELETE n
 							}
 							IN TRANSACTIONS OF 1000 ROWs""");
+
+					stmt.execute("""
+							/*+ NEO4J FORCE_CYPHER */
+							CREATE (p:Person {id: randomUUID(), name: 'Helge Schneider', born: 1995})
+							       -[:ACTED_IN {roles: ['Himself']}]
+							       ->(:Movie {id: randomUUID(), title: 'The Klimperclown'})
+							""");
 				}
 			});
 		}
@@ -100,12 +108,13 @@ class HibernateIT {
 
 		this.sessionFactory.inSession(session -> {
 			var tx = session.beginTransaction();
-			var movies = session.createSelectionQuery("from Movie", Movie.class).getResultList();
+			var movies = session.createSelectionQuery("from Movie where title like 'Winter%'", Movie.class)
+				.getResultList();
 			assertThat(movies).hasSize(1).first().satisfies(m -> {
 				assertThat(m.getId()).isNotNull();
 				assertThat(m.getTitle()).isEqualTo("Winter is coming.");
+				m.setTitle("We hibernated.");
 			});
-			movies.get(0).setTitle("We hibernated.");
 			tx.commit();
 		});
 
@@ -119,8 +128,53 @@ class HibernateIT {
 
 		this.sessionFactory.inSession(session -> {
 			var movies = session.createSelectionQuery("from Movie", Movie.class).getResultList();
-			assertThat(movies).isEmpty();
+			assertThat(movies).hasSize(1).first().satisfies(m -> {
+				assertThat(m.getId()).isNotNull();
+				assertThat(m.getTitle()).isEqualTo("The Klimperclown");
+			});
 		});
+	}
+
+	@Test
+	void shouldBeAbleToWorkWithRelationships() {
+		this.sessionFactory.inSession(session -> {
+			var people = session.createSelectionQuery("from Person", Person.class).getResultList();
+			assertThat(people).hasSize(1).first().satisfies(p -> {
+				assertThat(p.getName()).isEqualTo("Helge Schneider");
+				assertThat(p.getMovies()).hasSize(1);
+			});
+		});
+
+		this.sessionFactory.inSession(session -> {
+			var person = new Person();
+			person.setName("Jack Nicholson");
+			var movie = new Movie();
+			movie.setTitle("The Shining");
+			person.getMovies().add(movie);
+
+			var tx = session.beginTransaction();
+			session.persist(person);
+			tx.commit();
+		});
+
+		this.sessionFactory.inSession(session -> session.doWork(connection -> {
+			try (var stmt = connection.createStatement()) {
+				var rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH (n:Person) RETURN count(n)");
+				rs.next();
+				Assertions.assertThat(rs.getInt(1)).isEqualTo(2L);
+				rs.close();
+
+				rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH (n:Movie) RETURN count(n)");
+				rs.next();
+				Assertions.assertThat(rs.getInt(1)).isEqualTo(2L);
+				rs.close();
+
+				rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH ()-[r:ACTED_IN]->() RETURN count(r)");
+				rs.next();
+				Assertions.assertThat(rs.getInt(1)).isEqualTo(2L);
+				rs.close();
+			}
+		}));
 	}
 
 }

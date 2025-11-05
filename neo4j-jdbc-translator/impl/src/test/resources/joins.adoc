@@ -38,7 +38,7 @@ MATCH (p:Person)-->(m:Movie) RETURN p, m
 `NATURAL` joins can be chained, and the connecting join table does not need to exist.
 This will be turned into a Neo4j relationship:
 
-[source,sql,id=nj2,name=naturalJoins,metaData=Movie:title|released]
+[source,sql,id=nj2,name=naturalJoins,metaData=Movie:title|released;ACTED_IN:roles;Person_ACTED_IN_Movie:roles]
 ----
 SELECT p.name, r.roles, m.* FROM Person p
 NATURAL JOIN ACTED_IN r
