@@ -44,6 +44,7 @@ import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.platform.commons.util.ReflectionUtils;
@@ -156,6 +157,86 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getURLShouldWork() throws SQLException {
 		assertThat(this.getConnection().getMetaData().getURL()).startsWith(this.getConnectionURL());
+	}
+
+	@Test
+	void joinTablesWithoutPropertiesOnRel() throws SQLException {
+
+		try (var con = this.getConnection(false, true)) {
+			try (var stmt = con.createStatement()) {
+				stmt.execute("CREATE (p:Start {col1: 'colSourceValue'})-[:REL]->(:End {col2: 'colTargetValue'})\n");
+			}
+
+			var meta = con.getMetaData();
+			var columnsRs = meta.getColumns(null, null, "Start_REL_End", null);
+			var columns = new HashSet<String>();
+			while (columnsRs.next()) {
+				columns.add(columnsRs.getString("COLUMN_NAME"));
+			}
+
+			assertThat(columns).containsExactlyInAnyOrder("v$start_id", "v$end_id", "col2", "v$id", "col1");
+		}
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|",
+			textBlock = """
+					CREATE (p:Start {col: 'colSourceValue'})-[:REL {col: 'colRelValue'}]->(:End {col: 'colTargetValue'}) | v$start_id, v$end_id, start_col, col, end_col, v$id | SELECT * FROM Start_REL_End alias WHERE alias.start_col = 'colSourceValue' @ SELECT * FROM Start_REL_End alias WHERE alias.col = 'colRelValue' AND alias.start_col = 'colSourceValue' @ SELECT * FROM Start_REL_End alias WHERE alias.end_col = 'colTargetValue'
+					CREATE (p:Start)-[:REL {col: 'colRelValue'}]->(:End {col: 'colTargetValue'})                         | v$start_id, v$end_id, col, end_col, v$id            | SELECT * FROM Start_REL_End alias WHERE alias.end_col = 'colTargetValue'   @ SELECT * FROM Start_REL_End alias WHERE alias.col = 'colRelValue' AND alias.end_col = 'colTargetValue'
+					CREATE (p:Start {col: 'colSourceValue'})-[:REL]->(:End {col: 'colTargetValue'})                      | v$start_id, v$end_id, start_col, end_col, v$id      | SELECT * FROM Start_REL_End alias WHERE alias.start_col = 'colSourceValue'
+					CREATE (p:Start {col: 'colSourceValue'})-[:REL {col: 'colRelValue'}]->(:End)                         | v$start_id, v$end_id, start_col, col, v$id          | SELECT * FROM Start_REL_End alias WHERE alias.start_col = 'colSourceValue' @ SELECT * FROM Start_REL_End alias WHERE alias.col = 'colRelValue' AND alias.start_col = 'colSourceValue'
+					""")
+	void joinTablesWithDuplicateColumns(String graph, String expected, String select) throws SQLException {
+
+		try (var con = this.getConnection(false, true)) {
+			try (var stmt = con.createStatement()) {
+				stmt.execute(graph);
+			}
+
+			var meta = con.getMetaData();
+			var columnsRs = meta.getColumns(null, null, "Start_REL_End", null);
+			var columns = new HashSet<String>();
+			while (columnsRs.next()) {
+				columns.add(columnsRs.getString("COLUMN_NAME"));
+			}
+
+			assertThat(columns).containsExactlyInAnyOrder(expected.split(" ?, ?"));
+		}
+
+		var queries = new ArrayList<String>();
+		for (var query : select.split("@")) {
+			queries.add(query.trim());
+			queries.add(query.trim().replaceAll("alias\\.?", ""));
+		}
+
+		try (var con = this.getConnection(true, true); var stmt = con.createStatement()) {
+			for (var query : queries) {
+				var rs = stmt.executeQuery(query);
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.next()).isFalse();
+				rs.close();
+			}
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "CREATE (p:Start {col: 'colValue'})-[:REL]->(:End)",
+			"CREATE (p:Start)-[:REL {col: 'colValue'}]->(:End)", "CREATE (p:Start)-[:REL]->(:End {col: 'colValue'})" })
+	void joinTablesWithoutPropertiesOnStartOrEnd(String graph) throws SQLException {
+
+		try (var con = this.getConnection(false, true)) {
+			try (var stmt = con.createStatement()) {
+				stmt.execute(graph);
+			}
+
+			var meta = con.getMetaData();
+			var columnsRs = meta.getColumns(null, null, "Start_REL_End", null);
+			var columns = new HashSet<String>();
+			while (columnsRs.next()) {
+				columns.add(columnsRs.getString("COLUMN_NAME"));
+			}
+			assertThat(columns).containsExactlyInAnyOrder("v$start_id", "v$end_id", "col", "v$id");
+		}
 	}
 
 	@Test

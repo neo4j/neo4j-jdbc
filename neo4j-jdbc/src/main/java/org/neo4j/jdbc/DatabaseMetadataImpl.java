@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1098,7 +1099,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern, "column_name",
 				columnNamePattern, "sampleSize", this.relationshipSampleSize, "viewColumns", getViewColumns());
 		var innerColumnsResponse = doQueryForPullResponse(request);
-		var records = innerColumnsResponse.records();
+		var records = innerColumnsResponse.records()
+			.stream()
+			.filter(record -> !(record.get(1).isNull() || record.get(2).isNull()))
+			.toList();
 
 		var rows = new LinkedList<Value[]>();
 
@@ -1106,14 +1110,18 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		var cbvs = new HashSet<Value>();
 
+		// Distribution of property names
+		var propertyCount = new HashMap<Value, AtomicInteger>();
+		for (Record record : records) {
+
+			var propertyName = record.get(1);
+			propertyCount.computeIfAbsent(propertyName, ignored -> new AtomicInteger()).incrementAndGet();
+		}
+
 		for (Record record : records) {
 
 			var propertyName = record.get(1);
 			var propertyTypes = record.get(2);
-
-			if (propertyName.isNull() || propertyTypes.isNull()) {
-				continue;
-			}
 
 			var nodeLabels = record.get(0);
 			Value labelsOrTypes = nodeLabels;
@@ -1145,6 +1153,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				var properties = columnPerLabel.computeIfAbsent(nodeLabel, i -> new HashSet<>());
 				if (properties.contains(propertyName)) {
 					continue;
+				}
+				if (propertyCount.get(propertyName).getPlain() > 1 && !scopeTable.isNull()) {
+					propertyName = Values
+						.value(scopeTable.asString().toLowerCase(Locale.ROOT) + "_" + propertyName.asString());
 				}
 				properties.add(propertyName);
 				var values = addColumn(nodeLabel, propertyName, propertyType, NULLABLE, IS_NULLABLE,

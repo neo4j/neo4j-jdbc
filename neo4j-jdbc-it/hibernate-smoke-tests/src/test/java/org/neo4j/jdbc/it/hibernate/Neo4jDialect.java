@@ -18,34 +18,15 @@
  */
 package org.neo4j.jdbc.it.hibernate;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import org.hibernate.annotations.processing.GenericDialect;
+import org.hibernate.sql.ast.SqlAstTranslatorFactory;
+import org.hibernate.sql.ast.spi.StandardSqlAstTranslatorFactory;
 
-@Entity
-public class Movie {
+public final class Neo4jDialect extends GenericDialect {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	private String id;
-
-	private String title;
-
-	public String getId() {
-		return this.id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getTitle() {
-		return this.title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
+	@Override
+	public SqlAstTranslatorFactory getSqlAstTranslatorFactory() {
+		return new StandardSqlAstTranslatorFactory();
 	}
 
 }

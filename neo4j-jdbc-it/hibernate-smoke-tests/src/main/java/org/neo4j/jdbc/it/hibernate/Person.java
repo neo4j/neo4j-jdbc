@@ -18,19 +18,29 @@
  */
 package org.neo4j.jdbc.it.hibernate;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 @Entity
-public class Movie {
+public class Person {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private String id;
 
-	private String title;
+	private String name;
+
+	private Integer born;
+
+	@OneToMany(cascade = CascadeType.PERSIST)
+	private Set<Movie> actedIn = new HashSet<>();
 
 	public String getId() {
 		return this.id;
@@ -40,12 +50,24 @@ public class Movie {
 		this.id = id;
 	}
 
-	public String getTitle() {
-		return this.title;
+	public String getName() {
+		return this.name;
 	}
 
-	public void setTitle(String title) {
-		this.title = title;
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Integer getBorn() {
+		return this.born;
+	}
+
+	public void setBorn(Integer born) {
+		this.born = born;
+	}
+
+	public Set<Movie> getMovies() {
+		return this.actedIn;
 	}
 
 }
