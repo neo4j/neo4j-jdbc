@@ -50,6 +50,7 @@ class HibernateIT {
 		this.neo4j.start();
 		this.sessionFactory = new Configuration().addAnnotatedClass(Movie.class)
 			.addAnnotatedClass(Person.class)
+			.addAnnotatedClass(Actor.class)
 			.setProperty(AvailableSettings.JAKARTA_JDBC_DRIVER, Neo4jDriver.class)
 			.setProperty(AvailableSettings.JAKARTA_JDBC_URL,
 					"jdbc:neo4j://" + this.neo4j.getHost() + ":" + this.neo4j.getMappedPort(7687)
@@ -80,9 +81,13 @@ class HibernateIT {
 
 					stmt.execute("""
 							/*+ NEO4J FORCE_CYPHER */
-							CREATE (p:Person {id: randomUUID(), name: 'Helge Schneider', born: 1995})
-							       -[:ACTED_IN {roles: ['Himself']}]
-							       ->(:Movie {id: randomUUID(), title: 'The Klimperclown'})
+							CREATE (h:Person {id: randomUUID(), name: 'Helge Schneider', born: 1955})
+							CREATE (c:Person {id: randomUUID(), name: 'Christoph Schlingensief', born: 1960})
+							CREATE (m:Movie {id: randomUUID(), title: '00 Schneider – Jagd auf Nihil Baxter'})
+							CREATE
+								(h)-[r:ACTED_IN {roles: ['Himself']}]->(m),
+								(h)-[:DIRECTED]->(m),
+								(c)-[:DIRECTED]->(m)
 							""");
 				}
 			});
@@ -130,27 +135,43 @@ class HibernateIT {
 			var movies = session.createSelectionQuery("from Movie", Movie.class).getResultList();
 			assertThat(movies).hasSize(1).first().satisfies(m -> {
 				assertThat(m.getId()).isNotNull();
-				assertThat(m.getTitle()).isEqualTo("The Klimperclown");
+				assertThat(m.getTitle()).isEqualTo("00 Schneider – Jagd auf Nihil Baxter");
 			});
 		});
 	}
 
 	@Test
 	void shouldBeAbleToWorkWithRelationships() {
+
 		this.sessionFactory.inSession(session -> {
-			var people = session.createSelectionQuery("from Person", Person.class).getResultList();
+			var people = session.createSelectionQuery("""
+					from Person as director
+					where element(director.directed).title like '00%'
+					  and born = 1955
+					""", Person.class).getResultList();
 			assertThat(people).hasSize(1).first().satisfies(p -> {
 				assertThat(p.getName()).isEqualTo("Helge Schneider");
-				assertThat(p.getMovies()).hasSize(1);
+				assertThat(p.getMoviesDirected()).hasSize(1);
+			});
+
+			var movies = session.createSelectionQuery("from Movie", Movie.class).getResultList();
+			assertThat(movies).hasSize(1).first().satisfies(movie -> {
+				assertThat(movie.getActors()).hasSize(1).first().satisfies(actor -> {
+					assertThat(actor.getPerson().getName()).isEqualTo("Helge Schneider");
+					assertThat(actor.getRoles()).containsExactly("Himself");
+				});
+				assertThat(movie.getDirectors()).extracting(Person::getName)
+					.containsExactlyInAnyOrder("Helge Schneider", "Christoph Schlingensief");
 			});
 		});
 
 		this.sessionFactory.inSession(session -> {
 			var person = new Person();
-			person.setName("Jack Nicholson");
+			person.setName("Stanley Kubrick");
+			person.setBorn(1928);
 			var movie = new Movie();
 			movie.setTitle("The Shining");
-			person.getMovies().add(movie);
+			person.getMoviesDirected().add(movie);
 
 			var tx = session.beginTransaction();
 			session.persist(person);
@@ -161,7 +182,7 @@ class HibernateIT {
 			try (var stmt = connection.createStatement()) {
 				var rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH (n:Person) RETURN count(n)");
 				rs.next();
-				Assertions.assertThat(rs.getInt(1)).isEqualTo(2L);
+				Assertions.assertThat(rs.getInt(1)).isEqualTo(3L);
 				rs.close();
 
 				rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH (n:Movie) RETURN count(n)");
@@ -169,12 +190,25 @@ class HibernateIT {
 				Assertions.assertThat(rs.getInt(1)).isEqualTo(2L);
 				rs.close();
 
-				rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH ()-[r:ACTED_IN]->() RETURN count(r)");
+				rs = stmt.executeQuery("/*+ NEO4J FORCE_CYPHER */ MATCH ()-[r:DIRECTED]->() RETURN count(r)");
 				rs.next();
-				Assertions.assertThat(rs.getInt(1)).isEqualTo(2L);
+				Assertions.assertThat(rs.getInt(1)).isEqualTo(3L);
 				rs.close();
 			}
 		}));
+	}
+
+	@Test
+	void shouldBeAbleToWorkWithRelationshipWithProperties() {
+
+		this.sessionFactory.inSession(session -> {
+			var actors = session.createSelectionQuery("from Actor", Actor.class).getResultList();
+			assertThat(actors).hasSize(1).first().satisfies(actor -> {
+				assertThat(actor.getMovie().getTitle()).isEqualTo("00 Schneider – Jagd auf Nihil Baxter");
+				assertThat(actor.getPerson().getName()).isEqualTo("Helge Schneider");
+				assertThat(actor.getRoles()).containsExactly("Himself");
+			});
+		});
 	}
 
 }

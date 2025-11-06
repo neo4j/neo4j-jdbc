@@ -26,7 +26,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToMany;
 
 @Entity
 public class Person {
@@ -39,8 +39,8 @@ public class Person {
 
 	private Integer born;
 
-	@OneToMany(cascade = CascadeType.PERSIST)
-	private Set<Movie> actedIn = new HashSet<>();
+	@ManyToMany(cascade = CascadeType.PERSIST)
+	private Set<Movie> directed = new HashSet<>();
 
 	public String getId() {
 		return this.id;
@@ -66,8 +66,8 @@ public class Person {
 		this.born = born;
 	}
 
-	public Set<Movie> getMovies() {
-		return this.actedIn;
+	public Set<Movie> getMoviesDirected() {
+		return this.directed;
 	}
 
 }

@@ -18,10 +18,15 @@
  */
 package org.neo4j.jdbc.it.hibernate;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class Movie {
@@ -31,6 +36,12 @@ public class Movie {
 	private String id;
 
 	private String title;
+
+	@OneToMany(mappedBy = "movie")
+	private Set<Actor> actors = new HashSet<>();
+
+	@ManyToMany(mappedBy = "directed")
+	private Set<Person> directors = new HashSet<>();
 
 	public String getId() {
 		return this.id;
@@ -46,6 +57,14 @@ public class Movie {
 
 	public void setTitle(String title) {
 		this.title = title;
+	}
+
+	public Set<Actor> getActors() {
+		return this.actors;
+	}
+
+	public Set<Person> getDirectors() {
+		return this.directors;
 	}
 
 }

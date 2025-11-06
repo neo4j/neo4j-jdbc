@@ -291,9 +291,12 @@ final class SqlToCypher implements Translator {
 		return Renderer.getRenderer(this.rendererConfig).render(statement);
 	}
 
-	record JoinDetails(QOM.Join<?> join, QOM.Eq<?> eq) {
+	record JoinDetails(QOM.QualifiedJoin<?, ?> join, QOM.Eq<?> eq) {
 		static JoinDetails of(QOM.JoinTable<?, ?> joinTable) {
-			QOM.Join<?> join = (joinTable instanceof QOM.Join<?> $join) ? $join : null;
+			QOM.QualifiedJoin<?, ?> join = null;
+			if (joinTable instanceof QOM.Join || joinTable instanceof QOM.LeftJoin) {
+				join = (QOM.QualifiedJoin<?, ?>) joinTable;
+			}
 			QOM.Eq<?> eq = (join != null && join.$on() instanceof QOM.Eq<?> $eq) ? $eq : null;
 
 			return new JoinDetails(join, eq);
@@ -692,6 +695,8 @@ final class SqlToCypher implements Translator {
 		@SuppressWarnings({ "squid:S1854", "squid:S3776" })
 		private Statement buildSingleCreateStatement(QOM.Insert<?> insert,
 				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
+
+			this.useAliasForVColumn.set(false);
 			var row = expression(Objects.requireNonNull(insert.$values().$first()));
 			QOM.UnmodifiableList<? extends Field<?>> columns = insert.$columns();
 
@@ -742,6 +747,7 @@ final class SqlToCypher implements Translator {
 					}
 				}
 			}
+			this.useAliasForVColumn.compareAndSet(false, true);
 
 			var newRelationship = left.relationshipTo(right, relationship.getDetails().getTypes().get(0))
 				.withProperties(toPropertyArray(relProperties));
@@ -879,6 +885,7 @@ final class SqlToCypher implements Translator {
 		private Statement buildUnwindCreateStatement(QOM.Insert<?> insert,
 				List<? extends SelectFieldOrAsterisk> returning, Relationship relationship) {
 
+			this.useAliasForVColumn.set(false);
 			var columns = insert.$columns();
 			var virtualIdColumns = getColumnsOf(toTableName(relationship)).stream()
 				.filter(CachedColumn::isGenerated)
@@ -969,6 +976,7 @@ final class SqlToCypher implements Translator {
 				list.add(apply);
 			}
 			var properties = Cypher.listOf(list);
+			this.useAliasForVColumn.compareAndSet(false, true);
 
 			if (leftMergeProperties.isEmpty() && rightMergeProperties.isEmpty() && leftCondition == null
 					&& rightCondition == null) {
@@ -1370,7 +1378,7 @@ final class SqlToCypher implements Translator {
 			return col;
 		}
 
-		Optional<Property> findInScopedColumns(PatternElement pe, TableField<?, ?> tf) {
+		Optional<Expression> findInScopedColumns(PatternElement pe, TableField<?, ?> tf) {
 			if (!(pe instanceof Relationship rel)) {
 				return Optional.empty();
 			}
@@ -1378,9 +1386,11 @@ final class SqlToCypher implements Translator {
 			var optionalScopedColumn = relationshipColumns.stream()
 				.filter(c -> c.name().equals(tf.getName()) && c.scopeTable() != null)
 				.findFirst();
-			return optionalScopedColumn.map(scopedColumn -> (label(rel.getLeft()).equals(scopedColumn.scopeTable()))
-					? rel.getLeft().property(scopedColumn.unscopedName())
-					: rel.getRight().property(scopedColumn.unscopedName()));
+			return optionalScopedColumn
+				.map(scopedColumn -> (label(rel.getLeft()).equals(scopedColumn.scopeTable()))
+						? rel.getLeft().property(scopedColumn.unscopedName())
+						: rel.getRight().property(scopedColumn.unscopedName()))
+				.map(p -> this.useAliasForVColumn.get() ? p.as(tf.getName()) : p);
 		}
 
 		private Expression[] expression(Row row) {
@@ -2153,25 +2163,21 @@ final class SqlToCypher implements Translator {
 			}
 
 			var relationshipColumns = getColumnsOf(toTableName(rel));
-			var optionalScopedColumnLeft = relationshipColumns.stream()
-				.filter(c -> c.name().equals(eq.$arg1().getName()) && label(rel.getLeft()).equals(c.scopeTable))
-				.findFirst();
-			var optionalScopedColumnRight = relationshipColumns.stream()
-				.filter(c -> c.name().equals(eq.$arg2().getName()) && label(rel.getRight()).equals(c.scopeTable))
-				.findFirst();
 
-			if ((isElementId(eq.$arg1()) && isVirtualIdColumnForNode(rel.getLeft(), eq.$arg2().$name().last()))
-					|| (isElementId(eq.$arg2()) && isVirtualIdColumnForNode(rel.getLeft(), eq.$arg1().$name().last()))
-					|| optionalScopedColumnLeft.isPresent()) {
+			if (joinedByElementId(eq.$arg1(), eq.$arg2(), rel.getLeft())
+					|| joinedByElementId(eq.$arg2(), eq.$arg1(), rel.getLeft())
+					|| joinedByScopeColumn(eq.$arg1(), rel.getLeft(), relationshipColumns)
+					|| joinedOnArbitraryColumns(eq, node, rel.getLeft(), relationshipColumns)) {
 				var relationship = node
 					.relationshipTo(rel.getRight(), rel.getDetails().getTypes().toArray(String[]::new))
 					.named(rel.getRequiredSymbolicName());
 				this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
 				return relationship;
 			}
-			else if ((isElementId(eq.$arg1()) && isVirtualIdColumnForNode(rel.getRight(), eq.$arg2().$name().last()))
-					|| (isElementId(eq.$arg2()) && isVirtualIdColumnForNode(rel.getRight(), eq.$arg1().$name().last()))
-					|| optionalScopedColumnRight.isPresent()) {
+			else if (joinedByElementId(eq.$arg1(), eq.$arg2(), rel.getRight())
+					|| joinedByElementId(eq.$arg2(), eq.$arg1(), rel.getRight())
+					|| joinedByScopeColumn(eq.$arg2(), rel.getRight(), relationshipColumns)
+					|| joinedOnArbitraryColumns(eq, node, rel.getRight(), relationshipColumns)) {
 				var relationship = rel.getLeft()
 					.relationshipTo(node, rel.getDetails().getTypes().toArray(String[]::new))
 					.named(rel.getRequiredSymbolicName());
@@ -2198,6 +2204,7 @@ final class SqlToCypher implements Translator {
 						e1 = makeId(relationship.getRight(), null);
 						e2 = makeId(relationship, null);
 					}
+
 					if (relationship != null) {
 						relationship = (Relationship) relationship.where(Cypher.isEqualTo(e1, e2));
 						this.resolvedRelationships.put(relationship.getRequiredSymbolicName(), relationship);
@@ -2210,6 +2217,28 @@ final class SqlToCypher implements Translator {
 			}
 
 			return null;
+		}
+
+		private static boolean joinedByElementId(Field<?> src, Field<?> target, Node targetNode) {
+			return isElementId(src) && isVirtualIdColumnForNode(targetNode, target.$name().last());
+		}
+
+		private static boolean joinedByScopeColumn(Field<?> src, Node targetNode,
+				Set<CachedColumn> relationshipColumns) {
+			return relationshipColumns.stream()
+				.anyMatch(c -> c.name().equals(src.getName()) && label(targetNode).equals(c.scopeTable));
+		}
+
+		// No assigment in there is useless, thank you very much SonarQube.
+		@SuppressWarnings("squid:S1854")
+		private boolean joinedOnArbitraryColumns(QOM.Eq<?> eq, Node src, Node target,
+				Set<CachedColumn> relationshipColumns) {
+			var srcLabel = label(src);
+			var targetLabel = label(target);
+			var colLeftPresent = srcLabel.equals(targetLabel) && getColumnsOf(srcLabel).stream()
+				.anyMatch(c -> c.name().equals(eq.$arg1().getName()) || c.name().equals(eq.$arg2().getName()));
+			return colLeftPresent && relationshipColumns.stream()
+				.anyMatch(c -> c.name().equals(eq.$arg1().getName()) || c.name().equals(eq.$arg2().getName()));
 		}
 
 		private static String toTableName(PatternElement patternElement) {
@@ -2321,7 +2350,7 @@ final class SqlToCypher implements Translator {
 			return node.getLabels().stream().map(NodeLabel::getValue).anyMatch(needle::equals);
 		}
 
-		private String label(Node node) {
+		private static String label(Node node) {
 			return node.getLabels().get(0).getValue();
 		}
 
