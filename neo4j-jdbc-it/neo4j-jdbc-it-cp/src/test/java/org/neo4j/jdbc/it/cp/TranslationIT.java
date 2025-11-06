@@ -108,6 +108,26 @@ class TranslationIT extends IntegrationTestBase {
 
 	}
 
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|",
+			textBlock = """
+					d1_1 | SELECT d1_0.name from Person p1_0 join Person_ACTED_IN_Movie d1_0 on p1_0.id=d1_0.person_id join Movie d1_1 on d1_1.id=d1_0.movie_id
+					d1_1 | SELECT d1_0.name from Person p1_0 join Person_ACTED_IN_Movie d1_0 on d1_0.person_id=p1_0.id join Movie d1_1 on d1_1.id=d1_0.movie_id
+					_end | SELECT d1_0.name from Person_ACTED_IN_Movie d1_0 LEFT JOIN Person p1_0 ON p1_0.id=d1_0.person_id
+					""")
+	void shouldFlattenedJoinedRelationShip(String endNode, String query) throws SQLException {
+		try (var connection = getConnection(true, true)) {
+			try (var statement = connection.prepareStatement(
+					"/*+ NEO4J FORCE_CYPHER */ CREATE (a:Person {id: 'x', name: 'Jaret Leto'})-[:ACTED_IN {role: 'Ares'}]->(m:Movie {id: 'y', title: 'TRON Ares'})")) {
+				statement.executeUpdate();
+			}
+
+			var sql = connection.nativeSQL(query);
+			assertThat(sql).isEqualTo("MATCH (p1_0:Person)-[d1_0:ACTED_IN]->(%s:Movie) RETURN p1_0.name AS name",
+					endNode);
+		}
+	}
+
 	@Test
 	void shouldInsertRelationshipBasedOnTemplate() throws SQLException {
 
@@ -680,9 +700,7 @@ class TranslationIT extends IntegrationTestBase {
 
 	@SuppressWarnings("SqlNoDataSourceInspection")
 	@Test
-	void innerJoinWrongColumn() throws SQLException, IOException {
-		// Those queries will return empty results, but will not fail and are essentially
-		// correct as formulated in SQL
+	void innerJoinColumnsWrongDirection() throws SQLException, IOException {
 		try (var connection = getConnection(true, false)) {
 			TestUtils.createMovieGraph(connection);
 			var cypher = connection.nativeSQL("""
@@ -691,7 +709,7 @@ class TranslationIT extends IntegrationTestBase {
 					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
 					ON (`Person`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
 			assertThat(cypher).isEqualTo(
-					"MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(_end:Movie) RETURN person.name AS name, elementId(_end) AS v_movie_id");
+					"MATCH (person:Person)-[person_directed_movie:DIRECTED]->(_end:Movie) RETURN person.name AS name, elementId(_end) AS v_movie_id");
 
 			cypher = connection.nativeSQL("""
 					SELECT `Movie`.`title` AS `title`, `Person_DIRECTED_Movie`.`v$movie_id` AS `v_movie_id`
@@ -699,7 +717,7 @@ class TranslationIT extends IntegrationTestBase {
 					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
 					ON (`Movie`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
 			assertThat(cypher).isEqualTo(
-					"MATCH (_start:Person)-[person_directed_movie:DIRECTED WHERE elementId(movie) = elementId(person_directed_movie)]->(movie) RETURN movie.title AS title, elementId(movie) AS v_movie_id");
+					"MATCH (_start:Person)-[person_directed_movie:DIRECTED]->(movie:Movie) RETURN movie.title AS title, elementId(movie) AS v_movie_id");
 		}
 
 	}

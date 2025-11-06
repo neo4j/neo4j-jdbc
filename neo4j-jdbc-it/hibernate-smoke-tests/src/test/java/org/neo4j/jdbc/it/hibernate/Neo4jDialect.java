@@ -29,4 +29,9 @@ public final class Neo4jDialect extends GenericDialect {
 		return new StandardSqlAstTranslatorFactory();
 	}
 
+	@Override
+	public boolean supportsStandardArrays() {
+		return true;
+	}
+
 }

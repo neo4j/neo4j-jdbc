@@ -1112,7 +1112,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		// Distribution of property names
 		var propertyCount = new HashMap<Value, AtomicInteger>();
-		for (Record record : records) {
+		for (Record record : records) { @SuppressWarnings("squid:S3047")
 
 			var propertyName = record.get(1);
 			propertyCount.computeIfAbsent(propertyName, ignored -> new AtomicInteger()).incrementAndGet();
