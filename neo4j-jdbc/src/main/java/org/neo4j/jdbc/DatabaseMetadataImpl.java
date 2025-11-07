@@ -1086,7 +1086,9 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 						column.type())));
 	}
 
-	@SuppressWarnings("squid:S3776") // Yep, this is complex.
+	// Yep, this is complex; S3047 is about looping the records twice
+	// which is needed however.
+	@SuppressWarnings({ "squid:S3776", "squid:S3047" })
 	@Override
 	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
 			throws SQLException {
@@ -1110,15 +1112,15 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		var cbvs = new HashSet<Value>();
 
-		// Distribution of property names
+		// Distribution of property names, needed upfront
 		var propertyCount = new HashMap<Value, AtomicInteger>();
-		for (Record record : records) { @SuppressWarnings("squid:S3047")
+		for (var record : records) {
 
 			var propertyName = record.get(1);
 			propertyCount.computeIfAbsent(propertyName, ignored -> new AtomicInteger()).incrementAndGet();
 		}
 
-		for (Record record : records) {
+		for (var record : records) {
 
 			var propertyName = record.get(1);
 			var propertyTypes = record.get(2);
