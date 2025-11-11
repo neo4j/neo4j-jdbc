@@ -1,6 +1,6 @@
 {
   "name": "neo4j-jdbc-manual",
-  "version": "6.0.0",
+  "version": "6.9.1",
   "description": "Neo4j JDBC Driver Documentation Site",
   "private": true,
   "scripts": {
@@ -24,8 +24,8 @@
   },
   "homepage": "https://github.com/neo4j/neo4j-jdbc",
   "dependencies": {
-    "@antora/cli": "^3.1.7",
-    "@antora/site-generator-default": "^3.1.7",
+    "@antora/cli": "^3.1.14",
+    "@antora/site-generator-default": "^3.1.14",
     "@neo4j-antora/aliases-redirects": "^0.2.3",
     "@neo4j-antora/antora-add-notes": "^0.3.1",
     "@neo4j-antora/antora-modify-sitemaps": "^0.4.4",

@@ -23,8 +23,10 @@ set -euo pipefail
 DIR="$(dirname "$(realpath "$0")")"
 
 sed -i.bak 's/\(:latest_version:\) \(.*\)/\1 '"${1}"'/g' $DIR/../README.adoc
-
 rm $DIR/../README.adoc.bak
+
+sed -i.bak 's/\(.*"version":\) ".*",/\1 "'${1}'",/g' $DIR/../etc/antora/package.json
+rm $DIR/../etc/antora/package.json.bak
 
 if test -n "${2-}"; then
   DRYRUN=$2
