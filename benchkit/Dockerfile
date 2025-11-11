@@ -35,5 +35,8 @@ COPY --from=builder application/dependencies/ ./
 COPY --from=builder application/spring-boot-loader/ ./
 COPY --from=builder application/snapshot-dependencies/ ./
 COPY --from=builder application/application/ ./
+RUN useradd -m hschneider
+RUN chown -R hschneider:hschneider /application
+USER hschneider
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 
