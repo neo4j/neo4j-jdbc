@@ -21,6 +21,7 @@ package org.neo4j.jdbc.it.cp;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -263,7 +264,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	void getReadOnlyShouldWork(String database, boolean expected) throws SQLException {
 		var info = new Properties();
 		info.put("password", this.neo4j.getAdminPassword());
-		try (var readOnlyConnection = driver.connect(getConnectionURL(database), info)) {
+		try (var readOnlyConnection = DriverManager.getConnection(getConnectionURL(database), info)) {
 			assertThat(readOnlyConnection.getMetaData().isReadOnly()).isEqualTo(expected);
 
 			// some smoke test for multi db setup
@@ -1158,8 +1159,8 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	void getTablesWithoutSamplingShouldWork() throws SQLException {
 		var info = new Properties();
 		info.put("password", this.neo4j.getAdminPassword());
-		try (var connectionWithLowerSampleSize = this.driver.connect(getConnectionURL() + "?relationshipSampleSize=-1",
-				info)) {
+		try (var connectionWithLowerSampleSize = DriverManager
+			.getConnection(getConnectionURL() + "?relationshipSampleSize=-1", info)) {
 			var metaData = connectionWithLowerSampleSize.getMetaData();
 			assertThatNoException().isThrownBy(() -> metaData.getTables(null, null, null, null));
 		}

@@ -19,7 +19,6 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -68,8 +67,6 @@ abstract class IntegrationTestBase {
 
 	protected boolean doClean = true;
 
-	protected Driver driver;
-
 	/**
 	 * Absolute classpath resources to copy over into the
 	 * <code>/var/lib/neo4j/import</code> folder inside the container.
@@ -85,12 +82,7 @@ abstract class IntegrationTestBase {
 		}
 
 		var url = getConnectionURL();
-		this.driver = DriverManager.getDriver(url);
-		var properties = new Properties();
-		properties.put("user", "neo4j");
-		properties.put("password", this.neo4j.getAdminPassword());
-		properties.put("database", "system");
-		try (var connection = this.driver.connect(url, properties); var stmt = connection.createStatement()) {
+		try (var connection = getConnection(false, false); var stmt = connection.createStatement()) {
 			var resultSet = stmt.executeQuery("CALL dbms.components() YIELD edition");
 			resultSet.next();
 			var edition = resultSet.getString("edition");
@@ -139,7 +131,7 @@ abstract class IntegrationTestBase {
 				properties.put(additionalProperties[0], additionalProperties[1]);
 			}
 		}
-		return this.driver.connect(url, properties);
+		return DriverManager.getConnection(url, properties);
 	}
 
 	String getConnectionURL() {

@@ -129,6 +129,70 @@ class TranslationIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void shouldInsertIntoRelationshipWithSamePropertiesWithTemplate() throws SQLException {
+
+		try (var connection = getConnection(true, true)) {
+			try (var statement = connection.prepareStatement(
+					"/*+ NEO4J FORCE_CYPHER */ CREATE (a:Person {name: 'Jack Nance'})-[:ACTED_IN {role: 'Henry Spencer'}]->(m:Movie {name: 'Eraserhead'})")) {
+				statement.executeUpdate();
+			}
+			var meta = connection.getMetaData();
+			var rs = meta.getColumns(null, null, "Person_ACTED_IN_Movie", null);
+			var columnNames = new ArrayList<String>();
+			while (rs.next()) {
+				columnNames.add(rs.getString("COLUMN_NAME"));
+			}
+			assertThat(columnNames).containsExactlyInAnyOrder("v$movie_id", "v$person_id", "v$id", "movie_name",
+					"person_name", "role");
+			rs.close();
+			try (var statement = connection.createStatement()) {
+				statement.executeUpdate(
+						"INSERT INTO Person_ACTED_IN_Movie(movie_name, person_name, role) VALUES ('Eraserhead', 'Jeanne Bates', 'Mrs. X')");
+			}
+
+			assertMovieAndPersonCreated(connection);
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "INSERT INTO Person_ACTED_IN_Movie(movie_name, person_name, role) VALUES (?, ?, ?)",
+			"INSERT INTO Person_ACTED_IN_Movie(movie.name, person.name, role) VALUES (?, ?, ?)" })
+	void shouldInsertIntoRelationshipWithSamePropertiesWithoutTemplate(String query) throws SQLException {
+
+		try (var connection = getConnection(true, true)) {
+			try (var ps = connection.prepareStatement(query)) {
+
+				ps.setString(1, "Eraserhead");
+				ps.setString(2, "Jeanne Bates");
+				ps.setString(3, "Mrs. X");
+				ps.addBatch();
+
+				ps.setString(1, "Eraserhead");
+				ps.setString(2, "Jack Nance");
+				ps.setString(3, "Henry Spencer");
+
+				ps.executeBatch();
+
+				assertMovieAndPersonCreated(connection);
+			}
+		}
+	}
+
+	private static void assertMovieAndPersonCreated(Connection connection) throws SQLException {
+		try (var statement = connection.createStatement();
+				var rs = statement.executeQuery(
+						"/*+ NEO4J FORCE_CYPHER */ MATCH (n:Movie {name: 'Eraserhead'})<-[:ACTED_IN]-(p:Person) RETURN n, collect(p.name)")) {
+			assertThat(rs.next()).isTrue();
+			var n = rs.getObject(1, Node.class);
+			assertThat(n.get("name")).extracting(Value::asString).isEqualTo("Eraserhead");
+			@SuppressWarnings("unchecked")
+			var p = (List<String>) rs.getObject(2, List.class);
+			assertThat(p).containsExactlyInAnyOrder("Jack Nance", "Jeanne Bates");
+			assertThat(rs.next()).isFalse();
+		}
+	}
+
+	@Test
 	void shouldInsertRelationshipBasedOnTemplate() throws SQLException {
 
 		try (var connection = getConnection(true, true)) {
@@ -815,6 +879,12 @@ class TranslationIT extends IntegrationTestBase {
 		}
 	}
 
+	record PersonAndTitle(String name, String title) {
+	}
+
+	record NameAndRoles(String name, List<String> roles) {
+	}
+
 	@Nested
 	class RelationshipInsertions {
 
@@ -933,12 +1003,6 @@ class TranslationIT extends IntegrationTestBase {
 			}
 		}
 
-	}
-
-	record PersonAndTitle(String name, String title) {
-	}
-
-	record NameAndRoles(String name, List<String> roles) {
 	}
 
 }

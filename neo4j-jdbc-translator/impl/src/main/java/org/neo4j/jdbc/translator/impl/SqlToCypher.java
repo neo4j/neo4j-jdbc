@@ -43,6 +43,7 @@ import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -388,7 +389,7 @@ final class SqlToCypher implements Translator {
 			return relProperties.entrySet().stream().flatMap(e -> Stream.of(e.getKey().last(), e.getValue())).toArray();
 		}
 
-		private static Node nodeWithProperties(Node src, Map<Name, Expression> properties) {
+		private Node nodeWithProperties(Node src, Map<Name, Expression> properties) {
 			return src.withProperties(toPropertyArray(properties));
 		}
 
@@ -711,9 +712,7 @@ final class SqlToCypher implements Translator {
 			var relProperties = getPropertiesFor(row, columns, relationship, used);
 			used.addAll(relProperties.keySet());
 
-			var left = nodeWithProperties(relationship.getLeft(), lhsProperties);
 			Condition leftCondition = Cypher.noCondition();
-			var right = nodeWithProperties(relationship.getRight(), rhsProperties);
 			Condition rightCondition = Cypher.noCondition();
 
 			var virtualIdColumns = getColumnsOf(toTableName(relationship)).stream()
@@ -724,23 +723,41 @@ final class SqlToCypher implements Translator {
 			var relationshipColumns = getColumnsOf(toTableName(relationship));
 			for (int i = 0; i < columns.size(); ++i) {
 				var targetColumn = columns.get(i).$name();
-				var isVirtualId = virtualIdColumns.contains(targetColumn.last());
-				if (isVirtualId && isVirtualIdColumnForNode(left, targetColumn.last())) {
-					leftCondition = leftCondition.and(Cypher.elementId(left).eq(row[i]));
+				var lastName = targetColumn.last();
+				var isVirtualId = virtualIdColumns.contains(lastName);
+				if (isVirtualId && isVirtualIdColumnForNode(relationship.getLeft(), lastName)) {
+					leftCondition = leftCondition.and(Cypher.elementId(relationship.getLeft()).eq(row[i]));
 				}
-				else if (isVirtualId && isVirtualIdColumnForNode(right, targetColumn.last())) {
-					rightCondition = rightCondition.and(Cypher.elementId(right).eq(row[i]));
+				else if (isVirtualId && isVirtualIdColumnForNode(relationship.getRight(), lastName)) {
+					rightCondition = rightCondition.and(Cypher.elementId(relationship.getRight()).eq(row[i]));
 				}
 				else if (!(lhsProperties.containsKey(targetColumn) || rhsProperties.containsKey(targetColumn))) {
-					if (relationshipColumns.stream()
-						.anyMatch(c -> label(relationship.getLeft()).equals(c.scopeTable)
-								&& c.name().equals(targetColumn.last()))) {
-						leftCondition = leftCondition.and(expression(columns.get(i)).eq(row[i]));
+					UnaryOperator<String> toLower = s -> s.toLowerCase(Locale.ROOT);
+					if (relationshipColumns.isEmpty() && lastName.contains("_")) {
+						var indexOf_ = lastName.indexOf("_");
+						var prefix = toLower.apply(lastName.substring(0, indexOf_).toLowerCase(Locale.ROOT));
+						if (isLabelOfNode(relationship.getLeft(), prefix, toLower)) {
+							lhsProperties.put(this.dslContext.parser().parseName(lastName.substring(indexOf_ + 1)),
+									row[i]);
+						}
+						else if (isLabelOfNode(relationship.getRight(), prefix, toLower)) {
+							rhsProperties.put(this.dslContext.parser().parseName(lastName.substring(indexOf_ + 1)),
+									row[i]);
+						}
+					}
+					else if (relationshipColumns.stream()
+						.anyMatch(
+								c -> label(relationship.getLeft()).equals(c.scopeTable) && c.name().equals(lastName))) {
+						relProperties.remove(targetColumn);
+						var property = (Property) expression(columns.get(i));
+						lhsProperties.put(this.dslContext.parser().parseName(property.getName()), row[i]);
 					}
 					else if (relationshipColumns.stream()
 						.anyMatch(c -> label(relationship.getRight()).equals(c.scopeTable)
-								&& c.name().equals(targetColumn.last()))) {
-						rightCondition = rightCondition.and(expression(columns.get(i)).eq(row[i]));
+								&& c.name().equals(lastName))) {
+						relProperties.remove(targetColumn);
+						var property = (Property) expression(columns.get(i));
+						rhsProperties.put(this.dslContext.parser().parseName(property.getName()), row[i]);
 					}
 					else {
 						relProperties.putIfAbsent(targetColumn, row[i]);
@@ -748,6 +765,9 @@ final class SqlToCypher implements Translator {
 				}
 			}
 			this.useAliasForVColumn.compareAndSet(false, true);
+
+			var left = nodeWithProperties(relationship.getLeft(), lhsProperties);
+			var right = nodeWithProperties(relationship.getRight(), rhsProperties);
 
 			var newRelationship = left.relationshipTo(right, relationship.getDetails().getTypes().get(0))
 				.withProperties(toPropertyArray(relProperties));
@@ -2343,11 +2363,15 @@ final class SqlToCypher implements Translator {
 		}
 
 		private static boolean isLabelOfNode(Node node, String needle) {
+			return isLabelOfNode(node, needle, UnaryOperator.identity());
+		}
+
+		private static boolean isLabelOfNode(Node node, String needle, UnaryOperator<String> transformer) {
 			if (needle == null) {
 				return false;
 			}
 
-			return node.getLabels().stream().map(NodeLabel::getValue).anyMatch(needle::equals);
+			return node.getLabels().stream().map(NodeLabel::getValue).map(transformer).anyMatch(needle::equals);
 		}
 
 		private static String label(Node node) {

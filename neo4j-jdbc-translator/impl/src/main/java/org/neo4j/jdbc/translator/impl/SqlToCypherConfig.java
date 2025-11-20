@@ -389,7 +389,7 @@ public final class SqlToCypherConfig {
 
 	/**
 	 * Converts this configuration into jOOQ settings.
-	 * @param withMetaLookups wether to use configurable lookups or not
+	 * @param withMetaLookups whether to use configurable lookups or not
 	 * @return jOOQ Settings
 	 * @deprecated No replacement, not to be used externally
 	 */
@@ -401,6 +401,7 @@ public final class SqlToCypherConfig {
 			.withParseWithMetaLookups(withMetaLookups)
 			.withDiagnosticsLogging(isJooqDiagnosticLogging())
 			.withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
+			// .withNamePathSeparator()
 			.withParseDialect(getSqlDialect());
 	}
 
