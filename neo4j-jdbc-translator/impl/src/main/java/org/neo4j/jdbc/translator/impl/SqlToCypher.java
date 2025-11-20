@@ -1225,14 +1225,13 @@ final class SqlToCypher implements Translator {
 				var finalContainer = pc;
 				if (column.scopeTable() != null && pc instanceof Relationship rel) {
 					UnaryOperator<String> toLower = s -> s.toLowerCase(Locale.ROOT);
-					Function<String, String> asScopePrefix = toLower.andThen(s -> s + "_");
 					if (isLabelOfNode(rel.getLeft(), column.scopeTable(), toLower)) {
 						finalContainer = rel.getLeft();
-						projectedName = columnName.replace(asScopePrefix.apply(column.scopeTable()), "");
+						projectedName = column.unscopedName();
 					}
 					else if (isLabelOfNode(rel.getRight(), column.scopeTable(), toLower)) {
 						finalContainer = rel.getRight();
-						projectedName = columnName.replace(asScopePrefix.apply(column.scopeTable()), "");
+						projectedName = column.unscopedName();
 					}
 				}
 				properties.add(finalContainer.property(projectedName).as(uniqueColumnName(columnName)));

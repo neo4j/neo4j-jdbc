@@ -142,7 +142,7 @@ class TranslationIT extends IntegrationTestBase {
 					"""
 							MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie)
 							WHERE 1 = 0
-							RETURN elementId(_start) AS `v$person_id`, elementId(person_acted_in_movie) AS `v$id`, _end.name AS movie_name, _start.name AS person_name, person_acted_in_movie.role AS role, elementId(_end) AS `v$movie_id`""");
+							RETURN elementId(_start) AS `v$person_id`, elementId(person_acted_in_movie) AS `v$id`, _start.name AS person_name, _end.name AS movie_name, person_acted_in_movie.role AS role, elementId(_end) AS `v$movie_id`""");
 
 			var meta = connection.getMetaData();
 			var rs = meta.getColumns(null, null, "Person_ACTED_IN_Movie", null);
