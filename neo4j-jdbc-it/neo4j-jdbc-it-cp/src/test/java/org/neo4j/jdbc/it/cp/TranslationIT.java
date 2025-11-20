@@ -131,11 +131,19 @@ class TranslationIT extends IntegrationTestBase {
 	@Test
 	void shouldInsertIntoRelationshipWithSamePropertiesWithTemplate() throws SQLException {
 
-		try (var connection = getConnection(true, true)) {
+		try (var connection = getConnection(true, true, "s2c.prettyPrint", "true")) {
 			try (var statement = connection.prepareStatement(
 					"/*+ NEO4J FORCE_CYPHER */ CREATE (a:Person {name: 'Jack Nance'})-[:ACTED_IN {role: 'Henry Spencer'}]->(m:Movie {name: 'Eraserhead'})")) {
 				statement.executeUpdate();
 			}
+
+			// Assert meta
+			assertThat(connection.nativeSQL("SELECT * FROM Person_ACTED_IN_Movie WHERE 1=0")).isEqualTo(
+					"""
+							MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie)
+							WHERE 1 = 0
+							RETURN elementId(_start) AS `v$person_id`, elementId(person_acted_in_movie) AS `v$id`, _end.name AS movie_name, _start.name AS person_name, person_acted_in_movie.role AS role, elementId(_end) AS `v$movie_id`""");
+
 			var meta = connection.getMetaData();
 			var rs = meta.getColumns(null, null, "Person_ACTED_IN_Movie", null);
 			var columnNames = new ArrayList<String>();
@@ -144,6 +152,7 @@ class TranslationIT extends IntegrationTestBase {
 			}
 			assertThat(columnNames).containsExactlyInAnyOrder("v$movie_id", "v$person_id", "v$id", "movie_name",
 					"person_name", "role");
+
 			rs.close();
 			try (var statement = connection.createStatement()) {
 				statement.executeUpdate(

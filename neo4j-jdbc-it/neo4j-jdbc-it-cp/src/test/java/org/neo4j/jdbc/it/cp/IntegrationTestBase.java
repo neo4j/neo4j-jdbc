@@ -81,7 +81,6 @@ abstract class IntegrationTestBase {
 					"/var/lib/neo4j/import/%s".formatted(resource.substring(resource.lastIndexOf("/") + 1)));
 		}
 
-		var url = getConnectionURL();
 		try (var connection = getConnection(false, false); var stmt = connection.createStatement()) {
 			var resultSet = stmt.executeQuery("CALL dbms.components() YIELD edition");
 			resultSet.next();

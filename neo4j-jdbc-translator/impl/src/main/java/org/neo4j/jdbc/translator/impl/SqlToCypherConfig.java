@@ -401,7 +401,6 @@ public final class SqlToCypherConfig {
 			.withParseWithMetaLookups(withMetaLookups)
 			.withDiagnosticsLogging(isJooqDiagnosticLogging())
 			.withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
-			// .withNamePathSeparator()
 			.withParseDialect(getSqlDialect());
 	}
 

@@ -735,7 +735,7 @@ final class SqlToCypher implements Translator {
 					UnaryOperator<String> toLower = s -> s.toLowerCase(Locale.ROOT);
 					if (relationshipColumns.isEmpty() && lastName.contains("_")) {
 						var indexOf_ = lastName.indexOf("_");
-						var prefix = toLower.apply(lastName.substring(0, indexOf_).toLowerCase(Locale.ROOT));
+						var prefix = lastName.substring(0, indexOf_).toLowerCase(Locale.ROOT);
 						if (isLabelOfNode(relationship.getLeft(), prefix, toLower)) {
 							lhsProperties.put(this.dslContext.parser().parseName(lastName.substring(indexOf_ + 1)),
 									row[i]);
@@ -1221,16 +1221,21 @@ final class SqlToCypher implements Translator {
 					continue;
 				}
 				var columnName = column.name();
+				var projectedName = columnName;
 				var finalContainer = pc;
 				if (column.scopeTable() != null && pc instanceof Relationship rel) {
-					if (isLabelOfNode(rel.getLeft(), column.scopeTable())) {
+					UnaryOperator<String> toLower = s -> s.toLowerCase(Locale.ROOT);
+					Function<String, String> asScopePrefix = toLower.andThen(s -> s + "_");
+					if (isLabelOfNode(rel.getLeft(), column.scopeTable(), toLower)) {
 						finalContainer = rel.getLeft();
+						projectedName = columnName.replace(asScopePrefix.apply(column.scopeTable()), "");
 					}
-					else if (isLabelOfNode(rel.getRight(), column.scopeTable())) {
+					else if (isLabelOfNode(rel.getRight(), column.scopeTable(), toLower)) {
 						finalContainer = rel.getRight();
+						projectedName = columnName.replace(asScopePrefix.apply(column.scopeTable()), "");
 					}
 				}
-				properties.add(finalContainer.property(columnName).as(uniqueColumnName(columnName)));
+				properties.add(finalContainer.property(projectedName).as(uniqueColumnName(columnName)));
 			}
 			return properties;
 		}
@@ -2371,7 +2376,8 @@ final class SqlToCypher implements Translator {
 				return false;
 			}
 
-			return node.getLabels().stream().map(NodeLabel::getValue).map(transformer).anyMatch(needle::equals);
+			var target = transformer.apply(needle);
+			return node.getLabels().stream().map(NodeLabel::getValue).map(transformer).anyMatch(target::equals);
 		}
 
 		private static String label(Node node) {
