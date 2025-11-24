@@ -144,7 +144,7 @@
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
 		<cypher-v5-antlr-parser.version>5.26.17</cypher-v5-antlr-parser.version>
-		<docker-maven-plugin.version>0.47.0</docker-maven-plugin.version>
+		<docker-maven-plugin.version>0.48.0</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.6.2</exec-maven-plugin.version>
@@ -154,7 +154,7 @@
 		<jackson.version>2.20.1</jackson.version>
 		<jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
-		<japicmp-maven-plugin.version>0.24.2</japicmp-maven-plugin.version>
+		<japicmp-maven-plugin.version>0.25.0</japicmp-maven-plugin.version>
 		<java-build.version>25</java-build.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.4</jaxb-api.version>
@@ -201,7 +201,7 @@
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<quarkus.platform.version>3.29.3</quarkus.platform.version>
+		<quarkus.platform.version>3.29.4</quarkus.platform.version>
 		<skipITs>${skipTests}</skipITs>
 		<skipTests>false</skipTests>
 		<skipUTs>${skipTests}</skipUTs>
@@ -211,9 +211,9 @@
 		<spring-boot.version>4.0.0</spring-boot.version>
 		<spring-javaformat.version>0.0.47</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
-		<testcontainers-keycloak.version>3.9.0</testcontainers-keycloak.version>
+		<testcontainers-keycloak.version>4.0.0</testcontainers-keycloak.version>
 		<testcontainers.version>2.0.2</testcontainers.version>
-		<versions-maven-plugin.version>2.19.1</versions-maven-plugin.version>
+		<versions-maven-plugin.version>2.20.0</versions-maven-plugin.version>
 	</properties>
 
 	<dependencyManagement>
