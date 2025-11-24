@@ -29,13 +29,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.neo4j.jdbc.values.Node;
@@ -160,6 +163,47 @@ class TranslationIT extends IntegrationTestBase {
 			}
 
 			assertMovieAndPersonCreated(connection);
+		}
+	}
+
+	Stream<Arguments> shouldSelectPrefixedAndNonePrefixedProperties() {
+		return Stream.of(Arguments.of("SELECT person_name, movie_name FROM Person_ACTED_IN_Movie", "person_name",
+				"movie_name",
+				"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN _start.name AS person_name, _end.name AS movie_name"),
+				Arguments.of("SELECT Person.name, Movie.name FROM Person_ACTED_IN_Movie", "_start.name", "_end.name",
+						"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN _start.name, _end.name"),
+				Arguments.of("SELECT Person.name AS person_name, Movie.name AS movie_name FROM Person_ACTED_IN_Movie",
+						"person_name", "movie_name",
+						"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN _start.name AS person_name, _end.name AS movie_name"),
+				Arguments.of("SELECT person.name, movie.name FROM Person_ACTED_IN_Movie", "_start.name", "_end.name",
+						"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN _start.name, _end.name"),
+				Arguments.of("SELECT person.name AS person_name, movie.name AS movie_name FROM Person_ACTED_IN_Movie",
+						"person_name", "movie_name",
+						"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN _start.name AS person_name, _end.name AS movie_name"),
+				Arguments.of("SELECT * FROM Person_ACTED_IN_Movie", "person_name", "movie_name",
+						"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) RETURN elementId(_start) AS `v$person_id`, elementId(person_acted_in_movie) AS `v$id`, _start.name AS person_name, _end.name AS movie_name, person_acted_in_movie.role AS role, elementId(_end) AS `v$movie_id`"));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void shouldSelectPrefixedAndNonePrefixedProperties(String query, String col1, String col2, String expected)
+			throws SQLException {
+
+		try (var connection = getConnection(false, false)) {
+			try (var statement = connection.prepareStatement(
+					"CREATE (a:Person {name: 'Brad Pitt'})-[:ACTED_IN {role: 'David Mills'}]->(m:Movie {name: 'Seven'})")) {
+				statement.executeUpdate();
+			}
+		}
+
+		try (var connection = getConnection(true, false)) {
+			assertThat(connection.nativeSQL(query)).isEqualTo(expected);
+			try (var statement = connection.createStatement()) {
+				var rs = statement.executeQuery(query);
+				assertThat(rs.next()).isTrue();
+				assertThat(rs.getString(col1)).isEqualTo("Brad Pitt");
+				assertThat(rs.getString(col2)).isEqualTo("Seven");
+			}
 		}
 	}
 
