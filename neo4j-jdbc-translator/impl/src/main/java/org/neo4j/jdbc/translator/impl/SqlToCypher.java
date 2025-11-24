@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
@@ -1139,7 +1140,7 @@ final class SqlToCypher implements Translator {
 				var theField = (s instanceof QOM.FieldAlias<?> fa) ? fa.$aliased() : s;
 				Expression col;
 				if (theField instanceof TableField<?, ?> tf && tf.getTable() == null) {
-					col = findTableFieldInTables(tf, true, !(s instanceof QOM.FieldAlias<?>));
+					col = findTableFieldInTables(tf, true, !(s instanceof QOM.FieldAlias<?>), true);
 				}
 				else {
 					col = expression(s);
@@ -1302,6 +1303,23 @@ final class SqlToCypher implements Translator {
 			}
 		}
 
+		boolean containsMatchingScopedColumn(Set<CachedColumn> columns, BiPredicate<CachedColumn, String> predicate,
+				String fieldName) {
+			return columns.stream().anyMatch(c -> predicate.test(c, fieldName));
+		}
+
+		boolean hasField(Node node, String fieldName) {
+			return node.getLabels()
+				.stream()
+				.map(NodeLabel::getValue)
+				.flatMap(t -> this.getColumnsOf(t).stream())
+				.anyMatch(c -> c.name().equals(fieldName));
+		}
+
+		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName, boolean doAlias) {
+			return findTableFieldInTables(tf, fallbackToFieldName, doAlias, false);
+		}
+
 		/**
 		 * Looks for the table field {@code tf} in the list of {@code tables} for all
 		 * those cases in which the table field does not have an associated table with it.
@@ -1309,32 +1327,67 @@ final class SqlToCypher implements Translator {
 		 * @param fallbackToFieldName set to {@literal true} to fall back to the plain
 		 * field name
 		 * @param doAlias if we can use the field name as alias
+		 * @param isProjection is this a projected field (if so, we do try to resolve
+		 * relationship columns in a single matching table)
 		 * @return the Cypher column that was determined
 		 */
 		@SuppressWarnings("squid:S3776") // Yep, this is complex.
-		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName, boolean doAlias) {
+		private Expression findTableFieldInTables(TableField<?, ?> tf, boolean fallbackToFieldName, boolean doAlias,
+				boolean isProjection) {
 			Expression col = null;
+			var fieldName = tf.getName();
+			var alias = fieldName;
 			if (this.tables.size() == 1) {
 				Table<?> theTable = this.tables.get(0);
 				var propertyContainer = (PropertyContainer) resolveTableOrJoin(theTable).get(0);
 				if (isElementId(tf)) {
-					return makeId(propertyContainer, tf.getName());
+					return makeId(propertyContainer, fieldName);
 				}
 				if (isFkId(tf) != null && propertyContainer instanceof Relationship rel) {
-					if (isVirtualIdColumnForNode(rel.getLeft(), tf.getName())) {
-						return makeId(rel.getLeft(), tf.getName());
+					if (isVirtualIdColumnForNode(rel.getLeft(), fieldName)) {
+						return makeId(rel.getLeft(), fieldName);
 					}
-					else if (isVirtualIdColumnForNode(rel.getRight(), tf.getName())) {
-						return makeId(rel.getRight(), tf.getName());
+					else if (isVirtualIdColumnForNode(rel.getRight(), fieldName)) {
+						return makeId(rel.getRight(), fieldName);
 					}
 				}
-				col = propertyContainer.getSymbolicName().filter(f -> !f.getValue().equals(tf.getName())).map(__ -> {
-					var property = propertyContainer.property(tf.getName());
-					if (doAlias) {
-						return property.as(tf.getName());
+
+				if (isProjection && propertyContainer instanceof Relationship relationship) {
+					var relationshipColumns = getColumnsOf(fieldName);
+					UnaryOperator<String> toLower = s -> s.toLowerCase(Locale.ROOT);
+					if (relationshipColumns.isEmpty() && fieldName.contains("_")) {
+						var indexOf_ = fieldName.indexOf("_");
+						var prefix = toLower.apply(fieldName.substring(0, indexOf_));
+						if (isLabelOfNode(relationship.getLeft(), prefix, toLower)) {
+							propertyContainer = relationship.getLeft();
+							fieldName = fieldName.substring(indexOf_ + 1);
+						}
+						else if (isLabelOfNode(relationship.getRight(), prefix, toLower)) {
+							propertyContainer = relationship.getRight();
+							fieldName = fieldName.substring(indexOf_ + 1);
+						}
 					}
-					return property;
-				}).orElse(null);
+					else if (containsMatchingScopedColumn(relationshipColumns,
+							(c, n) -> label(relationship.getLeft()).equals(c.scopeTable()) && c.name().equals(n),
+							fieldName)) {
+						propertyContainer = relationship.getLeft();
+					}
+					else if (containsMatchingScopedColumn(relationshipColumns,
+							(c, n) -> label(relationship.getRight()).equals(c.scopeTable()) && c.name().equals(n),
+							fieldName)) {
+						propertyContainer = relationship.getRight();
+					}
+				}
+
+				if (!propertyContainer.getSymbolicName().map(SymbolicName::getValue).orElse("").equals(fieldName)) {
+					var property = propertyContainer.property(fieldName);
+					if (doAlias) {
+						col = property.as(alias);
+					}
+					else {
+						col = property;
+					}
+				}
 			}
 			else if (this.databaseMetaData != null) {
 				var isId = isElementId(tf);
@@ -1345,19 +1398,19 @@ final class SqlToCypher implements Translator {
 					// Figure out virtual columns
 					if (isId) {
 						var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
-						return makeId(pc, tf.getName());
+						return makeId(pc, fieldName);
 					}
 					if (tableName.equalsIgnoreCase(prefix)) {
 						var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
-						return makeId(pc, tf.getName());
+						return makeId(pc, fieldName);
 					}
 
 					try (var columns = this.databaseMetaData.getColumns(null, null, tableName, null)) {
 						while (columns.next()) {
 							var columnName = columns.getString("COLUMN_NAME");
-							if (columnName.equals(tf.getName())) {
+							if (columnName.equals(fieldName)) {
 								var pc = (PropertyContainer) resolveTableOrJoin(table).get(0);
-								col = pc.property(tf.getName());
+								col = pc.property(fieldName);
 							}
 						}
 					}
@@ -1368,7 +1421,7 @@ final class SqlToCypher implements Translator {
 			}
 
 			if (col == null && fallbackToFieldName) {
-				col = Cypher.name(tf.getName());
+				col = Cypher.name(fieldName);
 			}
 			if (col instanceof Property property && this.resolvedRelationships
 				.get(property.getContainer().getRequiredSymbolicName()) instanceof Relationship rel) {
@@ -1377,26 +1430,15 @@ final class SqlToCypher implements Translator {
 				if (optionalScopedColumn.isPresent()) {
 					col = optionalScopedColumn.get();
 				}
-				else if (getColumnsOf(toTableName(rel)).stream()
-					.filter(cachedColumn -> cachedColumn.scopeTable() == null)
-					.anyMatch(c -> c.name().equals(tf.getName()))) {
-					col = rel.property(tf.getName());
+				else if (containsMatchingScopedColumn(getColumnsOf(toTableName(rel)),
+						(c, n) -> c.scopeTable() == null && c.name().equals(n), fieldName)) {
+					col = rel.property(fieldName);
 				}
-				else if (rel.getLeft()
-					.getLabels()
-					.stream()
-					.map(NodeLabel::getValue)
-					.flatMap(t -> this.getColumnsOf(t).stream())
-					.anyMatch(c -> c.name().equals(tf.getName()))) {
-					col = rel.getLeft().property(tf.getName());
+				else if (hasField(rel.getLeft(), fieldName)) {
+					col = rel.getLeft().property(fieldName);
 				}
-				else if (rel.getRight()
-					.getLabels()
-					.stream()
-					.map(NodeLabel::getValue)
-					.flatMap(t -> this.getColumnsOf(t).stream())
-					.anyMatch(c -> c.name().equals(tf.getName()))) {
-					col = rel.getRight().property(tf.getName());
+				else if (hasField(rel.getRight(), fieldName)) {
+					col = rel.getRight().property(fieldName);
 				}
 			}
 			return col;
@@ -1462,7 +1504,7 @@ final class SqlToCypher implements Translator {
 				// Check if access to relationships has been qualified
 				for (var pattern : this.resolvedRelationships.values()) {
 					if (pattern instanceof Relationship rel) {
-						Predicate<String> labelOrTypePredicate = v -> v.equals(table.getName());
+						Predicate<String> labelOrTypePredicate = v -> v.equalsIgnoreCase(table.getName());
 						if (rel.getLeft()
 							.getLabels()
 							.stream()
