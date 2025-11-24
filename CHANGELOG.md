@@ -1,3 +1,141 @@
+# 6.10.0
+
+## 🚀 Features
+- 0113b73 feat(translator): Add support for `LEFT JOIN` and improve flattening of joins. (#1170)
+- 1c6b3e6 feat: Add support for retrieving generated keys.
+
+## 🐛 Bug Fixes
+- cf9003f fix(benchkit): Use correct classname for configuring the OpenAPI date format inside Springs Jackson customizer.
+- d88f2b8 Fix formatting errors.
+
+## 🔄️ Refactorings
+- f5b5a11 refactor(benchkit): Use a non-root user for running the entry point of the container.
+- ecd7a5c refactor: More improvements on the metadata of virtual tables for relationships. (#1169)
+- 8103de6 refactor(translator): Don’t wrap parameters in an artifical list for the `IN` keyword.
+
+## 📝 Documentation
+- 3cb81a0 chore: Update dependencies for Antora-Documentation generation, bump driver version in `package.json`.
+
+## 🧹 Housekeeping
+- 3512912 Bump org.apache.commons:commons-lang3 from 3.19.0 to 3.20.0 (#1183)
+- f75f188 Bump org.testcontainers:testcontainers-bom (#1187)
+- a14f086 Bump org.apache.maven.plugins:maven-jar-plugin (#1186)
+- 39ffa48 Bump org.graalvm.buildtools:native-maven-plugin (#1185)
+- f795894 Bump org.jooq:jooq from 3.19.27 to 3.19.28 (#1184)
+- 4d5ed8d Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#1182)
+- f921652 Bump com.puppycrawl.tools:checkstyle from 12.1.1 to 12.1.2 (#1181)
+- ec179e7 Bump quarkus.platform.version from 3.29.2 to 3.29.3 (#1180)
+- fbdcb37 Bump org.apache.maven.plugins:maven-release-plugin (#1179)
+- 6de0152 Bump org.neo4j:cypher-v5-antlr-parser (#1178)
+- 0540859 Bump org.jdbi:jdbi3-bom from 3.49.6 to 3.50.0 (#1177)
+- faac034 Bump io.micrometer:micrometer-tracing-bom (#1176)
+- ddea6e6 build(deps-dev): Bump org.asciidoctor:asciidoctorj from 3.0.0 to 3.0.1 (#1175)
+- 04a9e07 Bump quarkus.platform.version from 3.28.4 to 3.29.2 (#1174)
+- 2d2b60b Bump org.hibernate.orm:hibernate-platform (#1173)
+- d821e36 Bump org.openapitools:openapi-generator-maven-plugin (#1172)
+- 4f4d21e Bump io.micrometer:micrometer-bom from 1.15.5 to 1.16.0 (#1171)
+- 6ed4599 Bump org.junit:junit-bom from 6.0.0 to 6.0.1 (#1163)
+- 75b93da Bump io.fabric8:docker-maven-plugin from 0.46.0 to 0.47.0 (#1160)
+- 474cc4e Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1165)
+- 48427cb Bump com.fasterxml.jackson:jackson-bom (#1164)
+- 1a70651 Bump org.asciidoctor:asciidoctorj-pdf from 2.3.20 to 2.3.23 (#1166)
+- 61036fc Bump spring-boot.version from 3.5.6 to 3.5.7 (#1162)
+- 9b7c466 Bump org.jreleaser:jreleaser-maven-plugin (#1161)
+- 8cd78c0 Bump dev.langchain4j:langchain4j-bom from 1.7.1 to 1.8.0 (#1159)
+- eccba7d Bump org.openapitools:jackson-databind-nullable (#1158)
+- d1dbf45 Bump org.neo4j:cypher-v5-antlr-parser (#1157)
+
+## 🛠 Build
+- 651b875 build: Require JDK 25 for all pipelines, run integration tests on 17 and 25. (#1167)
+
+
+# 6.9.1
+
+Thanks a lot to @meistermeier and @venikkin for providing me with a plethora of test cases making the relationship insertion feature much better.
+
+## 🐛 Bug Fixes
+- a9ebf0e fix: Parameter name generation and handling with index like parameters.
+- 80b08a8 fix: Improve relationship insertation.
+
+## 🔄️ Refactorings
+- 8fc9395 refactor: Use more common start/end notation than lhs/rhs.
+
+## 🧹 Housekeeping
+- 95bd1c5 Bump org.testcontainers:testcontainers-bom from 1.21.3 to 2.0.1 (#1144)
+- 5388da7 Bump eu.michael-simons.maven:native-image-config-transformer (#1151)
+- 9b528ef Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1149)
+- 276e538 Bump io.micrometer:micrometer-bom from 1.15.4 to 1.15.5 (#1153)
+- 7554a85 Bump com.puppycrawl.tools:checkstyle from 12.0.1 to 12.1.1 (#1154)
+- f756741 Bump io.netty:netty-bom from 4.1.127.Final to 4.1.128.Final (#1152)
+- e987ada Bump io.micrometer:micrometer-tracing-bom (#1148)
+- 12da0b1 Bump org.codehaus.mojo:exec-maven-plugin (#1147)
+- 289c581 Bump org.graalvm.buildtools:native-maven-plugin (#1146)
+- 6a06192 Bump quarkus.platform.version from 3.28.3 to 3.28.4 (#1145)
+
+
+# 6.9.0
+
+This release contains a major new feature: Manipulating Neo4j-Relationships via plain SQL. Essentially, you can now create a relationship like this
+
+```sql
+INSERT INTO Person_ACTED_IN_Movie(name, role, title)
+VALUES
+    ('Jaret Leto', 'Ares', 'TRON Ares'),
+    ('Jodie Turner-Smith', 'Athena', 'TRON Ares');
+```
+
+which will give you this graph:
+
+![](https://neo4j.com/docs/jdbc-manual/current/_images/after_first_insert.png)
+
+Read the full manual here [Manipulating relationships](https://neo4j.com/docs/jdbc-manual/current/sql2cypher/#s2c_manipulating_relationships)
+
+The release also brings support for TCP fast open on the network level and makes the driver more future proof by supporting the `UNSUPPORTED` bolt type (no pun intended).
+
+## 🚀 Features
+- 40b3c01 feat: Allow manipulation of relationships via a single target table. (#1143)
+- 2babc58 feat: Add support for the `UNSUPPORTED` bolt type. (#1120)
+- d94cc1e feat: Add support for the TCP fast open provided by the Bolt connection api.
+
+## 🐛 Bug Fixes
+- 489bbed fix(tracing): Enable tracing to work with Query API (#1142)
+
+## 📝 Documentation
+- 4f4043a docs: Update local changelog.
+
+## 🧹 Housekeeping
+- e9c37c0 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1136)
+- 51ca0a3 Bump org.jacoco:jacoco-maven-plugin from 0.8.13 to 0.8.14 (#1140)
+- e1e7695 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1141)
+- 861dce5 Bump com.puppycrawl.tools:checkstyle from 11.1.0 to 12.0.1 (#1139)
+- 24472fe Bump org.hibernate.orm:hibernate-platform (#1138)
+- 23f2471 Bump quarkus.platform.version from 3.28.2 to 3.28.3 (#1137)
+- c5115e7 Bump org.neo4j:cypher-v5-antlr-parser (#1135)
+- a50c79c Bump org.codehaus.mojo:exec-maven-plugin (#1134)
+- d0f5133 Bump org.keycloak:keycloak-authz-client (#1132)
+- b681221 Bump org.jooq:jooq from 3.19.26 to 3.19.27 (#1130)
+- 218841d Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1133)
+- f3665af Bump org.junit:junit-bom from 5.13.4 to 6.0.0 (#1131)
+- b8df800 Bump org.hibernate.orm:hibernate-platform (#1129)
+- 9da839e Bump org.jdbi:jdbi3-bom from 3.49.5 to 3.49.6 (#1128)
+- bbd4c41 Bump org.apache.maven.plugins:maven-enforcer-plugin (#1127)
+- 62aa255 Bump org.asciidoctor:asciidoctorj-pdf from 2.3.19 to 2.3.20 (#1126)
+- 987ee03 Bump quarkus.platform.version from 3.28.1 to 3.28.2 (#1125)
+- 82a0ae4 Bump dev.langchain4j:langchain4j-bom from 1.6.0 to 1.7.1 (#1124)
+- 77c4728 Bump org.apache.commons:commons-lang3 from 3.18.0 to 3.19.0 (#1119)
+- 5eb90d5 Bump org.neo4j:neo4j-cypher-dsl-bom (#1115)
+- f77b325 Bump dev.langchain4j:langchain4j-bom from 1.5.0 to 1.6.0 (#1122)
+- a2ee1e2 Bump org.assertj:assertj-core from 3.27.5 to 3.27.6 (#1121)
+- a21a4da Bump com.puppycrawl.tools:checkstyle from 11.0.1 to 11.1.0 (#1118)
+- 7dd9833 Bump quarkus.platform.version from 3.26.4 to 3.28.1 (#1117)
+- 1aa4e4c Bump org.graalvm.buildtools:native-maven-plugin (#1116)
+- 5ecb3bb Bump org.openapitools:openapi-generator-maven-plugin (#1114)
+- ab98657 build: Ignore more betas and milestones in the versions plugin.
+- 6a71609 build: Upgrade testing to Neo4j 2025.09. (#1123)
+- 3c35616 build: Update dependencies
+- 1204349 build: Update dependencies.
+
+
 # 6.8.0
 
 This release brings support for transmitting the new data types optimised for vector storage in future Neo4j versions. If you want to try them out, you need at least Neo4j 2025.8 and enable several settings on the database site. Consult the Neo4j documentation on how to do that.
