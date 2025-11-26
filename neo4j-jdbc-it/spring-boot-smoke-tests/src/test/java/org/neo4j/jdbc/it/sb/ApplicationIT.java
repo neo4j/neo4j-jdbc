@@ -20,16 +20,13 @@ package org.neo4j.jdbc.it.sb;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import io.micrometer.core.instrument.Statistic;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tools.jackson.core.Version;
-import tools.jackson.databind.JacksonModule;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.boot.micrometer.metrics.actuate.endpoint.MetricsEndpoint;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
@@ -122,52 +119,9 @@ public class ApplicationIT {
 	static class JacksonAdditionalConfig {
 
 		@Bean
-		JacksonModule MetricsEndpointMixinsModule() {
-			return new JacksonModule() {
-				@Override
-				public String getModuleName() {
-					return "MetricsEndpointMixins";
-				}
-
-				@Override
-				public Version version() {
-					return Version.unknownVersion();
-				}
-
-				@Override
-				public void setupModule(SetupContext context) {
-					context.setMixIn(MetricsEndpoint.AvailableTag.class, AvailableTagMixin.class);
-					context.setMixIn(MetricsEndpoint.MetricDescriptor.class, MetricDescriptorMixin.class);
-					context.setMixIn(MetricsEndpoint.Sample.class, SampleMixin.class);
-				}
-			};
-		}
-
-		abstract static class MetricDescriptorMixin {
-
-			@JsonCreator
-			MetricDescriptorMixin(String name, String description, String baseUnit,
-					List<MetricsEndpoint.Sample> measurements,
-					List<org.springframework.boot.micrometer.metrics.actuate.endpoint.MetricsEndpoint.AvailableTag> availableTags) {
-			}
-
-		}
-
-		abstract static class SampleMixin {
-
-			@JsonCreator
-			SampleMixin(Statistic statistic, Double value) {
-
-			}
-
-		}
-
-		abstract static class AvailableTagMixin {
-
-			@JsonCreator
-			AvailableTagMixin(String tag, Set<String> values) {
-			}
-
+		JsonMapperBuilderCustomizer jacksonCustomizer() {
+			return builder -> builder
+				.changeDefaultVisibility(v -> v.withCreatorVisibility(JsonAutoDetect.Visibility.NON_PRIVATE));
 		}
 
 	}
