@@ -25,7 +25,7 @@
 	<parent>
 		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-tracing</artifactId>
-		<version>6.10.1-SNAPSHOT</version>
+		<version>6.10.1</version>
 	</parent>
 
 	<artifactId>neo4j-jdbc-tracing-micrometer</artifactId>
@@ -78,4 +78,8 @@
 			</plugin>
 		</plugins>
 	</build>
+
+  <scm>
+    <tag>6.10.1</tag>
+  </scm>
 </project>
