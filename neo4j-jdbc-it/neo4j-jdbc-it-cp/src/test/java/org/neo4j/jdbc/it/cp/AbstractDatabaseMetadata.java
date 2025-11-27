@@ -1194,8 +1194,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 						"release", "title", "role");
 			}
 
-			try (var stmt = con.createStatement();
-					var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
 				var values = new ArrayList<String>();
 				while (rs.next()) {
 					values.add(rs.getString("born") + "_" + rs.getString("release"));
