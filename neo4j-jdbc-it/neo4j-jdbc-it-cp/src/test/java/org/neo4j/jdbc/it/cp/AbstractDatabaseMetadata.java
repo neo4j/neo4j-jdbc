@@ -1167,6 +1167,44 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	void onlyMatchingStartAndEndLabelsMustBeConsideredForProperties() throws SQLException {
+		var graph = """
+					/*+ NEO4J FORCE_CYPHER */
+					CREATE (:Person:A {name: 'Christoph Schlingensief', born: localdatetime({year: 1960})})
+					CREATE (:Person:B {name: 'Per Berglund', born: 1939})
+					CREATE (a1:Person:C {name: 'Alfred Edel', born: "1932"})
+					CREATE (a2:Person:D {name: 'Karina Fallenstein', born: 1961})
+					CREATE (m:Movie {title: 'Das deutsche Kettensägenmassaker', release:"1990"})
+					CREATE (a1)-[:ACTED_IN {role: 'Alfred'}]->(m)
+					CREATE (a2)-[:ACTED_IN {role: 'Clara'}]->(m)
+					CREATE (a1)-[:ACTED_IN {role: 'Polizist im Gewahrsam'}]->(:Movie {title: 'Der demokratische Terrorist', release:1992})
+				""";
+
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.createStatement()) {
+				stmt.execute(graph);
+			}
+			var meta = con.getMetaData();
+			try (var rs = meta.getColumns(null, null, "Person_ACTED_IN_Movie", null)) {
+				var columnNames = new ArrayList<String>();
+				while (rs.next()) {
+					columnNames.add(rs.getString("COLUMN_NAME"));
+				}
+				assertThat(columnNames).containsExactlyInAnyOrder("v$movie_id", "v$person_id", "v$id", "born", "name",
+						"release", "title", "role");
+			}
+
+			try (var stmt = con.createStatement(); var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
+				var values = new ArrayList<String>();
+				while (rs.next()) {
+					values.add(rs.getString("born") + "_" + rs.getString("release"));
+				}
+				assertThat(values).containsExactlyInAnyOrder("1932_1992", "1932_1990", "1961_1990");
+			}
+		}
+	}
+
+	@Test
 	void getTablesWithStrictPattern() throws SQLException {
 
 		try (Statement statement = this.connection.createStatement()) {
