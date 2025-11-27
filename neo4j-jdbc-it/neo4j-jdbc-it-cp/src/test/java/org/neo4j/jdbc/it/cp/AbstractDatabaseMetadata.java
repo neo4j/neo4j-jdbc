@@ -1180,11 +1180,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 					CREATE (a1)-[:ACTED_IN {role: 'Polizist im Gewahrsam'}]->(:Movie {title: 'Der demokratische Terrorist', release:1992})
 				""";
 
-		try (var connection = getConnection(true, true)) {
-			try (var stmt = connection.createStatement()) {
+		try (var con = getConnection(true, true)) {
+			try (var stmt = con.createStatement()) {
 				stmt.execute(graph);
 			}
-			var meta = connection.getMetaData();
+			var meta = con.getMetaData();
 			try (var rs = meta.getColumns(null, null, "Person_ACTED_IN_Movie", null)) {
 				var columnNames = new ArrayList<String>();
 				while (rs.next()) {
@@ -1194,7 +1194,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 						"release", "title", "role");
 			}
 
-			try (var stmt = connection.createStatement();
+			try (var stmt = con.createStatement();
 					var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
 				var values = new ArrayList<String>();
 				while (rs.next()) {
