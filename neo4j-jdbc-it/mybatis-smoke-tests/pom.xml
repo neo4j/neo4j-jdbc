@@ -32,7 +32,7 @@
 	<name>Neo4j JDBC Driver (MyBatis Smoke tests)</name>
 
 	<properties>
-		<mybatis-spring-boot-starter.version>3.0.5</mybatis-spring-boot-starter.version>
+		<mybatis-spring-boot-starter.version>4.0.0</mybatis-spring-boot-starter.version>
 	</properties>
 
 	<dependencyManagement>
