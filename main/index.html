@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2025-12-08T10:18:03Z</span>
+<span id="revdate">2025-12-09T10:56:53Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -995,7 +995,7 @@ So for all <code>PreparedStatement</code> instances you need to specify paramete
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="type">var</span> match = <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (n:Movie {title: $title}) RETURN n.title AS title</span><span class="delimiter">&quot;</span></span>;
 <span class="keyword">try</span> (<span class="type">var</span> con = <span class="predefined-type">DriverManager</span>.getConnection(url, username, password);
-        Neo4jPreparedStatement stmt = (Neo4jPreparedStatement) con.prepareStatement(match)) {
+        Neo4jPreparedStatement stmt = con.prepareStatement(match).unwrap(Neo4jPreparedStatement.class)) {
     stmt.setString(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Test</span><span class="delimiter">&quot;</span></span>);
     <span class="keyword">try</span> (<span class="type">var</span> resultSet = stmt.executeQuery()) {
         <span class="keyword">while</span> (resultSet.next()) {
@@ -6015,7 +6015,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-12-08 10:18:21 UTC
+Last updated 2025-12-09 10:57:09 UTC
 </div>
 </div>
 </body>
