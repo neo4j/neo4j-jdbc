@@ -61,7 +61,7 @@ public final class NamedParameters {
 		// tag::index-np[]
 		var match = "MATCH (n:Movie {title: $title}) RETURN n.title AS title";
 		try (var con = DriverManager.getConnection(url, username, password);
-				Neo4jPreparedStatement stmt = (Neo4jPreparedStatement) con.prepareStatement(match)) {
+				Neo4jPreparedStatement stmt = con.prepareStatement(match).unwrap(Neo4jPreparedStatement.class)) {
 			stmt.setString("title", "Test");
 			try (var resultSet = stmt.executeQuery()) {
 				while (resultSet.next()) {
