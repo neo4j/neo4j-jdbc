@@ -41,8 +41,8 @@ Last but not least, you can add `http` as sub-protocol when using the Neo4j-JDBC
 [source, text]
 
 ----
-jdbc:neo4j:http//<host>:<port>/<database>?param1=value1&param2=value2
-jdbc:neo4j:https//<host>:<port>/<database>?param1=value1&param2=value2
+jdbc:neo4j:http://<host>:<port>/<database>?param1=value1&param2=value2
+jdbc:neo4j:https://<host>:<port>/<database>?param1=value1&param2=value2
 ----
 
 Usually, Neo4j provides the HTTP port on 7474 or 7473. When you don't specify the port, the Neo4j JDBC Driver defaults to 80 and 443 for http and https respectively.
