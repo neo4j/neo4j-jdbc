@@ -43,6 +43,7 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -587,8 +588,32 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 	}
 
 	private void setObjectParameter(String parameterName, Object value) throws SQLException {
-		if (value instanceof Date date) {
+		if (value instanceof Boolean booleanValue) {
+			setBoolean(parameterName, booleanValue);
+		}
+		else if (value instanceof Date date) {
 			setDate(parameterName, date);
+		}
+		else if (value instanceof Duration duration) {
+			setParameter(parameterName, Values.value(duration));
+		}
+		else if (value instanceof Float aNumber) {
+			setFloat(parameterName, aNumber);
+		}
+		else if (value instanceof Double aNumber) {
+			setDouble(parameterName, aNumber);
+		}
+		else if (value instanceof BigDecimal aNumber) {
+			setBigDecimal(parameterName, aNumber);
+		}
+		else if (value instanceof Short aNumber) {
+			setShort(parameterName, aNumber);
+		}
+		else if (value instanceof Integer aNumber) {
+			setInt(parameterName, aNumber);
+		}
+		else if (value instanceof Long aNumber) {
+			setLong(parameterName, aNumber);
 		}
 		else if (value instanceof Time time) {
 			setTime(parameterName, time);
@@ -596,8 +621,14 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		else if (value instanceof Timestamp timestamp) {
 			setTimestamp(parameterName, timestamp);
 		}
+		else if (value instanceof java.util.Date theOtherDate) {
+			setDate(parameterName, new Date(theOtherDate.getTime()));
+		}
 		else if (value instanceof Value neo4jValue) {
 			setParameter(parameterName, neo4jValue);
+		}
+		else if (value instanceof String string) {
+			setString(parameterName, string);
 		}
 		else {
 			var optionalJSONMapper = Optional.ofNullable(value)

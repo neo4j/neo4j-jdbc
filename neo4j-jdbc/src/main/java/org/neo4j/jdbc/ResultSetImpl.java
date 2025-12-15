@@ -42,6 +42,7 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -1275,6 +1276,13 @@ final class ResultSetImpl implements Neo4jResultSet {
 		return value -> {
 			if (type.isInstance(value)) {
 				return type.cast(value);
+			}
+			if (type == java.sql.Date.class) {
+				return type.cast(java.sql.Date.valueOf(value.asLocalDate()));
+			}
+			if (type == java.util.Date.class) {
+				return type
+					.cast(java.util.Date.from(value.asLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 			}
 			var optionalJSONMapper = JSONMappers.INSTANCE.getMapper(type.getName());
 			return optionalJSONMapper.map(mapper -> {
