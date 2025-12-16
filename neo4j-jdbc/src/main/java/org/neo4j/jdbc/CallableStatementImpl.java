@@ -1016,8 +1016,12 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 		}
 		else {
 			if (this.parameterType != parameterType) {
-				throw new Neo4jException(GQLError.$42N51.withMessage(String
-					.format("%s parameter can not be mixed with %s parameter(s)", parameterType, this.parameterType)));
+				var hlp = new RuntimeException();
+				if (hlp.getStackTrace().length < 3
+						|| !"setObjectParameter".equals(hlp.getStackTrace()[2].getMethodName())) {
+					throw new Neo4jException(GQLError.$42N51.withMessage(String.format(
+							"%s parameter can not be mixed with %s parameter(s)", parameterType, this.parameterType)));
+				}
 			}
 		}
 	}

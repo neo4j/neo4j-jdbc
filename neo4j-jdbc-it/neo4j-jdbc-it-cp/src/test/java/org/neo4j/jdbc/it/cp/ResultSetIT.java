@@ -18,8 +18,15 @@
  */
 package org.neo4j.jdbc.it.cp;
 
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +57,30 @@ class ResultSetIT extends IntegrationTestBase {
 				ints.add(rs.getInt("n"));
 			}
 			assertThat(ints).containsExactly(1, 2, 3, 4);
+		}
+	}
+
+	static Stream<Arguments> shouldGetAsObjectWithType() {
+		return Stream.of(
+				Arguments.of(java.util.Date
+					.from(LocalDate.parse("2025-12-15").atStartOfDay(ZoneId.of("Europe/Berlin")).toInstant())),
+				Arguments.of(java.sql.Date
+					.from(LocalDate.parse("2025-12-15").atStartOfDay(ZoneId.of("Europe/Berlin")).toInstant())),
+				Arguments.of(1.23f), Arguments.of((short) 23), Arguments.of(42), Arguments.of(666L),
+				Arguments.of(BigInteger.TEN), Arguments.of(Duration.ofDays(23)), Arguments.of(ZonedDateTime.now()),
+				Arguments.of(OffsetDateTime.now()), Arguments.of(OffsetTime.now()), Arguments.of(ZonedDateTime.of(2026, 1,1, 21,21, 0,0, ZoneId.of("Antarctica/Troll")))
+		);
+	}
+
+	@MethodSource
+	@ParameterizedTest
+	void shouldGetAsObjectWithType(Object in) throws SQLException {
+		try (var stmt = super.getConnection().prepareStatement("RETURN $1 AS v")) {
+			stmt.setObject(1, in);
+			var rs = stmt.executeQuery();
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getObject(1, in.getClass())).isEqualTo(in);
+			assertThat(rs.next()).isFalse();
 		}
 	}
 

@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -614,6 +615,9 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		}
 		else if (value instanceof Long aNumber) {
 			setLong(parameterName, aNumber);
+		}
+		else if (value instanceof BigInteger aNumber) {
+			setLong(parameterName, aNumber.longValue());
 		}
 		else if (value instanceof Time time) {
 			setTime(parameterName, time);

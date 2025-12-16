@@ -119,8 +119,10 @@ final class Neo4jConversions {
 			case LIST, VECTOR -> Types.ARRAY;
 			case MAP, POINT, PATH, RELATIONSHIP, NODE -> Types.STRUCT;
 			case DATE -> Types.DATE;
-			case TIME -> Types.TIME;
-			case DATE_TIME, LOCAL_DATE_TIME, LOCAL_TIME -> Types.TIMESTAMP;
+			case TIME -> Types.TIME_WITH_TIMEZONE;
+			case LOCAL_TIME -> Types.TIME;
+			case DATE_TIME -> Types.TIMESTAMP_WITH_TIMEZONE;
+			case LOCAL_DATE_TIME -> Types.TIMESTAMP;
 			case NULL -> Types.NULL;
 		};
 	}
