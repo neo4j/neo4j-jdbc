@@ -738,7 +738,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 				setDate(parameterName, new Date(date.getTime()));
 			}
 			else {
-				setParameter(parameterName, value);
+				setParameter(parameterName, Values.value(value));
 			}
 		}
 		else if (isTemporalValue(value) && sqlType.isPresent()) {
@@ -779,8 +779,9 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 			}
 		}
 		else {
-			throw new Neo4jException(GQLError.$22N37.withTemplatedMessage(value.getClass().getName(),
-					"sql type %s".formatted(sqlType.getAsInt())));
+			throw new Neo4jException(
+					GQLError.$22N37.withTemplatedMessage((value != null) ? value.getClass().getName() : "null",
+							"sql type %s".formatted(sqlType.getAsInt())));
 		}
 	}
 
