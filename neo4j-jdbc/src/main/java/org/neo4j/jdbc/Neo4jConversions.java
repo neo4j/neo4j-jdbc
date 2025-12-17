@@ -109,6 +109,8 @@ final class Neo4jConversions {
 	}
 
 	static int toSqlType(Type neo4jType) {
+		// The types in our enum are reflective of Driver 4.4 / Early 5, hence
+		// not fully aligned with Neo4j Cypher 5 / 25, comments inline mitigate that
 		return switch (neo4jType) {
 			case ANY, DURATION, UNSUPPORTED -> Types.OTHER;
 			case BOOLEAN -> Types.BOOLEAN;
@@ -118,11 +120,11 @@ final class Neo4jConversions {
 			case FLOAT -> Types.DOUBLE;
 			case LIST, VECTOR -> Types.ARRAY;
 			case MAP, POINT, PATH, RELATIONSHIP, NODE -> Types.STRUCT;
-			case DATE -> Types.DATE;
-			case TIME -> Types.TIME_WITH_TIMEZONE;
-			case LOCAL_TIME -> Types.TIME;
-			case DATE_TIME -> Types.TIMESTAMP_WITH_TIMEZONE;
-			case LOCAL_DATE_TIME -> Types.TIMESTAMP;
+			case DATE -> Types.DATE; // Cypher 25 DATE
+			case LOCAL_TIME -> Types.TIME; // Cypher 25 LOCAL TIME
+			case TIME -> Types.TIME_WITH_TIMEZONE; // Cypher 25 ZONED TIME
+			case LOCAL_DATE_TIME -> Types.TIMESTAMP; // Cypher 25 LOCAL DATETIME
+			case DATE_TIME -> Types.TIMESTAMP_WITH_TIMEZONE; // Cypher 25 ZONED DATETIME
 			case NULL -> Types.NULL;
 		};
 	}

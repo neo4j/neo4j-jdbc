@@ -68,8 +68,8 @@ class ResultSetIT extends IntegrationTestBase {
 					.from(LocalDate.parse("2025-12-15").atStartOfDay(ZoneId.of("Europe/Berlin")).toInstant())),
 				Arguments.of(1.23f), Arguments.of((short) 23), Arguments.of(42), Arguments.of(666L),
 				Arguments.of(BigInteger.TEN), Arguments.of(Duration.ofDays(23)), Arguments.of(ZonedDateTime.now()),
-				Arguments.of(OffsetDateTime.now()), Arguments.of(OffsetTime.now()), Arguments.of(ZonedDateTime.of(2026, 1,1, 21,21, 0,0, ZoneId.of("Antarctica/Troll")))
-		);
+				Arguments.of(OffsetDateTime.now()), Arguments.of(OffsetTime.now()),
+				Arguments.of(ZonedDateTime.of(2026, 1, 1, 21, 21, 0, 0, ZoneId.of("Antarctica/Troll"))));
 	}
 
 	@MethodSource

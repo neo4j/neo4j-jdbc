@@ -44,6 +44,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
@@ -1287,6 +1288,12 @@ final class ResultSetImpl implements Neo4jResultSet {
 			else if (type == java.util.Date.class) {
 				result = java.util.Date.from(value.asLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
 			}
+			else if (type == Time.class) {
+				result = java.sql.Time.valueOf(value.asLocalTime());
+			}
+			else if (type == Timestamp.class) {
+				result = java.sql.Timestamp.valueOf(value.asLocalDateTime());
+			}
 			else if (type == Duration.class && value.hasType(Type.DURATION) && value.asIsoDuration().months() == 0L) {
 				var isoDuration = value.asIsoDuration();
 				result = Duration.ofDays(isoDuration.days())
@@ -1305,10 +1312,18 @@ final class ResultSetImpl implements Neo4jResultSet {
 			else if (type == BigInteger.class && value.hasType(Type.INTEGER)) {
 				result = BigInteger.valueOf(value.asLong());
 			}
+			else if (type == BigDecimal.class && value.hasType(Type.FLOAT)) {
+				result = BigDecimal.valueOf(value.asDouble());
+			}
+			else if (type == BigDecimal.class && value.hasType(Type.STRING)) {
+				result = new BigDecimal(value.asString());
+			}
+			else if (type == LocalDateTime.class) {
+				result = value.asLocalDateTime();
+			}
 			else if (type == OffsetDateTime.class) {
 				result = value.asZonedDateTime().toOffsetDateTime();
 			}
-
 			if (result != null) {
 				return type.cast(result);
 			}
