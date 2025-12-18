@@ -294,7 +294,9 @@ class PreparedStatementIT extends IntegrationTestBase {
 						"data exception - Cannot coerce java.lang.String to sql type 91", null),
 				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.of(Types.TIME), null,
 						Time.valueOf(LocalTime.of(0, 0))),
-				Arguments.of(java.util.Date.from(LocalDateTime.of(2001, 2, 3, 21, 46).toInstant(ZoneOffset.ofHours(1))),
+				Arguments.of(
+						java.util.Date
+							.from(LocalDateTime.of(2001, 2, 3, 21, 46).atZone(ZoneId.systemDefault()).toInstant()),
 						OptionalInt.of(Types.TIME), null, Time.valueOf(LocalTime.of(21, 46))),
 				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.TIME),
 						"data exception - Cannot coerce java.time.LocalDate to java.sql.Time", null),
