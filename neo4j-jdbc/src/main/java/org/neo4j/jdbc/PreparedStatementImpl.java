@@ -619,7 +619,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		setParameter(parameterName, Values.value(Objects.requireNonNull(bytes)));
 	}
 
-	private boolean matchesTargetType(Type neo4jType, OptionalInt sqlType) {
+	private static boolean matchesTargetType(Type neo4jType, @SuppressWarnings("squid:S3553") OptionalInt sqlType) {
 		if (sqlType.isEmpty()) {
 			return true;
 		}
@@ -630,11 +630,11 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		return theValue == Neo4jConversions.toSqlType(neo4jType);
 	}
 
-	private boolean isTemporalValue(Object value) {
+	private static boolean isTemporalValue(Object value) {
 		return value instanceof java.util.Date || value instanceof Temporal;
 	}
 
-	Date makeDate(Object value) throws Neo4jException {
+	private static Date makeDate(Object value) throws Neo4jException {
 		if (value instanceof Date date) {
 			return date;
 		}
@@ -671,6 +671,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 				GQLError.$22N37.withTemplatedMessage(value.getClass().getName(), Time.class.getName()));
 	}
 
+	@SuppressWarnings("squid:S2143") // We need the darn calendar
 	Calendar makeCalendar(Object value) {
 		if (value instanceof ZonedDateTime zonedDateTime) {
 			return Calendar.getInstance(TimeZone.getTimeZone(zonedDateTime.getZone()));
@@ -694,7 +695,8 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 
 	// Yep, this is complex.
 	@SuppressWarnings({ "squid:S3776", "OptionalUsedAsFieldOrParameterType" })
-	private void setObjectParameter(String parameterName, Object value, OptionalInt sqlType) throws SQLException {
+	private void setObjectParameter(String parameterName, Object value,
+			@SuppressWarnings("squid:S3553") OptionalInt sqlType) throws SQLException {
 		if (value instanceof Boolean booleanValue && matchesTargetType(Type.BOOLEAN, sqlType)) {
 			setBoolean(parameterName, booleanValue);
 		}

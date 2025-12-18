@@ -1276,7 +1276,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		return getValueByColumnLabel(columnLabel, valueMapperFor(type, this.maxFieldSize));
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "squid:S3776", "deprecation" })
 	private static <T> ValueMapper<T> valueMapperFor(Class<T> type, int maxFieldSize) {
 		return value -> {
 			Object result = null;
@@ -1337,27 +1337,31 @@ final class ResultSetImpl implements Neo4jResultSet {
 			if (result != null) {
 				return type.cast(result);
 			}
-			var optionalJSONMapper = JSONMappers.INSTANCE.getMapper(type.getName());
-			return optionalJSONMapper.map(mapper -> {
-				Object json = mapper.toJson(value);
-				try {
-					return type.cast(json);
-				}
-				catch (ClassCastException ex) {
-					throw new RuntimeException(
-							"Resulting type after mapping is incompatible, use %s or %s for reification"
-								.formatted(json.getClass().getName(), mapper.getBaseType().getName()));
-				}
-			}).or(() -> {
-				var obj = mapToObject(value, maxFieldSize);
-				if (type.isInstance(obj)) {
-					return Optional.of(type.cast(obj));
-				}
-				return Optional.empty();
-			})
-				.orElseThrow(() -> new Neo4jException(
-						GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName())));
+
+			return tryJsonAndThenDefault(type, maxFieldSize, value);
 		};
+	}
+
+	private static <T> T tryJsonAndThenDefault(Class<T> type, int maxFieldSize, Value value) throws Neo4jException {
+		var optionalJSONMapper = JSONMappers.INSTANCE.getMapper(type.getName());
+		return optionalJSONMapper.map(mapper -> {
+			Object json = mapper.toJson(value);
+			try {
+				return type.cast(json);
+			}
+			catch (ClassCastException ex) {
+				throw new RuntimeException("Resulting type after mapping is incompatible, use %s or %s for reification"
+					.formatted(json.getClass().getName(), mapper.getBaseType().getName()));
+			}
+		}).or(() -> {
+			var obj = mapToObject(value, maxFieldSize);
+			if (type.isInstance(obj)) {
+				return Optional.of(type.cast(obj));
+			}
+			return Optional.empty();
+		})
+			.orElseThrow(() -> new Neo4jException(
+					GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName())));
 	}
 
 	@Override
