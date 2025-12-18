@@ -21,8 +21,6 @@ package org.neo4j.jdbc.it.cp;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -64,8 +62,7 @@ class ResultSetIT extends IntegrationTestBase {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
-	static Stream<Arguments> shouldGetAsObjectWithType() throws ParseException {
+	static Stream<Arguments> shouldGetAsObjectWithType() {
 		return Stream.of(Arguments.of(new GregorianCalendar(2025, Calendar.DECEMBER, 15).getTime()),
 				Arguments.of(java.sql.Date.valueOf(LocalDate.parse("2025-12-15"))), Arguments.of(1.23f),
 				Arguments.of((short) 23), Arguments.of(42), Arguments.of(666L), Arguments.of(BigInteger.TEN),
