@@ -21,6 +21,8 @@ package org.neo4j.jdbc.it.cp;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -28,6 +30,8 @@ import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -60,14 +64,12 @@ class ResultSetIT extends IntegrationTestBase {
 		}
 	}
 
-	static Stream<Arguments> shouldGetAsObjectWithType() {
-		return Stream.of(
-				Arguments.of(java.util.Date
-					.from(LocalDate.parse("2025-12-15").atStartOfDay(ZoneId.of("Europe/Berlin")).toInstant())),
-				Arguments.of(java.sql.Date
-					.from(LocalDate.parse("2025-12-15").atStartOfDay(ZoneId.of("Europe/Berlin")).toInstant())),
-				Arguments.of(1.23f), Arguments.of((short) 23), Arguments.of(42), Arguments.of(666L),
-				Arguments.of(BigInteger.TEN), Arguments.of(Duration.ofDays(23)), Arguments.of(ZonedDateTime.now()),
+	@SuppressWarnings("deprecation")
+	static Stream<Arguments> shouldGetAsObjectWithType() throws ParseException {
+		return Stream.of(Arguments.of(new GregorianCalendar(2025, Calendar.DECEMBER, 15).getTime()),
+				Arguments.of(java.sql.Date.valueOf(LocalDate.parse("2025-12-15"))), Arguments.of(1.23f),
+				Arguments.of((short) 23), Arguments.of(42), Arguments.of(666L), Arguments.of(BigInteger.TEN),
+				Arguments.of(Duration.ofDays(23)), Arguments.of(ZonedDateTime.now()),
 				Arguments.of(OffsetDateTime.now()), Arguments.of(OffsetTime.now()),
 				Arguments.of(ZonedDateTime.of(2026, 1, 1, 21, 21, 0, 0, ZoneId.of("Antarctica/Troll"))));
 	}

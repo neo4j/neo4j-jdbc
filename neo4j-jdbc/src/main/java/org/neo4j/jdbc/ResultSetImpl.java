@@ -44,11 +44,13 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.EnumSet;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1276,6 +1278,7 @@ final class ResultSetImpl implements Neo4jResultSet {
 		return getValueByColumnLabel(columnLabel, valueMapperFor(type, this.maxFieldSize));
 	}
 
+	@SuppressWarnings("deprecation")
 	private static <T> ValueMapper<T> valueMapperFor(Class<T> type, int maxFieldSize) {
 		return value -> {
 			Object result = null;
@@ -1286,7 +1289,10 @@ final class ResultSetImpl implements Neo4jResultSet {
 				result = java.sql.Date.valueOf(value.asLocalDate());
 			}
 			else if (type == java.util.Date.class) {
-				result = java.util.Date.from(value.asLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+				var localDate = value.asLocalDate();
+				result = new GregorianCalendar(localDate.getYear(), localDate.getMonthValue() - 1,
+						localDate.getDayOfMonth())
+					.getTime();
 			}
 			else if (type == Time.class) {
 				result = java.sql.Time.valueOf(value.asLocalTime());
