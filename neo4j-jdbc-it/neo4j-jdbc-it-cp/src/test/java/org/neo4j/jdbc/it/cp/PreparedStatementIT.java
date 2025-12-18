@@ -304,9 +304,14 @@ class PreparedStatementIT extends IntegrationTestBase {
 						OptionalInt.of(Types.TIME), null, Time.valueOf(LocalTime.of(10, 11, 12))),
 				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
 						LocalTime.of(0, 0).atOffset(ZoneId.systemDefault().getRules().getOffset(Instant.now()))),
-				Arguments.of(java.util.Date.from(LocalDateTime.of(2001, 2, 3, 21, 46).toInstant(ZoneOffset.ofHours(1))),
+				Arguments.of(
+						java.util.Date
+							.from(LocalDateTime.of(2001, 2, 3, 21, 46).atZone(ZoneId.systemDefault()).toInstant()),
 						OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
-						LocalTime.of(21, 46).atOffset(ZoneId.systemDefault().getRules().getOffset(Instant.now()))),
+						LocalDateTime.of(2001, 2, 3, 21, 46)
+							.atZone(ZoneId.systemDefault())
+							.toOffsetDateTime()
+							.toOffsetTime()),
 				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.TIME_WITH_TIMEZONE),
 						"data exception - Cannot coerce java.time.LocalDate to java.sql.Time", null),
 				Arguments.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,

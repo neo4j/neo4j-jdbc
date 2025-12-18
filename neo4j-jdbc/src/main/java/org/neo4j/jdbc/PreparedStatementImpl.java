@@ -49,6 +49,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.Temporal;
 import java.util.ArrayDeque;
@@ -674,7 +675,7 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 		if (value instanceof ZonedDateTime zonedDateTime) {
 			return Calendar.getInstance(TimeZone.getTimeZone(zonedDateTime.getZone()));
 		}
-		return Calendar.getInstance();
+		return Calendar.getInstance(TimeZone.getTimeZone(ZoneId.systemDefault()));
 	}
 
 	Timestamp makeTimestamp(Object value) throws Neo4jException {
