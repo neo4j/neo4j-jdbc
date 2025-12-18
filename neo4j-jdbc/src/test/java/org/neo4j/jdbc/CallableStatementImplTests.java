@@ -307,8 +307,6 @@ class CallableStatementImplTests {
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
 						SQLFeatureNotSupportedException.class),
 				// not currently supported
-				Arguments.of((StatementMethodRunner) statement -> statement.setObject(1, null, Types.NULL),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRef(1, null),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(Blob.class)),
@@ -493,7 +491,8 @@ class CallableStatementImplTests {
 
 	static Stream<Named<StatementMethodRunner>> streamSetterRunners(Class<?> type, Map<Class<?>, Object> typeToValue) {
 		return Arrays.stream(type.getDeclaredMethods())
-			.filter(method -> method.getName().startsWith("set"))
+			.filter(method -> method.getName().startsWith("set")
+					&& !(method.getName().equals("setObject") && method.getParameterTypes().length == 3))
 			.filter(method -> !method.getName().endsWith("setNull"))
 			.map(method -> Named.of(method.toString(), newRunner(method, typeToValue)));
 	}

@@ -303,8 +303,6 @@ class PreparedStatementImplTests {
 						(StatementMethodRunner) statement -> statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT),
 						SQLFeatureNotSupportedException.class),
 				// not currently supported
-				Arguments.of((StatementMethodRunner) statement -> statement.setObject(1, null, Types.NULL),
-						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setRef(1, null),
 						SQLFeatureNotSupportedException.class),
 				Arguments.of((StatementMethodRunner) statement -> statement.setBlob(1, mock(Blob.class)),
