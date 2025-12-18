@@ -1316,7 +1316,13 @@ final class ResultSetImpl implements Neo4jResultSet {
 				result = BigDecimal.valueOf(value.asDouble());
 			}
 			else if (type == BigDecimal.class && value.hasType(Type.STRING)) {
-				result = new BigDecimal(value.asString());
+				try {
+					result = new BigDecimal(value.asString());
+				}
+				catch (NumberFormatException ex) {
+					throw new Neo4jException(
+							GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName()));
+				}
 			}
 			else if (type == LocalDateTime.class) {
 				result = value.asLocalDateTime();
