@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -42,8 +43,12 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Calendar;
 import java.util.EnumSet;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1271,32 +1276,92 @@ final class ResultSetImpl implements Neo4jResultSet {
 		return getValueByColumnLabel(columnLabel, valueMapperFor(type, this.maxFieldSize));
 	}
 
+	@SuppressWarnings({ "squid:S3776", "deprecation" })
 	private static <T> ValueMapper<T> valueMapperFor(Class<T> type, int maxFieldSize) {
 		return value -> {
+			Object result = null;
 			if (type.isInstance(value)) {
-				return type.cast(value);
+				result = value;
 			}
-			var optionalJSONMapper = JSONMappers.INSTANCE.getMapper(type.getName());
-			return optionalJSONMapper.map(mapper -> {
-				Object json = mapper.toJson(value);
+			else if (type == java.sql.Date.class) {
+				result = java.sql.Date.valueOf(value.asLocalDate());
+			}
+			else if (type == java.util.Date.class) {
+				var localDate = value.asLocalDate();
+				result = new GregorianCalendar(localDate.getYear(), localDate.getMonthValue() - 1,
+						localDate.getDayOfMonth())
+					.getTime();
+			}
+			else if (type == Time.class) {
+				result = java.sql.Time.valueOf(value.asLocalTime());
+			}
+			else if (type == Timestamp.class) {
+				result = java.sql.Timestamp.valueOf(value.asLocalDateTime());
+			}
+			else if (type == Duration.class && value.hasType(Type.DURATION) && value.asIsoDuration().months() == 0L) {
+				var isoDuration = value.asIsoDuration();
+				result = Duration.ofDays(isoDuration.days())
+					.plusSeconds(isoDuration.seconds())
+					.plusNanos(isoDuration.nanoseconds());
+			}
+			else if ((type == float.class || type == Float.class) && value.hasType(Type.FLOAT)) {
+				result = value.asFloat();
+			}
+			else if ((type == short.class || type == Short.class) && value.hasType(Type.INTEGER)) {
+				result = (short) value.asInt();
+			}
+			else if ((type == int.class || type == Integer.class) && value.hasType(Type.INTEGER)) {
+				result = value.asInt();
+			}
+			else if (type == BigInteger.class && value.hasType(Type.INTEGER)) {
+				result = BigInteger.valueOf(value.asLong());
+			}
+			else if (type == BigDecimal.class && value.hasType(Type.FLOAT)) {
+				result = BigDecimal.valueOf(value.asDouble());
+			}
+			else if (type == BigDecimal.class && value.hasType(Type.STRING)) {
 				try {
-					return type.cast(json);
+					result = new BigDecimal(value.asString());
 				}
-				catch (ClassCastException ex) {
-					throw new RuntimeException(
-							"Resulting type after mapping is incompatible, use %s or %s for reification"
-								.formatted(json.getClass().getName(), mapper.getBaseType().getName()));
+				catch (NumberFormatException ex) {
+					throw new Neo4jException(
+							GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName()));
 				}
-			}).or(() -> {
-				var obj = mapToObject(value, maxFieldSize);
-				if (type.isInstance(obj)) {
-					return Optional.of(type.cast(obj));
-				}
-				return Optional.empty();
-			})
-				.orElseThrow(() -> new Neo4jException(
-						GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName())));
+			}
+			else if (type == LocalDateTime.class) {
+				result = value.asLocalDateTime();
+			}
+			else if (type == OffsetDateTime.class) {
+				result = value.asZonedDateTime().toOffsetDateTime();
+			}
+			if (result != null) {
+				return type.cast(result);
+			}
+
+			return tryJsonAndThenDefault(type, maxFieldSize, value);
 		};
+	}
+
+	private static <T> T tryJsonAndThenDefault(Class<T> type, int maxFieldSize, Value value) throws Neo4jException {
+		var optionalJSONMapper = JSONMappers.INSTANCE.getMapper(type.getName());
+		return optionalJSONMapper.map(mapper -> {
+			Object json = mapper.toJson(value);
+			try {
+				return type.cast(json);
+			}
+			catch (ClassCastException ex) {
+				throw new RuntimeException("Resulting type after mapping is incompatible, use %s or %s for reification"
+					.formatted(json.getClass().getName(), mapper.getBaseType().getName()));
+			}
+		}).or(() -> {
+			var obj = mapToObject(value, maxFieldSize);
+			if (type.isInstance(obj)) {
+				return Optional.of(type.cast(obj));
+			}
+			return Optional.empty();
+		})
+			.orElseThrow(() -> new Neo4jException(
+					GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName())));
 	}
 
 	@Override

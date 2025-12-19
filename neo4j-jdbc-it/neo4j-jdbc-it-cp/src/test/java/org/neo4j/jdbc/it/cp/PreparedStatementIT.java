@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -36,16 +37,21 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -67,6 +73,7 @@ import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.Values;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class PreparedStatementIT extends IntegrationTestBase {
@@ -240,6 +247,133 @@ class PreparedStatementIT extends IntegrationTestBase {
 				var resultSet = statement.executeQuery();
 				assertThat(resultSet.next()).isTrue();
 				assertThat(resultSet.getString(1)).isEqualTo(id);
+			}
+		}
+	}
+
+	static Stream<Arguments> setObjectShouldWork() {
+
+		return Stream.of(
+				// Arguments.of(Date.valueOf(LocalDate.of(2025, 12, 17)))
+				Arguments.of(true, OptionalInt.empty(), null, null),
+				Arguments.of(true, OptionalInt.of(Types.BOOLEAN), null, null),
+				Arguments.of(true, OptionalInt.of(Types.INTEGER),
+						"data exception - Cannot coerce java.lang.Boolean to sql type 4", null),
+				Arguments.of(Duration.ofMinutes(23), OptionalInt.empty(), null, null),
+				Arguments.of(2.5f, OptionalInt.empty(), null, null),
+				Arguments.of(2.5f, OptionalInt.of(Types.DOUBLE), null, null),
+				Arguments.of(2.5, OptionalInt.empty(), null, null),
+				Arguments.of(2.5, OptionalInt.of(Types.DOUBLE), null, null),
+				Arguments.of(BigDecimal.valueOf(2.5), OptionalInt.empty(), null, null),
+				Arguments.of(BigDecimal.valueOf(2.5), OptionalInt.of(Types.DOUBLE), null, null),
+				Arguments.of(BigDecimal.valueOf(2.5), OptionalInt.of(Types.VARCHAR), null, null),
+				Arguments.of((short) 23, OptionalInt.empty(), null, null),
+				Arguments.of((short) 23, OptionalInt.of(Types.INTEGER), null, null),
+				Arguments.of(23, OptionalInt.empty(), null, null),
+				Arguments.of(23, OptionalInt.of(Types.INTEGER), null, null),
+				Arguments.of(23L, OptionalInt.empty(), null, null),
+				Arguments.of(23L, OptionalInt.of(Types.INTEGER), null, null),
+				Arguments.of(BigInteger.TEN, OptionalInt.empty(), null, null),
+				Arguments.of(BigInteger.TEN, OptionalInt.of(Types.INTEGER), null, null),
+				Arguments.of(Time.valueOf(LocalTime.of(23, 23, 24)), OptionalInt.empty(), null, null),
+				Arguments
+					.of(Timestamp.valueOf(LocalDateTime.of(2025, 3, 6, 23, 23, 24)), OptionalInt.empty(), null, null),
+				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.empty(), null, null),
+				Arguments.of(java.util.Date.from(LocalDateTime.of(2001, 2, 3, 21, 45).toInstant(ZoneOffset.ofHours(1))),
+						OptionalInt.empty(), null, null),
+				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.of(Types.DATE), null,
+						Date.valueOf("1991-09-21")),
+				Arguments.of(java.util.Date.from(LocalDateTime.of(2001, 2, 3, 21, 45).toInstant(ZoneOffset.ofHours(1))),
+						OptionalInt.of(Types.DATE), null, Date.valueOf("1991-09-21")),
+				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.DATE), null, Date.valueOf("1991-09-21")),
+				Arguments.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), OptionalInt.of(Types.DATE), null,
+						Date.valueOf("1991-09-21")),
+				Arguments.of(ZonedDateTime.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), ZoneId.of("Europe/Berlin")),
+						OptionalInt.of(Types.DATE), null, Date.valueOf("1991-09-21")),
+				Arguments.of("1991-09-21", OptionalInt.of(Types.DATE),
+						"data exception - Cannot coerce java.lang.String to sql type 91", null),
+				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.of(Types.TIME), null,
+						Time.valueOf(LocalTime.of(0, 0))),
+				Arguments.of(
+						java.util.Date
+							.from(LocalDateTime.of(2001, 2, 3, 21, 46).atZone(ZoneId.systemDefault()).toInstant()),
+						OptionalInt.of(Types.TIME), null, Time.valueOf(LocalTime.of(21, 46))),
+				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.TIME),
+						"data exception - Cannot coerce java.time.LocalDate to java.sql.Time", null),
+				Arguments.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), OptionalInt.of(Types.TIME), null,
+						Time.valueOf(LocalTime.of(10, 11, 12))),
+				Arguments.of(ZonedDateTime.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), ZoneId.of("Europe/Berlin")),
+						OptionalInt.of(Types.TIME), null, Time.valueOf(LocalTime.of(10, 11, 12))),
+				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
+						LocalTime.of(0, 0).atOffset(ZoneId.systemDefault().getRules().getOffset(Instant.now()))),
+				Arguments.of(
+						java.util.Date
+							.from(LocalDateTime.of(2001, 2, 3, 21, 46).atZone(ZoneId.systemDefault()).toInstant()),
+						OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
+						LocalDateTime.of(2001, 2, 3, 21, 46)
+							.atZone(ZoneId.systemDefault())
+							.toOffsetDateTime()
+							.toOffsetTime()),
+				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.TIME_WITH_TIMEZONE),
+						"data exception - Cannot coerce java.time.LocalDate to java.sql.Time", null),
+				Arguments.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
+						LocalTime.of(10, 11, 12).atOffset(ZoneId.systemDefault().getRules().getOffset(Instant.now()))),
+				Arguments.of(ZonedDateTime.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), ZoneId.of("Europe/Athens")),
+						OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
+						LocalTime.of(10, 11, 12)
+							.atOffset(ZoneId.of("Europe/Athens").getRules().getOffset(Instant.now()))),
+				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.TIMESTAMP_WITH_TIMEZONE),
+						"data exception - Cannot coerce java.time.LocalDate to java.sql.Timestamp", null),
+				Arguments.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), OptionalInt.of(Types.TIMESTAMP_WITH_TIMEZONE),
+						null, LocalDateTime.of(1991, 9, 21, 10, 11, 12).atZone(ZoneId.systemDefault()),
+						Arguments.of(
+								ZonedDateTime.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), ZoneId.of("Europe/Athens")),
+								OptionalInt.of(Types.TIMESTAMP_WITH_TIMEZONE), null,
+								LocalDateTime.of(1991, 9, 21, 10, 11, 12).atZone(ZoneId.of("Europe/Athens")))));
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	void setObjectShouldWork(Object value, OptionalInt targetType, String expectedException, Object expectedObject)
+			throws Throwable {
+		try (var connection = getConnection()) {
+			try (var statement = connection.prepareStatement("RETURN $1")) {
+				ThrowableAssert.ThrowingCallable setter = () -> {
+					if (targetType.isEmpty()) {
+						statement.setObject(1, value);
+					}
+					else {
+						statement.setObject(1, value, targetType.getAsInt());
+					}
+				};
+				if (expectedException != null) {
+					assertThatException().isThrownBy(setter).withMessage(expectedException);
+				}
+				else {
+					setter.call();
+					var resultSet = statement.executeQuery();
+					assertThat(resultSet.next()).isTrue();
+					if (value.equals(java.util.Date
+						.from(LocalDateTime.of(2001, 2, 3, 21, 45).toInstant(ZoneOffset.ofHours(1))))) {
+						assertThat((java.util.Date) resultSet.getObject(1, value.getClass())).isEqualTo("2001-02-03");
+					}
+					else if (targetType.isEmpty()) {
+						assertThat(resultSet.getObject(1, value.getClass()))
+							.isEqualTo(Objects.requireNonNullElse(expectedObject, value));
+					}
+					else {
+						var targetTypeClass = switch (targetType.getAsInt()) {
+							case Types.DATE -> Date.class;
+							case Types.TIME -> Time.class;
+							case Types.TIME_WITH_TIMEZONE -> OffsetTime.class;
+							case Types.TIMESTAMP_WITH_TIMEZONE -> ZonedDateTime.class;
+							default -> value.getClass();
+						};
+						assertThat(resultSet.getObject(1, targetTypeClass))
+							.isEqualTo(Objects.requireNonNullElse(expectedObject, value));
+					}
+
+				}
 			}
 		}
 	}
