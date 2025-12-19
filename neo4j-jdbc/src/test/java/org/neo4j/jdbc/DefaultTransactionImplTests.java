@@ -658,6 +658,8 @@ class DefaultTransactionImplTests {
 		given(boltConnection.writeAndFlush(any(), any(DiscardMessage.class), any())).willReturn(writeFuture);
 		given(boltConnection.writeAndFlush(any(), any(CommitMessage.class), any())).willReturn(writeFuture);
 		given(boltConnection.writeAndFlush(any(), any(RollbackMessage.class), any())).willReturn(writeFuture);
+		given(boltConnection.writeAndFlush(any(), anyList(), any()))
+			.willReturn(CompletableFuture.failedFuture(new RuntimeException("Oops")));
 
 		this.transaction = new DefaultTransactionImpl(boltConnection, null, null, fatalExceptionHandler, true, true,
 				AccessMode.WRITE, null, "aBeautifulDatabase", state -> {
