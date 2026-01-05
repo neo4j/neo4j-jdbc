@@ -164,7 +164,7 @@
 		<jreleaser-maven-plugin.version>1.21.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>6.0.1</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.7</keycloak-authz-client.version>
-		<kotlin-stdlib-jdk8.version>2.2.21</kotlin-stdlib-jdk8.version>
+		<kotlin-stdlib-jdk8.version>2.3.0</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.9.1</langchain4j.version>
 		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
