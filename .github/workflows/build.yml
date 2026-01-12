@@ -97,6 +97,7 @@ jobs:
         run: > 
            ./mvnw --no-transfer-progress 
            -DskipUTs
+           -Dcheckstyle.skip=true
            -Dneo4j.version=${{ matrix.neo4j }}
            -Djava-build.version=17
            -f neo4j-jdbc-it
