@@ -97,6 +97,7 @@ jobs:
         run: > 
            ./mvnw --no-transfer-progress 
            -DskipUTs
+           -Dcheckstyle.skip=true
            -Dneo4j.version=${{ matrix.neo4j }}
            -Djava-build.version=17
            -f neo4j-jdbc-it
@@ -127,10 +128,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 'Run native tests (default distribution)'
-        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
+        run: ./mvnw --no-transfer-progress -DskipUTs -Dcheckstyle.skip=true -Dnative clean verify -pl neo4j-jdbc-it/neo4j-jdbc-it-cp
 
       - name: 'Run native tests (bundled distribution)'
-        run: ./mvnw --no-transfer-progress -DskipUTs -Dnative clean verify -pl bundles/neo4j-jdbc-full-bundle
+        run: ./mvnw --no-transfer-progress -DskipUTs -Dcheckstyle.skip=true -Dnative clean verify -pl bundles/neo4j-jdbc-full-bundle
 
   security_test:
     runs-on: ubuntu-latest
