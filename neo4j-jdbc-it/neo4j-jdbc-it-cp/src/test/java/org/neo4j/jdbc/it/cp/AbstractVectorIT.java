@@ -25,12 +25,10 @@ import java.sql.Types;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.condition.EnabledIf;
 import org.neo4j.bolt.connection.exception.BoltFailureException;
 import org.neo4j.bolt.connection.exception.BoltGqlErrorException;
 import org.neo4j.jdbc.Neo4jDatabaseMetaData;
@@ -44,21 +42,13 @@ import static org.assertj.core.api.Assertions.assertThatException;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@EnabledIf("databaseSupportsVectors")
 abstract class AbstractVectorIT {
 
 	protected final Neo4jContainer neo4j;
 
-	protected final boolean databaseSupportsVectors;
-
 	AbstractVectorIT(String defaultLanguage) {
-		this.neo4j = getNeo4jContainer("neo4j:2025.08-enterprise", defaultLanguage);
-		var logs = new CopyOnWriteArrayList<String>();
-		this.neo4j.withLogConsumer(frame -> logs.add(frame.getUtf8String().trim()));
+		this.neo4j = getNeo4jContainer("neo4j:2025.12.1-enterprise", defaultLanguage);
 		this.neo4j.start();
-		this.databaseSupportsVectors = logs.stream()
-			.noneMatch(l -> l
-				.contains("Unrecognized setting. No declared setting with name: internal.cypher.enable_vector_type"));
 	}
 
 	@AfterAll
@@ -82,19 +72,11 @@ abstract class AbstractVectorIT {
 		}
 		return new Neo4jContainer(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT)
-			.withNeo4jConfig("server.config.strict_validation.enabled", "false")
-			.withNeo4jConfig("internal.cypher.enable_extra_semantic_features", "VectorType")
 			.withNeo4jConfig("internal.dbms.bolt.max_protocol_version", "6.0")
-			.withNeo4jConfig("db.query.default_language", defaultLanguage)
-			.withNeo4jConfig("internal.cypher.enable_vector_type", "true");
-	}
-
-	final boolean databaseSupportsVectors() {
-		return this.databaseSupportsVectors;
+			.withNeo4jConfig("db.query.default_language", defaultLanguage);
 	}
 
 	@Test
-	@EnabledIf("databaseSupportsVectors")
 	final void shouldReadVector() throws SQLException {
 		try (var connection = getConnection(); var stmt = connection.createStatement(); var rs = stmt.executeQuery("""
 				CYPHER 25
@@ -121,7 +103,6 @@ abstract class AbstractVectorIT {
 	}
 
 	@Test
-	@EnabledIf("databaseSupportsVectors")
 	final void shouldReadVectorAsArray() throws SQLException {
 		try (var connection = getConnection(); var stmt = connection.createStatement(); var rs = stmt.executeQuery("""
 				CYPHER 25
@@ -143,7 +124,6 @@ abstract class AbstractVectorIT {
 	}
 
 	@Test
-	@EnabledIf("databaseSupportsVectors")
 	final void shouldExtractProperErrorMessage() throws SQLException {
 		try (var connection = getConnection(); var stmt = connection.createStatement()) {
 			assertThatException().isThrownBy(() -> stmt.executeQuery("CYPHER 25 RETURN VECTOR([1], 0, INT8)"))
@@ -160,7 +140,6 @@ abstract class AbstractVectorIT {
 	}
 
 	@Test
-	@EnabledIf("databaseSupportsVectors")
 	final void shouldWriteVector() throws SQLException {
 		try (var connection = getConnection(); var stmt = connection.prepareStatement("""
 				CREATE (n:VectorTest)
@@ -205,7 +184,6 @@ abstract class AbstractVectorIT {
 	}
 
 	@Test
-	@EnabledIf("databaseSupportsVectors")
 	final void metadataShouldWork() throws SQLException {
 		try (var connection = getConnection(); var stmt = connection.createStatement()) {
 
