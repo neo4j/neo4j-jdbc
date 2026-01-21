@@ -194,7 +194,7 @@
 		<neo4j-cypher-dsl.version>2025.2.2</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.10.4</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
-		<neo4j.version>2025.09</neo4j.version>
+		<neo4j.version>2025.12.1</neo4j.version>
 		<netty.version>4.1.130.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.18.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.12.0</opencsv.version>
@@ -1034,33 +1034,6 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>io.spring.javaformat</groupId>
-				<artifactId>spring-javaformat-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>validate</goal>
-						</goals>
-						<phase>validate</phase>
-						<inherited>true</inherited>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>checkstyle-validation</id>
-						<goals>
-							<goal>check</goal>
-						</goals>
-						<phase>validate</phase>
-						<inherited>true</inherited>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 			</plugin>
@@ -1298,6 +1271,42 @@
 	</build>
 
 	<profiles>
+		<profile>
+			<id>with_checkstyle</id>
+			<activation>
+				<jdk>[21,)</jdk>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.spring.javaformat</groupId>
+						<artifactId>spring-javaformat-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<goals>
+									<goal>validate</goal>
+								</goals>
+								<phase>validate</phase>
+								<inherited>true</inherited>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-checkstyle-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>validate</id>
+								<goals>
+									<goal>check</goal>
+								</goals>
+								<phase>validate</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 		<profile>
 			<id>no-release</id>
 			<!--
