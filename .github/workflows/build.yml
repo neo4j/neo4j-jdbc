@@ -28,11 +28,7 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}-${{ github.sha }}
 
-      - name: 'Enable Sonar for local PRs not from Dependabot'
-        if:  ${{ github.event.sender.login != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        run: echo "USE_SONAR=sonar" >> $GITHUB_ENV
-      - name: 'Disable Sonar for foreign PRs or from Dependabot'
-        if:  ${{ github.event.sender.login == 'dependabot[bot]' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
+      - name: 'Disable Sonar (Keeps on failing on their side since ~January 2026)'
         run: echo "USE_SONAR=-sonar" >> $GITHUB_ENV
 
       - name: 'Cache SonarQube packages'
