@@ -154,7 +154,7 @@
 		<jackson.version>2.20.1</jackson.version>
 		<jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
-		<japicmp-maven-plugin.version>0.25.3</japicmp-maven-plugin.version>
+		<japicmp-maven-plugin.version>0.25.4</japicmp-maven-plugin.version>
 		<java-build.version>25</java-build.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.4</jaxb-api.version>
