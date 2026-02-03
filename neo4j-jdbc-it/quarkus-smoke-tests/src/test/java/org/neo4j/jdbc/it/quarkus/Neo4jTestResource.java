@@ -30,7 +30,7 @@ import java.util.Map;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import jakarta.ws.rs.core.MediaType;
-import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 /**
  * If we used the official Neo4j quarkus extension, we wouldn't have to do this dance.
@@ -41,7 +41,7 @@ import org.testcontainers.containers.Neo4jContainer;
  */
 public final class Neo4jTestResource implements QuarkusTestResourceLifecycleManager {
 
-	private final Neo4jContainer<?> neo4j = new Neo4jContainer<>(System.getProperty("neo4j-jdbc.default-neo4j-image"))
+	private final Neo4jContainer neo4j = new Neo4jContainer(System.getProperty("neo4j-jdbc.default-neo4j-image"))
 		.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 		.withReuse(true);
 
