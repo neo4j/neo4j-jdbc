@@ -208,7 +208,7 @@
 		<slf4j.version>2.0.17</slf4j.version>
 		<sonar-maven-plugin.version>5.5.0.6356</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-		<spring-boot.version>4.0.1</spring-boot.version>
+		<spring-boot.version>4.0.2</spring-boot.version>
 		<spring-javaformat.version>0.0.47</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers-keycloak.version>4.1.1</testcontainers-keycloak.version>
