@@ -138,13 +138,13 @@
 		<assertj.version>3.27.7</assertj.version>
 		<awaitility.version>4.3.0</awaitility.version>
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
-		<checkstyle.version>13.1.0</checkstyle.version>
+		<checkstyle.version>13.2.0</checkstyle.version>
 		<commons-lang3.version>3.20.0</commons-lang3.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
-		<cypher-v5-antlr-parser.version>5.26.20</cypher-v5-antlr-parser.version>
-		<docker-maven-plugin.version>0.48.0</docker-maven-plugin.version>
+		<cypher-v5-antlr-parser.version>5.26.21</cypher-v5-antlr-parser.version>
+		<docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
@@ -157,7 +157,7 @@
 		<japicmp-maven-plugin.version>0.25.4</japicmp-maven-plugin.version>
 		<java-build.version>25</java-build.version>
 		<java.version>17</java.version>
-		<jaxb-api.version>4.0.4</jaxb-api.version>
+		<jaxb-api.version>4.0.5</jaxb-api.version>
 		<jboss-logging.version>3.6.2.Final</jboss-logging.version>
 		<jdbi3.version>3.51.0</jdbi3.version>
 		<jooq.version>3.19.30</jooq.version>
@@ -195,7 +195,7 @@
 		<neo4j-jdbc.previous.version>6.10.4</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>2025.12.1</neo4j.version>
-		<netty.version>4.1.130.Final</netty.version>
+		<netty.version>4.1.131.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.19.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.12.0</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
@@ -208,7 +208,7 @@
 		<slf4j.version>2.0.17</slf4j.version>
 		<sonar-maven-plugin.version>5.5.0.6356</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-		<spring-boot.version>4.0.1</spring-boot.version>
+		<spring-boot.version>4.0.2</spring-boot.version>
 		<spring-javaformat.version>0.0.47</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers-keycloak.version>4.1.1</testcontainers-keycloak.version>
