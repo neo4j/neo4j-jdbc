@@ -144,7 +144,7 @@
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.1</cyclonedx-maven-plugin.version>
 		<cypher-v5-antlr-parser.version>5.26.20</cypher-v5-antlr-parser.version>
-		<docker-maven-plugin.version>0.48.0</docker-maven-plugin.version>
+		<docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
 		<exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
