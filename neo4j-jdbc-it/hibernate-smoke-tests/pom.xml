@@ -32,7 +32,7 @@
 	<name>Neo4j JDBC Driver (Hibernate Smoke tests)</name>
 
 	<properties>
-		<hibernate-platform.version>7.2.4.Final</hibernate-platform.version>
+		<hibernate-platform.version>7.2.5.Final</hibernate-platform.version>
 	</properties>
 
 	<dependencyManagement>
