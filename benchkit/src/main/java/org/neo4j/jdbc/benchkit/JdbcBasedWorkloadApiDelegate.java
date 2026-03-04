@@ -26,8 +26,6 @@ import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.neo4j.jdbc.benchkit.api.WorkloadApiDelegate;
 import org.neo4j.jdbc.benchkit.model.Workload;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
@@ -41,9 +39,6 @@ public class JdbcBasedWorkloadApiDelegate implements WorkloadApiDelegate {
 	public JdbcBasedWorkloadApiDelegate(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
-
-	@Autowired
-	DataSourceProperties f;
 
 	@Override
 	public ResponseEntity<Void> executeSuppliedWorkload(Workload workload) {
