@@ -422,6 +422,121 @@ class StatementIT extends IntegrationTestBase {
 	}
 
 	@Test
+	void shouldExecuteBatchWithCypher() throws SQLException {
+		var testId = UUID.randomUUID().toString();
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:BatchTest {testId: '%s', idx: 1})".formatted(testId));
+			statement.addBatch("CREATE (:BatchTest {testId: '%s', idx: 2})".formatted(testId));
+			statement.addBatch("CREATE (:BatchTest {testId: '%s', idx: 3})".formatted(testId));
+			var results = statement.executeBatch();
+			assertThat(results).hasSize(3);
+			assertThat(results).containsOnly(1);
+		}
+		try (var connection = getConnection();
+				var statement = connection.createStatement();
+				var rs = statement
+					.executeQuery("MATCH (n:BatchTest {testId: '%s'}) RETURN count(n) AS cnt".formatted(testId))) {
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getInt("cnt")).isEqualTo(3);
+		}
+	}
+
+	@Test
+	void shouldExecuteBatchWithSQL() throws SQLException {
+		try (var connection = getConnection(true, false); var statement = connection.createStatement()) {
+			statement.addBatch("INSERT INTO BatchMovie(title) VALUES ('Film A')");
+			statement.addBatch("INSERT INTO BatchMovie(title) VALUES ('Film B')");
+			var results = statement.executeBatch();
+			assertThat(results).hasSize(2);
+			assertThat(results).containsOnly(1);
+		}
+	}
+
+	@Test
+	void shouldClearBatch() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:ClearBatchTest)");
+			statement.addBatch("CREATE (:ClearBatchTest)");
+			statement.clearBatch();
+			var results = statement.executeBatch();
+			assertThat(results).isEmpty();
+		}
+	}
+
+	@Test
+	void shouldThrowOnAddBatchWhenClosed() throws SQLException {
+		try (var connection = getConnection()) {
+			var statement = connection.createStatement();
+			statement.close();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> statement.addBatch("CREATE (:Test)"));
+		}
+	}
+
+	@Test
+	void shouldThrowOnAddBatchWithNullSQL() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> statement.addBatch(null));
+		}
+	}
+
+	@Test
+	void shouldRejectExecuteQueryWhenBatchPending() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:Test)");
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> statement.executeQuery("RETURN 1"))
+				.withMessageContaining("batch");
+		}
+	}
+
+	@Test
+	void shouldRejectExecuteUpdateWhenBatchPending() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:Test)");
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> statement.executeUpdate("CREATE (:Test2)"))
+				.withMessageContaining("batch");
+		}
+	}
+
+	@Test
+	void shouldRejectExecuteWhenBatchPending() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:Test)");
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> statement.execute("CREATE (:Test2)"))
+				.withMessageContaining("batch");
+		}
+	}
+
+	@Test
+	void shouldAllowExecuteAfterClearBatch() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:Test)");
+			statement.clearBatch();
+			var rs = statement.executeQuery("RETURN 1 AS n");
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getInt("n")).isEqualTo(1);
+		}
+	}
+
+	@Test
+	void shouldAllowExecuteAfterExecuteBatch() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			statement.addBatch("CREATE (:BatchThenQuery)");
+			statement.executeBatch();
+			var rs = statement.executeQuery("RETURN 1 AS n");
+			assertThat(rs.next()).isTrue();
+			assertThat(rs.getInt("n")).isEqualTo(1);
+		}
+	}
+
+	@Test
+	void shouldExecuteEmptyBatch() throws SQLException {
+		try (var connection = getConnection(); var statement = connection.createStatement()) {
+			var results = statement.executeBatch();
+			assertThat(results).isEmpty();
+		}
+	}
+
+	@Test
 	void pathsShouldBeAccessible() throws SQLException {
 		try (var connection = getConnection();
 				var stmt = connection.createStatement();
