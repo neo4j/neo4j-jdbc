@@ -1,7 +1,7 @@
 [#grouping]
 = Using aggregates and `GROUP BY`
 
-Cypher does by default implicit grouping. Cypher 5 does and will not have explicit grouping and as of March 2026, explicit grouping in Cypher 25 is in the making.
+Cypher uses implicit grouping by default. Cypher 5 does not have explicit grouping and will not gain it; as of March 2026, explicit grouping is being developed for Cypher 25.
 
 For the common case (`GROUP BY` columns matching the projected columns), the translator continues to emit simple `MATCH ... RETURN` statements because Cypher's implicit grouping produces the correct result. When the `GROUP BY` contains columns absent from the projection, or when a `HAVING` clause is present, the translator introduces a Cypher `WITH` clause to make grouping explicit and to support post-aggregation filtering.
 
