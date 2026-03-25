@@ -35,6 +35,8 @@ import org.jooq.conf.ParseWithMetaLookups;
 import org.jooq.conf.RenderNameCase;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DefaultConfiguration;
+import org.neo4j.cypherdsl.core.renderer.Configuration;
+import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.jdbc.translator.spi.Translator;
 
 /**
@@ -254,6 +256,8 @@ public final class SqlToCypherConfig {
 
 	private final String relationshipPattern;
 
+	private final Configuration rendererConfig;
+
 	private SqlToCypherConfig(Builder builder) {
 
 		this.parseNameCase = builder.parseNameCase;
@@ -269,6 +273,18 @@ public final class SqlToCypherConfig {
 		this.precedence = builder.precedence;
 		this.viewDefinitions = builder.viewDefinitions;
 		this.relationshipPattern = builder.relationshipPattern;
+		this.rendererConfig = Configuration.newConfig()
+			.withPrettyPrint(this.isPrettyPrint())
+			.alwaysEscapeNames(this.isAlwaysEscapeNames())
+			.withDialect(Dialect.NEO4J_5)
+			.build();
+	}
+
+	/**
+	 * {@return a configuration for Cypher-DSL rendering matching this translation config}
+	 */
+	Configuration getRendererConfig() {
+		return this.rendererConfig;
 	}
 
 	/**

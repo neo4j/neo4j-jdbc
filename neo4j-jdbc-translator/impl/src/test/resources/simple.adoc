@@ -383,7 +383,23 @@ MATCH (p:Product)
 RETURN p.productName, p.unitPrice ORDER BY p.unitPrice DESC LIMIT 10
 ----
 
-'''
+In the same fashion, we do support `OFFSET` queries:
+
+[translation_table,id=offset_queries]
+|===
+|SQL | Cypher equivalent
+
+|`SELECT name, age FROM People p ORDER BY name LIMIT 5 OFFSET 10`
+|`MATCH (p:People) RETURN p.name AS name, p.age AS age ORDER BY p.name SKIP 10 LIMIT 5`
+
+|`SELECT name FROM People p ORDER BY name LIMIT 3 OFFSET 0`
+|`MATCH (p:People) RETURN p.name AS name ORDER BY p.name SKIP 0 LIMIT 3`
+
+|`SELECT department, count(*) AS cnt FROM People p GROUP BY department ORDER BY department LIMIT 2 OFFSET 1`
+|`MATCH (p:People) RETURN p.department AS department, count(*) AS cnt ORDER BY p.department SKIP 1 LIMIT 2`
+
+|===
+
 
 The default order direction will be translated as is:
 

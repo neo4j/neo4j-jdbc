@@ -19,29 +19,17 @@
 package org.neo4j.jdbc.translator.impl;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.asciidoctor.Asciidoctor;
-import org.asciidoctor.Options;
-import org.asciidoctor.ast.Block;
-import org.asciidoctor.ast.ContentNode;
-import org.asciidoctor.ast.Document;
-import org.asciidoctor.extension.Treeprocessor;
 import org.jooq.impl.ParserException;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicTest;
@@ -77,21 +65,6 @@ class SqlToCypherTests {
 
 	private static final Translator NON_PRETTY_PRINTING_TRANSLATOR = SqlToCypher
 		.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
-
-	private static ResultSet makeColumns(String firstName, String... names) throws SQLException {
-		var personColumns = mock(ResultSet.class);
-		if (firstName == null) {
-			given(personColumns.next()).willReturn(false);
-			return personColumns;
-		}
-		Boolean[] results = new Boolean[names.length + 1];
-		for (int i = 0; i < results.length; i++) {
-			results[i] = i != results.length - 1;
-		}
-		given(personColumns.next()).willReturn(true, results);
-		given(personColumns.getString("COLUMN_NAME")).willReturn(firstName, names);
-		return personColumns;
-	}
 
 	static Stream<Arguments> concatShouldWork() {
 		return Stream.of(Arguments.of("SELECT 'a' || 'b'", "RETURN ('a' + 'b')"),
@@ -177,11 +150,11 @@ class SqlToCypherTests {
 
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
 		given(databaseMetaData.getTables(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
-		var resultSet = makeColumns("title");
+		var resultSet = TestUtils.makeColumns("title");
 		given(databaseMetaData.getColumns(null, null, "Movie", null)).willReturn(resultSet);
-		resultSet = makeColumns("foobar");
+		resultSet = TestUtils.makeColumns("foobar");
 		given(databaseMetaData.getColumns(null, null, "HAS", null)).willReturn(resultSet);
-		resultSet = makeColumns("name");
+		resultSet = TestUtils.makeColumns("name");
 		given(databaseMetaData.getColumns(null, null, "Genre", null)).willReturn(resultSet);
 
 		var renderer = Renderer.getRenderer(Configuration.newConfig()
@@ -207,23 +180,23 @@ class SqlToCypherTests {
 
 		DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
 		given(databaseMetaData.getTables(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
-		var resultSet1 = makeColumns("title", "released");
-		var resultSet2 = makeColumns("title", "released");
-		var resultSet3 = makeColumns("title", "released");
-		var resultSet4 = makeColumns("title", "released");
+		var resultSet1 = TestUtils.makeColumns("title", "released");
+		var resultSet2 = TestUtils.makeColumns("title", "released");
+		var resultSet3 = TestUtils.makeColumns("title", "released");
+		var resultSet4 = TestUtils.makeColumns("title", "released");
 		given(databaseMetaData.getColumns(null, null, "Movie", null)).willReturn(resultSet1)
 			.willReturn(resultSet2)
 			.willReturn(resultSet3)
 			.willReturn(resultSet4);
-		resultSet1 = makeColumns(null);
-		resultSet2 = makeColumns(null);
-		resultSet3 = makeColumns(null);
+		resultSet1 = TestUtils.makeColumns(null);
+		resultSet2 = TestUtils.makeColumns(null);
+		resultSet3 = TestUtils.makeColumns(null);
 		given(databaseMetaData.getColumns(null, null, "HAS", null)).willReturn(resultSet1)
 			.willReturn(resultSet2)
 			.willReturn(resultSet3);
-		resultSet1 = makeColumns("name");
-		resultSet2 = makeColumns("name");
-		resultSet3 = makeColumns("name");
+		resultSet1 = TestUtils.makeColumns("name");
+		resultSet2 = TestUtils.makeColumns("name");
+		resultSet3 = TestUtils.makeColumns("name");
 		given(databaseMetaData.getColumns(null, null, "Genre", null)).willReturn(resultSet1)
 			.willReturn(resultSet2)
 			.willReturn(resultSet3);
@@ -548,25 +521,6 @@ class SqlToCypherTests {
 		assertThat(cypher).isEqualTo("FINISH");
 	}
 
-	@ParameterizedTest
-	@CsvSource(delimiterString = "|", textBlock = """
-			SELECT name, count(*) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name AS name, count(*)
-			SELECT name, max(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name AS name, max(p.age)
-			SELECT name, min(age) FROM People p GROUP BY name|MATCH (p:People) RETURN p.name AS name, min(p.age)
-			SELECT sum(age) FROM People p GROUP BY name|MATCH (p:People) RETURN sum(p.age)
-			SELECT avg(age) FROM People p GROUP BY name|MATCH (p:People) RETURN avg(p.age)
-			SELECT percentileCont(age) FROM People p GROUP BY name|MATCH (p:People) RETURN percentileCont(p.age)
-			SELECT percentileDisc(age) FROM People p GROUP BY name|MATCH (p:People) RETURN percentileDisc(p.age)
-			SELECT stDev(age) FROM People p GROUP BY name|MATCH (p:People) RETURN stDev(p.age)
-			SELECT stDevP(age) FROM People p GROUP BY name|MATCH (p:People) RETURN stDevP(p.age)
-			""")
-	void aggregates(String sql, String cypher) {
-
-		var translator = SqlToCypher.defaultTranslator();
-		assertThat(translator.translate(sql)).isEqualTo(cypher);
-
-	}
-
 	@Test
 	void outerSelectStarShouldBeRemoved() {
 
@@ -605,20 +559,6 @@ class SqlToCypherTests {
 		assertThat(translator.translate(in)).isEqualTo(expected);
 	}
 
-	static List<TestData> getTestData(Path path) {
-		try (var asciidoctor = Asciidoctor.Factory.create()) {
-			var collector = new TestDataExtractor();
-			asciidoctor.javaExtensionRegistry().treeprocessor(collector);
-
-			var content = Files.readString(path);
-			asciidoctor.load(content, Options.builder().build());
-			return collector.testData;
-		}
-		catch (IOException ioe) {
-			throw new RuntimeException("Error reading TCK file " + path, ioe);
-		}
-	}
-
 	@TestFactory
 	Stream<DynamicContainer> tck() {
 
@@ -634,26 +574,35 @@ class SqlToCypherTests {
 		}
 
 		return Arrays.stream(files).map(file -> {
-			var tests = getTestData(file.toPath()).stream()
+			var tests = TestUtils.getTestData(file.toPath())
+				.stream()
 				.map(t -> DynamicTest.dynamicTest(
-						Optional.ofNullable(t.name).filter(Predicate.not(String::isBlank)).orElse(t.id),
-						() -> assertThatSqlIsTranslatedAsExpected(t.sql, t.cypher, t.tableMappings,
-								t.joinColumnsMappings, t.prettyPrint, t.databaseMetaData)))
+						Optional.ofNullable(t.name()).filter(Predicate.not(String::isBlank)).orElse(t.id()),
+						() -> assertThatSqlIsTranslatedAsExpected(t.sql(), t.cypher(), t.tableMappings(),
+								t.joinColumnsMappings(), t.prettyPrint(), t.forceDefaults(), t.databaseMetaData())))
 				.toList();
 			return DynamicContainer.dynamicContainer(file.getName(), tests);
 		});
 	}
 
 	void assertThatSqlIsTranslatedAsExpected(String sql, String expected, Map<String, String> tableMappings,
-			Map<String, String> join_columns_mappings, boolean prettyPrint, DatabaseMetaData databaseMetaData) {
-		assertThat(SqlToCypher
-			.with(SqlToCypherConfig.builder()
+			Map<String, String> join_columns_mappings, boolean prettyPrint, boolean forceDefaults,
+			DatabaseMetaData databaseMetaData) {
+
+		Translator translator;
+		if (forceDefaults) {
+			translator = SqlToCypher.defaultTranslator();
+
+		}
+		else {
+			translator = SqlToCypher.with(SqlToCypherConfig.builder()
 				.withPrettyPrint(prettyPrint)
 				.withAlwaysEscapeNames(!prettyPrint)
 				.withTableToLabelMappings(tableMappings)
 				.withJoinColumnsToTypeMappings(join_columns_mappings)
-				.build())
-			.translate(sql, databaseMetaData)).isEqualTo(expected);
+				.build());
+		}
+		assertThat(translator.translate(sql, databaseMetaData)).isEqualTo(expected);
 	}
 
 	@ParameterizedTest
@@ -817,6 +766,41 @@ class SqlToCypherTests {
 		assertThat(translator.translate(sqlAndCypher.sql())).isEqualTo(sqlAndCypher.cypher());
 	}
 
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|", quoteCharacter = '"', textBlock = """
+			SELECT * FROM People p
+			SELECT name FROM People p
+			SELECT name FROM People p ORDER BY name DESC LIMIT 10
+			SELECT count(*) FROM People p
+			SELECT sum(age) FROM People p
+			SELECT min(age), max(age) FROM People p
+			SELECT avg(age) FROM People p
+			INSERT INTO People (name, age) VALUES ('Alice', 30)
+			UPDATE People SET age = 31 WHERE name = 'Alice'
+			DELETE FROM People WHERE name = 'Alice'
+			""")
+	void nonGroupByPathNeverProducesWithClause(String sql) {
+
+		var translator = SqlToCypher.defaultTranslator();
+		var result = translator.translate(sql);
+		assertThat(result).doesNotContainPattern("\\bWITH\\b");
+	}
+
+	@Test
+	void registryDoesNotLeakBetweenTranslations() {
+
+		var translator = SqlToCypher.defaultTranslator();
+		// First: query with HAVING (activates registry)
+		var havingResult = translator.translate("SELECT name FROM People p GROUP BY name HAVING count(*) > 5");
+		assertThat(havingResult).contains("WITH").contains("__having_col_0");
+		// Second: simple query (should NOT have WITH or alias references)
+		var result = translator.translate("SELECT name FROM People p");
+		assertThat(result).doesNotContainPattern("\\bWITH\\b");
+		assertThat(result).doesNotContain("__with_col_");
+		assertThat(result).doesNotContain("__having_col_");
+		assertThat(result).isEqualTo("MATCH (p:People) RETURN p.name AS name");
+	}
+
 	private record SqlAndCypher(String name, String sql, String cypher) {
 		static SqlAndCypher of(String name, String sql, String cypher) {
 			return new SqlAndCypher(name, sql, cypher);
@@ -830,82 +814,6 @@ class SqlToCypherTests {
 		String displayName() {
 			return Optional.ofNullable(this.name).orElse(this.sql);
 		}
-	}
-
-	private static class TestDataExtractor extends Treeprocessor {
-
-		private final List<TestData> testData = new ArrayList<>();
-
-		TestDataExtractor() {
-			super(new HashMap<>()); // Must be mutable
-		}
-
-		@Override
-		public Document process(Document document) {
-
-			var blocks = document.findBy(Map.of("context", ":listing", "style", "source"))
-				.stream()
-				.map(Block.class::cast)
-				.filter(b -> b.hasAttribute("id"))
-				.collect(Collectors.toMap(ContentNode::getId, Function.identity()));
-
-			blocks.values().stream().filter(b -> "sql".equals(b.getAttribute("language"))).map(sqlBlock -> {
-				var name = (String) sqlBlock.getAttribute("name");
-				var sql = String.join("\n", sqlBlock.getLines());
-				var cypherBlock = blocks.get(sqlBlock.getId() + "_expected");
-				var cypher = String.join("\n", cypherBlock.getLines());
-				DatabaseMetaData databaseMetaData = null;
-				Map<String, String> tableMappings = new HashMap<>();
-				Map<String, String> join_columns_mappings = new HashMap<>();
-				if (sqlBlock.getAttribute("table_mappings") != null) {
-					tableMappings = SqlToCypherConfig.buildMap((String) sqlBlock.getAttribute("table_mappings"));
-				}
-				if (sqlBlock.getAttribute("join_column_mappings") != null) {
-					join_columns_mappings = SqlToCypherConfig
-						.buildMap((String) sqlBlock.getAttribute("join_column_mappings"));
-				}
-				if (sqlBlock.getAttribute("metaData") != null) {
-					String metaData = (String) sqlBlock.getAttribute("metaData");
-
-					databaseMetaData = mock(DatabaseMetaData.class);
-					try {
-						given(databaseMetaData.getTables(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
-					}
-					catch (SQLException ex) {
-						throw new RuntimeException(ex);
-					}
-					for (String m : metaData.split(";")) {
-						var endIndex = m.indexOf(":");
-						String label = m.substring(0, endIndex);
-						String[] properties = m.substring(endIndex + 1).split("\\|");
-						try {
-							var columns = (properties.length > 1)
-									? makeColumns(properties[0], Arrays.copyOfRange(properties, 1, properties.length))
-									: makeColumns(properties[0]);
-							given(databaseMetaData.getColumns(null, null, label, null)).willReturn(columns);
-						}
-						catch (SQLException ex) {
-							throw new RuntimeException(ex);
-						}
-					}
-				}
-				boolean parseCypher = Boolean.parseBoolean(((String) cypherBlock.getAttribute("parseCypher", "true")));
-				boolean prettyPrint = true;
-				if (parseCypher) {
-					var renderer = Renderer.getRenderer(Configuration.newConfig().withDialect(Dialect.NEO4J_5).build());
-					cypher = renderer.render(CypherParser.parse(cypher));
-					prettyPrint = false;
-				}
-				return new TestData(sqlBlock.getId(), name, sql, cypher, tableMappings, join_columns_mappings,
-						prettyPrint, databaseMetaData);
-			}).forEach(this.testData::add);
-			return document;
-		}
-
-	}
-
-	private record TestData(String id, String name, String sql, String cypher, Map<String, String> tableMappings,
-			Map<String, String> joinColumnsMappings, boolean prettyPrint, DatabaseMetaData databaseMetaData) {
 	}
 
 	private record Rel(String source, String rel, String target) {
