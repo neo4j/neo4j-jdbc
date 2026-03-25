@@ -532,7 +532,8 @@ final class SqlToCypher implements Translator {
 			}
 			var selectFields = selectStatement.$select();
 			for (var gf : groupByFields) {
-				if (gf instanceof Field<?> groupField && !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
+				if (gf instanceof Field<?> groupField && this.aliasRegistry.resolve(groupField) == null
+						&& !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
 					return true;
 				}
 			}
@@ -573,16 +574,16 @@ final class SqlToCypher implements Translator {
 			for (var selectField : selectStatement.$select()) {
 				var expressions = expression(selectField).toList();
 				for (var expr : expressions) {
-					String alias;
+					String alias = null;
 					if (expr instanceof AliasedExpression aliased) {
 						alias = aliased.getAlias();
 					}
-					else {
+					else if (!(expr instanceof org.neo4j.cypherdsl.core.Asterisk)) {
 						alias = selectField.toString();
 						expr = expr.as(alias);
 					}
 					withExpressions.add((IdentifiableElement) expr);
-					returnExpressions.add(Cypher.name(alias));
+					returnExpressions.add((alias != null) ? Cypher.name(alias) : expr);
 					if (selectField instanceof Field<?> f) {
 						this.aliasRegistry.register(f, alias);
 					}
@@ -593,12 +594,12 @@ final class SqlToCypher implements Translator {
 			// Add GROUP BY fields that are not already in the SELECT
 			var selectFields = selectStatement.$select();
 			for (var gf : groupByFields) {
-				if (gf instanceof Field<?> groupField && !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
+				if (gf instanceof Field<?> groupField && this.aliasRegistry.resolve(groupField) == null
+						&& !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
 					var expr = expression(groupField);
 					var alias = "__group_col_" + aliasCounter.getAndIncrement();
 					withExpressions.add(expr.as(alias));
 					this.aliasRegistry.register(groupField, alias);
-					// GROUP BY-only fields are not added to returnExpressions
 				}
 			}
 

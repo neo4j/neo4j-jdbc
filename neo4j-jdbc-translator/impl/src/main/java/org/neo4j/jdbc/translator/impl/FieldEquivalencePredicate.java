@@ -52,10 +52,28 @@ final class FieldEquivalencePredicate implements BiPredicate<Field<?>, Field<?>>
 
 		// Case 1: Alias unwrapping — aliases are presentation, not identity
 		if (a instanceof QOM.FieldAlias<?> fa) {
-			return test(fa.$field(), b);
+			if (test(fa.$field(), b)) {
+				return true;
+			}
+			else if (fa.$field() instanceof TableField<?, ?> tfa && b instanceof TableField<?, ?> tfb
+					&& (tfa.getTable() == null || tfb.getTable() == null)) {
+				return a.getName().equalsIgnoreCase(b.getName());
+			}
+			else {
+				return false;
+			}
 		}
 		if (b instanceof QOM.FieldAlias<?> fb) {
-			return test(a, fb.$field());
+			if (test(a, fb.$field())) {
+				return true;
+			}
+			else if (a instanceof TableField<?, ?> tfa && fb.$field() instanceof TableField<?, ?> tfb
+					&& (tfa.getTable() == null || tfb.getTable() == null)) {
+				return a.getName().equalsIgnoreCase(b.getName());
+			}
+			else {
+				return false;
+			}
 		}
 
 		// Case 2: Aggregate function matching

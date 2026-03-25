@@ -560,11 +560,19 @@ class SqlToCypherTests {
 	}
 
 	@ParameterizedTest
-	@CsvSource(delimiterString = "|", textBlock = """
-			SELECT name FROM Movie GROUP BY name | MATCH (movie:Movie) RETURN movie.name AS name
-			SELECT c.name FROM Customers c JOIN Orders o ON c.id = o.customer_id GROUP BY c.name | MATCH (c:Customers)<-[customer_id:CUSTOMER_ID]-(o:Orders) RETURN c.name
-			SELECT * FROM `public`.`Person` `Person` INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie` ON (`Person`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id` | f
-			""")
+	@CsvSource(delimiterString = "|",
+			textBlock = """
+					SELECT name FROM Movie GROUP BY name                  | MATCH (movie:Movie) RETURN movie.name AS name
+					SELECT name AS x FROM Movie GROUP BY x                | MATCH (movie:Movie) RETURN movie.name AS x
+					SELECT v$id FROM Movie GROUP BY title                 | MATCH (movie:Movie) WITH elementId(movie) AS `v$id`, movie.title AS __group_col_0 RETURN `v$id`
+					SELECT v$id, count(*) FROM Movie GROUP BY v$id        | MATCH (movie:Movie) RETURN elementId(movie) AS `v$id`, count(*)
+					SELECT v$id, count(*) FROM Movie GROUP BY v$id, title | MATCH (movie:Movie) WITH elementId(movie) AS `v$id`, count(*) AS `count(*)`, movie.title AS __group_col_0 RETURN `v$id`, `count(*)`
+					SELECT * FROM Movie GROUP BY title                    | MATCH (movie:Movie) WITH *, movie.title AS __group_col_0 RETURN *
+					SELECT Movie.name AS x FROM Movie GROUP BY x          | MATCH (movie:Movie) RETURN movie.name AS x
+					SELECT `Person`.`name` AS `name`, `Person_DIRECTED_Movie`.`v$movie_id` AS `v_movie_id` FROM `public`.`Person` `Person` INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie` ON (`Person`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id` | MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(_end:Movie) RETURN person.name AS name, elementId(_end) AS v_movie_id
+					SELECT Person.name AS name, Person_DIRECTED_Movie.v$movie_id AS v_movie_id FROM Person Person INNER JOIN Person_DIRECTED_Movie Person_DIRECTED_Movie ON (Person.v$id = Person_DIRECTED_Movie.v$id) GROUP BY name, v_movie_id | MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(_end:Movie) RETURN person.name AS name, elementId(_end) AS v_movie_id
+					SELECT Movie.title AS title, Person_DIRECTED_Movie.v$movie_id AS v_movie_id FROM public.Movie Movie INNER JOIN public.Person_DIRECTED_Movie Person_DIRECTED_Movie ON (Movie.v$id = Person_DIRECTED_Movie.v$id) INNER JOIN Person ON (Person.v$id = Person_DIRECTED_Movie.v$person_in) GROUP BY Person.name, v_movie_id | MATCH (person:Person)-[person_directed_movie:DIRECTED WHERE elementId(person) = elementId(person_directed_movie)]->(movie:Movie) WITH movie.title AS title, elementId(movie) AS v_movie_id, person.name AS __group_col_0 RETURN title, v_movie_id
+					""")
 	void groupByWithoutAggregate(String sql, String cypher) {
 
 		var translator = SqlToCypher
