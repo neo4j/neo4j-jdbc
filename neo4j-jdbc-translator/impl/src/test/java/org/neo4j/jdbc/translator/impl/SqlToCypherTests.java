@@ -559,6 +559,19 @@ class SqlToCypherTests {
 		assertThat(translator.translate(in)).isEqualTo(expected);
 	}
 
+	@ParameterizedTest
+	@CsvSource(delimiterString = "|", textBlock = """
+			SELECT name FROM Movie GROUP BY name | MATCH (movie:Movie) RETURN movie.name AS name
+			SELECT c.name FROM Customers c JOIN Orders o ON c.id = o.customer_id GROUP BY c.name | MATCH (c:Customers)<-[customer_id:CUSTOMER_ID]-(o:Orders) RETURN c.name
+			SELECT * FROM `public`.`Person` `Person` INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie` ON (`Person`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id` | f
+			""")
+	void groupByWithoutAggregate(String sql, String cypher) {
+
+		var translator = SqlToCypher
+			.with(SqlToCypherConfig.builder().withPrettyPrint(false).withAlwaysEscapeNames(false).build());
+		assertThat(translator.translate(sql)).isEqualTo(cypher);
+	}
+
 	@TestFactory
 	Stream<DynamicContainer> tck() {
 
