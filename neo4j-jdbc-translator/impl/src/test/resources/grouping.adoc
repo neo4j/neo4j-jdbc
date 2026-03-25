@@ -13,7 +13,7 @@ The following functionality is supported:
 - `ORDER BY` after `WITH` clause
 - `DISTINCT` with `GROUP BY` / `HAVING`
 - `LIMIT` and `OFFSET with `WITH` clauses
-- `WHERE` and `GROUP BY` combinations`
+- `WHERE` and `GROUP BY` combinations
 - `JOIN` and `GROUP BY`: aggregation across relationships, with and without `WITH` clauses
 
 == `WITH` clause generation

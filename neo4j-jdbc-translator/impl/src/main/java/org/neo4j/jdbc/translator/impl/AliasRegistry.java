@@ -21,6 +21,7 @@ package org.neo4j.jdbc.translator.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jooq.Field;
@@ -50,7 +51,7 @@ final class AliasRegistry {
 	void register(Field<?> field, String alias) {
 		var unwrapped = unwrap(field);
 		this.entries.add(new AliasEntry(unwrapped, alias));
-		this.aliasByName.putIfAbsent(alias.toUpperCase(), alias);
+		this.aliasByName.putIfAbsent(alias.toUpperCase(Locale.ROOT), alias);
 	}
 
 	/**
@@ -73,8 +74,7 @@ final class AliasRegistry {
 		}
 
 		// 2. Name-based matching (field.getName() against registered alias strings)
-		var nameKey = unwrapped.getName().toUpperCase();
-		return this.aliasByName.get(nameKey);
+		return this.aliasByName.get(unwrapped.getName().toUpperCase(Locale.ROOT));
 	}
 
 	private static Field<?> unwrap(Field<?> field) {
