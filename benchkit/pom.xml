@@ -100,6 +100,9 @@
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<generateModelDocumentation>false</generateModelDocumentation>
 							<generateApiDocumentation>false</generateApiDocumentation>
+							<importMappings>
+								<importMapping>Nullable=org.jspecify.annotations.Nullable</importMapping>
+							</importMappings>
 							<configOptions>
 								<basePackage>${base-package}</basePackage>
 								<useSpringBoot3>false</useSpringBoot3>
