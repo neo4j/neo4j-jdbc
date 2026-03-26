@@ -172,6 +172,8 @@ include::translator/predicates.adoc[leveloffset=+2]
 
 include::translator/joins.adoc[leveloffset=+2]
 
+include::translator/grouping.adoc[leveloffset=+2]
+
 include::translator/dml.adoc[leveloffset=+2]
 
 [#s2c_manipulating_relationships]

@@ -160,11 +160,8 @@ final class Neo4jConversions {
 	}
 
 	private static ZoneOffset getZoneOffsetFrom(Calendar cal) {
-		return Objects.requireNonNullElseGet(cal, Calendar::getInstance)
-			.getTimeZone()
-			.toZoneId()
-			.getRules()
-			.getOffset(cal.toInstant());
+		var nullSafeCal = Objects.requireNonNullElseGet(cal, Calendar::getInstance);
+		return nullSafeCal.getTimeZone().toZoneId().getRules().getOffset(nullSafeCal.toInstant());
 	}
 
 	static Value asValue(Time time, Calendar calendar) {

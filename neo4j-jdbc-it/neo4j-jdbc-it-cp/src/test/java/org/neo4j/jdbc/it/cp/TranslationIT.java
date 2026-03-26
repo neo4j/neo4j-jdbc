@@ -834,7 +834,7 @@ class TranslationIT extends IntegrationTestBase {
 					INNER JOIN `public`.`Person_DIRECTED_Movie` `Person_DIRECTED_Movie`
 					ON (`Movie`.`v$id` = `Person_DIRECTED_Movie`.`v$id`) GROUP BY `name`, `v_movie_id`""");
 			assertThat(cypher).isEqualTo(
-					"MATCH (_start:Person)-[person_directed_movie:DIRECTED]->(movie:Movie) RETURN movie.title AS title, elementId(movie) AS v_movie_id");
+					"MATCH (_start:Person)-[person_directed_movie:DIRECTED]->(movie:Movie) WITH movie.title AS title, elementId(movie) AS v_movie_id, _start.name AS __group_col_0 RETURN title, v_movie_id");
 		}
 
 	}

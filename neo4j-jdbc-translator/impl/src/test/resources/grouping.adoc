@@ -1,0 +1,197 @@
+[#grouping]
+= Using aggregates and `GROUP BY`
+
+Cypher uses implicit grouping by default. Cypher 5 does not have explicit grouping and will not gain it; as of March 2026, explicit grouping is being developed for Cypher 25.
+
+For the common case (`GROUP BY` columns matching the projected columns), the translator continues to emit simple `MATCH ... RETURN` statements because Cypher's implicit grouping produces the correct result. When the `GROUP BY` contains columns absent from the projection, or when a `HAVING` clause is present, the translator introduces a Cypher `WITH` clause to make grouping explicit and to support post-aggregation filtering.
+
+The following functionality is supported:
+
+- `GROUP BY`: implicit and explicit grouping
+- `HAVING`: simple conditions and compound conditions
+- `ORDER BY` on aggregate aliases
+- `ORDER BY` after `WITH` clause
+- `DISTINCT` with `GROUP BY` / `HAVING`
+- `LIMIT` and `OFFSET with `WITH` clauses
+- `WHERE` and `GROUP BY` combinations
+- `JOIN` and `GROUP BY`: aggregation across relationships, with and without `WITH` clauses
+
+== `WITH` clause generation
+
+[translation_table,id=withClauseGeneration]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT name, sum(age) FROM People p GROUP BY name, department`
+| `MATCH (p:People) WITH p.name AS name, sum(p.age) AS \`sum(age)\`, p.department AS __group_col_0 RETURN name, \`sum(age)\``
+
+| `SELECT name AS x, sum(age) AS y FROM People p GROUP BY x, department`
+| `MATCH (p:People) WITH p.name AS x, sum(p.age) AS y, p.department AS __group_col_0 RETURN x, y`
+
+| `SELECT count(*) FROM Customers c JOIN Orders o ON c.id = o.customer_id GROUP BY c.name`
+| `MATCH (c:Customers)<-[customer_id:CUSTOMER_ID]-(o:Orders) WITH count(*) AS \`count(*)\`, c.name AS __group_col_0 RETURN \`count(*)\``
+
+| `SELECT c.name, count(*) FROM Customers c JOIN Orders o ON c.id = o.customer_id GROUP BY c.name`
+| `MATCH (c:Customers)<-[customer_id:CUSTOMER_ID]-(o:Orders) RETURN c.name, count(*)`
+
+| `SELECT name, count(*), sum(age), avg(age) FROM People p GROUP BY name`
+| `MATCH (p:People) RETURN p.name AS name, count(*), sum(p.age), avg(p.age)`
+
+| `SELECT count(*), sum(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH count(*) AS \`count(*)\`, sum(p.age) AS \`sum(age)\`, p.name AS __group_col_0 RETURN \`count(*)\`, \`sum(age)\``
+
+| `SELECT sum(age) FROM People p GROUP BY name HAVING sum(age) > 100`
+| `MATCH (p:People) WITH sum(p.age) AS \`sum(age)\`, p.name AS __group_col_0 WHERE \`sum(age)\` > 100 RETURN \`sum(age)\``
+
+| `SELECT sum(age) FROM People p GROUP BY name ORDER BY sum(age)`
+| `MATCH (p:People) WITH sum(p.age) AS \`sum(age)\`, p.name AS __group_col_0 RETURN \`sum(age)\` ORDER BY \`sum(age)\``
+|===
+
+== Filtering aggregates with the `HAVING` clause
+
+[translation_table,id=havingConditionTranslation]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT name FROM People p GROUP BY name HAVING count(*) > 5`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0 WHERE __having_col_0 > 5 RETURN name`
+
+| `SELECT count(*) FROM People p HAVING count(*) > 5`
+| `MATCH (p:People) WITH count(*) AS \`count(*)\` WHERE \`count(*)\` > 5 RETURN \`count(*)\``
+
+| `SELECT count(*) FROM People p GROUP BY name HAVING name = 'Alice'`
+| `MATCH (p:People) WITH count(*) AS \`count(*)\`, p.name AS __group_col_0 WHERE __group_col_0 = 'Alice' RETURN \`count(*)\``
+
+| `SELECT name, count(*) AS cnt FROM People p GROUP BY name HAVING cnt > 5`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS cnt WHERE cnt > 5 RETURN name, cnt`
+
+| `SELECT name FROM People p GROUP BY name HAVING count(*) > 5 AND max(age) > 50`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0, max(p.age) AS __having_col_1 WHERE (__having_col_0 > 5 AND __having_col_1 > 50) RETURN name`
+
+| `SELECT name, sum(age) FROM People p GROUP BY name HAVING sum(age) > 100 AND count(*) > 2`
+| `MATCH (p:People) WITH p.name AS name, sum(p.age) AS \`sum(age)\`, count(*) AS __having_col_0 WHERE (\`sum(age)\` > 100 AND __having_col_0 > 2) RETURN name, \`sum(age)\``
+
+| `SELECT name FROM People p GROUP BY name HAVING count(*) > 5 ORDER BY name`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0 WHERE __having_col_0 > 5 RETURN name ORDER BY name`
+
+| `SELECT name FROM People p GROUP BY name HAVING count(DISTINCT age) > 3`
+| `MATCH (p:People) WITH p.name AS name, count(DISTINCT p.age) AS __having_col_0 WHERE __having_col_0 > 3 RETURN name`
+|===
+
+
+== Ordering the result set by an aggregate
+
+[translation_table,id=orderByAggregate]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT name, count(*) AS cnt FROM People p GROUP BY name ORDER BY cnt`
+| `MATCH (p:People) RETURN p.name AS name, count(*) AS cnt ORDER BY cnt`
+
+| `SELECT name, count(*) AS cnt FROM People p GROUP BY name ORDER BY cnt DESC`
+| `MATCH (p:People) RETURN p.name AS name, count(*) AS cnt ORDER BY cnt DESC`
+| `SELECT department, sum(age) AS total FROM People p GROUP BY department ORDER BY total`
+| `MATCH (p:People) RETURN p.department AS department, sum(p.age) AS total ORDER BY total`
+| `SELECT department, count(*) AS cnt, avg(age) AS average FROM People p GROUP BY department ORDER BY cnt DESC, average`
+| `MATCH (p:People) RETURN p.department AS department, count(*) AS cnt, avg(p.age) AS average ORDER BY cnt DESC, average`
+|===
+
+
+== Supported aggregate functions
+
+[translation_table,id=aggregates]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT name, count(*) FROM People p GROUP BY name`
+| `MATCH (p:People) RETURN p.name AS name, count(*)`
+
+| `SELECT name, max(age) FROM People p GROUP BY name`
+| `MATCH (p:People) RETURN p.name AS name, max(p.age)`
+
+| `SELECT name, min(age) FROM People p GROUP BY name`
+| `MATCH (p:People) RETURN p.name AS name, min(p.age)`
+
+| `SELECT sum(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH sum(p.age) AS \`sum(age)\`, p.name AS __group_col_0 RETURN \`sum(age)\``
+
+| `SELECT avg(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH avg(p.age) AS \`avg(age)\`, p.name AS __group_col_0 RETURN \`avg(age)\``
+
+| `SELECT percentileCont(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH percentileCont(p.age) AS \`percentileCont(age)\`, p.name AS __group_col_0 RETURN \`percentileCont(age)\``
+
+| `SELECT percentileDisc(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH percentileDisc(p.age) AS \`percentileDisc(age)\`, p.name AS __group_col_0 RETURN \`percentileDisc(age)\``
+
+| `SELECT stDev(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH stDev(p.age) AS \`stddev_samp(age)\`, p.name AS __group_col_0 RETURN \`stddev_samp(age)\``
+
+| `SELECT stDevP(age) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH stDevP(p.age) AS \`stddev_pop(age)\`, p.name AS __group_col_0 RETURN \`stddev_pop(age)\``
+
+| `SELECT stDev(age) AS x FROM People p GROUP BY name`
+| `MATCH (p:People) WITH stDev(p.age) AS x, p.name AS __group_col_0 RETURN x`
+
+| `SELECT stDevP(age) AS x FROM People p GROUP BY name`
+| `MATCH (p:People) WITH stDevP(p.age) AS x, p.name AS __group_col_0 RETURN x`
+|===
+
+== Limit and offset are supported with aggregations
+
+[translation_table,id=limitAndOffsetWithWithClause]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT sum(age) FROM People p GROUP BY name LIMIT 5`
+| `MATCH (p:People) WITH sum(p.age) AS \`sum(age)\`, p.name AS __group_col_0 RETURN \`sum(age)\` LIMIT 5`
+
+| `SELECT name FROM People p GROUP BY name HAVING count(*) > 5 LIMIT 10`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0 WHERE __having_col_0 > 5 RETURN name LIMIT 10`
+
+| `SELECT name FROM People p GROUP BY name HAVING count(*) > 5 ORDER BY name LIMIT 10 OFFSET 2`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0 WHERE __having_col_0 > 5 RETURN name ORDER BY name SKIP 2 LIMIT 10`
+|===
+
+== `DISTINCT` in the context of `GROUP BY`and `HAVING`
+
+`DISTINCT` applies to the final RETURN, not the `WITH`, across all `GROUP BY` / `HAVING` paths.
+
+[translation_table,id=distinctWithGroupByAndHaving]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT DISTINCT name, count(*) FROM People p GROUP BY name`
+| `MATCH (p:People) RETURN DISTINCT p.name AS name, count(*)`
+
+| `SELECT DISTINCT count(*) FROM People p GROUP BY name`
+| `MATCH (p:People) WITH count(*) AS \`count(*)\`, p.name AS __group_col_0 RETURN DISTINCT \`count(*)\``
+
+| `SELECT DISTINCT name FROM People p GROUP BY name HAVING count(*) > 5`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0 WHERE __having_col_0 > 5 RETURN DISTINCT name`
+|===
+
+== All supported clauses combined
+
+[translation_table,id=groupingCombinations]
+|===
+|SQL | Cypher equivalent
+
+| `SELECT DISTINCT name, sum(age) FROM People p GROUP BY name, department HAVING sum(age) > 100 ORDER BY name LIMIT 5`
+| `MATCH (p:People) WITH p.name AS name, sum(p.age) AS \`sum(age)\`, p.department AS __group_col_0 WHERE \`sum(age)\` > 100 RETURN DISTINCT name, \`sum(age)\` ORDER BY name LIMIT 5`
+
+| `SELECT DISTINCT name FROM People p GROUP BY name HAVING count(*) > 5 ORDER BY name LIMIT 10 OFFSET 5`
+| `MATCH (p:People) WITH p.name AS name, count(*) AS __having_col_0 WHERE __having_col_0 > 5 RETURN DISTINCT name ORDER BY name SKIP 5 LIMIT 10`
+
+| `SELECT DISTINCT department, count(*) AS cnt, max(age) AS max_age FROM People p WHERE age > 18 GROUP BY department HAVING count(*) > 1 AND max(age) > 25 ORDER BY cnt DESC LIMIT 10 OFFSET 2`
+| `MATCH (p:People) WHERE p.age > 18 WITH p.department AS department, count(*) AS cnt, max(p.age) AS max_age WHERE (cnt > 1 AND max_age > 25) RETURN DISTINCT department, cnt, max_age ORDER BY cnt DESC SKIP 2 LIMIT 10`
+
+| `SELECT department, count(*) AS cnt FROM People p WHERE age > 18 GROUP BY department`
+| `MATCH (p:People) WHERE p.age > 18 RETURN p.department AS department, count(*) AS cnt`
+
+| `SELECT count(*) AS cnt FROM People p WHERE age > 18 GROUP BY department`
+| `MATCH (p:People) WHERE p.age > 18 WITH count(*) AS cnt, p.department AS __group_col_0 RETURN cnt`
+
+| `SELECT count(*) AS cnt FROM People p ORDER BY cnt`
+| `MATCH (p:People) RETURN count(*) AS cnt ORDER BY cnt`
+|===

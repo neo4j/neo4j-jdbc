@@ -78,6 +78,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.ParserException;
 import org.jooq.impl.QOM;
 import org.jooq.impl.QOM.TableAlias;
+import org.neo4j.cypherdsl.core.AliasedExpression;
 import org.neo4j.cypherdsl.core.Case;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -108,8 +109,6 @@ import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReading;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithWhere;
 import org.neo4j.cypherdsl.core.StatementBuilder.OngoingReadingWithoutWhere;
 import org.neo4j.cypherdsl.core.SymbolicName;
-import org.neo4j.cypherdsl.core.renderer.Configuration;
-import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.cypherdsl.core.renderer.GeneralizedRenderer;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.jdbc.translator.spi.Cache;
@@ -162,8 +161,6 @@ final class SqlToCypher implements Translator {
 
 	private final SqlToCypherConfig config;
 
-	private final Configuration rendererConfig;
-
 	private final Cache<Query, String> cache = Cache.getInstance(STATEMENT_CACHE_SIZE);
 
 	private final Map<String, View> views;
@@ -173,12 +170,6 @@ final class SqlToCypher implements Translator {
 	private SqlToCypher(SqlToCypherConfig config) {
 
 		this.config = config;
-		this.rendererConfig = Configuration.newConfig()
-			.withPrettyPrint(this.config.isPrettyPrint())
-			.alwaysEscapeNames(this.config.isAlwaysEscapeNames())
-			.withDialect(Dialect.NEO4J_5)
-			.build();
-
 		if (this.config.getViewDefinitions() == null) {
 			this.views = Map.of();
 		}
@@ -235,7 +226,8 @@ final class SqlToCypher implements Translator {
 			Parser parser = dsl.parser();
 			query = parser.parseQuery(sql);
 			if (query == null && sql != null && sql.trim().startsWith("//")) {
-				return Renderer.getRenderer(this.rendererConfig, GeneralizedRenderer.class).render(Finish.create());
+				return Renderer.getRenderer(this.config.getRendererConfig(), GeneralizedRenderer.class)
+					.render(Finish.create());
 			}
 		}
 		catch (ParserException pe) {
@@ -290,7 +282,7 @@ final class SqlToCypher implements Translator {
 	}
 
 	private String render(Statement statement) {
-		return Renderer.getRenderer(this.rendererConfig).render(statement);
+		return Renderer.getRenderer(this.config.getRendererConfig()).render(statement);
 	}
 
 	record JoinDetails(QOM.QualifiedJoin<?, ?> join, QOM.Eq<?> eq) {
@@ -337,6 +329,12 @@ final class SqlToCypher implements Translator {
 		private final Map<SymbolicName, RelationshipPattern> resolvedRelationships = new HashMap<>();
 
 		private final AtomicBoolean useAliasForVColumn = new AtomicBoolean(true);
+
+		/**
+		 * Registry mapping jOOQ field expressions to their Cypher WITH and ORDER BY
+		 * clause aliases.
+		 */
+		private final AliasRegistry aliasRegistry = new AliasRegistry();
 
 		private final Map<String, View> views;
 
@@ -472,34 +470,240 @@ final class SqlToCypher implements Translator {
 
 			var reading = cbvs.isEmpty() ? createOngoingReadingFromSources(selectStatement)
 					: createOngoingReadingFromViews(selectStatement, cbvs);
-			var projection = selectStatement.$distinct() ? reading.returningDistinct(resultColumnsSupplier.get())
-					: reading.returning(resultColumnsSupplier.get());
+
+			var havingCondition = selectStatement.$having();
+			boolean needsWithClause = havingCondition != null || requiresWithForGroupBy(selectStatement);
+
+			OngoingReading effectiveReading = reading;
+			if (needsWithClause) {
+				var withResult = buildWithClause(reading, selectStatement, havingCondition);
+				effectiveReading = withResult.reading();
+				resultColumnsSupplier = withResult.returnExpressionsSupplier();
+			}
+
+			var projection = selectStatement.$distinct()
+					? effectiveReading.returningDistinct(resultColumnsSupplier.get())
+					: effectiveReading.returning(resultColumnsSupplier.get());
+
+			registerOrderByProjections(selectStatement);
+
 			var orderedProjection = projection
 				.orderBy(selectStatement.$orderBy().stream().map(this::expression).toList());
 
 			return addLimit(forceLimit, selectStatement, orderedProjection).build();
 		}
 
+		/**
+		 * Fill the alias registry for ORDER BY when not already in WITH scope. This
+		 * ensures ORDER BY on SELECT aliases (e.g., ORDER BY cnt where cnt is an
+		 * aggregate alias) resolves to the Cypher alias name rather than being treated as
+		 * a table property (p.cnt).
+		 * @param selectStatement the SELECT statement to inspect
+		 */
+		private void registerOrderByProjections(Select<?> selectStatement) {
+			if (selectStatement.$orderBy().isEmpty()) {
+				return;
+			}
+			for (var sf : selectStatement.$select()) {
+				if (sf instanceof QOM.FieldAlias<?> fa) {
+					this.aliasRegistry.register(fa, fa.$alias().last());
+				}
+			}
+		}
+
+		/**
+		 * Determines whether a GROUP BY clause requires a WITH-based translation because
+		 * the grouping fields contain entries not present in the SELECT list. When all
+		 * GROUP BY fields also appear in SELECT, Cypher's implicit aggregation produces
+		 * the correct result without an intermediate WITH clause.
+		 * <p>
+		 * Design decision: this method does not validate that every non-aggregated SELECT
+		 * expression appears in the GROUP BY list. Queries where non-aggregated SELECT
+		 * columns are missing from GROUP BY are silently translated. Cypher's implicit
+		 * grouping will group by all non-aggregated columns in the RETURN, which may
+		 * differ from the SQL GROUP BY.
+		 * @param selectStatement the SELECT statement to inspect
+		 * @return true if a WITH clause is needed for correct GROUP BY translation
+		 */
+		private boolean requiresWithForGroupBy(Select<?> selectStatement) {
+			var groupByFields = selectStatement.$groupBy();
+			if (groupByFields.isEmpty()) {
+				return false;
+			}
+			var selectFields = selectStatement.$select();
+			for (var gf : groupByFields) {
+				if (gf instanceof Field<?> groupField && this.aliasRegistry.resolve(groupField) == null
+						&& !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static boolean groupByFieldMatchesAnySelectField(Field<?> groupField,
+				List<? extends SelectFieldOrAsterisk> selectFields) {
+			Predicate<SelectFieldOrAsterisk> isFieldAndEquivalentToGroupBy = sf -> sf instanceof Field<?>;
+			isFieldAndEquivalentToGroupBy = isFieldAndEquivalentToGroupBy
+				.and(f -> new FieldEquivalencePredicate().test(groupField, (Field<?>) f));
+			return selectFields.stream().anyMatch(isFieldAndEquivalentToGroupBy);
+		}
+
+		/**
+		 * Builds a WITH clause for GROUP BY translation. The WITH includes all grouping
+		 * expressions and all aggregate expressions from the SELECT list, triggering
+		 * Cypher's implicit grouping. If a HAVING condition is present, it is applied as
+		 * a WHERE after the WITH. The returned supplier provides the final RETURN
+		 * expressions that reference the aliases established in the WITH.
+		 * @param reading the current reading step to attach the WITH to
+		 * @param selectStatement the SELECT statement being translated
+		 * @param havingCondition the HAVING condition, or null if absent
+		 * @return the WITH clause result containing the reading step and return
+		 * expressions
+		 */
+		private WithClauseResult buildWithClause(OngoingReading reading, Select<?> selectStatement,
+				org.jooq.Condition havingCondition) {
+
+			var withExpressions = new ArrayList<IdentifiableElement>();
+			var returnExpressions = new ArrayList<Expression>();
+
+			processProjections(selectStatement, withExpressions, returnExpressions);
+
+			var aliasCounter = new AtomicInteger(0);
+			processGroupingKeys(selectStatement, withExpressions, aliasCounter);
+			processHaving(selectStatement, withExpressions, aliasCounter);
+
+			var withStep = reading.with(withExpressions);
+
+			OngoingReading afterWith;
+			if (havingCondition != null) {
+				afterWith = withStep.where(havingCondition(havingCondition));
+			}
+			else {
+				afterWith = withStep;
+			}
+
+			return new WithClauseResult(afterWith, () -> returnExpressions);
+		}
+
+		/**
+		 * Translate each SELECT field and alias it for the WITH clause using the same
+		 * name as before (i.e. how it would have been rendered in the Cypher query
+		 * without any post-processing and WITH-projecting).
+		 * @param selectStatement the statement being worked on
+		 * @param withExpressions the list of expressions that need to be WITH projected
+		 * @param returnExpressions expressions from the WITH clause that needs to be
+		 * passed to RETURN
+		 */
+		private void processProjections(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
+				ArrayList<Expression> returnExpressions) {
+			for (var selectField : selectStatement.$select()) {
+				var expressions = expression(selectField).toList();
+				for (var expr : expressions) {
+					String alias = null;
+					if (expr instanceof AliasedExpression aliased) {
+						alias = aliased.getAlias();
+					}
+					else if (!(expr instanceof org.neo4j.cypherdsl.core.Asterisk)) {
+						alias = selectField.toString();
+						expr = expr.as(alias);
+					}
+					withExpressions.add((IdentifiableElement) expr);
+					returnExpressions.add((alias != null) ? Cypher.name(alias) : expr);
+					if (selectField instanceof Field<?> f) {
+						this.aliasRegistry.register(f, alias);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Add GROUP BY fields that are not already in the SELECT.
+		 * @param selectStatement the statement being worked on
+		 * @param withExpressions the list of expressions that need to be WITH projected
+		 * @param aliasCounter shared counter to track generated column identifiers
+		 */
+		private void processGroupingKeys(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
+				AtomicInteger aliasCounter) {
+			var selectFields = selectStatement.$select();
+			for (var gf : selectStatement.$groupBy()) {
+				if (gf instanceof Field<?> groupField && this.aliasRegistry.resolve(groupField) == null
+						&& !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
+					var expr = expression(groupField);
+					var alias = "__group_col_" + aliasCounter.getAndIncrement();
+					withExpressions.add(expr.as(alias));
+					this.aliasRegistry.register(groupField, alias);
+				}
+			}
+		}
+
+		/**
+		 * Inject HAVING-only aggregates as hidden WITH columns. These are aggregates
+		 * referenced in HAVING but not in SELECT — they need to be projected in the WITH
+		 * so the post-WITH WHERE can reference them, but they are NOT added to
+		 * returnExpressions (excluded from final RETURN).
+		 * @param selectStatement the statement being worked on
+		 * @param withExpressions the list of expressions that need to be WITH projected
+		 * @param aliasCounter shared counter to track generated column identifiers
+		 */
+		private void processHaving(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
+				AtomicInteger aliasCounter) {
+			var havingCondition = selectStatement.$having();
+			if (havingCondition == null) {
+				return;
+			}
+			for (var agg : Aggregates.of(havingCondition)) {
+				if (this.aliasRegistry.resolve(agg) == null) {
+					var expr = expression(agg);
+					var alias = "__having_col_" + aliasCounter.getAndIncrement();
+					withExpressions.add(expr.as(alias));
+					this.aliasRegistry.register(agg, alias);
+				}
+			}
+		}
+
+		/**
+		 * Translates a HAVING condition to a Cypher condition that references the aliases
+		 * established in the WITH clause. Aggregate expressions and column references in
+		 * the HAVING are resolved to their WITH aliases by the unified interception in
+		 * {@code expression(Field<?>)} via the active {@code aliasRegistry}.
+		 * @param c the jOOQ HAVING condition to translate
+		 * @return the equivalent Cypher condition referencing WITH aliases
+		 */
+		private Condition havingCondition(org.jooq.Condition c) {
+			return condition(c);
+		}
+
 		// Again, Sonar thinks sql and matcher are uselessly assigned
 		@SuppressWarnings("squid:S1854")
 		private StatementBuilder.BuildableStatement<ResultStatement> addLimit(boolean force, Select<?> selectStatement,
 				StatementBuilder.OngoingMatchAndReturnWithOrder projection) {
-			StatementBuilder.BuildableStatement<ResultStatement> buildableStatement;
-			if (!(selectStatement.$limit() instanceof Param<?> param)) {
-				var forceLimit = force;
-				var sql = Optional.ofNullable(selectStatement.$limit()).map(Object::toString).orElse("");
-				var matcher = LIMIT_STAR_FROM_PATTERN.matcher(sql);
-				var limit = 1;
-				if (matcher.matches()) {
-					forceLimit = true;
-					limit = Integer.parseInt(matcher.group(1));
-				}
-				buildableStatement = forceLimit ? projection.limit(limit) : projection;
+
+			// Apply OFFSET (SKIP) first — Cypher requires SKIP before LIMIT.
+			// skip() narrows the type to TerminalExposesLimit, so we branch here:
+			// if offset is present, apply skip first then limit on the result;
+			// otherwise use the original projection which supports both skip and limit.
+			var offset = selectStatement.$offset();
+			if (offset != null) {
+				var afterSkip = projection.skip(expression(offset));
+				return applyLimit(force, selectStatement, afterSkip);
 			}
-			else {
-				buildableStatement = projection.limit(expression(param));
+			return applyLimit(force, selectStatement, projection);
+		}
+
+		private StatementBuilder.BuildableStatement<ResultStatement> applyLimit(boolean force,
+				Select<?> selectStatement, StatementBuilder.TerminalExposesLimit target) {
+			if (selectStatement.$limit() instanceof Param<?> param) {
+				return target.limit(expression(param));
 			}
-			return buildableStatement;
+			var forceLimit = force;
+			var sql = Optional.ofNullable(selectStatement.$limit()).map(Object::toString).orElse("");
+			var matcher = LIMIT_STAR_FROM_PATTERN.matcher(sql);
+			var limit = 1;
+			if (matcher.matches()) {
+				forceLimit = true;
+				limit = Integer.parseInt(matcher.group(1));
+			}
+			return forceLimit ? target.limit(limit) : target;
 		}
 
 		private OngoingReading createOngoingReadingFromViews(Select<?> selectStatement, ArrayList<CbvPointer> cbvs) {
@@ -734,7 +938,7 @@ final class SqlToCypher implements Translator {
 				}
 				else if (!(lhsProperties.containsKey(targetColumn) || rhsProperties.containsKey(targetColumn))) {
 					UnaryOperator<String> toLower = s -> s.toLowerCase(Locale.ROOT);
-					if (relationshipColumns.isEmpty() && lastName.contains("_")) {
+					if (relationshipColumns.isEmpty() && (lastName != null && lastName.contains("_"))) {
 						var indexOf_ = lastName.indexOf("_");
 						var prefix = lastName.substring(0, indexOf_).toLowerCase(Locale.ROOT);
 						if (isLabelOfNode(relationship.getLeft(), prefix, toLower)) {
@@ -1473,6 +1677,14 @@ final class SqlToCypher implements Translator {
 
 		@SuppressWarnings({ "NestedIfDepth", "squid:S3776", "squid:S138" })
 		private Expression expression(Field<?> f, boolean turnUnknownIntoNames) {
+
+			// Registry interception — resolve fields to WITH aliases when in WITH scope
+			if ((f instanceof TableField<?, ?> || Aggregates.isAggregate(f) || f instanceof QOM.FieldAlias<?>)) {
+				String alias = this.aliasRegistry.resolve(f);
+				if (alias != null) {
+					return Cypher.name(alias);
+				}
+			}
 
 			if (f instanceof Param<?> p) {
 				if (p.$inline()) {
@@ -2408,10 +2620,6 @@ final class SqlToCypher implements Translator {
 				.anyMatch(needle::equalsIgnoreCase);
 		}
 
-		private static boolean isLabelOfNode(Node node, String needle) {
-			return isLabelOfNode(node, needle, UnaryOperator.identity());
-		}
-
 		private static boolean isLabelOfNode(Node node, String needle, UnaryOperator<String> transformer) {
 			if (needle == null) {
 				return false;
@@ -2476,6 +2684,9 @@ final class SqlToCypher implements Translator {
 			return (this.scopeTable != null) ? this.name.replace(this.scopeTable.toLowerCase(Locale.ROOT) + "_", "")
 					: this.name;
 		}
+	}
+
+	record WithClauseResult(OngoingReading reading, Supplier<List<Expression>> returnExpressionsSupplier) {
 	}
 
 }
