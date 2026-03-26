@@ -58,8 +58,7 @@ import org.jooq.CreateTableElementListStep;
 import org.jooq.DSLContext;
 import org.jooq.False;
 import org.jooq.Field;
-import org.jooq.GroupField;
-import org.jooq.Name;
+transaimport org.jooq.Name;
 import org.jooq.Null;
 import org.jooq.Param;
 import org.jooq.Parser;
@@ -473,42 +472,43 @@ final class SqlToCypher implements Translator {
 					: createOngoingReadingFromViews(selectStatement, cbvs);
 
 			var havingCondition = selectStatement.$having();
-			var groupByFields = selectStatement.$groupBy();
 			boolean needsWithClause = havingCondition != null || requiresWithForGroupBy(selectStatement);
 
-			OngoingReading effectiveReading;
-			Supplier<List<Expression>> finalResultColumnsSupplier;
+			OngoingReading effectiveReading = reading;
 			if (needsWithClause) {
-				var withResult = buildWithClause(reading, selectStatement, groupByFields, havingCondition);
+				var withResult = buildWithClause(reading, selectStatement, havingCondition);
 				effectiveReading = withResult.reading();
-				finalResultColumnsSupplier = withResult.returnExpressionsSupplier();
-			}
-			else {
-				effectiveReading = reading;
-				finalResultColumnsSupplier = resultColumnsSupplier;
+				resultColumnsSupplier = withResult.returnExpressionsSupplier();
 			}
 
 			var projection = selectStatement.$distinct()
-					? effectiveReading.returningDistinct(finalResultColumnsSupplier.get())
-					: effectiveReading.returning(finalResultColumnsSupplier.get());
+					? effectiveReading.returningDistinct(resultColumnsSupplier.get())
+					: effectiveReading.returning(resultColumnsSupplier.get());
 
-			// Fill the alias registry for ORDER BY when not already in WITH scope.
-			// This ensures ORDER BY on SELECT aliases (e.g., ORDER BY cnt where
-			// cnt is an aggregate alias) resolves to the Cypher alias name
-			// rather than being treated as a table property (p.cnt).
-			if (!selectStatement.$orderBy().isEmpty()) {
-				for (var sf : selectStatement.$select()) {
-					if (sf instanceof QOM.FieldAlias<?> fa) {
-						this.aliasRegistry.register(fa, fa.$alias().last());
-					}
-				}
-			}
+			registerOrderByProjections(selectStatement);
 
 			var orderedProjection = projection
 				.orderBy(selectStatement.$orderBy().stream().map(this::expression).toList());
 
 			return addLimit(forceLimit, selectStatement, orderedProjection).build();
+		}
 
+		/**
+		 * Fill the alias registry for ORDER BY when not already in WITH scope. This
+		 * ensures ORDER BY on SELECT aliases (e.g., ORDER BY cnt where cnt is an
+		 * aggregate alias) resolves to the Cypher alias name rather than being treated as
+		 * a table property (p.cnt).
+		 * @param selectStatement the SELECT statement to inspect
+		 */
+		private void registerOrderByProjections(Select<?> selectStatement) {
+			if (selectStatement.$orderBy().isEmpty()) {
+				return;
+			}
+			for (var sf : selectStatement.$select()) {
+				if (sf instanceof QOM.FieldAlias<?> fa) {
+					this.aliasRegistry.register(fa, fa.$alias().last());
+				}
+			}
 		}
 
 		/**
@@ -556,21 +556,45 @@ final class SqlToCypher implements Translator {
 		 * expressions that reference the aliases established in the WITH.
 		 * @param reading the current reading step to attach the WITH to
 		 * @param selectStatement the SELECT statement being translated
-		 * @param groupByFields the GROUP BY fields from the SQL statement
 		 * @param havingCondition the HAVING condition, or null if absent
 		 * @return the WITH clause result containing the reading step and return
 		 * expressions
 		 */
 		private WithClauseResult buildWithClause(OngoingReading reading, Select<?> selectStatement,
-				List<? extends GroupField> groupByFields, org.jooq.Condition havingCondition) {
+				org.jooq.Condition havingCondition) {
 
 			var withExpressions = new ArrayList<IdentifiableElement>();
 			var returnExpressions = new ArrayList<Expression>();
 
-			// Translate each SELECT field and alias it for the WITH clause using the same
-			// name as before
-			// (i.e. how it would have been rendered in the Cypher query without any
-			// post-processing and WITH-projecting)
+			processProjections(selectStatement, withExpressions, returnExpressions);
+
+			var aliasCounter = new AtomicInteger(0);
+			processGroupingKeys(selectStatement, withExpressions, aliasCounter);
+			processHaving(selectStatement, withExpressions, aliasCounter);
+
+			var withStep = reading.with(withExpressions);
+
+			OngoingReading afterWith;
+			if (havingCondition != null) {
+				afterWith = withStep.where(havingCondition(havingCondition));
+			}
+			else {
+				afterWith = withStep;
+			}
+
+			return new WithClauseResult(afterWith, () -> returnExpressions);
+		}
+
+		/**
+		 * Translate each SELECT field and alias it for the WITH clause using the same
+		 * name as before (i.e. how it would have been rendered in the Cypher query
+		 * without any post-processing and WITH-projecting).
+		 * @param selectStatement the statement being worked on
+		 * @param withExpressions the list of expressions that need to be WITH projected
+		 * @param returnExpressions       expressions from the WITH clause that needs to be passed to RETURN
+		 */
+		private void processProjections(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
+				ArrayList<Expression> returnExpressions) {
 			for (var selectField : selectStatement.$select()) {
 				var expressions = expression(selectField).toList();
 				for (var expr : expressions) {
@@ -589,11 +613,18 @@ final class SqlToCypher implements Translator {
 					}
 				}
 			}
+		}
 
-			var aliasCounter = new AtomicInteger(0);
-			// Add GROUP BY fields that are not already in the SELECT
+		/**
+		 * Add GROUP BY fields that are not already in the SELECT.
+		 * @param selectStatement the statement being worked on
+		 * @param withExpressions the list of expressions that need to be WITH projected
+		 * @param aliasCounter shared counter to track generated column identifiers
+		 */
+		private void processGroupingKeys(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
+				AtomicInteger aliasCounter) {
 			var selectFields = selectStatement.$select();
-			for (var gf : groupByFields) {
+			for (var gf : selectStatement.$groupBy()) {
 				if (gf instanceof Field<?> groupField && this.aliasRegistry.resolve(groupField) == null
 						&& !groupByFieldMatchesAnySelectField(groupField, selectFields)) {
 					var expr = expression(groupField);
@@ -602,33 +633,31 @@ final class SqlToCypher implements Translator {
 					this.aliasRegistry.register(groupField, alias);
 				}
 			}
+		}
 
-			// Inject HAVING-only aggregates as hidden WITH columns.
-			// These are aggregates referenced in HAVING but not in SELECT — they need
-			// to be projected in the WITH so the post-WITH WHERE can reference them,
-			// but they are NOT added to returnExpressions (excluded from final RETURN).
-			if (havingCondition != null) {
-				for (var agg : Aggregates.of(havingCondition)) {
-					if (this.aliasRegistry.resolve(agg) == null) {
-						var expr = expression(agg);
-						var alias = "__having_col_" + aliasCounter.getAndIncrement();
-						withExpressions.add(expr.as(alias));
-						this.aliasRegistry.register(agg, alias);
-					}
+		/**
+		 * Inject HAVING-only aggregates as hidden WITH columns. These are aggregates
+		 * referenced in HAVING but not in SELECT — they need to be projected in the WITH
+		 * so the post-WITH WHERE can reference them, but they are NOT added to
+		 * returnExpressions (excluded from final RETURN).
+		 * @param selectStatement the statement being worked on
+		 * @param withExpressions the list of expressions that need to be WITH projected
+		 * @param aliasCounter shared counter to track generated column identifiers
+		 */
+		private void processHaving(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
+				AtomicInteger aliasCounter) {
+			var havingCondition = selectStatement.$having();
+			if (havingCondition == null) {
+				return;
+			}
+			for (var agg : Aggregates.of(havingCondition)) {
+				if (this.aliasRegistry.resolve(agg) == null) {
+					var expr = expression(agg);
+					var alias = "__having_col_" + aliasCounter.getAndIncrement();
+					withExpressions.add(expr.as(alias));
+					this.aliasRegistry.register(agg, alias);
 				}
 			}
-
-			var withStep = reading.with(withExpressions);
-
-			OngoingReading afterWith;
-			if (havingCondition != null) {
-				afterWith = withStep.where(havingCondition(havingCondition));
-			}
-			else {
-				afterWith = withStep;
-			}
-
-			return new WithClauseResult(afterWith, () -> returnExpressions);
 		}
 
 		/**

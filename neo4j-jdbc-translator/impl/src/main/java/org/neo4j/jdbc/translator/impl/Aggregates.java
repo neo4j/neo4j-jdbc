@@ -52,6 +52,7 @@ final class Aggregates implements Iterable<Field<?>> {
 				|| f instanceof QOM.Avg || f instanceof QOM.StddevSamp || f instanceof QOM.StddevPop;
 	}
 
+	@SuppressWarnings("squid:S3776") // Yep, this is complex.
 	private static void collectAggregatesFromCondition(Condition condition, List<Field<?>> result) {
 		if (condition instanceof QOM.And and) {
 			collectAggregatesFromCondition(and.$arg1(), result);

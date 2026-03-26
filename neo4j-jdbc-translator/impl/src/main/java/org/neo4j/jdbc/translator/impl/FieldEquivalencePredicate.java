@@ -45,6 +45,7 @@ final class FieldEquivalencePredicate implements BiPredicate<Field<?>, Field<?>>
 	 * @return {@code true} if the fields are structurally equivalent
 	 */
 	@Override
+	@SuppressWarnings("squid:S3776") // Yep, this is complex.
 	public boolean test(Field<?> a, Field<?> b) {
 		if (a == null || b == null) {
 			return false;
