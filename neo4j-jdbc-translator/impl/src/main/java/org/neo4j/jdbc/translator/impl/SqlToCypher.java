@@ -58,7 +58,7 @@ import org.jooq.CreateTableElementListStep;
 import org.jooq.DSLContext;
 import org.jooq.False;
 import org.jooq.Field;
-transaimport org.jooq.Name;
+import org.jooq.Name;
 import org.jooq.Null;
 import org.jooq.Param;
 import org.jooq.Parser;
