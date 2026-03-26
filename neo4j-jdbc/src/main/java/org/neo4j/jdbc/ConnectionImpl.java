@@ -64,7 +64,6 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import org.neo4j.bolt.connection.AccessMode;
 import org.neo4j.bolt.connection.BasicResponseHandler;
@@ -103,8 +102,7 @@ final class ConnectionImpl implements Neo4jConnection {
 	// Adding the comment /*+ NEO4J FORCE_CYPHER */ to your Cypher statement will make the
 	// JDBC driver opt-out from translating it to Cypher, even if the driver has been
 	// configured for automatic translation.
-	private static final Pattern PATTERN_ENFORCE_CYPHER = Pattern
-		.compile("(['`\"])?[^'`\"]*/\\*\\+ NEO4J FORCE_CYPHER \\*/[^'`\"]*(['`\"])?");
+	private static final String FORCE_CYPHER_HINT = "/*+ NEO4J FORCE_CYPHER */";
 
 	static final Logger LOGGER = Logger.getLogger("org.neo4j.jdbc.connection");
 
@@ -1072,12 +1070,25 @@ final class ConnectionImpl implements Neo4jConnection {
 	}
 
 	static boolean forceCypher(String sql) {
-		var matcher = PATTERN_ENFORCE_CYPHER.matcher(sql);
-		while (matcher.find()) {
-			if (matcher.group(1) != null && matcher.group(1).equals(matcher.group(2))) {
-				continue;
+		int idx = sql.indexOf(FORCE_CYPHER_HINT);
+		while (idx >= 0) {
+			if (!isInsideQuotedLiteral(sql, idx, idx + FORCE_CYPHER_HINT.length())) {
+				return true;
 			}
-			return true;
+			idx = sql.indexOf(FORCE_CYPHER_HINT, idx + FORCE_CYPHER_HINT.length());
+		}
+		return false;
+	}
+
+	private static boolean isInsideQuotedLiteral(String sql, int matchStart, int matchEnd) {
+		for (char q : new char[] { '\'', '`', '"' }) {
+			int before = sql.lastIndexOf(q, matchStart - 1);
+			if (before >= 0) {
+				int after = sql.indexOf(q, matchEnd);
+				if (after >= 0) {
+					return true;
+				}
+			}
 		}
 		return false;
 	}

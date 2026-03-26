@@ -2014,6 +2014,13 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		public int hashCode() {
 			return Objects.hash(this.catalog, this.schemaPattern, this.tableNamePattern, Arrays.hashCode(this.types));
 		}
+
+		@Override
+		public String toString() {
+			return "GetTablesCacheKey{" + "catalog='" + this.catalog + '\'' + ", schemaPattern='" + this.schemaPattern
+					+ '\'' + ", tableNamePattern='" + this.tableNamePattern + '\'' + ", types="
+					+ Arrays.toString(this.types) + '}';
+		}
 	}
 
 	private record GetTablesCacheValue(RunResponse runResponse, PullResponse pullResponse) {
