@@ -591,7 +591,8 @@ final class SqlToCypher implements Translator {
 		 * without any post-processing and WITH-projecting).
 		 * @param selectStatement the statement being worked on
 		 * @param withExpressions the list of expressions that need to be WITH projected
-		 * @param returnExpressions       expressions from the WITH clause that needs to be passed to RETURN
+		 * @param returnExpressions expressions from the WITH clause that needs to be
+		 * passed to RETURN
 		 */
 		private void processProjections(Select<?> selectStatement, ArrayList<IdentifiableElement> withExpressions,
 				ArrayList<Expression> returnExpressions) {
