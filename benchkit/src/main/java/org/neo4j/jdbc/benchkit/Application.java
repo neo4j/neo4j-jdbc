@@ -18,7 +18,6 @@
  */
 package org.neo4j.jdbc.benchkit;
 
-import com.fasterxml.jackson.databind.Module;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 
 import org.springframework.boot.SpringApplication;
@@ -35,7 +34,7 @@ public class Application {
 	}
 
 	@Bean
-	public Module jsonNullableModule() {
+	public JsonNullableModule jsonNullableModule() {
 		return new JsonNullableModule();
 	}
 
