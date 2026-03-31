@@ -2028,7 +2028,7 @@ final class SqlToCypher implements Translator {
 			else if (f instanceof QOM.CurrentTimestamp<?>) {
 				return Cypher.localdatetime();
 			}
-			else if (f instanceof QOM.Extract<?> extract) {
+			else if (f instanceof QOM.Extract extract) {
 				return switch (extract.$datePart()) {
 					case YEAR -> expression(extract.$field()).property("year");
 					case MONTH -> expression(extract.$field()).property("month");
