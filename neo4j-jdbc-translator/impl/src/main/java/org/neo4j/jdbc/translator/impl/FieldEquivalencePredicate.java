@@ -82,7 +82,7 @@ final class FieldEquivalencePredicate implements BiPredicate<Field<?>, Field<?>>
 			if (ca.$distinct() != cb.$distinct()) {
 				return false;
 			}
-			return test(ca.$field(), cb.$field());
+			return (ca.$field() == null && cb.$field() == null) || test(ca.$field(), cb.$field());
 		}
 		if (a instanceof QOM.Sum sa && b instanceof QOM.Sum sb) {
 			return test(sa.$field(), sb.$field());
