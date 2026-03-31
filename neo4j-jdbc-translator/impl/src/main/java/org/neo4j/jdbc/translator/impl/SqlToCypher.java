@@ -1988,7 +1988,7 @@ final class SqlToCypher implements Translator {
 				var field = c.$field();
 				Expression exp;
 				// See https://github.com/jOOQ/jOOQ/issues/16344
-				if (field instanceof Asterisk || "*".equals(field.toString())) {
+				if (field == null || field instanceof Asterisk || "*".equals(field.toString())) {
 					exp = Cypher.asterisk();
 				}
 				else {

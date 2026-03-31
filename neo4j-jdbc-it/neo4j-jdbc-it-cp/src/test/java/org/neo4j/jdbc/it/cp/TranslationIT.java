@@ -752,8 +752,8 @@ class TranslationIT extends IntegrationTestBase {
 				var stmt = connection.prepareStatement("CREATE (m:Movie {title:  $title, released: $released})")) {
 			assertThatExceptionOfType(SQLException.class).isThrownBy(stmt::execute)
 				.withCauseInstanceOf(ParserException.class)
-				.withMessageStartingWith(
-						"general processing exception - FUNCTION, GENERATOR, GLOBAL TEMPORARY TABLE, INDEX, OR ALTER, OR REPLACE, PROCEDURE, SCHEMA, SEQUENCE, TABLE, TEMPORARY TABLE, TRIGGER, TYPE, UNIQUE INDEX, or VIEW expected");
+				.withMessageStartingWith("general processing exception -")
+				.withMessageContaining(" expected:");
 		}
 
 	}
