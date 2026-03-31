@@ -671,12 +671,20 @@ sealed class PreparedStatementImpl extends StatementImpl implements Neo4jPrepare
 				GQLError.$22N37.withTemplatedMessage(value.getClass().getName(), Time.class.getName()));
 	}
 
-	@SuppressWarnings("squid:S2143") // We need the darn calendar
+	@SuppressWarnings({ "squid:S2143", "MagicConstant" })
+	// We need the darn calendar
 	Calendar makeCalendar(Object value) {
 		if (value instanceof ZonedDateTime zonedDateTime) {
-			return Calendar.getInstance(TimeZone.getTimeZone(zonedDateTime.getZone()));
+			var instance = Calendar.getInstance(TimeZone.getTimeZone(zonedDateTime.getZone()));
+			instance.set(zonedDateTime.getYear(), zonedDateTime.getMonthValue() - 1, zonedDateTime.getDayOfMonth(),
+					zonedDateTime.getHour(), zonedDateTime.getMinute(), zonedDateTime.getSecond());
+			return instance;
 		}
-		return Calendar.getInstance(TimeZone.getTimeZone(ZoneId.systemDefault()));
+		var cal = Calendar.getInstance(TimeZone.getTimeZone(ZoneId.systemDefault()));
+		if (value instanceof java.util.Date date) {
+			cal.setTime(date);
+		}
+		return cal;
 	}
 
 	Timestamp makeTimestamp(Object value) throws Neo4jException {

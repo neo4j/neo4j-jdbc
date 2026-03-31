@@ -46,6 +46,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.util.Calendar;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
@@ -1333,6 +1334,9 @@ final class ResultSetImpl implements Neo4jResultSet {
 			}
 			else if (type == OffsetDateTime.class) {
 				result = value.asZonedDateTime().toOffsetDateTime();
+			}
+			else if (type == OffsetTime.class) {
+				result = value.asOffsetTime();
 			}
 			if (result != null) {
 				return type.cast(result);
