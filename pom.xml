@@ -160,7 +160,7 @@
 		<jaxb-api.version>4.0.5</jaxb-api.version>
 		<jboss-logging.version>3.6.2.Final</jboss-logging.version>
 		<jdbi3.version>3.52.0</jdbi3.version>
-		<jooq.version>3.21.1</jooq.version>
+		<jooq.version>3.19.31</jooq.version>
 		<jreleaser-maven-plugin.version>1.23.0</jreleaser-maven-plugin.version>
 		<junit-jupiter.version>6.0.3</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.8</keycloak-authz-client.version>
