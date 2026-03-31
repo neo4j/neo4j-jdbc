@@ -308,9 +308,9 @@ class PreparedStatementIT extends IntegrationTestBase {
 						LocalTime.of(0, 0).atOffset(ZoneId.systemDefault().getRules().getOffset(Instant.now()))),
 				Arguments.of(
 						java.util.Date
-							.from(LocalDateTime.of(2001, 2, 3, 21, 46).atZone(ZoneId.systemDefault()).toInstant()),
+							.from(LocalDateTime.of(2001, 2, 3, 21, 48).atZone(ZoneId.systemDefault()).toInstant()),
 						OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
-						LocalDateTime.of(2001, 2, 3, 21, 46)
+						LocalDateTime.of(2001, 2, 3, 21, 48)
 							.atZone(ZoneId.systemDefault())
 							.toOffsetDateTime()
 							.toOffsetTime()),
