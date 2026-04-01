@@ -185,7 +185,7 @@ final class ValueImpl implements Value, AsValue {
 				var result = (Function<Vector, Object>) vh.get();
 				return result;
 			}
-			catch (Throwable ex) {
+			catch (Exception ex) {
 				throw new RuntimeException(ex);
 			}
 		});

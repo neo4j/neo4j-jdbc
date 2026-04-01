@@ -129,7 +129,7 @@ class ArrayImpl implements Array {
 		return new ArrayImpl(connection, arrayType, values, containsNulls);
 	}
 
-	static Array of(Connection connection, Vector vector) throws SQLException {
+	static Array of(Connection connection, Vector vector) {
 		record ValuesAndArray(List<Value> values, Object array) {
 		}
 		var valuesAndArray = vector.stream()

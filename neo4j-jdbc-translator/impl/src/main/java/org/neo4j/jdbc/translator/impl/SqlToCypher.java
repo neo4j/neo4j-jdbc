@@ -690,14 +690,16 @@ final class SqlToCypher implements Translator {
 			return applyLimit(force, selectStatement, projection);
 		}
 
+		// Neither assigment to `forceLimit` nor `matcher` are useless, thank you sonar.
+		@SuppressWarnings({ "squid:S1854" })
 		private StatementBuilder.BuildableStatement<ResultStatement> applyLimit(boolean force,
 				Select<?> selectStatement, StatementBuilder.TerminalExposesLimit target) {
 			if (selectStatement.$limit() instanceof Param<?> param) {
 				return target.limit(expression(param));
 			}
 			var forceLimit = force;
-			var sql = Optional.ofNullable(selectStatement.$limit()).map(Object::toString).orElse("");
-			var matcher = LIMIT_STAR_FROM_PATTERN.matcher(sql);
+			var matcher = LIMIT_STAR_FROM_PATTERN
+				.matcher(Optional.ofNullable(selectStatement.$limit()).map(Object::toString).orElse(""));
 			var limit = 1;
 			if (matcher.matches()) {
 				forceLimit = true;

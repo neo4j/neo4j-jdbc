@@ -1533,9 +1533,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				columnSearchable = DatabaseMetaData.typePredNone;
 			}
 			var row = new Value[] { Values.value(type.name()), Values.value(sqlType), getMaxPrecision(sqlType),
-					Values.NULL, // Prefix and suffix are actually determined for some, we
-									// should use this at some point
-					Values.NULL, Values.NULL, Values.value(DatabaseMetaData.typeNullable),
+					Values.NULL, Values.NULL, Values.NULL, Values.value(DatabaseMetaData.typeNullable),
 					Values.value(type == Type.STRING), Values.value(columnSearchable), Values.value(false),
 					Values.value(false), Values.NULL, Values.NULL, Values.NULL, Values.NULL, Values.NULL, Values.NULL,
 					Values.value(10), };
