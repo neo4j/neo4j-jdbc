@@ -1002,7 +1002,7 @@ class ResultSetImplTests {
 
 		// when & then
 		verificationLogic
-			.run(() -> indexAccess ? this.resultSet.getAsciiStream(INDEX) : this.resultSet.getAsciiStream(LABEL));
+			.run(() -> indexAccess ? this.resultSet.getBinaryStream(INDEX) : this.resultSet.getBinaryStream(LABEL));
 	}
 
 	private static Stream<Arguments> getBinaryStreamArgs() {
@@ -1025,8 +1025,16 @@ class ResultSetImplTests {
 								supplier -> assertThat(supplier.get()).isNull())),
 				// other types handling
 				Arguments.of(Values.value(new byte[] {}),
-						Named.<VerificationLogic<InputStream>>of("verify throws exception",
-								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))),
+						Named.<VerificationLogic<InputStream>>of("verify throws exception", supplier -> {
+							byte[] value;
+							try {
+								value = new BufferedInputStream(supplier.get()).readAllBytes();
+							}
+							catch (IOException ex) {
+								throw new RuntimeException(ex);
+							}
+							assertThat(value).isEqualTo(new byte[0]);
+						})),
 				Arguments.of(Values.value(List.of("value")),
 						Named.<VerificationLogic<InputStream>>of("verify throws exception",
 								supplier -> assertThatThrownBy(supplier::get).isInstanceOf(SQLException.class))))
@@ -1288,6 +1296,7 @@ class ResultSetImplTests {
 
 	@ParameterizedTest
 	@MethodSource("shouldTruncateStringOnGetObjectArgs")
+	@MethodSource("shouldTruncateBytesOnGetObjectArgs")
 	void shouldTruncateOnGetObject(Value value, int maxFieldSize, VerificationLogic<Object> verificationLogic,
 			boolean indexAccess) throws SQLException {
 		// given
@@ -1346,18 +1355,6 @@ class ResultSetImplTests {
 										.isEqualTo(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }))))
 			// map each set of arguments to both index and label access methods
 			.flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
-	}
-
-	@ParameterizedTest
-	@MethodSource("shouldTruncateBytesOnGetObjectArgs")
-	void shouldTruncateBytesOnGetBytes(Value value, int maxFieldSize, VerificationLogic<Object> verificationLogic,
-			boolean indexAccess) throws SQLException {
-		// given
-		this.resultSet = setupWithValue(value, maxFieldSize);
-		this.resultSet.next();
-
-		// when & then
-		verificationLogic.run(() -> indexAccess ? this.resultSet.getObject(INDEX) : this.resultSet.getObject(LABEL));
 	}
 
 	private static Stream<Arguments> shouldTruncateBytesOnGetObjectArgs() {
@@ -1420,7 +1417,7 @@ class ResultSetImplTests {
 
 		// when & then
 		verificationLogic
-			.run(() -> indexAccess ? this.resultSet.getAsciiStream(INDEX) : this.resultSet.getAsciiStream(LABEL));
+			.run(() -> indexAccess ? this.resultSet.getBinaryStream(INDEX) : this.resultSet.getBinaryStream(LABEL));
 	}
 
 	private static Stream<Arguments> shouldTruncateOnGetBinaryStreamArgs() {

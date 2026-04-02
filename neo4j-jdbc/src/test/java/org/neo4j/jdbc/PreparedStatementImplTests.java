@@ -333,7 +333,8 @@ class PreparedStatementImplTests {
 
 	@ParameterizedTest
 	@MethodSource("getShouldThrowOnExplicitlyProhibitedMethodsArgs")
-	void shouldThrowOnExplicitlyProhibitedMethods(StatementMethodRunner consumer) throws SQLException {
+	@MethodSource("getShouldThrowOnInvalidParameterIndexArgs")
+	void shouldThrowNeo4jException(StatementMethodRunner consumer) throws SQLException {
 		this.statement = newStatement(StatementImplTests.mockConnection(), mock(Neo4jTransactionSupplier.class),
 				"query");
 		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(Neo4jException.class);
@@ -358,14 +359,6 @@ class PreparedStatementImplTests {
 				Arguments.of((StatementMethodRunner) statement -> statement.executeLargeUpdate("query", new int[0])),
 				Arguments
 					.of((StatementMethodRunner) statement -> statement.executeLargeUpdate("query", new String[0])));
-	}
-
-	@ParameterizedTest
-	@MethodSource("getShouldThrowOnInvalidParameterIndexArgs")
-	void shouldThrowOnInvalidParameterIndex(StatementMethodRunner consumer) throws SQLException {
-		this.statement = newStatement(StatementImplTests.mockConnection(), mock(Neo4jTransactionSupplier.class),
-				"query");
-		assertThatThrownBy(() -> consumer.run(this.statement)).isExactlyInstanceOf(Neo4jException.class);
 	}
 
 	static Stream<Arguments> getShouldThrowOnInvalidParameterIndexArgs() {
