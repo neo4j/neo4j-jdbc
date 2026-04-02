@@ -1,3 +1,222 @@
+# 6.12.1
+
+This release is now down to zero open issue on our Sonar instance, with only two (actual) todo-items aka new features left. 🥳
+
+## 🐛 Bug Fixes
+- 45dcf06 fix: Depulicate test methods, actually do tests what should have been under test.
+- 38102a2 fix: Make sure to set the time of the calendar that used for determining zones to the time of the value passed. (#1322)
+
+## 🔄️ Refactorings
+- d8c6610 refactor: Minor polishing.
+
+## 🧹 Housekeeping
+- fca9198 Bump org.graalvm.buildtools:native-maven-plugin from 0.11.5 to 1.0.0 (#1321)
+- bf7d587 Bump org.jooq:jooq from 3.19.30 to 3.19.31 (#1316)
+- 9dd169f Bump org.openapitools:jackson-databind-nullable from 0.2.9 to 0.2.10 (#1312)
+- cfb63d5 Bump io.netty:netty-bom from 4.1.131.Final to 4.1.132.Final (#1313)
+- 9273777 Bump com.puppycrawl.tools:checkstyle from 13.3.0 to 13.4.0 (#1320)
+- b6c0d45 Bump spring-boot.version from 4.0.4 to 4.0.5 (#1319)
+- d50b24d Bump com.fasterxml.jackson:jackson-bom (#1318)
+- df5c757 Bump quarkus.platform.version from 3.32.4 to 3.34.1 (#1317)
+- c52d4b9 Bump io.github.git-commit-id:git-commit-id-maven-plugin (#1315)
+- 866cd8a Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1314)
+
+
+# 6.12.0
+
+Thanks to @retroryan for initiating the new feature so that our SQL to Cypher translation now supports `GROUP BY` fully, including post-filtering via `HAVING`.
+
+## 🚀 Features
+- 6fdabf8 feat: Add support for explicit grouping keys and the `HAVING` and `OFFSET` clauses. (#1310)
+
+## 🐛 Bug Fixes
+- 3451425 fix: Remove double declaration of `spring-boot-starter-actuator` dependency.
+
+## 🧹 Housekeeping
+- 0b06dd6 Bump io.micrometer:micrometer-tracing-bom (#1302)
+- 82c8a8d Bump org.mockito:mockito-bom from 5.22.0 to 5.23.0 (#1299)
+- 352878b Bump org.hibernate.orm:hibernate-platform (#1309)
+- b10b17d Bump org.neo4j:cypher-v5-antlr-parser (#1308)
+- 2cba787 Bump org.neo4j:neo4j-cypher-dsl-bom (#1307)
+- 26bc5e9 Bump org.jdbi:jdbi3-bom from 3.51.0 to 3.52.0 (#1306)
+- b56d5ef Bump spring-boot.version from 4.0.3 to 4.0.4 (#1305)
+- 36c6841 Bump quarkus.platform.version from 3.32.2 to 3.32.4 (#1304)
+- 08a3bea Bump org.testcontainers:testcontainers-bom (#1303)
+- 3b78e7d Bump io.micrometer:micrometer-bom from 1.16.3 to 1.16.4 (#1298)
+
+## 🛠 Build
+- 05da142 build: Reconfigure openapi generator to use JSpecify.
+- d3ab5ea build: Use new Quarkus `io.quarkus:quarkus-junit` artifact instead of `quarkus-junit5`.
+- f3c4eb0 build: Include `--enable-final-field-mutation=ALL-UNNAMED` to be prepared for building on Java 26.
+
+
+# 6.11.0
+
+## 🚀 Features
+- 9a0e866 feat: Add batch support to `Statement` implementation (#1296)
+
+## 🧰 Tasks
+- 11d0acc chore: Migrate Benchkit module to Spring Boot 4.
+
+## 🧹 Housekeeping
+- ac4f16f Update CODEOWNERS.
+- 36f4bf0 build: Bump minor version.
+- 18922fd Bump quarkus.platform.version from 3.32.1 to 3.32.2 (#1294)
+- d58329a Bump dev.langchain4j:langchain4j-bom from 1.11.0 to 1.12.2 (#1295)
+- e90e76c Bump org.apache.maven.plugins:maven-shade-plugin (#1293)
+- 4b37f85 Bump org.graalvm.buildtools:native-maven-plugin (#1292)
+- 4743c91 Bump org.apache.maven.plugins:maven-resources-plugin (#1291)
+- 27be066 Bump org.mockito:mockito-bom from 5.21.0 to 5.22.0 (#1290)
+- d9d2b14 Bump org.hibernate.orm:hibernate-platform (#1289)
+- 9af595a Bump org.jreleaser:jreleaser-maven-plugin (#1288)
+- 47c3212 Bump com.puppycrawl.tools:checkstyle from 13.2.0 to 13.3.0 (#1287)
+- a18ab05 Bump quarkus.platform.version from 3.31.4 to 3.32.1 (#1286)
+- 295d138 Bump spring-boot.version from 4.0.2 to 4.0.3 (#1279)
+- 98087c7 Bump org.neo4j:neo4j-cypher-dsl-bom (#1283)
+- ad79485 Bump com.fasterxml.jackson:jackson-bom (#1284)
+- 4e75fa2 Bump org.apache.maven.plugins:maven-surefire-plugin (#1282)
+- c8210fb build(deps-dev): Bump org.openapitools:openapi-generator-maven-plugin (#1281)
+- 66bbd3f Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1280)
+- 6035e91 Bump quarkus.platform.version from 3.31.3 to 3.31.4 (#1278)
+- 328274f Bump org.apache.maven.plugins:maven-failsafe-plugin (#1277)
+- 953a2f5 Bump org.hibernate.orm:hibernate-platform (#1276)
+- 46da6d9 Bump io.micrometer:micrometer-tracing-bom (#1275)
+- 920e918 Bump quarkus.platform.version from 3.31.1 to 3.31.3 (#1274)
+- ea2a6e9 Bump io.micrometer:micrometer-bom from 1.16.2 to 1.16.3 (#1273)
+- 2ae1ce0 Bump org.junit:junit-bom from 6.0.2 to 6.0.3 (#1272)
+
+
+# 6.10.5
+
+## 🧹 Housekeeping
+- c23d4c5 Bump dev.langchain4j:langchain4j-bom from 1.10.0 to 1.11.0 (#1266)
+- 927e1ac Bump org.openapitools:jackson-databind-nullable (#1267)
+- 28f27cd Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1264)
+- acbabb0 Bump quarkus.platform.version from 3.30.6 to 3.31.1 (#1258)
+- ecc8296 Bump spring-boot.version from 4.0.1 to 4.0.2 (#1251)
+- 714f97b Bump org.jboss.logging:jboss-logging (#1261)
+- e5df77a Bump org.apache.maven.plugins:maven-compiler-plugin (#1260)
+- a0b23b7 Bump org.jooq:jooq from 3.19.29 to 3.19.30 (#1259)
+- d81b982 Bump com.puppycrawl.tools:checkstyle from 13.0.0 to 13.1.0 (#1257)
+- b4682eb Bump org.neo4j:cypher-v5-antlr-parser (#1256)
+- c586d17 build(deps-dev): Bump org.openapitools:openapi-generator-maven-plugin (#1255)
+- b3e0f84 Bump org.graalvm.buildtools:native-maven-plugin (#1254)
+- fcabf49 Bump org.assertj:assertj-core from 3.27.6 to 3.27.7 (#1253)
+- e520c13 Bump io.micrometer:micrometer-tracing-bom (#1249)
+- ddb8590 Bump com.fasterxml.jackson:jackson-bom (#1250)
+- 7985927 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1248)
+- 0c146d1 build(deps-dev): Bump org.codehaus.mojo:versions-maven-plugin (#1247)
+- 38995f4 Bump io.micrometer:micrometer-bom from 1.16.1 to 1.16.2 (#1246)
+- c0548b9 Bump org.hibernate.orm:hibernate-platform (#1245)
+- 891cb6a build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1244)
+- e5ac50a Bump org.neo4j:neo4j-cypher-dsl-bom (#1243)
+
+## 🛠 Build
+- 4f9d6eb build: Update all tests to use latest Neo4j image by default.
+- 60295c6 build: Run Checkstyle and Spring formatter only on Java 21 and higher.
+- 01477c1 build: Disable Sonar cloud.
+
+
+# 6.10.4
+
+## 🧰 Tasks
+- c1f24dc chore: Extend license header to 2026.
+
+## 🧹 Housekeeping
+- cad9516 Bump org.junit:junit-bom from 6.0.1 to 6.0.2 (#1241)
+- 2e894dd Bump com.puppycrawl.tools:checkstyle from 12.3.0 to 13.0.0 (#1242)
+- faf0324 Bump quarkus.platform.version from 3.30.4 to 3.30.6 (#1240)
+- 49b8fca Bump org.jreleaser:jreleaser-maven-plugin (#1239)
+- 30190ed Bump org.keycloak:keycloak-authz-client (#1238)
+- 2561902 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1237)
+- 0a538b7 Bump dev.langchain4j:langchain4j-bom from 1.9.1 to 1.10.0 (#1236)
+- b7b1ba0 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1235)
+- 2ce400e Bump mybatis-spring-boot-starter.version (#1234)
+- 577149a Bump spring-boot.version from 4.0.0 to 4.0.1
+- ed37e6e Bump org.openapitools:openapi-generator-maven-plugin (#1233)
+- 2ff2cc0 Bump org.neo4j:cypher-v5-antlr-parser (#1232)
+- bd86412 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1231)
+- 2e01804 Bump io.netty:netty-bom from 4.1.129.Final to 4.1.130.Final (#1230)
+- f77a246 Bump org.testcontainers:testcontainers-bom (#1229)
+- 0d37d83 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1228)
+- 3287427 Bump quarkus.platform.version from 3.30.3 to 3.30.4 (#1226)
+- 223db58 Bump org.neo4j:neo4j-cypher-dsl-bom (#1225)
+- b964df9 Bump org.codehaus.mojo:exec-maven-plugin (#1224)
+
+
+# 6.10.3
+
+## 🚀 Features
+- b8ff1aa feat: Add full support for `PreparedStatement#setObject(int, java.lang.Object, int)` and corresponding `getObject` in result set.
+
+## 🔄️ Refactorings
+- 9a3e6e1 refactor: Use unwrap instead of plain casting.
+
+## 📝 Documentation
+- 436fadb docs: Add missing `:` in http-urls.
+
+## 🧹 Housekeeping
+- 23c2e81 Bump org.mockito:mockito-bom from 5.20.0 to 5.21.0 (#1217)
+- da78980 Bump io.micrometer:micrometer-tracing-bom (#1221)
+- 4d5449f Bump org.hibernate.orm:hibernate-platform (#1222)
+- 49eb1d3 Bump com.puppycrawl.tools:checkstyle from 12.2.0 to 12.3.0 (#1220)
+- e9f76f1 Bump io.netty:netty-bom from 4.1.128.Final to 4.1.129.Final (#1219)
+- 6e1695f build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1218)
+- b1ea808 Bump quarkus.platform.version from 3.30.2 to 3.30.3 (#1216)
+- 4dde7fb Bump org.jdbi:jdbi3-bom from 3.50.0 to 3.51.0 (#1215)
+- c0b589a Bump io.micrometer:micrometer-bom from 1.16.0 to 1.16.1 (#1214)
+- bfdd7e6 Bump org.apache.maven.plugins:maven-release-plugin (#1213)
+
+
+# 6.10.2
+
+## 🧹 Housekeeping
+- b78b4d9 Bump mybatis-spring-boot-starter.version from 3.0.5 to 4.0.0 (#1207)
+- 5ff0cff Bump org.hibernate.orm:hibernate-platform (#1210)
+- 12cc004 Bump org.apache.maven.plugins:maven-release-plugin (#1211)
+- ce41f51 Bump org.neo4j:neo4j-cypher-dsl-bom (#1212)
+- 9cd457f Bump org.jooq:jooq from 3.19.28 to 3.19.29 (#1209)
+- 7027ec4 Bump org.neo4j:cypher-v5-antlr-parser (#1208)
+- 2f521fb Bump quarkus.platform.version from 3.30.1 to 3.30.2 (#1206)
+- 4778915 Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#1205)
+- ab8a80b Bump dev.langchain4j:langchain4j-bom from 1.8.0 to 1.9.1 (#1204)
+- 35729d0 Bump org.apache.maven.plugins:maven-source-plugin (#1203)
+- 4b38243 Bump org.apache.maven.plugins:maven-resources-plugin (#1202)
+- 299959c Bump com.puppycrawl.tools:checkstyle from 12.1.2 to 12.2.0 (#1201)
+- 3616cf0 Bump quarkus.platform.version from 3.29.4 to 3.30.1 (#1200)
+- fb5429a Bump org.apache.maven.plugins:maven-assembly-plugin (#1199)
+- e2f2aba Bump org.codehaus.mojo:versions-maven-plugin (#1198)
+
+
+# 6.10.1
+
+## 🐛 Bug Fixes
+- 76201e5 fix(translator): Try to match projected fields with and without prefixes to start and end node of relationships. (#1196)
+- 1a128d0 fix(translator): Unscope properties when projecting.
+
+## 🔄️ Refactorings
+- 9801424 refactor(metadata): Aggregate all properties for start/end nodes inside virtual relationship tables. (#1197)
+- 2b372f0 refactor: Simplify Jackson settings.
+- 2211d9c refactor(metadata): Enforce stable order for relationship table metadata.
+- 40ac6d6 refactor: Align insertion of unqualified properties with naming of properties in relationship virtual tables.
+
+## 📝 Documentation
+- b9364cc docs: Update local changelog.
+
+## 🧹 Housekeeping
+- 927e076 Bump org.neo4j:cypher-v5-antlr-parser (#1195)
+- 24276aa Bump org.codehaus.mojo:versions-maven-plugin (#1194)
+- 9eb6c4f Bump io.fabric8:docker-maven-plugin from 0.47.0 to 0.48.0 (#1193)
+- 791e81d Bump quarkus.platform.version from 3.29.3 to 3.29.4 (#1192)
+- 5b2eca6 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1191)
+- 50079b2 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1190)
+- fe2ab10 Bump org.hibernate.orm:hibernate-platform (#1188)
+
+## 🛠 Build
+- b1dfa19 build: Upgrade Spring Boot smoke tests to Spring Boot 4.
+- 003f698 build: Avoid failing on invalid JVM flags until the Maven enforcer plugin can scream about an unsupported Java version.
+
+
 # 6.10.0
 
 ## 🚀 Features
