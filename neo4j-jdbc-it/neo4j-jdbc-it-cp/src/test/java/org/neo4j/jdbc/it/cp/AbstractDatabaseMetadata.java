@@ -28,6 +28,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -107,6 +109,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@ParameterizedTest
 	@MethodSource
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void indexInfo(String table, boolean unique, List<IndexInfo> expected) throws SQLException {
 		try (var stmt = this.connection.createStatement()) {
 			stmt.execute("CREATE CONSTRAINT book_isbn IF NOT EXISTS FOR (book:Book) REQUIRE book.isbn IS UNIQUE");
@@ -135,8 +138,10 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@AfterEach
 	void dropConstraintsAndIndexes() throws SQLException {
-		dropConstraint0("SHOW CONSTRAINTS YIELD name", "DROP CONSTRAINT $constraint");
-		dropConstraint0("SHOW INDEXES YIELD name", "DROP INDEX $constraint");
+		if (!runningAgainstVirtualGraphs()) {
+			dropConstraint0("SHOW CONSTRAINTS YIELD name", "DROP CONSTRAINT $constraint");
+			dropConstraint0("SHOW INDEXES YIELD name", "DROP INDEX $constraint");
+		}
 	}
 
 	private void dropConstraint0(String getConstraintsStatement, String dropConstraintsStatement) throws SQLException {
@@ -187,6 +192,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 					CREATE (p:Start {col: 'colSourceValue'})-[:REL]->(:End {col: 'colTargetValue'})                      | v$start_id, v$end_id, start_col, end_col, v$id      | SELECT * FROM Start_REL_End alias WHERE alias.start_col = 'colSourceValue'
 					CREATE (p:Start {col: 'colSourceValue'})-[:REL {col: 'colRelValue'}]->(:End)                         | v$start_id, v$end_id, start_col, col, v$id          | SELECT * FROM Start_REL_End alias WHERE alias.start_col = 'colSourceValue' @ SELECT * FROM Start_REL_End alias WHERE alias.col = 'colRelValue' AND alias.start_col = 'colSourceValue'
 					""")
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void joinTablesWithDuplicateColumns(String graph, String expected, String select) throws SQLException {
 
 		try (var con = this.getConnection(false, true)) {
@@ -255,12 +261,12 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		}
 	}
 
-	static Stream<Arguments> getReadOnlyShouldWork() {
-		return Stream.of(Arguments.of("neo4j", false), Arguments.of("rodb", true));
-	}
-
 	@ParameterizedTest
-	@MethodSource
+	@CsvSource(textBlock = """
+			neo4j,false
+			rodb,true
+			""")
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getReadOnlyShouldWork(String database, boolean expected) throws SQLException {
 		var info = new Properties();
 		info.put("password", this.neo4j.getAdminPassword());
@@ -560,6 +566,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getAllTablesShouldReturnAllLabelsOnATable() throws SQLException {
 		List<String> expectedLabels = new ArrayList<>();
 		expectedLabels.add("TestLabel1");
@@ -730,35 +737,20 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
-	void getAllTablesShouldReturnEmptyForCatalogAndSchema() throws SQLException {
-		List<String> expectedLabels = new ArrayList<>();
-		expectedLabels.add("TestLabel1");
-		expectedLabels.add("TestLabel2");
+	void getAllTablesShouldReturnPublicForSchema() throws SQLException {
+		if (!runningAgainstVirtualGraphs()) {
+			List<String> expectedLabels = new ArrayList<>();
+			expectedLabels.add("TestLabel1");
+			expectedLabels.add("TestLabel2");
 
-		for (String label : expectedLabels) {
-			executeQueryWithoutResult("Create (:%s)".formatted(label));
-		}
-
-		try (var labelsRs = this.connection.getMetaData().getTables(null, null, "", null)) {
-			while (labelsRs.next()) {
-				var catalog = labelsRs.getString(1);
-				assertThat(catalog).isEqualTo("");
+			for (String label : expectedLabels) {
+				executeQueryWithoutResult("Create (:%s)".formatted(label));
 			}
 		}
-	}
-
-	@Test
-	void getAllTablesShouldReturnPublicForSchema() throws SQLException {
-		List<String> expectedLabels = new ArrayList<>();
-		expectedLabels.add("TestLabel1");
-		expectedLabels.add("TestLabel2");
-
-		for (String label : expectedLabels) {
-			executeQueryWithoutResult("Create (:%s)".formatted(label));
-		}
-
 		try (var labelsRs = this.connection.getMetaData().getTables(null, null, null, null)) {
 			while (labelsRs.next()) {
+				var catalog = labelsRs.getString(1);
+				assertThat(catalog).isEqualTo("neo4j");
 				var schema = labelsRs.getString(2);
 				assertThat(schema).isEqualTo("public");
 			}
@@ -767,14 +759,15 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Test
 	void getAllTablesShouldReturnPublicForSchemaIfPassingPublicForSchema() throws SQLException {
-		List<String> expectedLabels = new ArrayList<>();
-		expectedLabels.add("TestLabel1");
-		expectedLabels.add("TestLabel2");
+		if (!runningAgainstVirtualGraphs()) {
+			List<String> expectedLabels = new ArrayList<>();
+			expectedLabels.add("TestLabel1");
+			expectedLabels.add("TestLabel2");
 
-		for (String label : expectedLabels) {
-			executeQueryWithoutResult("Create (:%s)".formatted(label));
+			for (String label : expectedLabels) {
+				executeQueryWithoutResult("Create (:%s)".formatted(label));
+			}
 		}
-
 		try (var labelsRs = this.connection.getMetaData().getTables(null, "public", "", null)) {
 			while (labelsRs.next()) {
 				var schema = labelsRs.getString(2);
@@ -959,10 +952,12 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Test
 	void getColumnsWithInteger() throws SQLException {
-		executeQueryWithoutResult("Create (:Test {name: 3})");
+		if (!runningAgainstVirtualGraphs()) {
+			executeQueryWithoutResult("Create (:TestI {name: 3})");
+		}
 
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test", "name%")) {
+		try (var rs = databaseMetadata.getColumns(null, null, "TestI", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -978,7 +973,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			assertThat(sqlType).isEqualTo(Types.BIGINT);
 
 			var tableName = rs.getString("TABLE_NAME");
-			assertThat(tableName).isEqualTo("Test");
+			assertThat(tableName).isEqualTo("TestI");
 
 			assertThat(rs.next()).isFalse();
 		}
@@ -986,10 +981,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Test
 	void getColumnsWithFloat() throws SQLException {
-		executeQueryWithoutResult("Create (:Test {name: 3.3})");
-
+		if (!runningAgainstVirtualGraphs()) {
+			executeQueryWithoutResult("Create (:TestF {name: 3.3})");
+		}
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test", "name%")) {
+		try (var rs = databaseMetadata.getColumns(null, null, "TestF", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -1005,13 +1001,14 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			assertThat(sqlType).isEqualTo(Types.DOUBLE);
 
 			var tableName = rs.getString("TABLE_NAME");
-			assertThat(tableName).isEqualTo("Test");
+			assertThat(tableName).isEqualTo("TestF");
 
 			assertThat(rs.next()).isFalse();
 		}
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getColumnsWithMultipleTypesButOneIsAStringShouldReturnString() throws SQLException {
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: 'test4'})");
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: 3})");
@@ -1040,6 +1037,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getColumnsWithMultipleTypesShouldAny() throws SQLException {
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: date(\"2019-06-01\")})");
 		executeQueryWithoutResult("Create (:Test4 {nameToFind: 3})");
@@ -1069,10 +1067,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Test
 	void getColumnsWithPoint() throws SQLException {
-		executeQueryWithoutResult("Create (:Test4 {nameToFind: point({srid:7203, x: 3.0, y: 0.0})})");
-
+		if (!runningAgainstVirtualGraphs()) {
+			executeQueryWithoutResult("Create (:TestP {nameToFind: point({srid:7203, x: 3.0, y: 0.0})})");
+		}
 		var databaseMetadata = this.connection.getMetaData();
-		try (var rs = databaseMetadata.getColumns(null, null, "Test4", "name%")) {
+		try (var rs = databaseMetadata.getColumns(null, null, "TestP", "name%")) {
 			assertThat(rs.next()).isTrue();
 
 			var schema = rs.getString("TABLE_SCHEM");
@@ -1088,13 +1087,14 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			assertThat(sqlType).isEqualTo(Types.STRUCT);
 
 			var tableName = rs.getString("TABLE_NAME");
-			assertThat(tableName).isEqualTo("Test4");
+			assertThat(tableName).isEqualTo("TestP");
 
 			assertThat(rs.next()).isFalse();
 		}
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getColumnsWithLists() throws SQLException {
 		executeQueryWithoutResult("Create (:Test4 {along: [1,2]})");
 		executeQueryWithoutResult("Create (:Test4 {adouble: [1.1,2.1]})");
@@ -1167,6 +1167,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void onlyMatchingStartAndEndLabelsMustBeConsideredForProperties() throws SQLException {
 		var graph = """
 					/*+ NEO4J FORCE_CYPHER */
@@ -1227,9 +1228,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getTablesWithStrictPatternShouldFilterCBVs() throws SQLException {
 
-		try (Statement statement = this.connection.createStatement()) {
-			statement.execute("create (a:Test {one:1, two:2})");
-			statement.execute("create (b:Testa {three:3, four:4})");
+		if (!runningAgainstVirtualGraphs()) {
+			try (Statement statement = this.connection.createStatement()) {
+				statement.execute("create (a:Test {one:1, two:2})");
+				statement.execute("create (b:Testa {three:3, four:4})");
+			}
 		}
 
 		ResultSet labels = this.connection.getMetaData().getTables(null, null, "cbv1", null);
@@ -1251,9 +1254,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getTablesWithStrictPatternShouldFilterCBVType() throws SQLException {
 
-		try (Statement statement = this.connection.createStatement()) {
-			statement.execute("create (a:Test {one:1, two:2})");
-			statement.execute("create (b:Testa {three:3, four:4})");
+		if (!runningAgainstVirtualGraphs()) {
+			try (Statement statement = this.connection.createStatement()) {
+				statement.execute("create (a:Test {one:1, two:2})");
+				statement.execute("create (b:Testa {three:3, four:4})");
+			}
 		}
 
 		ResultSet labels = this.connection.getMetaData().getTables(null, null, null, new String[] { "CBV" });
@@ -1274,8 +1279,10 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 
 	@Test
 	void getRelationshipTableShouldWork() throws SQLException {
-		try (Statement statement = this.connection.createStatement()) {
-			statement.execute("CREATE (:Person {name: 'A'})-[:ACTED_IN {role: 'B'}]->(:Movie {title: 'C'})");
+		if (!runningAgainstVirtualGraphs()) {
+			try (Statement statement = this.connection.createStatement()) {
+				statement.execute("CREATE (:Person {name: 'A'})-[:ACTED_IN {role: 'B'}]->(:Movie {title: 'C'})");
+			}
 		}
 
 		var resultSet = this.connection.getMetaData().getTables(null, null, null, null);
@@ -1293,7 +1300,13 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			}
 		}
 		resultSet.close();
-		assertThat(tableNames).containsExactlyInAnyOrder("Person_ACTED_IN_Movie", "Movie", "Person", "cbv1", "cbv2");
+		if (runningAgainstVirtualGraphs()) {
+			assertThat(tableNames).containsExactlyInAnyOrderElementsOf(existingLabels());
+		}
+		else {
+			assertThat(tableNames).containsExactlyInAnyOrder("Person_ACTED_IN_Movie", "Movie", "Person", "cbv1",
+					"cbv2");
+		}
 
 		resultSet = this.connection.getMetaData().getColumns(null, null, "Person_ACTED_IN_Movie", null);
 		assertThat(resultSet).isNotNull();
@@ -1302,10 +1315,10 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			var columnName = resultSet.getString("COLUMN_NAME");
 			var scopeTable = resultSet.getString("SCOPE_TABLE");
 			columns.add(columnName);
-			if ("name".equals(columnName)) {
+			if ("name".equals(columnName) || "birth_year".equals(columnName)) {
 				assertThat(scopeTable).isEqualTo("Person");
 			}
-			else if ("title".equals(columnName)) {
+			else if (Set.of("title", "tagline", "release_year").contains(columnName)) {
 				assertThat(scopeTable).isEqualTo("Movie");
 			}
 			else {
@@ -1313,15 +1326,18 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 			}
 		}
 		resultSet.close();
-		var expectedColumns = new String[] { "role", "v$movie_id", "v$person_id", "v$id", "name", "title" };
-		assertThat(columns).containsOnly(expectedColumns);
 
-		try (var con = getConnection(true, true);
-				var stmt = con.createStatement();
-				var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
-			while (rs.next()) {
-				for (var expectedColumn : expectedColumns) {
-					assertThat(rs.getObject(expectedColumn)).isNotNull();
+		if (!runningAgainstVirtualGraphs()) {
+			var expectedColumns = new String[] { "role", "v$movie_id", "v$person_id", "v$id", "name", "title" };
+			assertThat(columns).containsOnly(expectedColumns);
+
+			try (var con = getConnection(true, true);
+					var stmt = con.createStatement();
+					var rs = stmt.executeQuery("SELECT * FROM Person_ACTED_IN_Movie")) {
+				while (rs.next()) {
+					for (var expectedColumn : expectedColumns) {
+						assertThat(rs.getObject(expectedColumn)).isNotNull();
+					}
 				}
 			}
 		}
@@ -1390,9 +1406,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getCBVColumnsForTableWildCard() throws SQLException {
 
-		try (Statement statement = this.connection.createStatement()) {
-			statement.execute("create (a:A {one:1, two:2})");
-			statement.execute("create (b:B {three:3, four:4})");
+		if (!runningAgainstVirtualGraphs()) {
+			try (Statement statement = this.connection.createStatement()) {
+				statement.execute("create (a:A {one:1, two:2})");
+				statement.execute("create (b:B {three:3, four:4})");
+			}
 		}
 
 		ResultSet columns = this.connection.getMetaData().getColumns(null, null, "cbv%", null);
@@ -1410,9 +1428,11 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void getCBVColumnsForColumnWildCard() throws SQLException {
 
-		try (Statement statement = this.connection.createStatement()) {
-			statement.execute("create (a:A {one:1, two:2})");
-			statement.execute("create (b:B {three:3, four:4})");
+		if (!runningAgainstVirtualGraphs()) {
+			try (Statement statement = this.connection.createStatement()) {
+				statement.execute("create (a:A {one:1, two:2})");
+				statement.execute("create (b:B {three:3, four:4})");
+			}
 		}
 
 		ResultSet columns = this.connection.getMetaData().getColumns(null, null, null, "c%");
@@ -1435,12 +1455,19 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 					assertThat(columns.getString("TYPE_NAME")).isEqualTo("BOOLEAN");
 					assertThat(columns.getInt("DATA_TYPE")).isEqualTo(Types.BOOLEAN);
 					break;
+				case "col":
+					break;
 				default:
 					fail("Unexpected column name " + columnName);
 			}
 		}
 
-		assertThat(columnNames).containsOnly("c1", "c2");
+		if (runningAgainstVirtualGraphs()) {
+			assertThat(columnNames).containsOnly("c1", "c2", "col");
+		}
+		else {
+			assertThat(columnNames).containsOnly("c1", "c2");
+		}
 	}
 
 	@Test
@@ -1504,6 +1531,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getIndexInfoWithConstraint() throws Exception {
 		String constrName = "bar_uuid";
 
@@ -1539,6 +1567,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getIndexInfoWithBacktickLabels() throws Exception {
 		String constrName = "barExt_uuid";
 		try (var statement = this.connection.createStatement()) {
@@ -1572,6 +1601,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getIndexInfoWithConstraintWrongLabel() throws Exception {
 		try (var statement = this.connection.createStatement()) {
 			statement.execute("CREATE CONSTRAINT bar_uuid IF NOT EXISTS FOR (f:Bar) REQUIRE (f.uuid) IS UNIQUE");
@@ -1588,6 +1618,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void precisionShallBeAvailableForSomeNumericProperties() throws SQLException {
 		try (var statement = this.connection.createStatement()) {
 			statement.execute("CREATE (n:Wurstsalat {d: 42.23, i: 21, s: 'asd'})");
@@ -1609,6 +1640,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void shouldBeAbleToMapAllV5CypherTypes() throws Exception {
 
 		var query = """
@@ -1643,6 +1675,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void getIndexInfoWithIndex() throws Exception {
 		String indexName = "bar_uuid";
 		try (var statement = this.connection.createStatement()) {
@@ -1683,7 +1716,9 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	@Test
 	void primaryKeysWithoutUniqueConstraints() throws SQLException, IOException {
 
-		TestUtils.createMovieGraph(this.connection);
+		if (!runningAgainstVirtualGraphs()) {
+			TestUtils.createMovieGraph(this.connection);
+		}
 
 		var primaryKeys = this.connection.getMetaData().getPrimaryKeys("neo4j", null, "Movie");
 		assertThat(primaryKeys.next()).isTrue();
@@ -1703,6 +1738,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void primaryKeysWithUniqueConstraints() throws SQLException, IOException {
 
 		TestUtils.createMovieGraph(this.connection);
@@ -1737,6 +1773,7 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisabledIf("runningAgainstVirtualGraphs")
 	void primaryKeysWithMoreThanOneColumn() throws SQLException, IOException {
 
 		TestUtils.createMovieGraph(this.connection);
@@ -1763,10 +1800,31 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 				catalogs.add(rs.getString("TABLE_CAT"));
 			}
 		}
-		assertThat(catalogs).containsExactlyInAnyOrder("neo4j", "system", "rodb");
+		if (runningAgainstVirtualGraphs()) {
+			assertThat(catalogs).containsExactlyInAnyOrder("neo4j", "system");
+		}
+		else {
+			assertThat(catalogs).containsExactlyInAnyOrder("neo4j", "system", "rodb");
+		}
 	}
 
 	abstract boolean apocShouldBeAvailable();
+
+	/**
+	 * {@return disables some tests that create data, or can be used to modify parts of
+	 * tests that won't work with virtual graphs}
+	 */
+	boolean runningAgainstVirtualGraphs() {
+		return false;
+	}
+
+	/**
+	 * {@return a collection of predefined, pre-existing labels not created by any test
+	 * method}
+	 */
+	Collection<String> existingLabels() {
+		return Set.of();
+	}
 
 	@Test
 	@DisabledInNativeImage
@@ -1778,8 +1836,10 @@ abstract class AbstractDatabaseMetadata extends IntegrationTestBase {
 		var result = (boolean) ReflectionUtils.invokeMethod(optionalMethod.get(), databaseMetadata);
 		var expected = apocShouldBeAvailable();
 		assertThat(result).isEqualTo(expected);
-		try (var stmt = this.connection.createStatement()) {
-			stmt.executeUpdate("CREATE (m:Movie)");
+		if (!runningAgainstVirtualGraphs()) {
+			try (var stmt = this.connection.createStatement()) {
+				stmt.executeUpdate("CREATE (m:Movie)");
+			}
 		}
 	}
 

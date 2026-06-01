@@ -1,0 +1,396 @@
+{
+  "catalog": "movies",
+  "schema": "main",
+  "entities": {
+    "nodes": [
+      {
+        "label": "TestI",
+        "table": "tests",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "name",
+            "column": "name",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "label": "TestF",
+        "table": "tests2",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "name",
+            "column": "name",
+            "type": "Float"
+          }
+        ]
+      },
+      {
+        "label": "TestP",
+        "table": "tests3",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "nameToFind",
+            "column": "name",
+            "type": "POINT"
+          }
+        ]
+      },
+      {
+        "label": "Movie",
+        "table": "movies",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "release_year",
+            "column": "released",
+            "type": "Integer"
+          },
+          {
+            "name": "tagline",
+            "column": "tagline",
+            "type": "String"
+          },
+          {
+            "name": "title",
+            "column": "title",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "label": "MovieA",
+        "table": "movies",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "release_year",
+            "column": "released",
+            "type": "Integer"
+          },
+          {
+            "name": "tagline",
+            "column": "tagline",
+            "type": "String"
+          },
+          {
+            "name": "title",
+            "column": "title",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "label": "StartNP",
+        "table": "movies",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": []
+      },
+      {
+        "label": "EndNP",
+        "table": "movies",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": []
+      },
+      {
+        "label": "Simple",
+        "table": "movies",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "col",
+            "column": "tagline",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "label": "Person",
+        "table": "people",
+        "key": [
+          {
+            "column": "id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "birth_year",
+            "column": "born",
+            "type": "Integer"
+          },
+          {
+            "name": "name",
+            "column": "name",
+            "type": "String"
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "label": "REL1",
+        "table": "movie_directors",
+        "start": {
+          "targetEntity": "StartNP",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "EndNP",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          }
+        ],
+        "properties": [
+          {
+            "name": "col",
+            "column": "person_id",
+            "type": "Integer"
+          }
+        ]
+      },
+      {
+        "label": "REL2",
+        "table": "movie_directors",
+        "start": {
+          "targetEntity": "StartNP",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "Simple",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          }
+        ],
+        "properties": []
+      },
+      {
+        "label": "REL3",
+        "table": "movie_directors",
+        "start": {
+          "targetEntity": "Simple",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "EndNP",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          }
+        ],
+        "properties": []
+      },
+      {
+        "label": "ACTED_IN",
+        "table": "movie_actors",
+        "start": {
+          "targetEntity": "Person",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "person_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "Movie",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          },
+          {
+            "column": "role"
+          }
+        ],
+        "properties": [
+          {
+            "name": "role",
+            "column": "role",
+            "type": "String"
+          }
+        ]
+      },
+      {
+        "label": "DIRECTED",
+        "table": "movie_directors",
+        "start": {
+          "targetEntity": "Person",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "person_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "Movie",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          }
+        ]
+      },
+      {
+        "label": "PRODUCED",
+        "table": "movie_producers",
+        "start": {
+          "targetEntity": "Person",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "person_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "Movie",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          }
+        ]
+      },
+      {
+        "label": "WROTE",
+        "table": "movie_writers",
+        "start": {
+          "targetEntity": "Person",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "person_id"
+            }
+          ]
+        },
+        "end": {
+          "targetEntity": "Movie",
+          "keys": [
+            {
+              "nodeColumn": "id",
+              "relationshipColumn": "movie_id"
+            }
+          ]
+        },
+        "key": [
+          {
+            "column": "person_id"
+          },
+          {
+            "column": "movie_id"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -21,8 +21,10 @@ package org.neo4j.jdbc.it.cp;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -67,26 +69,41 @@ abstract class IntegrationTestBase {
 
 	protected boolean doClean = true;
 
+	protected boolean doCreateDatabases = true;
+
 	/**
-	 * Absolute classpath resources to copy over into the
-	 * <code>/var/lib/neo4j/import</code> folder inside the container.
+	 * Absolute classpath resources to copy over into a folder inside the container. Key
+	 * of the map is the target directory.
 	 */
-	protected List<String> resources = new ArrayList<>();
+	protected Map<String, List<String>> resources = new HashMap<>();
 
 	@BeforeAll
 	void startNeo4j() throws SQLException {
-		this.neo4j.start();
-		for (var resource : this.resources) {
-			this.neo4j.copyFileToContainer(MountableFile.forClasspathResource(resource),
-					"/var/lib/neo4j/import/%s".formatted(resource.substring(resource.lastIndexOf("/") + 1)));
+		if (!this.resources.isEmpty()) {
+			// So, with reuse enable, Testcontainers will checksum and cache resources.
+			// That works fine in JVM, but not on native image, regardless how much one
+			// bashes resources-config.json… The native image resource will not be
+			// reachable under that checksum+name combination anymore. So, we disable
+			// reuse in a case in which we have resources AND native image usage.
+			this.neo4j.withReuse(!Optional.ofNullable(System.getProperty("org.graalvm.nativeimage.imagecode"))
+				.orElse("")
+				.matches(".+"));
+			for (var target : this.resources.entrySet()) {
+				for (var resource : target.getValue()) {
+					this.neo4j.withCopyFileToContainer(MountableFile.forClasspathResource(resource),
+							"%s/%s".formatted(target.getKey(), resource.substring(resource.lastIndexOf("/") + 1)));
+				}
+			}
 		}
+
+		this.neo4j.start();
 
 		try (var connection = getConnection(false, false); var stmt = connection.createStatement()) {
 			var resultSet = stmt.executeQuery("CALL dbms.components() YIELD edition");
 			resultSet.next();
 			var edition = resultSet.getString("edition");
 			resultSet.close();
-			if ("enterprise".equalsIgnoreCase(edition)) {
+			if ("enterprise".equalsIgnoreCase(edition) && this.doCreateDatabases) {
 				stmt.execute("CREATE DATABASE rodb IF NOT EXISTS WAIT");
 				stmt.execute("ALTER DATABASE rodb SET ACCESS READ ONLY");
 			}

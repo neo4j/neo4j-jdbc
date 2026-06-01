@@ -1,0 +1,4 @@
+{
+  "type": "duckdb",
+  "path": "movies.duckdb"
+}
