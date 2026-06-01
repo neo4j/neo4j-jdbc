@@ -1708,7 +1708,7 @@ final class SqlToCypher implements Translator {
 			else if (f instanceof TableField<?, ?> tf) {
 				Table<?> table = tf.getTable();
 				if (table == null) {
-					var tableField = findTableFieldInTables(tf, turnUnknownIntoNames, false);
+					var tableField = findTableFieldInTables(tf, turnUnknownIntoNames, false, true);
 					if (tableField == null) {
 						throw unsupported(tf);
 					}
