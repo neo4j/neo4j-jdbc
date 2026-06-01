@@ -2180,6 +2180,9 @@ final class SqlToCypher implements Translator {
 						.in(((searchList.size() == 1) && (searchList.get(0) instanceof Parameter<?> parameter))
 								? parameter : Cypher.listOf(searchList));
 				}
+				else if (c instanceof QOM.Contains<?> contains) {
+					return Cypher.contains(expression(contains.$arg1()), expression(contains.$arg2()));
+				}
 				else {
 					throw unsupported(c);
 				}

@@ -329,6 +329,7 @@ class SqlToCypherTests {
 				.willReturn(relationships);
 		}
 		given(relationships.next()).willReturn(false);
+		given(databaseMetadata.getColumns(any(), any(), any(), any())).willReturn(mock(ResultSet.class));
 		return databaseMetadata;
 	}
 
@@ -654,6 +655,18 @@ class SqlToCypherTests {
 		var sql = "Select * from movies";
 		var cypher = SqlToCypher.with(cfg).translate(sql);
 		assertThat(cypher).isEqualTo(expected.replace("$", cfg.isPrettyPrint() ? System.lineSeparator() : " "));
+	}
+
+	@Test
+	void orderByColumnsInRelationshipSelects() {
+		var translator = SqlToCypher.defaultTranslator();
+		var sql = """
+				SELECT person_name, role, movie_title
+				FROM Person_ACTED_IN_Movie
+				WHERE person_name LIKE '%arrie-Anne%'
+				ORDER BY person_name, role""";
+		assertThat(translator.translate(sql)).isEqualTo(
+				"MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie) WHERE _start.name CONTAINS 'arrie-Anne' RETURN _start.name AS person_name, person_acted_in_movie.role AS role, _end.title AS movie_title ORDER BY _start.name, person_acted_in_movie.role");
 	}
 
 	@Test
