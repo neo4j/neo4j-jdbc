@@ -20,6 +20,7 @@ package org.neo4j.jdbc;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -45,6 +46,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -54,6 +56,8 @@ import org.neo4j.jdbc.Neo4jTransaction.PullResponse;
 import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
 import org.neo4j.jdbc.translator.spi.View;
+import org.neo4j.jdbc.translator.spi.View.Column;
+import org.neo4j.jdbc.values.MapValue;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
 import org.neo4j.jdbc.values.Value;
@@ -255,6 +259,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private final Lazy<Boolean> apocAvailable;
 
+	private final Lazy<Boolean> isVirtualGraph;
+
+	private final Lazy<Map<VgTable, List<Column>>> virtualGraphSchema;
+
 	private final Lazy<String> userName;
 
 	private final Lazy<Boolean> readOnly;
@@ -270,6 +278,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		this.relationshipSampleSize = relationshipSampleSize;
 
 		this.apocAvailable = Lazy.of(this::isApocAvailable0);
+		this.isVirtualGraph = Lazy.of(this::isVirtualGraph0);
+		this.virtualGraphSchema = Lazy.of(this::getVirtualGraphSchema);
 		// Those queries use administrative commands that do not compose with normal
 		// queries, so we cache it here and hope for the best they don't interfere with
 		// other queries.
@@ -290,6 +300,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		return this.apocAvailable.resolve();
 	}
 
+	boolean isVirtualGraph() {
+		return this.isVirtualGraph.resolve();
+	}
+
 	private boolean isApocAvailable0() {
 		try {
 			var response = doQueryForPullResponse(new Request(
@@ -297,6 +311,24 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 					Map.of()));
 			var records = response.records();
 			return records.size() == 1 && records.get(0).get("available").asBoolean();
+		}
+		catch (SQLException ex) {
+			return false;
+		}
+	}
+
+	private boolean isVirtualGraph0() {
+		try {
+			// At some point in some future, this will be a database information, but as
+			// of May / June 2026,
+			// its per DBMS.
+			var response = doQueryForPullResponse(new Request("""
+					CALL dbms.listCapabilities()
+					YIELD name, value with name, value
+					WHERE name = 'virtual_graph.enabled'
+					RETURN value AS enabled""", Map.of()));
+			var records = response.records();
+			return records.size() == 1 && records.get(0).get("enabled").asBoolean();
 		}
 		catch (SQLException ex) {
 			return false;
@@ -353,7 +385,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	@Override
 	public boolean isReadOnly() throws SQLException {
-		return this.readOnly.resolveThrowing(SQLException.class);
+		return this.readOnly.resolveThrowing(SQLException.class)
+				|| this.isVirtualGraph.resolveThrowing(SQLException.class);
 	}
 
 	// Wrt ordering see
@@ -1026,14 +1059,160 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		}
 	}
 
+	private Map<VgTable, List<Column>> getVirtualGraphSchema() throws SQLException {
+
+		if (!isVirtualGraph()) {
+			return Map.of();
+		}
+
+		// Right now a static value, as `db.info()` is not supported, and the database is
+		// neo4j anyway
+		var tableCat = "neo4j";
+		var tableSchem = "public";
+		var tables = new TreeMap<VgTable, List<Column>>((o1, o2) -> {
+			var result = -1 * o1.TABLE_TYPE.compareTo(o2.TABLE_TYPE());
+			if (result == 0) {
+				return o1.TABLE_NAME.compareTo(o2.TABLE_NAME);
+			}
+			return result;
+		});
+
+		try (var result = doQueryForResultSet(
+				new Request("CALL apoc.meta.schema() YIELD value RETURN value", Map.of()))) {
+			result.next();
+			var schema = result.getObject("value", MapValue.class);
+			for (var key : schema.keys()) {
+				var entity = schema.get(key);
+
+				if ("node".equals(entity.get("type").asString())) {
+					var relationships = entity.get("relationships");
+					for (var type : relationships.keys()) {
+						var relationship = relationships.get(type);
+						if ("in".equals(relationship.get("direction").asString())) {
+							continue;
+						}
+						tables.put(new VgTable(tableCat, tableSchem,
+								"%s_%s_%s"
+									.formatted(key, type, relationship.get("labels").asList(Value::asString).get(0)),
+								"RELATIONSHIP",
+								"%s\n%s\n%s".formatted(key, type,
+										relationship.get("labels").asList(Value::asString).get(0)),
+								null, null, null, null), vgProperties(relationship));
+					}
+
+					tables.put(new VgTable(tableCat, tableSchem, key, "TABLE", null, null, null, null, null),
+							vgProperties(entity));
+				}
+			}
+		}
+
+		this.views.forEach((key, value) -> tables
+			.put(new VgTable(tableCat, tableSchem, key, "CBV", null, null, null, null, null), value.columns()));
+
+		return Collections.unmodifiableSortedMap(tables);
+	}
+
+	private List<Record> getVirtualGraphColumns(String tableNamePattern, String columnNamePattern) {
+
+		if (!isVirtualGraph()) {
+			return List.of();
+		}
+
+		var keys = List.of("tables", "propertyName", "propertyTypes", "TABLE_TYPE", "relationshipType", "SCOPE_TABLE");
+		var vgSchema = this.virtualGraphSchema.resolve();
+		var selected = vgSchema.entrySet()
+			.stream()
+			.filter(table -> (tableNamePattern == null || table.getKey().TABLE_NAME.matches(tableNamePattern))
+					&& (columnNamePattern == null
+							|| table.getValue().stream().anyMatch(column -> column.name().matches(columnNamePattern))))
+			.map(table -> Map.entry(table.getKey(),
+					table.getValue()
+						.stream()
+						.filter(column -> columnNamePattern == null || column.name().matches(columnNamePattern))
+						.toList()))
+			.toList();
+
+		var records = new ArrayList<Record>();
+
+		var isRelationship = (Predicate<Map.Entry<VgTable, List<Column>>>) entry -> entry.getKey().TABLE_TYPE
+			.equals("RELATIONSHIP");
+		selected.stream().filter(Predicate.not(isRelationship)).forEach(entry -> {
+			for (var columns : entry.getValue()) {
+				var row = toValues(entry, columns, Values.NULL, Values.NULL);
+				records.add(Record.of(keys, row));
+			}
+		});
+
+		selected.stream().filter(isRelationship).forEach(relationship -> {
+
+			// This is always safe with RELATIONSHIP tables
+			var remarks = relationship.getKey().REMARKS.split("\n");
+			for (var columns : relationship.getValue()) {
+				var row = toValues(relationship, columns, Values.value(remarks[1]), Values.NULL);
+				records.add(Record.of(keys, row));
+			}
+
+			var start = vgSchema.entrySet()
+				.stream()
+				.filter(node -> node.getKey().TABLE_NAME.equals(remarks[0]))
+				.findFirst()
+				.orElseThrow();
+			var end = vgSchema.entrySet()
+				.stream()
+				.filter(node -> node.getKey().TABLE_NAME.equals(remarks[2]))
+				.findFirst()
+				.orElseThrow();
+
+			for (var node : List.of(start, end)) {
+				for (var columns : node.getValue()) {
+					var row = toValues(relationship, columns, Values.value(remarks[1]),
+							Values.value(node.getKey().TABLE_NAME));
+					records.add(Record.of(keys, row));
+				}
+			}
+		});
+
+		return records;
+	}
+
+	private static Value[] toValues(Map.Entry<VgTable, List<Column>> entry, Column columns, Value relationshipType,
+			Value scopeTable) {
+		return new Value[] { Values.value(List.of(entry.getKey().TABLE_NAME)), Values.value(columns.name()),
+				Values.value(List.of(columns.type())), Values.value(entry.getKey().TABLE_TYPE), relationshipType,
+				scopeTable };
+	}
+
+	private static List<Column> vgProperties(Value entity) {
+		var result = new ArrayList<Column>();
+		var properties = entity.get("properties");
+		for (var property : properties.keys()) {
+			result.add(new Column(property, property, properties.get(property).get("type").asString()));
+		}
+		return List.copyOf(result);
+	}
+
 	private GetTablesCacheValue getTables0(GetTablesCacheKey key) {
 
-		var tableNamePattern = key.tableNamePattern();
+		var tableNamePattern = sanitizeNamePattern(key.tableNamePattern);
 		var types = key.types();
 
-		var request = getRequest(isApocAvailable() ? "getTablesApoc" : "getTablesFallback", "name",
-				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : null, "sampleSize",
-				this.relationshipSampleSize, "types", types, "views", this.views.keySet());
+		if (isVirtualGraph()) {
+			var vgSchema = this.virtualGraphSchema.resolve();
+			var selected = vgSchema.keySet()
+				.stream()
+				.filter(table -> (tableNamePattern == null || table.TABLE_NAME.matches(tableNamePattern))
+						&& ((types == null || Arrays.stream(types).anyMatch(type -> type.equals(table.TABLE_TYPE)))))
+				.toList();
+			try {
+				return GetTablesCacheValue.of(selected);
+			}
+			catch (SQLException ex) {
+				throw new UncheckedSQLException(ex);
+			}
+		}
+
+		var request = getRequest(isApocAvailable() ? "getTablesApoc" : "getTablesFallback", "name", tableNamePattern,
+				"sampleSize", this.relationshipSampleSize, "types", types, "views", this.views.keySet());
 
 		try (var resultSet = doQueryForResultSet(request)) {
 			return GetTablesCacheValue.of(resultSet);
@@ -1041,6 +1220,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		catch (SQLException ex) {
 			throw new UncheckedSQLException(ex);
 		}
+	}
+
+	private static String sanitizeNamePattern(String tableNamePattern) {
+		return Optional.ofNullable(tableNamePattern).map(String::trim).map(v -> v.replace("%", ".*")).orElse(null);
 	}
 
 	@Override
@@ -1087,7 +1270,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	}
 
 	// Yep, this is complex; S3047 is about looping the records twice
-	// which is needed however.
+	// which is needed, however.
 	@SuppressWarnings({ "squid:S3776", "squid:S3047" })
 	@Override
 	public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
@@ -1096,15 +1279,23 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		columnNamePattern = (columnNamePattern != null) ? columnNamePattern.replace("%", ".*") : columnNamePattern;
-		var request = getRequest("getColumns", "name",
-				(tableNamePattern != null) ? tableNamePattern.replace("%", ".*") : tableNamePattern, "column_name",
-				columnNamePattern, "sampleSize", this.relationshipSampleSize, "viewColumns", getViewColumns());
-		var innerColumnsResponse = doQueryForPullResponse(request);
-		var records = innerColumnsResponse.records()
-			.stream()
-			.filter(record -> !(record.get(1).isNull() || record.get(2).isNull()))
-			.toList();
+		tableNamePattern = sanitizeNamePattern(tableNamePattern);
+		columnNamePattern = sanitizeNamePattern(columnNamePattern);
+
+		List<Record> records;
+		if (isVirtualGraph()) {
+			records = getVirtualGraphColumns(tableNamePattern, columnNamePattern);
+		}
+		else {
+			var request = getRequest("getColumns", "name", tableNamePattern, "column_name", columnNamePattern,
+					"sampleSize", this.relationshipSampleSize, "viewColumns", getViewColumns());
+			var innerColumnsResponse = doQueryForPullResponse(request);
+
+			records = innerColumnsResponse.records()
+				.stream()
+				.filter(record -> !(record.get(1).isNull() || record.get(2).isNull()))
+				.toList();
+		}
 
 		var rows = new LinkedList<Value[]>();
 
@@ -2023,6 +2214,37 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private record GetTablesCacheValue(RunResponse runResponse, PullResponse pullResponse) {
 
+		static GetTablesCacheValue of(Collection<VgTable> tables) throws SQLException {
+
+			var keys = new ArrayList<String>();
+			var recordComponents = VgTable.class.getRecordComponents();
+			var columnCount = recordComponents.length;
+
+			for (var recordComponent : recordComponents) {
+				keys.add(recordComponent.getName());
+			}
+
+			var values = new ArrayList<Value[]>();
+			for (var table : tables) {
+				var row = new Value[columnCount];
+				int i = 0;
+				for (var recordComponent : recordComponents) {
+					var accessor = recordComponent.getAccessor();
+					try {
+						var value = Values.value(accessor.invoke(table));
+						row[i++] = value;
+					}
+					catch (IllegalAccessException | InvocationTargetException ex) {
+						throw new SQLException(ex);
+					}
+				}
+				values.add(row);
+			}
+			var response = createRunResponseForStaticKeys(keys);
+			var pull = staticPullResponseFor(keys, values);
+			return new GetTablesCacheValue(response, pull);
+		}
+
 		static GetTablesCacheValue of(ResultSet resultSet) throws SQLException {
 			var keys = new ArrayList<String>();
 			var metaData = resultSet.getMetaData();
@@ -2042,6 +2264,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			var pull = staticPullResponseFor(keys, values);
 			return new GetTablesCacheValue(response, pull);
 		}
+	}
+
+	private record VgTable(String TABLE_CAT, String TABLE_SCHEM, String TABLE_NAME, String TABLE_TYPE, String REMARKS,
+			String TYPE_CAT, String TYPE_SCHEM, String TYPE_NAME, String SELF_REFERENCES_COL_NAME) {
 	}
 
 }

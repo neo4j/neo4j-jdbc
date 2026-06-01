@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.testcontainers.neo4j.Neo4jContainer;
+import org.testcontainers.utility.DockerImageName;
 
 final class TestUtils {
 
@@ -67,7 +68,8 @@ final class TestUtils {
 		if (!dockerImageName.contains("-enterprise") && forceEnterprise) {
 			dockerImageName = dockerImageName + "-enterprise";
 		}
-		var container = new Neo4jContainer(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
+		var container = new Neo4jContainer(DockerImageName.parse(dockerImageName).asCompatibleSubstituteFor("neo4j"))
+			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
 			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT) // The HTTP wait strategy used by
 			// default seems not to work in
 			// native image, bolt must be

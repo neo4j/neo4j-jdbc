@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,9 +30,8 @@ class NorthwindIT extends IntegrationTestBase {
 
 	NorthwindIT() {
 		super.doClean = false;
-		super.resources.add("/northwind/categories.csv");
-		super.resources.add("/northwind/products.csv");
-		super.resources.add("/northwind/suppliers.csv");
+		super.resources.put("/var/lib/neo4j/import",
+				List.of("/northwind/categories.csv", "/northwind/products.csv", "/northwind/suppliers.csv"));
 	}
 
 	@BeforeAll
