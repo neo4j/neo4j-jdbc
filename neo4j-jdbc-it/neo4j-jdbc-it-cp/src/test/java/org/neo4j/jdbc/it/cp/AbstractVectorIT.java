@@ -23,7 +23,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
@@ -47,7 +46,9 @@ abstract class AbstractVectorIT {
 	protected final Neo4jContainer neo4j;
 
 	AbstractVectorIT(String defaultLanguage) {
-		this.neo4j = getNeo4jContainer("neo4j:2025.12.1-enterprise", defaultLanguage);
+		this.neo4j = TestUtils.getNeo4jContainer("neo4j:2025.12.1-enterprise", false, true)
+			.withNeo4jConfig("internal.dbms.bolt.max_protocol_version", "6.0")
+			.withNeo4jConfig("db.query.default_language", defaultLanguage);
 		this.neo4j.start();
 	}
 
@@ -60,20 +61,6 @@ abstract class AbstractVectorIT {
 		return DriverManager.getConnection(
 				"jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687)), "neo4j",
 				this.neo4j.getAdminPassword());
-	}
-
-	@SuppressWarnings("resource")
-	private static Neo4jContainer getNeo4jContainer(String image, String defaultLanguage) {
-
-		var dockerImageName = Optional.ofNullable(image)
-			.orElseGet(() -> System.getProperty("neo4j-jdbc.default-neo4j-image"));
-		if (!dockerImageName.contains("-enterprise")) {
-			dockerImageName = dockerImageName + "-enterprise";
-		}
-		return new Neo4jContainer(dockerImageName).withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes")
-			.waitingFor(Neo4jContainer.WAIT_FOR_BOLT)
-			.withNeo4jConfig("internal.dbms.bolt.max_protocol_version", "6.0")
-			.withNeo4jConfig("db.query.default_language", defaultLanguage);
 	}
 
 	@Test
