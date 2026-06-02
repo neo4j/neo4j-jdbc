@@ -238,6 +238,7 @@ class DatabaseMetadataVirtualGraphIT extends AbstractDatabaseMetadata {
 	}
 
 	@Test
+	@Override
 	void joinTablesWithoutPropertiesOnRel() throws SQLException {
 
 		try (var con = this.getConnection(false, true)) {
@@ -341,6 +342,7 @@ class DatabaseMetadataVirtualGraphIT extends AbstractDatabaseMetadata {
 	// Additional tests
 
 	@Test
+	@Override
 	void getProcedureColumnsShouldWorkForASingleProcedure() throws SQLException {
 
 		int cnt = 0;
@@ -362,6 +364,7 @@ class DatabaseMetadataVirtualGraphIT extends AbstractDatabaseMetadata {
 	}
 
 	@Test
+	@Override
 	void getFunctionColumnsShouldWorkForASingleFunction() throws SQLException {
 
 		List<Map<Integer, String>> resultColumns = new ArrayList<>();
@@ -383,6 +386,7 @@ class DatabaseMetadataVirtualGraphIT extends AbstractDatabaseMetadata {
 	}
 
 	@Test
+	@Override
 	void getProcedureColumnsShouldWorkForASingleProcedureAndASingleCol() throws SQLException {
 
 		List<Map<Integer, String>> resultColumns = new ArrayList<>();
@@ -397,6 +401,7 @@ class DatabaseMetadataVirtualGraphIT extends AbstractDatabaseMetadata {
 	}
 
 	@Test
+	@Override
 	void getFunctionColumnsShouldWorkForASingleProcedureAndASingleCol() throws SQLException {
 
 		List<Map<Integer, String>> resultColumns = new ArrayList<>();

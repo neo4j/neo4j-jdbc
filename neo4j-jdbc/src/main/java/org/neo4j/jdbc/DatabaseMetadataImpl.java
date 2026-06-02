@@ -221,6 +221,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private static final String DEFAULT_SCHEMA = "public";
 
+	private static final String DEFAULT_CATALOG = "neo4j";
+
+	private static final String TABLE_TYPE_RELATIONSHIP = "RELATIONSHIP";
+
 	static {
 		QUERIES = new Properties();
 		try {
@@ -1000,7 +1004,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	}
 
 	/**
-	 * In order to honour the three reserved columns in the return from getProcedures as
+	 * In order to honor the three reserved columns in the return from getProcedures as
 	 * outlined in the docs for jdbc we have used reserved_1 reserved_2 reserved_3 these
 	 * should not be used.
 	 * @param catalog should always be null as does not apply to Neo4j.
@@ -1067,8 +1071,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		// Right now a static value, as `db.info()` is not supported, and the database is
 		// neo4j anyway
-		var tableCat = "neo4j";
-		var tableSchem = "public";
+		var tableCat = DEFAULT_CATALOG;
+		var tableSchem = DEFAULT_SCHEMA;
 		var tables = new TreeMap<VgTable, List<Column>>((o1, o2) -> {
 			var result = -1 * o1.TABLE_TYPE.compareTo(o2.TABLE_TYPE());
 			if (result == 0) {
@@ -1091,13 +1095,16 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 						if ("in".equals(relationship.get("direction").asString())) {
 							continue;
 						}
-						tables.put(new VgTable(tableCat, tableSchem,
-								"%s_%s_%s"
-									.formatted(key, type, relationship.get("labels").asList(Value::asString).get(0)),
-								"RELATIONSHIP",
-								"%s\n%s\n%s".formatted(key, type,
-										relationship.get("labels").asList(Value::asString).get(0)),
-								null, null, null, null), vgProperties(relationship));
+						// The OS specific new lines are on purpose
+						@SuppressWarnings({ "squid:S3457" })
+						var remark = "%s\n%s\n%s".formatted(key, type,
+								relationship.get("labels").asList(Value::asString).get(0));
+						tables.put(
+								new VgTable(tableCat, tableSchem,
+										"%s_%s_%s".formatted(key, type,
+												relationship.get("labels").asList(Value::asString).get(0)),
+										TABLE_TYPE_RELATIONSHIP, remark, null, null, null, null),
+								vgProperties(relationship));
 					}
 
 					tables.put(new VgTable(tableCat, tableSchem, key, "TABLE", null, null, null, null, null),
@@ -1118,7 +1125,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			return List.of();
 		}
 
-		var keys = List.of("tables", "propertyName", "propertyTypes", "TABLE_TYPE", "relationshipType", "SCOPE_TABLE");
+		var keys = List.of("tables", "propertyName", "propertyTypes", "TABLE_TYPE", "relationshipType",
+				COL_SCOPE_TABLE);
 		var vgSchema = this.virtualGraphSchema.resolve();
 		var selected = vgSchema.entrySet()
 			.stream()
@@ -1135,7 +1143,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		var records = new ArrayList<Record>();
 
 		var isRelationship = (Predicate<Map.Entry<VgTable, List<Column>>>) entry -> entry.getKey().TABLE_TYPE
-			.equals("RELATIONSHIP");
+			.equals(TABLE_TYPE_RELATIONSHIP);
 		selected.stream().filter(Predicate.not(isRelationship)).forEach(entry -> {
 			for (var columns : entry.getValue()) {
 				var row = toValues(entry, columns, Values.NULL, Values.NULL);
@@ -1201,7 +1209,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			var selected = vgSchema.keySet()
 				.stream()
 				.filter(table -> (tableNamePattern == null || table.TABLE_NAME.matches(tableNamePattern))
-						&& ((types == null || Arrays.stream(types).anyMatch(type -> type.equals(table.TABLE_TYPE)))))
+						&& (types == null || Arrays.stream(types).anyMatch(type -> type.equals(table.TABLE_TYPE))))
 				.toList();
 			try {
 				return GetTablesCacheValue.of(selected);
@@ -1239,7 +1247,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		var runResponse = createRunResponseForStaticKeys(keys);
 		var pullResponse = staticPullResponseFor(keys, List.of(new Value[] { Values.value("TABLE") },
-				new Value[] { Values.value("RELATIONSHIP") }, new Value[] { Values.value("CBV") }));
+				new Value[] { Values.value(TABLE_TYPE_RELATIONSHIP) }, new Value[] { Values.value("CBV") }));
 		return new LocalStatementImpl(this.connection, runResponse, pullResponse).getResultSet();
 	}
 
@@ -1319,7 +1327,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			var nodeLabels = record.get(0);
 			Value labelsOrTypes = nodeLabels;
 			var tableType = record.get("TABLE_TYPE").asString();
-			if ("RELATIONSHIP".equals(tableType)) {
+			if (TABLE_TYPE_RELATIONSHIP.equals(tableType)) {
 				// This column contains the flat rel type, so that we don't have to strip
 				// away start / end node again.
 				labelsOrTypes = Values.value(List.of(record.get("relationshipType").asString()));
@@ -1376,7 +1384,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			boolean isRelationship = v.asString().contains("_");
 			var additionalIds = new ArrayList<>(List.of("v$id"));
 			if (isRelationship) {
-				var result = getTables(null, null, v.asString(), new String[] { "RELATIONSHIP" });
+				var result = getTables(null, null, v.asString(), new String[] { TABLE_TYPE_RELATIONSHIP });
 				if (result.next()) {
 					var definition = result.getString(COL_REMARKS).split("\n");
 					additionalIds.add("v$" + definition[0].toLowerCase(Locale.ROOT) + "_id");
@@ -1586,7 +1594,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 			boolean relationshipChecked = false;
 			// Check if it is a virtual table and extract the relationship name
 			if (table.matches(".+?_.+?_.+?")) {
-				var relationships = getTables(catalog, schema, table, new String[] { "RELATIONSHIP" });
+				var relationships = getTables(catalog, schema, table, new String[] { TABLE_TYPE_RELATIONSHIP });
 				if (relationships.next()) {
 					relationshipChecked = true;
 					finalTable = relationships.getString(COL_REMARKS).split("\n")[1].trim();
