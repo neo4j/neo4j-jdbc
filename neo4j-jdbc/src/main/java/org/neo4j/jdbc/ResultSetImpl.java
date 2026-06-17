@@ -1339,8 +1339,17 @@ final class ResultSetImpl implements Neo4jResultSet {
 			else if (type == OffsetTime.class) {
 				result = value.asOffsetTime();
 			}
+			else if (type == UUID.class && value.hasType(Type.UUID)) {
+				result = value.asUUID();
+			}
 			else if (type == UUID.class && value.hasType(Type.STRING)) {
-				result = UUID.fromString(value.asString());
+				try {
+					result = UUID.fromString(value.asString());
+				}
+				catch (IllegalArgumentException ex) {
+					throw new Neo4jException(
+							GQLError.$22N37.withTemplatedMessage(value.toDisplayString(), type.getName()));
+				}
 			}
 			if (result != null) {
 				return type.cast(result);
