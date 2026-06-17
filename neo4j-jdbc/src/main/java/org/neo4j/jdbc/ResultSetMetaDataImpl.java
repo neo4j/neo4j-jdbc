@@ -46,6 +46,7 @@ import org.neo4j.jdbc.values.RelationshipValue;
 import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
 import org.neo4j.jdbc.values.Type;
+import org.neo4j.jdbc.values.UUIDValue;
 import org.neo4j.jdbc.values.UnsupportedType;
 import org.neo4j.jdbc.values.Value;
 import org.neo4j.jdbc.values.VectorValue;
@@ -273,6 +274,9 @@ final class ResultSetMetaDataImpl implements ResultSetMetaData {
 			}
 			case UNSUPPORTED -> {
 				return UnsupportedType.class.getName();
+			}
+			case UUID -> {
+				return UUIDValue.class.getName();
 			}
 		}
 
