@@ -1130,9 +1130,9 @@ class ResultSetImplTests {
 							supplier -> assertThat(supplier.get()).isEqualTo(Vector.of(new int[1]))))));
 
 			var uuid = UUID.randomUUID();
-			var uuidStream = Stream.of(Values.values(uuid))
-				.flatMap(vectorValue -> Stream
-					.of(Arguments.of(vectorValue, Named.<VerificationLogic<Object>>of("verify returns UUID",
+			var uuidStream = Stream.of(Values.value(uuid))
+				.flatMap(uuidValue -> Stream
+					.of(Arguments.of(uuidValue, Named.<VerificationLogic<Object>>of("verify returns UUID",
 							supplier -> assertThat(supplier.get()).isEqualTo(uuid)))));
 
 			return switch (type) {
