@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -200,6 +201,9 @@ public final class Values {
 		}
 		if (value instanceof Object[]) {
 			return value(Arrays.asList((Object[]) value));
+		}
+		if (value instanceof UUID uuid) {
+			return new UUIDValue(uuid);
 		}
 
 		throw new ValueException("Unable to convert " + value.getClass().getName() + " to Neo4j Value.");

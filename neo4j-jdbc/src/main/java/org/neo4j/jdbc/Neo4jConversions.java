@@ -112,7 +112,7 @@ final class Neo4jConversions {
 		// The types in our enum are reflective of Driver 4.4 / Early 5, hence
 		// not fully aligned with Neo4j Cypher 5 / 25, comments inline mitigate that
 		return switch (neo4jType) {
-			case ANY, DURATION, UNSUPPORTED -> Types.OTHER;
+			case ANY, DURATION, UNSUPPORTED, UUID -> Types.OTHER;
 			case BOOLEAN -> Types.BOOLEAN;
 			case BYTES -> Types.BLOB;
 			case STRING -> Types.VARCHAR;

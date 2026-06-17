@@ -158,7 +158,12 @@ public enum Type {
 	 * A datatype that might be known in the server, but is unsupported in this client.
 	 * @since 6.9.0
 	 */
-	UNSUPPORTED;
+	UNSUPPORTED,
+	/**
+	 * Neo4j native UUID Type.
+	 * @since 6.14.0
+	 */
+	UUID;
 
 	/**
 	 * Test if the given value has this type.

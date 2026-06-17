@@ -25,7 +25,7 @@
 	<parent>
 		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j-jdbc-it</artifactId>
-		<version>6.13.2-SNAPSHOT</version>
+		<version>6.14.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>neo4j-jdbc-mybatis-smoke-tests</artifactId>
 
@@ -37,6 +37,16 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<!-- :sad-panda: Now we have exactly that scenario about which Spring Boot folks warned: Importing other
+				boms in a bom is causing trouble (Spring Boot imports Neo4j Java Driver bom which in turn imports that bom,
+				and here we are… clashes, because now the JDBC driver is on a higher bolt version than the Java driver in Boot -->
+				<groupId>org.neo4j.bolt</groupId>
+				<artifactId>neo4j-bolt-connection-bom</artifactId>
+				<version>${neo4j-bolt-connection.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<dependency>
 				<!-- Import dependency management from Spring Boot -->
 				<groupId>org.springframework.boot</groupId>

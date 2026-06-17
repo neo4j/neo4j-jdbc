@@ -27,6 +27,7 @@ import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -190,6 +191,11 @@ final class ValueImpl implements Value, AsValue {
 			}
 		});
 		return new BoltVectorImpl(jdbcVector.elementType().getJavaType(), accessor.apply(jdbcVector));
+	}
+
+	@Override
+	public UUID asUUID() {
+		return this.value.asUUID();
 	}
 
 	@Override

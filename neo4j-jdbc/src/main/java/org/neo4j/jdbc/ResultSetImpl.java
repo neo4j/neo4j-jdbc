@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -1337,6 +1338,9 @@ final class ResultSetImpl implements Neo4jResultSet {
 			}
 			else if (type == OffsetTime.class) {
 				result = value.asOffsetTime();
+			}
+			else if (type == UUID.class && value.hasType(Type.STRING)) {
+				result = UUID.fromString(value.asString());
 			}
 			if (result != null) {
 				return type.cast(result);

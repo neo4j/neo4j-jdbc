@@ -52,6 +52,7 @@ import org.neo4j.jdbc.values.PointValue;
 import org.neo4j.jdbc.values.RelationshipValue;
 import org.neo4j.jdbc.values.StringValue;
 import org.neo4j.jdbc.values.TimeValue;
+import org.neo4j.jdbc.values.UUIDValue;
 import org.neo4j.jdbc.values.UnsupportedDateTimeValue;
 import org.neo4j.jdbc.values.UnsupportedType;
 import org.neo4j.jdbc.values.Values;
@@ -86,6 +87,7 @@ enum ValueFactoryImpl implements ValueFactory {
 		hlp.put(ListValue.class, Type.LIST);
 		hlp.put(BytesValue.class, Type.BYTES);
 		hlp.put(VectorValue.class, Type.VECTOR);
+		hlp.put(UUIDValue.class, Type.UUID);
 		TYPE_MAP = Map.copyOf(hlp);
 	}
 

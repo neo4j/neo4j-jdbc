@@ -266,7 +266,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	private static final BoltProtocolVersion MIN_BOLT_VERSION = new BoltProtocolVersion(5, 1);
 
 	private static final Map<String, Object> BOLT_CONNECTION_OPTIONS = Map.of("eventLoopThreadNamePrefix",
-			"Neo4jJDBCDriverIO", "maxVersion", new BoltProtocolVersion(6, 0));
+			"Neo4jJDBCDriverIO", "maxVersion", new BoltProtocolVersion(6, 1));
 
 	/*
 	 * Register one default instance globally.

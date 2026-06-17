@@ -45,6 +45,7 @@ import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -486,6 +487,16 @@ public interface Value extends MapAccessorWithDefaultValue {
 	 * @since 6.8.0
 	 */
 	default Vector asVector() {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Returns the value as a {@link UUID}, if possible.
+	 * @return the value as a {@link UUID}, if possible.
+	 * @throws UncoercibleException if value types are incompatible.
+	 * @since 6.14.0
+	 */
+	default UUID asUUID() {
 		throw new UnsupportedOperationException();
 	}
 

@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1128,6 +1129,12 @@ class ResultSetImplTests {
 					.of(Arguments.of(vectorValue, Named.<VerificationLogic<Object>>of("verify returns Vector",
 							supplier -> assertThat(supplier.get()).isEqualTo(Vector.of(new int[1]))))));
 
+			var uuid = UUID.randomUUID();
+			var uuidStream = Stream.of(Values.values(uuid))
+				.flatMap(vectorValue -> Stream
+					.of(Arguments.of(vectorValue, Named.<VerificationLogic<Object>>of("verify returns UUID",
+							supplier -> assertThat(supplier.get()).isEqualTo(uuid)))));
+
 			return switch (type) {
 				case ANY, NODE, UNSUPPORTED, RELATIONSHIP, PATH, NUMBER -> Stream.of();
 				case BOOLEAN -> booleanStream;
@@ -1146,6 +1153,7 @@ class ResultSetImplTests {
 				case LOCAL_DATE_TIME -> localDateTimeStream;
 				case DATE_TIME -> dateTimeStream;
 				case DURATION -> durationStream;
+				case UUID -> uuidStream;
 			};
 		}).flatMap(ResultSetImplTests::mapArgumentToBothIndexAndLabelAccess);
 	}
