@@ -153,7 +153,7 @@
 		<git-commit-id-maven-plugin.version>10.0.0</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.10</jackson-databind-nullable.version>
 		<jackson.version>2.22.0</jackson.version>
-		<jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
 		<japicmp-maven-plugin.version>0.26.1</japicmp-maven-plugin.version>
 		<java-build.version>25</java-build.version>
