@@ -156,7 +156,7 @@
 		<jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
 		<japicmp-maven-plugin.version>0.26.1</japicmp-maven-plugin.version>
-		<java-build.version>25</java-build.version>
+		<java-build.version>26</java-build.version>
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.5</jaxb-api.version>
 		<jboss-logging.version>3.6.3.Final</jboss-logging.version>
@@ -185,7 +185,7 @@
 		<maven-source-plugin.version>3.4.0</maven-source-plugin.version>
 		<maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
-		<maven.version>3.9.11</maven.version>
+		<maven.version>3.9.16</maven.version>
 		<micrometer-tracing.version>1.7.0</micrometer-tracing.version>
 		<micrometer.version>1.17.0</micrometer.version>
 		<mockito.version>5.23.0</mockito.version>
@@ -1308,6 +1308,18 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+		<profile>
+			<id>native-image</id>
+			<activation>
+				<property>
+					<name>native</name>
+				</property>
+			</activation>
+			<properties>
+				<!-- Latest GraalVM Community version available -->
+				<java-build.version>25</java-build.version>
+			</properties>
 		</profile>
 		<profile>
 			<id>no-release</id>
