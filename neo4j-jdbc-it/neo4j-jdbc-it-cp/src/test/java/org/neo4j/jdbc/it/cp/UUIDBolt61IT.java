@@ -23,47 +23,22 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import com.github.dockerjava.api.exception.NotFoundException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.condition.EnabledIf;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.neo4j.Neo4jContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * For now only runs in case a local neo4j:boltv61 is available (i.e. the nightly tagged
- * as such)
- */
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@EnabledIf(value = "neo4jGreaterThanOrEqual202606Available",
-		disabledReason = "Neo4j 2026.06 or higher is not available")
 class UUIDBolt61IT {
 
 	protected final Neo4jContainer neo4j;
 
-	protected static final String IMAGE_NAME = "neo4j:boltv61";
-
-	// Client must not be closed, otherwise the factory will yell at you:
-	// "You should never close the global DockerClient!"
-	@SuppressWarnings("resource")
-	static boolean neo4jGreaterThanOrEqual202606Available() {
-		var dockerClient = DockerClientFactory.lazyClient();
-		try {
-			dockerClient.inspectImageCmd(IMAGE_NAME).exec();
-		}
-		catch (NotFoundException ex) {
-			return false;
-		}
-		return true;
-	}
-
 	UUIDBolt61IT() {
-		this.neo4j = TestUtils.getNeo4jContainer(IMAGE_NAME, false, false)
+		this.neo4j = TestUtils.getNeo4jContainer(null, false, false)
 			.withNeo4jConfig("internal.dbms.bolt.max_protocol_version", "6.1")
 			.withNeo4jConfig("db.query.default_language", "CYPHER_25");
 		this.neo4j.start();
