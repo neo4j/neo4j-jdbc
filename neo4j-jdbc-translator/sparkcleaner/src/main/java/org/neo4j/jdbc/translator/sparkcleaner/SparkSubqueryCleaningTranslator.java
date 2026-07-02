@@ -43,8 +43,8 @@ import org.neo4j.jdbc.translator.spi.Translator;
  */
 final class SparkSubqueryCleaningTranslator implements Translator {
 
-	private static final Pattern SUBQUERY_PATTERN = Pattern
-		.compile("(?ims)SELECT\\s+\\*\\s+FROM\\s+\\((.*?)\\)\\s+SPARK_GEN_SUBQ_0.*");
+	private static final Pattern SUBQUERY_PATTERN = Pattern.compile(
+			"(?ims)SELECT\\s+\\*\\s+FROM\\s+\\((.*?)\\)\\s+SPARK_GEN_SUBQ_\\d+(?:(?!SPARK_GEN_SUBQ_\\d|\\)).)*\\z");
 
 	private final int precedence;
 

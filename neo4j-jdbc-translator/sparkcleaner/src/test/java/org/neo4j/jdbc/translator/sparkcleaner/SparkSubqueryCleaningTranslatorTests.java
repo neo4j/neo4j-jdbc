@@ -76,7 +76,13 @@ class SparkSubqueryCleaningTranslatorTests {
 						SELECT * FROM (
 							SELECT * FROM (RETURN 1) SPARK_GEN_SUBQ_1
 						)
-						""", null), Arguments.of("SELECT * FROM Movie", null));
+						""", null), Arguments.of("SELECT * FROM Movie", null), Arguments.of("""
+						SELECT * FROM (SELECT operator, 1 as flight_count FROM Flight) SPARK_GEN_SUBQ_0 WHERE 1=0
+						""", "SELECT operator, 1 as flight_count FROM Flight"), Arguments.of("""
+						SELECT * FROM (SELECT operator, 1 as flight_count FROM Flight) SPARK_GEN_SUBQ_6 WHERE 1=0
+						""", "SELECT operator, 1 as flight_count FROM Flight")
+
+		);
 	}
 
 	@ParameterizedTest
