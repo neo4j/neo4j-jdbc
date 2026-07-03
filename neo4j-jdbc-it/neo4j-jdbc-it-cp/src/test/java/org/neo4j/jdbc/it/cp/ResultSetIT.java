@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -329,6 +330,16 @@ class ResultSetIT extends IntegrationTestBase {
 		}
 	}
 
+	boolean cypher25Available() throws SQLException {
+		try (var con = getConnection(); var stmt = con.createStatement(); var rs = stmt.executeQuery("""
+				CALL dbms.components() yield name, versions
+				WHERE name = 'Cypher' AND any(x IN versions WHERE x = '25')
+				    RETURN count(*)""")) {
+			rs.next();
+			return rs.getInt(1) > 0;
+		}
+	}
+
 	/**
 	 * Exercises every reachable branch of
 	 * {@link ResultSetMetaData#getColumnClassName(int)}. The class name is derived from
@@ -343,6 +354,7 @@ class ResultSetIT extends IntegrationTestBase {
 	 * {@code UUIDBolt61IT}), neither of which the default container image produces.
 	 */
 	@Test
+	@EnabledIf("cypher25Available")
 	void getColumnClassName() throws SQLException {
 		// firstRecord == null (empty result) falls back to Object
 		try (var con = getConnection();
