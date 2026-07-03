@@ -19,7 +19,9 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -39,6 +42,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.neo4j.jdbc.values.BooleanValue;
+import org.neo4j.jdbc.values.BytesValue;
+import org.neo4j.jdbc.values.DateTimeValue;
+import org.neo4j.jdbc.values.DateValue;
+import org.neo4j.jdbc.values.DurationValue;
+import org.neo4j.jdbc.values.FloatValue;
+import org.neo4j.jdbc.values.IntegerValue;
+import org.neo4j.jdbc.values.ListValue;
+import org.neo4j.jdbc.values.LocalDateTimeValue;
+import org.neo4j.jdbc.values.LocalTimeValue;
+import org.neo4j.jdbc.values.MapValue;
+import org.neo4j.jdbc.values.NodeValue;
+import org.neo4j.jdbc.values.NullValue;
+import org.neo4j.jdbc.values.PathValue;
+import org.neo4j.jdbc.values.PointValue;
+import org.neo4j.jdbc.values.RelationshipValue;
+import org.neo4j.jdbc.values.StringValue;
+import org.neo4j.jdbc.values.TimeValue;
+import org.neo4j.jdbc.values.VectorValue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -304,6 +326,85 @@ class ResultSetIT extends IntegrationTestBase {
 		try (var rs = getResultSet()) {
 			var msg = tester.apply(rs);
 			assertThat(msg).isEqualTo(expected);
+		}
+	}
+
+	/**
+	 * Exercises every reachable branch of
+	 * {@link ResultSetMetaData#getColumnClassName(int)}. The class name is derived from
+	 * the {@code type()} of the first record of a column, so this test returns one column
+	 * per concrete {@link org.neo4j.jdbc.values.Type} the server can send over Bolt plus
+	 * the empty-result case that maps to {@link Object}.
+	 * <p>
+	 * The {@code ANY} and {@code NUMBER} branches are unreachable on purpose: those are
+	 * abstract super-types used for {@code covers()} checks and are never returned by
+	 * {@code Value#type()}. The {@code UNSUPPORTED} branch needs a server-side type
+	 * unknown to this client and {@code UUID} needs the native UUID type of Bolt 6.1 (see
+	 * {@code UUIDBolt61IT}), neither of which the default container image produces.
+	 */
+	@Test
+	void getColumnClassName() throws SQLException {
+		// firstRecord == null (empty result) falls back to Object
+		try (var con = getConnection();
+				var stmt = con.createStatement();
+				var rs = stmt.executeQuery("UNWIND [] AS n RETURN n")) {
+			assertThat(rs.getMetaData().getColumnClassName(1)).isEqualTo(Object.class.getName());
+		}
+
+		var expectedByColumn = new HashMap<String, String>();
+		expectedByColumn.put("v_boolean", BooleanValue.class.getName());
+		expectedByColumn.put("v_bytes", BytesValue.class.getName());
+		expectedByColumn.put("v_string", StringValue.class.getName());
+		expectedByColumn.put("v_integer", IntegerValue.class.getName());
+		expectedByColumn.put("v_float", FloatValue.class.getName());
+		expectedByColumn.put("v_list", ListValue.class.getName());
+		expectedByColumn.put("v_map", MapValue.class.getName());
+		expectedByColumn.put("v_node", NodeValue.class.getName());
+		expectedByColumn.put("v_relationship", RelationshipValue.class.getName());
+		expectedByColumn.put("v_path", PathValue.class.getName());
+		expectedByColumn.put("v_point", PointValue.class.getName());
+		expectedByColumn.put("v_date", DateValue.class.getName());
+		expectedByColumn.put("v_time", TimeValue.class.getName());
+		expectedByColumn.put("v_localtime", LocalTimeValue.class.getName());
+		expectedByColumn.put("v_localdatetime", LocalDateTimeValue.class.getName());
+		expectedByColumn.put("v_datetime", DateTimeValue.class.getName());
+		expectedByColumn.put("v_duration", DurationValue.class.getName());
+		expectedByColumn.put("v_null", NullValue.class.getName());
+		expectedByColumn.put("v_vector", VectorValue.class.getName());
+
+		try (var con = getConnection(); var stmt = con.prepareStatement("""
+				CYPHER 25
+				CREATE p = (n:CcnNode {v: 1})-[r:CCN_REL {v: 2}]->(m:CcnNode {v: 3})
+				RETURN
+					true AS v_boolean,
+					$1 AS v_bytes,
+					'a string' AS v_string,
+					42 AS v_integer,
+					4.2 AS v_float,
+					[1, 2, 3] AS v_list,
+					{k: 'v'} AS v_map,
+					n AS v_node,
+					r AS v_relationship,
+					p AS v_path,
+					point({x: 1, y: 2}) AS v_point,
+					date() AS v_date,
+					time() AS v_time,
+					localtime() AS v_localtime,
+					localdatetime() AS v_localdatetime,
+					datetime() AS v_datetime,
+					duration({days: 1}) AS v_duration,
+					null AS v_null,
+					VECTOR([1, 2, 3], 3, INT8) AS v_vector""")) {
+			stmt.setBytes(1, "Hello".getBytes(StandardCharsets.UTF_8));
+			try (var rs = stmt.executeQuery()) {
+				var metaData = rs.getMetaData();
+				assertThat(metaData.getColumnCount()).isEqualTo(expectedByColumn.size());
+				for (var column = 1; column <= metaData.getColumnCount(); ++column) {
+					var label = metaData.getColumnLabel(column);
+					assertThat(metaData.getColumnClassName(column)).as("class name of column `%s`", label)
+						.isEqualTo(expectedByColumn.get(label));
+				}
+			}
 		}
 	}
 
