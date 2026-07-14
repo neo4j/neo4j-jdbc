@@ -130,7 +130,7 @@
 				<executions>
 					<execution>
 						<id>default-test</id>
-						<configuration combine.self="override">
+						<configuration combine.self="append">
 							<excludes>
 								<exclude>**/JSONMappersTests.java</exclude>
 							</excludes>
