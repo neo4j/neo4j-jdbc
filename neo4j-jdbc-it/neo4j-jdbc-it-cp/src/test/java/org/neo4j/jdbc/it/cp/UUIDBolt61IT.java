@@ -26,6 +26,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.neo4j.Neo4jContainer;
 
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@DisabledIfSystemProperty(named = "neo4j-jdbc.default-neo4j-image", matches = "5\\.26\\.*")
 class UUIDBolt61IT {
 
 	protected final Neo4jContainer neo4j;
