@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@DisabledIfSystemProperty(named = "neo4j-jdbc.default-neo4j-image", matches = "5\\.26\\.*")
+@DisabledIfSystemProperty(named = "neo4j-jdbc.default-neo4j-image", matches = "neo4j:5\\.26\\.*")
 class UUIDBolt61IT {
 
 	protected final Neo4jContainer neo4j;
