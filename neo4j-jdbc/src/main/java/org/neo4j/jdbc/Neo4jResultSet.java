@@ -36,7 +36,6 @@ public sealed interface Neo4jResultSet extends ResultSet permits ResultSetImpl {
 	 * Adds a listener to this statement that gets notified on starts and finish of
 	 * iteration and whenever a new batch is pulled from the database.
 	 * @param resultSetListener the lister to add to this result set
-	 * @since 6.3.0
 	 */
 	void addListener(ResultSetListener resultSetListener);
 
