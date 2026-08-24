@@ -29,6 +29,8 @@ nav:
 
 asciidoc:
   attributes:
+    page-tabs: drivers-apis@
+    page-tabs-index: 15
     group-id: ${groupId}
     artifact-id: ${mainArtifactId}
     artifact-id-spi: ${mainArtifactId}-translator-spi
