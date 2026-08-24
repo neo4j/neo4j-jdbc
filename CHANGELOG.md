@@ -1,3 +1,235 @@
+# 6.14.1
+
+## 🧰 Tasks
+- 51e8a5f chore: July / August roundup of dependency upgrades. (#1444)
+
+## 🧹 Housekeeping
+- fffa321 Bump dev.langchain4j:langchain4j-bom from 1.17.2 to 1.18.0 (#1434)
+- abf54a1 Bump org.keycloak:keycloak-authz-client (#1433)
+- 3e9bd8e Bump mybatis-spring-boot-starter.version (#1432)
+- 85c7129 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1435)
+- be83ba8 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak from 4.3.0 to 4.3.1 (#1437)
+- 14d693a Bump quarkus.platform.version from 3.37.2 to 3.37.3 (#1438)
+- 4eaaf1d Bump org.codehaus.mojo:flatten-maven-plugin (#1439)
+- 7b5c07c Bump org.apache.maven.plugins:maven-jar-plugin (#1440)
+- dd3f162 build(deps-dev): Bump org.duckdb:duckdb_jdbc from 1.5.4.0 to 1.5.5.0 (#1441)
+
+## 📝 Documentation
+- c1a5edd DOCOPS-176 Add page-tabs attributes (#1443)
+
+
+# 6.14.0
+
+## 🚀 Features
+- 02f1fe9 feat: Add support for Bolt v6.1 and with that, the native `UUID` type. (#1396)
+
+## 🔄️ Refactorings
+- 7d50fae refactor: Be more lenient when detecting Spark subqueries. (#1413)
+
+## 🧰 Tasks
+- 2dd2983 chore: Update to Neo4j 2026.06 and always enable UUID tests. (#1431)
+- 2a0ef2b chore: Add tests for some aspects of `ResultSetMetaData`.
+- 28f4966 Disable classname test on databases without Cypher 25.
+- aa82ed4 chore: Pin all actions (including officials) to their currenet sha. (#1414)
+- 18ea29f Add Spark cleaner submodule to test aggregation module.
+
+## 🧹 Housekeeping
+- a9e31af Bump com.fasterxml.jackson:jackson-bom (#1422)
+- ef5130f Bump org.junit:junit-bom from 6.1.1 to 6.1.2 (#1423)
+- fdd2804 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1424)
+- 1b7c361 Bump com.puppycrawl.tools:checkstyle from 13.7.0 to 13.8.0 (#1425)
+- 3df050b Bump quarkus.platform.version from 3.37.1 to 3.37.2 (#1426)
+- ad7c287 Bump org.graalvm.buildtools:native-maven-plugin (#1427)
+- 28af3cd Bump io.netty:netty-bom from 4.1.135.Final to 4.1.136.Final (#1428)
+- d4817b0 Bump org.hibernate.orm:hibernate-platform (#1429)
+- 75e03a5 Bump dev.langchain4j:langchain4j-bom from 1.17.1 to 1.17.2 (#1430)
+- 7f7d31c Bump org.hibernate.orm:hibernate-platform (#1415)
+- 38a5460 Bump org.neo4j:cypher-v5-antlr-parser (#1416)
+- 32c9453 Bump quarkus.platform.version from 3.37.0 to 3.37.1 (#1417)
+- b3f8b1e Bump org.keycloak:keycloak-authz-client (#1418)
+- 45197d0 Bump org.jreleaser:jreleaser-maven-plugin (#1419)
+- 1bec59b Bump dev.langchain4j:langchain4j-bom from 1.17.0 to 1.17.1 (#1420)
+- 6fe414b Bump org.jdbi:jdbi3-bom from 3.53.0 to 3.54.0 (#1421)
+- 7dbdfb2 Bump com.puppycrawl.tools:checkstyle from 13.6.0 to 13.7.0 (#1407)
+- 20231e5 Bump quarkus.platform.version from 3.36.3 to 3.37.0 (#1408)
+- 57d9ba1 Bump org.hibernate.orm:hibernate-platform (#1409)
+- c17dfc5 Bump org.graalvm.buildtools:native-maven-plugin (#1410)
+- 04da13a Bump dev.langchain4j:langchain4j-bom from 1.16.3 to 1.17.0 (#1411)
+- 6c982a5 Bump org.junit:junit-bom from 6.1.0 to 6.1.1 (#1412)
+- 665e7cc Bump neo4j-cypher-dsl.version from 2025.2.7 to 2025.3.0
+- 8dc6351 Bump org.apache.maven.plugins:maven-surefire-plugin (#1397)
+- 5cb184c Bump dev.langchain4j:langchain4j-bom from 1.16.2 to 1.16.3 (#1398)
+- 685c9fd Bump quarkus.platform.version from 3.36.2 to 3.36.3 (#1399)
+- bdf5957 Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#1400)
+- 01d3909 build(deps-dev): Bump org.duckdb:duckdb_jdbc from 1.5.3.0 to 1.5.4.0 (#1401)
+- 7bbb48f Bump org.hibernate.orm:hibernate-platform (#1402)
+- e3a5b2a Bump org.cyclonedx:cyclonedx-maven-plugin (#1403)
+- b3343fa Bump org.jooq:jooq from 3.19.35 to 3.19.36 (#1404)
+- aa3ec2e Bump org.jacoco:jacoco-maven-plugin from 0.8.14 to 0.8.15 (#1405)
+
+## 🛠 Build
+- ed1691b build: Upgrade build to JDK 26. (#1406)
+
+
+# 6.13.1
+
+## 📝 Documentation
+- 3b12adb docs: Add Maven badge to `README.adoc`.
+
+## 🧰 Tasks
+- 2a01471 chore: Minor polishing.
+
+## 🧹 Housekeeping
+- ea7ee72 Bump org.graalvm.buildtools:native-maven-plugin (#1386)
+- c973154 Bump org.neo4j:cypher-v5-antlr-parser (#1387)
+- 2d6026c Bump dev.langchain4j:langchain4j-bom from 1.16.1 to 1.16.2 (#1388)
+- c3e0353 build(deps-dev): Bump org.openapitools:openapi-generator-maven-plugin (#1389)
+- a9f7b5a Bump spring-boot.version from 4.0.6 to 4.1.0 (#1390)
+- 29b1cd3 Bump com.puppycrawl.tools:checkstyle from 13.5.0 to 13.6.0 (#1391)
+- 969872b Bump org.jooq:jooq from 3.19.34 to 3.19.35 (#1392)
+- d37644e Bump io.micrometer:micrometer-tracing-bom (#1393)
+- 8659f0e Bump quarkus.platform.version from 3.36.1 to 3.36.2 (#1394)
+- 22b7ed1 build(deps-dev): Bump org.apache.maven.plugins:maven-dependency-plugin (#1395)
+- d9ea203 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1377)
+- 3c6b241 Bump org.apache.maven.plugins:maven-failsafe-plugin (#1376)
+- d9c0e4d Bump com.puppycrawl.tools:checkstyle from 13.4.2 to 13.5.0 (#1378)
+- dcdad31 Bump dev.langchain4j:langchain4j-bom from 1.15.0 to 1.16.1 (#1379)
+- 3a8c516 Bump io.netty:netty-bom from 4.1.134.Final to 4.1.135.Final (#1380)
+- 6bed727 Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1381)
+- d4f85a1 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1382)
+- 72f82b4 Bump com.fasterxml.jackson:jackson-bom (#1383)
+- e9e7097 Bump quarkus.platform.version from 3.35.4 to 3.36.1 (#1384)
+- ddcadb0 Bump org.hibernate.orm:hibernate-platform (#1385)
+
+
+# 6.13.0
+
+Happy to announce that version 6.13.0 of our JDBC Driver is now compatible with Neo4 [Virtual Graphs](https://neo4j.com/blog/graph-database/introducing-neo4j-virtual-graph-graph-reasoning-on-the-data-you-already-have/). This affects especially the meta data that we retrieve from the Neo4j instance (we do use quite some sophisticated queries for that and we switch to a programmatic approach when running on Virtual Graphs).
+
+So, if you use the Neo4j-JDBC driver to run Cypher against Virtual Graph, it is fully up to you to write the Cypher in a way that our new offering can handle.
+
+In case you use the built-in SQL to Cypher translation, it might be that it generates Cypher that cannot yet be understood by Virtual Graphs (that would affect much of `GROUP BY` supported added in [6.12.0](https://github.com/neo4j/neo4j-jdbc/releases/tag/6.12.0))
+
+But essentially, we can go now full circle:
+
+Neo4j-JDBC driver will for example translate the following SQL passed to the driver
+
+```sql
+SELECT person_name, role, movie_title
+FROM Person_ACTED_IN_Movie
+WHERE person_name LIKE '%arrie-Anne%'
+ORDER BY person_name, role
+```
+
+into this Cypher:
+
+```cypher
+MATCH (_start:Person)-[person_acted_in_movie:ACTED_IN]->(_end:Movie)
+WHERE _start.name CONTAINS 'arrie-Anne'
+RETURN _start.name AS person_name, person_acted_in_movie.role AS role, _end.title AS movie_title
+ORDER BY _start.name, person_acted_in_movie.role
+```
+
+While a normal Neo4j would just execute that, Virtual Graphs engine will translate it to
+
+```sql
+SELECT
+   "v2_people"."NAME" AS "person_name",
+   "person_acted_in_movie"."ROLE" AS "role",
+   "v2_movies"."TITLE" AS "movie_title"
+ FROM "V2"."PEOPLE" AS "v2_people"
+ JOIN "V2"."MOVIE_ACTORS" AS "person_acted_in_movie" ON "person_acted_in_movie"."PERSON_ID" = "v2_people"."ID"
+ JOIN "V2"."MOVIES" AS "v2_movies" ON "v2_movies"."ID" = "person_acted_in_movie"."MOVIE_ID"
+ WHERE (contains("v2_people"."NAME", ? /*autostring0*/))
+ ORDER BY "v2_people"."NAME" ASC NULLS LAST, "person_acted_in_movie"."ROLE" ASC NULLS LAST
+```
+
+Taking that statement back to the JDBC Driver, it will produce
+
+```cypher
+MATCH (v2_people:Person)-[person_acted_in_movie:ACTED_IN]->(v2_movies:Movie) 
+WHERE v2_people.name CONTAINS 'arrie-Anne' 
+RETURN v2_people.name AS person_name, person_acted_in_movie.role AS role, v2_movies.title AS movie_title 
+ORDER BY person_name ASC, role ASC
+```
+
+which is in turn the same what the original SQL resulted in.
+
+Of course, the result is always the great Carrie-Anne Moss as Trinity.
+
+## 🚀 Features
+- 0765869 feat: Support running against Neo4j Virtual Graph.
+- aa7b541 feat(translator): Add support for the SQL `CONTAINS` clause.
+- 82cba34 feat(translator): Resolve table fields in predicates and sortfields the same way as in projections.
+
+## 🧰 Tasks
+- 3926f4a chore: Simplify `AbstractVectorIT`. (#1375)
+
+## 🧹 Housekeeping
+- 78b52ae Bump org.junit:junit-bom from 6.0.3 to 6.1.0 (#1365)
+- 22e7089 Bump io.netty:netty-bom from 4.1.133.Final to 4.1.134.Final (#1371)
+- 4230ae8 Bump org.neo4j:cypher-v5-antlr-parser (#1373)
+- 754cf34 Bump dev.langchain4j:langchain4j-bom from 1.14.1 to 1.15.0 (#1372)
+- bc8e0a8 Bump quarkus.platform.version from 3.35.2 to 3.35.4 (#1370)
+- b5e6a58 Bump org.apache.maven.plugins:maven-enforcer-plugin (#1369)
+- b8d8a84 Bump org.jooq:jooq from 3.19.33 to 3.19.34 (#1368)
+- d744ffd Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1367)
+- e859f11 Bump org.hibernate.orm:hibernate-platform (#1366)
+- bbffa0f Bump slf4j.version from 2.0.17 to 2.0.18 (#1364)
+
+
+# 6.12.3
+
+## 🧹 Housekeeping
+- 1134831 Bump org.jooq:jooq from 3.19.32 to 3.19.33 (#1354)
+- 5c0364a Bump org.neo4j:neo4j-cypher-dsl-bom (#1355)
+- 949b54a Bump quarkus.platform.version from 3.34.3 to 3.35.2 (#1356)
+- 679b959 Bump dev.langchain4j:langchain4j-bom from 1.14.0 to 1.14.1 (#1357)
+- 4e1a4f3 Bump io.micrometer:micrometer-tracing-bom (#1358)
+- dee4097 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1359)
+- f821b53 Bump io.netty:netty-bom from 4.1.132.Final to 4.1.133.Final (#1360)
+- 958990e Bump org.graalvm.buildtools:native-maven-plugin (#1361)
+- 3a83ab5 build(deps-dev): Bump com.tngtech.archunit:archunit from 1.4.1 to 1.4.2 (#1362)
+- 0cb872c Bump org.hibernate.orm:hibernate-platform (#1363)
+- a9340e2 Bump org.jreleaser:jreleaser-maven-plugin (#1344)
+- 16758d2 Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1345)
+- 1f0860a Bump org.jdbi:jdbi3-bom from 3.52.0 to 3.53.0 (#1346)
+- a12341a Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#1347)
+- 9203cff Bump org.hibernate.orm:hibernate-platform (#1348)
+- 8ad95a9 Bump com.fasterxml.jackson:jackson-bom (#1349)
+- fbc4d63 Bump dev.langchain4j:langchain4j-bom from 1.13.0 to 1.14.0 (#1350)
+- 369bc4e build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1351)
+- b7af9b7 build(deps-dev): Bump org.openapitools:openapi-generator-maven-plugin (#1352)
+- a0ebd3e Bump com.puppycrawl.tools:checkstyle from 13.4.0 to 13.4.2 (#1353)
+- f2829f7 Bump org.jetbrains.kotlin:kotlin-stdlib-jdk8 (#1335)
+- b8aafb9 Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1334)
+- 3a4a1cc Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1336)
+- 61ba63b Bump org.jooq:jooq from 3.19.31 to 3.19.32 (#1337)
+- a300868 Bump spring-boot.version from 4.0.5 to 4.0.6 (#1338)
+- fce5e84 Bump org.neo4j:cypher-v5-antlr-parser (#1339)
+- 7fb4cf4 Bump org.hibernate.orm:hibernate-platform (#1340)
+- 4b98fc1 Bump org.keycloak:keycloak-authz-client (#1341)
+- 5c61c73 Bump io.micrometer:micrometer-bom from 1.16.4 to 1.16.5 (#1342)
+- df4f38c Bump org.testcontainers:testcontainers-bom (#1343)
+
+
+# 6.12.2
+
+## 📝 Documentation
+- c29e1a0 docs: Update local changelog.
+
+## 🧹 Housekeeping
+- 2273bb4 Bump org.neo4j:neo4j-cypher-dsl-bom (#1325)
+- 22e599c Bump org.jboss.logging:jboss-logging (#1326)
+- 1ebbdac Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1327)
+- 3c16eea Bump org.neo4j:cypher-v5-antlr-parser (#1328)
+- 8c4cb41 Bump io.github.git-commit-id:git-commit-id-maven-plugin (#1329)
+- f318760 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1330)
+- 6fc6490 Bump org.hibernate.orm:hibernate-platform (#1331)
+- 6d10c94 Bump quarkus.platform.version from 3.34.1 to 3.34.3 (#1332)
+- 2dd7061 Bump dev.langchain4j:langchain4j-bom from 1.12.2 to 1.13.0 (#1333)
+
+
 # 6.12.1
 
 This release is now down to zero open issue on our Sonar instance, with only two (actual) todo-items aka new features left. 🥳
