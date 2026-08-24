@@ -31,15 +31,16 @@ import org.mybatis.spring.boot.test.autoconfigure.AutoConfigureMybatis;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@JdbcTest(includeFilters = @ComponentScan.Filter(Repository.class))
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@JdbcTest(includeFilters = @Filter(Repository.class))
+@AutoConfigureTestDatabase(replace = Replace.NONE)
 @AutoConfigureMybatis
 @Import(Neo4jTestConfig.class)
 class MoviesTests {

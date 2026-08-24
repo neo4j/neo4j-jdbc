@@ -26,6 +26,7 @@ import java.util.Properties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.neo4j.jdbc.values.IsoDuration;
 import org.neo4j.jdbc.values.PointValue;
@@ -35,7 +36,7 @@ import org.testcontainers.neo4j.Neo4jContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers(disabledWithoutDocker = true)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(Lifecycle.PER_CLASS)
 class Neo4jDriverIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this

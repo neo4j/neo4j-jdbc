@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Access the keys, properties and values of an underlying unordered map by key
+ * Access the keys, properties and values of an underlying unordered map by key.
  * <p>
  * This provides only read methods. Subclasses may choose to provide additional methods
  * for changing the underlying map.

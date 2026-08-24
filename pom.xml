@@ -131,20 +131,20 @@
 
 	<properties>
 		<aggregate.report.dir>neo4j-jdbc-test-results/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
-		<archunit.version>1.4.2</archunit.version>
+		<archunit.version>1.5.0</archunit.version>
 		<asciidoctor-maven-plugin.version>3.2.0</asciidoctor-maven-plugin.version>
 		<asciidoctorj.pdf.version>2.3.23</asciidoctorj.pdf.version>
 		<asciidoctorj.version>3.0.1</asciidoctorj.version>
 		<assertj.version>3.27.7</assertj.version>
 		<awaitility.version>4.3.0</awaitility.version>
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
-		<checkstyle.version>13.8.0</checkstyle.version>
+		<checkstyle.version>14.0.0</checkstyle.version>
 		<commons-lang3.version>3.20.0</commons-lang3.version>
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
-		<cyclonedx-maven-plugin.version>2.9.2</cyclonedx-maven-plugin.version>
-		<cypher-v5-antlr-parser.version>5.26.28</cypher-v5-antlr-parser.version>
-		<docker-maven-plugin.version>0.48.1</docker-maven-plugin.version>
+		<cyclonedx-maven-plugin.version>2.9.3</cyclonedx-maven-plugin.version>
+		<cypher-v5-antlr-parser.version>5.26.29</cypher-v5-antlr-parser.version>
+		<docker-maven-plugin.version>0.49.0</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duckdb_jdbc.version>1.5.5.0</duckdb_jdbc.version>
 		<duplicate-finder-maven-plugin.version>2.0.1</duplicate-finder-maven-plugin.version>
@@ -152,7 +152,7 @@
 		<flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>10.0.0</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.10</jackson-databind-nullable.version>
-		<jackson.version>2.22.1</jackson.version>
+		<jackson.version>2.22.2</jackson.version>
 		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
 		<japicmp-maven-plugin.version>0.26.1</japicmp-maven-plugin.version>
@@ -161,13 +161,14 @@
 		<jaxb-api.version>4.0.5</jaxb-api.version>
 		<jboss-logging.version>3.6.3.Final</jboss-logging.version>
 		<jdbi3.version>3.54.0</jdbi3.version>
-		<jooq.version>3.19.36</jooq.version>
+		<jooq.version>3.19.37</jooq.version>
 		<jreleaser-maven-plugin.version>1.25.0</jreleaser-maven-plugin.version>
+		<jspecify.version>1.0.1</jspecify.version>
 		<junit-jupiter.version>6.1.3</junit-jupiter.version>
-		<keycloak-authz-client.version>26.0.11</keycloak-authz-client.version>
+		<keycloak-authz-client.version>26.0.12</keycloak-authz-client.version>
 		<kotlin-stdlib-jdk8.version>2.4.10</kotlin-stdlib-jdk8.version>
 		<langchain4j.version>1.18.0</langchain4j.version>
-		<license-maven-plugin.version>5.0.0</license-maven-plugin.version>
+		<license-maven-plugin.version>5.1.2</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
@@ -186,18 +187,18 @@
 		<maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.9.16</maven.version>
-		<micrometer-tracing.version>1.7.0</micrometer-tracing.version>
-		<micrometer.version>1.17.0</micrometer.version>
+		<micrometer-tracing.version>1.7.1</micrometer-tracing.version>
+		<micrometer.version>1.17.1</micrometer.version>
 		<mockito.version>5.23.0</mockito.version>
 		<moditect-maven-plugin.version>1.3.0.Final</moditect-maven-plugin.version>
 		<native-image-config-transformer.version>1.0.2</native-image-config-transformer.version>
-		<native-maven-plugin.version>1.1.4</native-maven-plugin.version>
+		<native-maven-plugin.version>1.1.5</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>12.0.0</neo4j-bolt-connection.version>
 		<neo4j-cypher-dsl.version>2025.3.0</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.14.0</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
-		<neo4j.version>2026.06.0</neo4j.version>
-		<netty.version>4.1.136.Final</netty.version>
+		<neo4j.version>2026.07.1</neo4j.version>
+		<netty.version>4.1.137.Final</netty.version>
 		<openapi-generator-maven-plugin.version>7.23.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.12.0</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
@@ -210,8 +211,8 @@
 		<slf4j.version>2.0.18</slf4j.version>
 		<sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
 		<sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
-		<spring-boot.version>4.1.0</spring-boot.version>
-		<spring-javaformat.version>0.0.47</spring-javaformat.version>
+		<spring-boot.version>4.1.1</spring-boot.version>
+		<spring-javaformat.version>0.0.48</spring-javaformat.version>
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers-keycloak.version>4.3.1</testcontainers-keycloak.version>
 		<testcontainers.version>2.0.5</testcontainers.version>
@@ -356,6 +357,11 @@
 				<groupId>org.jooq</groupId>
 				<artifactId>jooq</artifactId>
 				<version>${jooq.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jspecify</groupId>
+				<artifactId>jspecify</artifactId>
+				<version>${jspecify.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.keycloak</groupId>
@@ -960,6 +966,16 @@
 										<ignoreVersion>
 											<!-- See https://github.com/apache/maven-javadoc-plugin/commit/71a6ca45da32a04483de6baca01f39ca27bec1ed -->
 											<version>3.11.3</version>
+										</ignoreVersion>
+									</ignoreVersions>
+								</rule>
+								<rule>
+									<groupId>org.graalvm.buildtools</groupId>
+									<artifactId>native-maven-plugin</artifactId>
+									<ignoreVersions>
+										<ignoreVersion>
+											<type>range</type>
+											<version>[1.1.6,)</version>
 										</ignoreVersion>
 									</ignoreVersions>
 								</rule>

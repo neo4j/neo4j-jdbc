@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.neo4j.jdbc.Neo4jPreparedStatement;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -36,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisabledIfSystemProperty(named = "disableHttpTests", matches = "true")
 @Testcontainers(disabledWithoutDocker = true)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(Lifecycle.PER_CLASS)
 class HttpIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
