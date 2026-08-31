@@ -126,13 +126,18 @@ public final class KCAuthenticationSupplier implements Supplier<Authentication> 
 
 	record TokensAndExpirationTime(String accessToken, Instant expiresAt, String refreshToken) {
 
-		static final Base64.Decoder DECODER = Base64.getDecoder();
+		static final Base64.Decoder DECODER = Base64.getUrlDecoder();
 
 		static TokensAndExpirationTime of(AccessTokenResponse accessTokenResponse) throws IOException {
 			var chunks = accessTokenResponse.getToken().split("\\.");
+			if (chunks.length < 2) {
+				throw new IOException("Malformed JWT: expected at least 2 segments");
+			}
 			var payload = JSON.std.mapFrom(DECODER.decode(chunks[1]));
-			var exp = Instant.ofEpochSecond(((Number) payload.get("exp")).longValue());
-			return new TokensAndExpirationTime(accessTokenResponse.getToken(), exp,
+			if (!(payload.get("exp") instanceof Number exp)) {
+				throw new IOException("JWT has no numeric 'exp' claim");
+			}
+			return new TokensAndExpirationTime(accessTokenResponse.getToken(), Instant.ofEpochSecond(exp.longValue()),
 					accessTokenResponse.getRefreshToken());
 		}
 
