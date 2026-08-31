@@ -20,12 +20,8 @@ package org.neo4j.jdbc.it.cp;
 
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
@@ -314,27 +310,6 @@ class ConnectionIT extends IntegrationTestBase {
 		var neo4j = "neo4j".equals(this.protocol);
 		return "jdbc:neo4j%s://%s:%d/neo4j".formatted(neo4j ? "" : ":" + this.protocol, this.neo4j.getHost(),
 				this.neo4j.getMappedPort(neo4j ? 7687 : 7474));
-	}
-
-	static class CapturingHandler extends Handler {
-
-		List<String> messages = new ArrayList<>();
-
-		@Override
-		public void publish(LogRecord record) {
-			this.messages.add(record.getMessage());
-		}
-
-		@Override
-		public void flush() {
-
-		}
-
-		@Override
-		public void close() throws SecurityException {
-
-		}
-
 	}
 
 }
