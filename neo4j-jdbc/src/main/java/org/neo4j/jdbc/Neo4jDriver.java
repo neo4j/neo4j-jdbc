@@ -974,10 +974,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			}
 		}
 		catch (ClassNotFoundException ex) {
-			getParentLogger().log(Level.WARNING, "Translator factory {0} not found", new Object[] { fqn });
+			getParentLogger().log(Level.SEVERE, "Translator factory {0} not found", new Object[] { fqn });
 		}
 		catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-			getParentLogger().log(Level.WARNING, ex, () -> "Could not load translator factory");
+			getParentLogger().log(Level.SEVERE, ex, () -> "Could not load translator factory");
 		}
 		catch (IllegalTranslatorFactoryException ex) {
 			getParentLogger().log(Level.SEVERE, "Class {0} cannot be used as translator factory",
