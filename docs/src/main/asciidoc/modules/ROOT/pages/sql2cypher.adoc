@@ -22,9 +22,16 @@ We believe our assumptions are appropriate for various use cases and instead of 
 The driver will use the standard Java service loader mechanism to find an implementation of the SPI on the module- or classpath.
 
 NOTE: Some tools (like Tableau) use a class-loader that won't let the driver use the standard Java service loader mechanism.
-For these scenarios, we provide an additional configuration property named `translatorFactory`.
-Set this to `DEFAULT` to directly load our default implementation or to a fully-qualified classname for any other factory.
-*Be aware* that either our default implementation or your custom one must be on the classpath.
+ For these scenarios, we provide an additional configuration property named `translatorFactory`.
+ Set this to `DEFAULT` to directly load our default implementation or to a fully-qualified classname for any other factory. +
+ +
+ For security reason, we block all factories that we don't officially ship being loaded through that mechanism.
+ To use a custom translator factory, you must configure the allow list through either a Java system property or an environment variable named `NEO4J_JDBC_ALLOWED_TRANSLATOR_FACTORIES`.
+ You can either use the value `+++*+++` to allow all classes implementing `org.neo4j.jdbc.translator.spi.TranslatorFactory` or use a list of fully qualified classnames, separated by a `,`.
+ If you are building an application that might allow a user to dynamically configure instances of this JDBC driver, be mindful of what you allow here. +
+ +
+ Lastly, any of these options require the configured factory to be on the class path.
+ Our default implementations only ship with the bundled distributions of this driver (the "fat-jar", dependency free distributions).
 
 == Translating SQL to Cypher
 

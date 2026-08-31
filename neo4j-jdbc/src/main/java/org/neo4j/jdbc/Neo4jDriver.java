@@ -21,6 +21,7 @@ package org.neo4j.jdbc;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -52,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -244,6 +246,12 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_SSL_MODE = "sslMode";
 
 	/**
+	 * Use this property to allow list additional translator factories we don't ship. This
+	 * property must be set via System properties or environment variables.
+	 */
+	public static final String TRANSLATOR_FACTORY_ALLOW_LIST_ENV_KEY = "NEO4J_JDBC_ALLOWED_TRANSLATOR_FACTORIES";
+
+	/**
 	 * An optional configuration flag to try opening new TCP connections using TCP fast
 	 * oben. TCP fast open requires one of the following libraries to be on the module or
 	 * classpath:
@@ -256,6 +264,15 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	public static final String PROPERTY_TRY_TCP_FAST_OPEN = "tryTcpFastOpen";
 
 	private static final String URL_REGEX = "^jdbc:neo4j(?:\\+(?<transport>s(?:sc)?)?)?(?::(?<protocol>https?))?://(?<host>[^:/?]+):?(?<port>\\d+)?/?(?<database>[^?]+)?\\??(?<urlParams>\\S+)?$";
+
+	/**
+	 * Those are the translator factories we do ship in official JDBC driver modules and
+	 * as such, always allowed.
+	 */
+	private static final Set<String> ALWAYS_ALLOWED_TRANSLATOR_FACTORIES = Set.of(
+			"org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory",
+			"org.neo4j.jdbc.translator.sparkcleaner.SparkSubqueryCleaningTranslatorFactory",
+			"org.neo4j.jdbc.translator.text2cypher.Text2CypherTranslatorFactory");
 
 	/**
 	 * The URL pattern that this driver supports.
@@ -478,9 +495,13 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
 				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
 
-		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier = this.sqlTranslatorFactories::resolve;
+		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
-			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory);
+			translatorFactoriesSupplier = () -> getSqlTranslatorFactory(translatorFactory,
+					getTranslatorFactoryAllowList());
+		}
+		else {
+			translatorFactoriesSupplier = this.sqlTranslatorFactories::resolve;
 		}
 
 		var finalAuthenticationSupplier = determineAuthenticationSupplier(authenticationSupplier, driverConfig);
@@ -611,16 +632,29 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 	}
 
 	static String getDefaultUserAgent() {
-		if (System.getProperties().containsKey(USER_AGENT_ENV_KEY)
-				&& !System.getProperties().getProperty(USER_AGENT_ENV_KEY).isBlank()) {
-			return System.getProperties().getProperty(USER_AGENT_ENV_KEY);
-		}
-		if (System.getenv().containsKey(USER_AGENT_ENV_KEY) && !System.getenv().get(USER_AGENT_ENV_KEY).isBlank()) {
-			return System.getenv().get(USER_AGENT_ENV_KEY);
+
+		var userAgent = getSystemPropertyOrEnvVariable(USER_AGENT_ENV_KEY);
+		if (userAgent != null) {
+			return userAgent;
 		}
 
 		return loadUserAgentFromResources("META-INF/neo4j-jdbc-user-agent.txt")
 			.orElseGet(() -> "neo4j-jdbc/%s".formatted(ProductVersion.getValue()));
+	}
+
+	static String getTranslatorFactoryAllowList() {
+		return getSystemPropertyOrEnvVariable(TRANSLATOR_FACTORY_ALLOW_LIST_ENV_KEY);
+	}
+
+	private static String getSystemPropertyOrEnvVariable(String key) {
+		if (System.getProperties().containsKey(key) && !System.getProperties().getProperty(key).isBlank()) {
+			return System.getProperties().getProperty(key);
+		}
+		if (System.getenv().containsKey(key) && !System.getenv().get(key).isBlank()) {
+			return System.getenv().get(key);
+		}
+
+		return null;
 	}
 
 	static Optional<String> loadUserAgentFromResources(String name) {
@@ -922,22 +956,50 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		return new SSLProperties(sslMode, ssl);
 	}
 
-	private List<TranslatorFactory> getSqlTranslatorFactory(String translatorFactory) {
+	@SuppressWarnings("unchecked")
+	private List<TranslatorFactory> getSqlTranslatorFactory(String translatorFactory, String allowList) {
 
 		var fqn = "DEFAULT".equalsIgnoreCase(translatorFactory)
 				? "org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory" : translatorFactory;
 		try {
-			@SuppressWarnings("unchecked")
-			Class<TranslatorFactory> cls = (Class<TranslatorFactory>) Class.forName(fqn);
-			return List.of(cls.getDeclaredConstructor().newInstance());
+			Class<TranslatorFactory> type = null;
+			if (inAllowList(fqn, allowList)) {
+				type = (Class<TranslatorFactory>) Class.forName(fqn, false, this.getClass().getClassLoader());
+			}
+			if (type != null && TranslatorFactory.class.isAssignableFrom(type)) {
+				return List.of(type.getDeclaredConstructor().newInstance());
+			}
+			else {
+				throw new IllegalTranslatorFactoryException(fqn);
+			}
 		}
 		catch (ClassNotFoundException ex) {
-			getParentLogger().log(Level.WARNING, "Translator factory {0} not found", new Object[] { fqn });
+			getParentLogger().log(Level.SEVERE, "Translator factory {0} not found", new Object[] { fqn });
 		}
 		catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-			getParentLogger().log(Level.WARNING, ex, () -> "Could not load translator factory");
+			getParentLogger().log(Level.SEVERE, ex, () -> "Could not load translator factory");
+		}
+		catch (IllegalTranslatorFactoryException ex) {
+			getParentLogger().log(Level.SEVERE, "Class {0} cannot be used as translator factory",
+					new Object[] { ex.configuredClassName });
 		}
 		return List.of();
+	}
+
+	private boolean inAllowList(String fqn, String allowList) {
+		if ("*".equalsIgnoreCase(allowList) || ALWAYS_ALLOWED_TRANSLATOR_FACTORIES.contains(fqn)) {
+			return true;
+		}
+		else if (allowList == null || allowList.isBlank()) {
+			return false;
+		}
+		else {
+			var starOrEquals = ((Predicate<String>) "*"::equals).or(fqn::equals);
+			return Arrays.stream(allowList.split(","))
+				.filter(Predicate.not(String::isBlank))
+				.map(String::trim)
+				.anyMatch(starOrEquals);
+		}
 	}
 
 	private <T> List<T> loadServices(Class<T> type) {
@@ -1672,6 +1734,19 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		public SpecifyEnvStep withSQLTranslation() {
 			this.forceSqlTranslation = true;
 			return this;
+		}
+
+	}
+
+	static class IllegalTranslatorFactoryException extends RuntimeException {
+
+		@Serial
+		private static final long serialVersionUID = 8223467710430721301L;
+
+		private final String configuredClassName;
+
+		IllegalTranslatorFactoryException(String configuredClassName) {
+			this.configuredClassName = configuredClassName;
 		}
 
 	}
