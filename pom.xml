@@ -111,7 +111,6 @@
 		<module>neo4j-jdbc-it</module>
 		<module>bundles/neo4j-jdbc-bundle</module>
 		<module>bundles/neo4j-jdbc-full-bundle</module>
-		<module>bundles/neo4j-jdbc-text2cypher-bundle</module>
 		<module>docs</module>
 		<module>dist</module>
 		<module>benchkit</module>
@@ -166,8 +165,6 @@
 		<jspecify.version>1.0.1</jspecify.version>
 		<junit-jupiter.version>6.1.3</junit-jupiter.version>
 		<keycloak-authz-client.version>26.0.12</keycloak-authz-client.version>
-		<kotlin-stdlib-jdk8.version>2.4.10</kotlin-stdlib-jdk8.version>
-		<langchain4j.version>1.19.0</langchain4j.version>
 		<license-maven-plugin.version>5.1.2</license-maven-plugin.version>
 		<mainArtifactId>neo4j-jdbc</mainArtifactId>
 		<maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
@@ -466,7 +463,7 @@
 								<rule>APPROVE</rule>
 								<value>Apache 2</value>
 							</dependencyPolicy>
-							<!-- Mainly due to Slf4j simple, which is used by ArchUnit in tests, and langchain4j in the text2cypher module -->
+							<!-- Mainly due to Slf4j simple, which is used by ArchUnit in tests -->
 							<dependencyPolicy>
 								<type>LICENSE_NAME</type>
 								<rule>APPROVE</rule>

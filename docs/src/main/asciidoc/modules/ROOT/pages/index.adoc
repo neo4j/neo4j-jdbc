@@ -15,7 +15,6 @@ ifndef::site-gen-antora[]
 :artifact-id-impl: ${mainArtifactId}-translator-impl
 :artifact-id-bundle: ${mainArtifactId}-bundle
 :artifact-id-full-bundle: ${mainArtifactId}-full-bundle
-:artifact-id-text2cypher-bundle: ${mainArtifactId}-text2cypher-bundle
 :version: ${project.version}
 endif::[]
 
@@ -53,8 +52,6 @@ include::sql2cypher.adoc[leveloffset=+1]
 include::cypher_backed_views.adoc[leveloffset=+1]
 
 include::object_mapping.adoc[leveloffset=+1]
-
-include::text2cypher.adoc[leveloffset=+1]
 
 [appendix]
 include::datatypes.adoc[leveloffset=+1]
