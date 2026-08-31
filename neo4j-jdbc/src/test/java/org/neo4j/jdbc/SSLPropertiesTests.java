@@ -88,7 +88,7 @@ class SSLPropertiesTests {
 
 			switch (info.name) {
 				case "ssl" -> assertThat(info.value).isEqualTo("true");
-				case "sslMode" -> assertThat(info.value).isEqualTo("require");
+				case "sslMode" -> assertThat(info.value).isEqualTo("verify-full");
 				default -> LOGGER.log(Level.FINE, "Ignoring key ''{0}''", info.name);
 			}
 		}
