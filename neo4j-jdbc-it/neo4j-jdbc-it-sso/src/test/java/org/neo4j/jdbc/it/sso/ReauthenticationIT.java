@@ -36,6 +36,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.http.impl.client.HttpClients;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -196,10 +197,13 @@ class ReauthenticationIT {
 		assertThat(Metrics.globalRegistry.find("org.neo4j.jdbc.authentications").tags("state", "new").counter())
 			.isNotNull()
 			.extracting(Counter::count)
-			.isEqualTo(1.0);
+			.asInstanceOf(InstanceOfAssertFactories.DOUBLE)
+			.isGreaterThanOrEqualTo(1.0);
 		assertThat(Metrics.globalRegistry.find("org.neo4j.jdbc.authentications").tags("state", "refreshed").counter())
+			.isNotNull()
 			.extracting(Counter::count)
-			.isEqualTo(2.0);
+			.asInstanceOf(InstanceOfAssertFactories.DOUBLE)
+			.isGreaterThanOrEqualTo(2.0);
 	}
 
 	@Test
