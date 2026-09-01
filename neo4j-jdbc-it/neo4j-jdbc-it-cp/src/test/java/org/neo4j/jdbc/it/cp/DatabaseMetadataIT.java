@@ -39,27 +39,28 @@ class DatabaseMetadataIT extends AbstractDatabaseMetadata {
 
 	@Test
 	void connectionMustReset() throws SQLException, NoSuchFieldException, IllegalAccessException {
-		var metaData = this.connection.getMetaData();
-		fakePresenceOfApoc(metaData);
+		try (var connection = this.getConnection()) {
+			var metaData = connection.getMetaData();
+			fakePresenceOfApoc(metaData);
 
-		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> metaData.getTables(null, null, "%", null));
+			assertThatExceptionOfType(SQLException.class).isThrownBy(() -> metaData.getTables(null, null, "%", null));
 
-		var procCount = 0;
-		try (var rs = metaData.getProcedures(null, null, null)) {
-			while (rs.next()) {
-				++procCount;
+			var procCount = 0;
+			try (var rs = metaData.getProcedures(null, null, null)) {
+				while (rs.next()) {
+					++procCount;
+				}
 			}
-		}
 
-		assertThat(procCount).isGreaterThan(0);
+			assertThat(procCount).isGreaterThan(0);
+		}
 
 	}
 
 	private static void fakePresenceOfApoc(DatabaseMetaData metaData)
 			throws NoSuchFieldException, IllegalAccessException {
 		// We do this on purpose: It's the easiest way to trigger a metadata server side
-		// error
-		// without relying on soon to be fixed other bugs.
+		// error without relying on soon to be fixed other bugs.
 		var apocAvailableField = metaData.getClass().getDeclaredField("apocAvailable");
 		apocAvailableField.setAccessible(true);
 		var apocAvailable = apocAvailableField.get(metaData);
