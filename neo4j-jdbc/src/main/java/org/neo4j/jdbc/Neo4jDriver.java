@@ -1051,7 +1051,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public Collection<Bookmark> getCurrentBookmarks(String url, Properties info) throws SQLException {
-		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		var bm = this.bookmarkManagers.get(BookmarkKey.of(DriverConfig.of(url, info)));
 		if (bm == null) {
 			return Set.of();
 		}
@@ -1060,7 +1060,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public void addBookmarks(String url, Properties info, Collection<Bookmark> bookmarks) throws SQLException {
-		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		var bm = this.bookmarkManagers.get(BookmarkKey.of(DriverConfig.of(url, info)));
 		if (bm != null) {
 			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
 		}
@@ -1755,6 +1755,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	record BookmarkKey(String host, Integer port, String database, boolean useBookmarks) {
 
+		static BookmarkKey of(DriverConfig driverConfig) {
+			return new BookmarkKey(driverConfig.host(), driverConfig.port(), driverConfig.database(),
+					driverConfig.useBookmarks());
+		}
 	}
 
 }
