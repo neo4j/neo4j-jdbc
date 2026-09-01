@@ -444,7 +444,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.collect(Collectors.collectingAndThen(
 					Collectors.toMap(AuthenticationSupplierFactory::getName, Function.identity()), Map::copyOf)));
 
-	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
+	private final Map<BookmarkKey, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
@@ -492,8 +492,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 		var translatorFactory = driverConfig.rawConfig.get(PROPERTY_TRANSLATOR_FACTORY);
-		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
-				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
+		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(
+				new BookmarkKey(driverConfig.host(), driverConfig.port(), driverConfig.database(),
+						driverConfig.useBookmarks()),
+				k -> k.useBookmarks() ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
 
 		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
@@ -1748,6 +1750,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		IllegalTranslatorFactoryException(String configuredClassName) {
 			this.configuredClassName = configuredClassName;
 		}
+
+	}
+
+	record BookmarkKey(String host, Integer port, String database, boolean useBookmarks) {
 
 	}
 
