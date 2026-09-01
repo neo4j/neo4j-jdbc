@@ -55,6 +55,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
@@ -91,7 +92,7 @@ class PreparedStatementImplTests {
 					""")
 	void placeHolderReplacementShouldWork(String in, String expected) {
 
-		var out = PreparedStatementImpl.rewritePlaceholders(in.replace("<NL>", "\n"));
+		var out = PreparedStatementImpl.rewritePlaceholdersOrKeys(in.replace("<NL>", "\n"), true, Set.of());
 		assertThat(out).isEqualTo(expected.replace("<NL>", "\n"));
 	}
 

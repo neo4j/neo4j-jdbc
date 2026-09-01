@@ -35,6 +35,7 @@ module org.neo4j.jdbc {
 	requires transitive org.neo4j.jdbc.authn.spi;
 	requires org.neo4j.jdbc.translator.spi;
 	requires org.neo4j.cypherdsl.support.schema_name;
+	requires org.jspecify;
 	// end::shaded-dependencies
 
 	// requires jdk.unsupported;
