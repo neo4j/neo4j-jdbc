@@ -44,4 +44,9 @@ public record TokenAuthentication(String scheme, String value, Instant expiresAt
 		Objects.requireNonNull(scheme, "Scheme can't be null");
 		Objects.requireNonNull(value, "Token can't be null");
 	}
+
+	@Override
+	public String toString() {
+		return "TokenAuthentication{scheme='%s', value='******', expiresAt=%s}".formatted(this.scheme, this.expiresAt);
+	}
 }

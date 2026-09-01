@@ -43,4 +43,10 @@ public record UsernamePasswordAuthentication(String username, String password, S
 		Objects.requireNonNull(username, "Username can't be null");
 		Objects.requireNonNull(password, "Password can't be null");
 	}
+
+	@Override
+	public String toString() {
+		return "UsernamePasswordAuthentication{username='%s', password='******', realm='%s'}".formatted(this.username,
+				this.realm);
+	}
 }
