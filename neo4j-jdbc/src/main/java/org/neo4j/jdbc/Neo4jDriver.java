@@ -914,7 +914,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 				}
 				else if (sslMode != SSLMode.REQUIRE) {
 					throw new Neo4jException(GQLError.$22N11
-						.withMessage("Invalid SSLMode %s for +scc transport option, accepts 'require' only"));
+						.withMessage("Invalid SSLMode %s for +ssc transport option, accepts 'require' only"));
 				}
 			}
 			else if (!transport.isEmpty()) {
@@ -928,7 +928,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			ssl = true;
 		}
 		else if (ssl != null && sslMode == null && ssl) {
-			sslMode = SSLMode.REQUIRE;
+			sslMode = SSLMode.VERIFY_FULL;
 		}
 
 		if (sslMode == null) {
