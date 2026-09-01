@@ -528,7 +528,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="header">
 <h1>Neo4j JDBC Driver</h1>
 <div class="details">
-<span id="revdate">2026-09-01T07:33:19Z</span>
+<span id="revdate">2026-09-01T09:16:30Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -594,7 +594,6 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_introduction_4">8.1. Introduction</a></li>
 </ul>
 </li>
-<li><a href="#text2cypher">9. text2cypher</a></li>
 <li><a href="#_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</a>
 <ul class="sectlevel2">
 <li><a href="#_data_types_for_fixed_point_arithmetic">A.1. Data types for fixed-point arithmetic</a></li>
@@ -820,7 +819,7 @@ However, the default SQL-to-Cypher translator will (when connected to a database
 <div class="title">Listing 1. Using the full bundle as a runtime dependency inside a Gradle-based project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="kotlin">dependencies {
-    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.14.2-SNAPSHOT) <i class="conum" data-value="1"></i><b>(1)</b>
+    runtimeOnly(org.neo4j:neo4j-jdbc-full-bundle:6.15.0-SNAPSHOT) <i class="conum" data-value="1"></i><b>(1)</b>
 }</code></pre>
 </div>
 </div>
@@ -1231,7 +1230,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.14.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.15.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1242,7 +1241,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 11. Neo4j JDBC Driver as Gradle runtime dependency</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.14.2-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc:6.15.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1255,7 +1254,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-translator-impl<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.14.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.15.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1266,7 +1265,7 @@ We offer a Maven BOM project, which you should import when using the individual 
 <div class="title">Listing 13. Gradle dependency for the default SQL to Cypher translator</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.14.2-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-translator-impl:6.15.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1279,7 +1278,7 @@ This bundle does not contain the default SQL-to-Cypher translator!
 The coordinates of this bundle are <code>org.neo4j:neo4j-jdbc-bundle</code> and you can download it from Maven central:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-bundle-6.14.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-bundle-6.14.2-SNAPSHOT.jar</a></p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.15.0-SNAPSHOT/neo4j-jdbc-bundle-6.15.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-bundle/6.15.0-SNAPSHOT/neo4j-jdbc-bundle-6.15.0-SNAPSHOT.jar</a></p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -1303,19 +1302,7 @@ Otherwise, it is identical to the <a href="#small_bundle">small bundle</a>.
 Its coordinates are <code>org.neo4j:neo4j-jdbc-full-bundle</code> and you can download it from Maven central here:</p>
 </div>
 <div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-full-bundle-6.14.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-full-bundle-6.14.2-SNAPSHOT.jar</a></p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="text2cypher_bundle">3.2.4. text2cypher bundle</h4>
-<div class="paragraph">
-<p>We also ship a very experimental bundle that we call <code>text2cypher</code>:</p>
-</div>
-<div class="paragraph">
-<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.14.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.14.2-SNAPSHOT.jar</a></p>
-</div>
-<div class="paragraph">
-<p>See <a href="#">Neo4j JDBC Driver</a> more information.</p>
+<p><a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.15.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.15.0-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-full-bundle/6.15.0-SNAPSHOT/neo4j-jdbc-full-bundle-6.15.0-SNAPSHOT.jar</a></p>
 </div>
 </div>
 </div>
@@ -2053,7 +2040,7 @@ For Maven, use this additional dependency declaration:</p>
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-tracing-micrometer<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.14.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.15.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -2064,7 +2051,7 @@ For Maven, use this additional dependency declaration:</p>
 <div class="title">Listing 23. Gradle dependency that allows you to configure tracing</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.14.2-SNAPSHOT</span><span class="delimiter">'</span></span>
+    runtimeOnly <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j:neo4j-jdbc-tracing-micrometer:6.15.0-SNAPSHOT</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -2561,7 +2548,7 @@ There is no need to copy the below code into your own application. We actually d
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-jdbc-authn-kc<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>6.14.2-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>6.15.0-SNAPSHOT<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -5882,163 +5869,6 @@ This structure is aligned with the <a href="https://neo4j.com/docs/query-api/cur
 </div>
 </div>
 <div class="sect1">
-<h2 id="text2cypher">9. text2cypher</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>This is an experimental translator inspired by the Neo4j Labs project <a href="https://github.com/neo4j-labs/text2cypher">text2cypher</a>.</p>
-</div>
-<div class="paragraph">
-<p>If you add this translator to the classpath or use the <a href="#text2cypher_bundle">text2cypher bundle</a>, all queries that start with</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="txt">🤖,</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>will be treated as <em>natural language</em> queries written in <strong>plain english</strong>.
-The driver will strip the prefix, and use <a href="https://openai.com">OpenAI</a> to translate the input into a Cypher statement.
-The driver will augment the generation of the query by passing the current graph schema along with the input question.</p>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>The following data will be sent to an external API:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Your database schema, including label names</p>
-</li>
-<li>
-<p>Any natural language query</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Don&#8217;t use this translator if you don&#8217;t want the above, or are not allowed to do so.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>This module requires one additional configuration: the OpenAI API key.
-You can use either a URL parameter, a JDBC property entry, or an environment variable:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>URL parameter/property name is <code>openAIApiKey</code></p>
-</li>
-<li>
-<p>Environment variable name is <code>OPEN_AI_API_KEY</code></p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="title">Listing 50. Example of a valid URL</div>
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="txt">jdbc:neo4j://localhost:7687?openAIApiKey=sk-xxx-your-key</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Additional configuration properties are</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">property name</th>
-<th class="tableblock halign-left valign-top">default value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">openAIBaseUrl</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://api.openai.com/v1" class="bare">https://api.openai.com/v1</a> (defined by langchain4j)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">openAIModelName</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">gpt-4-turbo</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">openAITemperature</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.0</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>With that in place, a query such as the following can be translated into Cypher:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="txt">🤖, How was The Da Vinci Code rated?</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The outcome of the LLM is not deterministic and is likely to vary.
-While you can execute it directly, we strongly recommend to use <code>Connection#nativeSQL</code> to retrieve the Cypher statement, inspect it, and then run it separately.
-In our test runs, the above questions was most often correctly translated to</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="text">MATCH (m:`Movie` {
-  title: 'The Da Vinci Code'
-})&lt;-[r:`REVIEWED`]-(p:`Person`)
-RETURN r.rating AS Rating, p.name AS ReviewerName</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Other times the result was a syntactically correct statement, but it would only return the reviewers and the movie itself.
-Also note that while a human likely recognizes that you are actually thinking about the average rating, the LLM does not infer this.
-Making the question more explicit gives better results:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="txt">🤖, How was The Da Vinci Code rated on average?</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>is translated more accurately to:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="cypher">MATCH (m:`Movie` {
-  title: 'The Da Vinci Code'
-})&lt;-[:`REVIEWED`]-(p:`Person`)
-RETURN avg(p.rating) AS AverageRating</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-Once a natural language query gets translated into Cypher, the result will be cached and further invocations of that query will use the cached result.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>All that statements that do not start with 🤖 will be used as-is and treated as Cypher.</p>
-</div>
-<div class="paragraph">
-<p>Get the full, ready to use bundle here: <a href="https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.14.2-SNAPSHOT.jar" class="bare">https://repo.maven.apache.org/maven2/org/neo4j/neo4j-jdbc-text2cypher-bundle/6.14.2-SNAPSHOT/neo4j-jdbc-text2cypher-bundle-6.14.2-SNAPSHOT.jar</a>. More information in <a href="#available_bundles">Available bundles</a>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_neo4j_specific_conversions">Appendix A: Neo4j specific conversions</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -6384,7 +6214,7 @@ For more information, see <a href="#s2c_star_selects">Star-Selects</a>.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-09-01 07:33:48 UTC
+Last updated 2026-09-01 09:16:41 UTC
 </div>
 </div>
 </body>
