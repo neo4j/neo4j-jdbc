@@ -444,7 +444,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			.collect(Collectors.collectingAndThen(
 					Collectors.toMap(AuthenticationSupplierFactory::getName, Function.identity()), Map::copyOf)));
 
-	private final Map<DriverConfig, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
+	private final Map<BookmarkKey, BookmarkManager> bookmarkManagers = new ConcurrentHashMap<>();
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
@@ -492,8 +492,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var rewriteBatchedStatements = driverConfig.rewriteBatchedStatements;
 		var rewritePlaceholders = driverConfig.rewritePlaceholders;
 		var translatorFactory = driverConfig.rawConfig.get(PROPERTY_TRANSLATOR_FACTORY);
-		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(driverConfig,
-				k -> driverConfig.useBookmarks ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
+		var bookmarkManager = this.bookmarkManagers.computeIfAbsent(
+				new BookmarkKey(driverConfig.host(), driverConfig.port(), driverConfig.database(),
+						driverConfig.useBookmarks()),
+				k -> k.useBookmarks() ? new DefaultBookmarkManagerImpl() : new NoopBookmarkManagerImpl());
 
 		Supplier<List<TranslatorFactory>> translatorFactoriesSupplier;
 		if (translatorFactory != null && !translatorFactory.isBlank()) {
@@ -1049,7 +1051,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public Collection<Bookmark> getCurrentBookmarks(String url, Properties info) throws SQLException {
-		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		var bm = this.bookmarkManagers.get(BookmarkKey.of(DriverConfig.of(url, info)));
 		if (bm == null) {
 			return Set.of();
 		}
@@ -1058,7 +1060,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	@Override
 	public void addBookmarks(String url, Properties info, Collection<Bookmark> bookmarks) throws SQLException {
-		var bm = this.bookmarkManagers.get(DriverConfig.of(url, info));
+		var bm = this.bookmarkManagers.get(BookmarkKey.of(DriverConfig.of(url, info)));
 		if (bm != null) {
 			bm.updateBookmarks(Bookmark::value, List.of(), bookmarks);
 		}
@@ -1749,6 +1751,14 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			this.configuredClassName = configuredClassName;
 		}
 
+	}
+
+	record BookmarkKey(String host, Integer port, String database, boolean useBookmarks) {
+
+		static BookmarkKey of(DriverConfig driverConfig) {
+			return new BookmarkKey(driverConfig.host(), driverConfig.port(), driverConfig.database(),
+					driverConfig.useBookmarks());
+		}
 	}
 
 }
