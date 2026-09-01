@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.neo4j.jdbc.authn.spi.Authentication;
@@ -39,7 +38,7 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 
 	private final Supplier<Authentication> authenticationSupplier;
 
-	private final AtomicReference<AuthenticationAndState> currentAuthentication = new AtomicReference<>();
+	private volatile AuthenticationAndState currentAuthentication;
 
 	private final Clock clock;
 
@@ -76,13 +75,31 @@ final class DefaultAuthenticationManagerImpl implements AuthenticationManager {
 	@Override
 	public Authentication getOrRefresh() {
 
-		var hlp = this.currentAuthentication.updateAndGet(previous -> {
-			if (previous != null && this.isValid(previous.authentication)) {
-				return new AuthenticationAndState(previous.authentication, State.REUSED);
+		var hlp = this.currentAuthentication;
+		boolean isNew = false;
+		if (hlp == null) {
+			synchronized (this) {
+				hlp = this.currentAuthentication;
+				if (hlp == null) {
+					this.currentAuthentication = new AuthenticationAndState(this.authenticationSupplier.get(),
+							State.NEW);
+					hlp = this.currentAuthentication;
+					isNew = true;
+				}
 			}
-			var authentication = this.authenticationSupplier.get();
-			return new AuthenticationAndState(authentication, (previous != null) ? State.REFRESHED : State.NEW);
-		});
+		}
+		if (!isNew) {
+			synchronized (this) {
+				if (isValid(hlp.authentication)) {
+					this.currentAuthentication = new AuthenticationAndState(hlp.authentication, State.NEW);
+				}
+				else {
+					this.currentAuthentication = new AuthenticationAndState(this.authenticationSupplier.get(),
+							State.REFRESHED);
+				}
+				hlp = this.currentAuthentication;
+			}
+		}
 		var eventState = hlp.state.toEventState();
 		if (eventState != null) {
 			this.notifyListeners(new NewAuthenticationEvent(this.targetUrl, eventState));
