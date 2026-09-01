@@ -1155,7 +1155,4 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	}
 
-	record SqlAndState(String sql, boolean forcedTranslation) {
-	}
-
 }
