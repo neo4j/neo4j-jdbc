@@ -23,7 +23,6 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.jr.ob.JSON;
@@ -66,7 +65,7 @@ public final class KCAuthenticationSupplier implements Supplier<Authentication> 
 
 	private final String url;
 
-	private final AtomicReference<TokensAndExpirationTime> currentToken = new AtomicReference<>();
+	private volatile TokensAndExpirationTime currentToken;
 
 	KCAuthenticationSupplier(String user, String password, Configuration cfg) {
 		this.username = user;
@@ -81,19 +80,27 @@ public final class KCAuthenticationSupplier implements Supplier<Authentication> 
 	 * {@return true if a token has been retrieved and it is still valid}
 	 */
 	public boolean currentTokenIsExpired() {
-		return Optional.ofNullable(this.currentToken.get())
-			.filter(v -> Instant.now().isAfter(v.expiresAt()))
-			.isPresent();
+		return Optional.ofNullable(this.currentToken).filter(v -> Instant.now().isAfter(v.expiresAt())).isPresent();
+	}
+
+	boolean isNullOrExpired(TokensAndExpirationTime tokensAndExpirationTime) {
+		return tokensAndExpirationTime == null || Instant.now().isAfter(tokensAndExpirationTime.expiresAt());
 	}
 
 	@Override
 	public Authentication get() {
-		return this.currentToken.updateAndGet(previous -> {
-			if (previous == null) {
-				return get0();
+
+		TokensAndExpirationTime result = this.currentToken;
+		if (isNullOrExpired(result)) {
+			synchronized (this) {
+				result = this.currentToken;
+				if (isNullOrExpired(result)) {
+					this.currentToken = (result != null) ? refresh0(result.refreshToken()) : get0();
+					result = this.currentToken;
+				}
 			}
-			return refresh0(previous.refreshToken());
-		}).toAuthentication();
+		}
+		return result.toAuthentication();
 	}
 
 	TokensAndExpirationTime get0() {
