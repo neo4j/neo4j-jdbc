@@ -596,7 +596,10 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			return AuthTokens.custom(BoltAdapters.adaptMap(customAuthentication.toMap()));
 		}
 
-		throw new IllegalArgumentException("Unsupported authentication type %s".formatted(authentication));
+		// This can not be thrown, even with custom authentications,
+		// above if/else is exhaustive
+		throw new IllegalArgumentException(
+				"Unsupported authentication type %s".formatted(authentication.getClass().getName()));
 	}
 
 	private BoltConnection establishBoltConnection(DriverConfig driverConfig, String userAgent,
@@ -1368,6 +1371,11 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			return result;
 		}
 
+		@Override
+		public String toString() {
+			return "DriverConfig{host='%s', protocol='%s', port=%d, database='%s', user='%s'}".formatted(this.host,
+					this.protocol, this.port, this.database, this.user);
+		}
 	}
 
 	/**

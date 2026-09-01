@@ -227,6 +227,12 @@ class Neo4jDriverTests {
 			return newDriverConfig(Map.of());
 		}
 
+		@Test
+		void driverConfigHasMinimumToString() {
+			assertThat(newDriverConfig())
+				.hasToString("DriverConfig{host='na', protocol='neo4j', port=7687, database='db', user='explicit'}");
+		}
+
 	}
 
 	@Nested
