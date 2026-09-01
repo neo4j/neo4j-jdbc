@@ -19,6 +19,7 @@
 package org.neo4j.jdbc.it.cp;
 
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -80,6 +81,83 @@ class Neo4jDriverExtensionsIT {
 				}
 			});
 
+	}
+
+	@Test
+	void urlFromImplicitFileShouldRejectedIfFileDoesNotContainAuth() throws Exception {
+
+		var dotEnvFile = Files.createFile(Paths.get("").resolve(".env"));
+		Files.write(dotEnvFile, List.of("NEO4J_URI=jdbc:neo4j://IAmEvil"));
+		try {
+			SystemLambda.withEnvironmentVariable("NEO4J_USERNAME", "neo4j")
+				.and("NEO4J_PASSWORD", this.neo4j.getAdminPassword())
+				.execute(() -> {
+					var connection = Neo4jDriver.fromEnv();
+					assertThat(connection).isEmpty();
+				});
+		}
+		finally {
+			Files.deleteIfExists(dotEnvFile);
+		}
+	}
+
+	@Test
+	void urlFromImplicitFileShouldNotRejectedIfDirIsSpecified() throws Exception {
+
+		var dotEnvFile = Files.createFile(Paths.get("").resolve(".env"));
+		Files.write(dotEnvFile, List
+			.of("NEO4J_URI=jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687))));
+		try {
+			SystemLambda.withEnvironmentVariable("NEO4J_USERNAME", "neo4j")
+				.and("NEO4J_PASSWORD", this.neo4j.getAdminPassword())
+				.execute(() -> {
+					var connection = Neo4jDriver.fromEnv(dotEnvFile.toAbsolutePath().getParent());
+					assertThat(connection).isPresent();
+					connection.orElseThrow().close();
+				});
+		}
+		finally {
+			Files.deleteIfExists(dotEnvFile);
+		}
+	}
+
+	@Test
+	void urlFromImplicitFileShouldNotRejectedIfFileIsSpecified() throws Exception {
+
+		var dotEnvFile = Files.createFile(Paths.get("").resolve(".whatever"));
+		Files.write(dotEnvFile, List
+			.of("NEO4J_URI=jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687))));
+		try {
+			SystemLambda.withEnvironmentVariable("NEO4J_USERNAME", "neo4j")
+				.and("NEO4J_PASSWORD", this.neo4j.getAdminPassword())
+				.execute(() -> {
+					var connection = Neo4jDriver.fromEnv(null, dotEnvFile.getFileName().toString());
+					assertThat(connection).isPresent();
+					connection.orElseThrow().close();
+				});
+		}
+		finally {
+			Files.deleteIfExists(dotEnvFile);
+		}
+	}
+
+	@Test
+	void urlFromImplicitFileShouldNotRejectedIfFileDoesContainAuth() throws Exception {
+
+		var dotEnvFile = Files.createFile(Paths.get("").resolve(".env"));
+		Files.write(dotEnvFile,
+				List.of("NEO4J_URI=jdbc:neo4j://%s:%s".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687)),
+						"NEO4J_USERNAME=neo4j", "NEO4J_PASSWORD=" + this.neo4j.getAdminPassword()));
+		try {
+
+			var connection = Neo4jDriver.fromEnv();
+			assertThat(connection).isPresent();
+			connection.orElseThrow().close();
+
+		}
+		finally {
+			Files.deleteIfExists(dotEnvFile);
+		}
 	}
 
 	@Test
