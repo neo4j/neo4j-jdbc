@@ -22,6 +22,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledInNativeImage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -38,6 +39,7 @@ class DatabaseMetadataIT extends AbstractDatabaseMetadata {
 	}
 
 	@Test
+	@DisabledInNativeImage
 	void connectionMustReset() throws SQLException, NoSuchFieldException, IllegalAccessException {
 		try (var connection = this.getConnection()) {
 			var metaData = connection.getMetaData();
