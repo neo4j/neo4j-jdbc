@@ -63,6 +63,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -131,6 +132,46 @@ class PreparedStatementIT extends IntegrationTestBase {
 			var result = statement.executeBatch();
 			assertThat(result).hasSize(1);
 			assertThat(result).containsExactly(3);
+		}
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			CREATE (n:Log {msg: "total $1 items",    v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: 'total $1 items',    v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: "'total $1 items'",  v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: "'total $1 items",   v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: "total $1 items'",   v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: '"total $1 items"',  v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: '"total $1 items',   v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: 'total $1 items"',   v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: "total $1\\" items", v: ?, x: $?, y: ?}) RETURN n
+			CREATE (n:Log {msg: 'total $1\\' items', v: ?, x: $?, y: ?}) RETURN n
+			""", delimiterString = "|")
+	void placeHoldersInStringLiteralsMustNotBeBatchRewritten(String statement) throws SQLException {
+		try (var connection = getConnection(false, true); var writeStatement = connection.prepareStatement(statement)) {
+			for (int i = 0; i < 3; ++i) {
+				writeStatement.setString(1, Integer.toString(i));
+				writeStatement.unwrap(Neo4jPreparedStatement.class).setString("?", "tja");
+				writeStatement.setString(2, "!");
+				writeStatement.addBatch();
+			}
+			var result = writeStatement.executeBatch();
+			assertThat(result).hasSize(1);
+			assertThat(result).containsExactly(3);
+
+			try (var readStatement = connection.createStatement()) {
+				var resultSet = readStatement
+					.executeQuery("MATCH (n:Log) RETURN n.msg AS msg, n.v AS v, n.x AS x, n.y AS y ORDER BY v");
+				for (int i = 0; i < 3; ++i) {
+					assertThat(resultSet.next()).isTrue();
+					assertThat(resultSet.getString("msg")).matches("['\"]*total \\$1['\"]* items['\"]*");
+					assertThat(resultSet.getString("v")).isEqualTo(Integer.toString(i));
+					assertThat(resultSet.getString("x")).isEqualTo("tja");
+					assertThat(resultSet.getString("y")).isEqualTo("!");
+				}
+				assertThat(resultSet.next()).isFalse();
+			}
 		}
 	}
 
