@@ -33,6 +33,8 @@ import java.util.concurrent.CompletionStage;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.neo4j.bolt.connection.BoltConnection;
 import org.neo4j.bolt.connection.BoltConnectionProvider;
@@ -260,6 +262,26 @@ class DatabaseMetadataImplTests {
 				assertThat(rs.getInt("NUM_PREC_RADIX")).isEqualTo(10);
 			}
 		}
+	}
+
+	@Test
+	void getSearchStringEscapeShouldNotChange() throws SQLException {
+		var meta = newConnection().getMetaData();
+		assertThat(meta.getSearchStringEscape()).isEqualTo("\\");
+	}
+
+	@ParameterizedTest
+	@CsvSource(textBlock = """
+			Nothing                  , \\QNothing\\E
+			NULL                     , NULL
+			''                       , NULL
+			Das?_ist_ein%T*st        , \\QDas?\\E.?+\\Qist\\E.?+\\Qein\\E.*+\\QT*st\\E
+			Das\\%ist auch\\_ein Test, \\QDas%ist auch_ein Test\\E
+			%_                       , .*+.?+
+			""", nullValues = "NULL")
+	void shouldEscapeSearchPatterns(String in, String expected) {
+		var formatted = DatabaseMetadataImpl.FormattedSearchPattern.of(in);
+		assertThat(formatted.value()).isEqualTo(expected);
 	}
 
 	@Test

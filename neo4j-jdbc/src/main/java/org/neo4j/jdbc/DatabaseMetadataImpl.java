@@ -45,10 +45,12 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,6 +59,7 @@ import org.neo4j.jdbc.Neo4jTransaction.ResultSummary;
 import org.neo4j.jdbc.Neo4jTransaction.RunResponse;
 import org.neo4j.jdbc.translator.spi.View;
 import org.neo4j.jdbc.translator.spi.View.Column;
+import org.neo4j.jdbc.values.AsValue;
 import org.neo4j.jdbc.values.MapValue;
 import org.neo4j.jdbc.values.Record;
 import org.neo4j.jdbc.values.Type;
@@ -224,6 +227,14 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 	private static final String DEFAULT_CATALOG = "neo4j";
 
 	private static final String TABLE_TYPE_RELATIONSHIP = "RELATIONSHIP";
+
+	private static final String SEARCH_STRING_ESCAPE = "\\";
+
+	private static final Pattern PATTERN_VALID_SQL_SEARCH_WILDCARDS = Pattern
+		.compile("(?<!%s)[%%_]".formatted(SEARCH_STRING_ESCAPE.repeat(2)));
+
+	private static final Pattern PATTERN_ESCAPED_SQL_SEARCH_WILDCARDS = Pattern
+		.compile("%s([%%_])".formatted(SEARCH_STRING_ESCAPE.repeat(2)));
 
 	static {
 		QUERIES = new Properties();
@@ -545,7 +556,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	@Override
 	public String getSearchStringEscape() {
-		return "'";
+		return SEARCH_STRING_ESCAPE;
 	}
 
 	@Override
@@ -1119,7 +1130,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		return Collections.unmodifiableSortedMap(tables);
 	}
 
-	private List<Record> getVirtualGraphColumns(String tableNamePattern, String columnNamePattern) {
+	private List<Record> getVirtualGraphColumns(FormattedSearchPattern tableNamePattern,
+			FormattedSearchPattern columnNamePattern) {
 
 		if (!isVirtualGraph()) {
 			return List.of();
@@ -1130,14 +1142,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		var vgSchema = this.virtualGraphSchema.resolve();
 		var selected = vgSchema.entrySet()
 			.stream()
-			.filter(table -> (tableNamePattern == null || table.getKey().TABLE_NAME.matches(tableNamePattern))
-					&& (columnNamePattern == null
-							|| table.getValue().stream().anyMatch(column -> column.name().matches(columnNamePattern))))
+			.filter(table -> tableNamePattern.matches(table.getKey().TABLE_NAME) && (columnNamePattern.isNull()
+					|| table.getValue().stream().anyMatch(column -> columnNamePattern.matches(column.name()))))
 			.map(table -> Map.entry(table.getKey(),
-					table.getValue()
-						.stream()
-						.filter(column -> columnNamePattern == null || column.name().matches(columnNamePattern))
-						.toList()))
+					table.getValue().stream().filter(column -> columnNamePattern.matches(column.name())).toList()))
 			.toList();
 
 		var records = new ArrayList<Record>();
@@ -1201,14 +1209,14 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private GetTablesCacheValue getTables0(GetTablesCacheKey key) {
 
-		var tableNamePattern = sanitizeNamePattern(key.tableNamePattern);
+		var tableNamePattern = FormattedSearchPattern.of(key.tableNamePattern);
 		var types = key.types();
 
 		if (isVirtualGraph()) {
 			var vgSchema = this.virtualGraphSchema.resolve();
 			var selected = vgSchema.keySet()
 				.stream()
-				.filter(table -> (tableNamePattern == null || table.TABLE_NAME.matches(tableNamePattern))
+				.filter(table -> tableNamePattern.matches(table.TABLE_NAME)
 						&& (types == null || Arrays.stream(types).anyMatch(type -> type.equals(table.TABLE_TYPE))))
 				.toList();
 			try {
@@ -1228,10 +1236,6 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		catch (SQLException ex) {
 			throw new UncheckedSQLException(ex);
 		}
-	}
-
-	private static String sanitizeNamePattern(String tableNamePattern) {
-		return Optional.ofNullable(tableNamePattern).map(String::trim).map(v -> v.replace("%", ".*")).orElse(null);
 	}
 
 	@Override
@@ -1287,16 +1291,16 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		assertCatalogIsNullOrEmpty(catalog);
 		assertSchemaIsPublicOrNull(schemaPattern);
 
-		tableNamePattern = sanitizeNamePattern(tableNamePattern);
-		columnNamePattern = sanitizeNamePattern(columnNamePattern);
-
+		var formattedTableNamePattern = FormattedSearchPattern.of(tableNamePattern);
+		var formattedColumnNamePattern = FormattedSearchPattern.of(columnNamePattern);
 		List<Record> records;
 		if (isVirtualGraph()) {
-			records = getVirtualGraphColumns(tableNamePattern, columnNamePattern);
+			records = getVirtualGraphColumns(formattedTableNamePattern, formattedColumnNamePattern);
 		}
 		else {
-			var request = getRequest("getColumns", "name", tableNamePattern, "column_name", columnNamePattern,
-					"sampleSize", this.relationshipSampleSize, "viewColumns", getViewColumns());
+			var request = getRequest("getColumns", "name", formattedTableNamePattern, "column_name",
+					formattedColumnNamePattern, "sampleSize", this.relationshipSampleSize, "viewColumns",
+					getViewColumns());
 			var innerColumnsResponse = doQueryForPullResponse(request);
 
 			records = innerColumnsResponse.records()
@@ -1392,7 +1396,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 				}
 			}
 			for (var additionalId : additionalIds) {
-				if (columnNamePattern != null && !additionalId.matches(columnNamePattern.replace("%", ".*"))) {
+				if (!formattedColumnNamePattern.matches(additionalId)) {
 					continue;
 				}
 
@@ -1752,7 +1756,7 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		assertSchemaIsPublicOrNull(schema);
 
 		var intermediateResults = new ArrayList<>();
-		var request = getRequest("getIndexInfo", "name", table, "unique", unique);
+		var request = getRequest("getIndexInfo", "name", FormattedSearchPattern.of(table), "unique", unique);
 		try (var rs = doQueryForResultSet(request)) {
 			while (rs.next()) {
 				intermediateResults.add(Map.of("name", rs.getString("name"), "tableName",
@@ -2276,6 +2280,53 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 	private record VgTable(String TABLE_CAT, String TABLE_SCHEM, String TABLE_NAME, String TABLE_TYPE, String REMARKS,
 			String TYPE_CAT, String TYPE_SCHEM, String TYPE_NAME, String SELF_REFERENCES_COL_NAME) {
+	}
+
+	record FormattedSearchPattern(String value) implements AsValue {
+
+		static FormattedSearchPattern of(String input) {
+
+			if (input == null || input.isBlank()) {
+				return new FormattedSearchPattern(null);
+			}
+
+			BiFunction<Integer, Integer, String> quoteAndEscape = (start, end) -> {
+				var part = input.substring(start, end);
+				if (part.isEmpty()) {
+					return "";
+				}
+				return Pattern.quote(PATTERN_ESCAPED_SQL_SEARCH_WILDCARDS.matcher(part).replaceAll("$1"));
+			};
+
+			var matcher = PATTERN_VALID_SQL_SEARCH_WILDCARDS.matcher(input);
+			var result = new StringBuilder();
+
+			var lastStart = new AtomicInteger(0);
+			matcher.results().forEach(matchResult -> {
+				result.append(quoteAndEscape.apply(lastStart.getAndSet(matchResult.end()), matchResult.start()));
+				var replacement = switch (matchResult.group()) {
+					case "_" -> ".?+";
+					case "%" -> ".*+";
+					default -> "";
+				};
+				result.append(replacement);
+			});
+			result.append(quoteAndEscape.apply(lastStart.get(), input.length()));
+			return new FormattedSearchPattern(result.toString());
+		}
+
+		@Override
+		public Value asValue() {
+			return (this.value != null) ? Values.value(this.value) : Values.NULL;
+		}
+
+		boolean matches(String target) {
+			return target == null || this.value == null || Pattern.compile(this.value).asMatchPredicate().test(target);
+		}
+
+		boolean isNull() {
+			return this.value == null;
+		}
 	}
 
 }
