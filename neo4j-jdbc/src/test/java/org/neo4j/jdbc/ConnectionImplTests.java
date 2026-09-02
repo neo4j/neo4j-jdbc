@@ -38,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.Assertions;
@@ -94,6 +95,26 @@ class ConnectionImplTests {
 		var connection = makeConnection(mock(BoltConnection.class));
 		assertThatExceptionOfType(SQLException.class).isThrownBy(() -> connection.nativeSQL("M"))
 			.withMessage("general processing exception - No translators available");
+	}
+
+	@Test
+	void chainingShouldNotDitchResultOnIntermediateNull() throws SQLException {
+
+		var connection = makeConnection(mock(BoltConnection.class),
+				() -> List.of((statement, optionalDatabaseMetaData) -> "1",
+						(statement, optionalDatabaseMetaData) -> null,
+						(statement, optionalDatabaseMetaData) -> statement + "3"));
+
+		assertThat(connection.nativeSQL("init")).isEqualTo("13");
+	}
+
+	@Test
+	void chainingShouldNotDitchResultOnLastNull() throws SQLException {
+
+		var connection = makeConnection(mock(BoltConnection.class), () -> List
+			.of((statement, optionalDatabaseMetaData) -> "1", (statement, optionalDatabaseMetaData) -> null));
+
+		assertThat(connection.nativeSQL("init")).isEqualTo("1");
 	}
 
 	@Test
@@ -840,9 +861,14 @@ class ConnectionImplTests {
 	}
 
 	ConnectionImpl makeConnection(BoltConnection boltConnection) {
+		return makeConnection(boltConnection, List::of);
+
+	}
+
+	ConnectionImpl makeConnection(BoltConnection boltConnection, Supplier<List<Translator>> translators) {
 		return new ConnectionImpl(URI.create("jdbc:neo4j://localhost"), Authentication::none, auth -> boltConnection,
-				List::of, false, false, true, false, new NoopBookmarkManagerImpl(), Map.of(), 23, "aBeautifulDatabase",
-				null, List.of());
+				translators, false, false, true, false, new NoopBookmarkManagerImpl(), Map.of(), 23,
+				"aBeautifulDatabase", null, List.of());
 
 	}
 

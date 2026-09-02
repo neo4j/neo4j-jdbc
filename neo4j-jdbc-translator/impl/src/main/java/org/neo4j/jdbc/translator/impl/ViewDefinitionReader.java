@@ -64,7 +64,7 @@ final class ViewDefinitionReader {
 			throw new IllegalArgumentException(
 					"Unsupported scheme: %s, supported schemes are %s".formatted(scheme, SUPPORTED_SCHEMES));
 		}
-		if ("file".equals(scheme) && uri.getPath() == null || uri.getPath().isBlank()) {
+		if ("file".equals(scheme) && (uri.getPath() == null || uri.getPath().isBlank())) {
 			throw new IllegalArgumentException(
 					"No path specified in this url: %s (%s is %s in that format, not the path; you probably meant file:///%2$s)"
 						.formatted(url, Optional.ofNullable(uri.getHost()).orElseGet(uri::getSchemeSpecificPart),

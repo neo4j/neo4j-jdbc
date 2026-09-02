@@ -73,7 +73,7 @@ final class Lazy<T> {
 			return this.resolve();
 		}
 		catch (Exception ex) {
-			if (type.isAssignableFrom(ex.getCause().getClass())) {
+			if (ex.getCause() != null && type.isInstance(ex.getCause())) {
 				throw type.cast(ex.getCause());
 			}
 			throw ex;

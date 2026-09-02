@@ -58,6 +58,12 @@ class Neo4jDriverTests {
 	}
 
 	@Test
+	void urlParamsWithTrailingSpaces() {
+		var mergedConfig = Neo4jDriver.mergeConfig(new String[] { "sslMode=verify-full " }, new Properties());
+		assertThat(mergedConfig).containsEntry("sslMode", "verify-full");
+	}
+
+	@Test
 	void getParentLoggerShouldWork() {
 
 		var driver = new Neo4jDriver();
