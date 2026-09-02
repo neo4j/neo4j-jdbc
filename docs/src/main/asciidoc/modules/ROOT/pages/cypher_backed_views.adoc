@@ -53,7 +53,7 @@ NOTE: Please be aware that we are strict with https://en.wikipedia.org/wiki/File
 `jdbc:neo4j://localhost:7687?viewDefinitions=file:///my/views/foobar.json`:: This is equivalent to the URL above
 `jdbc:neo4j://localhost:7687?viewDefinitions=https://myorg.com/movies.json`:: View definitions hosted on a secure webserver
 
-WARNING: Make sure you only load view definitions from trusted sources. As stated above, there's nothing that prevents a writing Cypher query being used as a view definition and you don't want to have them injected into your application from an unknown or untrusted source.
+WARNING: Make sure you only load view definitions from trusted sources. As stated above, there's nothing that prevents a writing Cypher query being used as a view definition, and you don't want to have them injected into your application from an unknown or untrusted source. Using `http` without encryption is only recommended for testing.
 
 A simple example looks like this:
 
