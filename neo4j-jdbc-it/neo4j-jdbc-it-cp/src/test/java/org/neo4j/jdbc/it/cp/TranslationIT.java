@@ -58,7 +58,7 @@ class TranslationIT extends IntegrationTestBase {
 			var stmt = connection.prepareStatement(sql);
 			assertThat(stmt).isNotNull();
 			assertThatExceptionOfType(SQLException.class).isThrownBy(stmt::executeQuery)
-				.withMessageContaining("error: syntax error or access rule violation - invalid syntax");
+				.withStackTraceContaining("Invalid input 'SELECT'");
 		}
 	}
 
