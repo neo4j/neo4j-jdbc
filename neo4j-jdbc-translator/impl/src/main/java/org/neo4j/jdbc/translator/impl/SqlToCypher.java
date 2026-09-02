@@ -375,10 +375,6 @@ final class SqlToCypher implements Translator {
 			this.views = views;
 		}
 
-		private boolean ownsView(CbvPointer cbvPointer) {
-			return this.views.containsKey(cbvPointer.viewName());
-		}
-
 		private static IllegalArgumentException unsupported(QueryPart p) {
 			var typeMsg = (p != null) ? " (Was of type " + p.getClass().getName() + ")" : "";
 			return new IllegalArgumentException("Unsupported SQL expression: " + p + typeMsg);
@@ -788,10 +784,9 @@ final class SqlToCypher implements Translator {
 		 */
 		private List<? extends Table<?>> extractQueriedTables(Select<?> src, List<CbvPointer> cbvs) {
 			// Retrieve all Cypher-backed views
-			var allCbvs = loadCypherBackedViews();
 			return unnestFromClause(getFromClause(src), false, (table, partOfJoin) -> {
 				var p = CbvPointer.of(table);
-				if (allCbvs.contains(p.viewName()) && ownsView(p)) {
+				if (isCbv(p)) {
 					if (partOfJoin) {
 						throw new IllegalArgumentException("Cypher-backed views cannot be used with a JOIN clause");
 					}
@@ -800,9 +795,17 @@ final class SqlToCypher implements Translator {
 			});
 		}
 
+		private boolean isCbv(CbvPointer p) {
+			// this.views contains all views this translator has loaded. We consult them
+			// first, as the chance that any other translator is present, is neglectable
+			// in most cases. If there is no result, try toe metadata (if connected), and
+			// thus, all other translators (if available)
+			return this.views.containsKey(p.viewName()) || loadAllCypherBackedViews().contains(p.viewName());
+		}
+
 		// The empty and already stated to be ignored catch block
 		@SuppressWarnings("squid:S108")
-		private Set<String> loadCypherBackedViews() {
+		private Set<String> loadAllCypherBackedViews() {
 			if (this.databaseMetaData == null) {
 				return Set.of();
 			}
@@ -1332,9 +1335,7 @@ final class SqlToCypher implements Translator {
 		}
 
 		private void assertCypherBackedViewUsage(String s, Table<?> table) {
-			var allCbvs = loadCypherBackedViews();
-			var p = CbvPointer.of(table);
-			if (allCbvs.contains(p.viewName()) && ownsView(p)) {
+			if (isCbv(CbvPointer.of(table))) {
 				throw new IllegalArgumentException(s);
 			}
 		}

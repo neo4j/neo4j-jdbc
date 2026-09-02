@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -833,6 +834,22 @@ class SqlToCypherTests {
 		assertThat(result).doesNotContain("__with_col_");
 		assertThat(result).doesNotContain("__having_col_");
 		assertThat(result).isEqualTo("MATCH (p:People) RETURN p.name AS name");
+	}
+
+	@ParameterizedTest
+	@CsvSource(
+			textBlock = """
+					SELECT * FROM CountryCountsView NATURAL JOIN Whatever | Cypher-backed views cannot be used with a JOIN clause
+					DELETE FROM CountryCountsView                         | Cypher-backed views cannot be deleted from
+					UPDATE CountryCountsView SET title = 'asdas'          | Cypher-backed views cannot be updated
+					INSERT INTO CountryCountsView (title) VALUES ('x')    | Cypher-backed views cannot be inserted to
+					""",
+			delimiterString = "|")
+	void cbvUsageMustBePreventedEvenWithoutMetadataInSomeCases(String sql, String expectedMessage) {
+
+		var resource = Objects.requireNonNull(this.getClass().getResource("/cbv/default.json")).toString();
+		var sqlToCypher = SqlToCypher.with(SqlToCypherConfig.builder().withViewDefinitions(resource).build());
+		assertThatIllegalArgumentException().isThrownBy(() -> sqlToCypher.translate(sql)).withMessage(expectedMessage);
 	}
 
 	private record SqlAndCypher(String name, String sql, String cypher) {
