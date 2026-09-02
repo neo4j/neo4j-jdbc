@@ -51,6 +51,18 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class TranslationIT extends IntegrationTestBase {
 
 	@Test
+	void mustNotUseCachedTranslationFromExplicitNativeCall() throws SQLException {
+		try (var connection = getConnection(false, false, "cacheSQLTranslations", "true")) {
+			var sql = "SELECT 1";
+			assertThat(connection.nativeSQL(sql)).isEqualTo("RETURN 1");
+			var stmt = connection.prepareStatement(sql);
+			assertThat(stmt).isNotNull();
+			assertThatExceptionOfType(SQLException.class).isThrownBy(stmt::executeQuery)
+				.withStackTraceContaining("Invalid input 'SELECT'");
+		}
+	}
+
+	@Test
 	void shouldLoadTranslatorDirectly() throws SQLException {
 
 		var url = "jdbc:neo4j://%s:%d".formatted(this.neo4j.getHost(), this.neo4j.getMappedPort(7687));

@@ -223,11 +223,12 @@ final class ConnectionImpl implements Neo4jConnection {
 	UnaryOperator<String> getTranslator(boolean force, Consumer<SQLWarning> warningConsumer) throws SQLException {
 
 		List<Translator> resolvedTranslators;
-		if (!(this.enableSqlTranslation || force)) {
-			resolvedTranslators = List.of((statement, optionalDatabaseMetaData) -> statement);
+		var useTranslators = this.enableSqlTranslation || force;
+		if (useTranslators) {
+			resolvedTranslators = this.translators.resolve();
 		}
 		else {
-			resolvedTranslators = this.translators.resolve();
+			resolvedTranslators = List.of((statement, optionalDatabaseMetaData) -> statement);
 		}
 
 		if (resolvedTranslators.isEmpty()) {
@@ -237,7 +238,7 @@ final class ConnectionImpl implements Neo4jConnection {
 		var metaData = this.getMetaData();
 		var sqlTranslator = new TranslatorChain(resolvedTranslators, metaData, warningConsumer);
 
-		if (this.enableTranslationCaching) {
+		if (this.enableTranslationCaching && useTranslators) {
 			return sql -> {
 				synchronized (ConnectionImpl.this) {
 					if (this.l2cache.containsKey(sql)) {
