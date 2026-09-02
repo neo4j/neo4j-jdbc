@@ -45,6 +45,8 @@ public record UsernamePasswordAuthentication(String username, String password, S
 	}
 
 	@Override
+	// That was the moment Sonar broke me a bit, complaining about the redacted password.
+	@SuppressWarnings({ "squid:S2068" })
 	public String toString() {
 		return "UsernamePasswordAuthentication{username='%s', password='******', realm='%s'}".formatted(this.username,
 				this.realm);
