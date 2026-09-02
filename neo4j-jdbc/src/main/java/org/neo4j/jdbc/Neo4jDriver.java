@@ -61,6 +61,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvEntry;
 import org.neo4j.bolt.connection.AuthToken;
 import org.neo4j.bolt.connection.AuthTokens;
 import org.neo4j.bolt.connection.BoltConnection;
@@ -1688,13 +1689,23 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			if (directory != null) {
 				builder = builder.directory(directory.toAbsolutePath().toString());
 			}
+			boolean fileSpecified = false;
 			if (filename != null && !filename.isBlank()) {
 				builder = builder.filename(filename);
+				fileSpecified = true;
 			}
 
 			var env = builder.load();
+			var entriesFromFile = env.entries(Dotenv.Filter.DECLARED_IN_ENV_FILE)
+				.stream()
+				.map(DotenvEntry::getKey)
+				.collect(Collectors.toSet());
 
-			var address = env.get("NEO4J_URI");
+			String address = null;
+			if ((directory != null || fileSpecified) || !entriesFromFile.contains("NEO4J_URI")
+					|| entriesFromFile.containsAll(Set.of("NEO4J_USERNAME", "NEO4J_PASSWORD"))) {
+				address = env.get("NEO4J_URI");
+			}
 			if (address != null && !address.toLowerCase(Locale.ROOT).startsWith("jdbc:")) {
 				address = "jdbc:" + address;
 			}
