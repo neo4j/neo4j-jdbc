@@ -19,8 +19,12 @@
 package org.neo4j.jdbc.translator.impl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,6 +59,35 @@ class ViewDefinitionReaderTests {
 			"https://host/foobar.json" })
 	void shouldDealWithValidSchemes(String input) {
 		assertThatNoException().isThrownBy(() -> ViewDefinitionReader.of(input));
+	}
+
+	@Test
+	void shouldLogWarning() {
+
+		List<String> messages = new ArrayList<>();
+		var handler = new Handler() {
+			@Override
+			public void publish(LogRecord record) {
+				messages.add(record.getMessage());
+			}
+
+			@Override
+			public void flush() {
+			}
+
+			@Override
+			public void close() throws SecurityException {
+			}
+		};
+		Logger.getLogger("org.neo4j.jdbc").addHandler(handler);
+		try {
+			assertThatNoException().isThrownBy(() -> ViewDefinitionReader.of("http://thisislegit.io/foobar.json"));
+			assertThat(messages).contains(
+					"Using plain http protocol is recommended only for testing, make sure you can trust the view definitions loaded from 'http://thisislegit.io/foobar.json'");
+		}
+		finally {
+			Logger.getLogger("org.neo4j.jdbc").removeHandler(handler);
+		}
 	}
 
 	@Test

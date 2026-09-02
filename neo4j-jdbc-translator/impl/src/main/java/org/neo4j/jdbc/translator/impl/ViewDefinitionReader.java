@@ -29,6 +29,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.jr.ob.JSON;
@@ -68,6 +70,12 @@ final class ViewDefinitionReader {
 						.formatted(url, Optional.ofNullable(uri.getHost()).orElseGet(uri::getSchemeSpecificPart),
 								(uri.getHost() == null && uri.getSchemeSpecificPart() != null)
 										? "a schema specific part" : "the host in"));
+		}
+		if ("http".equals(scheme)) {
+			Logger.getLogger("org.neo4j.jdbc")
+				.log(Level.WARNING,
+						() -> "Using plain http protocol is recommended only for testing, make sure you can trust the view definitions loaded from '%s'"
+							.formatted(url));
 		}
 		return new ViewDefinitionReader(uri);
 	}
