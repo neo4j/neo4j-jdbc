@@ -1142,8 +1142,8 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 		var vgSchema = this.virtualGraphSchema.resolve();
 		var selected = vgSchema.entrySet()
 			.stream()
-			.filter(table -> tableNamePattern.matches(table.getKey().TABLE_NAME)
-					&& table.getValue().stream().anyMatch(column -> columnNamePattern.matches(column.name())))
+			.filter(table -> tableNamePattern.matches(table.getKey().TABLE_NAME) && (columnNamePattern.isNull()
+					|| table.getValue().stream().anyMatch(column -> columnNamePattern.matches(column.name()))))
 			.map(table -> Map.entry(table.getKey(),
 					table.getValue().stream().filter(column -> columnNamePattern.matches(column.name())).toList()))
 			.toList();
@@ -2322,6 +2322,10 @@ final class DatabaseMetadataImpl implements Neo4jDatabaseMetaData {
 
 		boolean matches(String target) {
 			return target == null || this.value == null || Pattern.compile(this.value).asMatchPredicate().test(target);
+		}
+
+		boolean isNull() {
+			return this.value == null;
 		}
 	}
 

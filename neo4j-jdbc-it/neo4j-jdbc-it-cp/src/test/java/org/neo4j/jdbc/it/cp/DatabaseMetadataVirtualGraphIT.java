@@ -243,7 +243,7 @@ class DatabaseMetadataVirtualGraphIT extends AbstractDatabaseMetadata {
 
 		try (var con = this.getConnection(false, true)) {
 			var meta = con.getMetaData();
-			var columnsRs = meta.getColumns(null, null, "Person_DIRECTED_Movie", null);
+			var columnsRs = meta.getColumns(null, null, "Person\\_DIRECTED\\_Movie", null);
 			var columns = new HashSet<String>();
 			while (columnsRs.next()) {
 				columns.add(columnsRs.getString("COLUMN_NAME"));
