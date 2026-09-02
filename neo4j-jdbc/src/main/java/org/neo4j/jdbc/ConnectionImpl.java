@@ -162,6 +162,8 @@ final class ConnectionImpl implements Neo4jConnection {
 
 	private final AtomicBoolean resetNeeded = new AtomicBoolean(false);
 
+	private final AtomicBoolean metaDataResetNeeded = new AtomicBoolean(false);
+
 	/**
 	 * Neo4j as of now has no session / server state to hold those, but we keep it around
 	 * for future use.
@@ -917,9 +919,11 @@ final class ConnectionImpl implements Neo4jConnection {
 	Neo4jTransaction newMetadataTransaction(Map<String, Object> additionalTransactionMetadata) throws SQLException {
 		var combinedTransactionMetadata = getCombinedTransactionMetadata(additionalTransactionMetadata);
 		return new DefaultTransactionImpl(this.boltConnectionForMetaData.resolve(), this.bookmarkManager,
-				combinedTransactionMetadata, this::handleFatalException, false, this.autoCommit, getAccessMode(), null,
-				this.databaseName, state -> {
-				}, this.authenticationManager.getOrRefresh());
+				combinedTransactionMetadata, this::handleFatalException, this.metaDataResetNeeded.getAndSet(false),
+				this.autoCommit, getAccessMode(), null, this.databaseName,
+				state -> this.metaDataResetNeeded.compareAndSet(false,
+						EnumSet.of(State.FAILED, State.OPEN_FAILED).contains(state)),
+				this.authenticationManager.getOrRefresh());
 	}
 
 	private Map<String, Object> getCombinedTransactionMetadata(Map<String, Object> additionalTransactionMetadata)
