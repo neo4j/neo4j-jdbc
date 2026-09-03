@@ -24,14 +24,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
 import org.neo4j.jdbc.Neo4jDriver;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers(disabledWithoutDocker = true)
+@TestInstance(Lifecycle.PER_CLASS)
 @DisabledInNativeImage
+@Disabled("SystemLambda not working reliable on standard Maven/JUnit setup, even when JVM is forked")
 class UserAgentIT extends IntegrationTestBase {
 
 	@Test

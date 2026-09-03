@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -51,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(Lifecycle.PER_CLASS)
 @DisabledInNativeImage
+@Disabled("SystemLambda not working reliable on standard Maven/JUnit setup, even when JVM is forked")
 class Neo4jDriverExtensionsIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
