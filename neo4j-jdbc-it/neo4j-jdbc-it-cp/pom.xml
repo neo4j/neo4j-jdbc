@@ -136,6 +136,8 @@
 							<goal>verify</goal>
 						</goals>
 						<configuration>
+							<forkCount>1</forkCount>
+							<reuseForks>false</reuseForks>
 							<includes>
 								<include>**/Neo4jDriverExtensionsIT.java</include>
 								<include>**/TranslatorFactoryConfigIT.java</include>

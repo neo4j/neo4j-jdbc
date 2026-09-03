@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import com.github.stefanbirkner.systemlambda.Statement;
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -53,21 +54,30 @@ class TranslatorFactoryConfigIT {
 	@ParameterizedTest
 	@CsvSource(
 			textBlock = """
-						org.neo4j.jdbc.it.cp.FunkyRandomClass                       | n/a                                           | false | false
-						org.neo4j.jdbc.it.cp.FunkyFactory                           | n/a                                           | false | false
-						org.neo4j.jdbc.it.cp.FunkyRandomClass                       | *                                             | false | false
-						org.neo4j.jdbc.it.cp.FunkyFactory3                          | *                                             | true  | true
-						org.neo4j.jdbc.it.cp.FunkyFactory2                          | n/a                                           | false | false
-						org.neo4j.jdbc.it.cp.FunkyFactory2                          | *                                             | true  | false
-						org.neo4j.jdbc.it.cp.FunkyFactory2                          | ,org.neo4j.jdbc.it.cp.FunkyFactory2, whatever | true  | false
-						org.neo4j.jdbc.it.cp.FunkyFactory2                          | elefant,*,a possum                            | true  | false
-						org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory | n/a                                           | true  | false
+						org.neo4j.jdbc.it.cp.FunkyRandomClass                         | false | n/a                                           | false | false
+						org.neo4j.jdbc.it.cp.FunkyFactory                             | false | n/a                                           | false | false
+						org.neo4j.jdbc.it.cp.FunkyRandomClass                         | false | *                                             | false | false
+						org.neo4j.jdbc.it.cp.FunkyFactory                             | false | *                                             | true  | true
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | false | n/a                                           | false | false
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | false | *                                             | true  | false
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | false | ,org.neo4j.jdbc.it.cp.FunkyFactory2, whatever | true  | false
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | false | elefant,*,a possum                            | true  | false
+						org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory   | false | n/a                                           | true  | false
+						org.neo4j.jdbc.it.cp.FunkyRandomClass                         | true  | n/a                                           | false | false
+						org.neo4j.jdbc.it.cp.FunkyFactory                             | true  | n/a                                           | false | false
+						org.neo4j.jdbc.it.cp.FunkyRandomClass                         | true  | *                                             | false | false
+						org.neo4j.jdbc.it.cp.FunkyFactory3                            | true  | *                                             | true  | true
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | true  | n/a                                           | false | false
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | true  | *                                             | true  | false
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | true  | ,org.neo4j.jdbc.it.cp.FunkyFactory2, whatever | true  | false
+						org.neo4j.jdbc.it.cp.FunkyFactory2                            | true  | elefant,*,a possum                            | true  | false
+						org.neo4j.jdbc.translator.impl.SqlToCypherTranslatorFactory   | true  | n/a                                           | true  | false
 					""",
 			nullValues = "n/a", delimiterString = "|")
-	void mustNotPrematureInitialiseSQLTranslatorFactories(String fqn, String allowList, boolean wasLoaded,
-			boolean producedBogusMessage) throws Exception {
+	void mustNotPrematureInitialiseSQLTranslatorFactories(String fqn, boolean useSystemProperty, String allowList,
+			boolean wasLoaded, boolean producedBogusMessage) throws Exception {
 
-		SystemLambda.restoreSystemProperties(() -> {
+		Statement actualTest = () -> {
 			// Capturing funky classes
 			var output = new ByteArrayOutputStream();
 			var original = System.err;
@@ -79,7 +89,7 @@ class TranslatorFactoryConfigIT {
 			Logger.getLogger("org.neo4j.jdbc").addHandler(handler);
 
 			try {
-				if (allowList != null) {
+				if (allowList != null && useSystemProperty) {
 					System.setProperty("NEO4J_JDBC_ALLOWED_TRANSLATOR_FACTORIES", allowList);
 				}
 
@@ -133,7 +143,16 @@ class TranslatorFactoryConfigIT {
 			else {
 				assertThat(handler.messages).contains("Class {0} cannot be used as translator factory");
 			}
-		});
+		};
+
+		if (useSystemProperty) {
+			SystemLambda.restoreSystemProperties(actualTest);
+		}
+		else {
+			SystemLambda.withEnvironmentVariable("NEO4J_JDBC_ALLOWED_TRANSLATOR_FACTORIES", allowList)
+				.execute(actualTest);
+		}
+
 	}
 
 }
