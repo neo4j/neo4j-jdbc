@@ -103,6 +103,17 @@ jobs:
            -f neo4j-jdbc-it
            clean verify
 
+      - name: 'Run integration tests that modify environment'
+        run: >
+           NEO4J_ENV_TESTS=true ./mvnw --no-transfer-progress \
+           -Denvtests \
+           -DskipUTs \
+           -Dcheckstyle.skip=true \
+           -Dneo4j.version=${{ matrix.neo4j }}
+           -Djava-build.version=17
+           -f neo4j-jdbc-it/neo4j-jdbc-it-cp  \
+           pre-integration-test failsafe:integration-test
+
   native_build:
     name: Test using native image
     runs-on: ubuntu-latest

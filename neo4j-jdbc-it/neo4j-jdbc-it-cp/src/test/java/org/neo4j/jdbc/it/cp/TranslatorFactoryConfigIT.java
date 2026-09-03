@@ -27,10 +27,10 @@ import java.util.logging.Logger;
 import com.github.stefanbirkner.systemlambda.Statement;
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.neo4j.jdbc.Neo4jDriver;
@@ -42,7 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(Lifecycle.PER_CLASS)
 @DisabledInNativeImage
-@Disabled("SystemLambda not working reliable on standard Maven/JUnit setup, even when JVM is forked")
+@EnabledIfEnvironmentVariable(named = "NEO4J_ENV_TESTS", matches = ".+",
+		disabledReason = "SystemLambda not working reliable on standard Maven/JUnit setup, even when JVM is forked")
 class TranslatorFactoryConfigIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
