@@ -1230,7 +1230,7 @@ final class CallableStatementImpl extends PreparedStatementImpl implements Neo4j
 
 	private static final String VALID_IDENTIFIER = "\\p{javaJavaIdentifierStart}[.\\p{javaJavaIdentifierPart}]*";
 
-	private static final Predicate<String> IS_NUMBER = Pattern.compile("\\$?[1-9]+").asMatchPredicate();
+	private static final Predicate<String> IS_NUMBER = Pattern.compile("\\$?[1-9]\\d*").asMatchPredicate();
 
 	private static final Pattern VALID_IDENTIFIER_PATTERN = Pattern.compile(VALID_IDENTIFIER);
 

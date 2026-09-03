@@ -577,6 +577,7 @@ class CallableStatementImplTests {
 					'CALL f($0)', f, NONE, 0,,'CALL f($0)'
 					'CALL f(?, ''blub'', $2, ?, $3, $1, ?, ''foo'')', f, NONE, 6,,'CALL f($4, ''blub'', $2, $5, $3, $1, $6, ''foo'')'
 					'CALL f(?, ''blub'', $2, ?, $3, $1, ''foo'', ?)', f, NONE, 6,,'CALL f($4, ''blub'', $2, $5, $3, $1, ''foo'', $6)'
+					'CALL f($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $20, $30, ?)', f, NONE, 13,,'CALL f($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $20, $30, $11)'
 					""")
 	void shouldBeAbleToParseValidCallStatements(String statement, String expectedFqn,
 			CallableStatementImpl.ReturnType expectedReturnType, long expectedNumParameters, String names,

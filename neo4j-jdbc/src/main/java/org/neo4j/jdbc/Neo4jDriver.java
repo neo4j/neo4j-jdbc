@@ -449,7 +449,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 
 	private final Map<String, Object> transactionMetadata = new ConcurrentHashMap<>();
 
-	private final Set<DriverListener> listeners = new HashSet<>();
+	private final Set<DriverListener> listeners = ConcurrentHashMap.newKeySet();
 
 	private Neo4jTracer tracer;
 
@@ -713,7 +713,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 		var regex = "^(?<name>\\S+)=(?<value>\\S+)$";
 		var pattern = Pattern.compile(regex);
 		for (String param : urlParams) {
-			var matcher = pattern.matcher(param);
+			var matcher = pattern.matcher(param.trim());
 			if (matcher.matches()) {
 				var name = URLDecoder.decode(matcher.group("name"), StandardCharsets.UTF_8);
 				var value = URLDecoder.decode(matcher.group("value"), StandardCharsets.UTF_8);
@@ -1359,7 +1359,7 @@ public final class Neo4jDriver implements Neo4jDriverExtensions {
 			append(result, PROPERTY_SQL_TRANSLATION_ENABLED, this.enableSQLTranslation()).append("&");
 			append(result, PROPERTY_SQL_TRANSLATION_CACHING_ENABLED, this.enableTranslationCaching()).append("&");
 			append(result, PROPERTY_REWRITE_BATCHED_STATEMENTS, this.rewriteBatchedStatements()).append("&");
-			append(result, PROPERTY_REWRITE_PLACEHOLDERS, this.rewriteBatchedStatements()).append("&");
+			append(result, PROPERTY_REWRITE_PLACEHOLDERS, this.rewritePlaceholders()).append("&");
 			append(result, PROPERTY_USE_BOOKMARKS, this.useBookmarks()).append("&");
 			if (this.tryTcpFastOpen()) {
 				append(result, PROPERTY_TRY_TCP_FAST_OPEN, this.tryTcpFastOpen()).append("&");
