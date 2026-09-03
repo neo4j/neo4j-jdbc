@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import com.github.stefanbirkner.systemlambda.Statement;
 import com.github.stefanbirkner.systemlambda.SystemLambda;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
@@ -41,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers(disabledWithoutDocker = true)
 @TestInstance(Lifecycle.PER_CLASS)
 @DisabledInNativeImage
+@Disabled("SystemLambda not working reliable on standard Maven/JUnit setup, even when JVM is forked")
 class TranslatorFactoryConfigIT {
 
 	@SuppressWarnings("resource") // On purpose to reuse this
