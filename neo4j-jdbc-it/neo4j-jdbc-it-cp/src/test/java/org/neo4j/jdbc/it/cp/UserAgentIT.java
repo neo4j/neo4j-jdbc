@@ -24,12 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.github.stefanbirkner.systemlambda.SystemLambda;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.condition.DisabledInNativeImage;
-import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.neo4j.jdbc.Neo4jDriver;
 import org.testcontainers.junit.jupiter.Testcontainers;
