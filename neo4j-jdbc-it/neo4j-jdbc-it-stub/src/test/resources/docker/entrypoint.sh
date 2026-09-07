@@ -20,5 +20,4 @@
 
 set -e
 
-cd /testkit
-python -m boltstub -l 0.0.0.0:7687 -v /scripts/$1
+boltstub -l 0.0.0.0:7687 -v "/scripts/$1"
