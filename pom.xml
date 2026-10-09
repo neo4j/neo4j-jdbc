@@ -159,7 +159,7 @@
 		<java.version>17</java.version>
 		<jaxb-api.version>4.0.5</jaxb-api.version>
 		<jboss-logging.version>3.6.3.Final</jboss-logging.version>
-		<jdbi3.version>3.54.0</jdbi3.version>
+		<jdbi3.version>3.55.0</jdbi3.version>
 		<jooq.version>3.19.38</jooq.version>
 		<jreleaser-maven-plugin.version>1.26.0</jreleaser-maven-plugin.version>
 		<jspecify.version>1.0.1</jspecify.version>
