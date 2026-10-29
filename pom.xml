@@ -142,7 +142,7 @@
 		<covered-ratio-complexity>0.05</covered-ratio-complexity>
 		<covered-ratio-instructions>0.05</covered-ratio-instructions>
 		<cyclonedx-maven-plugin.version>2.9.3</cyclonedx-maven-plugin.version>
-		<cypher-v5-antlr-parser.version>5.26.31</cypher-v5-antlr-parser.version>
+		<cypher-v5-antlr-parser.version>5.26.32</cypher-v5-antlr-parser.version>
 		<docker-maven-plugin.version>0.49.0</docker-maven-plugin.version>
 		<dotenv-java.version>3.2.0</dotenv-java.version>
 		<duckdb_jdbc.version>1.5.5.1</duckdb_jdbc.version>
@@ -191,12 +191,12 @@
 		<native-image-config-transformer.version>1.0.2</native-image-config-transformer.version>
 		<native-maven-plugin.version>1.1.5</native-maven-plugin.version>
 		<neo4j-bolt-connection.version>12.1.0</neo4j-bolt-connection.version>
-		<neo4j-cypher-dsl.version>2025.3.4</neo4j-cypher-dsl.version>
+		<neo4j-cypher-dsl.version>2025.3.5</neo4j-cypher-dsl.version>
 		<neo4j-jdbc.previous.version>6.15.1</neo4j-jdbc.previous.version>
 		<neo4j.image>neo4j:${neo4j.version}</neo4j.image>
 		<neo4j.version>2026.07.1</neo4j.version>
 		<netty.version>4.1.138.Final</netty.version>
-		<openapi-generator-maven-plugin.version>7.25.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>7.26.0</openapi-generator-maven-plugin.version>
 		<opencsv.version>5.12.0</opencsv.version>
 		<openpojo.version>0.9.1</openpojo.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -213,7 +213,7 @@
 		<system-lambda.version>1.2.1</system-lambda.version>
 		<testcontainers-keycloak.version>4.4.0</testcontainers-keycloak.version>
 		<testcontainers.version>2.0.5</testcontainers.version>
-		<versions-maven-plugin.version>2.22.0</versions-maven-plugin.version>
+		<versions-maven-plugin.version>2.23.0</versions-maven-plugin.version>
 	</properties>
 
 	<dependencyManagement>
