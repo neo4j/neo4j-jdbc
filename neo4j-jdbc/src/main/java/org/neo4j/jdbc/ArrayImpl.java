@@ -223,7 +223,7 @@ class ArrayImpl implements Array {
 			}
 			else if (Type.FLOAT == this.arrayType) {
 				var builder = DoubleStream.builder();
-				this.values.forEach(v -> builder.add(v.asInt()));
+				this.values.forEach(v -> builder.add(v.asDouble()));
 				return builder.build().toArray();
 			}
 
