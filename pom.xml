@@ -151,7 +151,7 @@
 		<flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>10.0.1</git-commit-id-maven-plugin.version>
 		<jackson-databind-nullable.version>0.2.12</jackson-databind-nullable.version>
-		<jackson.version>2.22.3</jackson.version>
+		<jackson.version>2.22.4</jackson.version>
 		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<jakarta.activation-api.version>2.1.4</jakarta.activation-api.version>
 		<japicmp-maven-plugin.version>0.26.5</japicmp-maven-plugin.version>
@@ -674,7 +674,6 @@
 					<version>${maven-failsafe-plugin.version}</version>
 					<configuration>
 						<argLine>@{argLine} -Xverify:all</argLine>
-						<skipTests>${skipTests}</skipTests>
 						<skipITs>${skipITs}</skipITs>
 						<systemPropertyVariables>
 							<neo4j-jdbc.default-neo4j-image>${neo4j.image}</neo4j-jdbc.default-neo4j-image>
