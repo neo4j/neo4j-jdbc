@@ -218,12 +218,12 @@ class ArrayImpl implements Array {
 			}
 			else if (Type.INTEGER == this.arrayType) {
 				var builder = LongStream.builder();
-				this.values.forEach(v -> builder.add(v.asInt()));
+				this.values.forEach(v -> builder.add(v.asLong()));
 				return builder.build().toArray();
 			}
 			else if (Type.FLOAT == this.arrayType) {
 				var builder = DoubleStream.builder();
-				this.values.forEach(v -> builder.add(v.asInt()));
+				this.values.forEach(v -> builder.add(v.asDouble()));
 				return builder.build().toArray();
 			}
 
