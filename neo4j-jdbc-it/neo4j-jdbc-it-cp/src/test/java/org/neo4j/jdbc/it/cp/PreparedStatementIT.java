@@ -346,7 +346,10 @@ class PreparedStatementIT extends IntegrationTestBase {
 				Arguments.of(ZonedDateTime.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), ZoneId.of("Europe/Berlin")),
 						OptionalInt.of(Types.TIME), null, Time.valueOf(LocalTime.of(10, 11, 12))),
 				Arguments.of(Date.valueOf(LocalDate.of(1991, 9, 21)), OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
-						LocalTime.of(0, 0).atOffset(ZoneId.systemDefault().getRules().getOffset(Instant.now()))),
+						LocalTime.of(0, 0)
+							.atOffset(ZoneId.systemDefault()
+								.getRules()
+								.getOffset(LocalDate.of(1991, 9, 21).atStartOfDay()))),
 				Arguments.of(
 						java.util.Date
 							.from(LocalDateTime.of(2001, 2, 3, 21, 48).atZone(ZoneId.systemDefault()).toInstant()),
@@ -362,7 +365,9 @@ class PreparedStatementIT extends IntegrationTestBase {
 				Arguments.of(ZonedDateTime.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), ZoneId.of("Europe/Athens")),
 						OptionalInt.of(Types.TIME_WITH_TIMEZONE), null,
 						LocalTime.of(10, 11, 12)
-							.atOffset(ZoneId.of("Europe/Athens").getRules().getOffset(Instant.now()))),
+							.atOffset(ZoneId.of("Europe/Athens")
+								.getRules()
+								.getOffset(LocalDateTime.of(1991, 9, 21, 10, 11, 12)))),
 				Arguments.of(LocalDate.of(1991, 9, 21), OptionalInt.of(Types.TIMESTAMP_WITH_TIMEZONE),
 						"data exception - Cannot coerce java.time.LocalDate to java.sql.Timestamp", null),
 				Arguments.of(LocalDateTime.of(1991, 9, 21, 10, 11, 12), OptionalInt.of(Types.TIMESTAMP_WITH_TIMEZONE),

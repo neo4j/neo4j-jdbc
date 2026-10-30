@@ -674,7 +674,6 @@
 					<version>${maven-failsafe-plugin.version}</version>
 					<configuration>
 						<argLine>@{argLine} -Xverify:all</argLine>
-						<skipTests>${skipTests}</skipTests>
 						<skipITs>${skipITs}</skipITs>
 						<systemPropertyVariables>
 							<neo4j-jdbc.default-neo4j-image>${neo4j.image}</neo4j-jdbc.default-neo4j-image>
