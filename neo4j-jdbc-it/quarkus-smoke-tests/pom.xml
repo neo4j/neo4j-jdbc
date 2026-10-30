@@ -31,16 +31,11 @@
 
 	<name>Neo4j JDBC Driver (Quarkus Smoke tests)</name>
 
-	<properties>
-		<quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-		<quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-	</properties>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>${quarkus.platform.group-id}</groupId>
-				<artifactId>${quarkus.platform.artifact-id}</artifactId>
+				<groupId>io.quarkus.platform</groupId>
+				<artifactId>quarkus-bom</artifactId>
 				<version>${quarkus.platform.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
@@ -98,7 +93,7 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>${quarkus.platform.group-id}</groupId>
+				<groupId>io.quarkus.platform</groupId>
 				<artifactId>quarkus-maven-plugin</artifactId>
 				<version>${quarkus.platform.version}</version>
 				<extensions>true</extensions>
