@@ -1,3 +1,132 @@
+# 6.15.2
+
+Welcome @beikov as new contributor.
+
+## 🐛 Bug Fixes
+- 85b95cb fix: Avoid lossy coercion and overflow errors in `ArrayImpl` for Neo4j float and long values. (#1528)
+- 8236588 fix: Core modules does not depend on JSpecify. (#1529)
+- 4c79a76 fix: Use the offset for the tested time, not now. (#1530)
+
+## 🧹 Housekeeping
+- fdf35a6 build(deps-dev): Bump org.duckdb:duckdb_jdbc from 1.5.5.1 to 2.0.0.0 (#1527)
+- c9a6ac9 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1526)
+- bf1ef9f Bump quarkus.platform.version from 3.40.1 to 3.40.1.1 (#1525)
+- 4bf2d40 Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1521)
+- c6ab521 Bump io.netty:netty-bom from 4.1.138.Final to 4.1.139.Final (#1519)
+- de83311 Update to Jackson 2.22.4. (#1531)
+- 1a99420 Bump org.hibernate.orm:hibernate-platform (#1523)
+- 1b3f8c0 Bump org.neo4j:neo4j-cypher-dsl-bom (#1524)
+- 6bc55b0 Bump org.neo4j:cypher-v5-antlr-parser (#1522)
+- 1528ad5 build(deps-dev): Bump org.codehaus.mojo:versions-maven-plugin (#1520)
+- 5891a74 build(deps-dev): Bump org.openapitools:openapi-generator-maven-plugin (#1517)
+- 261c464 Bump org.apache.commons:commons-lang3 from 3.20.0 to 3.21.0 (#1506)
+- 2701869 Bump org.jooq:jooq from 3.19.38 to 3.19.39 (#1510)
+- e20a874 Bump org.openapitools:jackson-databind-nullable (#1505)
+- 4277cd9 Bump org.hibernate.orm:hibernate-platform (#1507)
+- a07fc4a Bump quarkus.platform.version from 3.39.5 to 3.40.1 (#1509)
+- 5ce05fc build(deps-dev): Bump com.tngtech.archunit:archunit from 1.5.0 to 1.5.1 (#1508)
+- 699ae5d Bump org.jdbi:jdbi3-bom from 3.54.0 to 3.55.0 (#1511)
+- 1225b06 build(deps-dev): Bump com.github.dasniko:testcontainers-keycloak (#1512)
+- edf85c7 Bump com.puppycrawl.tools:checkstyle from 14.1.0 to 14.3.0 (#1513)
+- 3345883 Bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0 (#1514)
+
+## 🛠 Build
+- 53b7c2c build: Inline quarkus group and artifact ids.
+
+
+# 6.15.1
+
+## 🧹 Housekeeping
+- a5b5e9a Bump org.neo4j:neo4j-cypher-dsl-bom to 2025.3.4 (#1504)
+- 0b2bdf8 Bump com.fasterxml.jackson:jackson-bom (#1498)
+- 6cac521 Bump quarkus.platform.version from 3.39.4 to 3.39.5 (#1499)
+- 1ecbd73 Bump slf4j.version from 2.0.19 to 2.0.20 (#1500)
+- 6972654 Bump org.hibernate.orm:hibernate-platform (#1501)
+- d96acea Bump org.neo4j:cypher-v5-antlr-parser (#1502)
+- 4bddb9d Bump org.mockito:mockito-bom from 5.23.0 to 5.24.0 (#1503)
+- 35ec862 Bump org.neo4j:neo4j-cypher-dsl-bom (#1489)
+- 8fa6439 Bump org.hibernate.orm:hibernate-platform (#1488)
+- 01bc1ca Bump quarkus.platform.version from 3.39.3 to 3.39.4 (#1490)
+- 07ee1b3 Bump org.codehaus.mojo:build-helper-maven-plugin (#1491)
+- 0e3f0c9 build(deps-dev): Bump org.codehaus.mojo:versions-maven-plugin (#1492)
+- 58dc3cd Bump org.apache.maven.plugins:maven-install-plugin (#1493)
+- 46ca5b4 Bump org.neo4j.bolt:neo4j-bolt-connection-bom (#1494)
+- c3b564a Bump org.codehaus.mojo:exec-maven-plugin (#1495)
+- b27bd12 Bump org.asciidoctor:asciidoctorj-pdf from 2.3.23 to 2.3.27 (#1496)
+- c3a0513 Bump org.apache.maven.plugins:maven-deploy-plugin (#1497)
+- 6c46ac0 Bump org.sonarsource.scanner.maven:sonar-maven-plugin (#1486)
+- 86e19d2 Bump org.jooq:jooq from 3.19.37 to 3.19.38 (#1483)
+- ecbf056 Bump org.neo4j:neo4j-cypher-dsl-bom (#1487)
+- a66e2ef Bump io.netty:netty-bom from 4.1.137.Final to 4.1.138.Final (#1485)
+- b81adcb Bump slf4j.version from 2.0.18 to 2.0.19 (#1484)
+- 2875881 Bump quarkus.platform.version from 3.39.2 to 3.39.3 (#1482)
+- e422f3c Bump org.apache.maven.plugins:maven-surefire-plugin (#1472)
+- ebcc5d6 Bump com.puppycrawl.tools:checkstyle from 14.0.0 to 14.1.0 (#1473)
+- 1003937 Bump io.github.git-commit-id:git-commit-id-maven-plugin (#1474)
+- 8514eab Bump org.apache.maven.plugins:maven-failsafe-plugin (#1475)
+- 880aadf Bump quarkus.platform.version from 3.39.1 to 3.39.2 (#1476)
+- e5f0baf Bump org.hibernate.orm:hibernate-platform (#1477)
+- 90be180 Bump com.github.siom79.japicmp:japicmp-maven-plugin (#1478)
+- 5d029af Bump org.apache.maven.plugins:maven-compiler-plugin (#1479)
+- 4e3504f Bump org.jreleaser:jreleaser-maven-plugin (#1480)
+
+## 🛠 Build
+- 72d1c3b test(stub): use Rust re-write of the bolt stub server (#1481)
+- ccedc9b build: Run all tests that modify the environment separately. (#1471)
+
+
+# 6.15.0
+
+This is a recommended update for all users. It includes several important security fixes and has no breaking API changes.
+The fallback mechanism of loading SQL to Cypher translators required for scenarios in which a service loader cannot be used has been hardened, so that only translators shipped with the drivers are allowed.
+The previous mechanism adding external classes through that mechanism can be restored by setting `NEO4J_JDBC_ALLOWED_TRANSLATOR_FACTORIES` to the fully qualified classname, either as Java system property or environment variable.
+
+Database metadata queries only allow `%` and `_` as wildcards now, aligned with the JDBC standard.
+
+Last but not least, the experimental "Natural text to Cypher" AI-based translator module has been removed without replacement. If you used that against all recommendations, feel free to combine the latest 6.14.1 version of that module with this release.
+
+All other changes listed as per usual:
+
+## 🚀 Features
+- b6a953a feat: Log a warning when accessing view definitions from http. (#1465)
+
+## 🐛 Bug Fixes
+- 56a6bd1 fix: Make sure updates and join operations are not allowed with views, even without database connection. (#1467)
+- 0bbbd8c fix: Don't use cached translations when SQL translation is not enabled. (#1464)
+- 700cfba fix: Reset metadata connection after server side failure. (#1459)
+- 20066ad fix: Use `Base64.getUrlDecoder()` instead of `Base64.getDecoder()` for decoding JWT tokens. (#1458)
+- 726c4e8 fix: Don't rewrite quoted placeholders in batch statement. (#1457)
+- 0413075 fix: Use correct SSL mode (verify-full) when ssl mode is configured via properties alone. (#1455)
+
+## 🔄️ Refactorings
+- b5b4f27 refactor: Don't allow arbitrary regex pattern for table and column search patterns. (#1466)
+- 89f0b28 refactor: Ignore address from implicit .env file as long as credentials are not sourced from the same file. (#1463)
+- 7ddef66 refactor: Avoid the use of `AtomicReference#updateAndGet` with methods that have side effects. (#1462)
+- e258b2e refactor: Make `toString()` methods of auth tokens safe for log usage. (#1461)
+- ff5229d refactor: Use a stripped down key for current bookmark managers. (#1460)
+- 9c66bfb refactor: Harden fallback loading of SQL Translator factories. (#1454)
+
+## 📝 Documentation
+- ead231c docs: Update local changelog.
+
+## 🧰 Tasks
+- cfcd32b chore: Address various other problems. (#1468)
+- e8af957 chore: Remove experimental text2cypher module. (#1456)
+
+## 🧹 Housekeeping
+- 307d85e Bump org.openapitools:jackson-databind-nullable (#1449)
+- 1f3d1dc build(deps-dev): Bump org.duckdb:duckdb_jdbc from 1.5.5.0 to 1.5.5.1 (#1450)
+- cb776d8 Bump quarkus.platform.version from 3.37.3 to 3.39.1 (#1452)
+- cdfb5d8 build(deps-dev): Bump org.openapitools:openapi-generator-maven-plugin (#1453)
+- 815a6a9 Bump dev.langchain4j:langchain4j-bom from 1.18.0 to 1.19.0 (#1448)
+- 3c3be88 Bump org.neo4j:neo4j-cypher-dsl-bom (#1451)
+- 9833383 Bump org.neo4j:cypher-v5-antlr-parser (#1447)
+
+## 🛠 Build
+- 15a8fb6 build: Disable environment tests for simple Maven builds. (#1470)
+- ca26fe1 build: Remove tests for environment variables from Maven / JUnit setup.
+
+
 # 6.14.1
 
 ## 🧰 Tasks
